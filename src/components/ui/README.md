@@ -2,6 +2,26 @@
 
 Reusable frontend-only components for the Storely enterprise SaaS redesign.
 
+## Shared presentation
+
+`design-tokens.ts` owns the palette, spacing, control sizes, typography, radii and shadows.
+`system-styles.tsx` derives the common component CSS from those tokens and is mounted once in the root layout.
+The component classes keep existing props, event handlers and data behavior intact. Avoid overriding internal typography, dimensions or metric grid borders in pages; use the existing sizes and variants instead.
+
+The legacy exports in `src/lib/ds.ts` and `src/app/storely-admin/_admin/kit.tsx` now consume the same tokens. Admin buttons, cards, headers and empty states delegate to Storely primitives, while the table and drawer use the same shared CSS.
+
+The component pass covers buttons; card headers and surfaces; separate metric blocks with wrapping text; tables and action groups; labels, inputs, selects, textareas and errors; badges; search toolbars; empty/loading states; pagination; confirmations; toast messages; announcements; and admin drawers.
+
+The only page integrations remove metric presentation overrides in Dashboard, Admin Overview and Admin Metrics. Page content, metrics, actions and workflows stay unchanged.
+
+### Files in the component pass
+
+- `src/components/ui/`: `design-tokens.ts`, `system-styles.tsx`, `button.tsx`, `card.tsx`, `data-table.tsx`, `metric-strip.tsx`, `page-header.tsx`, `form-field.tsx`, `status-badge.tsx`, `table-action.tsx`, `empty-state.tsx`, `app-layout.tsx`, and this README.
+- Legacy adapters: `src/lib/ds.ts`, `src/app/storely-admin/_admin/kit.tsx`.
+- Shared overlays and feedback: `src/components/ConfirmDialog.tsx`, `src/components/FeatureAnnouncement.tsx`, `src/components/pagination.tsx`, `src/components/toast.tsx`.
+- Global style registration: `src/app/layout.tsx`, `src/app/globals.css`.
+- Minimal metric integration: `src/app/(dashboard)/dashboard/page.tsx`, `src/app/storely-admin/page.tsx`, `src/app/storely-admin/metrics/page.tsx`.
+
 ## Principles
 
 - Use cards only for meaningful grouping.

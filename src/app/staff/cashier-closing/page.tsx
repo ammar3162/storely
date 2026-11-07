@@ -1,4 +1,7 @@
 'use client'
+import { StorelyButton, StorelyCard, StorelyPageHeader } from '@/components/ui'
+import { Camera, ChartNoAxesCombined, CheckCircle2, CircleAlert, LoaderCircle, LockKeyhole, Receipt, Wallet } from 'lucide-react'
+import { storelyTokens as uiTokens } from '@/components/ui/design-tokens'
 import { useState, useEffect } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter } from 'next/navigation'
@@ -91,18 +94,15 @@ function fmt(n: number) {
 function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconColor, error, currency }: any) {
   return (
     <div>
-      <div style={{position:'relative'}}>
-        <div style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',width:30,height:30,borderRadius:9,background:iconBg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>
+      <div className="relative">
+        <div className="absolute rounded-[var(--radius-sm)] flex items-center justify-center text-sm" style={{right:12, top:'50%', transform:'translateY(-50%)', width:30, height:30, background:iconBg}}>
           {icon}
         </div>
-        <input type="number" value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
-          style={{width:'100%',padding:'14px 54px 14px 46px',border:`1.5px solid ${error?'#dc2626':'#e5e5e2'}`,borderRadius:12,fontSize:16,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'right',color:'#1c1c1a',transition:'border-color .15s',background:error?'#fef7f7':'white'}}
-          onFocus={e=>{if(!error)e.target.style.borderColor=iconColor}}
-          onBlur={e=>{if(!error)e.target.style.borderColor='#e5e5e2'}}
+        <input type="number" value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} onFocus={e=>{if(!error)e.target.style.borderColor=iconColor}} onBlur={e=>{if(!error)e.target.style.borderColor='#e5e5e2'}} className="w-full rounded-[var(--radius)] !text-base font-semibold text-right storely-input min-w-0" style={{padding:'14px 54px 14px 46px', border:`1.5px solid ${error?uiTokens.color.danger:uiTokens.color.border}`, direction:'ltr', color:uiTokens.color.text, background:error?uiTokens.color.dangerBg:uiTokens.color.surface}}
         />
-        <span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:11,fontWeight:700,color:'#a8a7a1'}}>{currency || 'ر.س'}</span>
+        <span className="absolute text-xs font-semibold" style={{left:14, top:'50%', transform:'translateY(-50%)', color:uiTokens.color.textMuted}}>{currency || 'ر.س'}</span>
       </div>
-      {error && <div style={{fontSize:11,color:'#dc2626',fontWeight:700,marginTop:6,display:'flex',alignItems:'center',gap:4}}>⚠️ {error}</div>}
+      {error && <div className="text-xs font-semibold !mt-1 flex items-center gap-2" style={{color:uiTokens.color.danger}}><CircleAlert size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> {error}</div>}
     </div>
   )
 }
@@ -110,23 +110,17 @@ function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconColor, err
 function ProgressBar({ step, lang }: { step: number; lang: 'ar'|'en' }) {
   const STEPS = lang==='en' ? STEPS_EN : STEPS_AR
   return (
-    <div style={{display:'flex',alignItems:'center',marginBottom:26}}>
+    <div className="flex items-center !mb-6">
       {STEPS.map((s, i) => (
-        <div key={s.key} style={{display:'flex',alignItems:'center',flex:i<STEPS.length-1?1:'unset'}}>
-          <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
-            <div style={{
-              width:32,height:32,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',
-              fontSize:13,fontWeight:800,transition:'all .2s',
-              background: step>s.key ? '#029FA2' : step===s.key ? '#029FA2' : '#e5e5e2',
-              color: step>=s.key ? 'white' : '#a8a7a1',
-              boxShadow: step===s.key ? '0 0 0 4px #ccfbf1' : 'none',
-            }}>
+        <div key={s.key} className="flex items-center" style={{flex:i<STEPS.length-1?1:'unset'}}>
+          <div className="flex flex-col items-center gap-2">
+            <div className="rounded-[var(--radius-sm)] flex items-center justify-center text-sm font-semibold" style={{width:40, height:40, background:step>s.key ? uiTokens.color.navy : step===s.key ? uiTokens.color.navy : uiTokens.color.background, color:step>=s.key ? uiTokens.color.surface : uiTokens.color.textMuted, boxShadow:uiTokens.shadow.surface}}>
               {step>s.key ? '✓' : s.key}
             </div>
-            <span style={{fontSize:10,fontWeight:700,color: step>=s.key ? '#1c1c1a' : '#a8a7a1',whiteSpace:'nowrap'}}>{s.label}</span>
+            <span className="text-xs font-semibold whitespace-normal break-words" style={{color:step>=s.key ? uiTokens.color.text : uiTokens.color.textMuted}}>{s.label}</span>
           </div>
           {i<STEPS.length-1 && (
-            <div style={{flex:1,height:2,background: step>s.key ? '#029FA2' : '#e5e5e2',margin:'0 6px 18px',transition:'background .3s'}}/>
+            <div className="min-w-0 flex-1 !mt-0 !mx-1 !mb-4" style={{height:2, background:step>s.key ? uiTokens.color.navy : uiTokens.color.background}}/>
           )}
         </div>
       ))}
@@ -318,288 +312,278 @@ export default function CashierClosingPage() {
   }
 
   if(!session) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
-      <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:'#029FA2',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div className="min-h-screen flex items-center justify-center text-[var(--storely-navy)]" style={{background:uiTokens.color.background}}>
+      <LoaderCircle size={28} className="animate-spin" />
+
     </div>
   )
 
   if(locked) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl',padding:20,textAlign:'center' as const}}>
+    <div className="min-h-screen flex items-center justify-center !p-5 text-center text-[var(--storely-navy)]" style={{background:uiTokens.color.background, direction:lang==='en'?'ltr':'rtl'}}>
       <div>
-        <div style={{fontSize:44,marginBottom:12}}>🔒</div>
-        <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:8}}>{ct('lockedTitle',lang)}</div>
-        <div style={{fontSize:13,color:'#78716c'}}>{ct('lockedSub',lang)}</div>
+        <div className="text-2xl !mb-3"><LockKeyhole size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></div>
+        <div className="text-base font-semibold !mb-2" style={{color:uiTokens.color.text}}>{ct('lockedTitle',lang)}</div>
+        <div className="text-sm" style={{color:uiTokens.color.textMuted}}>{ct('lockedSub',lang)}</div>
       </div>
     </div>
   )
 
   return (
-    <div style={{minHeight:'100vh',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl',paddingBottom:50}}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}} .fu{animation:fadeUp .3s ease both}`}</style>
+    <div className="min-h-screen !pb-8 text-[var(--storely-navy)]" style={{background:uiTokens.color.background, direction:lang==='en'?'ltr':'rtl'}}>
 
       {toast && (
-        <div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:9999,background:toast.type==='success'?'#029FA2':'#dc2626',color:'white',padding:'12px 24px',borderRadius:40,fontSize:14,fontWeight:700,boxShadow:'0 8px 24px rgba(0,0,0,.25)',whiteSpace:'nowrap'}}>
+        <div className="fixed w-[calc(100%-32px)] max-w-lg border border-[var(--storely-border)] !py-3 !px-6 rounded-[var(--radius)] text-sm font-semibold whitespace-normal break-words" style={{top:20, left:'50%', transform:'translateX(-50%)', zIndex:9999, background:uiTokens.color.surface, color:toast.type==='success'?uiTokens.color.success:uiTokens.color.danger, boxShadow:uiTokens.shadow.surface}}>
           {toast.msg}
         </div>
       )}
 
-      <div style={{background:'linear-gradient(135deg,#042f2e,#0C213B)',padding:'16px 20px',position:'sticky',top:0,zIndex:100,boxShadow:'0 4px 20px rgba(0,0,0,.2)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-        <div style={{display:'flex',alignItems:'center',gap:12}}>
+      <div className="!py-4 !px-5 flex justify-between items-center flex-wrap gap-4" style={{background:uiTokens.color.surface, top:0, zIndex:100, boxShadow:uiTokens.shadow.surface}}>
+        <div className="flex items-center gap-3">
           {orgLogo ? (
-            <img src={orgLogo} alt="" style={{width:42,height:42,borderRadius:12,objectFit:'cover',border:'2px solid rgba(255,255,255,.2)'}}/>
+            <img src={orgLogo} alt="" className="rounded-[var(--radius)] object-cover" style={{width:42, height:42, border:'2px solid rgba(255,255,255,.2)'}}/>
           ) : (
-            <div style={{width:42,height:42,borderRadius:12,background:'rgba(255,255,255,.12)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:19}}>💰</div>
+            <div className="rounded-[var(--radius)] flex items-center justify-center text-lg" style={{width:42, height:42, background:uiTokens.color.surface}}><Wallet size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></div>
           )}
           <div>
-            <div style={{fontSize:15,fontWeight:800,color:'white'}}>{session.name}</div>
-            <div style={{fontSize:11,color:'rgba(255,255,255,.55)',marginTop:2,display:'flex',alignItems:'center',gap:5}}>
+            <div className="text-base font-semibold" style={{color:uiTokens.color.navy}}>{session.name}</div>
+            <div className="text-xs !mt-0 flex items-center gap-2" style={{color:uiTokens.color.textMuted}}>
               <span>{session.org_name}{session.branch_name?` · ${session.branch_name}`:''}</span>
-              <span style={{background:'rgba(255,255,255,.15)',padding:'1px 8px',borderRadius:20,fontWeight:700,fontSize:10}}>{ct('cashierBadge',lang)}</span>
+              <span className="!py-0 !px-2 rounded-[var(--radius)] font-semibold text-xs" style={{background:uiTokens.color.surface}}>{ct('cashierBadge',lang)}</span>
             </div>
           </div>
         </div>
-        <button onClick={logout} style={{background:'rgba(255,255,255,.1)',color:'white',border:'1px solid rgba(255,255,255,.2)',borderRadius:10,padding:'8px 16px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+        <StorelyButton onClick={logout} variant="secondary">
           {ct('logout',lang)}
-        </button>
+        </StorelyButton>
       </div>
 
-      <div style={{maxWidth:520,margin:'0 auto',padding:'28px 16px'}}>
+      <div className="max-w-4xl !my-0 !mx-auto !py-6 !px-4">
         {!saved && (
-          <div className="fu" style={{marginBottom:6}}>
-            <div style={{fontSize:22,fontWeight:800,color:'#1c1c1a',marginBottom:4}}>{ct('pageTitle',lang)}</div>
-            <div style={{fontSize:13,color:'#8b8a84',fontWeight:600,marginBottom:22}}>{new Date().toLocaleDateString(lang==='en'?'en-US':'ar-SA', {numberingSystem:'latn',weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
+          <div className="!mb-1">
+            <StorelyPageHeader title={<> {ct('pageTitle',lang)} </>} className="!mb-2" />
+            <div className="text-sm font-semibold !mb-5" style={{color:uiTokens.color.textMuted}}>{new Date().toLocaleDateString(lang==='en'?'en-US':'ar-SA', {numberingSystem:'latn',weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
             <ProgressBar step={step} lang={lang}/>
           </div>
         )}
 
         {saved ? (
-          <div className="fu" style={{background:'white',borderRadius:20,padding:36,textAlign:'center',boxShadow:'0 4px 24px rgba(0,0,0,.06)',border:'1px solid #eeeeeb'}}>
-            <div style={{width:64,height:64,borderRadius:'50%',background:'#f0fdfa',display:'flex',alignItems:'center',justifyContent:'center',fontSize:30,margin:'0 auto 16px'}}>✅</div>
-            <div style={{fontSize:18,fontWeight:800,color:'#1c1c1a',marginBottom:10}}>{ct('savedTitle',lang)}</div>
-            <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:12,padding:'12px 16px',marginBottom:14}}>
-              <div style={{fontSize:14,fontWeight:700,color:'#0f766e'}}>{thankYouMsg}</div>
+          <StorelyCard className="min-w-0 rounded-[var(--radius)] !p-8 text-center" style={{background:uiTokens.color.surface, boxShadow:uiTokens.shadow.surface, border:`1px solid ${uiTokens.color.border}`}}>
+            <div className="rounded-[var(--radius-sm)] flex items-center justify-center text-[28px] !mt-0 !mx-auto !mb-4" style={{width:64, height:64, background:uiTokens.color.surface}}><CheckCircle2 size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></div>
+            <div className="text-lg font-semibold !mb-2" style={{color:uiTokens.color.text}}>{ct('savedTitle',lang)}</div>
+            <div className="rounded-[var(--radius)] !py-3 !px-4 !mb-3" style={{background:uiTokens.color.surface, border:`1px solid ${uiTokens.color.border}`}}>
+              <div className="text-sm font-semibold" style={{color:uiTokens.color.navy}}>{thankYouMsg}</div>
             </div>
-            <div style={{fontSize:13,color:'#8b8a84',marginBottom:24}}>{ct('savedSub',lang)}</div>
-            <button onClick={resetForm} style={{padding:'13px 28px',background:'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>
+            <div className="text-sm !mb-6" style={{color:uiTokens.color.textMuted}}>{ct('savedSub',lang)}</div>
+            <StorelyButton onClick={resetForm} variant="primary">
               {ct('newClosing',lang)}
-            </button>
-          </div>
+            </StorelyButton>
+          </StorelyCard>
         ) : (
           <>
             {/* خطوة 1: البيانات */}
             {step===1 && (
-              <div className="fu" style={{background:'white',borderRadius:18,padding:22,marginBottom:16,boxShadow:'0 2px 16px rgba(0,0,0,.05)',border:'1px solid #eeeeeb'}}>
-                <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',marginBottom:16,display:'flex',alignItems:'center',gap:8}}>
-                  <span style={{width:24,height:24,borderRadius:7,background:'#f0fdfa',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12}}>📊</span>
+              <StorelyCard className="min-w-0 rounded-[var(--radius)] !p-5 !mb-4" style={{background:uiTokens.color.surface, boxShadow:uiTokens.shadow.surface, border:`1px solid ${uiTokens.color.border}`}}>
+                <div className="text-sm font-semibold !mb-4 flex items-center gap-2" style={{color:uiTokens.color.text}}>
+                  <span className="rounded-[var(--radius-sm)] flex items-center justify-center text-sm" style={{width:40, height:40, background:uiTokens.color.surface}}><ChartNoAxesCombined size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></span>
                   {ct('step1Title',lang)}
                 </div>
-                <div style={{marginBottom:16}}>
-                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>{ct('totalSalesLabel',lang)}</label>
-                  <MoneyInput value={totalSales} onChange={setTotalSales} placeholder="0.00" icon="📊" iconBg="#f0fdfa" iconColor="#029FA2" currency={curr}/>
+                <div className="!mb-4">
+                  <label className="text-sm font-semibold block !mb-2" style={{color:uiTokens.color.textMuted}}>{ct('totalSalesLabel',lang)}</label>
+                  <MoneyInput value={totalSales} onChange={setTotalSales} placeholder="0.00" icon={<ChartNoAxesCombined size={16}/>} iconBg={uiTokens.color.surface} iconColor={uiTokens.color.navy} currency={curr}/>
                 </div>
-                <div style={{marginBottom:16}}>
-                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>{ct('networkLabel',lang)}</label>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+                <div className="!mb-4">
+                  <label className="text-sm font-semibold block !mb-2" style={{color:uiTokens.color.textMuted}}>{ct('networkLabel',lang)}</label>
+                  <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>{ct('mada',lang)}</div>
-                      <input type="number" value={madaAmount} onChange={e=>setMadaAmount(e.target.value)} placeholder="0.00"
-                        style={{width:'100%',padding:'11px 8px',border:`1.5px solid ${networkError?'#dc2626':'#e5e5e2'}`,borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'center' as const,background:networkError?'#fef7f7':'white'}}/>
+                      <div className="text-xs font-semibold !mb-1 text-center" style={{color:uiTokens.color.textMuted}}>{ct('mada',lang)}</div>
+                      <input type="number" value={madaAmount} onChange={e=>setMadaAmount(e.target.value)} placeholder="0.00" className="w-full rounded-[var(--radius-sm)] text-sm font-semibold text-center storely-input min-w-0" style={{border:`1.5px solid ${networkError?uiTokens.color.danger:uiTokens.color.border}`, direction:'ltr', background:networkError?uiTokens.color.dangerBg:uiTokens.color.surface}}/>
                     </div>
                     <div>
-                      <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>{ct('visa',lang)}</div>
-                      <input type="number" value={visaAmount} onChange={e=>setVisaAmount(e.target.value)} placeholder="0.00"
-                        style={{width:'100%',padding:'11px 8px',border:`1.5px solid ${networkError?'#dc2626':'#e5e5e2'}`,borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'center' as const,background:networkError?'#fef7f7':'white'}}/>
+                      <div className="text-xs font-semibold !mb-1 text-center" style={{color:uiTokens.color.textMuted}}>{ct('visa',lang)}</div>
+                      <input type="number" value={visaAmount} onChange={e=>setVisaAmount(e.target.value)} placeholder="0.00" className="w-full rounded-[var(--radius-sm)] text-sm font-semibold text-center storely-input min-w-0" style={{border:`1.5px solid ${networkError?uiTokens.color.danger:uiTokens.color.border}`, direction:'ltr', background:networkError?uiTokens.color.dangerBg:uiTokens.color.surface}}/>
                     </div>
                     <div>
-                      <div style={{fontSize:10,fontWeight:700,color:'#8b8a84',marginBottom:5,textAlign:'center' as const}}>{ct('mastercard',lang)}</div>
-                      <input type="number" value={mastercardAmount} onChange={e=>setMastercardAmount(e.target.value)} placeholder="0.00"
-                        style={{width:'100%',padding:'11px 8px',border:`1.5px solid ${networkError?'#dc2626':'#e5e5e2'}`,borderRadius:10,fontSize:13,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'center' as const,background:networkError?'#fef7f7':'white'}}/>
+                      <div className="text-xs font-semibold !mb-1 text-center" style={{color:uiTokens.color.textMuted}}>{ct('mastercard',lang)}</div>
+                      <input type="number" value={mastercardAmount} onChange={e=>setMastercardAmount(e.target.value)} placeholder="0.00" className="w-full rounded-[var(--radius-sm)] text-sm font-semibold text-center storely-input min-w-0" style={{border:`1.5px solid ${networkError?uiTokens.color.danger:uiTokens.color.border}`, direction:'ltr', background:networkError?uiTokens.color.dangerBg:uiTokens.color.surface}}/>
                     </div>
                   </div>
                   {anyNetworkEntered && (
-                    <div style={{display:'flex',justifyContent:'space-between',marginTop:8,padding:'8px 10px',background:'#eff6ff',borderRadius:8,fontSize:11,fontWeight:700}}>
-                      <span style={{color:'#2563eb'}}>{ct('networkTotal',lang)}</span>
-                      <span style={{color:'#2563eb',direction:'ltr' as const}}>{fmt(network)} {curr}</span>
+                    <div className="flex justify-between !mt-2 !py-2 !px-2 rounded-[var(--radius-sm)] text-xs font-semibold flex-wrap gap-4" style={{background:uiTokens.color.infoBg}}>
+                      <span style={{color:uiTokens.color.info}}>{ct('networkTotal',lang)}</span>
+                      <span style={{color:uiTokens.color.info, direction:'ltr' as const}}>{fmt(network)} {curr}</span>
                     </div>
                   )}
-                  {networkError && <div style={{fontSize:11,color:'#dc2626',fontWeight:700,marginTop:6,display:'flex',alignItems:'center',gap:4}}>⚠️ {ct('networkErrorMsg',lang)}</div>}
+                  {networkError && <div className="text-xs font-semibold !mt-1 flex items-center gap-2" style={{color:uiTokens.color.danger}}><CircleAlert size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> {ct('networkErrorMsg',lang)}</div>}
                 </div>
                 <div style={{marginBottom: (totalSales && anyNetworkEntered && !networkError) ? 16 : 0}}>
-                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:7}}>{ct('cashInDrawer',lang)}</label>
-                  <MoneyInput value={cashAmount} onChange={setCashAmount} placeholder="0.00" icon="💵" iconBg="#fffbeb" iconColor="#d97706" currency={curr}/>
+                  <label className="text-sm font-semibold block !mb-2" style={{color:uiTokens.color.textMuted}}>{ct('cashInDrawer',lang)}</label>
+                  <MoneyInput value={cashAmount} onChange={setCashAmount} placeholder="0.00" icon={<Wallet size={16}/>} iconBg={uiTokens.color.surface} iconColor={uiTokens.color.navy} currency={curr}/>
                 </div>
                 {totalSales && anyNetworkEntered && !networkError && (
-                  <div style={{display:'flex',justifyContent:'space-between',padding:'12px 14px',background:'#f7f7f5',borderRadius:10,fontSize:12,fontWeight:700}}>
-                    <span style={{color:'#8b8a84'}}>{ct('expectedCashPreview',lang)}</span>
-                    <span style={{color:'#1c1c1a',direction:'ltr' as const}}>{fmt(expectedCash)} {curr}</span>
+                  <div className="flex justify-between !py-3 !px-3 rounded-[var(--radius-sm)] text-sm font-semibold flex-wrap gap-4" style={{background:uiTokens.color.background}}>
+                    <span style={{color:uiTokens.color.textMuted}}>{ct('expectedCashPreview',lang)}</span>
+                    <span style={{color:uiTokens.color.text, direction:'ltr' as const}}>{fmt(expectedCash)} {curr}</span>
                   </div>
                 )}
-              </div>
+              </StorelyCard>
             )}
 
             {/* خطوة 2: المصاريف */}
             {step===2 && (
-              <div className="fu" style={{background:'white',borderRadius:18,padding:22,marginBottom:16,boxShadow:'0 2px 16px rgba(0,0,0,.05)',border:'1px solid #eeeeeb'}}>
-                <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',marginBottom:14,display:'flex',alignItems:'center',gap:8}}>
-                  <span style={{width:24,height:24,borderRadius:7,background:'#fef2f2',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12}}>🧾</span>
+              <StorelyCard className="min-w-0 rounded-[var(--radius)] !p-5 !mb-4" style={{background:uiTokens.color.surface, boxShadow:uiTokens.shadow.surface, border:`1px solid ${uiTokens.color.border}`}}>
+                <div className="text-sm font-semibold !mb-3 flex items-center gap-2" style={{color:uiTokens.color.text}}>
+                  <span className="rounded-[var(--radius-sm)] flex items-center justify-center text-sm" style={{width:40, height:40, background:uiTokens.color.dangerBg}}><Receipt size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></span>
                   {ct('step2Title',lang)}
                 </div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:hasPurchases==='yes'?16:0}}>
-                  <button onClick={()=>setHasPurchases('no')} style={{padding:'11px',borderRadius:10,border:`1.5px solid ${hasPurchases==='no'?'#029FA2':'#e5e5e2'}`,background:hasPurchases==='no'?'#f0fdfa':'white',color:hasPurchases==='no'?'#029FA2':'#5f5e5a',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" style={{marginBottom:hasPurchases==='yes'?16:0}}>
+                  <StorelyButton onClick={()=>setHasPurchases('no')} style={{border:`1.5px solid ${hasPurchases==='no'?uiTokens.color.navy:uiTokens.color.border}`, background:hasPurchases==='no'?uiTokens.color.surface:uiTokens.color.surface, color:hasPurchases==='no'?uiTokens.color.navy:uiTokens.color.textMuted}} variant="secondary">
                     {ct('no',lang)}
-                  </button>
-                  <button onClick={()=>setHasPurchases('yes')} style={{padding:'11px',borderRadius:10,border:`1.5px solid ${hasPurchases==='yes'?'#029FA2':'#e5e5e2'}`,background:hasPurchases==='yes'?'#f0fdfa':'white',color:hasPurchases==='yes'?'#029FA2':'#5f5e5a',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
+                  </StorelyButton>
+                  <StorelyButton onClick={()=>setHasPurchases('yes')} style={{border:`1.5px solid ${hasPurchases==='yes'?uiTokens.color.navy:uiTokens.color.border}`, background:hasPurchases==='yes'?uiTokens.color.surface:uiTokens.color.surface, color:hasPurchases==='yes'?uiTokens.color.navy:uiTokens.color.textMuted}} variant="secondary">
                     {ct('yes',lang)}
-                  </button>
+                  </StorelyButton>
                 </div>
 
                 {hasPurchases==='yes' && (
                   <div>
                     {purchases.map((p,idx)=>(
-                      <div key={idx} style={{display:'flex',gap:8,marginBottom:10,alignItems:'center',background:'#faf9f7',padding:10,borderRadius:12,border:'1px solid #f0efec'}}>
-                        <div style={{flex:1}}>
-                          <input type="number" value={p.amount} onChange={e=>updatePurchase(idx,'amount',e.target.value)} placeholder={ct('amountPh',lang)}
-                            style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e5e2',borderRadius:9,fontSize:14,fontWeight:700,fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'right'}}/>
+                      <div key={idx} className="flex gap-2 !mb-2 items-center !p-2 rounded-[var(--radius)]" style={{background:uiTokens.color.background, border:`1px solid ${uiTokens.color.border}`}}>
+                        <div className="min-w-0 flex-1">
+                          <input type="number" value={p.amount} onChange={e=>updatePurchase(idx,'amount',e.target.value)} placeholder={ct('amountPh',lang)} className="w-full rounded-[var(--radius-sm)] text-sm font-semibold text-right storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`, direction:'ltr'}}/>
                         </div>
                         <div style={{flex:1.4}}>
-                          <input type="text" value={p.reason} onChange={e=>updatePurchase(idx,'reason',e.target.value)} placeholder={ct('reasonPh',lang)}
-                            style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e5e2',borderRadius:9,fontSize:13,fontFamily:'inherit',outline:'none',boxSizing:'border-box'}}/>
+                          <input type="text" value={p.reason} onChange={e=>updatePurchase(idx,'reason',e.target.value)} placeholder={ct('reasonPh',lang)} className="w-full rounded-[var(--radius-sm)] text-sm storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`}}/>
                         </div>
                         {purchases.length>1 && (
-                          <button onClick={()=>removePurchaseRow(idx)} style={{width:34,height:34,flexShrink:0,borderRadius:9,border:'none',background:'#fef2f2',color:'#dc2626',cursor:'pointer',fontSize:16,fontWeight:700}}>×</button>
+                          <StorelyButton onClick={()=>removePurchaseRow(idx)} className="shrink-0 !px-0" style={{width:40, height:40}} variant="danger">×</StorelyButton>
                         )}
                       </div>
                     ))}
-                    <button onClick={addPurchaseRow} style={{width:'100%',padding:'11px',borderRadius:10,border:'1.5px dashed #d4d3ce',background:'transparent',color:'#5f5e5a',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginTop:2}}>
+                    <StorelyButton onClick={addPurchaseRow} className="w-full !mt-0" variant="secondary">
                       {ct('addExpenseRow',lang)}
-                    </button>
+                    </StorelyButton>
                     {totalPurchasesNow>0 && (
-                      <div style={{display:'flex',justifyContent:'space-between',marginTop:12,padding:'10px 12px',background:'#fef2f2',borderRadius:9,fontSize:12,fontWeight:700}}>
-                        <span style={{color:'#dc2626'}}>{ct('totalWithdrawals',lang)}</span>
-                        <span style={{color:'#dc2626',direction:'ltr' as const}}>{fmt(totalPurchasesNow)} {curr}</span>
+                      <div className="flex justify-between !mt-3 !py-2 !px-3 rounded-[var(--radius-sm)] text-sm font-semibold flex-wrap gap-4" style={{background:uiTokens.color.dangerBg}}>
+                        <span style={{color:uiTokens.color.danger}}>{ct('totalWithdrawals',lang)}</span>
+                        <span style={{color:uiTokens.color.danger, direction:'ltr' as const}}>{fmt(totalPurchasesNow)} {curr}</span>
                       </div>
                     )}
                   </div>
                 )}
-              </div>
+              </StorelyCard>
             )}
 
             {/* خطوة 3: الصور */}
             {step===3 && (
-              <div className="fu" style={{background:'white',borderRadius:18,padding:22,marginBottom:16,boxShadow:'0 2px 16px rgba(0,0,0,.05)',border:'1px solid #eeeeeb'}}>
-                <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',marginBottom:16,display:'flex',alignItems:'center',gap:8}}>
-                  <span style={{width:24,height:24,borderRadius:7,background:'#eff6ff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12}}>📸</span>
+              <StorelyCard className="min-w-0 rounded-[var(--radius)] !p-5 !mb-4" style={{background:uiTokens.color.surface, boxShadow:uiTokens.shadow.surface, border:`1px solid ${uiTokens.color.border}`}}>
+                <div className="text-sm font-semibold !mb-4 flex items-center gap-2" style={{color:uiTokens.color.text}}>
+                  <span className="rounded-[var(--radius-sm)] flex items-center justify-center text-sm" style={{width:40, height:40, background:uiTokens.color.infoBg}}><Camera size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></span>
                   {ct('step3Title',lang)}
                 </div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
-                    <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}}>{ct('salesReportImg',lang)}</label>
+                    <label className="text-xs font-semibold block !mb-1" style={{color:uiTokens.color.textMuted}}>{ct('salesReportImg',lang)}</label>
                     {salesImage ? (
-                      <div style={{position:'relative'}}>
-                        <img src={salesImage} alt="sales report" style={{width:'100%',height:130,borderRadius:10,objectFit:'cover'}}/>
-                        <button type="button" onClick={()=>setSalesImage('')} style={{position:'absolute',top:6,left:6,background:'rgba(0,0,0,.55)',color:'white',border:'none',borderRadius:'50%',width:24,height:24,cursor:'pointer',fontSize:14}}>×</button>
+                      <div className="relative">
+                        <img src={salesImage} alt="sales report" className="w-full rounded-[var(--radius-sm)] object-cover" style={{height:130}}/>
+                        <StorelyButton type="button" onClick={()=>setSalesImage('')} className="absolute" style={{top:6, left:6, width:24, height:24}} variant="secondary">×</StorelyButton>
                       </div>
                     ):(
-                      <label style={{display:'flex',alignItems:'center',justifyContent:'center',height:130,border:'2px dashed #d4d3ce',borderRadius:10,cursor:'pointer',background:'#faf9f7',textAlign:'center' as const,padding:8}}>
-                        <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>e.target.files?.[0]&&uploadImage(e.target.files[0],'sales')}/>
-                        <span style={{fontSize:12,color:'#8b8a84',fontWeight:600}}>{uploadingSales?ct('uploadingImg',lang):ct('tapSalesUpload',lang)}</span>
+                      <label className="flex items-center justify-center rounded-[var(--radius-sm)] text-center !p-2" style={{height:130, border:`1px dashed ${uiTokens.color.border}`, cursor:'pointer', background:uiTokens.color.background}}>
+                        <input type="file" accept="image/*" onChange={e=>e.target.files?.[0]&&uploadImage(e.target.files[0],'sales')} className="hidden"/>
+                        <span className="text-sm font-semibold" style={{color:uiTokens.color.textMuted}}>{uploadingSales?ct('uploadingImg',lang):ct('tapSalesUpload',lang)}</span>
                       </label>
                     )}
                   </div>
                   <div>
-                    <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}}>{ct('networkBalanceImg',lang)}</label>
+                    <label className="text-xs font-semibold block !mb-1" style={{color:uiTokens.color.textMuted}}>{ct('networkBalanceImg',lang)}</label>
                     {networkImage ? (
-                      <div style={{position:'relative'}}>
-                        <img src={networkImage} alt="network balance" style={{width:'100%',height:130,borderRadius:10,objectFit:'cover'}}/>
-                        <button type="button" onClick={()=>setNetworkImage('')} style={{position:'absolute',top:6,left:6,background:'rgba(0,0,0,.55)',color:'white',border:'none',borderRadius:'50%',width:24,height:24,cursor:'pointer',fontSize:14}}>×</button>
+                      <div className="relative">
+                        <img src={networkImage} alt="network balance" className="w-full rounded-[var(--radius-sm)] object-cover" style={{height:130}}/>
+                        <StorelyButton type="button" onClick={()=>setNetworkImage('')} className="absolute" style={{top:6, left:6, width:24, height:24}} variant="secondary">×</StorelyButton>
                       </div>
                     ):(
-                      <label style={{display:'flex',alignItems:'center',justifyContent:'center',height:130,border:'2px dashed #d4d3ce',borderRadius:10,cursor:'pointer',background:'#faf9f7',textAlign:'center' as const,padding:8}}>
-                        <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>e.target.files?.[0]&&uploadImage(e.target.files[0],'network')}/>
-                        <span style={{fontSize:12,color:'#8b8a84',fontWeight:600}}>{uploadingNetwork?ct('uploadingImg',lang):ct('tapNetworkUpload',lang)}</span>
+                      <label className="flex items-center justify-center rounded-[var(--radius-sm)] text-center !p-2" style={{height:130, border:`1px dashed ${uiTokens.color.border}`, cursor:'pointer', background:uiTokens.color.background}}>
+                        <input type="file" accept="image/*" onChange={e=>e.target.files?.[0]&&uploadImage(e.target.files[0],'network')} className="hidden"/>
+                        <span className="text-sm font-semibold" style={{color:uiTokens.color.textMuted}}>{uploadingNetwork?ct('uploadingImg',lang):ct('tapNetworkUpload',lang)}</span>
                       </label>
                     )}
                   </div>
                 </div>
-              </div>
+              </StorelyCard>
             )}
 
             {/* خطوة 4: المراجعة */}
             {step===4 && (
-              <div className="fu" style={{background:'white',borderRadius:18,padding:22,marginBottom:16,boxShadow:'0 2px 16px rgba(0,0,0,.05)',border:'1px solid #eeeeeb'}}>
-                <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>{ct('summaryTitle',lang)}</div>
+              <StorelyCard className="min-w-0 rounded-[var(--radius)] !p-5 !mb-4" style={{background:uiTokens.color.surface, boxShadow:uiTokens.shadow.surface, border:`1px solid ${uiTokens.color.border}`}}>
+                <div className="text-sm font-semibold !mb-3" style={{color:uiTokens.color.text}}>{ct('summaryTitle',lang)}</div>
                 {[
                   {label:ct('totalSalesRow',lang),value:sales,sign:''},
                   ...(mada>0?[{label:`— ${ct('mada',lang)}`,value:mada,sign:'−'}]:[]),
                   ...(visa>0?[{label:`— ${ct('visa',lang)}`,value:visa,sign:'−'}]:[]),
                   ...(mastercard>0?[{label:`— ${ct('mastercard',lang)}`,value:mastercard,sign:'−'}]:[]),
                 ].map((r,i)=>(
-                  <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:13,borderBottom:'1px dashed #eeeeeb'}}>
-                    <span style={{color:'#8b8a84',fontWeight:600}}>{r.label}</span>
-                    <span style={{color:'#1c1c1a',fontWeight:700,direction:'ltr' as const}}>{r.sign}{fmt(r.value)} {curr}</span>
+                  <div key={i} className="flex justify-between !py-2 !px-0 text-sm flex-wrap gap-4" style={{borderBottom:`1px dashed ${uiTokens.color.border}`}}>
+                    <span className="font-semibold" style={{color:uiTokens.color.textMuted}}>{r.label}</span>
+                    <span className="font-semibold" style={{color:uiTokens.color.text, direction:'ltr' as const}}>{r.sign}{fmt(r.value)} {curr}</span>
                   </div>
                 ))}
-                <div style={{display:'flex',justifyContent:'space-between',padding:'12px 0 16px',fontSize:14}}>
-                  <span style={{color:'#1c1c1a',fontWeight:800}}>{ct('expectedCashEq',lang)}</span>
-                  <span style={{color:'#1c1c1a',fontWeight:900,direction:'ltr' as const}}>{fmt(expectedCash)} {curr}</span>
+                <div className="flex justify-between !pt-3 !px-0 !pb-4 text-sm flex-wrap gap-4">
+                  <span className="font-semibold" style={{color:uiTokens.color.text}}>{ct('expectedCashEq',lang)}</span>
+                  <span className="font-semibold" style={{color:uiTokens.color.text, direction:'ltr' as const}}>{fmt(expectedCash)} {curr}</span>
                 </div>
-                <div style={{height:1,background:'#eeeeeb',margin:'4px 0 12px'}}/>
-                <div style={{display:'flex',justifyContent:'space-between',padding:'12px 0 16px',fontSize:14}}>
-                  <span style={{color:'#1c1c1a',fontWeight:800}}>{ct('actualCashRow',lang)}</span>
-                  <span style={{color:'#1c1c1a',fontWeight:900,direction:'ltr' as const}}>{fmt(cash)} {curr}</span>
+                <div className="!mt-1 !mx-0 !mb-3" style={{height:1, background:uiTokens.color.background}}/>
+                <div className="flex justify-between !pt-3 !px-0 !pb-4 text-sm flex-wrap gap-4">
+                  <span className="font-semibold" style={{color:uiTokens.color.text}}>{ct('actualCashRow',lang)}</span>
+                  <span className="font-semibold" style={{color:uiTokens.color.text, direction:'ltr' as const}}>{fmt(cash)} {curr}</span>
                 </div>
                 {totalPurchasesNow>0 && (
-                  <div style={{background:'#faf9f7',borderRadius:10,padding:'10px 12px',marginBottom:16}}>
-                    <div style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
-                      <span style={{color:'#8b8a84',fontWeight:600}}>{ct('recordedWithdrawals',lang)}</span>
-                      <span style={{color:'#8b8a84',fontWeight:700,direction:'ltr' as const}}>{fmt(totalPurchasesNow)} {curr}</span>
+                  <div className="rounded-[var(--radius-sm)] !py-2 !px-3 !mb-4" style={{background:uiTokens.color.background}}>
+                    <div className="flex justify-between text-sm flex-wrap gap-4">
+                      <span className="font-semibold" style={{color:uiTokens.color.textMuted}}>{ct('recordedWithdrawals',lang)}</span>
+                      <span className="font-semibold" style={{color:uiTokens.color.textMuted, direction:'ltr' as const}}>{fmt(totalPurchasesNow)} {curr}</span>
                     </div>
-                    <div style={{fontSize:10,color:'#a8a7a1',marginTop:4}}>{ct('withdrawalsNote',lang)}</div>
+                    <div className="text-xs !mt-1" style={{color:uiTokens.color.textMuted}}>{ct('withdrawalsNote',lang)}</div>
                   </div>
                 )}
-                <div style={{
-                  padding:'18px',borderRadius:14,textAlign:'center',marginBottom:16,
-                  background: status==='balanced' ? '#f0fdfa' : status==='deficit' ? '#fef2f2' : '#eff6ff',
-                  border: `1.5px solid ${status==='balanced' ? '#99f6e4' : status==='deficit' ? '#fecaca' : '#bfdbfe'}`
-                }}>
-                  <div style={{fontSize:13,fontWeight:800,color: status==='balanced' ? '#029FA2' : status==='deficit' ? '#dc2626' : '#2563eb',marginBottom:status!=='balanced'?6:0}}>
+                <div className="!p-4 rounded-[var(--radius)] text-center !mb-4" style={{background:status==='balanced' ? uiTokens.color.successBg : status==='deficit' ? uiTokens.color.dangerBg : uiTokens.color.infoBg, border:`1.5px solid ${status==='balanced' ? uiTokens.color.successBorder : status==='deficit' ? uiTokens.color.dangerBorder : uiTokens.color.infoBorder}`}}>
+                  <div className="text-sm font-semibold" style={{color:status==='balanced' ? uiTokens.color.success : status==='deficit' ? uiTokens.color.danger : uiTokens.color.info, marginBottom:status!=='balanced'?6:0}}>
                     {status==='balanced' ? ct('balanced',lang) : status==='deficit' ? ct('deficit',lang) : ct('surplus',lang)}
                   </div>
                   {status!=='balanced' && (
-                    <div style={{fontSize:28,fontWeight:900,color: status==='deficit' ? '#dc2626' : '#2563eb'}}>
+                    <div className="text-[28px] font-semibold" style={{color:status==='deficit' ? uiTokens.color.danger : uiTokens.color.info}}>
                       {fmt(Math.abs(difference))} {curr}
                     </div>
                   )}
                 </div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                  <div style={{padding:8,borderRadius:9,background:'#f7f7f5',textAlign:'center' as const}}>
-                    <img src={salesImage} alt="" style={{width:'100%',height:60,borderRadius:6,objectFit:'cover',marginBottom:4}}/>
-                    <span style={{fontSize:10,color:'#8b8a84',fontWeight:700}}>{ct('salesReportCheck',lang)}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="!p-2 rounded-[var(--radius-sm)] text-center" style={{background:uiTokens.color.background}}>
+                    <img src={salesImage} alt="" className="w-full rounded-[var(--radius-sm)] object-cover !mb-1" style={{height:60}}/>
+                    <span className="text-xs font-semibold" style={{color:uiTokens.color.textMuted}}>{ct('salesReportCheck',lang)}</span>
                   </div>
-                  <div style={{padding:8,borderRadius:9,background:'#f7f7f5',textAlign:'center' as const}}>
-                    <img src={networkImage} alt="" style={{width:'100%',height:60,borderRadius:6,objectFit:'cover',marginBottom:4}}/>
-                    <span style={{fontSize:10,color:'#8b8a84',fontWeight:700}}>{ct('networkBalanceCheck',lang)}</span>
+                  <div className="!p-2 rounded-[var(--radius-sm)] text-center" style={{background:uiTokens.color.background}}>
+                    <img src={networkImage} alt="" className="w-full rounded-[var(--radius-sm)] object-cover !mb-1" style={{height:60}}/>
+                    <span className="text-xs font-semibold" style={{color:uiTokens.color.textMuted}}>{ct('networkBalanceCheck',lang)}</span>
                   </div>
                 </div>
-              </div>
+              </StorelyCard>
             )}
 
             {/* أزرار التنقل */}
-            <div className="fu" style={{display:'flex',gap:10}}>
+            <div className="flex flex-wrap gap-3">
               {step>1 && (
-                <button onClick={goBack} style={{flex:1,padding:'15px',background:'white',color:'#5f5e5a',border:'1.5px solid #e5e5e2',borderRadius:14,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                <StorelyButton onClick={goBack} className="min-w-0 flex-1" variant="secondary">
                   {ct('back',lang)}
-                </button>
+                </StorelyButton>
               )}
               {step<4 ? (
-                <button onClick={goNext} style={{flex:2,padding:'15px',background:'#029FA2',color:'white',border:'none',borderRadius:14,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 16px rgba(22,163,74,.28)'}}>
+                <StorelyButton onClick={goNext} style={{flex:2}} variant="primary">
                   {ct('next',lang)}
-                </button>
+                </StorelyButton>
               ) : (
-                <button onClick={saveClosing} disabled={submitting} style={{flex:2,padding:'15px',background:'#029FA2',color:'white',border:'none',borderRadius:14,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',opacity:submitting?.7:1,boxShadow:'0 4px 16px rgba(22,163,74,.28)'}}>
+                <StorelyButton onClick={saveClosing} disabled={submitting} style={{flex:2}} variant="primary">
                   {submitting ? ct('saving',lang) : ct('confirmSave',lang)}
-                </button>
+                </StorelyButton>
               )}
             </div>
           </>

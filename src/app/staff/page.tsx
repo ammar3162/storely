@@ -105,7 +105,7 @@ function StaffLoginInner() {
   const keyContent = (k: string) => k === '⌫' ? <Delete size={22} strokeWidth={2} /> : k
 
   return (
-    <div style={{minHeight:'100vh',background:'#0b2b29',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:dir}}>
+    <div className="staff-login" style={{minHeight:'100vh',background:'#ffffff',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:dir}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap');
         *{box-sizing:border-box}
@@ -114,22 +114,24 @@ function StaffLoginInner() {
         @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         .fade-up{animation:fadeUp .35s ease both}
         @keyframes dotPulse{0%,100%{opacity:.25;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
-        .kp-btn{transition:background .12s ease, transform .08s ease}
-        .kp-btn:active{transform:scale(.94);background:rgba(255,255,255,.14) !important}
+        .kp-btn{min-height:56px;border:1px solid #D7DEE3!important;transition:background .12s ease, transform .08s ease}
+        .kp-btn:active{transform:scale(.94);background:#E7EAED !important}
+        .staff-login button:focus-visible{outline:2px solid #203640;outline-offset:3px}
+        .staff-login .kp-btn:not(:disabled):hover{background:#F4F6F7!important;border-color:#203640!important}
       `}</style>
 
       <div style={{width:'100%',maxWidth:440,minHeight:'100vh',display:'flex',flexDirection:'column' as const,padding:'0 24px'}}>
 
         {/* شريط علوي: زر اللغة بالزاوية */}
         <div style={{display:'flex',justifyContent:'flex-end',paddingTop:16}}>
-          <button onClick={()=>setLang(lang==='ar'?'en':'ar')} style={{background:'transparent',border:'1px solid rgba(255,255,255,.18)',borderRadius:8,padding:'6px 12px',fontSize:12,fontWeight:600,color:'rgba(255,255,255,.75)',cursor:'pointer',fontFamily:'inherit'}}>
+          <button onClick={()=>setLang(lang==='ar'?'en':'ar')} style={{background:'transparent',border:'1px solid #D7DEE3',borderRadius:6,padding:'8px 12px',minHeight:40,fontSize:14,fontWeight:600,color:'#203640',cursor:'pointer',fontFamily:'inherit'}}>
             {lang==='ar'?'English':'عربي'}
           </button>
         </div>
 
         {/* الشعار — الصورة فيها اسم Storely أصلاً، فما نكرره */}
         <div style={{display:'flex',justifyContent:'center',paddingTop:'clamp(16px, 5vh, 40px)',paddingBottom:28}}>
-          <img src="/storely-logo.png" alt="Storely" style={{width:64,height:64,objectFit:'contain',borderRadius:16,background:'white',padding:6}}/>
+          <img src="/storely-logo.png" alt="Storely" style={{width:64,height:64,objectFit:'contain',borderRadius:8,background:'white',padding:6}}/>
         </div>
 
         {/* المحتوى الرئيسي */}
@@ -137,29 +139,29 @@ function StaffLoginInner() {
 
           {step === 'phone' ? (
             <div key="phone-step" className="fade-up">
-              <h1 style={{fontSize:'clamp(22px,5vw,26px)',fontWeight:800,color:'white',marginBottom:6,textAlign:'center' as const}}>{t('staffLogin.welcome')}</h1>
-              <p style={{fontSize:14,color:'rgba(255,255,255,.55)',marginBottom:32,textAlign:'center' as const}}>{t('staffLogin.subtitle')}</p>
+              <h1 style={{fontSize:'clamp(22px,5vw,26px)',fontWeight:800,color:'#203640',marginBottom:6,textAlign:'center' as const}}>{t('staffLogin.welcome')}</h1>
+              <p style={{fontSize:14,color:'#66737C',marginBottom:32,textAlign:'center' as const}}>{t('staffLogin.subtitle')}</p>
 
               {/* حقل الجوال + اختيار الدولة */}
               <div style={{position:'relative' as const,marginBottom:24}}>
-                <div className={shake?'shake':''} style={{display:'flex',alignItems:'center',background:'rgba(255,255,255,.06)',border:`1.5px solid ${shake?'#f87171':'rgba(255,255,255,.14)'}`,borderRadius:16,padding:'4px'}}>
+                <div className={shake?'shake':''} style={{display:'flex',alignItems:'center',background:'#F8FAFC',border:`1.5px solid ${shake?'#B91C1C':'#D7DEE3'}`,borderRadius:8,padding:'4px'}}>
                   <button onClick={()=>setShowCountryPicker(v=>!v)}
-                    style={{background:'transparent',border:'none',color:'white',fontSize:15,fontWeight:700,padding:'12px 10px',cursor:'pointer',display:'flex',alignItems:'center',gap:6,fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
+                    style={{background:'transparent',border:'none',color:'#203640',fontSize:15,fontWeight:700,padding:'12px 10px',cursor:'pointer',display:'flex',alignItems:'center',gap:6,fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
                     <span style={{fontSize:18}}>{selectedCountry.flag}</span>
                     <span style={{fontSize:13,opacity:.8}}>+{selectedCountry.code}</span>
                     <span style={{fontSize:10,opacity:.6}}>{showCountryPicker?'▲':'▼'}</span>
                   </button>
-                  <div style={{width:1,height:24,background:'rgba(255,255,255,.15)'}}/>
-                  <div style={{flex:1,padding:'12px 14px',fontSize:20,fontWeight:700,color:'white',textAlign:'left' as const,direction:'ltr' as const,minHeight:24,letterSpacing:'1px'}}>
-                    {phone ? groupDigits(phone) : <span style={{color:'rgba(255,255,255,.28)',fontWeight:500}}>{phonePlaceholder}</span>}
+                  <div style={{width:1,height:24,background:'#D7DEE3'}}/>
+                  <div style={{flex:1,padding:'12px 14px',fontSize:20,fontWeight:700,color:'#203640',textAlign:'left' as const,direction:'ltr' as const,minHeight:24,letterSpacing:'1px'}}>
+                    {phone ? groupDigits(phone) : <span style={{color:'#66737C',fontWeight:500}}>{phonePlaceholder}</span>}
                   </div>
                 </div>
 
                 {showCountryPicker && (
-                  <div style={{position:'absolute' as const,top:'calc(100% + 8px)',right:0,left:0,background:'#134e4a',border:'1px solid rgba(255,255,255,.15)',borderRadius:14,padding:6,zIndex:20,maxHeight:260,overflowY:'auto' as const,boxShadow:'0 20px 50px rgba(0,0,0,.4)'}}>
+                  <div style={{position:'absolute' as const,top:'calc(100% + 8px)',right:0,left:0,background:'#ffffff',border:'1px solid #D7DEE3',borderRadius:6,padding:6,zIndex:20,maxHeight:260,overflowY:'auto' as const,boxShadow:'0 8px 24px rgba(32,54,64,.10)'}}>
                     {COUNTRY_PHONE_LEN.map(c=>(
                       <button key={c.code} onClick={()=>{setCountry(c.name);setPhone('');setShowCountryPicker(false)}}
-                        style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'11px 12px',background:country===c.name?'rgba(22,163,74,.2)':'transparent',border:'none',borderRadius:10,color:'white',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
+                        style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'11px 12px',background:country===c.name?'#F4F6F7':'transparent',border:'none',borderRadius:6,color:'#203640',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
                         <span style={{fontSize:18}}>{c.flag}</span>
                         <span style={{flex:1}}>{t('staffLogin.'+c.key)}</span>
                         <span style={{opacity:.5,fontSize:12,direction:'ltr' as const}}>+{c.code}</span>
@@ -169,25 +171,25 @@ function StaffLoginInner() {
                 )}
               </div>
 
-              {error && <div style={{textAlign:'center' as const,color:'#fca5a5',fontSize:13,fontWeight:600,marginBottom:16}}>{error}</div>}
+              {error && <div style={{textAlign:'center' as const,color:'#B91C1C',fontSize:13,fontWeight:600,marginBottom:16}}>{error}</div>}
 
               {/* لوحة أرقام مخصصة لإدخال الجوال */}
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:20,direction:'ltr' as const}}>
                 {keypadKeys.map((k,i)=> k==='' ? <div key={i}/> : (
                   <button key={i} className="kp-btn" onClick={()=>pressPhoneKey(k)}
-                    style={{padding:'16px 0',borderRadius:14,border:'none',background:'rgba(255,255,255,.06)',fontSize:20,fontWeight:700,color:k==='⌫'?'rgba(255,255,255,.7)':'white',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    style={{padding:'16px 0',borderRadius:6,border:'none',background:'#F8FAFC',fontSize:20,fontWeight:700,color:k==='⌫'?'#203640':'#203640',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center'}}>
                     {keyContent(k)}
                   </button>
                 ))}
               </div>
 
               <button onClick={goToPin} disabled={phone.length<requiredLen}
-                style={{width:'100%',padding:16,marginBottom:'clamp(24px,6vh,48px)',background:phone.length>=requiredLen?'#14b8a6':'rgba(255,255,255,.1)',color:phone.length>=requiredLen?'#042f2e':'rgba(255,255,255,.45)',border:'none',borderRadius:14,fontSize:16,fontWeight:700,cursor:phone.length>=requiredLen?'pointer':'not-allowed',fontFamily:'inherit',transition:'background .15s, color .15s'}}>
+                style={{width:'100%',padding:16,marginBottom:'clamp(24px,6vh,48px)',background:phone.length>=requiredLen?'#203640':'#E7EAED',color:phone.length>=requiredLen?'#ffffff':'#66737C',border:'none',borderRadius:6,fontSize:16,fontWeight:700,cursor:phone.length>=requiredLen?'pointer':'not-allowed',fontFamily:'inherit',transition:'background .15s, color .15s'}}>
                 {t('staffLogin.continueBtn')}
               </button>
               <div style={{textAlign:'center' as const,marginTop:'calc(-1 * clamp(12px,3vh,32px))',paddingBottom:16}}>
                 <button onClick={()=>{setStaffDevice(false);window.location.href='/login'}}
-                  style={{background:'none',border:'none',color:'rgba(255,255,255,.55)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                  style={{background:'none',border:'none',color:'#66737C',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                   صاحب المنشأة؟ دخول بالإيميل
                 </button>
               </div>
@@ -195,20 +197,20 @@ function StaffLoginInner() {
           ) : (
             <div key="pin-step" className="fade-up">
               <button onClick={()=>{setStep('phone');setPin('');setError('')}}
-                style={{background:'none',border:'none',color:'rgba(255,255,255,.55)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',marginBottom:20,display:'flex',alignItems:'center',gap:4}}>
+                style={{background:'none',border:'none',color:'#66737C',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',marginBottom:20,display:'flex',alignItems:'center',gap:4}}>
                 {t('staffLogin.changeNumber')}
               </button>
 
-              <h1 style={{fontSize:'clamp(20px,5vw,24px)',fontWeight:800,color:'white',marginBottom:6,textAlign:'center' as const}}>{t('staffLogin.enterPin')}</h1>
-              <p style={{fontSize:13,color:'rgba(255,255,255,.5)',marginBottom:32,textAlign:'center' as const,direction:'ltr' as const}}>+{selectedCountry.code} {groupDigits(phone)}</p>
+              <h1 style={{fontSize:'clamp(20px,5vw,24px)',fontWeight:800,color:'#203640',marginBottom:6,textAlign:'center' as const}}>{t('staffLogin.enterPin')}</h1>
+              <p style={{fontSize:13,color:'#66737C',marginBottom:32,textAlign:'center' as const,direction:'ltr' as const}}>+{selectedCountry.code} {groupDigits(phone)}</p>
 
               {/* نقاط عرض PIN */}
               <div className={shake?'shake':''} style={{display:'flex',justifyContent:'center',gap:14,marginBottom:32,direction:'ltr' as const}}>
                 {[0,1,2,3].map(i=>(
                   <div key={i} style={{
                     width:14,height:14,borderRadius:'50%',
-                    background: i<pin.length ? '#14b8a6' : 'rgba(255,255,255,.12)',
-                    border: i<pin.length ? 'none' : '1.5px solid rgba(255,255,255,.25)',
+                    background: i<pin.length ? '#203640' : '#E7EAED',
+                    border: i<pin.length ? 'none' : '1.5px solid #D7DEE3',
                     animation: loading && i<pin.length ? 'dotPulse 1s ease infinite' : 'none',
                     animationDelay: `${i*0.08}s`,
                     transition:'all .15s',
@@ -216,21 +218,21 @@ function StaffLoginInner() {
                 ))}
               </div>
 
-              {error && <div style={{textAlign:'center' as const,color:'#fca5a5',fontSize:13,fontWeight:600,marginBottom:20}}>{error}</div>}
-              {loading && <div style={{textAlign:'center' as const,color:'rgba(255,255,255,.5)',fontSize:12,marginBottom:20}}>{t('staffLogin.verifying')}</div>}
+              {error && <div style={{textAlign:'center' as const,color:'#B91C1C',fontSize:13,fontWeight:600,marginBottom:20}}>{error}</div>}
+              {loading && <div style={{textAlign:'center' as const,color:'#66737C',fontSize:12,marginBottom:20}}>{t('staffLogin.verifying')}</div>}
 
               {/* لوحة أرقام PIN */}
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:24,direction:'ltr' as const}}>
                 {keypadKeys.map((k,i)=> k==='' ? <div key={i}/> : (
                   <button key={i} className="kp-btn" disabled={loading} onClick={()=>pressPinKey(k)}
-                    style={{padding:'18px 0',borderRadius:14,border:'none',background:'rgba(255,255,255,.06)',fontSize:22,fontWeight:700,color:k==='⌫'?'rgba(255,255,255,.7)':'white',cursor:loading?'default':'pointer',fontFamily:'inherit',opacity:loading?.5:1,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    style={{padding:'18px 0',borderRadius:6,border:'none',background:'#F8FAFC',fontSize:22,fontWeight:700,color:k==='⌫'?'#203640':'#203640',cursor:loading?'default':'pointer',fontFamily:'inherit',opacity:loading?.5:1,display:'flex',alignItems:'center',justifyContent:'center'}}>
                     {keyContent(k)}
                   </button>
                 ))}
               </div>
 
               <div style={{textAlign:'center' as const,paddingBottom:'clamp(24px,6vh,48px)'}}>
-                <span style={{fontSize:12,color:'rgba(255,255,255,.4)'}}>{t('staffLogin.forgotPin')}</span>
+                <span style={{fontSize:12,color:'#66737C'}}>{t('staffLogin.forgotPin')}</span>
               </div>
             </div>
           )}

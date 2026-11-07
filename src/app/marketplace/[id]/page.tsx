@@ -1,4 +1,7 @@
 'use client'
+import { StorelyButton, StorelyCard, StorelyPageHeader } from '@/components/ui'
+import { CheckCircle2, CircleCheck, ClipboardList, FilePenLine, Link2, LoaderCircle, MapPin, Package, Search, Star, Truck, Wallet } from 'lucide-react'
+import { storelyTokens as uiTokens } from '@/components/ui/design-tokens'
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -140,79 +143,80 @@ export default function SupplierStorefrontPage() {
   }
 
   if (loading) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f0f4f8'}}>
-      <div style={{width:36,height:36,border:'3px solid #99f6e4',borderTopColor:'#029FA2',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div className="min-h-screen flex items-center justify-center text-[var(--storely-navy)]" style={{background:uiTokens.color.background}}>
+      <LoaderCircle size={28} className="animate-spin" />
+
     </div>
   )
 
   if (notFound || !supplier) return (
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',background:'#f0f4f8',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:20}}>
-      <div style={{fontSize:48,marginBottom:12}}>🔍</div>
-      <div style={{fontSize:16,fontWeight:700,color:'#0f172a'}}>هذا المورد غير موجود</div>
-      <button onClick={()=>router.push('/marketplace')} style={{marginTop:16,padding:'10px 20px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>← رجوع للموردين</button>
+    <div className="min-h-screen flex flex-col items-center justify-center !p-5 text-[var(--storely-navy)]" style={{background:uiTokens.color.background, direction:'rtl'}}>
+      <div className="text-2xl !mb-3"><Search size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></div>
+      <div className="text-base font-semibold" style={{color:uiTokens.color.text}}>هذا المورد غير موجود</div>
+      <StorelyButton onClick={()=>router.push('/marketplace')} className="!mt-4" variant="primary">← رجوع للموردين</StorelyButton>
     </div>
   )
 
   return (
-    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700;800&display=swap');*{box-sizing:border-box}`}</style>
+    <div className="min-h-screen text-[var(--storely-navy)]" style={{background:uiTokens.color.background, direction:'rtl'}}>
 
       {/* Header */}
-      <div style={{background:'linear-gradient(135deg,#042f2e,#0C213B)',padding:'32px 20px'}}>
-        <div style={{maxWidth:800,margin:'0 auto'}}>
-          <button onClick={()=>router.push('/marketplace')} style={{background:'rgba(255,255,255,.1)',border:'none',color:'white',borderRadius:10,padding:'8px 14px',cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:700,marginBottom:20}}>← رجوع للموردين</button>
-          <div style={{display:'flex',alignItems:'center',gap:16}}>
-            <div style={{width:64,height:64,borderRadius:16,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:30}}>🚚</div>
+      <div className="!py-8 !px-5" style={{background:uiTokens.color.surface}}>
+        <div className="max-w-6xl !my-0 !mx-auto">
+          <StorelyButton onClick={()=>router.push('/marketplace')} className="!mb-5" variant="secondary">← رجوع للموردين</StorelyButton>
+          <div className="flex items-center gap-4">
+            <div className="rounded-[var(--radius)] flex items-center justify-center text-[28px]" style={{width:64, height:64, background:uiTokens.color.surface}}><Truck size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></div>
             <div>
-              <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap' as const}}>
-                <h1 style={{fontSize:22,fontWeight:900,color:'white',margin:0}}>{supplier.business_name}</h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <StorelyPageHeader title={<> {supplier.business_name} </>} className="!mb-2" />
                 {reviewCount > 0 && (
-                  <span style={{fontSize:12,fontWeight:700,color:'#facc15',background:'rgba(255,255,255,.15)',padding:'3px 10px',borderRadius:20}}>
-                    ⭐ {avgRating?.toFixed(1)} ({reviewCount})
+                  <span className="text-sm font-semibold !py-1 !px-2 rounded-[var(--radius)]" style={{color:uiTokens.color.warning, background:uiTokens.color.surface}}>
+
+                    <Star size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> {avgRating?.toFixed(1)} ({reviewCount})
                   </span>
                 )}
                 {reviewCount >= 3 && (
-                  <span style={{fontSize:11,fontWeight:700,color:'#029FA2',background:'white',padding:'3px 10px',borderRadius:20}}>
-                    ✅ موثّق عبر Storely
+                  <span className="text-xs font-semibold !py-1 !px-2 rounded-[var(--radius)]" style={{color:uiTokens.color.navy, background:uiTokens.color.surface}}>
+
+                    <CheckCircle2 size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> موثّق عبر Storely
                   </span>
                 )}
               </div>
-              {supplier.location && <p style={{fontSize:13,color:'rgba(255,255,255,.7)',margin:'6px 0 0'}}>📍 {supplier.location}</p>}
+              {supplier.location && <p className="text-sm !mt-1 !mx-0 !mb-0" style={{color:uiTokens.color.textMuted}}><MapPin size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> {supplier.location}</p>}
             </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div style={{maxWidth:800,margin:'0 auto',padding:'24px 20px'}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-          <h2 style={{fontSize:16,fontWeight:800,color:'#0f172a',margin:0}}>الأصناف المتوفرة ({items.length})</h2>
+      <div className="max-w-6xl !my-0 !mx-auto !py-6 !px-5">
+        <div className="flex justify-between items-center !mb-4 flex-wrap gap-4">
+          <h2 className="text-base font-semibold !m-0" style={{color:uiTokens.color.text}}>الأصناف المتوفرة ({items.length})</h2>
           {supplier.phone && (
-            <a href={getWhatsAppLink()} target="_blank" rel="noopener noreferrer"
-              style={{padding:'10px 18px',background:'#029FA2',color:'white',borderRadius:10,fontSize:13,fontWeight:700,textDecoration:'none'}}>
-              📲 تواصل مع المورد
+            <a  href={getWhatsAppLink()} target="_blank" rel="noopener noreferrer" className="!py-2 !px-4 rounded-[var(--radius-sm)] text-sm font-semibold" style={{background:uiTokens.color.navy, color:uiTokens.color.onPrimary, textDecoration:'none'}}>
+
+              <CircleCheck size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> تواصل مع المورد
             </a>
           )}
         </div>
 
         {items.length === 0 ? (
-          <div style={{textAlign:'center' as const,padding:60,background:'white',borderRadius:16}}>
-            <div style={{fontSize:44,marginBottom:10}}>📦</div>
-            <div style={{fontSize:14,color:'#64748b'}}>ما فيه أصناف متوفرة حالياً</div>
-          </div>
+          <StorelyCard className="min-w-0 text-center !p-8 rounded-[var(--radius)]" style={{background:uiTokens.color.surface}}>
+            <div className="text-2xl !mb-2"><Package size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></div>
+            <div className="text-sm" style={{color:uiTokens.color.textMuted}}>ما فيه أصناف متوفرة حالياً</div>
+          </StorelyCard>
         ) : (
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:14}}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {items.map((it:any)=>(
-              <div key={it.id} style={{background:'white',borderRadius:14,overflow:'hidden',border:'1px solid #f1f5f9',boxShadow:'0 2px 8px rgba(0,0,0,.05)'}}>
+              <StorelyCard key={it.id} className="min-w-0 rounded-[var(--radius)]" style={{background:uiTokens.color.surface, overflow:'hidden', border:`1px solid ${uiTokens.color.border}`, boxShadow:uiTokens.shadow.surface}}>
                 {it.image_url ? (
-                  <img src={it.image_url} alt={it.name} style={{width:'100%',height:140,objectFit:'cover'}}/>
+                  <img src={it.image_url} alt={it.name} className="w-full object-cover" style={{height:140}}/>
                 ) : (
-                  <div style={{width:'100%',height:140,background:'#f1f5f9',display:'flex',alignItems:'center',justifyContent:'center',fontSize:36}}>📦</div>
+                  <div className="w-full flex items-center justify-center text-2xl" style={{height:140, background:uiTokens.color.background}}><Package size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></div>
                 )}
-                <div style={{padding:'12px 14px'}}>
-                  <div style={{fontSize:14,fontWeight:800,color:'#0f172a'}}>{it.name}</div>
-                  <div style={{fontSize:11,color:'#64748b',marginTop:2}}>{it.unit}</div>
+                <div className="!py-3 !px-3">
+                  <div className="text-sm font-semibold" style={{color:uiTokens.color.text}}>{it.name}</div>
+                  <div className="text-xs !mt-0" style={{color:uiTokens.color.textMuted}}>{it.unit}</div>
                   {(() => {
                     const includesVat = it.price_includes_vat !== false
                     const finalPrice = includesVat ? Number(it.price) : Number(it.price) * 1.15
@@ -220,173 +224,164 @@ export default function SupplierStorefrontPage() {
                     const vatAmount = finalPrice - basePrice
                     return (
                       <>
-                        <div style={{fontSize:16,fontWeight:900,color:'#029FA2',marginTop:8}}>{finalPrice.toFixed(2)} ر.س</div>
-                        <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>
+                        <div className="text-base font-semibold !mt-2" style={{color:uiTokens.color.navy}}>{finalPrice.toFixed(2)} ر.س</div>
+                        <div className="text-xs !mt-0" style={{color:uiTokens.color.textMuted}}>
                           الأساسي {basePrice.toFixed(2)} + ضريبة {vatAmount.toFixed(2)} ر.س
                         </div>
                       </>
                     )
                   })()}
-                  <div style={{display:'flex',alignItems:'center',gap:6,marginTop:10,paddingTop:10,borderTop:'1px solid #f1f5f9'}}>
-                    <label style={{display:'flex',alignItems:'center',gap:4,fontSize:11,color:'#475569',cursor:'pointer'}}>
+                  <div className="flex items-center gap-2 !mt-2 !pt-2" style={{borderTop:`1px solid ${uiTokens.color.border}`}}>
+                    <label className="flex items-center gap-2 text-xs" style={{color:uiTokens.color.textMuted, cursor:'pointer'}}>
                       <input type="checkbox" checked={selected[it.id]!==undefined} onChange={()=>toggleSelect(it.id)}/>
                       طلب تسعير
                     </label>
                     {selected[it.id]!==undefined && (
-                      <input type="number" min="1" value={selected[it.id]} onChange={e=>setQty(it.id, e.target.value)}
-                        style={{width:50,padding:'4px 6px',borderRadius:6,border:'1px solid #e2e8f0',fontSize:11,marginRight:'auto'}}/>
+                      <input type="number" min="1" value={selected[it.id]} onChange={e=>setQty(it.id, e.target.value)} className="rounded-[var(--radius-sm)] text-xs !mr-auto storely-input min-w-0" style={{width:50, border:`1px solid ${uiTokens.color.border}`}}/>
                     )}
                   </div>
                 </div>
-              </div>
+              </StorelyCard>
             ))}
           </div>
         )}
 
         {Object.keys(selected).length > 0 && (
-          <div style={{position:'sticky' as const,bottom:16,marginTop:20,background:'#042f2e',borderRadius:14,padding:'14px 18px',display:'flex',justifyContent:'space-between',alignItems:'center',boxShadow:'0 8px 24px rgba(0,0,0,.2)'}}>
-            <span style={{color:'white',fontSize:13,fontWeight:700}}>{Object.keys(selected).length} صنف محدّد للتسعير</span>
-            <button onClick={submitQuoteRequest} disabled={submitting}
-              style={{padding:'10px 20px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>
+          <div className="sticky !mt-5 rounded-[var(--radius)] !py-3 !px-4 flex justify-between items-center flex-wrap gap-4" style={{bottom:16, background:uiTokens.color.surface, boxShadow:uiTokens.shadow.surface}}>
+            <span className="text-sm font-semibold" style={{color:uiTokens.color.navy}}>{Object.keys(selected).length} صنف محدّد للتسعير</span>
+            <StorelyButton onClick={submitQuoteRequest} disabled={submitting} variant="primary">
               {submitting?'⏳ جاري الإرسال...':'📩 إرسال طلب التسعير'}
-            </button>
+            </StorelyButton>
           </div>
         )}
 
         {orgId && (
-          <div style={{marginTop:32,background:'white',borderRadius:16,border:'1px solid #f1f5f9',overflow:'hidden'}}>
-            <div style={{padding:'14px 18px',borderBottom:'1px solid #f1f5f9',fontSize:15,fontWeight:800,color:'#0f172a'}}>💬 تواصل مع المورد</div>
-            <div style={{maxHeight:280,overflowY:'auto' as const,padding:16,display:'flex',flexDirection:'column' as const,gap:8,background:'#f8fafc'}}>
+          <StorelyCard className="min-w-0 !mt-8 rounded-[var(--radius)]" style={{background:uiTokens.color.surface, border:`1px solid ${uiTokens.color.border}`, overflow:'hidden'}}>
+            <div className="!py-3 !px-4 text-base font-semibold" style={{borderBottom:`1px solid ${uiTokens.color.border}`, color:uiTokens.color.text}}><CircleCheck size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> تواصل مع المورد</div>
+            <div className="overflow-y-auto !p-4 flex flex-col gap-2" style={{maxHeight:280, background:uiTokens.color.background}}>
               {chatMessages.length===0 ? (
-                <div style={{textAlign:'center' as const,color:'#94a3b8',fontSize:12,padding:20}}>ما فيه رسائل بعد — ابدأ المحادثة</div>
+                <div className="text-center text-sm !p-5" style={{color:uiTokens.color.textMuted}}>ما فيه رسائل بعد — ابدأ المحادثة</div>
               ) : chatMessages.map((m:any)=>(
-                <div key={m.id} style={{alignSelf:m.sender_type==='customer'?'flex-end':'flex-start',maxWidth:'75%'}}>
-                  <div style={{padding:'8px 12px',borderRadius:12,fontSize:13,background:m.sender_type==='customer'?'#029FA2':'white',color:m.sender_type==='customer'?'white':'#0f172a',border:m.sender_type==='customer'?'none':'1px solid #e2e8f0'}}>
+                <div key={m.id} style={{alignSelf:m.sender_type==='customer'?'flex-end':'flex-start', maxWidth:'75%'}}>
+                  <div className="!py-3 !px-4 rounded-[var(--radius)] text-sm break-words leading-7" style={{background:m.sender_type==='customer'?uiTokens.color.navy:uiTokens.color.surface, color:m.sender_type==='customer'?uiTokens.color.surface:uiTokens.color.text, border:m.sender_type==='customer'?'none':`1px solid ${uiTokens.color.border}`}}>
                     {m.message}
                   </div>
-                  <div style={{fontSize:9,color:'#94a3b8',marginTop:2,textAlign:m.sender_type==='customer'?'left' as const:'right' as const}}>
+                  <div className="text-xs !mt-0" style={{color:uiTokens.color.textMuted, textAlign:m.sender_type==='customer'?'left' as const:'right' as const}}>
                     {new Date(m.created_at).toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'})}
                   </div>
                 </div>
               ))}
             </div>
-            <div style={{display:'flex',gap:8,padding:12,borderTop:'1px solid #f1f5f9'}}>
-              <input value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') sendChatMessage()}}
-                placeholder="اكتب رسالتك..." style={{flex:1,padding:'10px 14px',borderRadius:10,border:'1px solid #e2e8f0',fontSize:13,fontFamily:'inherit'}}/>
-              <button onClick={sendChatMessage} disabled={chatSending}
-                style={{padding:'10px 20px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>
+            <div className="flex gap-2 !p-3" style={{borderTop:`1px solid ${uiTokens.color.border}`}}>
+              <input value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') sendChatMessage()}} placeholder="اكتب رسالتك..." className="min-w-0 flex-1 rounded-[var(--radius-sm)] text-sm storely-input" style={{border:`1px solid ${uiTokens.color.border}`}}/>
+              <StorelyButton onClick={sendChatMessage} disabled={chatSending} variant="primary">
                 {chatSending?'...':'إرسال'}
-              </button>
+              </StorelyButton>
             </div>
-          </div>
+          </StorelyCard>
         )}
 
         {myRequests.length > 0 && (
-          <div style={{marginTop:32}}>
-            <h2 style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:14}}>📋 طلبات التسعير السابقة</h2>
-            <div style={{display:'flex',flexDirection:'column' as const,gap:14}}>
+          <div className="!mt-8">
+            <h2 className="text-base font-semibold !mb-3" style={{color:uiTokens.color.text}}><ClipboardList size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> طلبات التسعير السابقة</h2>
+            <div className="flex flex-col gap-3">
               {myRequests.map((r:any, idx:number)=>{
                 const STAGES = ['pending','quoted','accepted','confirmed','fulfilled']
                 const stageIdx = STAGES.indexOf(r.status)
                 const orderNo = `#${String(myRequests.length - idx).padStart(3,'0')}`
                 return (
-                <div key={r.id} style={{background:'white',borderRadius:14,overflow:'hidden',border:'1px solid #eef2f7',boxShadow:'0 1px 4px rgba(15,23,42,.04)'}}>
-                  <div style={{padding:'12px 16px',background:'#f8fafc',borderBottom:'1px solid #eef2f7',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                    <div style={{display:'flex',alignItems:'center',gap:8}}>
-                      <span style={{fontSize:12,fontWeight:800,color:'#0f172a'}}>{orderNo}</span>
-                      <span style={{fontSize:11,color:'#94a3b8'}}>{new Date(r.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'})}</span>
+                <StorelyCard key={r.id} className="min-w-0 rounded-[var(--radius)]" style={{background:uiTokens.color.surface, overflow:'hidden', border:`1px solid ${uiTokens.color.border}`, boxShadow:uiTokens.shadow.surface}}>
+                  <div className="!py-3 !px-4 flex justify-between items-center flex-wrap gap-4" style={{background:uiTokens.color.background, borderBottom:`1px solid ${uiTokens.color.border}`}}>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-sm font-semibold" style={{color:uiTokens.color.text}}>{orderNo}</span>
+                      <span className="text-xs" style={{color:uiTokens.color.textMuted}}>{new Date(r.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'})}</span>
                     </div>
-                    <span style={{fontSize:11,fontWeight:700,padding:'4px 12px',borderRadius:20,
-                      background:r.status==='fulfilled'?'#dbeafe':r.status==='confirmed'?'#e0f2fe':r.status==='accepted'?'#ccfbf1':r.status==='quoted'?'#fef3c7':'#f1f5f9',
-                      color:r.status==='fulfilled'?'#1d4ed8':r.status==='confirmed'?'#0369a1':r.status==='accepted'?'#029FA2':r.status==='quoted'?'#92400e':'#64748b'}}>
+                    <span className="text-xs font-semibold !py-1 !px-3 rounded-[var(--radius)]" style={{background:r.status==='fulfilled'?uiTokens.color.infoBg:r.status==='confirmed'?uiTokens.color.infoBg:r.status==='accepted'?uiTokens.color.successBg:r.status==='quoted'?uiTokens.color.warningBg:uiTokens.color.background, color:r.status==='fulfilled'?uiTokens.color.info:r.status==='confirmed'?uiTokens.color.info:r.status==='accepted'?uiTokens.color.success:r.status==='quoted'?uiTokens.color.warning:uiTokens.color.textMuted}}>
                       {r.status==='fulfilled'?'📦 تم التنفيذ':r.status==='confirmed'?'🚚 جاري التوريد':r.status==='accepted'?'✅ مقبول':r.status==='quoted'?'💰 تم التسعير':'⏳ بانتظار الرد'}
                     </span>
                   </div>
 
-                  <div style={{display:'flex',alignItems:'center',padding:'14px 16px 4px'}}>
+                  <div className="flex items-center !pt-3 !px-4 !pb-1">
                     {STAGES.map((stg,i)=>(
-                      <div key={stg} style={{display:'flex',alignItems:'center',flex:i<STAGES.length-1?1:0}}>
-                        <div style={{width:9,height:9,borderRadius:'50%',flexShrink:0,background:i<=stageIdx?'#029FA2':'#e2e8f0'}}/>
-                        {i<STAGES.length-1 && <div style={{flex:1,height:2,background:i<stageIdx?'#029FA2':'#e2e8f0'}}/>}
+                      <div key={stg} className="flex items-center" style={{flex:i<STAGES.length-1?1:0}}>
+                        <div className="rounded-full shrink-0" style={{width:9, height:9, background:i<=stageIdx?uiTokens.color.navy:uiTokens.color.background}}/>
+                        {i<STAGES.length-1 && <div className="min-w-0 flex-1" style={{height:2, background:i<stageIdx?uiTokens.color.navy:uiTokens.color.background}}/>}
                       </div>
                     ))}
                   </div>
 
-                  <div style={{padding:'8px 16px 16px'}}>
-                    <div style={{display:'flex',flexDirection:'column' as const,gap:4,marginBottom:10,marginTop:6}}>
+                  <div className="!pt-2 !px-4 !pb-4">
+                    <div className="flex flex-col gap-2 !mb-2 !mt-1">
                       {(r.items||[]).map((i:any,ii:number)=>(
-                        <div key={ii} style={{display:'flex',justifyContent:'space-between',fontSize:12,color:'#334155'}}>
+                        <div key={ii} className="flex justify-between text-sm flex-wrap gap-4" style={{color:uiTokens.color.text}}>
                           <span>• {i.name}</span>
-                          <span style={{color:'#94a3b8'}}>{i.qty} {i.unit||''}</span>
+                          <span style={{color:uiTokens.color.textMuted}}>{i.qty} {i.unit||''}</span>
                         </div>
                       ))}
                     </div>
 
                     {(r.status==='quoted'||r.status==='accepted'||r.status==='confirmed'||r.status==='fulfilled') && (
-                      <div style={{background:'#f0fdfa',borderRadius:10,padding:'10px 14px',marginBottom:8,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                        <span style={{fontSize:12,color:'#0f766e',fontWeight:700}}>💰 السعر المقترح</span>
-                        <span style={{fontSize:16,fontWeight:900,color:'#029FA2'}}>{r.quoted_price} ر.س</span>
+                      <div className="rounded-[var(--radius-sm)] !py-2 !px-3 !mb-2 flex justify-between items-center flex-wrap gap-4" style={{background:uiTokens.color.surface}}>
+                        <span className="text-sm font-semibold" style={{color:uiTokens.color.navy}}><Wallet size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> السعر المقترح</span>
+                        <span className="text-base font-semibold" style={{color:uiTokens.color.navy}}>{r.quoted_price} ر.س</span>
                       </div>
                     )}
                     {r.quoted_note && (r.status==='quoted'||r.status==='accepted'||r.status==='confirmed'||r.status==='fulfilled') && (
-                      <div style={{fontSize:11,color:'#64748b',marginBottom:8,paddingRight:2}}>📝 {r.quoted_note}</div>
+                      <div className="text-xs !mb-2 !pr-0" style={{color:uiTokens.color.textMuted}}><FilePenLine size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> {r.quoted_note}</div>
                     )}
                     {(r.status==='confirmed'||r.status==='fulfilled') && r.rep_name && (
-                      <div style={{background:'#eff6ff',borderRadius:10,padding:'10px 14px',marginBottom:8}}>
-                        <div style={{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:r.delivery_date?4:0}}>
-                          <span style={{color:'#1d4ed8',fontWeight:700}}>🚚 المندوب</span>
-                          <span style={{color:'#1e3a8a'}}>{r.rep_name} — {r.rep_phone}</span>
+                      <div className="rounded-[var(--radius-sm)] !py-2 !px-3 !mb-2" style={{background:uiTokens.color.infoBg}}>
+                        <div className="flex justify-between text-sm flex-wrap gap-4" style={{marginBottom:r.delivery_date?4:0}}>
+                          <span className="font-semibold" style={{color:uiTokens.color.info}}><Truck size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> المندوب</span>
+                          <span style={{color:uiTokens.color.info}}>{r.rep_name} — {r.rep_phone}</span>
                         </div>
                         {r.delivery_date && (
-                          <div style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
-                            <span style={{color:'#1d4ed8',fontWeight:700}}>📅 موعد التوريد</span>
-                            <span style={{color:'#1e3a8a'}}>{r.delivery_date}</span>
+                          <div className="flex justify-between text-sm flex-wrap gap-4">
+                            <span className="font-semibold" style={{color:uiTokens.color.info}}><CircleCheck size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> موعد التوريد</span>
+                            <span style={{color:uiTokens.color.info}}>{r.delivery_date}</span>
                           </div>
                         )}
                       </div>
                     )}
                     {r.status==='quoted' && (
-                      <button onClick={()=>acceptOffer(r.id)}
-                        style={{width:'100%',padding:'10px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>
-                        ✅ قبول العرض
-                      </button>
+                      <StorelyButton onClick={()=>acceptOffer(r.id)} className="w-full" variant="primary">
+
+                        <CheckCircle2 size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> قبول العرض
+                      </StorelyButton>
                     )}
                     {(r.status==='accepted'||r.status==='confirmed'||r.status==='fulfilled') && (
-                      <button onClick={()=>router.push(`/suppliers?ms=${supplierId}`)}
-                        style={{width:'100%',padding:'10px',background:'#eff6ff',color:'#1d4ed8',border:'1px solid #bfdbfe',borderRadius:10,fontSize:12,fontWeight:700,cursor:'pointer',marginTop:8}}>
-                        🔗 اعتماد المورد وربط منتج (توريد تلقائي عند نقص المخزون)
-                      </button>
+                      <StorelyButton onClick={()=>router.push(`/suppliers?ms=${supplierId}`)} className="w-full !mt-2" variant="secondary">
+
+                        <Link2 size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> اعتماد المورد وربط منتج (توريد تلقائي عند نقص المخزون)
+                      </StorelyButton>
                     )}
                     {r.status==='fulfilled' && !myReviewedIds.includes(r.id) && (
                       reviewingId===r.id ? (
-                        <div style={{background:'#fffbeb',borderRadius:10,padding:'12px',marginTop:4}}>
-                          <div style={{display:'flex',gap:4,marginBottom:8,justifyContent:'center'}}>
+                        <div className="rounded-[var(--radius-sm)] !p-3 !mt-1" style={{background:uiTokens.color.warningBg}}>
+                          <div className="flex gap-2 !mb-2 justify-center">
                             {[1,2,3,4,5].map(n=>(
-                              <button key={n} onClick={()=>setReviewRating(n)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',padding:0,opacity:n<=reviewRating?1:.3}}>⭐</button>
+                              <StorelyButton key={n} onClick={()=>setReviewRating(n)} variant="secondary"><Star size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></StorelyButton>
                             ))}
                           </div>
-                          <input value={reviewComment} onChange={e=>setReviewComment(e.target.value)} placeholder="تعليق (اختياري)"
-                            style={{width:'100%',padding:'8px 12px',borderRadius:8,border:'1px solid #fde68a',fontSize:12,marginBottom:8,boxSizing:'border-box' as const}}/>
-                          <div style={{display:'flex',gap:6}}>
-                            <button onClick={()=>submitReview(r.id)} disabled={reviewSaving}
-                              style={{flex:1,padding:'8px',background:'#029FA2',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>
+                          <input value={reviewComment} onChange={e=>setReviewComment(e.target.value)} placeholder="تعليق (اختياري)" className="w-full rounded-[var(--radius-sm)] text-sm !mb-2 storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.warningBorder}`}}/>
+                          <div className="flex flex-wrap gap-3">
+                            <StorelyButton onClick={()=>submitReview(r.id)} disabled={reviewSaving} className="min-w-0 flex-1" variant="primary">
                               {reviewSaving?'...':'إرسال التقييم'}
-                            </button>
-                            <button onClick={()=>setReviewingId(null)}
-                              style={{padding:'8px 14px',background:'white',border:'1px solid #e2e8f0',borderRadius:8,fontSize:12,cursor:'pointer',color:'#64748b'}}>
+                            </StorelyButton>
+                            <StorelyButton onClick={()=>setReviewingId(null)} variant="secondary">
                               إلغاء
-                            </button>
+                            </StorelyButton>
                           </div>
                         </div>
                       ) : (
-                        <button onClick={()=>setReviewingId(r.id)}
-                          style={{width:'100%',padding:'10px',background:'white',color:'#b45309',border:'1px solid #fde68a',borderRadius:10,fontSize:12,fontWeight:700,cursor:'pointer'}}>
-                          ⭐ قيّم المورد
-                        </button>
+                        <StorelyButton onClick={()=>setReviewingId(r.id)} className="w-full" variant="secondary">
+
+                          <Star size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> قيّم المورد
+                        </StorelyButton>
                       )
                     )}
                   </div>
-                </div>
+                </StorelyCard>
                 )
               })}
             </div>

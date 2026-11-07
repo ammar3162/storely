@@ -410,12 +410,12 @@ export default function PurchasesPage() {
   ]
 
   return (
-    <div className="min-h-full bg-[#F7F3ED] text-[#203640]">
+    <div className="min-h-full bg-[var(--storely-background)] text-[#203640]">
       {pendingThanks && (
         <div className="fixed inset-0 z-[4000] flex items-center justify-center bg-[#203640]/50 p-4">
           <StorelyCard className="w-full max-w-md">
             <div className="p-5 text-center">
-              <div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full border border-[#E7E1D8] bg-[#F7F3ED] text-[#203640]"><Building2 size={19}/></div>
+              <div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full border border-[#E7E1D8] bg-[var(--storely-background)] text-[#203640]"><Building2 size={19}/></div>
               <div className="text-base font-semibold text-[#203640]">تأكيد استلام الطلبية</div>
               <p className="mt-2 text-sm leading-6 text-[#66737C]">
                 هل المورد <b>{pendingThanks.supplierName}</b> هو الذي وصل «{pendingThanks.productName}»؟ عند التأكيد سنرسل له رسالة شكر تلقائية عبر واتساب.
@@ -451,7 +451,7 @@ export default function PurchasesPage() {
                   <StorelyStatusBadge status={selectedPurchase.payment_status==='unpaid' ? 'warning' : 'success'}>{selectedPurchase.payment_status==='unpaid' ? 'غير مدفوعة' : 'مدفوعة'}</StorelyStatusBadge>
                 </div>
               </div>
-              <dl className="grid grid-cols-2 gap-3 text-sm">
+              <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                 <div className="rounded-[6px] border border-[#E7E1D8] p-3"><dt className="text-xs text-[#66737C]">المورد</dt><dd className="mt-1 font-semibold text-[#203640]">{selectedPurchase.supplier || 'غير محدد'}</dd></div>
                 <div className="rounded-[6px] border border-[#E7E1D8] p-3"><dt className="text-xs text-[#66737C]">الإجمالي</dt><dd className="mt-1 font-semibold text-[#203640]">{Number(selectedPurchase.total_amount||0).toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:2})} {curr}</dd></div>
                 <div className="rounded-[6px] border border-[#E7E1D8] p-3"><dt className="text-xs text-[#66737C]">الكمية</dt><dd className="mt-1 font-semibold text-[#203640]">{selectedPurchase.qty ? `${selectedPurchase.qty} ${selectedPurchase.unit||''}` : 'غير محددة'}</dd></div>
@@ -472,29 +472,27 @@ export default function PurchasesPage() {
           actions={<StorelyButton variant="primary" icon={<Plus size={16}/>} onClick={()=>document.getElementById('purchase-entry-form')?.scrollIntoView({behavior:'smooth',block:'start'})}>تسجيل شراء</StorelyButton>}
         />
 
-        <StorelyCard className="mb-4">
-          <div className="grid divide-y divide-[#E7E1D8] md:grid-cols-4 md:divide-x md:divide-y-0 md:divide-x-reverse">
+        <div className="storely-metric-grid mb-6">
             {[
-              { label: '????????', value: filteredHistory.length.toLocaleString('ar-SA', {numberingSystem:'latn'}), tone: 'text-[#203640]', Icon: Receipt },
-              { label: '????????', value: totalSpent.toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0}) + ' ' + curr, tone: 'text-[#203640]', Icon: ShoppingCart },
-              { label: '????? 15%', value: totalVat.toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0}) + ' ' + curr, tone: 'text-[#B45309]', Icon: Percent },
-              { label: '??????? ????????', value: totalPayableAmount.toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0}) + ' ' + curr, tone: 'text-[#203640]', Icon: CreditCard, meta: payables.length + ' ??? ??????? ' + overduePayables + ' ??????' },
+              { label: 'الفواتير', value: filteredHistory.length.toLocaleString('ar-SA', {numberingSystem:'latn'}), tone: 'text-[#203640]', Icon: Receipt },
+              { label: 'الإجمالي', value: totalSpent.toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0}) + ' ' + curr, tone: 'text-[#203640]', Icon: ShoppingCart },
+              { label: 'ضريبة 15%', value: totalVat.toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0}) + ' ' + curr, tone: 'text-[#B45309]', Icon: Percent },
+              { label: 'المستحقات', value: totalPayableAmount.toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0}) + ' ' + curr, tone: 'text-[#203640]', Icon: CreditCard, meta: payables.length + ' غير مدفوعة ' + overduePayables + ' متأخرة' },
             ].map((item) => (
-              <div key={item.label} className="p-3">
-                <div className="flex items-center justify-between gap-3 text-xs font-semibold text-[#66737C]">
+              <div key={item.label} className="storely-metric">
+                <div className="storely-metric-label flex items-center justify-between gap-3">
                   <span>{item.label}</span>
                   <item.Icon size={15} className="text-[#8EA0B1]" />
                 </div>
-                <div className={`mt-1.5 text-lg font-semibold tabular-nums ${item.tone}`}>{item.value}</div>
-                {item.meta ? <div className="mt-1 text-xs text-[#66737C]">{item.meta}</div> : null}
+                <div className={`storely-metric-value ${item.tone}`}>{item.value}</div>
+                {item.meta ? <div className="storely-metric-helper">{item.meta}</div> : null}
               </div>
             ))}
-          </div>
-        </StorelyCard>
+        </div>
 
-        <div className="grid gap-4 xl:grid-cols-[400px_minmax(0,1fr)]">
+        <div className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-[400px_minmax(0,1fr)]">
           <StorelyCard id="purchase-entry-form" title="تسجيل شراء جديد" description="القيم التي تؤثر على المخزون يتم حفظها من خلال API المشتريات كما هي." actions={<StorelyStatusBadge status={form.category===CATS[0] ? 'success' : 'info'}>{form.category}</StorelyStatusBadge>}>
-            <form onSubmit={handleSubmit} className="space-y-3 p-3">
+            <form onSubmit={handleSubmit} className="space-y-5 p-5 sm:p-6">
               <div>
                 <label className="storely-label">نوع الشراء</label>
                 <div className="grid grid-cols-3 gap-2">
@@ -508,7 +506,7 @@ export default function PurchasesPage() {
               <div>
                 <label className="storely-label">صورة الفاتورة {form.hasVat==='yes'?<span className="text-[#B91C1C]">*</span>:<span className="font-normal text-[#8EA0B1]">اختياري</span>}</label>
                 <input ref={fileRef} type="file" accept="image/*,.pdf" className="hidden" onChange={e=>{if(e.target.files?.[0])handleImage(e.target.files[0])}}/>
-                <button type="button" onClick={()=>fileRef.current?.click()} className="flex min-h-10 w-full items-center justify-center gap-2 rounded-[6px] border border-dashed border-[#D7CDC2] bg-[#F7F3ED] px-3 text-sm font-semibold text-[#66737C] hover:border-[#203640] hover:text-[#203640]">
+                <button type="button" onClick={()=>fileRef.current?.click()} className="flex min-h-10 w-full items-center justify-center gap-2 rounded-[6px] border border-dashed border-[#D7CDC2] bg-[var(--storely-background)] px-3 text-sm font-semibold text-[#66737C] hover:border-[#203640] hover:text-[#203640]">
                   {uploading ? <Clock size={16}/> : previewUrl ? <CheckCircle2 size={16}/> : <Upload size={16}/>} {uploading?'جاري الرفع...':previewUrl?'تم الرفع، اضغط للتغيير':'رفع صورة أو PDF'}
                 </button>
                 {previewUrl&&previewUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? <img src={previewUrl} alt="فاتورة" className="mt-2 h-24 w-full rounded-[6px] border border-[#E7E1D8] object-cover"/> : null}
@@ -524,7 +522,7 @@ export default function PurchasesPage() {
                         <input type="checkbox" checked={!!ocrSelected[i]} onChange={e=>setOcrSelected(s=>({...s,[i]:e.target.checked}))}/>
                         <button type="button" className="truncate text-right font-semibold text-[#203640]" onClick={()=>pickOcrItem(item)}>{item.name}</button>
                         <span className="text-[#66737C]">{item.qty||0} {item.unit||''}</span>
-                        <input type="number" step="0.01" value={ocrPrices[i]||''} onChange={e=>setOcrPrices(p=>({...p,[i]:e.target.value}))} placeholder="السعر" className="storely-input h-8"/>
+                        <input type="number" step="0.01" value={ocrPrices[i]||''} onChange={e=>setOcrPrices(p=>({...p,[i]:e.target.value}))} placeholder="السعر" className="storely-input"/>
                       </label>
                     ))}
                   </div>
@@ -546,7 +544,7 @@ export default function PurchasesPage() {
                     {form.name===''||products.filter((p:any)=>p.name.includes(form.name)&&form.name!==p.name).length>0 ? (
                       <div className="absolute right-0 left-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-[6px] border border-[#E7E1D8] bg-white shadow-lg">
                         {products.filter((p:any)=>!form.name||p.name.includes(form.name)).slice(0,10).map((p:any)=>(
-                          <button key={p.id} type="button" onClick={()=>setForm({...form,name:p.name,unit:p.unit})} className="flex w-full items-center justify-between border-b border-[#E7E1D8] px-3 py-2 text-right text-sm hover:bg-[#F7F3ED]"><span className="font-semibold text-[#203640]">{p.name}</span><span className="text-xs text-[#66737C]">{p.qty} {p.unit}</span></button>
+                          <button key={p.id} type="button" onClick={()=>setForm({...form,name:p.name,unit:p.unit})} className="flex w-full items-center justify-between border-b border-[#E7E1D8] px-3 py-2 text-right text-sm hover:bg-[var(--storely-background)]"><span className="font-semibold text-[#203640]">{p.name}</span><span className="text-xs text-[#66737C]">{p.qty} {p.unit}</span></button>
                         ))}
                       </div>
                     ) : null}
@@ -577,7 +575,7 @@ export default function PurchasesPage() {
               </div>
 
               {inputTotal>0&&form.hasVat==='yes' ? (
-                <div className="rounded-[6px] border border-[#E7E1D8] bg-[#F7F3ED] p-3 text-xs">
+                <div className="rounded-[6px] border border-[#E7E1D8] bg-[var(--storely-background)] p-3 text-xs">
                   <div className="flex justify-between"><span className="text-[#66737C]">بدون ضريبة</span><b>{displayAmount} {curr}</b></div>
                   <div className="mt-1 flex justify-between"><span className="text-[#66737C]">ضريبة 15%</span><b className="text-[#B45309]">{displayVat} {curr}</b></div>
                   <div className="mt-2 flex justify-between border-t border-[#E7E1D8] pt-2"><span className="text-[#66737C]">الإجمالي</span><b className="text-[#203640]">{inputTotal.toFixed(2)} {curr}</b></div>
@@ -592,7 +590,7 @@ export default function PurchasesPage() {
             </form>
           </StorelyCard>
 
-          <div className="space-y-4">
+          <div className="min-w-0 space-y-4">
             {payables.length>0 ? (
               <StorelyCard title="مستحقات الموردين" description={`${payables.length} فاتورة غير مدفوعة بقيمة ${totalPayableAmount.toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0})} ${curr}`} actions={<button type="button" className="flex items-center gap-1 text-xs font-semibold text-[#66737C]" onClick={()=>setShowPayables(v=>!v)}>عرض <ChevronDown size={14} className={showPayables?'rotate-180':''}/></button>}>
                 {showPayables ? <div className="divide-y divide-[#E7E1D8]">{payables.map((p:any)=>{ const overdue = p.due_date && p.due_date < todayStr; return <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm"><div><div className="font-semibold text-[#203640]">{p.name||'بدون اسم'}</div><div className="mt-1 text-xs text-[#66737C]">{p.supplier||'غير محدد'} {p.due_date ? `- استحقاق ${p.due_date}` : ''}</div></div><div className="flex items-center gap-3"><StorelyStatusBadge status={overdue?'danger':'warning'}>{overdue?'متأخرة':'مستحقة'}</StorelyStatusBadge><span className="font-semibold tabular-nums">{Number(p.total_amount||0).toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0})} {curr}</span><StorelyButton size="sm" variant="primary" disabled={payingId===p.id} onClick={()=>markPaid(p.id)}>{payingId===p.id?'...':'دُفعت'}</StorelyButton></div></div>})}</div> : null}
@@ -600,7 +598,7 @@ export default function PurchasesPage() {
             ) : null}
 
             <StorelyCard title="سجل المشتريات" description="جدول تشغيلي للفواتير مع فرز، فلاتر، وفتح التفاصيل." actions={<StorelyStatusBadge status="info">{filteredHistory.length} فاتورة</StorelyStatusBadge>}>
-              <div className="grid gap-2 border-b border-[#E7E1D8] p-2.5 md:grid-cols-[auto_auto_minmax(180px,1fr)]">
+              <div className="storely-toolbar">
                 <div className="storely-segmented">{[{v:'all',l:'الكل'},{v:'today',l:'اليوم'},{v:'week',l:'أسبوع'},{v:'month',l:'شهر'}].map(p=><button key={p.v} type="button" onClick={()=>setFilterPeriod(p.v)} className={filterPeriod===p.v?'active':''}>{p.l}</button>)}</div>
                 <div className="storely-segmented">{[{v:'all',l:'كل الأنواع'},{v:CATS[0],l:CATS[0]},{v:CATS[1],l:CATS[1]},{v:CATS[2],l:CATS[2]}].map(c=><button key={c.v} type="button" onClick={()=>setFilterCat(c.v)} className={filterCat===c.v?'active':''}>{c.l}</button>)}</div>
                 <input value={filterSupplier} onChange={e=>setFilterSupplier(e.target.value)} placeholder="بحث بالمورد" className="storely-input h-8"/>
@@ -619,19 +617,6 @@ export default function PurchasesPage() {
         </div>
       </div>
 
-      <style jsx>{`
-        .storely-label{display:block;margin-bottom:6px;font-size:12px;font-weight:700;color:#66737C}
-        .storely-input{width:100%;border:1px solid #D7CDC2;border-radius:5px;background:white;padding:8px 10px;font-size:13px;color:#203640;outline:none;transition:border-color .15s,box-shadow .15s}
-        .storely-input:focus{border-color:#203640;box-shadow:0 0 0 3px rgba(32,54,64,.14)}
-        .storely-choice{display:inline-flex;min-height:34px;align-items:center;justify-content:center;gap:6px;border:1px solid #D7CDC2;border-radius:5px;background:white;padding:7px 9px;font-size:12px;font-weight:700;color:#66737C;transition:background .15s,border-color .15s,color .15s}
-        .storely-choice:hover{border-color:#8EA0B1;background:#F7F3ED;color:#203640}
-        .storely-choice-active{border-color:#203640;background:#ECFDF5;color:#203640}
-        .storely-choice-danger{border-color:#FECACA;background:#FEF2F2;color:#B91C1C}
-        .storely-choice-warning{border-color:#FDE68A;background:#FFFBEB;color:#B45309}
-        .storely-segmented{display:flex;gap:3px;align-items:center;border:1px solid #E7E1D8;background:#F7F3ED;border-radius:5px;padding:2px;overflow-x:auto}
-        .storely-segmented button{white-space:nowrap;border:0;border-radius:4px;background:transparent;padding:5px 9px;font-size:12px;font-weight:700;color:#66737C;cursor:pointer}
-        .storely-segmented button.active{background:white;color:#203640;box-shadow:none}
-      `}</style>
     </div>
   )
 }

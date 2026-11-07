@@ -1,8 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { LEGACY_C } from '../_admin/kit'
-
-const C = LEGACY_C
+import { Download, Search } from 'lucide-react'
+import { StorelyButton, StorelyCard, StorelyEmptyState, StorelyPageHeader } from '@/components/ui'
+import { storelyTokens } from '@/components/ui/design-tokens'
 
 export default function ConsentLogsPage() {
   const [logs, setLogs] = useState<any[]>([])
@@ -86,89 +86,71 @@ export default function ConsentLogsPage() {
   }
 
   if (!authChecked) return (
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{color:C.text2,fontSize:13}}>⏳ جاري التحقق...</div>
-    </div>
+    <div className="storely-loading" dir="rtl">جاري التحقق...</div>
   )
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,flexWrap:'wrap' as const,gap:12}}>
-        <div>
-          <h1 style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:4}}>سجلات الموافقة على الشروط</h1>
-          <div style={{fontSize:12,color:C.text3}}>توثيق قانوني لموافقة كل عميل — الوقت، نسخة الشروط، IP، الجهاز</div>
+    <div className="min-w-0 space-y-6" dir="rtl">
+      <StorelyPageHeader title="سجلات الموافقة على الشروط" description="توثيق قانوني لموافقة كل عميل — الوقت، نسخة الشروط، IP، الجهاز"
+        actions={<StorelyButton onClick={exportCSV} disabled={logs.length===0} icon={<Download size={16}/>}>تصدير CSV</StorelyButton>} />
+      <StorelyCard>
+        <div className="space-y-4 p-5 sm:p-6">
+          <div className="text-base font-semibold">نسخة الشروط الحالية: <span className="font-mono" dir="ltr">{currentVersion||'...'}</span></div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="min-w-0 flex-1 basis-64">
+              <input value={newVersion} onChange={e=>setNewVersion(e.target.value)} placeholder="رقم النسخة الجديد (مثلاً 2026-09)" className="storely-input"/>
+            </div>
+            <StorelyButton onClick={updateVersion} disabled={versionSaving||!newVersion.trim()||newVersion===currentVersion} variant="primary">{versionSaving?'...':'تحديث النسخة'}</StorelyButton>
+          </div>
+          {versionMsg && <div className="storely-notice" style={{color:versionMsg.startsWith('✅')?storelyTokens.color.success:storelyTokens.color.danger}}>{versionMsg}</div>}
+          <div className="text-sm leading-7 text-[var(--storely-muted)]">تحديث النسخة يفرض على كل المالكين إعادة الموافقة على الشروط بأول دخول لهم بعد نشر التعديل بصفحة /terms</div>
         </div>
-        <div style={{display:'flex',gap:10}}>
-          <button onClick={exportCSV} disabled={logs.length===0} style={{padding:'8px 16px',background:C.green+'22',color:C.green,border:`1px solid ${C.green}44`,borderRadius:10,fontSize:13,fontWeight:700,cursor:logs.length===0?'not-allowed':'pointer',fontFamily:'inherit',opacity:logs.length===0?.5:1}}>⬇ تصدير CSV</button>
-        </div>
-      </div>
-
-      <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:16,marginBottom:20}}>
-        <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:10}}>نسخة الشروط الحالية: <span style={{color:C.green}}>{currentVersion||'...'}</span></div>
-        <div style={{display:'flex',gap:10,alignItems:'center'}}>
-          <input value={newVersion} onChange={e=>setNewVersion(e.target.value)} placeholder="رقم النسخة الجديد (مثلاً 2026-09)"
-            style={{flex:1,padding:'9px 12px',background:C.bg,border:`1px solid ${C.border}`,borderRadius:9,color:C.text,fontSize:13,fontFamily:'inherit'}}/>
-          <button onClick={updateVersion} disabled={versionSaving||!newVersion.trim()||newVersion===currentVersion}
-            style={{padding:'9px 18px',background:C.green,color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:(versionSaving||!newVersion.trim()||newVersion===currentVersion)?.5:1}}>
-            {versionSaving?'...':'تحديث النسخة'}
-          </button>
-        </div>
-        {versionMsg && <div style={{fontSize:12,color:versionMsg.startsWith('✅')?C.green:'#d92d20',marginTop:8}}>{versionMsg}</div>}
-        <div style={{fontSize:11,color:C.text3,marginTop:8}}>تحديث النسخة يفرض على كل المالكين إعادة الموافقة على الشروط بأول دخول لهم بعد نشر التعديل بصفحة /terms</div>
-      </div>
-
-      <form onSubmit={handleSearch} style={{display:'flex',gap:10,marginBottom:20}}>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث بالاسم، الجوال، أو اسم المؤسسة"
-          style={{flex:1,padding:'10px 14px',background:C.card,border:`1px solid ${C.border}`,borderRadius:10,color:C.text,fontSize:13,fontFamily:'inherit'}}/>
-        <button type="submit" disabled={loading} style={{padding:'10px 20px',background:C.blue,color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-          {loading?'...':'🔍 بحث'}
-        </button>
-        {search && (
-          <button type="button" onClick={()=>{setSearch('');load('')}} style={{padding:'10px 16px',background:'#f2f4f7',color:C.text,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-            مسح
-          </button>
-        )}
-      </form>
-
-      {error && <div style={{background:'#fef3f2',color:'#d92d20',padding:'10px 14px',borderRadius:10,fontSize:13,marginBottom:16}}>{error}</div>}
-
-      {loading ? (
-        <div style={{textAlign:'center',padding:60,color:C.text3}}>جاري التحميل...</div>
-      ) : logs.length === 0 ? (
-        <div style={{background:C.card,borderRadius:14,padding:40,textAlign:'center',border:`1px solid ${C.border}`}}>
-          <div style={{fontSize:32,marginBottom:10}}>📭</div>
-          <div style={{color:C.text2}}>{search ? 'ما فيه نتائج مطابقة' : 'ما فيه سجلات موافقة بعد'}</div>
-        </div>
-      ) : (
-        <div style={{background:C.card,borderRadius:14,border:`1px solid ${C.border}`,overflow:'hidden'}}>
-          <div style={{overflowX:'auto' as const}}>
-            <table style={{width:'100%',borderCollapse:'collapse' as const,fontSize:13}}>
+      </StorelyCard>
+      <StorelyCard>
+        <form onSubmit={handleSearch} className="storely-toolbar">
+          <div className="storely-search">
+            <Search size={16} className="storely-search-icon" aria-hidden="true"/>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث بالاسم، الجوال، أو اسم المؤسسة" className="storely-input"/>
+          </div>
+          <div className="storely-actions">
+            <StorelyButton type="submit" disabled={loading} variant="primary">{loading?'...':'بحث'}</StorelyButton>
+            {search && <StorelyButton type="button" onClick={()=>{setSearch('');load('')}}>مسح</StorelyButton>}
+          </div>
+        </form>
+        {error && <div className="storely-notice m-5" style={{color:storelyTokens.color.danger,borderColor:storelyTokens.color.dangerBorder}}>{error}</div>}
+        {loading ? (
+          <div className="storely-loading">جاري التحميل...</div>
+        ) : logs.length === 0 ? (
+          <StorelyEmptyState className="!border-0" title={search ? 'ما فيه نتائج مطابقة' : 'ما فيه سجلات موافقة بعد'} />
+        ) : (
+          <div className="storely-table-scroll">
+            <table className="storely-table">
               <thead>
-                <tr style={{background:'#f9fafb',borderBottom:`1px solid ${C.border}`}}>
-                  <th style={{padding:'10px 14px',textAlign:'right' as const,color:C.text3,fontWeight:700}}>التاريخ والوقت</th>
-                  <th style={{padding:'10px 14px',textAlign:'right' as const,color:C.text3,fontWeight:700}}>المؤسسة</th>
-                  <th style={{padding:'10px 14px',textAlign:'right' as const,color:C.text3,fontWeight:700}}>الاسم</th>
-                  <th style={{padding:'10px 14px',textAlign:'right' as const,color:C.text3,fontWeight:700}}>الجوال</th>
-                  <th style={{padding:'10px 14px',textAlign:'right' as const,color:C.text3,fontWeight:700}}>نسخة الشروط</th>
-                  <th style={{padding:'10px 14px',textAlign:'right' as const,color:C.text3,fontWeight:700}}>IP</th>
+                <tr>
+                  <th>التاريخ والوقت</th>
+                  <th>المؤسسة</th>
+                  <th>الاسم</th>
+                  <th>الجوال</th>
+                  <th>نسخة الشروط</th>
+                  <th>IP</th>
                 </tr>
               </thead>
               <tbody>
                 {logs.map((l,i)=>(
-                  <tr key={l.id} style={{borderBottom:i<logs.length-1?`1px solid ${C.border}`:'none'}}>
-                    <td style={{padding:'10px 14px',color:C.text2,whiteSpace:'nowrap' as const}}>{new Date(l.accepted_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</td>
-                    <td style={{padding:'10px 14px',color:C.text,fontWeight:600}}>{l.org_name}</td>
-                    <td style={{padding:'10px 14px',color:C.text2}}>{l.profile_name}</td>
-                    <td style={{padding:'10px 14px',color:C.text2,direction:'ltr' as const,textAlign:'right' as const}}>{l.profile_phone}</td>
-                    <td style={{padding:'10px 14px',color:C.text2}}>{l.terms_version}</td>
-                    <td style={{padding:'10px 14px',color:C.text3,fontSize:11,direction:'ltr' as const,textAlign:'right' as const}}>{l.ip_address || '—'}</td>
+                  <tr key={l.id} style={{borderBottom:i<logs.length-1?`1px solid ${storelyTokens.color.border}`:'none'}}>
+                    <td className="whitespace-nowrap">{new Date(l.accepted_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</td>
+                    <td className="font-semibold">{l.org_name}</td>
+                    <td>{l.profile_name}</td>
+                    <td><span dir="ltr" className="inline-block">{l.profile_phone}</span></td>
+                    <td><span dir="ltr" className="inline-block font-mono">{l.terms_version}</span></td>
+                    <td><span dir="ltr" className="inline-block font-mono text-[13px]">{l.ip_address || '—'}</span></td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </StorelyCard>
     </div>
   )
 }

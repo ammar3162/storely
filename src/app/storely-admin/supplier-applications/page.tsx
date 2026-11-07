@@ -2,7 +2,9 @@
 import { useEffect, useState } from 'react'
 import { MessageCircle, RefreshCw, Globe } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
-import { A, Badge, Btn, Card, Empty, Loading, PageHeader, adminFetch, fmtDate } from '../_admin/kit'
+import { adminFetch, fmtDate } from '../_admin/kit'
+import { StorelyButton, StorelyCard, StorelyEmptyState, StorelyPageHeader, StorelyStatusBadge } from '@/components/ui'
+import { storelyTokens } from '@/components/ui/design-tokens'
 
 const isSafeUrl = (u?: string | null) => !!u && /^https?:\/\//i.test(u.trim())
 const STATUS = { pending: { l: 'بانتظار المراجعة', t: 'warning' }, approved: { l: 'مقبول', t: 'primary' }, rejected: { l: 'مرفوض', t: 'danger' } } as const
@@ -44,59 +46,80 @@ export default function SupplierApplicationsPage() {
   const shown = tab === 'pending' ? pending : apps
 
   return (
-    <>
-      <PageHeader title="طلبات الموردين" subtitle="موردون طلبوا الانضمام لسوق Storely"
-        actions={<Btn onClick={load} loading={loading}><RefreshCw size={14} /> تحديث</Btn>} />
-
-      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-        {([['pending', `بانتظار المراجعة (${pending.length})`], ['all', `الكل (${apps.length})`]] as const).map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)} className="adm-btn"
-            style={{ padding: '7px 14px', borderRadius: 99, fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
-              border: `1px solid ${tab === k ? A.primary : A.border}`, background: tab === k ? A.primary : A.surface, color: tab === k ? 'white' : A.text2 }}>{l}</button>
-        ))}
-      </div>
-
-      {loading ? <Loading /> : shown.length === 0 ? <Card><Empty title={tab === 'pending' ? 'ما فيه طلبات تنتظر المراجعة' : 'ما فيه طلبات'} /></Card> : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {shown.map(a => {
-            const st = STATUS[a.status as keyof typeof STATUS] || STATUS.pending
-            const phone = String(a.phone || '').replace(/\D/g, '')
-            return (
-              <Card key={a.id} pad={18}>
-                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                  <div style={{ flex: '1 1 320px', minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <div style={{ fontSize: 15, fontWeight: 800 }}>{a.company_name}</div>
-                      <Badge tone={st.t}>{st.l}</Badge>
+    <div className="supplier-applications-page" dir="rtl">
+      <style>{supplierStyles}</style>
+      <StorelyPageHeader title="طلبات الموردين" description="موردون طلبوا الانضمام لسوق Storely"
+        actions={<StorelyButton onClick={load} disabled={loading}><RefreshCw size={16} /> تحديث</StorelyButton>} />
+      <StorelyCard className="supplier-workspace">
+        <div className="supplier-toolbar">
+          {([['pending', `بانتظار المراجعة (${pending.length})`], ['all', `الكل (${apps.length})`]] as const).map(([k, l]) => (
+            <StorelyButton key={k} onClick={() => setTab(k)} variant={tab === k ? 'primary' : 'secondary'} aria-pressed={tab === k}>{l}</StorelyButton>
+          ))}
+        </div>
+        {loading ? <div className="supplier-placeholder" aria-busy="true">جاري التحميل...</div> : shown.length === 0 ? <StorelyEmptyState className="!border-0" title={tab === 'pending' ? 'ما فيه طلبات تنتظر المراجعة' : 'ما فيه طلبات'} /> : (
+          <div>
+            {shown.map(a => {
+              const st = STATUS[a.status as keyof typeof STATUS] || STATUS.pending
+              const phone = String(a.phone || '').replace(/\D/g, '')
+              return (
+                <article key={a.id} className="supplier-record">
+                  <div className="supplier-copy">
+                    <div className="supplier-record-heading">
+                      <h2>{a.company_name}</h2>
+                      <StorelyStatusBadge status={st.t === 'primary' ? 'success' : st.t}>{st.l}</StorelyStatusBadge>
                     </div>
-                    <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 13, color: A.text2, marginTop: 8 }}>
+                    <div className="supplier-contact-details">
                       <span>{a.contact_name}</span>
                       <span dir="ltr">{a.phone}</span>
                       {a.email && <span dir="ltr">{a.email}</span>}
-                      {isSafeUrl(a.website) && <a href={a.website} target="_blank" rel="noopener noreferrer" style={{ color: A.info, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Globe size={13} /> الموقع</a>}
+                      {isSafeUrl(a.website) && <a href={a.website} target="_blank" rel="noopener noreferrer" className="supplier-website"><Globe size={16} /> الموقع</a>}
                     </div>
                     {a.business_type?.length > 0 && (
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
-                        {a.business_type.map((t: string) => <Badge key={t}>{t}</Badge>)}
+                      <div className="supplier-types">
+                        {a.business_type.map((t: string) => <span key={t}>{t}</span>)}
                       </div>
                     )}
-                    {a.description && <div style={{ fontSize: 13, color: A.text2, marginTop: 10, lineHeight: 1.7 }}>{a.description}</div>}
-                    <div style={{ fontSize: 12, color: A.text3, marginTop: 10 }}>{fmtDate(a.created_at, true)}</div>
+                    {a.description && <div className="supplier-description">{a.description}</div>}
+                    <div className="supplier-date">{fmtDate(a.created_at, true)}</div>
                   </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {phone && <a href={`https://wa.me/${phone}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}><Btn><MessageCircle size={14} /> واتساب</Btn></a>}
+                  <div className="supplier-actions">
+                    {phone && <a href={`https://wa.me/${phone}`} target="_blank" rel="noopener noreferrer" className="supplier-whatsapp"><MessageCircle size={16} /> واتساب</a>}
                     {a.status === 'pending' && <>
-                      <Btn kind="primary" loading={busy === a.id} onClick={() => approve(a)}>قبول</Btn>
-                      <Btn kind="danger" disabled={busy === a.id} onClick={() => remove(a, true)}>رفض</Btn>
+                      <StorelyButton variant="primary" disabled={busy === a.id} aria-busy={busy === a.id} onClick={() => approve(a)}>قبول</StorelyButton>
+                      <StorelyButton variant="danger" disabled={busy === a.id} onClick={() => remove(a, true)}>رفض</StorelyButton>
                     </>}
-                    {a.status !== 'pending' && <Btn kind="ghost" disabled={busy === a.id} onClick={() => remove(a, false)}>حذف</Btn>}
+                    {a.status !== 'pending' && <StorelyButton variant="ghost" disabled={busy === a.id} onClick={() => remove(a, false)}>حذف</StorelyButton>}
                   </div>
-                </div>
-              </Card>
-            )
-          })}
-        </div>
-      )}
-    </>
+                </article>
+              )
+            })}
+          </div>
+        )}
+      </StorelyCard>
+    </div>
   )
 }
+
+const supplierStyles = `
+  .supplier-applications-page { min-width: 0; font-family: ${storelyTokens.typography.family}; color: ${storelyTokens.color.text}; font-size: ${storelyTokens.typography.body}px; line-height: ${storelyTokens.typography.lineHeight}; }
+  .supplier-applications-page h1 { font-size: ${storelyTokens.typography.title}px; line-height: 1.5; }
+  .supplier-applications-page .supplier-workspace { border-radius: ${storelyTokens.radius.card}; }
+  .supplier-applications-page .supplier-toolbar { display: flex; flex-wrap: wrap; gap: ${storelyTokens.spacing[2]}px; padding: ${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px; border-bottom: 1px solid ${storelyTokens.color.border}; }
+  .supplier-applications-page .supplier-record { display: flex; align-items: flex-start; flex-wrap: wrap; gap: ${storelyTokens.spacing[6]}px; padding: ${storelyTokens.spacing[6]}px; border-bottom: 1px solid ${storelyTokens.color.border}; }
+  .supplier-applications-page .supplier-record:last-child { border-bottom: 0; }
+  .supplier-applications-page .supplier-copy { flex: 1 1 320px; min-width: 0; overflow-wrap: anywhere; }
+  .supplier-applications-page .supplier-record-heading { display: flex; align-items: center; flex-wrap: wrap; gap: ${storelyTokens.spacing[3]}px; }
+  .supplier-applications-page h2 { font-size: ${storelyTokens.typography.section}px; font-weight: 600; }
+  .supplier-applications-page .supplier-contact-details { display: flex; flex-wrap: wrap; gap: ${storelyTokens.spacing[3]}px ${storelyTokens.spacing[4]}px; margin-top: ${storelyTokens.spacing[3]}px; color: ${storelyTokens.color.textMuted}; }
+  .supplier-applications-page .supplier-contact-details > * { min-width: 0; overflow-wrap: anywhere; }
+  .supplier-applications-page .supplier-website { display: inline-flex; align-items: center; gap: ${storelyTokens.spacing[1]}px; color: ${storelyTokens.color.navy}; }
+  .supplier-applications-page .supplier-types { display: flex; flex-wrap: wrap; gap: ${storelyTokens.spacing[2]}px; margin-top: ${storelyTokens.spacing[3]}px; }
+  .supplier-applications-page .supplier-types span { font-size: 12px; padding: ${storelyTokens.spacing[1]}px ${storelyTokens.spacing[2]}px; border: 1px solid ${storelyTokens.color.border}; border-radius: ${storelyTokens.radius.control}; }
+  .supplier-applications-page .supplier-description { color: ${storelyTokens.color.textMuted}; margin-top: ${storelyTokens.spacing[3]}px; }
+  .supplier-applications-page .supplier-date { font-size: ${storelyTokens.typography.supporting}px; color: ${storelyTokens.color.textMuted}; margin-top: ${storelyTokens.spacing[3]}px; }
+  .supplier-applications-page .supplier-actions { display: flex; flex-wrap: wrap; gap: ${storelyTokens.spacing[2]}px; }
+  .supplier-applications-page .supplier-whatsapp { display: inline-flex; align-items: center; justify-content: center; gap: ${storelyTokens.spacing[2]}px; min-height: 36px; padding: ${storelyTokens.spacing[2]}px ${storelyTokens.spacing[4]}px; background: ${storelyTokens.color.surface}; color: ${storelyTokens.color.navy}; border: 1px solid ${storelyTokens.color.border}; border-radius: ${storelyTokens.radius.control}; font-weight: 600; text-decoration: none; }
+  .supplier-applications-page .supplier-whatsapp:focus-visible { outline: none; box-shadow: ${storelyTokens.shadow.focus}; }
+  .supplier-applications-page .supplier-placeholder { padding: ${storelyTokens.spacing[8]}px; color: ${storelyTokens.color.textMuted}; }
+  @media (max-width: 640px) { .supplier-applications-page .supplier-record { padding: ${storelyTokens.spacing[4]}px; gap: ${storelyTokens.spacing[4]}px; } .supplier-applications-page .supplier-actions { width: 100%; } }
+`

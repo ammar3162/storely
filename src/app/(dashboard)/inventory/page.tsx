@@ -1,4 +1,5 @@
 'use client'
+import { storelyTokens } from '@/components/ui/design-tokens'
 /* eslint-disable @typescript-eslint/no-explicit-any, react/no-unescaped-entities */
 export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
@@ -6,7 +7,7 @@ import { Upload, Download, Paperclip, X, AlertTriangle, Camera, Ruler, CheckCirc
 import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
 import { cache } from '@/lib/cache'
-import { colors as dsColors } from '@/lib/ds'
+import { colors as dsColors, inp as dsInput } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh'
 import Pagination from '@/components/pagination'
@@ -324,8 +325,8 @@ export default function InventoryPage() {
     },
   ]
 
-  const lbl: React.CSSProperties = {fontSize:10,fontWeight:700,color:C.text3,display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em'}
-  const inp = (extra?:any): React.CSSProperties => ({width:'100%',padding:'10px 12px',border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',background:'white',color:C.text,fontFamily:'inherit',...extra})
+  const lbl: React.CSSProperties = {fontSize:storelyTokens.typography.body,fontWeight:600,color:C.text,display:'block',marginBottom:storelyTokens.spacing[3],lineHeight:storelyTokens.typography.lineHeight}
+  const inp = (extra?:any): React.CSSProperties => dsInput(extra)
 
   if(loading) return (
     <div className="iv" style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
@@ -369,8 +370,7 @@ export default function InventoryPage() {
         @keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
         @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
         .u{animation:up .3s ease both}
-        input:focus,select:focus{border-color:${C.primary}!important;outline:none!important;box-shadow:0 0 0 3px ${C.primaryL}!important}
-        .chip{padding:5px 12px;border-radius:99px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;border:1px solid;transition:all .15s;font-family:inherit}
+        .iv .chip{min-height:36px;padding:6px 12px;border-radius:${storelyTokens.radius.control};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;border:1px solid;transition:all .15s;font-family:inherit}
         .rh{transition:background .1s}
         .rh:hover{background:#f9f9f8}
         .tap{transition:all .12s;cursor:pointer}
@@ -389,13 +389,13 @@ export default function InventoryPage() {
 
       {/* Delete confirm */}
       {confirm&&(
-        <div style={{position:'fixed',inset:0,zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)'}}>
-          <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:300,fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',animation:'slideUp .2s ease'}}>
-            <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:6,textAlign:'center'}}>حذف "{confirm.name}"؟</div>
-            <div style={{fontSize:11,color:C.text3,textAlign:'center',marginBottom:16}}>لا يمكن التراجع عن هذا الإجراء</div>
+        <div className="storely-overlay" style={{zIndex:1000}}>
+          <div className="storely-dialog-shell" style={{width:'100%',maxWidth:300,direction:'rtl',animation:'slideUp .2s ease'}}>
+            <div style={{fontSize:storelyTokens.typography.body,fontWeight:600,color:C.text,marginBottom:6,textAlign:'center'}}>حذف "{confirm.name}"؟</div>
+            <div style={{fontSize:storelyTokens.typography.supporting,color:C.text3,textAlign:'center',marginBottom:16}}>لا يمكن التراجع عن هذا الإجراء</div>
             <div style={{display:'flex',gap:8}}>
-              <button onClick={()=>setConfirm(null)} style={{flex:1,padding:'10px',background:C.bg,color:C.text2,border:`1px solid ${C.border2}`,borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
-              <button onClick={doDelete} style={{flex:1,padding:'10px',background:C.danger,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>حذف</button>
+              <button onClick={()=>setConfirm(null)} style={{flex:1,padding:'10px',background:C.bg,color:C.text2,border:`1px solid ${C.border2}`,borderRadius:storelyTokens.radius.control,fontSize:storelyTokens.typography.body,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+              <button onClick={doDelete} style={{flex:1,padding:'10px',background:C.danger,color:'white',border:'none',borderRadius:storelyTokens.radius.control,fontSize:storelyTokens.typography.body,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>حذف</button>
             </div>
           </div>
         </div>
@@ -410,26 +410,26 @@ export default function InventoryPage() {
         else { setJardNotFound(code) }
       }} onClose={()=>setShowJardScan(false)}/></Suspense>}
       {showImport&&(
-        <div style={{position:'fixed',inset:0,zIndex:3000,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
-          <div style={{background:'white',borderRadius:16,width:'100%',maxWidth:520,maxHeight:'85vh',overflowY:'auto' as const,padding:20}}>
-            <div style={{fontSize:15,fontWeight:800,color:C.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><Upload size={16} strokeWidth={2.25}/> استيراد منتجات من ملف</div>
-            <div style={{fontSize:12,color:C.text4,marginBottom:16}}>ارفع ملف CSV بصيغة Excel — سيتم تحديث الأصناف الموجودة وإضافة الجديدة تلقائياً</div>
+        <div className="storely-overlay" style={{zIndex:3000}}>
+          <div className="storely-dialog-shell" style={{width:'100%',maxWidth:520,maxHeight:'85vh',overflowY:'auto' as const}}>
+            <div style={{fontSize:15,fontWeight:600,color:C.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><Upload size={16} strokeWidth={2.25}/> استيراد منتجات من ملف</div>
+            <div style={{fontSize:storelyTokens.typography.body,color:C.text4,marginBottom:16}}>ارفع ملف CSV بصيغة Excel — سيتم تحديث الأصناف الموجودة وإضافة الجديدة تلقائياً</div>
 
             {importPreview.length===0 ? (
               <>
-                <button onClick={downloadImportTemplate} type="button" style={{width:'100%',padding:10,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,fontSize:12,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit',marginBottom:10}}>
+                <button onClick={downloadImportTemplate} type="button" style={{width:'100%',padding:10,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:storelyTokens.radius.card,fontSize:storelyTokens.typography.body,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit',marginBottom:10}}>
                   تحميل نموذج فارغ (CSV)
                 </button>
                 <input ref={importFileRef} type="file" accept=".csv" style={{display:'none'}} onChange={e=>{if(e.target.files?.[0])handleImportFile(e.target.files[0])}}/>
-                <button onClick={()=>importFileRef.current?.click()} type="button" style={{width:'100%',padding:14,background:C.primaryL,border:`1.5px dashed ${C.primaryB}`,borderRadius:10,fontSize:13,fontWeight:700,color:C.primary,cursor:'pointer',fontFamily:'inherit'}}>
+                <button onClick={()=>importFileRef.current?.click()} type="button" style={{width:'100%',padding:14,background:C.primaryL,border:`1.5px dashed ${C.primaryB}`,borderRadius:storelyTokens.radius.card,fontSize:storelyTokens.typography.body,fontWeight:700,color:C.primary,cursor:'pointer',fontFamily:'inherit'}}>
                   <Paperclip size={13} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> اختر ملف CSV للاستيراد
                 </button>
               </>
             ) : (
               <>
-                <div style={{fontSize:12,fontWeight:700,color:C.text2,marginBottom:8}}>معاينة ({importPreview.length} صنف)</div>
-                <div style={{border:`1px solid ${C.border}`,borderRadius:10,overflow:'hidden',marginBottom:14,maxHeight:280,overflowY:'auto' as const}}>
-                  <table style={{width:'100%',borderCollapse:'collapse',fontSize:11}}>
+                <div style={{fontSize:storelyTokens.typography.body,fontWeight:700,color:C.text2,marginBottom:8}}>معاينة ({importPreview.length} صنف)</div>
+                <div style={{border:`1px solid ${C.border}`,borderRadius:storelyTokens.radius.card,overflow:'hidden',marginBottom:14,maxHeight:280,overflowY:'auto' as const}}>
+                  <table style={{width:'100%',borderCollapse:'collapse',fontSize:storelyTokens.typography.supporting}}>
                     <thead>
                       <tr style={{background:C.bg}}>
                         <th style={{padding:'6px 8px',textAlign:'right',fontWeight:700,color:C.text3}}>الاسم</th>
@@ -447,7 +447,7 @@ export default function InventoryPage() {
                             <td style={{padding:'6px 8px',color:C.text2}}>{r.qty}</td>
                             <td style={{padding:'6px 8px',color:C.text2}}>{r.unit}</td>
                             <td style={{padding:'6px 8px'}}>
-                              <span style={{fontSize:9,fontWeight:700,padding:'2px 6px',borderRadius:5,background:exists?C.warningL:C.primaryL,color:exists?C.warning:C.primary}}>
+                              <span style={{fontSize:storelyTokens.typography.supporting,fontWeight:700,padding:'2px 6px',borderRadius:storelyTokens.radius.control,background:exists?C.warningL:C.primaryL,color:exists?C.warning:C.primary}}>
                                 {exists?'تحديث':'جديد'}
                               </span>
                             </td>
@@ -458,21 +458,21 @@ export default function InventoryPage() {
                   </table>
                 </div>
                 <div style={{display:'flex',gap:8}}>
-                  <button onClick={()=>setImportPreview([])} type="button" style={{flex:1,padding:11,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,fontSize:12,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
-                  <button onClick={confirmImport} disabled={importing} type="button" style={{flex:2,padding:11,background:C.primary,border:'none',borderRadius:10,fontSize:12,fontWeight:700,color:'white',cursor:importing?'not-allowed':'pointer',fontFamily:'inherit',opacity:importing?.7:1}}>
+                  <button onClick={()=>setImportPreview([])} type="button" style={{flex:1,padding:11,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:storelyTokens.radius.card,fontSize:storelyTokens.typography.body,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                  <button onClick={confirmImport} disabled={importing} type="button" style={{flex:2,padding:11,background:C.primary,border:'none',borderRadius:storelyTokens.radius.card,fontSize:storelyTokens.typography.body,fontWeight:700,color:'white',cursor:importing?'not-allowed':'pointer',fontFamily:'inherit',opacity:importing?.7:1}}>
                     {importing?'جاري الاستيراد...':<span style={{display:'inline-flex',alignItems:'center',gap:6}}><CheckCircle2 size={14} strokeWidth={2.25}/> تأكيد استيراد {importPreview.length} صنف</span>}
                   </button>
                 </div>
               </>
             )}
 
-            <button onClick={()=>{setShowImport(false);setImportPreview([])}} type="button" style={{width:'100%',padding:9,background:'none',border:'none',fontSize:11,color:C.text4,cursor:'pointer',fontFamily:'inherit',marginTop:10}}>إغلاق</button>
+            <button onClick={()=>{setShowImport(false);setImportPreview([])}} type="button" style={{width:'100%',padding:9,background:'none',border:'none',fontSize:storelyTokens.typography.supporting,color:C.text4,cursor:'pointer',fontFamily:'inherit',marginTop:10}}>إغلاق</button>
           </div>
         </div>
       )}
 
       {jardNotFound&&(
-        <div style={{position:'fixed',bottom:20,left:'50%',transform:'translateX(-50%)',background:C.dangerL,color:C.danger,border:`1px solid ${C.dangerB}`,borderRadius:10,padding:'10px 16px',fontSize:12,fontWeight:600,zIndex:2000,boxShadow:'0 4px 16px rgba(0,0,0,.1)'}}>
+        <div style={{position:'fixed',bottom:20,left:'50%',transform:'translateX(-50%)',background:C.dangerL,color:C.danger,border:`1px solid ${C.dangerB}`,borderRadius:storelyTokens.radius.card,padding:'10px 16px',fontSize:storelyTokens.typography.body,fontWeight:600,zIndex:2000,boxShadow:'0 4px 16px rgba(0,0,0,.1)'}}>
           <span style={{display:'inline-flex',alignItems:'center',gap:5}}><AlertTriangle size={13} strokeWidth={2.25}/> لا يوجد منتج بهذا الباركود: {jardNotFound}</span>
           <button onClick={()=>setJardNotFound('')} style={{marginRight:8,background:'none',border:'none',color:C.danger,cursor:'pointer',display:'flex',alignItems:'center'}}><X size={15} strokeWidth={2.5}/></button>
         </div>
@@ -480,10 +480,10 @@ export default function InventoryPage() {
 
       {/* Add/Edit Sheet */}
       {showAdd&&(
-        <div className="iv-sheet-wrap" style={{position:'fixed',inset:0,background:'rgba(16,24,40,.45)',zIndex:500,display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
-          <div className="iv-sheet" style={{background:'white',borderRadius:'14px 14px 0 0',padding:'0 0 env(safe-area-inset-bottom)',width:'100%',maxWidth:520,maxHeight:'92vh',display:'flex',flexDirection:'column',animation:'slideUp .25s ease',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
+        <div className="iv-sheet-wrap">
+          <div className="storely-dialog-shell iv-sheet" data-padding="none">
             <div style={{padding:'10px 18px 0',flexShrink:0}}>
-              <div style={{width:36,height:4,borderRadius:99,background:C.border2,margin:'0 auto 14px'}}/>
+              <div style={{width:36,height:4,borderRadius:storelyTokens.radius.card,background:C.border2,margin:'0 auto 14px'}}/>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
                 <div style={{fontSize:17,fontWeight:700,color:C.text}}>{editItem?'تعديل المنتج':'منتج جديد'}</div>
                 <button onClick={()=>{setShowAdd(false);setEditItem(null)}} style={{width:28,height:28,borderRadius:'50%',border:`1px solid ${C.border2}`,background:C.bg,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}}><X size={14} strokeWidth={2.25}/></button>
@@ -516,7 +516,7 @@ export default function InventoryPage() {
                       <label style={lbl}>باركود</label>
                       <div style={{display:'flex',gap:5}}>
                         <input value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} style={{...inp(),flex:1}} placeholder="اختياري"/>
-                        <button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 10px',background:C.primaryL,color:C.primary,border:`1px solid ${C.primaryB}`,borderRadius:8,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><Camera size={15} strokeWidth={2.25}/></button>
+                        <button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 10px',background:C.primaryL,color:C.primary,border:`1px solid ${C.primaryB}`,borderRadius:storelyTokens.radius.control,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><Camera size={15} strokeWidth={2.25}/></button>
                       </div>
                     </div>
                     <div>
@@ -530,15 +530,15 @@ export default function InventoryPage() {
                   </div>
 
                   {/* تحويل الوحدة الدقيقة — لدقة استخدام هذا المنتج بالوصفات */}
-                  <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:12}}>
+                  <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:storelyTokens.radius.card,padding:12}}>
                     <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
                       <span style={{display:'flex',alignItems:'center'}}><Ruler size={13} strokeWidth={2.25}/></span>
-                      <div style={{fontSize:13,fontWeight:600,color:C.text}}>تحويل الوحدة الدقيقة (اختياري)</div>
+                      <div style={{fontSize:storelyTokens.typography.body,fontWeight:600,color:C.text}}>تحويل الوحدة الدقيقة (اختياري)</div>
                       {form.recipe_unit && form.recipe_unit_factor && Number(form.recipe_unit_factor)>0 && (
-                        <span style={{fontSize:12,fontWeight:600,color:C.primary,marginRight:'auto'}}>محدد</span>
+                        <span style={{fontSize:storelyTokens.typography.body,fontWeight:600,color:C.primary,marginRight:'auto'}}>محدد</span>
                       )}
                     </div>
-                    <div style={{fontSize:12,color:C.text3,marginBottom:8,lineHeight:1.6}}>مفيد لو تستخدم هذا المنتج بوصفات — مثال: الكيس فيه كم جرام، الكرتون فيه كم علبة</div>
+                    <div style={{fontSize:storelyTokens.typography.body,color:C.text3,marginBottom:8,lineHeight:1.6}}>مفيد لو تستخدم هذا المنتج بوصفات — مثال: الكيس فيه كم جرام، الكرتون فيه كم علبة</div>
                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                       <div>
                         <label style={lbl}>الوحدة الدقيقة</label>
@@ -550,18 +550,18 @@ export default function InventoryPage() {
                       </div>
                     </div>
                     {form.recipe_unit && form.recipe_unit_factor && Number(form.recipe_unit_factor)>0 && (
-                      <div style={{fontSize:12,fontWeight:600,color:C.text2,marginTop:8}}>
+                      <div style={{fontSize:storelyTokens.typography.body,fontWeight:600,color:C.text2,marginTop:8}}>
                         1 {form.unit} = {form.recipe_unit_factor} {form.recipe_unit}
                       </div>
                     )}
                   </div>
 
                   {editItem?(
-                    <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:12}}>
-                      <div style={{fontSize:13,color:C.text2,marginBottom:8}}>الكمية الحالية: <b style={{color:C.text}}>{editItem.qty} {form.unit}</b></div>
+                    <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:storelyTokens.radius.card,padding:12}}>
+                      <div style={{fontSize:storelyTokens.typography.body,color:C.text2,marginBottom:8}}>الكمية الحالية: <b style={{color:C.text}}>{editItem.qty} {form.unit}</b></div>
                       <label style={lbl}>كمية تضيفها</label>
                       <input type="number" min="0" value={addQty||''} onChange={e=>setAddQty(Number(e.target.value)||0)} style={{...inp(),fontSize:16,fontWeight:600}} placeholder="0"/>
-                      {addQty>0&&<div style={{fontSize:12,color:C.text2,marginTop:6}}>الإجمالي بعد الإضافة: {editItem.qty+addQty} {form.unit}</div>}
+                      {addQty>0&&<div style={{fontSize:storelyTokens.typography.body,color:C.text2,marginTop:6}}>الإجمالي بعد الإضافة: {editItem.qty+addQty} {form.unit}</div>}
                     </div>
                   ):(
                     <div>
@@ -572,13 +572,13 @@ export default function InventoryPage() {
                 </div>
                 {editItem && (
                   <button type="button" onClick={()=>{setConfirm({id:editItem.id,name:editItem.name});setShowAdd(false)}}
-                    style={{width:'100%',padding:'10px',marginTop:16,background:C.dangerL,color:C.danger,border:`1px solid ${C.dangerB}`,borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                    style={{width:'100%',padding:'10px',marginTop:16,background:C.dangerL,color:C.danger,border:`1px solid ${C.dangerB}`,borderRadius:storelyTokens.radius.control,fontSize:storelyTokens.typography.body,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                     <Trash2 size={13} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> حذف هذا المنتج
                   </button>
                 )}
                 <div style={{display:'flex',gap:8,marginTop:editItem?8:16}}>
-                  <button type="button" onClick={()=>{setShowAdd(false);setEditItem(null)}} style={{flex:1,padding:'11px',background:C.bg,color:C.text2,border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
-                  <button type="submit" disabled={saving} style={{flex:2,padding:'11px',background:C.primary,color:'white',border:'none',borderRadius:8,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:saving?.7:1}}>
+                  <button type="button" onClick={()=>{setShowAdd(false);setEditItem(null)}} style={{flex:1,padding:'11px',background:C.bg,color:C.text2,border:`1px solid ${C.border2}`,borderRadius:storelyTokens.radius.control,fontSize:storelyTokens.typography.body,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                  <button type="submit" disabled={saving} style={{flex:2,padding:'11px',background:C.primary,color:'white',border:'none',borderRadius:storelyTokens.radius.control,fontSize:storelyTokens.typography.body,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:saving?.7:1}}>
                     {saving?'جاري الحفظ...':editItem?'حفظ التعديلات':'إضافة المنتج'}
                   </button>
                 </div>
@@ -651,25 +651,25 @@ export default function InventoryPage() {
       <StorelyMetricStrip metrics={metrics} className="mb-4" />
 
       {filtered.length===0 && !search && catFilter==='all' && STARTER_PRODUCTS[businessType] && !templateDismissed ? (
-        <div className="u" style={{background:'white',borderRadius:14,padding:'28px 24px',border:`1.5px solid ${C.primaryB}`}}>
+        <div className="u" style={{background:'white',borderRadius:storelyTokens.radius.card,padding:'28px 24px',border:`1.5px solid ${C.primaryB}`}}>
           <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
             <div style={{display:'flex',justifyContent:'center',color:C.text4}}><Package size={18} strokeWidth={1.75}/></div>
-            <div style={{fontSize:15,fontWeight:800,color:C.text}}>نقترح عليك هذي الأصناف الشائعة لـ{businessType}</div>
+            <div style={{fontSize:15,fontWeight:600,color:C.text}}>نقترح عليك هذي الأصناف الشائعة لـ{businessType}</div>
           </div>
-          <div style={{fontSize:12,color:C.text4,marginBottom:18}}>اختر اللي يناسبك وراح نضيفها لمخزونك بضغطة وحدة — أو تجاهل وابدأ يدوياً</div>
+          <div style={{fontSize:storelyTokens.typography.body,color:C.text4,marginBottom:18}}>اختر اللي يناسبك وراح نضيفها لمخزونك بضغطة وحدة — أو تجاهل وابدأ يدوياً</div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))',gap:8,marginBottom:18}}>
             {(STARTER_PRODUCTS[businessType]||[]).map(item=>(
-              <label key={item.name} style={{display:'flex',alignItems:'center',gap:8,padding:'10px 12px',background:selectedTemplate[item.name]?(C.primaryL):C.bg,border:`1.5px solid ${selectedTemplate[item.name]?(C.primaryB):C.border}`,borderRadius:9,cursor:'pointer',transition:'all .15s'}}>
+              <label key={item.name} style={{display:'flex',alignItems:'center',gap:8,padding:'10px 12px',background:selectedTemplate[item.name]?(C.primaryL):C.bg,border:`1.5px solid ${selectedTemplate[item.name]?(C.primaryB):C.border}`,borderRadius:storelyTokens.radius.card,cursor:'pointer',transition:'all .15s'}}>
                 <input type="checkbox" checked={!!selectedTemplate[item.name]}
                   onChange={e=>setSelectedTemplate(prev=>({...prev,[item.name]:e.target.checked}))}
                   style={{width:16,height:16,accentColor:C.primary,flexShrink:0}}/>
-                <span style={{fontSize:12,fontWeight:600,color:C.text}}>{item.name}</span>
+                <span style={{fontSize:storelyTokens.typography.body,fontWeight:600,color:C.text}}>{item.name}</span>
               </label>
             ))}
           </div>
           <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap' as const}}>
             <button onClick={addTemplateProducts} disabled={addingTemplate||Object.values(selectedTemplate).every(v=>!v)}
-              style={{padding:'10px 20px',background:Object.values(selectedTemplate).every(v=>!v)?C.border2:(C.primary),color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:Object.values(selectedTemplate).every(v=>!v)?'not-allowed':'pointer',fontFamily:'inherit'}}>
+              style={{padding:'10px 20px',background:Object.values(selectedTemplate).every(v=>!v)?C.border2:(C.primary),color:'white',border:'none',borderRadius:storelyTokens.radius.card,fontSize:storelyTokens.typography.body,fontWeight:700,cursor:Object.values(selectedTemplate).every(v=>!v)?'not-allowed':'pointer',fontFamily:'inherit'}}>
               {addingTemplate?'جاري الإضافة...':<span style={{display:'inline-flex',alignItems:'center',gap:6}}><CheckCircle2 size={14} strokeWidth={2.25}/> أضف المحدد ({Object.values(selectedTemplate).filter(Boolean).length})</span>}
             </button>
             <button onClick={()=>{
@@ -677,11 +677,11 @@ export default function InventoryPage() {
                 for(const p of (STARTER_PRODUCTS[businessType]||[])) all[p.name]=true
                 setSelectedTemplate(all)
               }}
-              style={{padding:'10px 16px',background:'none',color:C.primary,border:`1.5px solid ${C.primaryB}`,borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+              style={{padding:'10px 16px',background:'none',color:C.primary,border:`1.5px solid ${C.primaryB}`,borderRadius:storelyTokens.radius.card,fontSize:storelyTokens.typography.body,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
               تحديد الكل
             </button>
             <button onClick={()=>setTemplateDismissed(true)}
-              style={{padding:'10px 16px',background:'none',color:C.text4,border:'none',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',marginRight:'auto'}}>
+              style={{padding:'10px 16px',background:'none',color:C.text4,border:'none',fontSize:storelyTokens.typography.body,fontWeight:600,cursor:'pointer',fontFamily:'inherit',marginRight:'auto'}}>
               تجاهل، أبدأ يدوياً
             </button>
           </div>
@@ -740,20 +740,15 @@ export default function InventoryPage() {
 
 function StatusDot({ out, low }: { out: boolean; low: boolean }) {
   const c = out ? C.danger : low ? C.warning : C.primary
-  return <span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:12.5,fontWeight:500,color:C.text2}}><span style={{width:7,height:7,borderRadius:'50%',background:c}}/>{out?'نفد':low?'ناقص':'كافٍ'}</span>
+  return <span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:storelyTokens.typography.body,fontWeight:500,color:C.text2}}><span style={{width:7,height:7,borderRadius:'50%',background:c}}/>{out?'نفد':low?'ناقص':'كافٍ'}</span>
 }
 
 const IV_CSS = `
   .iv{color:${C.text}}
-  .iv-filterbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
-  .iv-select{height:32px;min-width:145px;border:1px solid #D7CDC2;border-radius:5px;background:white;color:#203640;padding:0 10px;font-size:13px;font-family:inherit;outline:none}
-  .iv-skeleton{border-radius:5px;background:#E7E1D8;animation:ivPulse 1.3s ease-in-out infinite}
+  .iv-filterbar{display:flex;align-items:center;gap:${storelyTokens.spacing[3]}px;flex-wrap:wrap;margin-bottom:${storelyTokens.spacing[5]}px}
+  .iv-select{min-height:${storelyTokens.control.medium}px;min-width:145px;border:1px solid ${storelyTokens.color.border};border-radius:${storelyTokens.radius.control};background:${storelyTokens.color.surface};color:${storelyTokens.color.text};padding:${storelyTokens.spacing[2]}px ${storelyTokens.spacing[3]}px;font-size:${storelyTokens.typography.body}px;font-family:inherit;outline:none}
+  .iv-skeleton{border-radius:5px;background:${storelyTokens.color.border};animation:ivPulse 1.3s ease-in-out infinite}
   @keyframes ivPulse{0%,100%{opacity:1}50%{opacity:.45}}
-  .iv-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-  .iv-title{font-size:20px;font-weight:700;color:${C.text};margin:0}
-  .iv-sub{font-size:13px;color:${C.text3};margin:4px 0 0;font-variant-numeric:tabular-nums}
-  .iv-tools{display:flex;gap:8px;flex-wrap:wrap}
-  @media(max-width:640px){.iv-hide-sm{display:none}.iv-tools .sh-btn{padding:9px 11px}}
   .iv-note{background:${C.surface};border:1px solid ${C.border};border-radius:10px;margin-bottom:14px}
   .iv-note-head{width:100%;display:flex;align-items:center;gap:10px;padding:11px 14px;border:none;background:none;font-family:inherit;font-size:13px;color:${C.text2};cursor:pointer;text-align:right}
   .iv-note-head svg{color:${C.text4};flex-shrink:0}
@@ -762,34 +757,21 @@ const IV_CSS = `
   .iv-note-item{width:100%;display:flex;justify-content:space-between;padding:10px 14px;border:none;border-bottom:1px solid ${C.border};background:none;font-family:inherit;font-size:13px;color:${C.text};cursor:pointer;text-align:right}
   .iv-note-item:hover{background:#f9fafb}
   .iv-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
-  .iv-tabs{display:inline-flex;background:#eef0f3;border-radius:9px;padding:3px}
-  .iv-tab{border:none;background:none;padding:7px 14px;border-radius:7px;font-family:inherit;font-size:13px;font-weight:500;color:${C.text2};cursor:pointer;white-space:nowrap}
-  .iv-tab.on{background:white;color:${C.text};font-weight:600;box-shadow:0 1px 2px rgba(16,24,40,.08)}
-  .iv-tab-n{color:${C.text4};font-weight:500;margin-right:4px;font-variant-numeric:tabular-nums}
   .iv-search{flex:1;min-width:200px;position:relative;display:flex;align-items:center}
   .iv-search svg{position:absolute;right:11px;color:${C.text4};pointer-events:none}
-  .iv-search input{width:100%;padding:9px 34px 9px 12px;border:1px solid ${C.border2};border-radius:8px;font-size:13px;font-family:inherit;background:white;color:${C.text};outline:none}
-  .iv-cats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:12px}
-  .iv-cat{flex-shrink:0;padding:5px 11px;border-radius:99px;border:1px solid ${C.border};background:white;font-family:inherit;font-size:12.5px;color:${C.text2};cursor:pointer;white-space:nowrap}
-  .iv-cat.on{border-color:${C.text};color:${C.text};font-weight:600}
+  .iv-search input{width:100%;min-height:${storelyTokens.control.medium}px;padding:8px 36px 8px 12px;border:1px solid ${C.border2};border-radius:8px;font-size:13px;font-family:inherit;background:white;color:${C.text};outline:none}
   .iv-list{display:block;background:white;border:1px solid ${C.border};border-radius:12px;overflow:hidden}
   .iv-item{width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;border:none;border-bottom:1px solid ${C.border};background:none;font-family:inherit;text-align:right;cursor:pointer}
   .iv-item:last-child{border-bottom:none}
   .iv-item:active{background:#f9fafb}
-  .iv-name{font-size:14px;font-weight:600;color:${C.text};overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .iv-name{font-size:14px;font-weight:600;color:${C.text};overflow-wrap:anywhere}
   .iv-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:${C.text3};margin-top:3px}
   .iv-qty{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
   .iv-unit{font-size:12px;font-weight:400;color:${C.text3}}
-  .iv-min{font-size:11.5px;color:${C.text4};margin-top:2px}
-  .iv-table-wrap{background:white;border:1px solid ${C.border};border-radius:12px;overflow:hidden}
-  .iv-table{width:100%;border-collapse:collapse}
-  .iv-table th{text-align:right;padding:10px 16px;font-size:12px;font-weight:600;color:${C.text3};background:#f9fafb;border-bottom:1px solid ${C.border};white-space:nowrap}
-  .iv-table td{padding:12px 16px;border-bottom:1px solid ${C.border};font-size:13px;color:${C.text};vertical-align:middle}
-  .iv-table tbody tr{cursor:pointer}
-  .iv-table tbody tr:hover td{background:#f9fafb}
-  .iv-table tbody tr:last-child td{border-bottom:none}
-  .iv-act{border:none;background:none;padding:4px 8px;font-family:inherit;font-size:13px;font-weight:500;color:${C.text2};cursor:pointer;border-radius:6px}
-  .iv-act:hover{background:#f2f4f7}
-  @media(min-width:768px){.iv-sheet-wrap{align-items:center!important;padding:20px}.iv-sheet{border-radius:14px!important}}
+  .iv-min{font-size:${storelyTokens.typography.supporting}px;color:${C.text4};margin-top:2px}
+  .iv-sheet-wrap{position:fixed;inset:0;background:${storelyTokens.color.backdrop};z-index:500;display:flex;align-items:flex-end;justify-content:center}
+  .iv-sheet{width:100%;max-width:520px;max-height:92dvh;display:flex;flex-direction:column;overflow:hidden;border-end-start-radius:0;border-end-end-radius:0;padding-bottom:env(safe-area-inset-bottom);animation:slideUp .25s ease;direction:rtl}
+  .iv-sheet form{min-width:0}
+  @media(min-width:768px){.iv-sheet-wrap{align-items:center;padding:${storelyTokens.spacing[5]}px}.iv-sheet{border-radius:${storelyTokens.radius.panel}}}
 `
 

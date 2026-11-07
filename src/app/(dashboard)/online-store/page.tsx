@@ -1,11 +1,121 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import PageIcon from '@/components/PageIcon'
+import { StorelyPageHeader } from '@/components/ui/page-header'
+import { StorelyButton } from '@/components/ui/button'
+import { StorelyCard } from '@/components/ui/card'
+import { StorelyFormField } from '@/components/ui/form-field'
+import { storelyTokens as T } from '@/components/ui/design-tokens'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { getOrgId } from '@/lib/session'
-import { colors, font, card, btnPrimary, pageTitle, pageSub, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
+
+
+const ONLINE_STYLES = `
+  .online-page,.os-access,.os-loading{font-family:${T.typography.family};direction:rtl;color:${T.color.text};line-height:${T.typography.lineHeight}}
+  .online-page{max-width:1200px;margin:0 auto;padding:${T.spacing[6]}px;min-width:0;background:${T.color.background};border-radius:${T.radius.panel};font-size:${T.typography.body}px}
+  .online-page *,.os-access *{box-sizing:border-box}
+  .online-page>header{margin-bottom:${T.spacing[6]}px}
+  .online-page>header h1{font-size:${T.typography.title}px;line-height:1.6}
+  .online-page>header p{font-size:${T.typography.body}px;line-height:${T.typography.lineHeight}}
+  .online-page .os-workspace{padding:${T.spacing[6]}px;margin-bottom:${T.spacing[6]}px;border-color:${T.color.border};border-radius:${T.radius.card};background:${T.color.surface};min-width:0;overflow:visible}
+  .os-section-title{font-size:${T.typography.section}px;font-weight:600;color:${T.color.text};line-height:${T.typography.lineHeight};margin-bottom:${T.spacing[3]}px}
+  .os-supporting{font-size:${T.typography.supporting}px;line-height:1.8;color:${T.color.textMuted}}
+  .os-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:${T.spacing[6]}px}
+  .os-settings>.os-section-title,.os-settings>.os-hours,.os-settings>.os-check-label,.os-settings>.os-actions,.os-settings>.os-field-group:has(.os-url-row),.os-settings>.os-field-group:has(.os-colors),.os-settings>.os-field-group:has(.os-section-header){grid-column:1/-1}
+  .os-settings>.os-section-title{margin-bottom:0;padding-bottom:${T.spacing[5]}px;border-bottom:1px solid ${T.color.border}}
+  .os-field-group{min-width:0}
+  .os-field-group .os-supporting{margin-top:${T.spacing[2]}px}
+  .online-page .os-control{width:100%;min-width:0;height:44px;padding:${T.spacing[2]}px ${T.spacing[3]}px;border:1px solid ${T.color.infoBorder};border-radius:${T.radius.control};background:${T.color.surface};color:${T.color.text};font-family:inherit;font-size:${T.typography.body}px;line-height:${T.typography.lineHeight}}
+  .online-page .os-control::placeholder{color:${T.color.textSubtle};opacity:1}
+  .online-page .os-control:focus-visible,.online-page button:focus-visible,.online-page .os-check:focus-visible{outline:2px solid ${T.color.navy};outline-offset:2px;box-shadow:${T.shadow.focus}}
+  .online-page .os-textarea{height:auto;min-height:80px;resize:vertical;display:block;margin-block:${T.spacing[4]}px}
+  .online-page input[type=number],.online-page input[type=time]{font-variant-numeric:tabular-nums;direction:ltr}
+  .online-page input[type=number]{text-align:right}
+  .online-page label{font-size:${T.typography.supporting}px;line-height:${T.typography.lineHeight};color:${T.color.textMuted}}
+  .os-label{display:block;font-weight:600;margin-bottom:${T.spacing[2]}px}
+  .os-url-row{display:flex;align-items:center;gap:${T.spacing[3]}px;direction:ltr}
+  .os-url-row>.os-control{flex:1;min-width:0}
+  .os-url-prefix{font-size:${T.typography.supporting}px;color:${T.color.textMuted};white-space:nowrap}
+  .online-page .os-button,.os-access .os-button{display:inline-flex;align-items:center;justify-content:center;gap:${T.spacing[2]}px;min-height:40px;height:auto;max-width:100%;padding:${T.spacing[2]}px ${T.spacing[4]}px;border:1px solid ${T.color.infoBorder};border-radius:${T.radius.control};background:${T.color.surface};color:${T.color.navy};font-family:inherit;font-size:${T.typography.body}px;font-weight:600;line-height:1.6;white-space:normal;text-decoration:none;cursor:pointer;box-shadow:none}
+  .online-page .os-button:hover:not(:disabled){background:${T.color.infoBg};border-color:${T.color.infoBorder}}
+  .online-page .os-button:disabled{opacity:.5;cursor:not-allowed}
+  .online-page .os-primary,.os-access .os-primary{border-color:${T.color.navy};background:${T.color.navy};color:${T.color.surface}}
+  .online-page .os-primary:hover:not(:disabled){border-color:${T.color.navy};background:${T.color.navy};color:${T.color.surface}}
+  .online-page .os-danger{border-color:${T.color.dangerBorder};background:${T.color.surface};color:${T.color.danger}}
+  .online-page .os-danger:hover:not(:disabled){background:${T.color.dangerBg};border-color:${T.color.dangerBorder}}
+  .os-actions{display:flex;align-items:stretch;flex-wrap:wrap;gap:${T.spacing[2]}px}
+  .os-settings>.os-actions{padding-top:${T.spacing[5]}px;border-top:1px solid ${T.color.border}}
+  .os-colors{display:flex;align-items:center;flex-wrap:wrap;gap:${T.spacing[2]}px}
+  .os-color-swatch,.os-color-picker{width:36px;height:36px;flex-shrink:0;border:1px solid ${T.color.border};border-radius:${T.radius.control};padding:0;cursor:pointer}
+  .os-section-header{display:flex;align-items:center;justify-content:space-between;gap:${T.spacing[3]}px;flex-wrap:wrap;margin-bottom:${T.spacing[3]}px}
+  .os-section-header>.os-label{margin-bottom:0}
+  .os-stack{display:flex;flex-direction:column;gap:${T.spacing[3]}px;min-width:0}
+  .os-link-row{display:grid;grid-template-columns:160px minmax(0,1fr) 40px;gap:${T.spacing[2]}px;align-items:start}
+  .online-page .os-remove-link{width:40px;min-height:44px;padding:0}
+  .os-hours{padding-block:${T.spacing[5]}px;border-block:1px solid ${T.color.border}}
+  .os-hour-options{display:flex;align-items:center;flex-wrap:wrap;gap:${T.spacing[5]}px;margin-top:${T.spacing[4]}px;margin-bottom:${T.spacing[4]}px}
+  .os-check-label{display:flex;align-items:flex-start;gap:${T.spacing[2]}px;cursor:pointer;font-size:${T.typography.body}px!important;line-height:${T.typography.lineHeight}}
+  .os-check{width:16px;height:16px;flex-shrink:0;margin-top:${T.spacing[1]}px;accent-color:${T.color.navy}}
+  .os-time-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:${T.spacing[4]}px;max-width:500px}
+  .os-qr{display:flex;align-items:center;flex-wrap:wrap;gap:${T.spacing[6]}px}
+  .os-qr-image{width:130px;height:130px;object-fit:contain;background:${T.color.surface};border:1px solid ${T.color.border};border-radius:${T.radius.control};flex-shrink:0}
+  .os-qr-description{flex:1;min-width:0;flex-basis:260px}
+  .os-qr-description>.os-supporting{margin-bottom:${T.spacing[4]}px}
+  .os-products>.os-field-group{font-size:${T.typography.supporting}px;color:${T.color.textMuted};line-height:1.8;margin-bottom:${T.spacing[6]}px}
+  .os-category{border-radius:${T.radius.control};min-width:0;transition:opacity .15s}
+  .os-category-header{display:flex;align-items:center;flex-wrap:wrap;gap:${T.spacing[2]}px;margin-bottom:${T.spacing[3]}px;padding-bottom:${T.spacing[3]}px;border-bottom:1px solid ${T.color.border}}
+  .online-page .os-category-name{width:auto;min-width:0;flex:1 1 160px;max-width:360px;font-size:${T.typography.section}px;font-weight:600;border-color:transparent;padding-inline:${T.spacing[2]}px}
+  .os-drag-handle{display:inline-flex;align-items:center;justify-content:center;width:24px;min-height:32px;flex-shrink:0;cursor:grab;color:${T.color.textMuted};font-size:18px;touch-action:none;user-select:none}
+  .os-product-row{display:grid;grid-template-columns:24px 28px 48px minmax(0,1fr) auto auto;align-items:center;gap:${T.spacing[3]}px;padding:${T.spacing[4]}px ${T.spacing[3]}px;border-radius:${T.radius.control};min-width:0;transition:opacity .15s}
+  .os-move-controls{display:flex;flex-direction:column;gap:${T.spacing[1]}px}
+  .online-page .os-move-button{width:28px;height:28px;min-height:28px;padding:0;font-size:10px}
+  .os-product-thumb{width:48px;height:48px;border-radius:${T.radius.control};overflow:hidden;display:flex;align-items:center;justify-content:center;background:${T.color.background}}
+  .os-product-identity{min-width:0;overflow-wrap:anywhere}
+  .os-product-name{font-size:16px;font-weight:600;line-height:${T.typography.lineHeight};overflow-wrap:anywhere}
+  .os-product-identity>.os-supporting{margin-top:${T.spacing[1]}px}
+  .online-page .os-row-action{min-height:36px;padding:${T.spacing[2]}px ${T.spacing[3]}px;font-size:${T.typography.supporting}px}
+  .os-image{display:block;width:100%;height:100%;object-fit:cover}
+  .os-edit-product{padding:${T.spacing[5]}px;border:1px solid ${T.color.infoBorder};border-radius:${T.radius.control};background:${T.color.surface}}
+  .os-product-fields{display:grid;grid-template-columns:80px minmax(0,1fr);gap:${T.spacing[4]}px;align-items:start}
+  .os-product-fields .os-stack>div>.os-control+.os-control{margin-top:${T.spacing[3]}px}
+  .os-upload-preview{width:80px;height:80px;border:1px dashed ${T.color.infoBorder};border-radius:${T.radius.control};background:${T.color.surface};display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:${T.spacing[2]}px}
+  .os-upload-label{display:inline-block;color:${T.color.info}!important;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+  .os-file{display:none}
+  .os-edit-product>.os-check-label,.os-new-product>.os-check-label{margin-block:${T.spacing[4]}px}
+  .os-new-product{margin-top:${T.spacing[6]}px;padding-top:${T.spacing[6]}px;border-top:1px solid ${T.color.border}}
+  .os-new-product>.os-field-group{margin-bottom:${T.spacing[5]}px}
+  .os-new-product>.os-section-title{font-size:${T.typography.section}px}
+  .os-new-product .os-actions>.os-control{flex:1 1 200px}
+  .online-page .os-full{width:100%}
+  .os-access{max-width:520px;margin:${T.spacing[8]}px auto;padding:${T.spacing[8]}px ${T.spacing[6]}px;background:${T.color.surface};border:1px solid ${T.color.border};border-radius:${T.radius.card};text-align:center}
+  .os-access-icon{font-size:32px;margin-bottom:${T.spacing[4]}px}
+  .os-access>.os-supporting{margin-bottom:${T.spacing[5]}px;font-size:${T.typography.body}px}
+  .os-loading{padding:${T.spacing[8]}px;text-align:center;font-size:${T.typography.body}px;color:${T.color.textMuted}}
+  @media(max-width:760px){.os-settings{grid-template-columns:minmax(0,1fr)}}
+  @media(max-width:640px){
+    .online-page{padding:${T.spacing[4]}px}
+    .online-page .os-workspace{padding:${T.spacing[5]}px}
+    .os-settings{gap:${T.spacing[5]}px}
+    .os-url-row{flex-wrap:wrap;gap:${T.spacing[2]}px}
+    .os-url-row>.os-control{flex-basis:100%}
+    .os-link-row{grid-template-columns:minmax(0,1fr) 40px}
+    .os-link-row>.os-select{grid-column:1/-1}
+    .os-colors>.os-button{flex-basis:100%}
+    .os-product-row{grid-template-columns:20px 28px 40px minmax(0,1fr);gap:${T.spacing[2]}px;padding:${T.spacing[3]}px ${T.spacing[2]}px}
+    .os-product-thumb{width:40px;height:40px}
+    .os-product-row>.os-row-action:nth-last-child(2){grid-column:1/3}
+    .os-product-row>.os-row-action:last-child{grid-column:3/-1}
+    .os-product-fields{grid-template-columns:64px minmax(0,1fr);gap:${T.spacing[3]}px}
+    .os-upload-preview{width:64px;height:64px}
+    .os-qr{align-items:flex-start}
+    .os-qr-description{flex-basis:100%}
+    .os-edit-product{padding:${T.spacing[4]}px}
+    .os-actions>.os-button{flex:1 1 120px}
+    .os-time-fields{gap:${T.spacing[3]}px}
+  }
+  @media(prefers-reduced-motion:reduce){.online-page *{transition:none!important}}
+`
 
 export default function OnlineStorePage() {
   const [orgId, setOrgId] = useState('')
@@ -369,216 +479,210 @@ export default function OnlineStorePage() {
   const shownCount = products.filter(p => p.show_on_shop).length
   const previewUrl = slug && typeof window !== 'undefined' ? `${window.location.origin}/shop/${slug}` : ''
 
-  if (loading) return <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontFamily: font.family }}>جاري التحميل...</div>
+  if (loading) return <div className="os-loading"><style>{ONLINE_STYLES}</style>جاري التحميل...</div>
 
   if (hasSubscription === false) {
     return (
-      <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 480, margin: '80px auto', textAlign: 'center' as const, ...card, padding: 40 }}>
-        <div style={{ fontSize: 44, marginBottom: 14 }}>📋</div>
-        <div style={{ fontSize: 18, fontWeight: 800, color: colors.text, marginBottom: 8 }}>ميزة "المنتجات" غير مفعّلة</div>
-        <div style={{ fontSize: 13, color: colors.text3, lineHeight: 1.8, marginBottom: 20 }}>
+      <div className="os-access">
+        <style>{ONLINE_STYLES}</style>
+        <div className="os-access-icon">📋</div>
+        <div className="os-section-title">ميزة "المنتجات" غير مفعّلة</div>
+        <div className="os-supporting">
           <span className="hide-in-app">اشترك بميزة المنيو الإلكتروني من الإضافات عشان تقدر تبني صفحة منتجاتك العامة</span>
         </div>
-        <a className="hide-in-app" href="/addons-market" style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '12px 28px' }}>روح لالإضافات</a>
+        <a className="hide-in-app os-button os-primary" href="/addons-market" >روح لالإضافات</a>
       </div>
     )
   }
 
   return (
-    <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 900, margin: '0 auto' }}>
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={pageTitle}><PageIcon/>المنيو الإلكتروني</h1>
-        <p style={pageSub}>ابنِ صفحة عامة تعرض منتجاتك للعملاء — بالسعر والوصف والصورة</p>
-      </div>
+    <div className="online-page">
+      <style>{ONLINE_STYLES}</style>
+      <StorelyPageHeader
+        title="المنيو الإلكتروني"
+        description="ابنِ صفحة عامة تعرض منتجاتك للعملاء — بالسعر والوصف والصورة"
+      />
 
-      <div style={{ ...card, padding: '20px', marginBottom: 16 }}>
-        <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 14 }}>إعدادات المتجر</div>
+      <StorelyCard className="os-workspace os-settings">
+        <div className="os-section-title">إعدادات المتجر</div>
 
-        <div style={{ marginBottom: 14 }}>
-          <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }}>رابط المتجر</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 12, color: colors.text4, whiteSpace: 'nowrap' as const }}>storely.dev/shop/</span>
-            <input value={slug} onChange={e => setSlug(e.target.value)} placeholder="اسم-منشأتك" style={{ ...inp(), flex: 1 }} dir="ltr" />
+        <StorelyFormField className="os-field-group" label={<>رابط المتجر</>}>
+          <div className="os-url-row">
+            <span className="os-url-prefix">storely.dev/shop/</span>
+            <input className="os-control" value={slug} onChange={e => setSlug(e.target.value)} placeholder="اسم-منشأتك"  dir="ltr" />
           </div>
-        </div>
+        </StorelyFormField>
 
-        <div style={{ marginBottom: 14 }}>
-          <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }}>اسم يظهر بالمتجر (اختياري)</label>
-          <input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder={orgName || 'اسم منشأتك التجاري'} style={{ ...inp(), width: '100%' }} />
-          <div style={{ fontSize: 10, color: colors.text4, marginTop: 4 }}>لو تركته فاضي، بيظهر اسم منشأتك المسجّل ({orgName})</div>
-        </div>
+        <StorelyFormField className="os-field-group" label={<>اسم يظهر بالمتجر (اختياري)</>} htmlFor="online-field-2">
+          <input id="online-field-2" className="os-control" value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder={orgName || 'اسم منشأتك التجاري'}  />
+          <div className="os-supporting">لو تركته فاضي، بيظهر اسم منشأتك المسجّل ({orgName})</div>
+        </StorelyFormField>
 
-        <div style={{ marginBottom: 14 }}>
-          <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }}>وصف قصير (اختياري)</label>
-          <input value={tagline} onChange={e => setTagline(e.target.value)} placeholder="مثال: أشهى المخبوزات الطازجة يومياً" style={{ ...inp(), width: '100%' }} />
-        </div>
+        <StorelyFormField className="os-field-group" label={<>وصف قصير (اختياري)</>} htmlFor="online-field-3">
+          <input id="online-field-3" className="os-control" value={tagline} onChange={e => setTagline(e.target.value)} placeholder="مثال: أشهى المخبوزات الطازجة يومياً"  />
+        </StorelyFormField>
 
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 8 }}>لون المتجر</label>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, alignItems: 'center' }}>
+        <StorelyFormField className="os-field-group" label={<>لون المتجر</>}>
+          <div className="os-colors">
             {['#203640', '#0369a1', '#b91c1c', '#7c2d12', '#717553', '#203640', '#be185d', '#a16207'].map(c => (
-              <button key={c} onClick={() => setShopColor(c)} style={{ width: 32, height: 32, borderRadius: 10, background: c, border: shopColor === c ? '3px solid #203640' : '1px solid #E7E1D8', cursor: 'pointer', boxShadow: shopColor === c ? '0 0 0 2px white inset' : 'none' }} />
+              <button className="os-color-swatch" key={c} onClick={() => setShopColor(c)} style={{background:c,borderWidth:shopColor===c?3:1,borderColor:shopColor===c?T.color.navy:T.color.border,boxShadow:shopColor===c?`0 0 0 2px ${T.color.surface} inset`:'none'}} />
             ))}
-            <input type="color" value={shopColor} onChange={e => setShopColor(e.target.value)} style={{ width: 32, height: 32, borderRadius: 10, border: '1px solid #E7E1D8', cursor: 'pointer', padding: 0 }} />
-            <button onClick={suggestColorFromLogo} disabled={suggestingColor} style={{ padding: '0 14px', height: 32, borderRadius: 10, border: `1.5px solid ${colors.infoBorder}`, background: colors.infoLight, color: colors.info, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
+            <input className="os-color-picker" type="color" value={shopColor} onChange={e => setShopColor(e.target.value)}  />
+            <StorelyButton className="os-button" onClick={suggestColorFromLogo} disabled={suggestingColor}>
               {suggestingColor ? '⏳ جاري التحليل...' : '🎨 اقترح من الشعار'}
-            </button>
+            </StorelyButton>
           </div>
-        </div>
+        </StorelyFormField>
 
         {/* روابط خارجية */}
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <label style={{ fontSize: 11, fontWeight: 700, color: colors.text3 }}>روابط خارجية (اختياري)</label>
-            <button onClick={addLink} style={{ fontSize: 11, fontWeight: 700, color: colors.primary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family }}>+ إضافة رابط</button>
+        <div className="os-field-group">
+          <div className="os-section-header">
+            <label className="os-label">روابط خارجية (اختياري)</label>
+            <StorelyButton className="os-button" onClick={addLink}>+ إضافة رابط</StorelyButton>
           </div>
           {links.length === 0 ? (
-            <div style={{ fontSize: 11, color: colors.text4 }}>مافيش روابط — أضف إنستقرام، تيك توك، سناب شات، واتساب، أو قوقل ماب</div>
+            <div className="os-supporting">مافيش روابط — أضف إنستقرام، تيك توك، سناب شات، واتساب، أو قوقل ماب</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+            <div className="os-stack">
               {links.map((l, i) => (
-                <div key={i} style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <select value={l.type} onChange={e => updateLink(i, { type: e.target.value })} style={{ ...inp(), width: 150 }}>
+                <div className="os-stack" key={i}>
+                  <div className="os-link-row">
+                    <select className="os-control os-select" value={l.type} onChange={e => updateLink(i, { type: e.target.value })} >
                       {PLATFORMS.map(p => <option key={p.v} value={p.v}>{p.l}</option>)}
                     </select>
-                    <input value={l.url} onChange={e => updateLink(i, { url: e.target.value })} placeholder={l.type==='whatsapp'?'https://wa.me/9665xxxxxxxx':'https://...'} style={{ ...inp(), flex: 1 }} dir="ltr" />
-                    <button onClick={() => removeLink(i)} style={{ padding: '0 10px', borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', fontSize: 12 }}>✕</button>
+                    <input className="os-control" value={l.url} onChange={e => updateLink(i, { url: e.target.value })} placeholder={l.type==='whatsapp'?'https://wa.me/9665xxxxxxxx':'https://...'}  dir="ltr" />
+                    <StorelyButton className="os-button os-danger os-remove-link" variant="danger" onClick={() => removeLink(i)}>✕</StorelyButton>
                   </div>
                   {l.type === 'website' && (
-                    <input value={l.label} onChange={e => updateLink(i, { label: e.target.value })} placeholder="اسم يظهر للرابط (مثال: الموقع الرسمي)" style={{ ...inp(), width: '100%' }} />
+                    <input className="os-control" value={l.label} onChange={e => updateLink(i, { label: e.target.value })} placeholder="اسم يظهر للرابط (مثال: الموقع الرسمي)"  />
                   )}
                 </div>
               ))}
             </div>
           )}
         </div>
-
-        <div style={{ marginBottom: 16, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14 }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: hoursEnabled ? 12 : 0, cursor: 'pointer', fontSize: 12, fontWeight: 700, color: colors.text2 }}>
-            <input type="checkbox" checked={hoursEnabled} onChange={e => setHoursEnabled(e.target.checked)} />
+        <div className="os-hours">
+          <label className="os-check-label">
+            <input className="os-check" type="checkbox" checked={hoursEnabled} onChange={e => setHoursEnabled(e.target.checked)} />
             عرض حالة "مفتوح/مغلق" بالمتجر
           </label>
           {hoursEnabled && (
             <div>
-              <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer' }}>
-                  <input type="radio" checked={hours24} onChange={() => setHours24(true)} /> يفتح 24 ساعة
+              <div className="os-hour-options">
+                <label className="os-check-label">
+                  <input className="os-check" type="radio" checked={hours24} onChange={() => setHours24(true)} /> يفتح 24 ساعة
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer' }}>
-                  <input type="radio" checked={!hours24} onChange={() => setHours24(false)} /> أوقات محددة
+                <label className="os-check-label">
+                  <input className="os-check" type="radio" checked={!hours24} onChange={() => setHours24(false)} /> أوقات محددة
                 </label>
               </div>
               {!hours24 && (
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <div><label style={{ fontSize: 10, color: colors.text4, display: 'block', marginBottom: 3 }}>يفتح</label><input type="time" value={openTime} onChange={e => setOpenTime(e.target.value)} style={{ ...inp() }} /></div>
-                  <div><label style={{ fontSize: 10, color: colors.text4, display: 'block', marginBottom: 3 }}>يغلق</label><input type="time" value={closeTime} onChange={e => setCloseTime(e.target.value)} style={{ ...inp() }} /></div>
+                <div className="os-time-fields">
+                  <StorelyFormField label={<>يفتح</>} htmlFor="online-field-5"><input id="online-field-5" className="os-control" type="time" value={openTime} onChange={e => setOpenTime(e.target.value)}  /></StorelyFormField>
+                  <StorelyFormField label={<>يغلق</>} htmlFor="online-field-6"><input id="online-field-6" className="os-control" type="time" value={closeTime} onChange={e => setCloseTime(e.target.value)}  /></StorelyFormField>
                 </div>
               )}
             </div>
           )}
         </div>
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: colors.text2 }}>
-          <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} />
+        <label className="os-check-label">
+          <input className="os-check" type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} />
           تفعيل المتجر ونشره للعامة
         </label>
-
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={saveShopSettings} disabled={saving} style={{ ...btnPrimary, flex: 1 }}>{saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}</button>
+        <div className="os-actions">
+          <StorelyButton className="os-button os-primary" variant="primary" onClick={saveShopSettings} disabled={saving}>{saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}</StorelyButton>
           {previewUrl && (
-            <a href={previewUrl} target="_blank" rel="noopener noreferrer" style={{ padding: '10px 20px', borderRadius: 10, border: `1.5px solid ${colors.border2}`, color: colors.text2, fontSize: 13, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+            <a className="os-button" href={previewUrl} target="_blank" rel="noopener noreferrer" >
               👁️ معاينة
             </a>
           )}
         </div>
-      </div>
+      </StorelyCard>
 
       {previewUrl && enabled && (
-        <div style={{ ...card, padding: '20px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' as const }}>
-          <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(previewUrl)}`} alt="QR" style={{ width: 130, height: 130, borderRadius: 12, border: `1px solid ${colors.border}` }} />
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 6 }}>رمز QR لمتجرك</div>
-            <div style={{ fontSize: 11, color: colors.text4, marginBottom: 12, lineHeight: 1.7 }}>اطبعه وحطّه على الطاولات أو ملصقات المحل — العميل يمسحه ويوصل لمنتجاتك مباشرة</div>
-            <a href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(previewUrl)}`} download={`qr-${slug}.png`} style={{ ...btnPrimary, display: 'inline-block', textDecoration: 'none', padding: '9px 18px', fontSize: 12 }}>
+        <StorelyCard className="os-workspace os-qr">
+          <img className="os-qr-image" src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(previewUrl)}`} alt="QR"  />
+          <div className="os-qr-description">
+            <div className="os-section-title">رمز QR لمتجرك</div>
+            <div className="os-supporting">اطبعه وحطّه على الطاولات أو ملصقات المحل — العميل يمسحه ويوصل لمنتجاتك مباشرة</div>
+            <a className="os-button os-primary" href={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(previewUrl)}`} download={`qr-${slug}.png`} >
               ⬇️ تحميل بجودة عالية
             </a>
           </div>
-        </div>
+        </StorelyCard>
       )}
 
       {/* منتجات المتجر */}
-      <div style={{ ...card, padding: '20px' }}>
-        <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text, marginBottom: 4 }}>منتجات المتجر</div>
-        <div style={{ fontSize: 11, color: colors.text4, marginBottom: 14 }}>أنشئ قسم (مثل "مشروبات حارة")، وأضف كل منتج جواه بصورته واسمه وسعره ووصفه</div>
+      <StorelyCard className="os-workspace os-products">
+        <div className="os-section-title">منتجات المتجر</div>
+        <div className="os-field-group">أنشئ قسم (مثل "مشروبات حارة")، وأضف كل منتج جواه بصورته واسمه وسعره ووصفه</div>
 
         {shopItems.length > 0 && (() => {
           const grouped: Record<string, any[]> = {}
           shopItems.forEach((it: any) => { const c = it.category || 'منتجات خارجية'; if (!grouped[c]) grouped[c] = []; grouped[c].push(it) })
           return (
-            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 18, marginBottom: 16 }}>
+            <div className="os-stack">
               {Object.entries(grouped).map(([cat, items]) => (
-                <div key={cat}
+                <div className="os-category" key={cat}
                   onPointerEnter={() => { if (draggingCat && draggingCat !== cat) setDragOverCat(cat) }}
-                  style={{ opacity: draggingCat === cat ? 0.4 : 1, border: dragOverCat === cat && draggingCat ? `2px dashed ${colors.primary}` : '2px dashed transparent', borderRadius: 12, padding: dragOverCat === cat && draggingCat ? 6 : 0, transition: 'opacity .15s' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                    <span onPointerDown={e => startCatLongPress(e, cat)} onPointerMove={watchForScroll} onPointerUp={cancelLongPress}
-                      style={{ cursor: 'grab', fontSize: 16, color: colors.text4, touchAction: 'none', userSelect: 'none' as const, padding: '2px 4px' }}>⠿</span>
-                    <input value={catEdits[cat] ?? cat} onChange={e => setCatEdits(prev => ({ ...prev, [cat]: e.target.value }))}
+                  style={{opacity:draggingCat === cat ? 0.4 : 1,border:dragOverCat === cat && draggingCat ? `2px dashed ${T.color.navy}` : '2px dashed transparent',padding:dragOverCat === cat && draggingCat ? 6 : 0}}>
+                  <div className="os-category-header">
+                    <span className="os-drag-handle" onPointerDown={e => startCatLongPress(e, cat)} onPointerMove={watchForScroll} onPointerUp={cancelLongPress}
+                      style={{touchAction:'none',userSelect:'none' as const}}>⠿</span>
+                    <input className="os-control os-category-name" value={catEdits[cat] ?? cat} onChange={e => setCatEdits(prev => ({ ...prev, [cat]: e.target.value }))}
                       onBlur={() => renameCategory(cat)} onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
-                      style={{ ...inp(), fontWeight: 800, fontSize: 13, border: 'none', background: 'transparent', padding: '4px 6px', width: 220 }} />
-                    {savingCat === cat && <span style={{ fontSize: 10, color: colors.text4 }}>جاري الحفظ...</span>}
+                       />
+                    {savingCat === cat && <span className="os-supporting">جاري الحفظ...</span>}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+                  <div className="os-stack">
                     {items.map((it: any, j: number) => (
                       editingId === it.id ? (
-                        <div key={it.id} style={{ border: `1.5px solid ${colors.primaryBorder}`, borderRadius: 12, padding: 14, background: colors.primaryLight }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 12, marginBottom: 10 }}>
+                        <div className="os-edit-product" key={it.id}>
+                          <div className="os-product-fields">
                             <div>
-                              <div style={{ width: 80, height: 80, borderRadius: 10, background: colors.surface, border: `1px dashed ${colors.border2}`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: 6 }}>
-                                {editForm.image_url ? <img src={editForm.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 20, opacity: .3 }}>📦</span>}
+                              <div className="os-upload-preview">
+                                {editForm.image_url ? <img className="os-image" src={editForm.image_url}  /> : <span className="os-supporting" style={{opacity:.3}}>📦</span>}
                               </div>
-                              <label style={{ fontSize: 10, color: colors.info, cursor: 'pointer', textDecoration: 'underline' }}>
+                              <label className="os-upload-label">
                                 {uploadingEditImg ? 'جاري الرفع...' : 'تغيير الصورة'}
-                                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadEditImage(f) }} />
+                                <input className="os-file" type="file" accept="image/*"  onChange={e => { const f = e.target.files?.[0]; if (f) uploadEditImage(f) }} />
                               </label>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
-                              <input placeholder="اسم المنتج" value={editForm.name} onChange={e => setEditForm((p:any) => ({ ...p, name: e.target.value }))} style={{ ...inp(), width: '100%' }} />
-                              <input type="number" placeholder="السعر" value={editForm.price} onChange={e => setEditForm((p:any) => ({ ...p, price: e.target.value }))} style={{ ...inp(), width: '100%' }} />
+                            <div className="os-stack">
+                              <input className="os-control" placeholder="اسم المنتج" value={editForm.name} onChange={e => setEditForm((p:any) => ({ ...p, name: e.target.value }))}  />
+                              <input className="os-control" type="number" placeholder="السعر" value={editForm.price} onChange={e => setEditForm((p:any) => ({ ...p, price: e.target.value }))}  />
                             </div>
                           </div>
-                          <textarea placeholder="وصف قصير..." value={editForm.description} onChange={e => setEditForm((p:any) => ({ ...p, description: e.target.value }))} rows={2} style={{ ...inp(), width: '100%', resize: 'vertical' as const, marginBottom: 10 }} />
-                          <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: colors.text2 }}>
-                            <input type="checkbox" checked={!!editForm.is_featured} onChange={e => setEditForm((p:any) => ({ ...p, is_featured: e.target.checked }))} />
+                          <textarea className="os-control os-textarea" placeholder="وصف قصير..." value={editForm.description} onChange={e => setEditForm((p:any) => ({ ...p, description: e.target.value }))} rows={2}  />
+                          <label className="os-check-label">
+                            <input className="os-check" type="checkbox" checked={!!editForm.is_featured} onChange={e => setEditForm((p:any) => ({ ...p, is_featured: e.target.checked }))} />
                             ⭐ وسم "الأكثر مبيعاً"
                           </label>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <button onClick={saveEdit} disabled={savingEdit} style={{ ...btnPrimary, flex: 1 }}>{savingEdit ? 'جاري الحفظ...' : 'حفظ التعديل'}</button>
-                            <button onClick={() => setEditingId(null)} style={{ padding: '10px 18px', borderRadius: 10, border: `1px solid ${colors.border2}`, background: 'white', color: colors.text2, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>إلغاء</button>
+                          <div className="os-actions">
+                            <StorelyButton className="os-button os-primary" variant="primary" onClick={saveEdit} disabled={savingEdit}>{savingEdit ? 'جاري الحفظ...' : 'حفظ التعديل'}</StorelyButton>
+                            <StorelyButton className="os-button" onClick={() => setEditingId(null)}>إلغاء</StorelyButton>
                           </div>
                         </div>
                       ) : (
-                        <div key={it.id}
+                        <div className="os-product-row" key={it.id}
                           onPointerEnter={() => { if (draggingItem && draggingItem.cat === cat && draggingItem.id !== it.id) setDragOverItem(it.id) }}
-                          style={{ display: 'flex', alignItems: 'center', gap: 12, border: dragOverItem === it.id && draggingItem ? `1.5px dashed ${colors.primary}` : `1px solid ${colors.border}`, borderRadius: 12, padding: 12, opacity: draggingItem?.id === it.id ? 0.4 : 1, transition: 'opacity .15s' }}>
-                          <span onPointerDown={e => startItemLongPress(e, it.id, cat)} onPointerMove={watchForScroll} onPointerUp={cancelLongPress}
-                            style={{ cursor: 'grab', fontSize: 15, color: colors.text4, touchAction: 'none', userSelect: 'none' as const, flexShrink: 0 }}>⠿</span>
-                          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 2, flexShrink: 0 }}>
-                            <button onClick={() => moveItem(cat, it.id, 'up')} disabled={j === 0}
-                              style={{ width: 22, height: 18, border: 'none', borderRadius: 5, background: j === 0 ? colors.bg : colors.surface, color: j === 0 ? colors.text4 : colors.text2, cursor: j === 0 ? 'not-allowed' : 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▲</button>
-                            <button onClick={() => moveItem(cat, it.id, 'down')} disabled={j === items.length - 1}
-                              style={{ width: 22, height: 18, border: 'none', borderRadius: 5, background: j === items.length - 1 ? colors.bg : colors.surface, color: j === items.length - 1 ? colors.text4 : colors.text2, cursor: j === items.length - 1 ? 'not-allowed' : 'pointer', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▼</button>
+                          style={{border:dragOverItem === it.id && draggingItem ? `1.5px dashed ${T.color.navy}` : `1px solid ${T.color.border}`,opacity:draggingItem?.id === it.id ? 0.4 : 1}}>
+                          <span className="os-drag-handle" onPointerDown={e => startItemLongPress(e, it.id, cat)} onPointerMove={watchForScroll} onPointerUp={cancelLongPress}
+                            style={{touchAction:'none',userSelect:'none' as const}}>⠿</span>
+                          <div className="os-move-controls">
+                            <StorelyButton className="os-button os-move-button" onClick={() => moveItem(cat, it.id, 'up')} disabled={j === 0}>▲</StorelyButton>
+                            <StorelyButton className="os-button os-move-button" onClick={() => moveItem(cat, it.id, 'down')} disabled={j === items.length - 1}>▼</StorelyButton>
                           </div>
-                          <div style={{ width: 48, height: 48, borderRadius: 8, background: colors.surface, flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            {it.image_url ? <img src={it.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 16, opacity: .3 }}>📦</span>}
+                          <div className="os-product-thumb">
+                            {it.image_url ? <img className="os-image" src={it.image_url}  /> : <span className="os-supporting" style={{opacity:.3}}>📦</span>}
                           </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{it.name}{it.is_featured && ' ⭐'}</div>
-                            {it.price != null && <div style={{ fontSize: 11, color: colors.text4 }}>{it.price} ر.س</div>}
+                          <div className="os-product-identity">
+                            <div className="os-product-name">{it.name}{it.is_featured && ' ⭐'}</div>
+                            {it.price != null && <div className="os-supporting">{it.price} ر.س</div>}
                           </div>
-                          <button onClick={() => startEdit(it)} style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${colors.infoBorder}`, background: colors.infoLight, color: colors.info, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>تعديل</button>
-                          <button onClick={() => deleteShopItem(it.id)} style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>حذف</button>
+                          <StorelyButton className="os-button os-row-action" onClick={() => startEdit(it)}>تعديل</StorelyButton>
+                          <StorelyButton className="os-button os-danger os-row-action" variant="danger" onClick={() => deleteShopItem(it.id)}>حذف</StorelyButton>
                         </div>
                       )
                     ))}
@@ -592,55 +696,52 @@ export default function OnlineStorePage() {
         {(() => {
           const existingCats = Array.from(new Set(shopItems.map((it: any) => it.category || 'منتجات خارجية')))
           return (
-            <div style={{ border: `1.5px dashed ${colors.border2}`, borderRadius: 12, padding: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: colors.text2, marginBottom: 10 }}>+ إضافة منتج خارجي جديد</div>
-
-              <div style={{ marginBottom: 10 }}>
-                <label style={{ fontSize: 10, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 5 }}>١) اختر القسم أو أنشئ قسم جديد *</label>
+            <div className="os-new-product">
+              <div className="os-section-title">+ إضافة منتج خارجي جديد</div>
+              <div className="os-field-group">
+                <label className="os-label">١) اختر القسم أو أنشئ قسم جديد *</label>
                 {!creatingNewCat ? (
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <select value={newItem.category} onChange={e => setNewItem(prev => ({ ...prev, category: e.target.value }))} style={{ ...inp(), flex: 1 }}>
+                  <div className="os-actions">
+                    <select className="os-control os-select" value={newItem.category} onChange={e => setNewItem(prev => ({ ...prev, category: e.target.value }))} >
                       <option value="">— اختر قسم —</option>
                       {existingCats.map(c => <option key={c as string} value={c as string}>{c as string}</option>)}
                     </select>
-                    <button onClick={() => { setCreatingNewCat(true); setNewItem(prev => ({ ...prev, category: '' })) }} style={{ padding: '0 14px', borderRadius: 8, border: `1.5px solid ${colors.primaryBorder}`, background: colors.primaryLight, color: colors.primary, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>+ قسم جديد</button>
+                    <StorelyButton className="os-button" onClick={() => { setCreatingNewCat(true); setNewItem(prev => ({ ...prev, category: '' })) }}>+ قسم جديد</StorelyButton>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input autoFocus placeholder="اسم القسم الجديد (مثال: المشروبات الباردة)" value={newItem.category} onChange={e => setNewItem(prev => ({ ...prev, category: e.target.value }))} style={{ ...inp(), flex: 1 }} />
+                  <div className="os-actions">
+                    <input className="os-control" autoFocus placeholder="اسم القسم الجديد (مثال: المشروبات الباردة)" value={newItem.category} onChange={e => setNewItem(prev => ({ ...prev, category: e.target.value }))}  />
                     {existingCats.length > 0 && (
-                      <button onClick={() => setCreatingNewCat(false)} style={{ padding: '0 14px', borderRadius: 8, border: `1px solid ${colors.border2}`, background: colors.bg, color: colors.text2, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>إلغاء</button>
+                      <StorelyButton className="os-button" onClick={() => setCreatingNewCat(false)}>إلغاء</StorelyButton>
                     )}
                   </div>
                 )}
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 12, marginBottom: 10 }}>
+              <div className="os-product-fields">
                 <div>
-                  <div style={{ width: 80, height: 80, borderRadius: 10, background: colors.surface, border: `1px dashed ${colors.border2}`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', marginBottom: 6 }}>
-                    {newItem.image_url ? <img src={newItem.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 20, opacity: .3 }}>📦</span>}
+                  <div className="os-upload-preview">
+                    {newItem.image_url ? <img className="os-image" src={newItem.image_url}  /> : <span className="os-supporting" style={{opacity:.3}}>📦</span>}
                   </div>
-                  <label style={{ fontSize: 10, color: colors.info, cursor: 'pointer', textDecoration: 'underline' }}>
+                  <label className="os-upload-label">
                     {uploadingNewItem ? 'جاري الرفع...' : 'رفع صورة'}
-                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadNewItemImage(f) }} />
+                    <input className="os-file" type="file" accept="image/*"  onChange={e => { const f = e.target.files?.[0]; if (f) uploadNewItemImage(f) }} />
                   </label>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
-                  <label style={{ fontSize: 10, fontWeight: 700, color: colors.text3 }}>٢) تفاصيل المنتج</label>
-                  <input placeholder="اسم المنتج *" value={newItem.name} onChange={e => setNewItem(prev => ({ ...prev, name: e.target.value }))} style={{ ...inp(), width: '100%' }} />
-                  <input type="number" placeholder="السعر (ر.س)" value={newItem.price} onChange={e => setNewItem(prev => ({ ...prev, price: e.target.value }))} style={{ ...inp(), width: '100%' }} />
-                </div>
+                <StorelyFormField className="os-stack" label={<>٢) تفاصيل المنتج</>} htmlFor="online-field-7">
+                  <input id="online-field-7" className="os-control" placeholder="اسم المنتج *" value={newItem.name} onChange={e => setNewItem(prev => ({ ...prev, name: e.target.value }))}  />
+                  <input className="os-control" type="number" placeholder="السعر (ر.س)" value={newItem.price} onChange={e => setNewItem(prev => ({ ...prev, price: e.target.value }))}  />
+                </StorelyFormField>
               </div>
-              <textarea placeholder="وصف قصير..." value={newItem.description} onChange={e => setNewItem(prev => ({ ...prev, description: e.target.value }))} rows={2} style={{ ...inp(), width: '100%', resize: 'vertical' as const, marginBottom: 10 }} />
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, color: colors.text2 }}>
-                <input type="checkbox" checked={newItem.is_featured} onChange={e => setNewItem(prev => ({ ...prev, is_featured: e.target.checked }))} />
+              <textarea className="os-control os-textarea" placeholder="وصف قصير..." value={newItem.description} onChange={e => setNewItem(prev => ({ ...prev, description: e.target.value }))} rows={2}  />
+              <label className="os-check-label">
+                <input className="os-check" type="checkbox" checked={newItem.is_featured} onChange={e => setNewItem(prev => ({ ...prev, is_featured: e.target.checked }))} />
                 ⭐ وسم "الأكثر مبيعاً"
               </label>
-              <button onClick={() => { if (!newItem.category.trim()) { toast('اختر أو اكتب اسم القسم أول', 'warning'); return } addShopItem() }} disabled={addingItem} style={{ ...btnPrimary, width: '100%' }}>{addingItem ? 'جاري الإضافة...' : '+ إضافة المنتج للقسم'}</button>
+              <StorelyButton className="os-button os-primary os-full" variant="primary" onClick={() => { if (!newItem.category.trim()) { toast('اختر أو اكتب اسم القسم أول', 'warning'); return } addShopItem() }} disabled={addingItem}>{addingItem ? 'جاري الإضافة...' : '+ إضافة المنتج للقسم'}</StorelyButton>
             </div>
           )
         })()}
-      </div>
+      </StorelyCard>
     </div>
   )
 }

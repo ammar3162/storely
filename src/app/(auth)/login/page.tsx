@@ -362,73 +362,74 @@ function LoginPage() {
   const phonePlaceholder = phoneRule.placeholder
 
   return (
-    <div className={`login-shell${mode==='register' ? ' register-shell' : ''}`} style={{minHeight:'100vh',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',background:'#ffffff',display:'flex',flexDirection:'column'}}>
+    <div className={`login-shell${mode==='register' ? ' register-shell' : ''}`} style={{minHeight:'100vh',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',background:"var(--storely-surface)",display:'flex',flexDirection:'column'}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap');
         *{box-sizing:border-box}
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
         @keyframes spin{to{transform:rotate(360deg)}}
-        .login-shell{background:#fff!important;color:#203640}
-        .login-nav{height:72px!important;padding:0 clamp(20px,4vw,56px)!important;border-bottom:1px solid #E7EAED!important;background:#fff!important}
-        .login-main{flex:1;display:grid!important;grid-template-columns:minmax(420px,0.95fr) minmax(420px,1.05fr);direction:ltr;background:#fff}
-        .login-form-wrap{padding:clamp(40px,6vw,72px) clamp(28px,5vw,72px)!important;background:#fff!important;direction:rtl;order:2}
+        .login-shell{background:var(--storely-surface)!important;color:var(--storely-text)}
+        .login-nav{height:72px!important;padding:0 clamp(20px,4vw,56px)!important;border-bottom:1px solid var(--storely-border)!important;background:var(--storely-surface)!important}
+        .login-main{flex:1;display:grid!important;grid-template-columns:minmax(420px,0.95fr) minmax(420px,1.05fr);direction:ltr;background:var(--storely-surface)}
+        .login-form-wrap{padding:clamp(40px,6vw,72px) clamp(28px,5vw,72px)!important;background:var(--storely-surface)!important;direction:rtl;order:2}
         .login-card{max-width:456px!important}
-        .right-panel{width:auto!important;background:#fff!important;border-right:0!important;border-left:1px solid #E7EAED!important;padding:clamp(44px,6vw,76px)!important;direction:rtl;align-items:flex-start!important;order:1}
+        .right-panel{width:auto!important;background:var(--storely-surface)!important;border-right:0!important;border-left:1px solid var(--storely-border)!important;padding:clamp(44px,6vw,76px)!important;direction:rtl;align-items:flex-start!important;order:1}
         .brand-panel-inner{max-width:460px!important}
-        .inp{width:100%;min-height:48px!important;padding:0 15px!important;border:1px solid #D7DEE3!important;border-radius:6px!important;font-size:15px!important;line-height:1.6!important;outline:none;background:white;color:#203640!important;font-family:inherit;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}
-        .inp:focus{border-color:#203640!important;box-shadow:0 0 0 3px rgba(32,54,64,.14)!important}
-        .inp::placeholder{color:#8EA0B1}
+        .inp{width:100%;min-height:48px!important;padding:0 15px!important;border:1px solid var(--storely-border)!important;border-radius:6px!important;font-size:15px!important;line-height:1.6!important;outline:none;background:var(--storely-surface);color:var(--storely-text)!important;font-family:inherit;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}
+        .inp:focus{border-color:var(--storely-text)!important;box-shadow:0 0 0 3px rgba(32,54,64,.14)!important}
+        .inp::placeholder{color:var(--storely-subtle)}
         .btn-main{width:100%;min-height:48px!important;padding:0 20px!important;background:#203640!important;color:white;border:1px solid #203640!important;border-radius:6px!important;font-size:15px!important;font-weight:700;cursor:pointer;font-family:inherit;transition:background .16s ease,border-color .16s ease,box-shadow .16s ease}
         .btn-main:hover{background:#16262D!important;border-color:#16262D!important}
         .btn-main:disabled{opacity:.6;cursor:not-allowed}
         .tab{flex:1;padding:11px 12px;border:none;border-radius:6px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .2s}
-        .biz{min-height:68px;padding:11px 8px;border-radius:6px;border:1px solid #D7DEE3!important;background:white;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;transition:all .15s;font-size:12px;font-weight:600;color:#43525B!important}
-        .biz:hover{border-color:#203640!important;background:#F8EEDF55}
-        .biz.on{border-color:#203640!important;background:#F8EEDF!important;color:#203640!important}
-        .biz span:first-child{font-size:11px!important;color:#8EA0B1!important;font-weight:800;letter-spacing:.04em}
-        .auth-note-icon{width:36px;height:36px;border-radius:6px;border:1px solid #D7DEE3;background:#fff;display:inline-flex;align-items:center;justify-content:center;color:#203640;font-size:13px;font-weight:800;flex-shrink:0}
-        .auth-secondary-btn{width:100%;min-height:48px;padding:0 18px;background:white;border:1px solid #D7DEE3;border-radius:6px;font-size:15px;font-weight:700;color:#203640;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;transition:border-color .16s ease,background .16s ease}
-        .auth-secondary-btn:hover{border-color:#203640;background:#FAFBFC}
-        .auth-divider{display:flex;align-items:center;gap:14px;margin:22px 0;color:#8EA0B1;font-size:13px;font-weight:600}
-        .auth-divider::before,.auth-divider::after{content:"";flex:1;height:1px;background:#E7EAED}
+        .biz{min-height:68px;padding:11px 8px;border-radius:6px;border:1px solid var(--storely-border)!important;background:var(--storely-surface);cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;transition:all .15s;font-size:12px;font-weight:600;color:var(--storely-muted)!important}
+        .biz:hover{border-color:var(--storely-text)!important;background:var(--storely-background)}
+        .biz.on{border-color:var(--storely-text)!important;background:var(--storely-background)!important;color:var(--storely-text)!important}
+        .biz span:first-child{font-size:11px!important;color:var(--storely-subtle)!important;font-weight:800;letter-spacing:.04em}
+        .auth-note-icon{width:36px;height:36px;border-radius:6px;border:1px solid var(--storely-border);background:var(--storely-surface);display:inline-flex;align-items:center;justify-content:center;color:var(--storely-text);font-size:13px;font-weight:800;flex-shrink:0}
+        .auth-secondary-btn{width:100%;min-height:48px;padding:0 18px;background:var(--storely-surface);border:1px solid var(--storely-border);border-radius:6px;font-size:15px;font-weight:700;color:var(--storely-text);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;transition:border-color .16s ease,background .16s ease}
+        .auth-secondary-btn:hover{border-color:var(--storely-text);background:var(--storely-background)}
+        .auth-divider{display:flex;align-items:center;gap:14px;margin:22px 0;color:var(--storely-subtle);font-size:13px;font-weight:600}
+        .auth-divider::before,.auth-divider::after{content:"";flex:1;height:1px;background:var(--storely-border)}
         .auth-error{background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:12px 14px;margin-bottom:18px;font-size:14px;color:#B91C1C;font-weight:600;line-height:1.7}
-        .auth-link-btn{background:none;border:none;color:#203640;cursor:pointer;font-family:inherit;font-weight:700;padding:0;text-decoration:none}
+        .auth-link-btn{background:none;border:none;color:var(--storely-text);cursor:pointer;font-family:inherit;font-weight:700;padding:0;text-decoration:none}
         .auth-link-btn:hover{text-decoration:underline}
-        .brand-image{position:relative;border-radius:8px!important;overflow:hidden;border:1px solid #E7EAED;margin-bottom:28px!important;background:#F8FAFC;box-shadow:none!important}
-        .brand-kicker{display:inline-flex!important;align-items:center;gap:8px!important;background:#F8EEDF!important;border:1px solid #E7D9C7!important;border-radius:6px!important;padding:7px 12px!important;font-size:13px!important;font-weight:700;color:#203640!important;margin-bottom:22px!important}
-        .brand-stat-card{margin-top:28px!important;padding:18px 20px!important;background:#fff;border-radius:8px!important;border:1px solid #E7EAED!important}
+        .brand-image{position:relative;border-radius:8px!important;overflow:hidden;border:1px solid var(--storely-border);margin-bottom:28px!important;background:#F8FAFC;box-shadow:none!important}
+        .brand-kicker{display:inline-flex!important;align-items:center;gap:8px!important;background:var(--storely-background)!important;border:1px solid #E7D9C7!important;border-radius:6px!important;padding:7px 12px!important;font-size:13px!important;font-weight:700;color:var(--storely-text)!important;margin-bottom:22px!important}
+        .brand-stat-card{margin-top:28px!important;padding:18px 20px!important;background:var(--storely-surface);border-radius:8px!important;border:1px solid var(--storely-border)!important}
         .register-shell .login-main{grid-template-columns:minmax(430px,.9fr) minmax(520px,1.1fr)}
         .register-shell .login-form-wrap{padding-block:clamp(42px,5vw,68px)!important}
         .register-card{max-width:588px!important}
         .register-heading{margin-bottom:32px}
         .register-progress{display:flex;gap:8px;margin-bottom:24px}
-        .register-progress span{flex:1;height:4px;border-radius:999px;background:#E7EAED;transition:background .18s ease}
+        .register-progress span{flex:1;height:4px;border-radius:999px;background:var(--storely-border);transition:background .18s ease}
         .register-progress span.active{background:#203640}
-        .register-title{font-size:29px;font-weight:850;color:#203640;margin:0 0 10px;letter-spacing:0;line-height:1.38}
-        .register-subtitle{font-size:15px;color:#66737C;margin:0;line-height:1.9;max-width:520px}
+        .register-title{font-size:29px;font-weight:850;color:var(--storely-text);margin:0 0 10px;letter-spacing:0;line-height:1.38}
+        .register-subtitle{font-size:15px;color:var(--storely-muted);margin:0;line-height:1.9;max-width:520px}
         .register-form{display:flex;flex-direction:column;gap:22px}
         .register-field{display:flex;flex-direction:column;gap:8px}
-        .register-label{font-size:13px;font-weight:750;color:#203640;line-height:1.6}
-        .register-help{font-size:12px;color:#8EA0B1;margin-top:3px;line-height:1.75}
-        .register-phone{display:flex;min-height:52px;border:1px solid #D7DEE3;border-radius:6px;overflow:hidden;background:#fff;transition:border-color .16s ease,box-shadow .16s ease}
-        .register-phone:focus-within{border-color:#203640;box-shadow:0 0 0 3px rgba(32,54,64,.14)}
+        .register-label{font-size:13px;font-weight:750;color:var(--storely-text);line-height:1.6}
+        .register-help{font-size:12px;color:var(--storely-subtle);margin-top:3px;line-height:1.75}
+        .register-phone{display:flex;min-height:52px;border:1px solid var(--storely-border);border-radius:6px;overflow:hidden;background:var(--storely-surface);transition:border-color .16s ease,box-shadow .16s ease}
+        .register-phone input{min-width:0}
+        .register-phone:focus-within{border-color:var(--storely-text);box-shadow:0 0 0 3px rgba(32,54,64,.14)}
         .register-business-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}
-        .register-actions-note{text-align:center;margin-top:24px;font-size:14px;color:#66737C;line-height:1.85}
-        .register-back{background:none;border:none;color:#66737C;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;padding:0;margin-bottom:16px;display:inline-flex;align-items:center;gap:6px}
-        .register-back:hover{color:#203640}
+        .register-actions-note{text-align:center;margin-top:24px;font-size:14px;color:var(--storely-muted);line-height:1.85}
+        .register-back{background:none;border:none;color:var(--storely-muted);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;padding:0;margin-bottom:16px;display:inline-flex;align-items:center;gap:6px}
+        .register-back:hover{color:var(--storely-text)}
         .register-billing{display:flex;justify-content:center;margin-bottom:12px}
-        .register-billing-inner{display:inline-flex;gap:4px;background:#F4F6F7;padding:4px;border-radius:8px;border:1px solid #E7EAED}
-        .register-plan{padding:20px;border-radius:8px;border:1px solid #D7DEE3;background:#fff;cursor:pointer;font-family:inherit;text-align:right;transition:border-color .16s ease,background .16s ease,box-shadow .16s ease;display:flex;justify-content:space-between;align-items:center;gap:18px}
-        .register-plan:hover{border-color:#8EA0B1;background:#FAFBFC}
-        .register-plan.selected{border-color:#203640;background:#F8EEDF;box-shadow:inset 0 0 0 1px #203640}
-        .register-trial-note{background:#F6F8F2;border:1px solid #D9DDC6;border-radius:8px;padding:13px 15px;font-size:13px;color:#203640;font-weight:700;line-height:1.8}
-        .register-terms{display:flex;align-items:flex-start;gap:11px;font-size:13px;color:#43525B;cursor:pointer;margin-top:2px;line-height:1.95}
-        .register-terms input{margin-top:6px;flex-shrink:0;cursor:pointer;accent-color:#203640}
+        .register-billing-inner{display:inline-flex;gap:4px;background:var(--storely-background);padding:4px;border-radius:8px;border:1px solid var(--storely-border)}
+        .register-plan{padding:20px;border-radius:8px;border:1px solid var(--storely-border);background:var(--storely-surface);cursor:pointer;font-family:inherit;text-align:right;transition:border-color .16s ease,background .16s ease,box-shadow .16s ease;display:flex;justify-content:space-between;align-items:center;gap:18px}
+        .register-plan:hover{border-color:var(--storely-subtle);background:var(--storely-background)}
+        .register-plan.selected{border-color:var(--storely-text);background:var(--storely-background);box-shadow:inset 0 0 0 1px #203640}
+        .register-trial-note{background:#F6F8F2;border:1px solid #D9DDC6;border-radius:8px;padding:13px 15px;font-size:13px;color:var(--storely-text);font-weight:700;line-height:1.8}
+        .register-terms{display:flex;align-items:flex-start;gap:11px;font-size:13px;color:var(--storely-muted);cursor:pointer;margin-top:2px;line-height:1.95}
+        .register-terms input{margin-top:6px;flex-shrink:0;cursor:pointer;accent-color:var(--storely-text)}
         .register-password-meta{margin-top:8px;display:flex;align-items:center;gap:7px}
-        .register-password-meta span{font-size:12px;color:#8EA0B1;flex-shrink:0}
+        .register-password-meta span{font-size:12px;color:var(--storely-subtle);flex-shrink:0}
         .register-password-bar{flex:1;height:4px;border-radius:99px;transition:background .3s}
         @media(max-width:980px){
-          .login-main{grid-template-columns:1fr}
+          .login-main,.register-shell .login-main{grid-template-columns:minmax(0,1fr)}
           .right-panel{display:none!important}
           .login-form-wrap{padding:40px 22px 56px!important}
           .login-card{max-width:460px!important}
@@ -462,12 +463,12 @@ function LoginPage() {
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           <button onClick={()=>setLang(lang==='ar'?'en':'ar')}
-            style={{display:'none',padding:'8px 14px',background:'none',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',color:'#374151'}}>
+            style={{display:'none',padding:'8px 14px',background:'none',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',color:"var(--storely-text)"}}>
             {lang==='ar'?'EN':'عربي'}
           </button>
-          <span style={{fontSize:13,color:'#6b7280'}}>{t('login.haveAccount')}</span>
+          <span style={{fontSize:13,color:"var(--storely-muted)"}}>{t('login.haveAccount')}</span>
           <button onClick={()=>{setMode('login');setError('');setStep(1)}}
-            style={{minHeight:38,padding:'0 18px',background:'white',border:'1px solid #D7DEE3',borderRadius:6,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',color:'#203640',transition:'border-color .2s,background .2s'}}
+            style={{minHeight:38,padding:'0 18px',background:"var(--storely-surface)",border:'1px solid #D7DEE3',borderRadius:6,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',color:"var(--storely-text)",transition:'border-color .2s,background .2s'}}
             onMouseEnter={e=>e.currentTarget.style.borderColor='#203640'}
             onMouseLeave={e=>e.currentTarget.style.borderColor='#D7DEE3'}>
             {t('login.loginNav')}
@@ -484,12 +485,12 @@ function LoginPage() {
             {accountStatus && (
               <div style={{textAlign:'center' as const,padding:'8px 4px'}}>
                 <div style={{width:64,height:64,borderRadius:'50%',background:accountStatus==='suspended'?'#fef2f2':'#f3f4f6',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px'}}>
-                  <span style={{fontSize:13,fontWeight:800,color:'#203640'}}>{accountStatus==='suspended'?'LOCK':'STOP'}</span>
+                  <span style={{fontSize:13,fontWeight:800,color:"var(--storely-text)"}}>{accountStatus==='suspended'?'LOCK':'STOP'}</span>
                 </div>
-                <h1 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:10,letterSpacing:'-0.4px'}}>
+                <h1 style={{fontSize:22,fontWeight:800,color:"var(--storely-text)",marginBottom:10,letterSpacing:'-0.4px'}}>
                   {accountStatus==='suspended' ? 'حسابك موقوف مؤقتاً' : 'هذا الحساب غير متاح'}
                 </h1>
-                <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:28,maxWidth:340,marginInline:'auto'}}>
+                <p style={{fontSize:14,color:"var(--storely-muted)",lineHeight:1.7,marginBottom:28,maxWidth:340,marginInline:'auto'}}>
                   {accountStatus==='suspended'
                     ? 'إما انتهى اشتراكك أو تم إيقاف الحساب مؤقتاً. تواصل معنا وبنساعدك تفعّله من جديد خلال دقائق.'
                     : 'هذا الحساب لم يعد متاحاً على المنصة. تواصل معنا لو تحتاج مساعدة أو توضيح.'}
@@ -502,7 +503,7 @@ function LoginPage() {
                 </a>
                 <div style={{marginTop:20}}>
                   <button type="button" onClick={()=>{setAccountStatus(null);setEmail('');setPassword('')}}
-                    style={{background:'none',border:'none',color:'#9ca3af',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textDecoration:'underline'}}>
+                    style={{background:'none',border:'none',color:"var(--storely-muted)",fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textDecoration:'underline'}}>
                     الرجوع لتسجيل الدخول
                   </button>
                 </div>
@@ -514,8 +515,8 @@ function LoginPage() {
               <>
                 <StoreMascot focused={mascotFocus} cursorRatio={cursorRatio}/>
                 <div style={{marginBottom:32,textAlign:'center' as const}}>
-                  <h1 style={{fontSize:28,fontWeight:800,color:'#111827',marginBottom:8,letterSpacing:'-0.5px'}}>{t('login.welcomeBack')}</h1>
-                  <p style={{fontSize:15,color:'#6b7280'}}>{t('login.welcomeSub')}</p>
+                  <h1 style={{fontSize:28,fontWeight:800,color:"var(--storely-text)",marginBottom:8,letterSpacing:'-0.5px'}}>{t('login.welcomeBack')}</h1>
+                  <p style={{fontSize:15,color:"var(--storely-muted)"}}>{t('login.welcomeSub')}</p>
                 </div>
                 {error && <div className="auth-error">{error}</div>}
                 <button type="button" onClick={handleGoogle} disabled={loading} className="auth-secondary-btn">
@@ -524,7 +525,7 @@ function LoginPage() {
                 <div className="auth-divider">{t('login.orWithEmail')}</div>
                 <form onSubmit={handleLogin} style={{display:'flex',flexDirection:'column',gap:18}}>
                   <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.email')}</label>
+                    <label style={{fontSize:13,fontWeight:600,color:"var(--storely-text)",display:'block',marginBottom:6}}>{t('login.email')}</label>
                     <input className="inp" type="email" required value={email}
                       onChange={e=>{setEmail(e.target.value);const pos=e.target.selectionStart||e.target.value.length;setCursorRatio(e.target.value.length?Math.min(Math.max(pos/Math.max(e.target.value.length,8),0),1):0.5)}}
                       onFocus={()=>setMascotFocus('email')} onBlur={()=>setMascotFocus(null)}
@@ -532,7 +533,7 @@ function LoginPage() {
                   </div>
                   <div>
                     <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
-                      <label style={{fontSize:13,fontWeight:600,color:'#374151'}}>{t('login.password')}</label>
+                      <label style={{fontSize:13,fontWeight:600,color:"var(--storely-text)"}}>{t('login.password')}</label>
                       <button type="button" onClick={()=>{setMode('forgot');setError('')}}
                         className="auth-link-btn" style={{fontSize:13}}>
                         {t('login.forgotPassword')}
@@ -546,14 +547,14 @@ function LoginPage() {
                     {loading?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span style={{width:16,height:16,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block'}}/>{t('login.loggingIn')}</span>:t('login.loginBtn')}
                   </button>
                 </form>
-                <div style={{textAlign:'center',marginTop:24,fontSize:13,color:'#6b7280'}}>
+                <div style={{textAlign:'center',marginTop:24,fontSize:13,color:"var(--storely-muted)"}}>
                   {t('login.noAccount')}{' '}
                   <button onClick={()=>{setMode('register');setError('');setStep(1)}} className="auth-link-btn" style={{fontSize:13}}>
                     {t('login.signupNow')}
                   </button>
                 </div>
                 <button type="button" className="show-in-app" onClick={()=>{setStaffDevice(true);window.location.href='/staff'}}
-                  style={{width:'100%',marginTop:16,minHeight:46,padding:'0 16px',background:'white',border:'1px solid #D7DEE3',borderRadius:6,fontSize:14,fontWeight:700,color:'#203640',cursor:'pointer',fontFamily:'inherit'}}>
+                  style={{width:'100%',marginTop:16,minHeight:46,padding:'0 16px',background:"var(--storely-surface)",border:'1px solid #D7DEE3',borderRadius:6,fontSize:14,fontWeight:700,color:"var(--storely-text)",cursor:'pointer',fontFamily:'inherit'}}>
                   أنا موظف — دخول برقم الجوال و PIN
                 </button>
               </>
@@ -569,7 +570,7 @@ function LoginPage() {
                     ))}
                   </div>
                   <h1 className="register-title">{oauth ? t('login.completeTitle') : t('login.createAccountFree')}</h1>
-                  <p className="register-subtitle">{oauth ? <>{t('login.completeSub')} <b style={{color:'#203640'}} dir="ltr">{email}</b></> : t('login.freeTrialNoCard')}</p>
+                  <p className="register-subtitle">{oauth ? <>{t('login.completeSub')} <b style={{color:"var(--storely-text)"}} dir="ltr">{email}</b></> : t('login.freeTrialNoCard')}</p>
                 </div>
                 {error && <div className="auth-error">{error}</div>}
                 {!oauth && <>
@@ -602,12 +603,12 @@ function LoginPage() {
                     <label className="register-label">{t('login.whatsappLabel')}</label>
                     <div className="register-phone">
                       <select value={countryCode} onChange={e=>setCountryCode(e.target.value)}
-                        style={{background:'transparent',border:'none',borderLeft:'1px solid #D7DEE3',padding:'0 10px',fontSize:14,fontFamily:'inherit',outline:'none',cursor:'pointer',direction:'ltr',color:'#203640',minWidth:104}}>
+                        style={{background:'transparent',border:'none',borderLeft:'1px solid #D7DEE3',padding:'0 10px',fontSize:14,fontFamily:'inherit',outline:'none',cursor:'pointer',direction:'ltr',color:"var(--storely-text)",minWidth:104}}>
                         {COUNTRY_CODES.map(c=><option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}
                       </select>
                       <input type="tel" required value={phone} onChange={e=>{setPhone(e.target.value);setOtpSent(false);setOtpVerified(false);setOtp('')}}
                         placeholder={phonePlaceholder} dir="ltr"
-                        style={{background:'transparent',border:'none',padding:'0 15px',fontSize:15,color:'#203640',flex:1,outline:'none',fontFamily:'inherit'}}/>
+                        style={{background:'transparent',border:'none',padding:'0 15px',fontSize:15,color:"var(--storely-text)",flex:1,outline:'none',fontFamily:'inherit'}}/>
                     </div>
                     <div className="register-help">
                       {PHONE_RULES[countryCode] ? `${PHONE_RULES[countryCode].length} أرقام${PHONE_RULES[countryCode].prefix ? ` · يبدأ بـ ${PHONE_RULES[countryCode].prefix}` : ''}` : ''}
@@ -619,7 +620,7 @@ function LoginPage() {
                     <div style={{position:'relative'}}>
                       <input className="inp" type={showPassword?'text':'password'} required value={password} onChange={e=>setPassword(e.target.value)} placeholder={t('login.passwordPlaceholder')} style={{paddingLeft:44}}/>
                       <button type="button" onClick={()=>setShowPassword(s=>!s)}
-                        style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',fontSize:16,color:'#9ca3af',padding:4}}
+                        style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',fontSize:16,color:"var(--storely-muted)",padding:4}}
                         aria-label={showPassword?t('login.hidePassword'):t('login.showPassword')}>
                         {showPassword?'إخفاء':'عرض'}
                       </button>
@@ -692,7 +693,7 @@ function LoginPage() {
                       </div>
                       <div className="hide-in-app" style={{flexShrink:0,marginRight:12,textAlign:'left'}}>
                         <span style={{fontSize:20,fontWeight:800,color:branchCount===p.v?p.color:'#111827'}}>{billing==='yearly'?p.yearlyPrice:p.price}</span>
-                        <span style={{fontSize:12,color:'#9ca3af'}}> {lang==='ar'?'ر.س':'SAR'}/{billing==='yearly'?(lang==='ar'?'سنة':'yr'):(lang==='ar'?'شهر':'mo')}</span>
+                        <span style={{fontSize:12,color:"var(--storely-muted)"}}> {lang==='ar'?'ر.س':'SAR'}/{billing==='yearly'?(lang==='ar'?'سنة':'yr'):(lang==='ar'?'شهر':'mo')}</span>
                       </div>
                     </button>
                   ))}
@@ -708,9 +709,9 @@ function LoginPage() {
                     />
                     <span>
                       {t('login.agreeTo')}{' '}
-                      <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:'#203640',fontWeight:700,textDecoration:'underline'}}>{t('login.termsAndConditions')}</a>
+                      <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:"var(--storely-text)",fontWeight:700,textDecoration:'underline'}}>{t('login.termsAndConditions')}</a>
                       {' '}{t('login.andWord')}{' '}
-                      <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:'#203640',fontWeight:700,textDecoration:'underline'}}>{t('login.privacyPolicy')}</a>
+                      <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:"var(--storely-text)",fontWeight:700,textDecoration:'underline'}}>{t('login.privacyPolicy')}</a>
                     </span>
                   </label>
 
@@ -725,11 +726,11 @@ function LoginPage() {
             {mode==='forgot' && (
               <>
                 <button onClick={()=>{setMode('login');setError('')}}
-                  style={{background:'none',border:'none',color:'#6b7280',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:0,marginBottom:24,display:'flex',alignItems:'center',gap:4}}>
+                  style={{background:'none',border:'none',color:"var(--storely-muted)",fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:0,marginBottom:24,display:'flex',alignItems:'center',gap:4}}>
                   {t('login.back')}
                 </button>
-                <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:8,letterSpacing:'-0.5px'}}>{t('login.restorePassword')}</h1>
-                <p style={{fontSize:14,color:'#6b7280',marginBottom:20}}>{t('login.chooseRecoveryMethod')}</p>
+                <h1 style={{fontSize:26,fontWeight:800,color:"var(--storely-text)",marginBottom:8,letterSpacing:'-0.5px'}}>{t('login.restorePassword')}</h1>
+                <p style={{fontSize:14,color:"var(--storely-muted)",marginBottom:20}}>{t('login.chooseRecoveryMethod')}</p>
 
                 <div style={{display:'flex',gap:4,marginBottom:24,background:'#F4F6F7',borderRadius:8,padding:4,border:'1px solid #E7EAED'}}>
                   <button type="button" onClick={()=>{setForgotMethod('email');setError('')}}
@@ -747,7 +748,7 @@ function LoginPage() {
                 {forgotMethod==='email' ? (
                   <form onSubmit={handleForgot} style={{display:'flex',flexDirection:'column',gap:18}}>
                     <div>
-                      <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.email')}</label>
+                      <label style={{fontSize:13,fontWeight:600,color:"var(--storely-text)",display:'block',marginBottom:6}}>{t('login.email')}</label>
                       <input className="inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
                     </div>
                     <button type="submit" disabled={loading} className="btn-main">
@@ -757,7 +758,7 @@ function LoginPage() {
                 ) : (
                   <form onSubmit={handleForgotWhatsapp} style={{display:'flex',flexDirection:'column',gap:18}}>
                     <div>
-                      <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>{t('login.registeredPhone')}</label>
+                      <label style={{fontSize:13,fontWeight:600,color:"var(--storely-text)",display:'block',marginBottom:6}}>{t('login.registeredPhone')}</label>
                       <input className="inp" type="tel" required dir="ltr" value={forgotPhone} onChange={e=>setForgotPhone(e.target.value)} placeholder="05xxxxxxxx"/>
                     </div>
                     <button type="submit" disabled={loading} className="btn-main">
@@ -771,9 +772,9 @@ function LoginPage() {
             {mode==='forgot-sent-wa' && (
               <div style={{textAlign:'center',padding:'40px 0'}}>
                 <div className="auth-note-icon" style={{width:64,height:64,margin:'0 auto 20px'}}>WA</div>
-                <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8}}>{t('login.checkWhatsapp')}</h2>
-                <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:8}}>{t('login.ifRegisteredMsg')}</p>
-                <p style={{fontSize:12,color:'#9ca3af',marginBottom:28}}>{t('login.linkValidHour')}</p>
+                <h2 style={{fontSize:22,fontWeight:800,color:"var(--storely-text)",marginBottom:8}}>{t('login.checkWhatsapp')}</h2>
+                <p style={{fontSize:14,color:"var(--storely-muted)",lineHeight:1.7,marginBottom:8}}>{t('login.ifRegisteredMsg')}</p>
+                <p style={{fontSize:12,color:"var(--storely-muted)",marginBottom:28}}>{t('login.linkValidHour')}</p>
                 <button onClick={()=>{setMode('login');setError('')}} className="btn-main">{t('login.backToLogin')}</button>
               </div>
             )}
@@ -782,12 +783,12 @@ function LoginPage() {
             {mode==='registered' && (
               <div style={{textAlign:'center',padding:'40px 20px'}}>
                 <div className="auth-note-icon" style={{width:64,height:64,margin:'0 auto 16px'}}>MAIL</div>
-                <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8}}>{t('login.checkYourEmail')}</h2>
-                <p style={{fontSize:14,color:'#6b7280',lineHeight:1.8,marginBottom:8}}>
+                <h2 style={{fontSize:22,fontWeight:800,color:"var(--storely-text)",marginBottom:8}}>{t('login.checkYourEmail')}</h2>
+                <p style={{fontSize:14,color:"var(--storely-muted)",lineHeight:1.8,marginBottom:8}}>
                   {t('login.activationLinkSent')}<br/>
-                  <b style={{color:'#111827'}}>{email}</b>
+                  <b style={{color:"var(--storely-text)"}}>{email}</b>
                 </p>
-                <p style={{fontSize:13,color:'#9ca3af',marginBottom:28,lineHeight:1.7}}>
+                <p style={{fontSize:13,color:"var(--storely-muted)",marginBottom:28,lineHeight:1.7}}>
                   {t('login.clickLinkToActivate')}<br/>
                   {t('login.checkSpam')}
                 </p>
@@ -799,8 +800,8 @@ function LoginPage() {
             {mode==='forgot-sent' && (
               <div style={{textAlign:'center',padding:'40px 0'}}>
                 <div className="auth-note-icon" style={{width:64,height:64,margin:'0 auto 20px'}}>MAIL</div>
-                <h2 style={{fontSize:22,fontWeight:800,color:'#111827',marginBottom:8}}>{t('login.sentTitle')}</h2>
-                <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:28}}>{t('login.checkEmailMsg')} <b style={{color:'#111827'}}>{email}</b><br/>{t('login.clickToReset')}</p>
+                <h2 style={{fontSize:22,fontWeight:800,color:"var(--storely-text)",marginBottom:8}}>{t('login.sentTitle')}</h2>
+                <p style={{fontSize:14,color:"var(--storely-muted)",lineHeight:1.7,marginBottom:28}}>{t('login.checkEmailMsg')} <b style={{color:"var(--storely-text)"}}>{email}</b><br/>{t('login.clickToReset')}</p>
                 <button onClick={()=>{setMode('login');setError('')}} className="btn-main">{t('login.backToLogin')}</button>
               </div>
             )}
@@ -810,12 +811,12 @@ function LoginPage() {
         {/* Right — Branding */}
         <div className="right-panel" style={{width:'45%',background:'#f9fafb',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'48px 44px',borderRight:'1px solid #f3f4f6'}}>
           <div className="brand-panel-inner" style={{maxWidth:400,width:'100%'}}>
-            <div className="brand-kicker" style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'6px 14px',fontSize:12,fontWeight:700,color:'#203640',marginBottom:20}}>
+            <div className="brand-kicker" style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'6px 14px',fontSize:12,fontWeight:700,color:"var(--storely-text)",marginBottom:20}}>
               {t('login.badge')}
             </div>
-            <h2 style={{fontSize:34,fontWeight:900,color:'#203640',lineHeight:1.25,marginBottom:14,letterSpacing:0}}>
+            <h2 style={{fontSize:34,fontWeight:900,color:"var(--storely-text)",lineHeight:1.25,marginBottom:14,letterSpacing:0}}>
               Storely<br/>
-              <span style={{color:'#203640'}}>{t('login.headline')}</span>
+              <span style={{color:"var(--storely-text)"}}>{t('login.headline')}</span>
             </h2>
             <p style={{fontSize:15,color:'#43525B',lineHeight:1.9,marginBottom:28}}>
               {t('login.subtitle')}
@@ -839,11 +840,11 @@ function LoginPage() {
                 </div>
               ))}
             </div>
-            <div className="hide-in-app brand-stat-card" style={{marginTop:24,padding:'16px 18px',background:'white',borderRadius:12,border:'1px solid #e5e7eb'}}>
+            <div className="hide-in-app brand-stat-card" style={{marginTop:24,padding:'16px 18px',background:"var(--storely-surface)",borderRadius:12,border:'1px solid #e5e7eb'}}>
               <div style={{display:'flex',gap:28,justifyContent:'space-between'}}>
                 {[['99 '+(lang==='ar'?'ر.س':'SAR'),t('login.statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('login.statTrial')],['7',t('login.statLangs')]].map(([n,l])=>(
                   <div key={l}>
-                    <div style={{fontSize:18,fontWeight:900,color:'#203640'}}>{n}</div>
+                    <div style={{fontSize:18,fontWeight:900,color:"var(--storely-text)"}}>{n}</div>
                     <div style={{fontSize:11,color:'#66737C',marginTop:4,fontWeight:600}}>{l}</div>
                   </div>
                 ))}

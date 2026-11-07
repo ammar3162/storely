@@ -1,5 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { CheckCircle2, CircleX, LoaderCircle } from 'lucide-react'
+import { StorelyButton, StorelyCard, StorelyPageHeader } from '@/components/ui'
+import { storelyTokens } from '@/components/ui/design-tokens'
 
 export default function ConfirmPage({ params }: { params: { token: string } }) {
   const [status, setStatus] = useState<'loading'|'confirm'|'done'|'error'>('loading')
@@ -29,62 +32,53 @@ export default function ConfirmPage({ params }: { params: { token: string } }) {
   }
 
   if(status==='loading') return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4'}}>
-      <div style={{width:40,height:40,border:'3px solid #99f6e4',borderTopColor:'#029FA2',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div className="flex min-h-screen items-center justify-center bg-[var(--storely-background)] text-[var(--storely-navy)]" dir="rtl">
+      <LoaderCircle size={28} className="animate-spin" />
     </div>
   )
 
   if(status==='error') return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4'}}>
-      <div style={{background:'white',borderRadius:16,padding:32,textAlign:'center',maxWidth:320,width:'100%',margin:16}}>
-        <div style={{fontSize:48,marginBottom:12}}>❌</div>
-        <div style={{fontSize:16,fontWeight:700,color:'#1c1c1a'}}>رابط غير صالح</div>
-        <div style={{fontSize:12,color:'#888780',marginTop:6}}>هذا الرابط غير موجود أو منتهي</div>
-      </div>
+    <div className="flex min-h-screen items-center justify-center bg-[var(--storely-background)] !p-4" dir="rtl">
+      <StorelyCard className="w-full max-w-md !p-6 text-center sm:!p-8">
+        <CircleX size={28} className="!mx-auto !mb-5" style={{color:storelyTokens.color.danger}} />
+        <div className="text-xl font-semibold">رابط غير صالح</div>
+        <div className="!mt-3 text-sm leading-7 text-[var(--storely-muted)]">هذا الرابط غير موجود أو منتهي</div>
+      </StorelyCard>
     </div>
   )
 
   if(status==='done') return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f0fdfa'}}>
-      <div style={{background:'white',borderRadius:16,padding:32,textAlign:'center',maxWidth:320,width:'100%',margin:16,border:'1px solid #99f6e4'}}>
-        <div style={{fontSize:48,marginBottom:12}}>✅</div>
-        <div style={{fontSize:18,fontWeight:700,color:'#029FA2'}}>تم التأكيد</div>
-        <div style={{fontSize:12,color:'#5f5e5a',marginTop:8,lineHeight:1.6}}>شكراً — تم إبلاغ العميل بتأكيدك</div>
-      </div>
+    <div className="flex min-h-screen items-center justify-center bg-[var(--storely-background)] !p-4" dir="rtl">
+      <StorelyCard className="w-full max-w-md !p-6 text-center sm:!p-8">
+        <CheckCircle2 size={28} className="!mx-auto !mb-5" style={{color:storelyTokens.color.success}} />
+        <div className="text-xl font-semibold">تم التأكيد</div>
+        <div className="!mt-3 text-sm leading-7 text-[var(--storely-muted)]">شكراً — تم إبلاغ العميل بتأكيدك</div>
+      </StorelyCard>
     </div>
   )
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',background:'#f5f5f4',padding:16,display:'flex',alignItems:'center',justifyContent:'center'}}>
-      <div style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,overflow:'hidden',border:'1px solid #ebebea'}}>
-        {/* Header */}
-        <div style={{background:'#029FA2',padding:'20px 20px 16px',textAlign:'center'}}>
-          <div style={{fontSize:14,fontWeight:700,color:'white',opacity:.8,marginBottom:4}}>🟢 Storely</div>
-          <div style={{fontSize:18,fontWeight:700,color:'white'}}>طلب توريد</div>
-          <div style={{fontSize:12,color:'white',opacity:.7,marginTop:4}}>{order?.supplier_name}</div>
+    <div className="flex min-h-screen items-center justify-center bg-[var(--storely-background)] !p-4" dir="rtl">
+      <StorelyCard className="w-full max-w-xl">
+        <div className="border-b border-[var(--storely-border)] !p-5 sm:!p-6">
+          <div className="!mb-4 text-sm font-semibold text-[var(--storely-muted)]">Storely</div>
+          <StorelyPageHeader title="طلب توريد" description={order?.supplier_name} className="!mb-0" />
         </div>
-
-        {/* Order details */}
-        <div style={{padding:'16px 20px'}}>
-          <div style={{fontSize:12,fontWeight:700,color:'#888780',marginBottom:10,textTransform:'uppercase',letterSpacing:'.05em'}}>تفاصيل الطلب</div>
-          <div style={{background:'#f9f9f8',borderRadius:10,padding:14,marginBottom:16}}>
-            <div style={{fontSize:12,color:'#5f5e5a',marginBottom:8}}>من: <b style={{color:'#1c1c1a'}}>{order?.org_name||'العميل'}</b></div>
+        <div className="!space-y-5 !p-5 sm:!p-6">
+          <h2 className="text-lg font-semibold">تفاصيل الطلب</h2>
+          <div>
+            <div className="!mb-4 text-sm text-[var(--storely-muted)]">من: <b className="text-[var(--storely-navy)]">{order?.org_name||'العميل'}</b></div>
             {(order?.items||[]).map((item:any,i:number)=>(
-              <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 0',borderBottom:i<order.items.length-1?'1px solid #ebebea':'none'}}>
-                <span style={{fontSize:13,fontWeight:600,color:'#1c1c1a'}}>{item.name}</span>
-                <span style={{fontSize:13,fontWeight:700,color:'#029FA2'}}>{item.qty} {item.unit}</span>
+              <div key={i} className="flex flex-wrap items-center justify-between gap-4 !py-4" style={{borderBottom:i<order.items.length-1?`1px solid ${storelyTokens.color.border}`:'none'}}>
+                <span className="min-w-0 break-words text-sm font-medium">{item.name}</span>
+                <span className="text-sm font-semibold tabular-nums">{item.qty} {item.unit}</span>
               </div>
             ))}
           </div>
-
-          <button onClick={confirm}
-            style={{width:'100%',padding:'14px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-            ✅ تأكيد الطلب
-          </button>
-          <div style={{fontSize:11,color:'#888780',textAlign:'center',marginTop:10}}>بالضغط على التأكيد سيتم إبلاغ العميل فوراً</div>
+          <StorelyButton onClick={confirm} variant="primary" className="w-full" icon={<CheckCircle2 size={16} />}>تأكيد الطلب</StorelyButton>
+          <div className="text-center text-sm leading-7 text-[var(--storely-muted)]">بالضغط على التأكيد سيتم إبلاغ العميل فوراً</div>
         </div>
-      </div>
+      </StorelyCard>
     </div>
   )
 }

@@ -1,14 +1,76 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import PageIcon from '@/components/PageIcon'
+import { StorelyPageHeader } from '@/components/ui/page-header'
+import { StorelyButton } from '@/components/ui/button'
+import { StorelyCard } from '@/components/ui/card'
+import { storelyTokens as T } from '@/components/ui/design-tokens'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { getMe } from '@/lib/session'
 import { confirmDialog } from '@/components/ConfirmDialog'
-import { colors, font, card, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { billLines, planKeyOf, addonPeriodEnd, proratedCharge } from '@/lib/planPricing'
 import { isInApp } from '@/lib/inApp'
+
+const AM_STYLES = `
+  .am-page{max-width:1200px;min-width:0;margin:0 auto;padding:${T.spacing[6]}px;direction:rtl;font-family:${T.typography.family};font-size:${T.typography.body}px;line-height:${T.typography.lineHeight};color:${T.color.text};background:${T.color.background};border-radius:${T.radius.panel}}
+  .am-page *{box-sizing:border-box}
+  .am-page>header{margin-bottom:${T.spacing[6]}px}
+  .am-page>header h1{font-size:${T.typography.title}px;line-height:1.6}
+  .am-page>header p{font-size:${T.typography.body}px;line-height:${T.typography.lineHeight}}
+  .am-page .ui-workspace{padding:${T.spacing[6]}px;margin-bottom:${T.spacing[6]}px;min-width:0;border:1px solid ${T.color.border};border-radius:${T.radius.card};background:${T.color.surface};overflow:visible}
+  .am-page .ui-section-title{font-size:${T.typography.section}px;font-weight:600;color:${T.color.text};margin-bottom:${T.spacing[3]}px;line-height:${T.typography.lineHeight};overflow-wrap:anywhere}
+  .am-page .ui-supporting{font-size:${T.typography.supporting}px;color:${T.color.textMuted};line-height:1.8}
+  .am-page .ui-strong{font-size:${T.typography.body}px;font-weight:600;line-height:${T.typography.lineHeight}}
+  .am-page .ui-value{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.6;overflow-wrap:anywhere}
+  .am-page .ui-between{display:flex;align-items:center;justify-content:space-between;gap:${T.spacing[3]}px;flex-wrap:wrap;min-width:0}
+  .am-page .ui-inline{display:flex;align-items:center;gap:${T.spacing[2]}px;flex-wrap:wrap;min-width:0}
+  .am-page .ui-stack{display:flex;flex-direction:column;gap:${T.spacing[3]}px;min-width:0}
+  .am-page .ui-total{display:flex;justify-content:space-between;align-items:baseline;gap:${T.spacing[3]}px;padding-top:${T.spacing[4]}px;margin-top:${T.spacing[4]}px;border-top:1px solid ${T.color.border};font-size:${T.typography.section}px;font-weight:600}
+  .am-page .ui-button{display:inline-flex;align-items:center;justify-content:center;gap:${T.spacing[2]}px;min-height:40px;height:auto;max-width:100%;padding:${T.spacing[2]}px ${T.spacing[4]}px;background:${T.color.surface};border:1px solid ${T.color.infoBorder};border-radius:${T.radius.control};color:${T.color.navy};font-size:${T.typography.body}px;font-weight:600;line-height:1.6;font-family:inherit;text-decoration:none;white-space:normal;cursor:pointer;box-shadow:none}
+  .am-page .ui-button:hover:not(:disabled){background:${T.color.infoBg};border-color:${T.color.infoBorder}}
+  .am-page .ui-button:disabled{opacity:.5;cursor:not-allowed}
+  .am-page .ui-primary{background:${T.color.navy};border-color:${T.color.navy};color:${T.color.surface}}
+  .am-page .ui-primary:hover:not(:disabled){background:${T.color.navy};border-color:${T.color.navy};color:${T.color.surface}}
+  .am-page .ui-danger{background:${T.color.surface};border-color:${T.color.dangerBorder};color:${T.color.danger}}
+  .am-page .ui-danger:hover:not(:disabled){background:${T.color.dangerBg};border-color:${T.color.dangerBorder}}
+  .am-page .ui-control{width:100%;height:44px;min-width:0;padding:${T.spacing[2]}px ${T.spacing[3]}px;border:1px solid ${T.color.infoBorder};border-radius:${T.radius.control};background:${T.color.surface};color:${T.color.text};font-family:inherit;font-size:${T.typography.body}px;line-height:${T.typography.lineHeight}}
+  .am-page .ui-control::placeholder{color:${T.color.textSubtle};opacity:1}
+  .am-page .ui-control:focus-visible,.am-page button:focus-visible{outline:2px solid ${T.color.navy};outline-offset:2px;box-shadow:${T.shadow.focus}}
+  .am-page input[type=number],.am-page input[type=month]{direction:ltr;font-variant-numeric:tabular-nums}
+  .am-page input[type=number]{text-align:right}
+  .am-page .ui-label{display:flex;align-items:center;gap:${T.spacing[2]}px;font-size:${T.typography.body}px;line-height:${T.typography.lineHeight};margin-bottom:${T.spacing[3]}px;cursor:pointer}
+  .am-page .ui-checkbox{width:16px;height:16px;flex-shrink:0;accent-color:${T.color.navy}}
+  .am-page .ui-empty{padding:${T.spacing[8]}px ${T.spacing[6]}px;text-align:center;background:${T.color.surface};border:1px solid ${T.color.border};border-radius:${T.radius.card}}
+  .am-page .ui-loading{padding:${T.spacing[8]}px;text-align:center}
+  .am-page.ui-access{text-align:center;padding:${T.spacing[8]}px ${T.spacing[6]}px;background:${T.color.surface};border:1px solid ${T.color.border};max-width:680px}
+  .am-page .ui-large-icon{font-size:24px;margin-bottom:${T.spacing[4]}px}
+  @media(max-width:640px){.am-page{padding:${T.spacing[4]}px}.am-page .ui-workspace{padding:${T.spacing[5]}px}.am-page .ui-between{align-items:flex-start}}
+  @media(prefers-reduced-motion:reduce){.am-page *{animation:none!important;transition:none!important}}
+
+  .am-page .am-bill{margin-bottom:${T.spacing[6]}px}
+  .am-bill>.ui-between{padding-block:${T.spacing[2]}px;border-bottom:1px solid ${T.color.border}}
+  .am-bill>.ui-between:last-of-type{border-bottom:0}
+  .am-bill>.ui-value{display:flex;align-items:baseline;justify-content:space-between;gap:${T.spacing[3]}px;margin-top:${T.spacing[4]}px;padding-top:${T.spacing[4]}px;border-top:1px solid ${T.color.border};font-size:${T.typography.section}px}
+  .am-page .am-catalog{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch;gap:${T.spacing[5]}px}
+  .am-page .am-addon{position:relative;display:flex;flex-direction:column;align-items:stretch;margin:0;min-width:0}
+  .am-addon>.ui-section-title{padding-inline-end:${T.spacing[8]}px;margin-bottom:${T.spacing[2]}px}
+  .am-addon-icon{font-size:20px;line-height:1.5;margin-bottom:${T.spacing[3]}px}
+  .am-addon>.ui-supporting{margin-bottom:${T.spacing[4]}px}
+  .am-addon>.ui-value{margin-bottom:${T.spacing[4]}px}
+  .am-addon>.ui-value>.ui-strong{font-size:${T.typography.supporting}px;font-weight:400}
+  .am-addon>.ui-stack{margin-bottom:${T.spacing[4]}px}
+  .am-addon>.ui-inline{margin-bottom:${T.spacing[3]}px}
+  .am-addon .ui-inline>.ui-control{flex:1;min-width:0}
+  .am-addon .ui-control[type=number]{flex:0 0 80px;width:80px;text-align:center}
+  .am-addon .ui-stack>.ui-inline{align-items:flex-start;flex-wrap:wrap;padding:${T.spacing[3]}px;border:1px solid ${T.color.infoBorder};border-radius:${T.radius.control};background:${T.color.surface}}
+  .am-addon .ui-stack>.ui-inline>div{min-width:0;flex:1 1 140px}
+  .am-addon .ui-danger{min-height:36px;padding:${T.spacing[1]}px ${T.spacing[3]}px;font-size:${T.typography.supporting}px}
+  .am-page .am-cancel{position:absolute;inset-inline-end:${T.spacing[4]}px;top:${T.spacing[4]}px;width:32px;height:32px;min-height:32px;padding:0}
+  .am-addon>a.ui-primary{margin-top:auto;width:100%}
+  .am-addon>.ui-supporting>.ui-button{margin-top:${T.spacing[3]}px}
+  @media(max-width:700px){.am-page .am-catalog{grid-template-columns:minmax(0,1fr)}}
+`
 
 export default function AddonsMarketPage() {
   const [addons, setAddons] = useState<any[]>([])
@@ -62,8 +124,8 @@ export default function AddonsMarketPage() {
   function DueNote({ addon, qty }: { addon: any; qty: number }) {
     const d = dueNow(addon, qty)
     return (
-      <div style={{ fontSize: 11, color: colors.text3, lineHeight: 1.7, marginBottom: 12 }}>
-        تدفع الحين <b style={{ color: colors.text }}>{d.amount} ر.س</b> عن {d.days} يوم لين تجديد باقتك ({d.endStr})، وبعدها تتجدد مع الباقة.
+      <div className="ui-supporting" style={{color:T.color.textMuted}}>
+        تدفع الحين <b style={{color:T.color.text}}>{d.amount} ر.س</b> عن {d.days} يوم لين تجديد باقتك ({d.endStr})، وبعدها تتجدد مع الباقة.
       </div>
     )
   }
@@ -96,42 +158,41 @@ export default function AddonsMarketPage() {
   }
 
   if (inApp) return (
-    <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 480, margin: '80px auto', textAlign: 'center' as const, ...card, padding: 32 }}>
-      <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 8 }}>الإضافات</div>
-      <div style={{ fontSize: 13, color: colors.text3, lineHeight: 1.8 }}>إدارة الاشتراك والإضافات متاحة من حسابك على الموقع.</div>
+    <div className="am-page ui-access">
+      <style>{AM_STYLES}</style>
+      <div className="ui-section-title" style={{color:T.color.text}}>الإضافات</div>
+      <div className="ui-supporting" style={{color:T.color.textMuted}}>إدارة الاشتراك والإضافات متاحة من حسابك على الموقع.</div>
     </div>
   )
 
-  if (loading) return <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontFamily: font.family }}>جاري التحميل...</div>
+  if (loading) return <div className="ui-loading" style={{color:T.color.textMuted}}>جاري التحميل...</div>
 
   return (
-    <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 900, margin: '0 auto' }}>
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={pageTitle}><PageIcon/>الإضافات</h1>
-        <p style={pageSub}>ميزات إضافية تساعدك تطوّر منشأتك — اشترك بأي وقت</p>
-      </div>
+    <div className="am-page">
+      <style>{AM_STYLES}</style>
+      <StorelyPageHeader title="الإضافات" description={<>ميزات إضافية تساعدك تطوّر منشأتك — اشترك بأي وقت</>}/>
 
       {plan && (() => {
         const bill = billLines(planKeyOf(plan.key, plan.maxBranches), plan.cycle, addons)
         return (
-          <div style={{ ...card, padding: 18, marginBottom: 20 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10 }}>فاتورتك الحالية</div>
+          <StorelyCard className="ui-workspace am-bill">
+            <div className="ui-section-title" style={{color:T.color.text}}>فاتورتك الحالية</div>
             {bill.lines.map((l, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, color: colors.text3, padding: '4px 0' }}>
-                <span>{l.label}</span><span style={{ fontWeight: 700, color: colors.text, whiteSpace: 'nowrap' }}>{l.amount} ر.س</span>
+              <div className="ui-between" key={i} style={{color:T.color.textMuted}}>
+                <span>{l.label}</span><span className="ui-strong" style={{color:T.color.text}}>{l.amount} ر.س</span>
               </div>
             ))}
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${colors.border}`, marginTop: 8, paddingTop: 10, fontSize: 14, fontWeight: 900, color: colors.primary }}>
+            <div className="ui-value" style={{color:T.color.navy}}>
               <span>الإجمالي</span><span>{bill.total} ر.س</span>
             </div>
-          </div>
+          </StorelyCard>
         )
       })()}
 
       {addons.length === 0 ? (
-        <div style={{ ...card, padding: 40, textAlign: 'center' as const, color: colors.text4 }}>ما فيه إضافات متاحة حالياً</div>
+        <div className="ui-loading" style={{color:T.color.textMuted}}>ما فيه إضافات متاحة حالياً</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 16 }}>
+        <div className="am-catalog">
           {addons.map((a: any) => {
             // "موظف إضافي" له بطاقة خاصة (يدعم عدة فروع بنفس الوقت)
             if (a.slug === 'extra_staff') {
@@ -139,27 +200,26 @@ export default function AddonsMarketPage() {
               const selectedBranch = staffBranchMap['extra_staff_default'] || (branches[0]?.id || '')
               const qty = qtyMap[a.id] || 1
               return (
-                <div key={a.id} style={{ ...card, padding: 20 }}>
-                  <div style={{ fontSize: 32, marginBottom: 10 }}>{a.icon}</div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
-                  <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14 }}>{a.description}</div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 14 }}>
-                    {a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text4 }}>ر.س / وحدة / شهر — لكل فرع لحاله</span>
+                <StorelyCard className="ui-workspace am-addon" key={a.id}>
+                  <div className="am-addon-icon">{a.icon}</div>
+                  <div className="ui-section-title" style={{color:T.color.text}}>{a.name}</div>
+                  <div className="ui-supporting" style={{color:T.color.textMuted}}>{a.description}</div>
+                  <div className="ui-value" style={{color:T.color.navy}}>
+                    {a.monthly_price} <span className="ui-strong" style={{color:T.color.textMuted}}>ر.س / وحدة / شهر — لكل فرع لحاله</span>
                   </div>
 
                   {subs.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, marginBottom: 12 }}>
+                    <div className="ui-stack">
                       {subs.map((s: any) => {
                         const branchName = branches.find(b => b.id === s.branch_id)?.name || 'فرع'
                         return (
-                          <div key={s.branch_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}` }}>
-                            <div style={{ flex: 1, fontSize: 11, color: colors.text }}>
+                          <div className="ui-inline" key={s.branch_id}>
+                            <div className="ui-supporting" style={{color:T.color.text}}>
                               {branchName} — مفعّلة لـ{s.quantity} حتى {new Date(s.expires_at).toLocaleDateString('ar-SA', { numberingSystem: 'latn' })}
                             </div>
-                            <button onClick={() => cancelAddon(a, s.branch_id)} disabled={cancelling === a.id + s.branch_id}
-                              style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            <StorelyButton className="ui-button ui-danger" variant="danger" onClick={() => cancelAddon(a, s.branch_id)} disabled={cancelling === a.id + s.branch_id}>
                               {cancelling === a.id + s.branch_id ? '...' : 'إلغاء'}
-                            </button>
+                            </StorelyButton>
                           </div>
                         )
                       })}
@@ -169,57 +229,53 @@ export default function AddonsMarketPage() {
                   {branches.length > 0 ? (
                     <>
                       <DueNote addon={a} qty={qty} />
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                        <select value={selectedBranch} onChange={e => setStaffBranchMap(prev => ({ ...prev, extra_staff_default: e.target.value }))}
-                          style={{ flex: 1, padding: '6px 8px', borderRadius: 8, border: `1px solid ${colors.border2}`, fontSize: 12, fontFamily: 'inherit', background: 'white' }}>
+                      <div className="ui-inline">
+                        <select className="ui-control" value={selectedBranch} onChange={e => setStaffBranchMap(prev => ({ ...prev, extra_staff_default: e.target.value }))}>
                           {branches.map((b: any) => (<option key={b.id} value={b.id}>{b.name}</option>))}
                         </select>
-                        <input type="number" min={1} max={20} value={qty}
+                        <input className="ui-control" type="number" min={1} max={20} value={qty}
                           onChange={e => setQtyMap(prev => ({ ...prev, [a.id]: Math.max(1, Math.min(20, Number(e.target.value) || 1)) }))}
-                          style={{ width: 56, padding: '6px 4px', borderRadius: 8, border: `1px solid ${colors.border2}`, fontSize: 12, textAlign: 'center' as const, fontFamily: 'inherit' }} />
+                           />
                       </div>
-                      <a href={subscribeLink(a, qty, selectedBranch)} target="_blank" rel="noopener noreferrer"
-                        style={{ display: 'block', textAlign: 'center' as const, padding: '11px', background: colors.primary, color: 'white', borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+                      <a className="ui-button ui-primary" href={subscribeLink(a, qty, selectedBranch)} target="_blank" rel="noopener noreferrer">
                         اشتراك عبر واتساب ({qty * a.monthly_price} ر.س)
                       </a>
                     </>
                   ) : (
-                    <div style={{ fontSize: 11, color: colors.text4, textAlign: 'center' as const }}>ما فيه فروع نشطة حالياً</div>
+                    <div className="ui-supporting" style={{color:T.color.textMuted}}>ما فيه فروع نشطة حالياً</div>
                   )}
-                </div>
+                </StorelyCard>
               )
             }
 
             const active = a.subscription?.isValid
             return (
-              <div key={a.id} style={{ ...card, padding: 20, position: 'relative' as const, border: active ? `1.5px solid ${colors.primaryBorder}` : undefined, background: active ? colors.primaryLight : undefined }}>
+              <StorelyCard className="ui-workspace am-addon" key={a.id}>
                 {active && (
-                  <button onClick={() => cancelAddon(a)} disabled={cancelling === a.id}
-                    title="إلغاء الاشتراك"
-                    style={{ position: 'absolute' as const, top: 12, left: 12, width: 26, height: 26, borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>
+                  <StorelyButton className="ui-button ui-danger am-cancel" variant="danger" onClick={() => cancelAddon(a)} disabled={cancelling === a.id}
+                    title="إلغاء الاشتراك">
                     {cancelling === a.id ? '…' : '🗑️'}
-                  </button>
+                  </StorelyButton>
                 )}
-                <div style={{ fontSize: 32, marginBottom: 10 }}>{a.icon}</div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
-                <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14, minHeight: 40 }}>{a.description}</div>
+                <div className="am-addon-icon">{a.icon}</div>
+                <div className="ui-section-title" style={{color:T.color.text}}>{a.name}</div>
+                <div className="ui-supporting" style={{color:T.color.textMuted}}>{a.description}</div>
                 {(() => {
                   const isQtyAddon = a.slug === 'extra_suppliers' || a.slug === 'extra_branch'
                   const qty = qtyMap[a.id] || 1
                   return (
-                    <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 14 }}>
-                      {isQtyAddon && !active ? qty * a.monthly_price : a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text4 }}>ر.س / شهر{isQtyAddon ? ` (${a.monthly_price} ر.س/وحدة)` : ''}</span>
+                    <div className="ui-value" style={{color:T.color.navy}}>
+                      {isQtyAddon && !active ? qty * a.monthly_price : a.monthly_price} <span className="ui-strong" style={{color:T.color.textMuted}}>ر.س / شهر{isQtyAddon ? ` (${a.monthly_price} ر.س/وحدة)` : ''}</span>
                     </div>
                   )
                 })()}
 
                 {active ? (
-                  <div style={{ textAlign: 'center' as const }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 4 }}>✅ مفعّلة{(a.slug==='extra_suppliers'||a.slug==='extra_branch') ? ` (${a.subscription?.quantity||1})` : ''}</div>
-                    <div style={{ fontSize: 10, color: colors.text4 }}>حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA', { numberingSystem: 'latn' })}</div>
+                  <div >
+                    <div className="ui-supporting" style={{color:T.color.navy}}>✅ مفعّلة{(a.slug==='extra_suppliers'||a.slug==='extra_branch') ? ` (${a.subscription?.quantity||1})` : ''}</div>
+                    <div className="ui-supporting" style={{color:T.color.textMuted}}>حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA', { numberingSystem: 'latn' })}</div>
                     {a.slug === 'extra_branch' && (
-                      <a href={subscribeLink(a, (a.subscription?.quantity || 1) + 1)} target="_blank" rel="noopener noreferrer"
-                        style={{ display: 'inline-block', marginTop: 10, fontSize: 11, fontWeight: 700, color: colors.primary }}>
+                      <a className="ui-button" href={subscribeLink(a, (a.subscription?.quantity || 1) + 1)} target="_blank" rel="noopener noreferrer">
                         تحتاج فرع زيادة؟ اطلب عبر واتساب
                       </a>
                     )}
@@ -227,21 +283,20 @@ export default function AddonsMarketPage() {
                 ) : (
                   <>
                     {(a.slug === 'extra_suppliers' || a.slug === 'extra_branch') && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 10 }}>
-                        <span style={{ fontSize: 11, color: colors.text3, fontWeight: 700 }}>الكمية:</span>
-                        <input type="number" min={1} max={20} value={qtyMap[a.id] || 1}
+                      <div className="ui-between">
+                        <span className="ui-strong" style={{color:T.color.textMuted}}>الكمية:</span>
+                        <input className="ui-control" type="number" min={1} max={20} value={qtyMap[a.id] || 1}
                           onChange={e => setQtyMap(prev => ({ ...prev, [a.id]: Math.max(1, Math.min(20, Number(e.target.value) || 1)) }))}
-                          style={{ width: 56, padding: '6px 4px', borderRadius: 8, border: `1px solid ${colors.border2}`, fontSize: 12, textAlign: 'center' as const, fontFamily: 'inherit' }} />
+                           />
                       </div>
                     )}
                     <DueNote addon={a} qty={qtyMap[a.id] || 1} />
-                    <a href={subscribeLink(a, qtyMap[a.id] || 1)} target="_blank" rel="noopener noreferrer"
-                      style={{ display: 'block', textAlign: 'center' as const, padding: '11px', background: colors.primary, color: 'white', borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+                    <a className="ui-button ui-primary" href={subscribeLink(a, qtyMap[a.id] || 1)} target="_blank" rel="noopener noreferrer">
                       اشتراك عبر واتساب
                     </a>
                   </>
                 )}
-              </div>
+              </StorelyCard>
             )
           })}
         </div>

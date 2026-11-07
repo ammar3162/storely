@@ -25,14 +25,14 @@ export function StorelyFormField({
   const description = error ?? helperText
 
   return (
-    <div className={cn('min-w-0', className)}>
-      <label htmlFor={htmlFor} className="mb-2 block text-[13px] font-semibold text-[#43525B]">
+    <div className={cn('storely-field', className)} data-error={!!error}>
+      <label htmlFor={htmlFor} className="storely-field-label">
         {label}
-        {required ? <span className="mr-1 text-[#B91C1C]">*</span> : null}
+        {required ? <span className="storely-field-required">*</span> : null}
       </label>
-      <div className={cn('min-w-0', controlClassName)}>{children}</div>
+      <div className={cn('storely-field-control', controlClassName)}>{children}</div>
       {description ? (
-        <div className={cn('mt-1.5 text-xs leading-5', error ? 'text-[#B91C1C]' : 'text-[#66737C]')}>
+        <div className="storely-field-description" data-error={!!error}>
           {description}
         </div>
       ) : null}

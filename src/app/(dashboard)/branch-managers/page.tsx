@@ -1,9 +1,10 @@
 'use client'
-import PageIcon from '@/components/PageIcon'
+import { Building2, Plus, Trash2 } from 'lucide-react'
+import { StorelyButton, StorelyCard, StorelyFormField, StorelyPageHeader } from '@/components/ui'
+import { storelyTokens } from '@/components/ui/design-tokens'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { getOrgId } from '@/lib/session'
-import { colors, font, card, btnPrimary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { cache } from '@/lib/cache'
@@ -17,6 +18,30 @@ const PERMS = [
   { key:'suppliers', label:'الموردين' },
   { key:'staff', label:'الموظفون' },
 ]
+
+const managerStyles = `
+  .branch-managers-page { max-width: 1100px; min-width: 0; margin: 0 auto; color: ${storelyTokens.color.text}; font-family: ${storelyTokens.typography.family}; line-height: ${storelyTokens.typography.lineHeight}; }
+  .branch-managers-page h1 { font-size: ${storelyTokens.typography.title}px; line-height: 1.5; }
+  .branch-managers-page .manager-section { background: ${storelyTokens.color.surface}; border-radius: ${storelyTokens.radius.card}; margin-bottom: ${storelyTokens.spacing[6]}px; }
+  .branch-managers-page .manager-section h2 { font-size: ${storelyTokens.typography.section}px; line-height: 1.7; }
+  .branch-managers-page .manager-form { padding: ${storelyTokens.spacing[6]}px; }
+  .branch-managers-page .manager-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: ${storelyTokens.spacing[5]}px; margin-bottom: ${storelyTokens.spacing[6]}px; }
+  .branch-managers-page .manager-control { width: 100%; min-width: 0; min-height: 40px; padding: ${storelyTokens.spacing[2]}px ${storelyTokens.spacing[3]}px; border: 1px solid ${storelyTokens.color.border}; border-radius: ${storelyTokens.radius.control}; background: ${storelyTokens.color.surface}; color: ${storelyTokens.color.text}; font: inherit; font-size: ${storelyTokens.typography.body}px; }
+  .branch-managers-page .manager-control:focus-visible { outline: none; border-color: ${storelyTokens.color.navy}; box-shadow: ${storelyTokens.shadow.focus}; }
+  .branch-managers-page .manager-permissions { display: flex; flex-wrap: wrap; gap: ${storelyTokens.spacing[2]}px; }
+  .branch-managers-page .manager-checkbox { display: flex; align-items: center; gap: ${storelyTokens.spacing[2]}px; padding: ${storelyTokens.spacing[2]}px ${storelyTokens.spacing[3]}px; min-height: 40px; border: 1px solid ${storelyTokens.color.border}; border-radius: ${storelyTokens.radius.control}; background: ${storelyTokens.color.surface}; cursor: pointer; font-size: ${storelyTokens.typography.body}px; }
+  .branch-managers-page .manager-checkbox:has(input:checked) { border-color: ${storelyTokens.color.navy}; }
+  .branch-managers-page .manager-checkbox input { width: 16px; height: 16px; accent-color: ${storelyTokens.color.navy}; }
+  .branch-managers-page .manager-form-actions { display: flex; margin-top: ${storelyTokens.spacing[6]}px; padding-top: ${storelyTokens.spacing[5]}px; border-top: 1px solid ${storelyTokens.color.border}; }
+  .branch-managers-page .manager-record { padding: ${storelyTokens.spacing[6]}px; border-bottom: 1px solid ${storelyTokens.color.border}; }
+  .branch-managers-page .manager-record:last-child { border-bottom: 0; }
+  .branch-managers-page .manager-record-header { display: flex; align-items: flex-start; justify-content: space-between; gap: ${storelyTokens.spacing[4]}px; margin-bottom: ${storelyTokens.spacing[4]}px; }
+  .branch-managers-page .manager-identity { min-width: 0; overflow-wrap: anywhere; }
+  .branch-managers-page .manager-name { font-size: ${storelyTokens.typography.body}px; font-weight: 600; }
+  .branch-managers-page .manager-branch { display: flex; align-items: baseline; gap: ${storelyTokens.spacing[2]}px; margin-top: ${storelyTokens.spacing[1]}px; color: ${storelyTokens.color.textMuted}; font-size: ${storelyTokens.typography.body}px; }
+  .branch-managers-page .manager-placeholder { padding: ${storelyTokens.spacing[8]}px ${storelyTokens.spacing[6]}px; color: ${storelyTokens.color.textMuted}; font-size: ${storelyTokens.typography.body}px; }
+  @media (max-width: 640px) { .branch-managers-page .manager-fields { grid-template-columns: minmax(0, 1fr); gap: ${storelyTokens.spacing[4]}px; } .branch-managers-page .manager-form, .branch-managers-page .manager-record { padding: ${storelyTokens.spacing[4]}px; } .branch-managers-page .manager-form-actions > button { width: 100%; } }
+`
 
 export default function BranchManagersPage() {
   const [orgId, setOrgId] = useState('')
@@ -93,78 +118,75 @@ export default function BranchManagersPage() {
   }
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:1000,margin:'0 auto'}}>
-      <div style={{marginBottom:20}}>
-        <h1 style={{...pageTitle}}><PageIcon/>مديرو الفروع</h1>
-        <p style={{...pageSub}}>أضف حساب مدير لكل فرع، وحدد بالضبط أي الصفحات يقدر يشوفها — يدخل بإيميله وكلمة مروره الخاصة، ويشوف فرعه بس</p>
-      </div>
-
-      <div style={{...card,padding:'18px 20px',marginBottom:20}}>
-        <div style={{fontSize:font.base,fontWeight:800,color:colors.text,marginBottom:14}}>➕ إضافة مدير فرع جديد</div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
-          <div>
-            <label style={{fontSize:11,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>اسم المدير</label>
-            <input value={name} onChange={e=>setName(e.target.value)} style={inp()} placeholder="مثال: أحمد محمد"/>
+    <div className="branch-managers-page" dir="rtl">
+      <style>{managerStyles}</style>
+      <StorelyPageHeader
+        title="مديرو الفروع"
+        description="أضف حساب مدير لكل فرع، وحدد بالضبط أي الصفحات يقدر يشوفها — يدخل بإيميله وكلمة مروره الخاصة، ويشوف فرعه بس"
+      />
+      <StorelyCard className="manager-section" title="إضافة مدير فرع جديد">
+        <div className="manager-form">
+          <div className="manager-fields">
+            <StorelyFormField label="اسم المدير" htmlFor="manager-name">
+              <input id="manager-name" value={name} onChange={e=>setName(e.target.value)} className="manager-control" placeholder="مثال: أحمد محمد"/>
+            </StorelyFormField>
+            <StorelyFormField label="الفرع" htmlFor="manager-branch">
+              <select id="manager-branch" value={branchId} onChange={e=>setBranchId(e.target.value)} className="manager-control">
+                <option value="">اختر الفرع</option>
+                {branches.map((b:any)=>(<option key={b.id} value={b.id}>{b.name}</option>))}
+              </select>
+            </StorelyFormField>
+            <StorelyFormField label="الإيميل" htmlFor="manager-email">
+              <input id="manager-email" type="email" value={email} onChange={e=>setEmail(e.target.value)} className="manager-control" dir="ltr" placeholder="manager@example.com"/>
+            </StorelyFormField>
+            <StorelyFormField label="كلمة المرور" htmlFor="manager-password">
+              <input id="manager-password" type="password" value={password} onChange={e=>setPassword(e.target.value)} className="manager-control" placeholder="6 أحرف على الأقل"/>
+            </StorelyFormField>
           </div>
-          <div>
-            <label style={{fontSize:11,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>الفرع</label>
-            <select value={branchId} onChange={e=>setBranchId(e.target.value)} style={inp()}>
-              <option value="">اختر الفرع</option>
-              {branches.map((b:any)=>(<option key={b.id} value={b.id}>{b.name}</option>))}
-            </select>
-          </div>
-          <div>
-            <label style={{fontSize:11,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>الإيميل</label>
-            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} style={inp()} placeholder="manager@example.com"/>
-          </div>
-          <div>
-            <label style={{fontSize:11,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>كلمة المرور</label>
-            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} style={inp()} placeholder="6 أحرف على الأقل"/>
+          <fieldset className="m-0 min-w-0 border-0 p-0">
+            <legend className="mb-3 text-sm font-semibold">الصفحات المسموح له يشوفها</legend>
+            <div className="manager-permissions">
+              {PERMS.map(p=>(
+                <label key={p.key} className="manager-checkbox">
+                  <input type="checkbox" checked={!!perms[p.key]} onChange={()=>setPerms(prev=>({...prev,[p.key]:!prev[p.key]}))}/>
+                  {p.label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <div className="manager-form-actions">
+            <StorelyButton onClick={addManager} disabled={saving} variant="primary" size="lg" icon={!saving && <Plus size={16} />}>
+              {saving?'جاري الإضافة...':'إضافة مدير الفرع'}
+            </StorelyButton>
           </div>
         </div>
-        <label style={{fontSize:11,fontWeight:700,color:colors.text4,display:'block',marginBottom:8}}>الصفحات المسموح له يشوفها</label>
-        <div style={{display:'flex',flexWrap:'wrap' as const,gap:8,marginBottom:14}}>
-          {PERMS.map(p=>(
-            <label key={p.key} style={{display:'flex',alignItems:'center',gap:6,padding:'7px 12px',background:perms[p.key]?colors.primaryLight:colors.bg,border:`1px solid ${perms[p.key]?colors.primaryBorder:colors.border}`,borderRadius:8,cursor:'pointer',fontSize:12,fontWeight:600,color:perms[p.key]?colors.primary:colors.text2}}>
-              <input type="checkbox" checked={!!perms[p.key]} onChange={()=>setPerms(prev=>({...prev,[p.key]:!prev[p.key]}))} style={{width:14,height:14}}/>
-              {p.label}
-            </label>
-          ))}
-        </div>
-        <button onClick={addManager} disabled={saving} style={{...btnPrimary,padding:'11px 20px'}}>
-          {saving?'⏳ جاري الإضافة...':'إضافة مدير الفرع'}
-        </button>
-      </div>
-
-      <div style={{...card,padding:'18px 20px'}}>
-        <div style={{fontSize:font.base,fontWeight:800,color:colors.text,marginBottom:14}}>مديرو الفروع الحاليون ({managers.length})</div>
-        {loading ? <div style={{color:colors.text4,fontSize:13}}>جاري التحميل...</div> :
-          managers.length===0 ? <div style={{color:colors.text4,fontSize:13,textAlign:'center' as const,padding:20}}>ما فيه مديرو فروع مضافين بعد</div> :
-          <div style={{display:'flex',flexDirection:'column' as const,gap:12}}>
+      </StorelyCard>
+      <StorelyCard className="manager-section" title={`مديرو الفروع الحاليون (${managers.length})`}>
+        {loading ? <div className="manager-placeholder" aria-busy="true">جاري التحميل...</div> :
+          managers.length===0 ? <div className="manager-placeholder text-center">ما فيه مديرو فروع مضافين بعد</div> :
+          <div>
             {managers.map((m:any)=>(
-              <div key={m.id} style={{padding:'14px',background:colors.bg,borderRadius:10,border:`1px solid ${colors.border}`}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-                  <div>
-                    <span style={{fontSize:14,fontWeight:700,color:colors.text}}>{m.full_name}</span>
-                    <span style={{fontSize:11,color:colors.text4,marginRight:8}}>🏪 {(m.branches as any)?.name||'—'}</span>
+              <div key={m.id} className="manager-record">
+                <div className="manager-record-header">
+                  <div className="manager-identity">
+                    <div className="manager-name">{m.full_name}</div>
+                    <div className="manager-branch"><Building2 size={16} className="shrink-0 self-center" aria-hidden="true" /><span>{(m.branches as any)?.name||'—'}</span></div>
                   </div>
-                  <button onClick={()=>deleteManager(m.id)} style={{background:'none',border:`1px solid ${colors.dangerBorder}`,color:colors.danger,borderRadius:6,padding:'5px 12px',fontSize:11,fontWeight:700,cursor:'pointer'}}>
-                    🗑️ حذف
-                  </button>
+                  <StorelyButton onClick={()=>deleteManager(m.id)} variant="danger" size="sm" icon={<Trash2 size={16} />}>حذف</StorelyButton>
                 </div>
-                <div style={{display:'flex',flexWrap:'wrap' as const,gap:6}}>
+                <div className="manager-permissions">
                   {PERMS.map(p=>(
-                    <button key={p.key} onClick={()=>togglePerm(m.id,p.key,m.permissions)}
-                      style={{padding:'4px 10px',borderRadius:99,border:`1px solid ${m.permissions?.[p.key]?colors.primaryBorder:colors.border2}`,background:m.permissions?.[p.key]?colors.primaryLight:'white',color:m.permissions?.[p.key]?colors.primary:colors.text4,fontSize:10,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                    <StorelyButton key={p.key} onClick={()=>togglePerm(m.id,p.key,m.permissions)}
+                      variant={m.permissions?.[p.key]?'primary':'secondary'} aria-pressed={!!m.permissions?.[p.key]}>
                       {p.label}
-                    </button>
+                    </StorelyButton>
                   ))}
                 </div>
               </div>
             ))}
           </div>
         }
-      </div>
+      </StorelyCard>
     </div>
   )
 }

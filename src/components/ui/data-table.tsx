@@ -108,12 +108,12 @@ export function StorelyDataTable<T>({
   }
 
   return (
-    <section className={cn('overflow-hidden rounded-[6px] border border-[#E7E1D8] bg-white', className)}>
+    <section className={cn('storely-data-table', className)}>
       {(searchable || toolbar) && (
-        <div className="flex flex-col gap-3 border-b border-[#E7E1D8] p-3 md:flex-row md:items-center md:justify-between">
+        <div className="storely-toolbar">
           {searchable ? (
-            <label className="relative block max-w-md flex-1">
-              <Search className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#8EA0B1]" size={16} />
+            <label className="storely-search">
+              <Search className="storely-search-icon" size={16} />
               <input
                 value={query}
                 onChange={(event) => {
@@ -121,19 +121,19 @@ export function StorelyDataTable<T>({
                   setPage(1)
                 }}
                 placeholder={searchPlaceholder}
-                className="h-9 w-full rounded-[6px] border border-[#D7CDC2] bg-white pr-9 pl-3 text-sm text-[#203640] outline-none transition placeholder:text-[#8EA0B1] focus:border-[#203640] focus:ring-2 focus:ring-[#203640]/15"
+                className="storely-input"
               />
             </label>
           ) : (
             <div />
           )}
-          {toolbar ? <div className="flex flex-wrap items-center gap-2">{toolbar}</div> : null}
+          {toolbar ? <div className="storely-actions">{toolbar}</div> : null}
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full border-collapse text-right text-sm leading-6">
-          <thead className="bg-[#F8EEDF]/40">
+      <div className="storely-table-scroll">
+        <table className="storely-table">
+          <thead >
             <tr>
               {columns.map((column) => {
                 const active = sortKey === column.key
@@ -143,7 +143,7 @@ export function StorelyDataTable<T>({
                   <th
                     key={column.key}
                     className={cn(
-                      'h-11 border-b border-[#E7E1D8] px-4 py-2 text-[13px] font-semibold text-[#56646D]',
+                      'storely-table-heading',
                       column.sortable && 'cursor-pointer select-none hover:text-[#203640]',
                       column.headerClassName,
                     )}
@@ -166,7 +166,7 @@ export function StorelyDataTable<T>({
                 <tr
                   key={key}
                   className={cn(
-                    'border-b border-[#E7E1D8] last:border-b-0 hover:bg-[#F8EEDF]/25',
+                    'storely-table-row',
                     onRowClick && 'cursor-pointer',
                   )}
                   onClick={() => onRowClick?.(row)}
@@ -174,9 +174,9 @@ export function StorelyDataTable<T>({
                   {columns.map((column) => (
                     <td
                       key={column.key}
+                      data-dense={dense}
                       className={cn(
-                        dense ? 'px-4 py-2.5' : 'px-4 py-3.5',
-                        'h-11 align-middle text-sm text-[#203640]',
+                        'storely-table-cell',
                         column.className,
                       )}
                     >
@@ -197,15 +197,15 @@ export function StorelyDataTable<T>({
       ) : null}
 
       {sorted.length > pageSize ? (
-        <div className="flex flex-col gap-3 border-t border-[#E7E1D8] px-4 py-3 text-[13px] text-[#66737C] md:flex-row md:items-center md:justify-between">
+        <div className="storely-pagination">
           <span>
             عرض {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, sorted.length)} من {sorted.length}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="storely-pagination-controls">
             <StorelyButton size="sm" disabled={currentPage <= 1} onClick={() => setPage((value) => value - 1)}>
               السابق
             </StorelyButton>
-            <span className="min-w-16 text-center font-semibold text-[#203640]">
+            <span className="min-w-16 text-center font-semibold">
               {currentPage} / {totalPages}
             </span>
             <StorelyButton size="sm" disabled={currentPage >= totalPages} onClick={() => setPage((value) => value + 1)}>

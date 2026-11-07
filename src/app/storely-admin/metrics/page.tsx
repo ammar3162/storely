@@ -1,17 +1,17 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { LEGACY_C } from '../_admin/kit'
+import { ArrowDown, ArrowUp, Ban, CircleCheck, Gift, Info, RefreshCw } from 'lucide-react'
+import { StorelyButton, StorelyCard, StorelyMetricStrip, StorelyPageHeader } from '@/components/ui'
+import { storelyTokens } from '@/components/ui/design-tokens'
 
-const C = LEGACY_C
-
-const EVENT_LABELS: Record<string,{label:string;color:string;icon:string}> = {
-  trial_started: { label:'بدأ تجربة', color:C.blue, icon:'🎁' },
-  activated:     { label:'اشترك (مدفوع)', color:C.green, icon:'✅' },
-  cancelled:     { label:'ألغى/أُوقف', color:C.red, icon:'⛔' },
-  upgraded:      { label:'رقّى الباقة', color:C.purple, icon:'⬆️' },
-  downgraded:    { label:'خفّض الباقة', color:'#f59e0b', icon:'⬇️' },
-  renewed:       { label:'جدّد الاشتراك', color:C.green, icon:'🔄' },
-}
+const EVENT_LABELS = {
+  trial_started: { label:'بدأ تجربة', color:storelyTokens.color.info, icon:Gift },
+  activated: { label:'اشترك (مدفوع)', color:storelyTokens.color.success, icon:CircleCheck },
+  cancelled: { label:'ألغى/أُوقف', color:storelyTokens.color.danger, icon:Ban },
+  upgraded: { label:'رقّى الباقة', color:storelyTokens.color.text, icon:ArrowUp },
+  downgraded: { label:'خفّض الباقة', color:storelyTokens.color.warning, icon:ArrowDown },
+  renewed: { label:'جدّد الاشتراك', color:storelyTokens.color.success, icon:RefreshCw },
+} as const
 
 export default function MetricsPage() {
   const [data, setData] = useState<any>(null)
@@ -45,80 +45,79 @@ export default function MetricsPage() {
   }
 
   if (!authChecked) return (
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{color:C.text2,fontSize:13}}>⏳ جاري التحقق...</div>
+    <div className="admin-metrics" dir="rtl">
+      <style>{metricsStyles}</style>
+      <div className="metrics-loading">جاري التحقق...</div>
     </div>
   )
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,flexWrap:'wrap' as const,gap:12}}>
-        <div>
-          <h1 style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:4}}>مقاييس العمل التجاري</h1>
-          <div style={{fontSize:12,color:C.text3}}>الإيراد المتكرر، معدل التحويل، وسجل أحداث الاشتراكات</div>
-        </div>
-        <div style={{display:'flex',gap:10}}>
-          <button onClick={load} disabled={loading} style={{padding:'8px 16px',background:'#f2f4f7',color:C.text,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-            {loading?'...':'↺ تحديث'}
-          </button>
-        </div>
-      </div>
-
-      {error && <div style={{background:'#fef3f2',color:'#d92d20',padding:'10px 14px',borderRadius:10,fontSize:13,marginBottom:16}}>{error}</div>}
-
+    <div className="admin-metrics" dir="rtl">
+      <style>{metricsStyles}</style>
+      <StorelyPageHeader title="مقاييس العمل التجاري" description="الإيراد المتكرر، معدل التحويل، وسجل أحداث الاشتراكات"
+        actions={<StorelyButton onClick={load} disabled={loading} icon={!loading && <RefreshCw size={16} />}>{loading?'...':'تحديث'}</StorelyButton>} />
+      {error && <div className="metrics-error">{error}</div>}
       {loading && !data ? (
-        <div style={{textAlign:'center',padding:60,color:C.text3}}>جاري التحميل...</div>
+        <div className="metrics-loading">جاري التحميل...</div>
       ) : data && (
         <>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:14,marginBottom:24}}>
-            {[
-              { label:'الإيراد الشهري (MRR)', value:`${data.mrr.toLocaleString()} ر.س`, color:C.green, icon:'💰' },
-              { label:'الإيراد السنوي المتوقع (ARR)', value:`${data.arr.toLocaleString()} ر.س`, color:C.blue, icon:'📈' },
-              { label:'معدل التحويل لمدفوع', value:`${data.conversionRate}%`, color:C.purple, icon:'🎯' },
-              { label:'مشتركون مدفوعون نشطون', value:data.paidCount, color:C.green, icon:'✅' },
-              { label:'بالتجربة المجانية', value:data.trialCount, color:C.blue, icon:'🎁' },
-              { label:'موقوفون/ملغيون', value:data.suspendedCount, color:C.red, icon:'⛔' },
-            ].map((s,i)=>(
-              <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:14,padding:'16px 18px'}}>
-                <div style={{fontSize:20,marginBottom:8}}>{s.icon}</div>
-                <div style={{fontSize:20,fontWeight:800,color:s.color}}>{s.value}</div>
-                <div style={{fontSize:11,color:C.text3,marginTop:4}}>{s.label}</div>
-              </div>
-            ))}
+          <StorelyMetricStrip className="metrics-summary" metrics={[
+            { label:'الإيراد الشهري (MRR)', value:`${data.mrr.toLocaleString()} ر.س` },
+            { label:'الإيراد السنوي المتوقع (ARR)', value:`${data.arr.toLocaleString()} ر.س` },
+            { label:'معدل التحويل لمدفوع', value:`${data.conversionRate}%` },
+            { label:'مشتركون مدفوعون نشطون', value:data.paidCount },
+            { label:'بالتجربة المجانية', value:data.trialCount },
+            { label:'موقوفون/ملغيون', value:data.suspendedCount },
+          ]} />
+          <div className="metrics-notice">
+            <Info size={18} className="shrink-0" aria-hidden="true" />
+            <span>سجل الأحداث (تفعيل، إلغاء، ترقية) بدأ التسجيل اليوم — كل ما مرّ وقت أكثر، تصير مقاييس زي معدل الإلغاء الشهري (Churn) أدق.</span>
           </div>
-
-          <div style={{background:'#eff8ff',border:'1px solid #1e3a5f',borderRadius:12,padding:'12px 16px',marginBottom:20,fontSize:12,color:C.text2}}>
-            ℹ️ سجل الأحداث (تفعيل، إلغاء، ترقية) بدأ التسجيل اليوم — كل ما مرّ وقت أكثر، تصير مقاييس زي معدل الإلغاء الشهري (Churn) أدق.
-          </div>
-
-          <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:12}}>آخر أحداث الاشتراكات</div>
-          {(!data.recentEvents || data.recentEvents.length===0) ? (
-            <div style={{background:C.card,borderRadius:14,padding:40,textAlign:'center',border:`1px solid ${C.border}`}}>
-              <div style={{fontSize:32,marginBottom:10}}>📭</div>
-              <div style={{color:C.text2}}>ما فيه أحداث مسجّلة بعد — بتظهر هنا أول ما تفعّل/تلغي/ترقّي أي اشتراك</div>
-            </div>
-          ) : (
-            <div style={{display:'flex',flexDirection:'column',gap:8}}>
-              {data.recentEvents.map((e:any)=>{
-                const cfg = EVENT_LABELS[e.event_type] || { label:e.event_type, color:C.text2, icon:'•' }
-                return (
-                  <div key={e.id} style={{background:C.card,borderRadius:10,border:`1px solid ${C.border}`,padding:'10px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap' as const}}>
-                    <div style={{display:'flex',alignItems:'center',gap:10}}>
-                      <span style={{fontSize:16}}>{cfg.icon}</span>
-                      <div>
-                        <span style={{fontSize:12,fontWeight:700,color:cfg.color}}>{cfg.label}</span>
-                        <span style={{fontSize:12,color:C.text2}}> — {e.org_name}</span>
-                        {e.plan && <span style={{fontSize:11,color:C.text3}}> ({e.plan})</span>}
+          <StorelyCard className="metrics-events" title="آخر أحداث الاشتراكات">
+            {(!data.recentEvents || data.recentEvents.length===0) ? (
+              <div className="metrics-empty">ما فيه أحداث مسجّلة بعد — بتظهر هنا أول ما تفعّل/تلغي/ترقّي أي اشتراك</div>
+            ) : (
+              <div>
+                {data.recentEvents.map((e:any)=>{
+                  const cfg = EVENT_LABELS[e.event_type as keyof typeof EVENT_LABELS] || { label:e.event_type, color:storelyTokens.color.textMuted, icon:Info }
+                  const Icon = cfg.icon
+                  return (
+                    <div key={e.id} className="metrics-event">
+                      <div className="metrics-event-detail">
+                        <Icon size={18} style={{color:cfg.color}} className="shrink-0" aria-hidden="true" />
+                        <div className="min-w-0">
+                          <span className="font-semibold" style={{color:cfg.color}}>{cfg.label}</span>
+                          <span> — {e.org_name}</span>
+                          {e.plan && <span className="metrics-plan"> ({e.plan})</span>}
+                        </div>
                       </div>
+                      <div className="metrics-date">{new Date(e.created_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
                     </div>
-                    <div style={{fontSize:11,color:C.text3}}>{new Date(e.created_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+                  )
+                })}
+              </div>
+            )}
+          </StorelyCard>
         </>
       )}
     </div>
   )
 }
+
+const metricsStyles = `
+  .admin-metrics { min-width: 0; font-family: ${storelyTokens.typography.family}; color: ${storelyTokens.color.text}; font-size: ${storelyTokens.typography.body}px; line-height: ${storelyTokens.typography.lineHeight}; }
+  .admin-metrics h1 { font-size: ${storelyTokens.typography.title}px; line-height: 1.5; }
+  .admin-metrics h2 { font-size: ${storelyTokens.typography.section}px; }
+  .admin-metrics .metrics-summary { margin-bottom: ${storelyTokens.spacing[6]}px; border-radius: ${storelyTokens.radius.card}; }
+  .admin-metrics .metrics-notice { display: flex; align-items: flex-start; gap: ${storelyTokens.spacing[3]}px; padding: ${storelyTokens.spacing[4]}px; margin-bottom: ${storelyTokens.spacing[6]}px; border: 1px solid ${storelyTokens.color.border}; border-radius: ${storelyTokens.radius.control}; background: ${storelyTokens.color.surface}; color: ${storelyTokens.color.textMuted}; }
+  .admin-metrics .metrics-notice svg { margin-top: ${storelyTokens.spacing[1]}px; }
+  .admin-metrics .metrics-events { border-radius: ${storelyTokens.radius.card}; }
+  .admin-metrics .metrics-event { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: ${storelyTokens.spacing[4]}px; padding: ${storelyTokens.spacing[5]}px; border-bottom: 1px solid ${storelyTokens.color.border}; }
+  .admin-metrics .metrics-event:last-child { border-bottom: 0; }
+  .admin-metrics .metrics-event-detail { display: flex; align-items: baseline; gap: ${storelyTokens.spacing[3]}px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .admin-metrics .metrics-event-detail > svg { align-self: center; }
+  .admin-metrics .metrics-date, .admin-metrics .metrics-plan { color: ${storelyTokens.color.textMuted}; font-size: ${storelyTokens.typography.supporting}px; }
+  .admin-metrics .metrics-loading, .admin-metrics .metrics-empty { padding: ${storelyTokens.spacing[8]}px ${storelyTokens.spacing[5]}px; text-align: center; color: ${storelyTokens.color.textMuted}; }
+  .admin-metrics .metrics-error { background: ${storelyTokens.color.dangerBg}; border: 1px solid ${storelyTokens.color.dangerBorder}; color: ${storelyTokens.color.danger}; padding: ${storelyTokens.spacing[4]}px; margin-bottom: ${storelyTokens.spacing[4]}px; border-radius: ${storelyTokens.radius.control}; }
+  @media (max-width: 640px) { .admin-metrics .metrics-date { width: 100%; padding-inline-start: 30px; } }
+`

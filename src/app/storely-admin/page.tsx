@@ -2,9 +2,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, RefreshCw } from 'lucide-react'
-import { A, Badge, Btn, Card, Empty, Loading, Notice, PageHeader, Stat, adminFetch, daysLeft, fmtDate, useAdmin } from './_admin/kit'
-import { type Customer, PLAN_KEYS, PLAN_TONE, STATUS, mapCustomer, monthlyRevenue, planLabel } from './_admin/customers'
+import { Empty, Loading, Notice, Stat, adminFetch, daysLeft, fmtDate, useAdmin } from './_admin/kit'
+import { type Customer, PLAN_KEYS, STATUS, mapCustomer, monthlyRevenue, planLabel } from './_admin/customers'
 import CustomerDrawer from './_admin/CustomerDrawer'
+import { StorelyButton, StorelyCard, StorelyPageHeader, StorelyStatusBadge } from '@/components/ui'
+import { storelyTokens } from '@/components/ui/design-tokens'
 
 export default function OverviewPage() {
   const router = useRouter()
@@ -56,22 +58,23 @@ export default function OverviewPage() {
   const today = new Date().toLocaleDateString('ar-SA', { numberingSystem: 'latn', weekday: 'long', day: 'numeric', month: 'long' })
 
   return (
-    <>
-      <PageHeader title="نظرة عامة" subtitle={today} actions={<Btn onClick={load} loading={loading}><RefreshCw size={14} /> تحديث</Btn>} />
+    <div className="storely-admin-page admin-overview" dir="rtl">
+      <style>{overviewStyles}</style>
+      <StorelyPageHeader title="نظرة عامة" description={today} actions={<StorelyButton onClick={load} disabled={loading}><RefreshCw size={14} /> تحديث</StorelyButton>} />
 
       {maintenance && (
         <div style={{ marginBottom: 16 }}>
-          <Notice tone="danger" action={<Btn small onClick={() => router.push('/storely-admin/settings')}>الإعدادات</Btn>}>
+          <Notice tone="danger" action={<StorelyButton size="sm" onClick={() => router.push('/storely-admin/settings')}>الإعدادات</StorelyButton>}>
             وضع الصيانة مفعّل — العملاء يشوفون شاشة الصيانة الحين
           </Notice>
         </div>
       )}
 
-      {!canUsers ? <Card><Empty title="أهلاً بك" hint="استخدم القائمة الجانبية للأقسام المتاحة لك" /></Card> : loading ? <Loading /> : (
+      {!canUsers ? <StorelyCard className="admin-panel"><Empty title="أهلاً بك" hint="استخدم القائمة الجانبية للأقسام المتاحة لك" /></StorelyCard> : loading ? <Loading /> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* يحتاج إجراء */}
           {(s.pending.length > 0 || s.expiring.length > 0 || pendingSuppliers > 0 || s.expired > 0) && (
-            <Card title="يحتاج إجراء منك">
+            <StorelyCard className="admin-panel" title="يحتاج إجراء منك">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {s.pending.length > 0 && (
                   <ActionRow tone="warning" text={`${s.pending.length} منشأة بانتظار التفعيل`} onClick={() => router.push('/storely-admin/customers?filter=pending')} />
@@ -86,69 +89,67 @@ export default function OverviewPage() {
                   <ActionRow tone="info" text={`${pendingSuppliers} طلب مورد جديد`} onClick={() => router.push('/storely-admin/supplier-applications')} />
                 )}
               </div>
-            </Card>
+            </StorelyCard>
           )}
 
           {/* الأرقام */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 12 }}>
+          <div className="storely-metric-grid">
             <Stat label="الإيراد الشهري المتوقع" value={`${s.revenue.toLocaleString('en')} ر.س`} hint={`من ${s.paid} مشترك مدفوع`} tone="primary" />
             <Stat label="المنشآت المسجّلة" value={s.total} hint={`${s.newThisMonth} جديدة هذا الشهر`} onClick={() => router.push('/storely-admin/customers')} />
             <Stat label="مفعّلة" value={s.active} hint={`${s.paid} مدفوع · ${s.trial} تجربة`} />
             <Stat label="بانتظار التفعيل" value={s.pending.length} tone={s.pending.length ? 'warning' : 'default'} onClick={() => router.push('/storely-admin/customers?filter=pending')} />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(320px,1fr))', gap: 20 }}>
+          <div className="overview-sections">
             {/* ينتهي قريباً */}
-            <Card title="اشتراكات تنتهي قريباً" subtitle="خلال 7 أيام" pad={0}>
+            <StorelyCard className="admin-panel" title="اشتراكات تنتهي قريباً" description="خلال 7 أيام">
               {s.expiring.length === 0 ? <Empty title="ما فيه اشتراكات تنتهي هالأسبوع" /> : s.expiring.slice(0, 6).map(({ u, d }) => (
                 <ListRow key={u.id} onClick={() => setSelectedId(u.id)} title={u.org_name} sub={`${planLabel(u.plan)} · ${u.subscription_type === 'paid' ? 'مدفوع' : 'تجربة'}`}
-                  end={<Badge tone={d! <= 3 ? 'danger' : 'warning'}>باقي {d} يوم</Badge>} />
+                  end={<StorelyStatusBadge status={d! <= 3 ? 'danger' : 'warning'}>باقي {d} يوم</StorelyStatusBadge>} />
               ))}
-            </Card>
+            </StorelyCard>
 
             {/* آخر المسجّلين */}
-            <Card title="آخر المسجّلين" pad={0} actions={<Btn small kind="ghost" onClick={() => router.push('/storely-admin/customers')}>عرض الكل</Btn>}>
+            <StorelyCard className="admin-panel" title="آخر المسجّلين" actions={<StorelyButton size="sm" variant="ghost" onClick={() => router.push('/storely-admin/customers')}>عرض الكل</StorelyButton>}>
               {s.latest.length === 0 ? <Empty title="ما فيه عملاء بعد" /> : s.latest.map(u => (
                 <ListRow key={u.id} onClick={() => setSelectedId(u.id)} title={u.org_name} sub={`${u.full_name} · ${fmtDate(u.created_at)}`}
-                  end={<Badge tone={(STATUS[u.status] || STATUS.pending).tone}>{(STATUS[u.status] || STATUS.pending).label}</Badge>} />
+                  end={<StorelyStatusBadge status={u.status === 'active' ? 'success' : u.status === 'suspended' ? 'danger' : u.status === 'deleted' ? 'info' : 'warning'}>{(STATUS[u.status] || STATUS.pending).label}</StorelyStatusBadge>} />
               ))}
-            </Card>
+            </StorelyCard>
 
             {/* توزيع الباقات */}
-            <Card title="توزيع الباقات" subtitle="المنشآت المفعّلة">
+            <StorelyCard className="admin-panel" title="توزيع الباقات" description="المنشآت المفعّلة">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {s.byPlan.map(({ k, n }) => {
                   const pct = s.active ? Math.round((n / s.active) * 100) : 0
                   return (
                     <div key={k}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
-                        <Badge tone={PLAN_TONE[k]}>{planLabel(k)}</Badge>
-                        <span style={{ fontWeight: 700 }}>{n} <span style={{ color: A.text3, fontWeight: 500 }}>({pct}%)</span></span>
+                        <span className="font-semibold">{planLabel(k)}</span>
+                        <span style={{ fontWeight: 700 }}>{n} <span style={{ color: storelyTokens.color.textMuted, fontWeight: 500 }}>({pct}%)</span></span>
                       </div>
-                      <div style={{ height: 8, background: '#f2f4f7', borderRadius: 99, overflow: 'hidden' }}>
-                        <div style={{ width: `${pct}%`, height: '100%', background: A.primary, borderRadius: 99 }} />
+                      <div style={{ height: 8, background: storelyTokens.color.border, borderRadius: 0, overflow: 'hidden' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: storelyTokens.color.navy, borderRadius: 0 }} />
                       </div>
                     </div>
                   )
                 })}
               </div>
-            </Card>
+            </StorelyCard>
           </div>
         </div>
       )}
 
-      <CustomerDrawer customer={selected} onClose={() => setSelectedId(null)}
-        onChanged={patch => patch ? setList(prev => prev.map(u => u.id === selectedId ? { ...u, ...patch } : u)) : load()} />
-    </>
+      <div className="admin-drawer"><CustomerDrawer customer={selected} onClose={() => setSelectedId(null)}
+        onChanged={patch => patch ? setList(prev => prev.map(u => u.id === selectedId ? { ...u, ...patch } : u)) : load()} /></div>
+    </div>
   )
 }
 
 function ActionRow({ text, tone, onClick }: { text: string; tone: 'warning' | 'danger' | 'info'; onClick: () => void }) {
-  const color = { warning: A.warning, danger: A.danger, info: A.info }[tone]
-  const bg = { warning: A.warningSoft, danger: A.dangerSoft, info: A.infoSoft }[tone]
+  const color = storelyTokens.color[tone]
   return (
-    <button onClick={onClick} className="adm-hover"
-      style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '11px 14px', borderRadius: 10, border: `1px solid ${color}22`, background: bg, color, fontSize: 13.5, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', textAlign: 'right' }}>
+    <button onClick={onClick} className="overview-action" style={{color}}>
       <span style={{ width: 8, height: 8, borderRadius: 99, background: color, flexShrink: 0 }} />
       <span style={{ flex: 1 }}>{text}</span>
       <ChevronLeft size={16} />
@@ -158,13 +159,23 @@ function ActionRow({ text, tone, onClick }: { text: string; tone: 'warning' | 'd
 
 function ListRow({ title, sub, end, onClick }: { title: string; sub: string; end: React.ReactNode; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="adm-row-btn"
-      style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '12px 20px', border: 'none', borderBottom: `1px solid ${A.border}`, background: 'transparent', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'right' }}>
+    <button onClick={onClick} className="overview-list-row">
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13.5, fontWeight: 700, color: A.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</div>
-        <div style={{ fontSize: 12, color: A.text3, marginTop: 2 }}>{sub}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: storelyTokens.color.text, overflowWrap: 'anywhere' }}>{title}</div>
+        <div style={{ fontSize: 12, color: storelyTokens.color.textMuted, marginTop: 2 }}>{sub}</div>
       </div>
       {end}
     </button>
   )
 }
+
+const overviewStyles = `
+  .admin-overview .overview-sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: ${storelyTokens.spacing[6]}px; }
+  .admin-overview .overview-sections > section:last-child { grid-column: 1 / -1; }
+  .admin-overview .overview-sections > section:last-child > div:last-child { padding: ${storelyTokens.spacing[5]}px; }
+  .admin-overview .overview-action { display: flex; align-items: center; gap: ${storelyTokens.spacing[3]}px; width: 100%; padding: ${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px; border: 0; border-bottom: 1px solid ${storelyTokens.color.border}; background: ${storelyTokens.color.surface}; font: inherit; font-weight: 600; text-align: start; cursor: pointer; }
+  .admin-overview .overview-action:hover, .admin-overview .overview-list-row:hover { background: ${storelyTokens.color.background}; }
+  .admin-overview .overview-list-row { display: flex; flex-wrap: wrap; align-items: center; gap: ${storelyTokens.spacing[3]}px; width: 100%; padding: ${storelyTokens.spacing[5]}px; border: 0; border-bottom: 1px solid ${storelyTokens.color.border}; background: ${storelyTokens.color.surface}; font: inherit; text-align: start; cursor: pointer; }
+  .admin-overview .overview-list-row:last-child { border-bottom: 0; }
+  @media (max-width: 640px) { .admin-overview .overview-sections { grid-template-columns: minmax(0, 1fr); } }
+`

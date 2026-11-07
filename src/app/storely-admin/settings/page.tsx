@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { toast } from '@/components/toast'
-import { A, Badge, Btn, Card, Field, Loading, Notice, PageHeader, adminFetch, inputStyle, useAdmin } from '../_admin/kit'
+import { Btn, Field, Loading, Notice, adminFetch, useAdmin } from '../_admin/kit'
+import { StorelyCard, StorelyPageHeader, StorelyStatusBadge } from '@/components/ui'
 
 export default function SettingsPage() {
   const { admin, setAdmin } = useAdmin()
@@ -62,43 +63,47 @@ export default function SettingsPage() {
   if (loading) return <Loading />
 
   return (
-    <>
-      <PageHeader title="إعدادات المنصة" subtitle="إعدادات تأثر على كل العملاء، وأمان حسابك" />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 760 }}>
+    <div className="min-w-0 space-y-6" dir="rtl">
+      <StorelyPageHeader title="إعدادات المنصة" description="إعدادات تأثر على كل العملاء، وأمان حسابك" />
+      <div className="flex min-w-0 max-w-3xl flex-col gap-6">
 
         {isSuper && (
-          <Card title="وضع الصيانة" subtitle="يوقف واجهة العملاء مؤقتاً — العمليات الخلفية تستمر"
-            actions={<Badge tone={maint ? 'danger' : 'primary'}>{maint ? 'مفعّل' : 'الموقع شغّال'}</Badge>}>
-            {maint && <div style={{ marginBottom: 14 }}><Notice tone="danger">العملاء يشوفون شاشة الصيانة الحين</Notice></div>}
-            <Field label="الرسالة اللي يشوفها العملاء" hint="اختياري">
-              <input value={maintMsg} onChange={e => setMaintMsg(e.target.value)} placeholder="نعمل على تحسينات، نرجع خلال دقائق" style={inputStyle} />
-            </Field>
-            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-              <Btn kind={maint ? 'primary' : 'danger'} loading={busy === 'maint'} onClick={toggleMaintenance}>{maint ? 'إيقاف الصيانة' : 'تفعيل الصيانة'}</Btn>
-              {maint && <Btn disabled={!!busy} onClick={() => saveSettings({ maintenanceMode: true, maintenanceMessage: maintMsg }, 'msg', 'تم حفظ الرسالة')}>حفظ الرسالة</Btn>}
-            </div>
-          </Card>
-        )}
-
-        <Card title="التحقق بخطوتين" subtitle="رمز من تطبيق المصادقة مع كلمة المرور عند الدخول"
-          actions={<Badge tone={admin.totp_enabled ? 'primary' : 'warning'}>{admin.totp_enabled ? 'مفعّل' : 'غير مفعّل'}</Badge>}>
-          {admin.totp_enabled ? (
-            <Btn kind="danger" onClick={disable2FA}>إلغاء التحقق بخطوتين</Btn>
-          ) : qr ? (
-            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-              <img src={qr} alt="رمز QR" width={168} height={168} style={{ borderRadius: 8, border: `1px solid ${A.border}` }} />
-              <div style={{ flex: '1 1 220px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ fontSize: 13, color: A.text2, lineHeight: 1.7 }}>امسح الرمز بتطبيق المصادقة (مثل Google Authenticator)، وبعدها أدخل الرمز المكوّن من 6 أرقام.</div>
-                <input value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} maxLength={6} inputMode="numeric" dir="ltr" placeholder="000000"
-                  style={{ ...inputStyle, fontSize: 20, letterSpacing: 8, textAlign: 'center', maxWidth: 220 }} />
-                <div><Btn kind="primary" loading={busy === '2fa'} disabled={code.length !== 6} onClick={confirm2FA}>تأكيد وتفعيل</Btn></div>
+          <StorelyCard title="وضع الصيانة" description="يوقف واجهة العملاء مؤقتاً — العمليات الخلفية تستمر"
+            actions={<StorelyStatusBadge status={maint ? 'danger' : 'success'}>{maint ? 'مفعّل' : 'الموقع شغّال'}</StorelyStatusBadge>}>
+            <div className="space-y-5 p-5 sm:p-6">
+              {maint && <div className="mb-5"><Notice tone="danger">العملاء يشوفون شاشة الصيانة الحين</Notice></div>}
+              <Field label="الرسالة اللي يشوفها العملاء" hint="اختياري">
+                <input value={maintMsg} onChange={e => setMaintMsg(e.target.value)} placeholder="نعمل على تحسينات، نرجع خلال دقائق" className="storely-input" />
+              </Field>
+              <div className="storely-actions">
+                <Btn kind={maint ? 'primary' : 'danger'} loading={busy === 'maint'} onClick={toggleMaintenance}>{maint ? 'إيقاف الصيانة' : 'تفعيل الصيانة'}</Btn>
+                {maint && <Btn disabled={!!busy} onClick={() => saveSettings({ maintenanceMode: true, maintenanceMessage: maintMsg }, 'msg', 'تم حفظ الرسالة')}>حفظ الرسالة</Btn>}
               </div>
             </div>
-          ) : (
-            <Btn kind="primary" loading={busy === '2fa'} onClick={start2FA}>تفعيل الآن</Btn>
-          )}
-        </Card>
+          </StorelyCard>
+        )}
+
+        <StorelyCard title="التحقق بخطوتين" description="رمز من تطبيق المصادقة مع كلمة المرور عند الدخول"
+          actions={<StorelyStatusBadge status={admin.totp_enabled ? 'success' : 'warning'}>{admin.totp_enabled ? 'مفعّل' : 'غير مفعّل'}</StorelyStatusBadge>}>
+          <div className="p-5 sm:p-6">
+            {admin.totp_enabled ? (
+              <Btn kind="danger" onClick={disable2FA}>إلغاء التحقق بخطوتين</Btn>
+            ) : qr ? (
+              <div className="flex min-w-0 flex-wrap items-start gap-6">
+                <img src={qr} alt="رمز QR" width={168} height={168} className="shrink-0 rounded-[var(--radius-sm)] border border-[var(--storely-border)]" />
+                <div className="flex min-w-0 flex-1 basis-56 flex-col gap-4">
+                  <div className="text-sm leading-7 text-[var(--storely-muted)]">امسح الرمز بتطبيق المصادقة (مثل Google Authenticator)، وبعدها أدخل الرمز المكوّن من 6 أرقام.</div>
+                  <input value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} maxLength={6} inputMode="numeric" dir="ltr" placeholder="000000"
+                    className="storely-input max-w-56 text-center !text-xl tracking-[0.4em]" />
+                  <div><Btn kind="primary" loading={busy === '2fa'} disabled={code.length !== 6} onClick={confirm2FA}>تأكيد وتفعيل</Btn></div>
+                </div>
+              </div>
+            ) : (
+              <Btn kind="primary" loading={busy === '2fa'} onClick={start2FA}>تفعيل الآن</Btn>
+            )}
+          </div>
+        </StorelyCard>
       </div>
-    </>
+    </div>
   )
 }

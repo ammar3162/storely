@@ -1,8 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { LEGACY_C } from '../_admin/kit'
-
-const C = LEGACY_C
+import { Search, UserRound } from 'lucide-react'
+import { StorelyButton, StorelyCard, StorelyEmptyState, StorelyPageHeader } from '@/components/ui'
+import { storelyTokens } from '@/components/ui/design-tokens'
 
 export default function AuditLogPage() {
   const [logs, setLogs] = useState<any[]>([])
@@ -43,58 +43,43 @@ export default function AuditLogPage() {
   }
 
   if (!authChecked) return (
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{color:C.text2,fontSize:13}}>⏳ جاري التحقق...</div>
-    </div>
+    <div className="storely-loading" dir="rtl">جاري التحقق...</div>
   )
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,flexWrap:'wrap' as const,gap:12}}>
-        <div>
-          <h1 style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:4}}>سجل تدقيق الإجراءات الإدارية</h1>
-          <div style={{fontSize:12,color:C.text3}}>مين سوى إيش، ومتى — كل إجراء إداري حساس (تفعيل، حذف، تعديل)</div>
-        </div>
-      </div>
-
-      <form onSubmit={handleSearch} style={{display:'flex',gap:10,marginBottom:20}}>
-        <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث باسم المشرف، نوع الإجراء، أو اسم المؤسسة"
-          style={{flex:1,padding:'10px 14px',background:C.card,border:`1px solid ${C.border}`,borderRadius:10,color:C.text,fontSize:13,fontFamily:'inherit'}}/>
-        <button type="submit" disabled={loading} style={{padding:'10px 20px',background:C.blue,color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-          {loading?'...':'🔍 بحث'}
-        </button>
-        {search && (
-          <button type="button" onClick={()=>{setSearch('');load('')}} style={{padding:'10px 16px',background:'#f2f4f7',color:C.text,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-            مسح
-          </button>
-        )}
-      </form>
-
-      {error && <div style={{background:'#fef3f2',color:'#d92d20',padding:'10px 14px',borderRadius:10,fontSize:13,marginBottom:16}}>{error}</div>}
-
-      {loading ? (
-        <div style={{textAlign:'center',padding:60,color:C.text3}}>جاري التحميل...</div>
-      ) : logs.length === 0 ? (
-        <div style={{background:C.card,borderRadius:14,padding:40,textAlign:'center',border:`1px solid ${C.border}`}}>
-          <div style={{fontSize:32,marginBottom:10}}>📭</div>
-          <div style={{color:C.text2}}>{search ? 'ما فيه نتائج مطابقة' : 'ما فيه إجراءات مسجّلة بعد'}</div>
-        </div>
-      ) : (
-        <div style={{display:'flex',flexDirection:'column',gap:10}}>
-          {logs.map((l)=>(
-            <div key={l.id} style={{background:C.card,borderRadius:12,border:`1px solid ${C.border}`,padding:'14px 16px'}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12,flexWrap:'wrap' as const}}>
-                <div>
-                  <div style={{fontSize:13,fontWeight:700,color:C.text}}>{l.action}</div>
-                  <div style={{fontSize:12,color:C.text2,marginTop:3}}>👤 {l.admin_name}{l.target_org_name ? ` — على مؤسسة: ${l.target_org_name}` : ''}</div>
-                  {l.details && <div style={{fontSize:11,color:C.text3,marginTop:4,fontFamily:'monospace'}}>{JSON.stringify(l.details)}</div>}
+    <div className="min-w-0 space-y-6" dir="rtl">
+      <StorelyPageHeader title="سجل تدقيق الإجراءات الإدارية" description="مين سوى إيش، ومتى — كل إجراء إداري حساس (تفعيل، حذف، تعديل)" />
+      <StorelyCard>
+        <form onSubmit={handleSearch} className="storely-toolbar">
+          <div className="storely-search">
+            <Search size={16} className="storely-search-icon" aria-hidden="true"/>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث باسم المشرف، نوع الإجراء، أو اسم المؤسسة" className="storely-input"/>
+          </div>
+          <div className="storely-actions">
+            <StorelyButton type="submit" disabled={loading} variant="primary">{loading?'...':'بحث'}</StorelyButton>
+            {search && <StorelyButton type="button" onClick={()=>{setSearch('');load('')}}>مسح</StorelyButton>}
+          </div>
+        </form>
+        {error && <div className="m-5 storely-notice" style={{color:storelyTokens.color.danger,borderColor:storelyTokens.color.dangerBorder}}>{error}</div>}
+        {loading ? (
+          <div className="storely-loading">جاري التحميل...</div>
+        ) : logs.length === 0 ? (
+          <StorelyEmptyState className="!border-0" title={search ? 'ما فيه نتائج مطابقة' : 'ما فيه إجراءات مسجّلة بعد'} />
+        ) : (
+          <div className="divide-y divide-[var(--storely-border)]">
+            {logs.map((l)=>(
+              <div key={l.id} className="flex flex-wrap items-start justify-between gap-4 p-5 sm:p-6">
+                <div className="min-w-0 flex-1 basis-72">
+                  <div className="break-words text-sm font-semibold">{l.action}</div>
+                  <div className="mt-3 flex items-start gap-2 text-sm text-[var(--storely-muted)]"><UserRound size={16} className="mt-1 shrink-0" aria-hidden="true"/><span className="min-w-0 break-words">{l.admin_name}{l.target_org_name ? ` — على مؤسسة: ${l.target_org_name}` : ''}</span></div>
+                  {l.details && <div className="mt-4 max-w-full overflow-x-auto rounded-[var(--radius-sm)] border border-[var(--storely-border)] bg-[var(--storely-background)] p-3 font-mono text-[13px] leading-6 break-all text-[var(--storely-muted)]" dir="auto">{JSON.stringify(l.details)}</div>}
                 </div>
-                <div style={{fontSize:11,color:C.text3,whiteSpace:'nowrap' as const}}>{new Date(l.created_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
+                <div className="text-[13px] leading-6 text-[var(--storely-muted)]">{new Date(l.created_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </StorelyCard>
     </div>
   )
 }

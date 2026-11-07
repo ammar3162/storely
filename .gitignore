@@ -47,6 +47,11 @@ schema.sql
 supabase/.temp/
 .vercel/
 
+# Local verification evidence and development logs (keep on disk)
+/artifacts/
+/artifacts-*.png
+/.next-dev*.log
+
 # بناء تطبيق الجوال (scripts/build-app.mjs)
 /.app-build/
 /app-www/

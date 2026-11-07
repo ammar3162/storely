@@ -1,4 +1,7 @@
 'use client'
+import { StorelyButton, StorelyCard, StorelyPageHeader, StorelyMetricStrip, StorelyEmptyState, StorelyStatusBadge, StorelyFormField } from '@/components/ui'
+import { Bell, CheckCircle2, LoaderCircle, Package, Pencil, Plus, Receipt, Star, Trash2, Truck, UserRound, Bike, Camera, ChartNoAxesCombined, ClipboardList, MessagesSquare, Flame, Store } from 'lucide-react'
+import { storelyTokens as uiTokens } from '@/components/ui/design-tokens'
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -6,6 +9,8 @@ import { api } from '@/lib/api-client'
 import { confirmDialog } from '@/components/ConfirmDialog'
 
 type Tab = 'products' | 'orders' | 'chats' | 'reps' | 'reports' | 'activity' | 'account'
+
+const NAV_ICONS = { products:<Package size={18}/>, orders:<ClipboardList size={18}/>, chats:<MessagesSquare size={18}/>, reps:<Bike size={18}/>, reports:<ChartNoAxesCombined size={18}/>, activity:<Bell size={18}/>, account:<UserRound size={18}/> }
 
 const TAB_PATHS: Record<Tab, string> = {
   products: '/supplier-portal/dashboard',
@@ -258,9 +263,9 @@ export default function SupplierDashboardShared() {
   }
 
   if (loading) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4'}}>
-      <div style={{width:36,height:36,border:'3px solid #99f6e4',borderTopColor:'#029FA2',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div className="min-h-screen flex items-center justify-center text-[var(--storely-navy)]" style={{background:uiTokens.color.background}}>
+      <LoaderCircle size={28} className="animate-spin" />
+
     </div>
   )
 
@@ -320,286 +325,261 @@ export default function SupplierDashboardShared() {
   const paidTotal = paidInvoices.reduce((sum:number,r:any)=>sum+(Number(r.quoted_price)||0),0)
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',minHeight:'100vh',background:'#f5f5f4'}}>
+    <div className="min-h-screen text-[var(--storely-navy)]" style={{direction:'rtl', background:uiTokens.color.background}}>
       {/* Header */}
-      <div style={{background:'white',borderBottom:'1px solid #ebebea',padding:'14px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-        <div>
-          <div style={{fontSize:18,fontWeight:800,color:'#1c1c1a'}}>{profile?.business_name}</div>
-          <div style={{fontSize:12,color:'#888780'}}>{profile?.location || '—'}</div>
-        </div>
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <button onClick={toggleVisibility}
-            style={{padding:'8px 16px',borderRadius:8,border:'1px solid',borderColor:profile?.is_visible!==false?'#99f6e4':'#fecaca',background:profile?.is_visible!==false?'#f0fdfa':'#fef2f2',fontSize:12,fontWeight:700,cursor:'pointer',color:profile?.is_visible!==false?'#029FA2':'#dc2626',display:'flex',alignItems:'center',gap:6}}>
-            <span style={{width:8,height:8,borderRadius:'50%',background:profile?.is_visible!==false?'#029FA2':'#dc2626'}}/>
+      <div className="!p-5 sm:!px-8 flex justify-between items-center flex-wrap gap-5" style={{background:uiTokens.color.surface, borderBottom:`1px solid ${uiTokens.color.border}`}}>
+        <StorelyPageHeader title={profile?.business_name} description={profile?.location || '—'} className="!mb-0 min-w-0 flex-1" />
+        <div className="flex flex-wrap items-center gap-3">
+          <StorelyButton onClick={toggleVisibility} className="flex flex-wrap items-center gap-3" style={{borderColor:profile?.is_visible!==false?uiTokens.color.successBorder:uiTokens.color.dangerBorder, background:uiTokens.color.surface, color:profile?.is_visible!==false?uiTokens.color.success:uiTokens.color.danger}} variant="secondary">
+            <span className="rounded-full" style={{width:8, height:8, background:profile?.is_visible!==false?uiTokens.color.success:uiTokens.color.danger}}/>
             {profile?.is_visible!==false?'ظاهر للعملاء':'مخفي عن العملاء'}
-          </button>
-          <button onClick={logout} style={{padding:'8px 16px',borderRadius:8,border:'1px solid #e5e5e3',background:'white',fontSize:12,fontWeight:700,cursor:'pointer',color:'#5f5e5a'}}>خروج</button>
+          </StorelyButton>
+          <StorelyButton onClick={logout} variant="secondary">خروج</StorelyButton>
         </div>
       </div>
 
-      <div style={{display:'flex',maxWidth:900,margin:'0 auto',alignItems:'flex-start'}}>
+      <div className="grid min-w-0 max-w-7xl grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] !mx-auto !p-4 sm:!p-6 gap-6 items-start">
         {/* Sidebar */}
-        <div style={{width:180,flexShrink:0,padding:'20px 12px',position:'sticky' as const,top:0}}>
-          <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
+        <div className="storely-card min-w-0 !p-3 lg:sticky lg:top-6">
+          <div className="grid min-w-0 grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2">
             {NAV_ITEMS.map(item=>(
-              <button key={item.id} onClick={()=>router.push(TAB_PATHS[item.id])}
-                style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 14px',borderRadius:10,border:'none',
-                  background:activeTab===item.id?'#029FA2':'transparent',color:activeTab===item.id?'white':'#5f5e5a',
-                  fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
-                <span style={{display:'flex',alignItems:'center',gap:8}}><span>{item.icon}</span>{item.label}</span>
+              <StorelyButton key={item.id} onClick={()=>router.push(TAB_PATHS[item.id])} className="!justify-between !px-3 text-start !whitespace-normal" variant={activeTab===item.id?'primary':'secondary'} aria-current={activeTab===item.id?'page':undefined}>
+                <span className="flex flex-wrap items-center gap-3"><span className="inline-flex shrink-0">{NAV_ICONS[item.id]}</span>{item.label}</span>
                 {item.badge && (
-                  <span style={{background:activeTab===item.id?'rgba(255,255,255,.25)':'#dc2626',color:'white',fontSize:10,fontWeight:800,borderRadius:20,padding:'1px 7px',minWidth:18,textAlign:'center' as const}}>
+                  <span className="text-xs font-semibold rounded-[var(--radius)] !py-0 !px-2 text-center" style={{background:activeTab===item.id?uiTokens.color.surface:uiTokens.color.danger, color:activeTab===item.id?uiTokens.color.navy:uiTokens.color.surface, minWidth:20}}>
                     {item.badge}
                   </span>
                 )}
-              </button>
+              </StorelyButton>
             ))}
           </div>
         </div>
 
         {/* Content */}
-        <div style={{flex:1,padding:'20px 20px 20px 0',minWidth:0}}>
+        <div className="min-w-0 !space-y-6">
 
           {activeTab==='products' && (
             <>
-              <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea',marginBottom:16}}>
-                <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:12}}>{editingId?'✏️ تعديل صنف':'➕ إضافة صنف جديد'}</div>
-                <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr',gap:8,marginBottom:10}}>
-                  <input value={name} onChange={e=>setName(e.target.value)} placeholder="اسم الصنف"
-                    style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
-                  <input value={unit} onChange={e=>setUnit(e.target.value)} placeholder="الوحدة (كيلو، قطعة...)"
-                    style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
-                  <input type="number" value={price} onChange={e=>setPrice(e.target.value)} placeholder="السعر"
-                    style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
+              <StorelyCard className="min-w-0 !p-5 sm:!p-6 !mb-6" style={{background:uiTokens.color.surface, border:`1px solid ${uiTokens.color.border}`}}>
+                <h2 className="text-lg font-semibold !mb-5" style={{color:uiTokens.color.text}}>{editingId?"تعديل صنف":"إضافة صنف جديد"}</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_1fr] gap-4 !mb-5">
+                  <input value={name} onChange={e=>setName(e.target.value)} placeholder="اسم الصنف" className="rounded-[var(--radius-sm)] text-sm storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`}}/>
+                  <input value={unit} onChange={e=>setUnit(e.target.value)} placeholder="الوحدة (كيلو، قطعة...)" className="rounded-[var(--radius-sm)] text-sm storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`}}/>
+                  <input type="number" value={price} onChange={e=>setPrice(e.target.value)} placeholder="السعر" className="rounded-[var(--radius-sm)] text-sm storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`}}/>
                 </div>
-                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10,background:'#f5f5f4',borderRadius:8,padding:'8px 10px'}}>
-                  <span style={{fontSize:12,fontWeight:700,color:'#5f5e5a'}}>هل السعر شامل الضريبة؟</span>
-                  <div style={{display:'flex',gap:6,marginRight:'auto'}}>
-                    <button onClick={()=>setPriceIncludesVat(true)} style={{padding:'5px 14px',borderRadius:6,border:'1px solid',borderColor:priceIncludesVat?'#029FA2':'#e5e5e3',background:priceIncludesVat?'#029FA2':'white',color:priceIncludesVat?'white':'#5f5e5a',fontSize:11,fontWeight:700,cursor:'pointer'}}>نعم</button>
-                    <button onClick={()=>setPriceIncludesVat(false)} style={{padding:'5px 14px',borderRadius:6,border:'1px solid',borderColor:!priceIncludesVat?'#dc2626':'#e5e5e3',background:!priceIncludesVat?'#dc2626':'white',color:!priceIncludesVat?'white':'#5f5e5a',fontSize:11,fontWeight:700,cursor:'pointer'}}>لا</button>
+                <div className="flex flex-wrap items-center gap-4 !mb-5 rounded-[var(--radius-sm)] !py-2 !px-2" style={{background:uiTokens.color.background}}>
+                  <span className="text-sm font-semibold" style={{color:uiTokens.color.textMuted}}>هل السعر شامل الضريبة؟</span>
+                  <div className="storely-actions !ms-auto">
+                    <StorelyButton onClick={()=>setPriceIncludesVat(true)} variant={priceIncludesVat?'primary':'secondary'}>نعم</StorelyButton>
+                    <StorelyButton onClick={()=>setPriceIncludesVat(false)} variant={!priceIncludesVat?'primary':'secondary'}>لا</StorelyButton>
                   </div>
                 </div>
                 {price && !priceIncludesVat && (
-                  <div style={{fontSize:11,color:'#0369a1',background:'#eff6ff',borderRadius:8,padding:'8px 12px',marginBottom:10}}>
+                  <div className="storely-notice !mb-5" style={{color:uiTokens.color.info, background:uiTokens.color.infoBg}}>
                     السعر النهائي اللي بيشوفه العميل (بعد إضافة 15% ضريبة): <b>{(Number(price)*1.15).toFixed(2)} ر.س</b>
                   </div>
                 )}
-                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+                <div className="flex flex-wrap items-center gap-4 !mb-5">
                   {(imagePreview || existingImageUrl) && (
-                    <img src={imagePreview || existingImageUrl} alt="" style={{width:48,height:48,borderRadius:8,objectFit:'cover',border:'1px solid #e5e5e3'}}/>
+                    <img src={imagePreview || existingImageUrl} alt="" className="rounded-[var(--radius-sm)] object-cover" style={{width:48, height:48, border:`1px solid ${uiTokens.color.border}`}}/>
                   )}
-                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',padding:'8px 12px',borderRadius:8,border:'1px dashed #cbd5e1',cursor:'pointer'}}>
-                    📷 {imagePreview||existingImageUrl?'تغيير الصورة':'إضافة صورة (اختياري)'}
-                    <input type="file" accept="image/*" onChange={onPickImage} style={{display:'none'}}/>
+                  <label className="text-sm font-semibold !py-2 !px-3 rounded-[var(--radius-sm)]" style={{color:uiTokens.color.textMuted, border:`1px dashed ${uiTokens.color.border}`, cursor:'pointer'}}>
+
+                    <Camera size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> {imagePreview||existingImageUrl?'تغيير الصورة':'إضافة صورة (اختياري)'}
+                    <input type="file" accept="image/*" onChange={onPickImage} className="hidden"/>
                   </label>
                 </div>
-                <div style={{display:'flex',gap:8}}>
-                  <button onClick={saveItem} disabled={saving} style={{padding:'10px 20px',borderRadius:8,border:'none',background:'#029FA2',color:'white',fontWeight:700,fontSize:13,cursor:'pointer'}}>
-                    {saving?(uploading?'⏳ جاري رفع الصورة...':'⏳ جاري الحفظ...'):editingId?'حفظ التعديل':'إضافة'}
-                  </button>
-                  {editingId && <button onClick={resetForm} style={{padding:'10px 20px',borderRadius:8,border:'1px solid #e5e5e3',background:'white',fontWeight:700,fontSize:13,cursor:'pointer',color:'#5f5e5a'}}>إلغاء</button>}
+                <div className="storely-actions">
+                  <StorelyButton onClick={saveItem} disabled={saving} variant="primary">
+                    {saving?(uploading?"جاري رفع الصورة...":"جاري الحفظ..."):editingId?'حفظ التعديل':'إضافة'}
+                  </StorelyButton>
+                  {editingId && <StorelyButton onClick={resetForm} variant="secondary">إلغاء</StorelyButton>}
                 </div>
-              </div>
+              </StorelyCard>
 
-              <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
-                <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>أصنافي ({items.length})</div>
+              <StorelyCard className="min-w-0 !p-5 sm:!p-6" style={{background:uiTokens.color.surface, border:`1px solid ${uiTokens.color.border}`}}>
+                <h2 className="text-lg font-semibold !mb-5" style={{color:uiTokens.color.text}}>أصنافي ({items.length})</h2>
                 {items.length===0 ? (
-                  <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه أصناف مضافة بعد</div>
+                  <StorelyEmptyState className="!border-0 !p-5" title="ما فيه أصناف مضافة بعد" />
                 ) : (
-                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(190px,1fr))',gap:14}}>
+                  <div className="grid min-w-0 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                     {items.map((item:any)=>(
-                      <div key={item.id} style={{border:'1px solid #ebebea',borderRadius:14,overflow:'hidden',opacity:item.is_available?1:.55,transition:'opacity .15s',background:'white'}}>
-                        <div style={{width:'100%',height:110,background:'#f5f5f4',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
+                      <StorelyCard key={item.id} className="min-w-0 rounded-[var(--radius)]" style={{border:`1px solid ${uiTokens.color.border}`, overflow:'hidden', opacity:item.is_available?1:.55, background:uiTokens.color.surface}}>
+                        <div className="w-full flex items-center justify-center" style={{height:144, background:uiTokens.color.background, overflow:'hidden'}}>
                           {item.image_url ? (
-                            <img src={item.image_url} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                            <img src={item.image_url} alt="" className="w-full object-cover" style={{height:'100%'}}/>
                           ) : (
-                            <span style={{fontSize:32}}>📦</span>
+                            <span className="text-[28px]"><Package size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></span>
                           )}
                         </div>
-                        <div style={{padding:'12px 14px'}}>
-                          <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{item.name}</div>
-                          <div style={{fontSize:11,color:'#888780',marginTop:2}}>{item.unit}</div>
-                          <div style={{fontSize:15,fontWeight:900,color:'#029FA2',marginTop:6}}>{item.price} ر.س</div>
-                          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:10,paddingTop:10,borderTop:'1px solid #f1f1f0'}}>
-                            <button onClick={()=>toggleAvailable(item)} aria-label="toggle availability"
-                              style={{width:38,height:21,borderRadius:20,border:'none',cursor:'pointer',position:'relative' as const,background:item.is_available?'#029FA2':'#dcdcda',transition:'background .2s',padding:0}}>
-                              <span style={{position:'absolute' as const,top:2,left:item.is_available?18:2,width:17,height:17,borderRadius:'50%',background:'white',transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,.25)'}}/>
-                            </button>
-                            <div style={{display:'flex',gap:4}}>
-                              <button onClick={()=>startEdit(item)} style={{width:26,height:26,borderRadius:7,border:'1px solid #e5e5e3',background:'white',fontSize:11,cursor:'pointer',color:'#3b82f6'}}>✏️</button>
-                              <button onClick={()=>deleteItem(item.id)} style={{width:26,height:26,borderRadius:7,border:'1px solid #e5e5e3',background:'white',fontSize:11,cursor:'pointer',color:'#dc2626'}}>🗑️</button>
+                        <div className="!p-4">
+                          <div className="text-sm font-semibold whitespace-normal break-words" style={{color:uiTokens.color.text}}>{item.name}</div>
+                          <div className="text-xs !mt-2" style={{color:uiTokens.color.textMuted}}>{item.unit}</div>
+                          <div className="text-base font-semibold !mt-1" style={{color:uiTokens.color.navy}}>{item.price} ر.س</div>
+                          <div className="flex justify-between items-center !mt-2 !pt-2 flex-wrap gap-4" style={{borderTop:`1px solid ${uiTokens.color.border}`}}>
+                            <StorelyButton onClick={()=>toggleAvailable(item)} aria-label="toggle availability" className="relative !w-12 !h-10 !p-0" style={{background:item.is_available?uiTokens.color.navy:uiTokens.color.textMuted}} variant="secondary">
+                              <span className="absolute rounded-full" style={{top:11, left:item.is_available?28:4, width:16, height:16, background:uiTokens.color.surface, boxShadow:uiTokens.shadow.surface}}/>
+                            </StorelyButton>
+                            <div className="storely-actions">
+                              <StorelyButton onClick={()=>startEdit(item)} className="!size-10 !p-0" aria-label="تعديل" variant="secondary"><Pencil size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></StorelyButton>
+                              <StorelyButton onClick={()=>deleteItem(item.id)} className="!size-10 !p-0" aria-label="حذف" variant="danger"><Trash2 size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></StorelyButton>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </StorelyCard>
                     ))}
                   </div>
                 )}
-              </div>
+              </StorelyCard>
             </>
           )}
 
           {activeTab==='orders' && (
-            <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
-              <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>طلبات التسعير الواردة ({quoteRequests.length})</div>
+            <StorelyCard className="min-w-0 !p-5 sm:!p-6" style={{background:uiTokens.color.surface, border:`1px solid ${uiTokens.color.border}`}}>
+              <h2 className="text-lg font-semibold !mb-5" style={{color:uiTokens.color.text}}>طلبات التسعير الواردة ({quoteRequests.length})</h2>
               {quoteRequests.length===0 ? (
-                <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه طلبات تسعير بعد</div>
+                <StorelyEmptyState className="!border-0 !p-5" title="ما فيه طلبات تسعير بعد" />
               ) : (
-                <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
+                <div className="flex flex-col gap-4">
                   {quoteRequests.map((r:any)=>(
-                    <div key={r.id} style={{padding:'12px 14px',background:'#f5f5f4',borderRadius:10}}>
-                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-                        <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{r.org_name || 'عميل'}</span>
-                        <span style={{fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:20,
-                          background:r.status==='fulfilled'?'#dbeafe':r.status==='confirmed'?'#e0f2fe':r.status==='accepted'?'#ccfbf1':r.status==='quoted'?'#fef3c7':'#f1f5f9',
-                          color:r.status==='fulfilled'?'#1d4ed8':r.status==='confirmed'?'#0369a1':r.status==='accepted'?'#029FA2':r.status==='quoted'?'#92400e':'#64748b'}}>
-                          {r.status==='fulfilled'?'📦 منفَّذ':r.status==='confirmed'?'🚚 جدولة توريد':r.status==='accepted'?'✅ العميل وافق — بانتظار موافقتك':r.status==='quoted'?'💬 تم الرد':'⏳ بانتظار ردك'}
-                        </span>
+                    <div key={r.id} className="!p-5 rounded-[var(--radius-sm)] border border-[var(--storely-border)] !space-y-4" style={{background:uiTokens.color.background}}>
+                      <div className="flex justify-between items-center !mb-1 flex-wrap gap-4">
+                        <span className="text-sm font-semibold" style={{color:uiTokens.color.text}}>{r.org_name || 'عميل'}</span>
+                        <StorelyStatusBadge status={r.status==='fulfilled'?'success':r.status==='quoted'||r.status==='pending'?'warning':'info'}>
+                          {r.status==='fulfilled'?"منفَّذ":r.status==='confirmed'?"جدولة توريد":r.status==='accepted'?"العميل وافق — بانتظار موافقتك":r.status==='quoted'?"تم الرد":"بانتظار ردك"}
+                        </StorelyStatusBadge>
                       </div>
-                      <div style={{fontSize:12,color:'#5f5e5a',marginBottom:8}}>
+                      <div className="text-sm !mb-2" style={{color:uiTokens.color.textMuted}}>
                         {(r.items||[]).map((i:any)=>`${i.name} (${i.qty} ${i.unit||''})`).join('، ')}
                       </div>
                       {r.status==='accepted' ? (
                         approvingId===r.id ? (
-                          <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
-                            <select value={selectedRepId} onChange={e=>setSelectedRepId(e.target.value)}
-                              style={{padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',fontSize:12,fontFamily:'inherit'}}>
+                          <div className="flex flex-col gap-4">
+                            <select value={selectedRepId} onChange={e=>setSelectedRepId(e.target.value)} className="rounded-[var(--radius-sm)] text-sm storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`}}>
                               <option value="">اختر المندوب...</option>
                               {reps.map((rep:any)=>(<option key={rep.id} value={rep.id}>{rep.name} — {rep.phone}</option>))}
                             </select>
-                            <input type="date" value={deliveryDate} onChange={e=>setDeliveryDate(e.target.value)}
-                              style={{padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',fontSize:12,fontFamily:'inherit'}}/>
-                            <div style={{display:'flex',gap:6}}>
-                              <button onClick={()=>approveDelivery(r)} disabled={approveSaving || !selectedRepId || !deliveryDate}
-                                style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#029FA2',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
-                                {approveSaving?'...':'✅ تأكيد الموافقة'}
-                              </button>
-                              <button onClick={()=>setApprovingId(null)}
-                                style={{padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:11,cursor:'pointer',color:'#5f5e5a'}}>
+                            <input type="date" value={deliveryDate} onChange={e=>setDeliveryDate(e.target.value)} className="rounded-[var(--radius-sm)] text-sm storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`}}/>
+                            <div className="storely-actions">
+                              <StorelyButton onClick={()=>approveDelivery(r)} disabled={approveSaving || !selectedRepId || !deliveryDate} variant="primary">
+                                {approveSaving?'...':"تأكيد الموافقة"}
+                              </StorelyButton>
+                              <StorelyButton onClick={()=>setApprovingId(null)} variant="secondary">
                                 إلغاء
-                              </button>
+                              </StorelyButton>
                             </div>
-                            {reps.length===0 && <div style={{fontSize:10,color:'#dc2626'}}>ما فيه مناديب مضافين — روح تبويب "المناديب" وأضف واحد أول</div>}
+                            {reps.length===0 && <div className="storely-notice" style={{color:uiTokens.color.danger,borderColor:uiTokens.color.dangerBorder}}>{'ما فيه مناديب مضافين — روح تبويب "المناديب" وأضف واحد أول'}</div>}
                           </div>
                         ) : (
                           <div>
-                            <div style={{fontSize:12,color:'#029FA2',fontWeight:700,marginBottom:8}}>سعرك المرسل: {r.quoted_price} ر.س — العميل وافق عليه</div>
-                            <button onClick={()=>startApprove(r.id)}
-                              style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#2563eb',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
-                              🚚 الموافقة على التوريد
-                            </button>
+                            <div className="text-sm font-semibold !mb-2" style={{color:uiTokens.color.navy}}>سعرك المرسل: {r.quoted_price} ر.س — العميل وافق عليه</div>
+                            <StorelyButton onClick={()=>startApprove(r.id)} variant="secondary">
+
+                              <Truck size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> الموافقة على التوريد
+                            </StorelyButton>
                           </div>
                         )
                       ) : r.status==='confirmed' ? (
                         <div>
-                          <div style={{fontSize:12,color:'#0369a1',fontWeight:700,marginBottom:8}}>
+                          <div className="text-sm font-semibold !mb-2" style={{color:uiTokens.color.info}}>
                             المندوب: {r.rep_name} ({r.rep_phone}) — موعد التوريد: {r.delivery_date}
                           </div>
-                          <button onClick={()=>markFulfilled(r.id)}
-                            style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#2563eb',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
-                            📦 تأكيد التنفيذ (تم التوريد)
-                          </button>
+                          <StorelyButton onClick={()=>markFulfilled(r.id)} variant="secondary">
+
+                            <Package size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> تأكيد التنفيذ (تم التوريد)
+                          </StorelyButton>
                         </div>
                       ) : r.status==='fulfilled' ? (
                         <div>
-                          <div style={{fontSize:12,color:'#1d4ed8',fontWeight:700}}>
-                            سعرك المرسل: {r.quoted_price} ر.س — تم التنفيذ ✅
-                            {r.rep_name && <div style={{fontSize:11,color:'#64748b',marginTop:2}}>المندوب: {r.rep_name} ({r.rep_phone})</div>}
+                          <div className="text-sm font-semibold" style={{color:uiTokens.color.info}}>
+                            سعرك المرسل: {r.quoted_price}  ر.س — تم التنفيذ <CheckCircle2 size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" />
+                            {r.rep_name && <div className="text-xs !mt-0" style={{color:uiTokens.color.textMuted}}>المندوب: {r.rep_name} ({r.rep_phone})</div>}
                           </div>
                           {!myGivenReviewIds.includes(r.id) && (
                             ratingCustomerId===r.id ? (
-                              <div style={{background:'#fffbeb',borderRadius:10,padding:'12px',marginTop:8}}>
-                                <div style={{display:'flex',gap:4,marginBottom:8,justifyContent:'center'}}>
+                              <div className="rounded-[var(--radius-sm)] !p-3 !mt-2" style={{background:uiTokens.color.warningBg}}>
+                                <div className="flex gap-2 !mb-2 justify-center">
                                   {[1,2,3,4,5].map(n=>(
-                                    <button key={n} onClick={()=>setCustomerRating(n)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',padding:0,opacity:n<=customerRating?1:.3}}>⭐</button>
+                                    <StorelyButton key={n} onClick={()=>setCustomerRating(n)} className="!size-10 !p-0" aria-label={String(n)} style={{color:uiTokens.color.navy,opacity:n<=customerRating?1:.35}} variant="secondary"><Star size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></StorelyButton>
                                   ))}
                                 </div>
-                                <div style={{display:'flex',gap:6}}>
-                                  <button onClick={()=>submitCustomerRating(r.id)} disabled={ratingSaving}
-                                    style={{flex:1,padding:'8px',background:'#029FA2',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>
+                                <div className="storely-actions">
+                                  <StorelyButton onClick={()=>submitCustomerRating(r.id)} disabled={ratingSaving} className="min-w-0 flex-1" variant="primary">
                                     {ratingSaving?'...':'إرسال التقييم'}
-                                  </button>
-                                  <button onClick={()=>setRatingCustomerId(null)}
-                                    style={{padding:'8px 14px',background:'white',border:'1px solid #e2e8f0',borderRadius:8,fontSize:12,cursor:'pointer',color:'#64748b'}}>
+                                  </StorelyButton>
+                                  <StorelyButton onClick={()=>setRatingCustomerId(null)} variant="secondary">
                                     إلغاء
-                                  </button>
+                                  </StorelyButton>
                                 </div>
                               </div>
                             ) : (
-                              <button onClick={()=>setRatingCustomerId(r.id)}
-                                style={{width:'100%',padding:'8px',background:'white',color:'#b45309',border:'1px solid #fde68a',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',marginTop:8}}>
-                                ⭐ قيّم العميل
-                              </button>
+                              <StorelyButton onClick={()=>setRatingCustomerId(r.id)} className="w-full !mt-2" variant="secondary">
+
+                                <Star size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> قيّم العميل
+                              </StorelyButton>
                             )
                           )}
                         </div>
                       ) : r.status==='quoted' ? (
-                        <div style={{fontSize:12,color:'#029FA2',fontWeight:700}}>سعرك المرسل: {r.quoted_price} ر.س</div>
+                        <div className="text-sm font-semibold" style={{color:uiTokens.color.navy}}>سعرك المرسل: {r.quoted_price} ر.س</div>
                       ) : respondingId===r.id ? (
-                        <div style={{display:'flex',gap:6,alignItems:'center'}}>
-                          <input type="number" value={respondPrice} onChange={e=>setRespondPrice(e.target.value)} placeholder="السعر"
-                            style={{width:90,padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',fontSize:12}}/>
-                          <input value={respondNote} onChange={e=>setRespondNote(e.target.value)} placeholder="ملاحظة (اختياري)"
-                            style={{flex:1,padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',fontSize:12}}/>
-                          <button onClick={()=>submitResponse(r.id)} disabled={respondSaving}
-                            style={{padding:'7px 14px',borderRadius:6,border:'none',background:'#029FA2',color:'white',fontSize:11,fontWeight:700,cursor:'pointer'}}>
+                        <div className="grid grid-cols-1 sm:grid-cols-[112px_minmax(0,1fr)_auto_auto] gap-3 items-center">
+                          <input type="number" value={respondPrice} onChange={e=>setRespondPrice(e.target.value)} placeholder="السعر" className="rounded-[var(--radius-sm)] text-sm storely-input min-w-0" style={{width:112, border:`1px solid ${uiTokens.color.border}`}}/>
+                          <input value={respondNote} onChange={e=>setRespondNote(e.target.value)} placeholder="ملاحظة (اختياري)" className="min-w-0 flex-1 rounded-[var(--radius-sm)] text-sm storely-input" style={{border:`1px solid ${uiTokens.color.border}`}}/>
+                          <StorelyButton onClick={()=>submitResponse(r.id)} disabled={respondSaving} variant="primary">
                             {respondSaving?'...':'إرسال'}
-                          </button>
-                          <button onClick={()=>setRespondingId(null)}
-                            style={{padding:'7px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:11,cursor:'pointer',color:'#5f5e5a'}}>
+                          </StorelyButton>
+                          <StorelyButton onClick={()=>setRespondingId(null)} variant="secondary">
                             إلغاء
-                          </button>
+                          </StorelyButton>
                         </div>
                       ) : (
-                        <button onClick={()=>startRespond(r.id)}
-                          style={{padding:'7px 14px',borderRadius:6,border:'1px solid #029FA2',background:'white',color:'#029FA2',fontSize:11,fontWeight:700,cursor:'pointer'}}>
-                          💬 الرد بسعر
-                        </button>
+                        <StorelyButton onClick={()=>startRespond(r.id)} variant="secondary">
+
+                          <MessagesSquare size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> الرد بسعر
+                        </StorelyButton>
                       )}
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+            </StorelyCard>
           )}
 
           {activeTab==='chats' && (
-            <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
-              <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>💬 المحادثات</div>
+            <StorelyCard className="min-w-0 !p-5 sm:!p-6" style={{background:uiTokens.color.surface, border:`1px solid ${uiTokens.color.border}`}}>
+              <h2 className="text-lg font-semibold !mb-5" style={{color:uiTokens.color.text}}><MessagesSquare size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> المحادثات</h2>
               {(() => {
                 const orgIds = Array.from(new Set(chatMessages.map((m:any)=>m.org_id)))
-                if (orgIds.length===0) return <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه محادثات بعد</div>
+                if (orgIds.length===0) return <StorelyEmptyState className="!border-0 !p-5" title="ما فيه محادثات بعد" />
                 return (
-                  <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                  <div className="flex flex-col gap-4">
                     {orgIds.map((oid:any) => {
                       const orgMsgs = chatMessages.filter((m:any)=>m.org_id===oid)
                       const orgName = orgMsgs[orgMsgs.length-1]?.org_name || 'عميل'
                       const isOpen = openChatOrgId===oid
                       return (
-                        <div key={oid} style={{border:'1px solid #e5e5e3',borderRadius:12,overflow:'hidden'}}>
-                          <button onClick={()=>setOpenChatOrgId(isOpen?null:oid)}
-                            style={{width:'100%',padding:'12px 14px',background:'#f5f5f4',border:'none',display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer',fontFamily:'inherit'}}>
-                            <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{orgName}</span>
-                            <span style={{fontSize:11,color:'#888780'}}>{orgMsgs.length} رسالة {isOpen?'▲':'▼'}</span>
-                          </button>
+                        <div key={oid} className="rounded-[var(--radius)]" style={{border:`1px solid ${uiTokens.color.border}`, overflow:'hidden'}}>
+                          <StorelyButton onClick={()=>setOpenChatOrgId(isOpen?null:oid)} className="w-full flex justify-between items-center flex-wrap gap-4" variant="secondary">
+                            <span className="text-sm font-semibold" style={{color:uiTokens.color.text}}>{orgName}</span>
+                            <span className="text-xs" style={{color:uiTokens.color.textMuted}}>{orgMsgs.length} رسالة {isOpen?'▲':'▼'}</span>
+                          </StorelyButton>
                           {isOpen && (
                             <div>
-                              <div style={{maxHeight:240,overflowY:'auto' as const,padding:14,display:'flex',flexDirection:'column' as const,gap:8}}>
+                              <div className="overflow-y-auto !p-3 flex flex-col gap-2" style={{maxHeight:240}}>
                                 {orgMsgs.map((m:any)=>(
-                                  <div key={m.id} style={{alignSelf:m.sender_type==='supplier'?'flex-end':'flex-start',maxWidth:'75%'}}>
-                                    <div style={{padding:'8px 12px',borderRadius:12,fontSize:13,background:m.sender_type==='supplier'?'#029FA2':'#f1f5f9',color:m.sender_type==='supplier'?'white':'#1c1c1a'}}>
+                                  <div key={m.id} style={{alignSelf:m.sender_type==='supplier'?'flex-end':'flex-start', maxWidth:'75%'}}>
+                                    <div className="!py-3 !px-4 rounded-[var(--radius)] text-sm leading-7 break-words" style={{background:m.sender_type==='supplier'?uiTokens.color.navy:uiTokens.color.background, color:m.sender_type==='supplier'?uiTokens.color.surface:uiTokens.color.text}}>
                                       {m.message}
                                     </div>
                                   </div>
                                 ))}
                               </div>
-                              <div style={{display:'flex',gap:6,padding:10,borderTop:'1px solid #f1f5f9'}}>
-                                <input value={chatReply} onChange={e=>setChatReply(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') sendChatReply(oid)}}
-                                  placeholder="اكتب ردك..." style={{flex:1,padding:'8px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:12,fontFamily:'inherit'}}/>
-                                <button onClick={()=>sendChatReply(oid)} disabled={chatSending}
-                                  style={{padding:'8px 16px',background:'#029FA2',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer'}}>
+                              <div className="flex flex-wrap gap-3 !p-4" style={{borderTop:`1px solid ${uiTokens.color.border}`}}>
+                                <input value={chatReply} onChange={e=>setChatReply(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') sendChatReply(oid)}} placeholder="اكتب ردك..." className="min-w-0 flex-1 rounded-[var(--radius-sm)] text-sm storely-input" style={{border:`1px solid ${uiTokens.color.border}`}}/>
+                                <StorelyButton onClick={()=>sendChatReply(oid)} disabled={chatSending} variant="primary">
                                   {chatSending?'...':'إرسال'}
-                                </button>
+                                </StorelyButton>
                               </div>
                             </div>
                           )}
@@ -609,193 +589,166 @@ export default function SupplierDashboardShared() {
                   </div>
                 )
               })()}
-            </div>
+            </StorelyCard>
           )}
 
           {activeTab==='reps' && (
             <>
-              <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea',marginBottom:16}}>
-                <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:12}}>➕ إضافة مندوب توصيل</div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:10}}>
-                  <input value={repName} onChange={e=>setRepName(e.target.value)} placeholder="اسم المندوب"
-                    style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
-                  <input value={repPhone} onChange={e=>setRepPhone(e.target.value)} placeholder="رقم جواله"
-                    style={{padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13}}/>
+              <StorelyCard className="min-w-0 !p-5 sm:!p-6 !mb-6" style={{background:uiTokens.color.surface, border:`1px solid ${uiTokens.color.border}`}}>
+                <h2 className="text-lg font-semibold !mb-5" style={{color:uiTokens.color.text}}><Plus size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> إضافة مندوب توصيل</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 !mb-5">
+                  <input value={repName} onChange={e=>setRepName(e.target.value)} placeholder="اسم المندوب" className="rounded-[var(--radius-sm)] text-sm storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`}}/>
+                  <input dir="ltr" value={repPhone} onChange={e=>setRepPhone(e.target.value)} placeholder="رقم جواله" className="rounded-[var(--radius-sm)] text-sm storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`}}/>
                 </div>
-                <button onClick={addRep} disabled={repSaving} style={{padding:'10px 20px',borderRadius:8,border:'none',background:'#029FA2',color:'white',fontWeight:700,fontSize:13,cursor:'pointer'}}>
-                  {repSaving?'⏳ جاري الإضافة...':'إضافة مندوب'}
-                </button>
-              </div>
+                <StorelyButton onClick={addRep} disabled={repSaving} variant="primary">
+                  {repSaving?"جاري الإضافة...":'إضافة مندوب'}
+                </StorelyButton>
+              </StorelyCard>
 
-              <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
-                <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>مناديبي ({reps.length})</div>
+              <StorelyCard className="min-w-0 !p-5 sm:!p-6" style={{background:uiTokens.color.surface, border:`1px solid ${uiTokens.color.border}`}}>
+                <h2 className="text-lg font-semibold !mb-5" style={{color:uiTokens.color.text}}>مناديبي ({reps.length})</h2>
                 {reps.length===0 ? (
-                  <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه مناديب مضافين بعد</div>
+                  <StorelyEmptyState className="!border-0 !p-5" title="ما فيه مناديب مضافين بعد" />
                 ) : (
-                  <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                  <div className="flex flex-col gap-4">
                     {reps.map((rep:any)=>(
-                      <div key={rep.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'#f5f5f4',borderRadius:10}}>
+                      <div key={rep.id} className="flex justify-between items-center !py-2 !px-3 rounded-[var(--radius-sm)] flex-wrap gap-4" style={{background:uiTokens.color.background}}>
                         <div>
-                          <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{rep.name}</span>
-                          <span style={{fontSize:12,color:'#888780',marginRight:10}}>{rep.phone}</span>
+                          <span className="text-sm font-semibold" style={{color:uiTokens.color.text}}>{rep.name}</span>
+                          <span className="text-sm !mr-2" style={{color:uiTokens.color.textMuted}}><bdi dir="ltr">{rep.phone}</bdi></span>
                         </div>
-                        <button onClick={()=>deleteRep(rep.id)} style={{padding:'5px 10px',borderRadius:6,border:'1px solid #e5e5e3',background:'white',fontSize:10,cursor:'pointer',color:'#dc2626'}}>🗑️</button>
+                        <StorelyButton onClick={()=>deleteRep(rep.id)} aria-label="حذف" className="!size-10 !p-0" variant="danger"><Trash2 size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></StorelyButton>
                       </div>
                     ))}
                   </div>
                 )}
-              </div>
+              </StorelyCard>
             </>
           )}
 
           {activeTab==='reports' && (
             <>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:16}}>
-                <div style={{background:'white',borderRadius:16,padding:18,border:'1px solid #ebebea'}}>
-                  <div style={{fontSize:11,color:'#888780',marginBottom:6}}>إجمالي المبيعات (منفَّذ)</div>
-                  <div style={{fontSize:22,fontWeight:900,color:'#029FA2'}}>{totalRevenue.toFixed(0)} ر.س</div>
-                </div>
-                <div style={{background:'white',borderRadius:16,padding:18,border:'1px solid #ebebea'}}>
-                  <div style={{fontSize:11,color:'#888780',marginBottom:6}}>إجمالي الطلبات</div>
-                  <div style={{fontSize:22,fontWeight:900,color:'#1c1c1a'}}>{totalOrders}</div>
-                </div>
-                <div style={{background:'white',borderRadius:16,padding:18,border:'1px solid #ebebea'}}>
-                  <div style={{fontSize:11,color:'#888780',marginBottom:6}}>طلبات منفَّذة</div>
-                  <div style={{fontSize:22,fontWeight:900,color:'#2563eb'}}>{fulfilledCount}</div>
-                </div>
-              </div>
+              <StorelyMetricStrip className="!mb-6" metrics={[
+                {label:'إجمالي المبيعات (منفَّذ)',value:<>{totalRevenue.toFixed(0)} ر.س</>},
+                {label:'إجمالي الطلبات',value:totalOrders},
+                {label:'طلبات منفَّذة',value:fulfilledCount},
+              ]} />
 
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16}}>
-                <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
-                  <div style={{fontSize:14,fontWeight:800,color:'#1c1c1a',marginBottom:12}}>🔥 أكثر الأصناف طلباً</div>
-                  {topItems.length===0 ? <div style={{fontSize:12,color:'#888780'}}>ما فيه بيانات بعد</div> : (
-                    <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 !mb-6">
+                <StorelyCard className="min-w-0 !p-5 sm:!p-6" style={{background:uiTokens.color.surface, border:`1px solid ${uiTokens.color.border}`}}>
+                  <h2 className="text-lg font-semibold !mb-5" style={{color:uiTokens.color.text}}><Flame size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> أكثر الأصناف طلباً</h2>
+                  {topItems.length===0 ? <StorelyEmptyState className="!border-0 !p-5" title="ما فيه بيانات بعد" /> : (
+                    <div className="flex flex-col gap-4">
                       {topItems.map(([name,qty])=>(
-                        <div key={name} style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
-                          <span style={{color:'#1c1c1a',fontWeight:700}}>{name}</span>
-                          <span style={{color:'#888780'}}>{qty} وحدة</span>
+                        <div key={name} className="flex justify-between text-sm flex-wrap gap-4">
+                          <span className="font-semibold" style={{color:uiTokens.color.text}}>{name}</span>
+                          <span style={{color:uiTokens.color.textMuted}}>{qty} وحدة</span>
                         </div>
                       ))}
                     </div>
                   )}
-                </div>
-                <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
-                  <div style={{fontSize:14,fontWeight:800,color:'#1c1c1a',marginBottom:12}}>🏪 أكثر العملاء طلباً</div>
-                  {topCustomers.length===0 ? <div style={{fontSize:12,color:'#888780'}}>ما فيه بيانات بعد</div> : (
-                    <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                </StorelyCard>
+                <StorelyCard className="min-w-0 !p-5 sm:!p-6" style={{background:uiTokens.color.surface, border:`1px solid ${uiTokens.color.border}`}}>
+                  <h2 className="text-lg font-semibold !mb-5" style={{color:uiTokens.color.text}}><Store size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> أكثر العملاء طلباً</h2>
+                  {topCustomers.length===0 ? <StorelyEmptyState className="!border-0 !p-5" title="ما فيه بيانات بعد" /> : (
+                    <div className="flex flex-col gap-4">
                       {topCustomers.map(([name,agg])=>(
-                        <div key={name} style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
-                          <span style={{color:'#1c1c1a',fontWeight:700}}>{name}</span>
-                          <span style={{color:'#888780'}}>{agg.count} طلب — {agg.total.toFixed(0)} ر.س</span>
+                        <div key={name} className="flex justify-between text-sm flex-wrap gap-4">
+                          <span className="font-semibold" style={{color:uiTokens.color.text}}>{name}</span>
+                          <span style={{color:uiTokens.color.textMuted}}>{agg.count} طلب — {agg.total.toFixed(0)} ر.س</span>
                         </div>
                       ))}
                     </div>
                   )}
-                </div>
+                </StorelyCard>
               </div>
 
-              <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
-                <div style={{fontSize:14,fontWeight:800,color:'#1c1c1a',marginBottom:12}}>🚚 تقرير التوصيل حسب المندوب</div>
-                {repStats.length===0 ? <div style={{fontSize:12,color:'#888780'}}>ما فيه توريدات مسندة بعد</div> : (
-                  <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+              <StorelyCard className="min-w-0 !p-5 sm:!p-6" style={{background:uiTokens.color.surface, border:`1px solid ${uiTokens.color.border}`}}>
+                <h2 className="text-lg font-semibold !mb-5" style={{color:uiTokens.color.text}}><Truck size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> تقرير التوصيل حسب المندوب</h2>
+                {repStats.length===0 ? <StorelyEmptyState className="!border-0 !p-5" title="ما فيه توريدات مسندة بعد" /> : (
+                  <div className="flex flex-col gap-4">
                     {repStats.map(([name,count])=>(
-                      <div key={name} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',background:'#f5f5f4',borderRadius:8,fontSize:12}}>
-                        <span style={{color:'#1c1c1a',fontWeight:700}}>{name}</span>
-                        <span style={{color:'#029FA2',fontWeight:700}}>{count} توريد</span>
+                      <div key={name} className="flex justify-between items-center !py-2 !px-3 rounded-[var(--radius-sm)] text-sm flex-wrap gap-4" style={{background:uiTokens.color.background}}>
+                        <span className="font-semibold" style={{color:uiTokens.color.text}}>{name}</span>
+                        <span className="font-semibold" style={{color:uiTokens.color.navy}}>{count} توريد</span>
                       </div>
                     ))}
                   </div>
                 )}
-              </div>
+              </StorelyCard>
 
-              <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea',marginTop:16}}>
-                <div style={{fontSize:14,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>🧾 الفواتير</div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16}}>
-                  <div style={{background:'#fef2f2',borderRadius:10,padding:14}}>
-                    <div style={{fontSize:11,color:'#991b1b',marginBottom:4}}>فواتير آجلة (لسا ما تسدّدت)</div>
-                    <div style={{fontSize:18,fontWeight:900,color:'#dc2626'}}>{unpaidTotal.toFixed(0)} ر.س</div>
-                    <div style={{fontSize:10,color:'#991b1b',marginTop:2}}>{unpaidInvoices.length} فاتورة</div>
+              <StorelyCard className="min-w-0 rounded-[var(--radius)] !p-5 !mt-4" style={{background:uiTokens.color.surface, border:`1px solid ${uiTokens.color.border}`}}>
+                <h2 className="text-lg font-semibold !mb-5" style={{color:uiTokens.color.text}}><Receipt size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> الفواتير</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 !mb-6">
+                  <div className="rounded-[var(--radius-sm)] !p-3" style={{background:uiTokens.color.dangerBg}}>
+                    <div className="text-xs !mb-1" style={{color:uiTokens.color.textMuted}}>فواتير آجلة (لسا ما تسدّدت)</div>
+                    <div className="text-lg font-semibold" style={{color:uiTokens.color.danger}}>{unpaidTotal.toFixed(0)} ر.س</div>
+                    <div className="text-xs !mt-0" style={{color:uiTokens.color.textMuted}}>{unpaidInvoices.length} فاتورة</div>
                   </div>
-                  <div style={{background:'#f0fdfa',borderRadius:10,padding:14}}>
-                    <div style={{fontSize:11,color:'#0f766e',marginBottom:4}}>فواتير مسدَّدة</div>
-                    <div style={{fontSize:18,fontWeight:900,color:'#029FA2'}}>{paidTotal.toFixed(0)} ر.س</div>
-                    <div style={{fontSize:10,color:'#0f766e',marginTop:2}}>{paidInvoices.length} فاتورة</div>
+                  <div className="rounded-[var(--radius-sm)] !p-3" style={{background:uiTokens.color.surface}}>
+                    <div className="text-xs !mb-1" style={{color:uiTokens.color.navy}}>فواتير مسدَّدة</div>
+                    <div className="text-lg font-semibold" style={{color:uiTokens.color.navy}}>{paidTotal.toFixed(0)} ر.س</div>
+                    <div className="text-xs !mt-0" style={{color:uiTokens.color.navy}}>{paidInvoices.length} فاتورة</div>
                   </div>
                 </div>
 
                 {fulfilledRequests.length===0 ? (
-                  <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه فواتير بعد — تظهر هنا بعد تأكيد التنفيذ لأي طلب</div>
+                  <StorelyEmptyState className="!border-0 !p-5" title="ما فيه فواتير بعد — تظهر هنا بعد تأكيد التنفيذ لأي طلب" />
                 ) : (
-                  <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                  <div className="flex flex-col gap-4">
                     {fulfilledRequests.map((r:any)=>(
-                      <div key={r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 14px',background:'#f5f5f4',borderRadius:10}}>
+                      <div key={r.id} className="flex justify-between items-center !py-2 !px-3 rounded-[var(--radius-sm)] flex-wrap gap-4" style={{background:uiTokens.color.background}}>
                         <div>
-                          <div style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{r.org_name || 'عميل'}</div>
-                          <div style={{fontSize:11,color:'#888780'}}>{r.delivery_date || new Date(r.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'})}</div>
+                          <div className="text-sm font-semibold" style={{color:uiTokens.color.text}}>{r.org_name || 'عميل'}</div>
+                          <div className="text-xs" style={{color:uiTokens.color.textMuted}}>{r.delivery_date || new Date(r.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'})}</div>
                         </div>
-                        <div style={{display:'flex',alignItems:'center',gap:10}}>
-                          <span style={{fontSize:13,fontWeight:800,color:'#1c1c1a'}}>{r.quoted_price} ر.س</span>
-                          <button onClick={()=>togglePaymentStatus(r.id, r.payment_status)}
-                            style={{padding:'5px 12px',borderRadius:20,border:'none',fontSize:10,fontWeight:700,cursor:'pointer',
-                              background:r.payment_status==='paid'?'#ccfbf1':'#fee2e2',color:r.payment_status==='paid'?'#029FA2':'#dc2626'}}>
-                            {r.payment_status==='paid'?'✅ مسدَّدة':'⏳ آجلة'}
-                          </button>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className="text-sm font-semibold" style={{color:uiTokens.color.text}}>{r.quoted_price} ر.س</span>
+                          <StorelyButton onClick={()=>togglePaymentStatus(r.id, r.payment_status)} style={{background:r.payment_status==='paid'?uiTokens.color.successBg:uiTokens.color.dangerBg, color:r.payment_status==='paid'?uiTokens.color.success:uiTokens.color.danger}} variant="danger">
+                            {r.payment_status==='paid'?"مسدَّدة":"آجلة"}
+                          </StorelyButton>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-              </div>
+              </StorelyCard>
             </>
           )}
 
           {activeTab==='activity' && (
-            <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
-              <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:14}}>🔔 سجل الأحداث</div>
+            <StorelyCard className="min-w-0 !p-5 sm:!p-6" style={{background:uiTokens.color.surface, border:`1px solid ${uiTokens.color.border}`}}>
+              <h2 className="text-lg font-semibold !mb-5" style={{color:uiTokens.color.text}}><Bell size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> سجل الأحداث</h2>
               {activityFeed.length===0 ? (
-                <div style={{fontSize:13,color:'#888780',textAlign:'center' as const,padding:20}}>ما فيه أحداث بعد</div>
+                <StorelyEmptyState className="!border-0 !p-5" title="ما فيه أحداث بعد" />
               ) : (
-                <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
+                <div className="flex flex-col gap-4">
                   {activityFeed.map((ev:any,i:number)=>(
-                    <div key={i} style={{display:'flex',gap:10,alignItems:'flex-start',padding:'10px 12px',background:'#f5f5f4',borderRadius:10}}>
-                      <span style={{fontSize:16}}>{ev.type==='order'?'📋':'💬'}</span>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:12,color:'#1c1c1a'}}>{ev.text}</div>
-                        <div style={{fontSize:10,color:'#888780',marginTop:2}}>{new Date(ev.at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
+                    <div key={i} className="flex gap-2 items-start !py-2 !px-3 rounded-[var(--radius-sm)]" style={{background:uiTokens.color.background}}>
+                      <span className="text-base">{ev.type==='order'?<ClipboardList size={18}/>:<MessagesSquare size={18}/>}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm" style={{color:uiTokens.color.text}}>{ev.text}</div>
+                        <div className="text-xs !mt-0" style={{color:uiTokens.color.textMuted}}>{new Date(ev.at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+            </StorelyCard>
           )}
 
           {activeTab==='account' && (
-            <div style={{background:'white',borderRadius:16,padding:20,border:'1px solid #ebebea'}}>
-              <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:16}}>👤 معلومات الحساب</div>
-              <div style={{display:'flex',flexDirection:'column' as const,gap:14,maxWidth:420}}>
-                <div>
-                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}}>اسم المنشأة</label>
-                  <input value={accountName} onChange={e=>setAccountName(e.target.value)}
-                    style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const}}/>
-                </div>
-                <div>
-                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}}>الموقع / المدينة</label>
-                  <input value={accountLocation} onChange={e=>setAccountLocation(e.target.value)} placeholder="مثال: صبيا"
-                    style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const}}/>
-                </div>
-                <div>
-                  <label style={{fontSize:12,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}}>رقم الجوال</label>
-                  <input value={profile?.phone || ''} disabled
-                    style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid #e5e5e3',fontSize:13,fontFamily:'inherit',background:'#f5f5f4',color:'#888780',boxSizing:'border-box' as const}}/>
-                  <div style={{fontSize:10,color:'#888780',marginTop:4}}>رقم الجوال مرتبط بحساب الدخول، للتواصل مع الدعم لتغييره</div>
-                </div>
-                <button onClick={saveAccountInfo} disabled={accountSaving}
-                  style={{padding:'10px 20px',borderRadius:8,border:'none',background:'#029FA2',color:'white',fontWeight:700,fontSize:13,cursor:'pointer',alignSelf:'flex-start' as const}}>
-                  {accountSaving?'⏳ جاري الحفظ...':'حفظ التعديلات'}
-                </button>
+            <StorelyCard className="min-w-0 !p-5 sm:!p-6" style={{background:uiTokens.color.surface, border:`1px solid ${uiTokens.color.border}`}}>
+              <h2 className="text-lg font-semibold !mb-5" style={{color:uiTokens.color.text}}><UserRound size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> معلومات الحساب</h2>
+              <div className="flex flex-col gap-5 max-w-2xl">
+                <StorelyFormField label="اسم المنشأة" htmlFor="supplier-account-name"><input id="supplier-account-name" value={accountName} onChange={e=>setAccountName(e.target.value)} className="w-full rounded-[var(--radius-sm)] text-sm storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`}}/></StorelyFormField>
+                <StorelyFormField label="الموقع / المدينة" htmlFor="supplier-account-location"><input id="supplier-account-location" value={accountLocation} onChange={e=>setAccountLocation(e.target.value)} placeholder="مثال: صبيا" className="w-full rounded-[var(--radius-sm)] text-sm storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`}}/></StorelyFormField>
+                <StorelyFormField label="رقم الجوال" htmlFor="supplier-account-phone" helperText="رقم الجوال مرتبط بحساب الدخول، للتواصل مع الدعم لتغييره"><input id="supplier-account-phone" dir="ltr" value={profile?.phone || ''} disabled className="w-full rounded-[var(--radius-sm)] text-sm storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`, background:uiTokens.color.background, color:uiTokens.color.textMuted}}/></StorelyFormField>
+                <StorelyButton onClick={saveAccountInfo} disabled={accountSaving} style={{alignSelf:'flex-start' as const}} variant="primary">
+                  {accountSaving?"جاري الحفظ...":'حفظ التعديلات'}
+                </StorelyButton>
               </div>
-            </div>
+            </StorelyCard>
           )}
 
         </div>

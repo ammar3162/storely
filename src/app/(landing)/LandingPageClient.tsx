@@ -15,9 +15,12 @@ import {
   ShoppingCart,
   Users,
   X,
+  MessageCircle,
 } from 'lucide-react'
 import { isInApp } from '@/lib/inApp'
-import { Billing, BRANCH_OPTIONS, BRANCH_OPTIONS_EN, PLAN_BRANCHES, PLANS } from './landing-data'
+import { Billing, BRANCH_OPTIONS, BRANCH_OPTIONS_EN, FEATURES, FAQ_ITEMS, PLAN_BRANCHES, PLANS } from './landing-data'
+import { FaqItem } from './landing-components'
+import { restoredCopy } from './restored-content'
 import styles from './LandingPageClient.module.css'
 
 type Lang = 'ar' | 'en'
@@ -191,6 +194,7 @@ export default function LandingPage() {
   })
 
   const c = copy[lang]
+  const p = restoredCopy[lang]
   const dir = lang === 'ar' ? 'rtl' : 'ltr'
 
   function setLang(nextLang: Lang) {
@@ -279,7 +283,10 @@ export default function LandingPage() {
 
         <nav className={styles.desktopNav} aria-label="Primary">
           <a href="#product">{c.navProduct}</a>
+          <a href="#how">{p.how}</a>
+          <a href="#features">{p.features}</a>
           <a href="#pricing">{c.navPricing}</a>
+          <a href="#faq">{p.faq}</a>
           <a href="#demo">{c.navDemo}</a>
         </nav>
 
@@ -303,7 +310,10 @@ export default function LandingPage() {
       {menuOpen && (
         <div className={styles.mobileNav}>
           <a href="#product" onClick={() => setMenuOpen(false)}>{c.navProduct}</a>
+          <a href="#how">{p.how}</a>
+          <a href="#features">{p.features}</a>
           <a href="#pricing" onClick={() => setMenuOpen(false)}>{c.navPricing}</a>
+          <a href="#faq">{p.faq}</a>
           <a href="#demo" onClick={() => setMenuOpen(false)}>{c.navDemo}</a>
           <button type="button" onClick={() => router.push('/login')}>{c.login}</button>
         </div>
@@ -312,15 +322,19 @@ export default function LandingPage() {
       <section className={styles.hero}>
         <div className={styles.heroText}>
           <p className={styles.eyebrow}>{c.eyebrow}</p>
-          <h1>{c.title}</h1>
+          <p className={styles.brandLine}>{c.title} <span>{p.badge}</span></p>
+          <h1>{p.headline}<br />{p.headlineEnd}</h1>
+          <p className={styles.subtitle}>{p.support}</p>
           <p className={styles.subtitle}>{c.subtitle}</p>
           <div className={styles.heroActions}>
             <button className={styles.primaryButton} type="button" onClick={() => router.push('/login?mode=register')}>
-              {c.primaryCta}
+              {p.start}
               <ArrowLeft size={17} aria-hidden="true" />
             </button>
             <a className={styles.secondaryButton} href="#demo">{c.secondaryCta}</a>
+            <a className={styles.textLink} href="#how">{p.watch}</a>
           </div>
+          <ul className={styles.trustList}>{p.trust.map(point => <li key={point}><Check size={16} aria-hidden="true" />{point}</li>)}</ul>
         </div>
 
         <div className={styles.productPreview} aria-label={c.previewTitle}>
@@ -331,6 +345,9 @@ export default function LandingPage() {
             </div>
             <ShieldCheck size={22} aria-hidden="true" />
           </div>
+          <video className={styles.productVideo} src="/videos/storely-ad.mp4" poster="/videos/storely-ad.jpg" controls playsInline preload="none" aria-label={c.previewTitle} />
+          <div className={styles.stockNotice}><Bell size={18} aria-hidden="true" /><div><strong>{p.inventoryNotice}</strong><p>{p.orderNotice}</p></div></div>
+          <p className={styles.cashierNotice}><Check size={16} aria-hidden="true" />{p.cashier}</p>
           <div className={styles.previewRows}>
             {previewRows.map((row) => {
               const Icon = row.icon
@@ -349,14 +366,48 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <dl className={styles.stats}>{p.stats.map(([value, label]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+
       {partners.length > 0 && (
         <section className={styles.partners} aria-label="Partners">
+          <p>{p.partners}</p>
           {partners.map((partner) => (
             // eslint-disable-next-line @next/next/no-img-element -- Partner logos are remote CMS assets without a fixed Next image host.
             <img key={partner.id} src={partner.logo_url} alt={partner.name} />
           ))}
         </section>
       )}
+
+      <section className={styles.storySection}>
+        <figure className={styles.photo}>
+          <Image src="/storely-team.jpg" alt={p.ownerPhoto} width={720} height={480} />
+          <figcaption><strong>{p.greeting}</strong><span>{p.morningNotice}</span></figcaption>
+        </figure>
+        <div className={styles.sectionIntro}>
+          <p className={styles.eyebrow}>{p.morningTag}</p>
+          <h2>{p.morningTitle}</h2><p>{p.morningText}</p>
+          <ul className={styles.checkList}>{p.morningPoints.map(point => <li key={point}><Check size={17} aria-hidden="true" />{point}</li>)}</ul>
+        </div>
+      </section>
+
+      <section id="how" className={styles.workflowSection}>
+        <div className={styles.sectionIntro}><p className={styles.eyebrow}>{p.how}</p><h2>{p.workflowTitle}</h2></div>
+        <ol className={styles.workflows}>{p.workflows.map(([title, text], index) => <li key={title}><span>{String(index + 1).padStart(2, '0')}</span><div><h3>{title}</h3><p>{text}</p></div></li>)}</ol>
+        <video className={styles.workflowVideo} src="/videos/storely-features.mp4" poster="/videos/storely-features.jpg" controls playsInline preload="none" aria-label={p.features} />
+      </section>
+
+      <section className={styles.storySection}>
+        <div className={styles.sectionIntro}><p className={styles.eyebrow}>{p.supplierTag}</p><h2>{p.supplierTitle}</h2><p>{p.supplierText}</p><a className={styles.textLink} href="#how">{p.watch}<ArrowLeft size={17} aria-hidden="true" /></a></div>
+        <figure className={styles.photo}>
+          <Image src="/supplier-team.jpg" alt={p.supplierPhoto} width={720} height={480} />
+          <figcaption className={styles.supplierExample}><strong><MessageCircle size={17} aria-hidden="true" /> Storely</strong><p>{p.supplierOrder}</p><p><Check size={16} aria-hidden="true" />{p.supplierReply}</p></figcaption>
+        </figure>
+      </section>
+
+      <section id="features" className={styles.featuresSection}>
+        <div className={styles.sectionIntro}><p className={styles.eyebrow}>{p.features}</p><h2>{p.featuresTitle}</h2></div>
+        <div className={styles.featuresGrid}>{FEATURES.map(feature => <article key={feature.title}><feature.icon size={23} strokeWidth={1.75} aria-hidden="true" /><div><h3>{lang === 'ar' ? feature.title : feature.titleEn}{feature.badge && <small>{lang === 'ar' ? feature.badge : feature.badgeEn}</small>}</h3><p>{lang === 'ar' ? feature.desc : feature.descEn}</p></div></article>)}</div>
+      </section>
 
       <section id="product" className={styles.valueSection}>
         <div className={styles.sectionIntro}>
@@ -376,13 +427,13 @@ export default function LandingPage() {
 
       <section id="pricing" className={styles.pricingSection}>
         <div className={styles.sectionHeading}>
-          <h2>{c.plansTitle}</h2>
+          <div><p className={styles.eyebrow}>{c.navPricing}</p><h2>{lang === 'ar' ? 'باقة تناسب كل حجم منشأة' : 'A plan for every business size'}</h2><p className={styles.supportingText}>{c.plansTitle}</p></div>
           <div className={styles.billingToggle}>
             <button type="button" data-active={billing === 'monthly'} onClick={() => setBilling('monthly')}>
               {c.monthly}
             </button>
             <button type="button" data-active={billing === 'yearly'} onClick={() => setBilling('yearly')}>
-              {c.yearly}
+              {c.yearly} <span>{p.save}</span>
             </button>
           </div>
         </div>
@@ -396,7 +447,7 @@ export default function LandingPage() {
               <article className={styles.plan} key={planName} data-featured={plan.popular}>
                 <div className={styles.planHeader}>
                   <h3>{planName}</h3>
-                  {plan.popular && <span>{c.included}</span>}
+                  {plan.popular && <span>{p.popular}</span>}
                 </div>
                 <div className={styles.price}>
                   <strong>{billing === 'yearly' ? plan.yearlyPrice : plan.price}</strong>
@@ -408,19 +459,20 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 <ul className={styles.featureList}>
-                  {features.slice(0, 5).map((feature) => (
+                  {features.map((feature) => (
                     <li key={feature}>
                       <Check size={15} aria-hidden="true" />
                       <span>{removeDecorativeEmoji(feature)}</span>
                     </li>
                   ))}
                 </ul>
+                {plan.addonNote && plan.addonNoteEn && <p className={styles.addonNote}>{removeDecorativeEmoji(lang === 'ar' ? plan.addonNote : plan.addonNoteEn)}</p>}
                 <button
                   className={plan.popular ? styles.primaryButton : styles.secondaryButton}
                   type="button"
                   onClick={() => router.push(`/login?mode=register&branches=${PLAN_BRANCHES[index]}&billing=${billing}`)}
                 >
-                  {c.choosePlan}
+                  {p.startNow}
                 </button>
               </article>
             )
@@ -430,11 +482,16 @@ export default function LandingPage() {
 
       <section id="demo" className={styles.demoSection}>
         <div className={styles.demoIntro}>
-          <h2>{c.demoTitle}</h2>
+          <Image src="/storely-logo.png" alt="" width={40} height={40} className={styles.demoLogo} />
+          <h2>{p.demoTitle}</h2>
+          <p>{p.demoText}</p>
+          <p className={styles.supportingText}>{c.demoTitle}</p>
           <p>{c.demoText}</p>
+          <a className={styles.textLink} href="https://wa.me/966594351667" target="_blank" rel="noreferrer">{p.contact}<ArrowLeft size={17} aria-hidden="true" /></a>
         </div>
 
         <form className={styles.demoForm} onSubmit={submitDemoRequest}>
+          <h3>{p.formTitle}</h3><p className={styles.supportingText}>{p.formText}</p>
           {submitMsg && (
             <div className={submitMsg.ok ? styles.successMessage : styles.errorMessage}>
               {submitMsg.text}
@@ -443,23 +500,23 @@ export default function LandingPage() {
 
           <div className={styles.formGrid}>
             <label>
-              <span>{c.firstName}</span>
+              <span>{c.firstName} *</span>
               <input required value={form.firstName} onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))} />
             </label>
             <label>
-              <span>{c.lastName}</span>
+              <span>{c.lastName} *</span>
               <input required value={form.lastName} onChange={(event) => setForm((current) => ({ ...current, lastName: event.target.value }))} />
             </label>
             <label>
-              <span>{c.phone}</span>
+              <span>{c.phone} *</span>
               <input required type="tel" value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} />
             </label>
             <label>
-              <span>{c.email}</span>
+              <span>{c.email} *</span>
               <input required type="email" value={form.email} onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))} />
             </label>
             <label>
-              <span>{c.business}</span>
+              <span>{c.business} *</span>
               <input required value={form.businessName} onChange={(event) => setForm((current) => ({ ...current, businessName: event.target.value }))} />
             </label>
             <label>
@@ -476,7 +533,7 @@ export default function LandingPage() {
           <label className={styles.checkbox}>
             <input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} />
             <span>
-              {c.agree} <a href="/terms" target="_blank">{c.terms}</a> {c.and} <a href="/privacy" target="_blank">{c.privacy}</a>
+              {p.agree} <a href="/terms" target="_blank">{p.terms}</a> {c.and} <a href="/privacy" target="_blank">{c.privacy}</a>
             </span>
           </label>
 
@@ -486,19 +543,33 @@ export default function LandingPage() {
         </form>
       </section>
 
+      <section id="faq" className={styles.faqSection}>
+        <div className={styles.sectionIntro}><p className={styles.eyebrow}>{p.faqTag}</p><h2>{p.faqTitle}</h2></div>
+        <div>{FAQ_ITEMS.map(item => <FaqItem key={item.q} q={lang === 'ar' ? item.q : item.qEn} a={lang === 'ar' ? item.a : item.aEn} />)}</div>
+      </section>
+
+      <section className={styles.finalCta}><div><h2>{p.finalTitle}</h2><p>{p.finalText}</p></div><div className={styles.heroActions}><Link className={styles.primaryButton} href="/login?mode=register">{p.finalStart}</Link><a className={styles.secondaryButton} href="https://wa.me/966594351667" target="_blank" rel="noreferrer">{p.contact}</a></div></section>
+
       <footer className={styles.footer}>
         <div>
-          <strong>Storely</strong>
+          <div className={styles.footerBrand}><Image src="/storely-logo.png" alt="" width={32} height={32} className={styles.logo} /><strong>Storely</strong></div>
+          <p>{p.footerTagline}</p>
           <p>{c.footerText}</p>
         </div>
-        <nav>
+        <nav aria-label={p.platform}><strong>{p.platform}</strong><Link href="/login">{p.login}</Link><Link href="/login?mode=register">{p.signup}</Link><a href="#pricing">{c.navPricing}</a></nav>
+        <nav aria-label={c.legal}><strong>{c.legal}</strong>
           <a href="/privacy">{c.privacy}</a>
-          <a href="/terms">{c.terms}</a>
-          <a href="/security">{c.legal}</a>
+          <a href="/terms">{p.terms}</a>
+          <a href="/security">{p.security}</a>
+        </nav>
+        <nav aria-label={c.contact}><strong>{c.contact}</strong>
           <a href="https://wa.me/966594351667" target="_blank" rel="noreferrer">{c.whatsapp}</a>
+          <a href="mailto:support@storely.dev">{p.email} <bdi>support@storely.dev</bdi></a>
         </nav>
         <span>{c.rights} {new Date().getFullYear()}</span>
+        <p className={styles.commercial}>{p.commercial}<br /><bdi>storely.dev</bdi></p>
       </footer>
+      <a className={styles.contactShortcut} href="https://wa.me/966594351667" target="_blank" rel="noreferrer" aria-label={c.whatsapp}><MessageCircle size={21} aria-hidden="true" /></a>
     </main>
   )
 }

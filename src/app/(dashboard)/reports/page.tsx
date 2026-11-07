@@ -1,4 +1,5 @@
 'use client'
+import { storelyTokens } from '@/components/ui/design-tokens'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
 import type React from 'react'
@@ -17,9 +18,9 @@ type FilterPeriod = 'today'|'week'|'month'|'year'|'custom'
 
 const reportSurface: React.CSSProperties = {
   background: '#FFFFFF',
-  border: '1px solid #DEE6EA',
-  borderRadius: 16,
-  boxShadow: '0 1px 2px rgba(32,54,64,.035)',
+  border: `1px solid ${storelyTokens.color.border}`,
+  borderRadius: storelyTokens.radius.card,
+  boxShadow: storelyTokens.shadow.surface,
 }
 
 const reportCss = `
@@ -31,39 +32,37 @@ const reportCss = `
   .su{animation:slideUp .4s ease both}
   .reports-home-shell{font-family:${font.family};direction:rtl;max-width:1320px;margin:0 auto;opacity:var(--reports-visible);transition:opacity .4s ease}
   .reports-detail-shell{font-family:${font.family};direction:rtl;max-width:1120px;margin:0 auto;padding:0 2px 28px}
-  .reports-hero{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:22px;padding:26px 28px}
+  .reports-hero{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:24px;padding:8px 0}
   .reports-filter-panel{margin-bottom:22px;padding:18px}
   .reports-filter-bar{display:flex;gap:10px;flex-wrap:wrap}
-  .reports-filter-pill{min-height:40px;padding:10px 18px;border-radius:999px;font-family:${font.family};font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s}
-  .reports-filter-custom{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px;background:#F7FAFB;border:1px solid #DEE6EA;border-radius:14px}
+  .reports-filter-pill{min-height:40px;padding:10px 18px;border-radius:${storelyTokens.radius.control};font-family:${font.family};font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s}
+  .reports-filter-custom{margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px;background:${storelyTokens.color.surface};border:1px solid ${storelyTokens.color.border};border-radius:${storelyTokens.radius.card}}
   .reports-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:18px}
-  .reports-card-grid > div:first-child,.reports-card-grid > div:nth-child(2){grid-column:span 1}
   .report-card-button{width:100%;height:100%;text-align:right;border:none;cursor:pointer;font-family:${font.family};padding:0;background:transparent}
-  .report-card{height:100%;background:#fff;border-radius:16px;border:1px solid #DEE6EA;box-shadow:0 1px 2px rgba(32,54,64,.035);padding:22px 24px;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+  .report-card{height:100%;background:#fff;border-radius:${storelyTokens.radius.card};border:1px solid ${storelyTokens.color.border};box-shadow:${storelyTokens.shadow.surface};padding:22px 24px;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
   .report-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
   .report-card-title-row{display:flex;align-items:center;gap:12px;min-width:0}
-  .report-card-icon{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-  .report-card-detail{display:flex;align-items:center;gap:6px;border-radius:999px;padding:7px 12px;border:1px solid #DEE6EA;transition:all .2s;white-space:nowrap}
-  .report-stat-grid{display:grid;gap:10px;margin-bottom:16px}
-  .report-stat{border-radius:13px;padding:13px 10px;text-align:center;border:1px solid #E6ECEF;background:#F7FAFB}
-  .report-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:12px 0 16px}
+  .report-card-icon{width:44px;height:44px;border-radius:${storelyTokens.radius.card};display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .report-card-detail{display:flex;align-items:center;gap:6px;border-radius:${storelyTokens.radius.control};padding:7px 12px;border:1px solid ${storelyTokens.color.border};transition:all .2s;white-space:nowrap}
+  .report-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:0;margin-bottom:16px}
+  .report-stat{min-width:0;padding:8px;text-align:start;border:0;background:${storelyTokens.color.surface};overflow-wrap:anywhere}
+  .report-stat + .report-stat{border-inline-start:1px solid ${storelyTokens.color.border}}
+  .report-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px;margin:12px 0 16px}
   .report-two-column-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:20px}
   .report-recent-grid{margin-top:16px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
   @media (max-width:900px){
     .reports-home-shell,.reports-detail-shell{padding-inline:2px}
-    .reports-hero{display:block;padding:22px 20px}
+    .reports-hero{display:block}
     .reports-card-grid,.report-two-column-grid{grid-template-columns:1fr}
     .report-recent-grid{grid-template-columns:1fr}
   }
   @media (max-width:640px){
-    .reports-hero{padding:20px 16px}
     .reports-filter-panel{padding:14px}
     .reports-filter-pill{flex:1 1 calc(50% - 10px);justify-content:center;padding-inline:12px}
     .reports-filter-custom{grid-template-columns:1fr}
     .report-card{padding:18px 16px}
     .report-card-top{flex-direction:column}
     .report-card-detail{align-self:flex-start}
-    .report-stat-grid{grid-template-columns:1fr !important}
   }
 `
 
@@ -117,7 +116,7 @@ function FilterBar({ period, setPeriod, from, setFrom, to, setTo }: any) {
             <button key={p.key} onClick={()=>setPeriod(p.key as FilterPeriod)}
               className="reports-filter-pill"
               style={{
-                border:active?`1px solid ${colors.primary}`:`1px solid #DEE6EA`,
+                border:active?`1px solid ${colors.primary}`:`1px solid ${storelyTokens.color.border}`,
                 background:active?'#F4F7F8':'white',
                 color:active?colors.primary:colors.text2,
                 boxShadow:active?'inset 0 0 0 1px rgba(32,54,64,.08)':'none',
@@ -158,9 +157,9 @@ function ReportCard({ title, subtitle, icon, color, bg, border, stats, onClick, 
       <div
         className="report-card"
         style={{
-          borderColor: hov ? color : '#DEE6EA',
-          boxShadow: hov ? `0 18px 42px ${color}18` : '0 1px 2px rgba(32,54,64,.035)',
-          transform: hov ? 'translateY(-3px)' : 'none',
+          borderColor: hov ? storelyTokens.color.navy : storelyTokens.color.border,
+          boxShadow: storelyTokens.shadow.surface,
+          transform: 'none',
         }}
       >
         <div className="report-card-top">
@@ -169,26 +168,26 @@ function ReportCard({ title, subtitle, icon, color, bg, border, stats, onClick, 
               <div className="report-card-icon" style={{background:bg,border:`1px solid ${border}`,color}}>{icon}</div>
               <div>
                 <div style={{fontSize:17,fontWeight:700,color:colors.text,lineHeight:1.5}}>{title}</div>
-                <div style={{fontSize:13,color:colors.text3,marginTop:3,lineHeight:1.6}}>{subtitle}</div>
+                <div style={{fontSize:storelyTokens.typography.body,color:colors.text3,marginTop:3,lineHeight:1.6}}>{subtitle}</div>
               </div>
             </div>
           </div>
-          <div className="report-card-detail" style={{background:hov?color:'#F7FAFB',borderColor:hov?color:'#DEE6EA'}}>
+          <div className="report-card-detail" style={{background:hov?storelyTokens.color.navy:storelyTokens.color.surface,borderColor:storelyTokens.color.border}}>
             <span style={{fontSize:font.xs,fontWeight:700,color:hov?'white':colors.text3}}>التفاصيل</span>
             <svg width={12} height={12} fill="none" stroke={hov?'white':colors.text3} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
           </div>
         </div>
 
-        {stats.length > 0 ? <div className="report-stat-grid" style={{gridTemplateColumns:`repeat(${stats.length},1fr)`,marginBottom:chartData?16:0}}>
+        {stats.length > 0 ? <div className="report-stat-grid" style={{marginBottom:chartData?16:0}}>
           {loading?[...Array(stats.length)].map((_,i)=>(
             <div key={i} className="report-stat">
-              <div style={{height:22,background:colors.border2,borderRadius:6,marginBottom:6,animation:'sk 1.4s infinite'}}/>
-              <div style={{height:10,background:colors.border,borderRadius:4,animation:'sk 1.4s infinite'}}/>
+              <div style={{height:22,background:colors.border2,borderRadius:storelyTokens.radius.control,marginBottom:6,animation:'sk 1.4s infinite'}}/>
+              <div style={{height:10,background:colors.border,borderRadius:storelyTokens.radius.control,animation:'sk 1.4s infinite'}}/>
             </div>
           )):stats.map((s:any,i:number)=>(
-            <div key={i} className="report-stat" style={{background:s.highlight?bg:'#F7FAFB',borderColor:s.highlight?border:'#E6ECEF'}}>
+            <div key={i} className="report-stat" style={{background:storelyTokens.color.surface,borderColor:storelyTokens.color.border}}>
               <div style={{fontSize:20,fontWeight:700,color:s.color}}>{s.value}</div>
-              <div style={{fontSize:11,color:colors.text4,marginTop:4,fontWeight:600,lineHeight:1.5}}>{s.label}</div>
+              <div style={{fontSize:storelyTokens.typography.supporting,color:colors.text4,marginTop:4,fontWeight:600,lineHeight:1.5}}>{s.label}</div>
             </div>
           ))}
         </div> : null}
@@ -300,28 +299,28 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
           {label:'أصناف مختلفة',value:Object.keys(productMap).length,color:'#717553',bg:'#F8EEDF',border:'#D9CDBE'},
         ].map((s,i)=>(
           <div key={i} style={{...card,padding:'16px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
-            <div style={{fontSize:28,fontWeight:900,color:s.color,letterSpacing:'-1px'}}>{s.value}</div>
+            <div style={{fontSize:28,fontWeight:600,color:s.color,letterSpacing:'-1px'}}>{s.value}</div>
             <div style={{fontSize:font.xs,color:s.color,marginTop:4,fontWeight:700,opacity:.8}}>{s.label}</div>
           </div>
         ))}
       </div>
       {topProducts.length>0&&(
         <div style={{...card,padding:'16px 18px',marginBottom:16}}>
-          <div style={{fontSize:font.base,fontWeight:800,color:colors.text,marginBottom:14,display:'flex',alignItems:'center',gap:6}}><Trophy size={16} strokeWidth={2.25}/> الأكثر صرفاً</div>
+          <div style={{fontSize:font.base,fontWeight:600,color:colors.text,marginBottom:14,display:'flex',alignItems:'center',gap:6}}><Trophy size={16} strokeWidth={2.25}/> الأكثر صرفاً</div>
           {topProducts.map(([name,qty],i)=>{
             const pct=Math.round((qty/topProducts[0][1])*100)
             return(
               <div key={i} style={{display:'flex',alignItems:'center',gap:10,marginBottom:i<topProducts.length-1?12:0}}>
-                <div style={{width:26,height:26,borderRadius:8,background:barColors[i]+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:`1px solid ${barColors[i]}44`}}>
-                  <span style={{fontSize:11,fontWeight:900,color:barColors[i]}}>{i+1}</span>
+                <div style={{width:26,height:26,borderRadius:storelyTokens.radius.control,background:barColors[i]+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:`1px solid ${barColors[i]}44`}}>
+                  <span style={{fontSize:storelyTokens.typography.supporting,fontWeight:600,color:barColors[i]}}>{i+1}</span>
                 </div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:'flex',justifyContent:'space-between',marginBottom:5}}>
                     <span style={{fontSize:font.sm,fontWeight:700,color:colors.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const,maxWidth:200}}>{name}</span>
-                    <span style={{fontSize:font.sm,fontWeight:900,color:barColors[i]}}>{qty}</span>
+                    <span style={{fontSize:font.sm,fontWeight:600,color:barColors[i]}}>{qty}</span>
                   </div>
-                  <div style={{height:5,background:colors.border,borderRadius:99}}>
-                    <div style={{height:'100%',width:pct+'%',background:barColors[i],borderRadius:99,transition:'width .6s'}}/>
+                  <div style={{height:5,background:colors.border,borderRadius:storelyTokens.radius.card}}>
+                    <div style={{height:'100%',width:pct+'%',background:barColors[i],borderRadius:storelyTokens.radius.card,transition:'width .6s'}}/>
                   </div>
                 </div>
               </div>
@@ -342,24 +341,24 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
         ):(
           <>
           <div style={{overflowX:'auto'}}>
-            <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:400}}>
+            <table className="storely-table" style={{width:'100%',borderCollapse:'collapse' as const,minWidth:400}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
                   {['التاريخ','المنتج','الكمية','الموظف','الملاحظة'].map((h,i)=>(
-                    <th key={i} style={{padding:'10px 16px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
+                    <th key={i} style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,color:colors.text4,fontSize:storelyTokens.typography.body,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((m,i)=>(
                   <tr key={m.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}>
-                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
-                    <td style={{padding:'11px 16px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td>
-                    <td style={{padding:'11px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:900}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
-                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#F8EEDF',color:'#203640',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #D9CDBE'}}>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:600}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#F8EEDF',color:'#203640',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:storelyTokens.radius.card,border:'1px solid #D9CDBE'}}>
 {(m.profiles as any)?.full_name||(m.staff_members as any)?.name||(m.note?.match(/بواسطة[^:]*:\s*(.+)/)?.[1])||'—'}
 </span></td>
-                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text4}}>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:colors.text4}}>
                       {m.note?.replace(/صرف بواسطة الموظف: .+/, '').trim() || m.note || '—'}
                     </td>
                   </tr>
@@ -369,7 +368,7 @@ function DispenseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
           </div>
           <div style={{padding:'12px 16px',background:colors.dangerLight,borderTop:`1.5px solid ${colors.dangerBorder}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <span style={{fontSize:font.sm,fontWeight:700,color:colors.danger}}>{filtered.length} عملية</span>
-            <span style={{fontSize:font.base,fontWeight:900,color:colors.danger}}>{totalQty} وحدة مصروفة</span>
+            <span style={{fontSize:font.base,fontWeight:600,color:colors.danger}}>{totalQty} وحدة مصروفة</span>
           </div>
           </>
         )}
@@ -458,29 +457,29 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
           {label:'أصناف مختلفة',value:Object.keys(productMap).length,color:'#717553',bg:'#F8EEDF',border:'#D9CDBE'},
         ].map((s,i)=>(
           <div key={i} style={{...card,padding:'16px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
-            <div style={{fontSize:28,fontWeight:900,color:s.color,letterSpacing:'-1px'}}>{s.value}</div>
+            <div style={{fontSize:28,fontWeight:600,color:s.color,letterSpacing:'-1px'}}>{s.value}</div>
             <div style={{fontSize:font.xs,color:s.color,marginTop:4,fontWeight:700,opacity:.8}}>{s.label}</div>
           </div>
         ))}
       </div>
       {Object.keys(reasonMap).length>0&&(
         <div style={{...card,padding:'16px 18px',marginBottom:16}}>
-          <div style={{fontSize:font.base,fontWeight:800,color:colors.text,marginBottom:14,display:'flex',alignItems:'center',gap:6}}><Trash2 size={16} strokeWidth={2.25}/> الهدر حسب السبب</div>
+          <div style={{fontSize:font.base,fontWeight:600,color:colors.text,marginBottom:14,display:'flex',alignItems:'center',gap:6}}><Trash2 size={16} strokeWidth={2.25}/> الهدر حسب السبب</div>
           {Object.entries(reasonMap).sort((a,b)=>b[1]-a[1]).map(([reason,qty],i)=>{
             const maxV = Math.max(...Object.values(reasonMap),1)
             const pct=Math.round((qty/maxV)*100)
             return(
               <div key={i} style={{display:'flex',alignItems:'center',gap:10,marginBottom:i<Object.keys(reasonMap).length-1?12:0}}>
-                <div style={{width:26,height:26,borderRadius:8,background:barColors[i%barColors.length]+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:`1px solid ${barColors[i%barColors.length]}44`}}>
-                  <span style={{fontSize:11,fontWeight:900,color:barColors[i%barColors.length]}}>{i+1}</span>
+                <div style={{width:26,height:26,borderRadius:storelyTokens.radius.control,background:barColors[i%barColors.length]+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:`1px solid ${barColors[i%barColors.length]}44`}}>
+                  <span style={{fontSize:storelyTokens.typography.supporting,fontWeight:600,color:barColors[i%barColors.length]}}>{i+1}</span>
                 </div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:'flex',justifyContent:'space-between',marginBottom:5}}>
                     <span style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{reason}</span>
-                    <span style={{fontSize:font.sm,fontWeight:900,color:barColors[i%barColors.length]}}>{qty}</span>
+                    <span style={{fontSize:font.sm,fontWeight:600,color:barColors[i%barColors.length]}}>{qty}</span>
                   </div>
-                  <div style={{height:5,background:colors.border,borderRadius:99}}>
-                    <div style={{height:'100%',width:pct+'%',background:barColors[i%barColors.length],borderRadius:99,transition:'width .6s'}}/>
+                  <div style={{height:5,background:colors.border,borderRadius:storelyTokens.radius.card}}>
+                    <div style={{height:'100%',width:pct+'%',background:barColors[i%barColors.length],borderRadius:storelyTokens.radius.card,transition:'width .6s'}}/>
                   </div>
                 </div>
               </div>
@@ -501,27 +500,27 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
         ):(
           <>
           <div style={{overflowX:'auto'}}>
-            <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:400}}>
+            <table className="storely-table" style={{width:'100%',borderCollapse:'collapse' as const,minWidth:400}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
                   {['التاريخ','المنتج','الكمية','السبب','الموظف','الملاحظة'].map((h,i)=>(
-                    <th key={i} style={{padding:'10px 16px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
+                    <th key={i} style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,color:colors.text4,fontSize:storelyTokens.typography.body,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((m,i)=>(
                   <tr key={m.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}>
-                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
-                    <td style={{padding:'11px 16px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td>
-                    <td style={{padding:'11px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:900}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
-                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#fffbeb',color:'#b45309',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #fde68a'}}>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:600}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#fffbeb',color:'#b45309',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:storelyTokens.radius.card,border:'1px solid #fde68a'}}>
 {(m as any).waste_reason||'—'}
 </span></td>
-                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#F8EEDF',color:'#203640',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #D9CDBE'}}>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#F8EEDF',color:'#203640',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:storelyTokens.radius.card,border:'1px solid #D9CDBE'}}>
 {(m.profiles as any)?.full_name||(m.staff_members as any)?.name||(m.note?.match(/بواسطة[^:]*:\s*(.+)/)?.[1])||'—'}
 </span></td>
-                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text4}}>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:colors.text4}}>
                       {m.note?.replace(/هدر: .+/, '').trim() || m.note || '—'}
                     </td>
                   </tr>
@@ -531,7 +530,7 @@ function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:s
           </div>
           <div style={{padding:'12px 16px',background:colors.dangerLight,borderTop:`1.5px solid ${colors.dangerBorder}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <span style={{fontSize:font.sm,fontWeight:700,color:colors.danger}}>{filtered.length} عملية</span>
-            <span style={{fontSize:font.base,fontWeight:900,color:colors.danger}}>{totalQty} وحدة مهدورة</span>
+            <span style={{fontSize:font.base,fontWeight:600,color:colors.danger}}>{totalQty} وحدة مهدورة</span>
           </div>
           </>
         )}
@@ -694,7 +693,7 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
           {label:'الفواتير',value:String(filtered.length),color:colors.info,bg:colors.infoLight,border:colors.infoBorder},
         ].map((s,i)=>(
           <div key={i} style={{...card,padding:'14px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
-            <div style={{fontSize:i===2?20:16,fontWeight:900,color:s.color,letterSpacing:'-0.5px'}}>{s.value}</div>
+            <div style={{fontSize:i===2?20:16,fontWeight:600,color:s.color,letterSpacing:'-0.5px'}}>{s.value}</div>
             <div style={{fontSize:font.xs,color:s.color,marginTop:4,fontWeight:600,opacity:.8}}>{s.label}</div>
           </div>
         ))}
@@ -718,32 +717,32 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
         ):(
           <>
           <div style={{overflowX:'auto'}}>
-            <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
+            <table className="storely-table" style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
                   {['التاريخ','الصنف','النوع','بدون ضريبة','ضريبة','الإجمالي','المورد','فاتورة','إجراء'].map((h,i)=>(
-                    <th key={i} style={{padding:'10px 12px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
+                    <th key={i} style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,color:colors.text4,fontSize:storelyTokens.typography.body,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((p,i)=>(
                   <tr key={p.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}>
-                    <td style={{padding:'11px 12px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(p.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
-                    <td style={{padding:'11px 12px',fontSize:font.sm,fontWeight:700,color:colors.text,maxWidth:140,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.name}</td>
-                    <td style={{padding:'11px 12px'}}><span style={catTag(p.category)}>{p.category}</span></td>
-                    <td style={{padding:'11px 12px',fontSize:font.sm}}>{Number(p.amount||0).toFixed(0)} {curr}</td>
-                    <td style={{padding:'11px 12px',fontSize:font.sm,color:colors.warning,fontWeight:600}}>{Number(p.vat_amount||0).toFixed(0)} {curr}</td>
-                    <td style={{padding:'11px 12px',fontSize:font.sm,fontWeight:700,color:colors.primary}}>{Number(p.total_amount||0).toFixed(0)} {curr}</td>
-                    <td style={{padding:'11px 12px',fontSize:font.xs,color:colors.text4,maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.supplier||'—'}</td>
-                    <td style={{padding:'11px 12px',textAlign:'center' as const}}>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(p.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,fontWeight:700,color:colors.text,maxWidth:140,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.name}</td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`}}><span style={catTag(p.category)}>{p.category}</span></td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body}}>{Number(p.amount||0).toFixed(0)} {curr}</td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:colors.warning,fontWeight:600}}>{Number(p.vat_amount||0).toFixed(0)} {curr}</td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,fontWeight:700,color:colors.primary}}>{Number(p.total_amount||0).toFixed(0)} {curr}</td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:colors.text4,maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.supplier||'—'}</td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,textAlign:'center' as const}}>
                       {p.invoice_image
-                        ? <a href={p.invoice_image} target="_blank" rel="noreferrer" style={{background:'#F3F5F6',color:'#4F6678',border:'1px solid #CBD4DC',borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap' as const,display:'inline-flex',alignItems:'center',gap:4}}><Paperclip size={11} strokeWidth={2.25}/> عرض</a>
+                        ? <a href={p.invoice_image} target="_blank" rel="noreferrer" style={{background:'#F3F5F6',color:'#4F6678',border:'1px solid #CBD4DC',borderRadius:storelyTokens.radius.control,padding:'3px 10px',fontSize:storelyTokens.typography.supporting,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap' as const,display:'inline-flex',alignItems:'center',gap:4}}><Paperclip size={11} strokeWidth={2.25}/> عرض</a>
                         : <span style={{color:colors.border2}}>—</span>}
                     </td>
-                    <td style={{padding:'11px 12px',textAlign:'center' as const}}>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,textAlign:'center' as const}}>
                       <button onClick={()=>{setConfirmDelete(p);setDeletePassword('');setDeleteError('')}}
-                        style={{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                        style={{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:storelyTokens.radius.control,padding:'4px 10px',fontSize:storelyTokens.typography.supporting,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                         <Trash2 size={12} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> حذف
                       </button>
                     </td>
@@ -752,10 +751,10 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
               </tbody>
               <tfoot>
                 <tr style={{background:colors.primaryLight,borderTop:`2px solid ${colors.primaryBorder}`}}>
-                  <td colSpan={3} style={{padding:'11px 12px',fontWeight:800,fontSize:font.sm,color:colors.text}}>الإجمالي ({filtered.length} فاتورة)</td>
-                  <td style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm}}>{totalAmount.toFixed(0)} {curr}</td>
-                  <td style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm,color:colors.warning}}>{totalVat.toFixed(0)} {curr}</td>
-                  <td style={{padding:'11px 12px',fontWeight:900,fontSize:font.md,color:colors.primary}}>{totalWithVat.toFixed(0)} {curr}</td>
+                  <td colSpan={3} style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontWeight:600,fontSize:storelyTokens.typography.body,color:colors.text}}>الإجمالي ({filtered.length} فاتورة)</td>
+                  <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontWeight:700,fontSize:storelyTokens.typography.body}}>{totalAmount.toFixed(0)} {curr}</td>
+                  <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontWeight:700,fontSize:storelyTokens.typography.body,color:colors.warning}}>{totalVat.toFixed(0)} {curr}</td>
+                  <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontWeight:600,fontSize:storelyTokens.typography.body,color:colors.primary}}>{totalWithVat.toFixed(0)} {curr}</td>
                   <td/><td/><td/>
                 </tr>
               </tfoot>
@@ -766,35 +765,35 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
       </div>
 
       {/* سجل الفواتير المحذوفة — تدقيق واسترجاع */}
-      <div style={{marginTop:20,background:'white',borderRadius:14,border:`1px solid ${colors.border2}`,overflow:'hidden'}}>
+      <div style={{marginTop:20,background:'white',borderRadius:storelyTokens.radius.card,border:`1px solid ${colors.border2}`,overflow:'hidden'}}>
         <button type="button" onClick={()=>{ if(!showDeletedLog) loadDeletedLog(); setShowDeletedLog(v=>!v) }}
           style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
             <span style={{display:'flex',alignItems:'center'}}><Trash2 size={16} strokeWidth={2.25}/></span>
-            <span style={{fontSize:13,fontWeight:700,color:colors.text}}>سجل الفواتير المحذوفة</span>
+            <span style={{fontSize:storelyTokens.typography.body,fontWeight:700,color:colors.text}}>سجل الفواتير المحذوفة</span>
           </div>
-          <span style={{fontSize:12,color:colors.text3}}>{showDeletedLog?'إخفاء ▲':'عرض ▼'}</span>
+          <span style={{fontSize:storelyTokens.typography.body,color:colors.text3}}>{showDeletedLog?'إخفاء ▲':'عرض ▼'}</span>
         </button>
         {showDeletedLog && (
           <div style={{borderTop:`1px solid ${colors.border2}`,padding:'12px 18px 18px'}}>
             {loadingDeleted ? (
-              <div style={{textAlign:'center' as const,padding:20,fontSize:12,color:colors.text3}}>⏳ جاري التحميل...</div>
+              <div style={{textAlign:'center' as const,padding:20,fontSize:storelyTokens.typography.body,color:colors.text3}}>⏳ جاري التحميل...</div>
             ) : deletedList.length===0 ? (
-              <div style={{textAlign:'center' as const,padding:20,fontSize:12,color:colors.text4,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><PartyPopper size={14} strokeWidth={2.25}/> ما فيه فواتير محذوفة</div>
+              <div style={{textAlign:'center' as const,padding:20,fontSize:storelyTokens.typography.body,color:colors.text4,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><PartyPopper size={14} strokeWidth={2.25}/> ما فيه فواتير محذوفة</div>
             ) : (
               <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
                 {deletedList.map((d:any)=>(
-                  <div key={d.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'#fef2f2',border:'1px solid #fecaca',borderRight:'3px solid #dc2626',borderRadius:9,padding:'10px 14px'}}>
+                  <div key={d.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'#fef2f2',border:'1px solid #fecaca',borderRight:'3px solid #dc2626',borderRadius:storelyTokens.radius.card,padding:'10px 14px'}}>
                     <div>
-                      <div style={{fontSize:12,fontWeight:700,color:colors.text}}>{d.name}
-                        <span style={{fontSize:10,fontWeight:600,color:colors.text4,marginRight:6}}>({d.category||'—'})</span>
+                      <div style={{fontSize:storelyTokens.typography.body,fontWeight:700,color:colors.text}}>{d.name}
+                        <span style={{fontSize:storelyTokens.typography.supporting,fontWeight:600,color:colors.text4,marginRight:6}}>({d.category||'—'})</span>
                       </div>
-                      <div style={{fontSize:10,color:'#991b1b',marginTop:2}}>
+                      <div style={{fontSize:storelyTokens.typography.supporting,color:'#991b1b',marginTop:2}}>
                         {Number(d.total_amount||0).toFixed(0)} {curr} — حُذفت {relativeTime(d.deleted_at)} بواسطة {d.deleterName}
                       </div>
                     </div>
                     <button onClick={()=>restorePurchase(d)} disabled={restoringId===d.id}
-                      style={{padding:'6px 14px',background:'white',color:'#203640',border:'1.5px solid #D9CDBE',borderRadius:8,fontSize:11,fontWeight:700,cursor:restoringId===d.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:restoringId===d.id?.6:1,whiteSpace:'nowrap' as const}}>
+                      style={{padding:'6px 14px',background:'white',color:'#203640',border:'1.5px solid #D9CDBE',borderRadius:storelyTokens.radius.control,fontSize:storelyTokens.typography.supporting,fontWeight:700,cursor:restoringId===d.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:restoringId===d.id?.6:1,whiteSpace:'nowrap' as const}}>
                       {restoringId===d.id?'...':'↩️ استعادة'}
                     </button>
                   </div>
@@ -807,25 +806,25 @@ function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; fro
 
       {confirmDelete && (
         <div style={{position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div style={{position:'absolute',inset:0,background:'rgba(15,23,42,.4)',backdropFilter:'blur(6px)'}} onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}/>
-          <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:360,position:'relative',boxShadow:'0 24px 60px rgba(0,0,0,.2)'}}>
-            <div style={{width:48,height:48,borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',color:'#dc2626'}}><Lock size={22} strokeWidth={2}/></div>
-            <div style={{fontSize:15,fontWeight:800,color:colors.text,textAlign:'center',marginBottom:6}}>تأكيد حذف العملية</div>
-            <div style={{fontSize:12,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
+          <div style={{position:'absolute',inset:0,background:'rgba(15,23,42,.4)'}} onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}/>
+          <div style={{background:'white',borderRadius:storelyTokens.radius.card,padding:24,width:'100%',maxWidth:360,position:'relative',boxShadow:'0 24px 60px rgba(0,0,0,.2)'}}>
+            <div style={{width:48,height:48,borderRadius:storelyTokens.radius.card,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',color:'#dc2626'}}><Lock size={22} strokeWidth={2}/></div>
+            <div style={{fontSize:15,fontWeight:600,color:colors.text,textAlign:'center',marginBottom:6}}>تأكيد حذف العملية</div>
+            <div style={{fontSize:storelyTokens.typography.body,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
               سيتم حذف <b style={{color:colors.text}}>{confirmDelete.name}</b> ({Number(confirmDelete.total_amount||0).toFixed(0)} {curr}) من السجل الحالي (تقدر تسترجعها لاحقاً من "سجل المحذوفات").<br/>أدخل كلمة مرور حسابك للتأكيد
             </div>
             <input type="password" value={deletePassword} onChange={e=>setDeletePassword(e.target.value)}
               onKeyDown={e=>{if(e.key==='Enter'&&deletePassword&&!deleting) confirmDeletePurchase()}}
               placeholder="كلمة المرور" autoFocus
               style={{...inp(),width:'100%',marginBottom:10,boxSizing:'border-box' as const}}/>
-            {deleteError && <div style={{fontSize:12,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><AlertTriangle size={13} strokeWidth={2.25}/> {deleteError}</div>}
+            {deleteError && <div style={{fontSize:storelyTokens.typography.body,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><AlertTriangle size={13} strokeWidth={2.25}/> {deleteError}</div>}
             <div style={{display:'flex',gap:8}}>
               <button onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}
-                style={{flex:1,padding:'11px',background:colors.bg,color:colors.text3,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                style={{flex:1,padding:'11px',background:colors.bg,color:colors.text3,border:'none',borderRadius:storelyTokens.radius.card,fontSize:storelyTokens.typography.body,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                 إلغاء
               </button>
               <button onClick={confirmDeletePurchase} disabled={!deletePassword||deleting}
-                style={{flex:2,padding:'11px',background:!deletePassword||deleting?colors.border2:'#dc2626',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:!deletePassword||deleting?'not-allowed':'pointer',fontFamily:'inherit'}}>
+                style={{flex:2,padding:'11px',background:!deletePassword||deleting?colors.border2:'#dc2626',color:'white',border:'none',borderRadius:storelyTokens.radius.card,fontSize:storelyTokens.typography.body,fontWeight:700,cursor:!deletePassword||deleting?'not-allowed':'pointer',fontFamily:'inherit'}}>
                 {deleting?'جاري الحذف...':'تأكيد الحذف'}
               </button>
             </div>
@@ -948,7 +947,7 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
         ].map((s,i)=>(
           <div key={i} onClick={()=>{if((s as any).clickable) router.push('/transfer-stock')}}
             style={{...card,padding:'14px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`,cursor:(s as any).clickable?'pointer':'default'}}>
-            <div style={{fontSize:24,fontWeight:900,color:s.color}}>{s.value}</div>
+            <div style={{fontSize:24,fontWeight:600,color:s.color}}>{s.value}</div>
             <div style={{fontSize:font.xs,color:s.color,marginTop:4,fontWeight:600,opacity:.8}}>{s.label}</div>
           </div>
         ))}
@@ -958,7 +957,7 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="ابحث بالاسم أو الفئة..." style={{...inp(),flex:1,minWidth:120}}/>
           <div style={{display:'flex',gap:6}}>
             {(['all','low','out'] as const).map(f=>(
-              <button key={f} onClick={()=>setFilter(f)} style={{padding:'7px 12px',borderRadius:20,border:`1.5px solid ${filter===f?colors.primary:colors.border}`,background:filter===f?colors.primaryLight:colors.surface,color:filter===f?colors.primary:colors.text3,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family,transition:'all .15s'}}>
+              <button key={f} onClick={()=>setFilter(f)} style={{padding:'7px 12px',borderRadius:storelyTokens.radius.card,border:`1.5px solid ${filter===f?colors.primary:colors.border}`,background:filter===f?colors.primaryLight:colors.surface,color:filter===f?colors.primary:colors.text3,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family,transition:'all .15s'}}>
                 {f==='all'?'الكل':f==='low'?'ناقص':'نفد'}
               </button>
             ))}
@@ -969,11 +968,11 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
         ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><ClipboardList size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
         ):(
           <div style={{overflowX:'auto'}}>
-            <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
+            <table className="storely-table" style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
                   {['الصنف','الفئة','مصروف','مشترى','المتبقي','الحالة'].map((h,i)=>(
-                    <th key={i} style={{padding:'10px 14px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
+                    <th key={i} style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,color:colors.text4,fontSize:storelyTokens.typography.body,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -986,12 +985,12 @@ function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; fr
                   const purchased=purchasedMap[p.name]||0
                   return (
                     <tr key={p.id} style={{borderBottom:`1px solid ${colors.border}`,background:isOut?colors.dangerLight:isLow?colors.warningLight:i%2===0?colors.surface:colors.bg}}>
-                      <td style={{padding:'11px 14px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{p.name}</td>
-                      <td style={{padding:'11px 14px',fontSize:font.xs,color:colors.text3}}>{p.category||'—'}</td>
-                      <td style={{padding:'11px 14px'}}>{dispensed>0?<span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder)}}>▼ {dispensed}</span>:<span style={{color:colors.text4}}>—</span>}</td>
-                      <td style={{padding:'11px 14px'}}>{purchased>0?<span style={{...tag(colors.primary,colors.primaryLight,colors.primaryBorder)}}>▲ {purchased}</span>:<span style={{color:colors.text4}}>—</span>}</td>
-                      <td style={{padding:'11px 14px',fontWeight:900,fontSize:18,color:statusColor}}>{p.qty} <span style={{fontSize:font.xs,fontWeight:400,color:colors.text4}}>{p.unit}</span></td>
-                      <td style={{padding:'11px 14px'}}><span style={{...tag(statusColor,isOut?colors.dangerLight:isLow?colors.warningLight:colors.primaryLight,isOut?colors.dangerBorder:isLow?colors.warningBorder:colors.primaryBorder)}}>{statusLabel}</span></td>
+                      <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,fontWeight:700,color:colors.text}}>{p.name}</td>
+                      <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:colors.text3}}>{p.category||'—'}</td>
+                      <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`}}>{dispensed>0?<span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder)}}>▼ {dispensed}</span>:<span style={{color:colors.text4}}>—</span>}</td>
+                      <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`}}>{purchased>0?<span style={{...tag(colors.primary,colors.primaryLight,colors.primaryBorder)}}>▲ {purchased}</span>:<span style={{color:colors.text4}}>—</span>}</td>
+                      <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontWeight:600,fontSize:storelyTokens.typography.body,color:statusColor}}>{p.qty} <span style={{fontSize:font.xs,fontWeight:400,color:colors.text4}}>{p.unit}</span></td>
+                      <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`}}><span style={{...tag(statusColor,isOut?colors.dangerLight:isLow?colors.warningLight:colors.primaryLight,isOut?colors.dangerBorder:isLow?colors.warningBorder:colors.primaryBorder)}}>{statusLabel}</span></td>
                     </tr>
                   )
                 })}
@@ -1014,26 +1013,26 @@ function RecentOpsSection({ recentOps, colors }: { recentOps:any[]; colors:any }
   function OpsSheet({ items, title, color, bg, border, onClose }:any) {
     return (
       <div style={{position:'fixed',inset:0,zIndex:1000,display:'flex',alignItems:'flex-end'}}>
-        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)'}} onClick={onClose}/>
+        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.45)'}} onClick={onClose}/>
         <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxHeight:'80vh',display:'flex',flexDirection:'column' as const,position:'relative',fontFamily:'inherit',direction:'rtl'}}>
           <div style={{padding:'14px 20px',borderBottom:`1px solid #f0f0f0`,display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
-            <div style={{width:32,height:3,borderRadius:99,background:'#e5e7eb',position:'absolute',top:8,left:'50%',transform:'translateX(-50%)'}}/>
-            <span style={{fontSize:15,fontWeight:800,color:'#111827'}}>{title}</span>
+            <div style={{width:32,height:3,borderRadius:storelyTokens.radius.card,background:'#e5e7eb',position:'absolute',top:8,left:'50%',transform:'translateX(-50%)'}}/>
+            <span style={{fontSize:15,fontWeight:600,color:'#111827'}}>{title}</span>
             <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'#9ca3af',padding:4,display:'flex',alignItems:'center'}}><X size={18} strokeWidth={2.25}/></button>
           </div>
           <div style={{overflowY:'auto',flex:1}}>
             {items.length===0?(
-              <div style={{padding:'40px',textAlign:'center',color:'#9ca3af',fontSize:13}}>لا توجد عمليات</div>
+              <div style={{padding:'40px',textAlign:'center',color:'#9ca3af',fontSize:storelyTokens.typography.body}}>لا توجد عمليات</div>
             ):items.map((m:any,i:number)=>(
               <div key={m.id} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 20px',borderBottom:i<items.length-1?'1px solid #f3f4f6':'none'}}>
-                <div style={{width:36,height:36,borderRadius:10,background:bg,border:`1px solid ${border}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                  <span style={{fontSize:14,fontWeight:900,color}}>{Math.abs(m.qty_change)}</span>
+                <div style={{width:36,height:36,borderRadius:storelyTokens.radius.card,background:bg,border:`1px solid ${border}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  <span style={{fontSize:14,fontWeight:600,color}}>{Math.abs(m.qty_change)}</span>
                 </div>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:700,color:'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(m.products as any)?.name}</div>
-                  <div style={{fontSize:11,color:'#9ca3af',marginTop:2}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                  <div style={{fontSize:storelyTokens.typography.body,fontWeight:700,color:'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(m.products as any)?.name}</div>
+                  <div style={{fontSize:storelyTokens.typography.supporting,color:'#9ca3af',marginTop:2}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
                 </div>
-                <span style={{fontSize:13,fontWeight:800,color,flexShrink:0}}>{m.type==='out'?'-':'+'}{Math.abs(m.qty_change)} <span style={{fontSize:10,fontWeight:400,color:'#9ca3af'}}>{(m.products as any)?.unit}</span></span>
+                <span style={{fontSize:storelyTokens.typography.body,fontWeight:600,color,flexShrink:0}}>{m.type==='out'?'-':'+'}{Math.abs(m.qty_change)} <span style={{fontSize:storelyTokens.typography.supporting,fontWeight:400,color:'#9ca3af'}}>{(m.products as any)?.unit}</span></span>
               </div>
             ))}
           </div>
@@ -1055,12 +1054,12 @@ function RecentOpsSection({ recentOps, colors }: { recentOps:any[]; colors:any }
           {key:'purchase' as const, title:'آخر العمليات', count:recentOps.length, color:colors.info,    bg:colors.infoLight,    border:colors.infoBorder,    icon:<ClipboardList size={24} strokeWidth={1.75}/>},
         ].map(s=>(
           <button key={s.key} onClick={()=>setSheet(s.key)}
-            style={{background:'white',borderRadius:12,padding:'14px 10px',border:`1.5px solid ${s.border}`,cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all .15s',boxShadow:`0 2px 8px ${s.color}10`}}
+            style={{background:'white',borderRadius:storelyTokens.radius.card,padding:'14px 10px',border:`1.5px solid ${s.border}`,cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all .15s',boxShadow:`0 2px 8px ${s.color}10`}}
             onMouseEnter={e=>(e.currentTarget as HTMLElement).style.transform='translateY(-2px)'}
             onMouseLeave={e=>(e.currentTarget as HTMLElement).style.transform='none'}>
             <div style={{marginBottom:8,display:'flex',justifyContent:'center',color:s.color}}>{s.icon}</div>
-            <div style={{fontSize:20,fontWeight:900,color:s.color,marginBottom:4}}>{s.count}</div>
-            <div style={{fontSize:11,fontWeight:700,color:'#374151'}}>{s.title}</div>
+            <div style={{fontSize:20,fontWeight:600,color:s.color,marginBottom:4}}>{s.count}</div>
+            <div style={{fontSize:storelyTokens.typography.supporting,fontWeight:700,color:'#374151'}}>{s.title}</div>
           </button>
         ))}
       </div>
@@ -1109,16 +1108,16 @@ function AttendanceDetail({ onBack }: { onBack:()=>void }) {
 
   return (
     <div className="reports-detail-shell">
-      <button onClick={onBack} style={{background:'none',border:'none',color:colors.primary,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginBottom:12,display:'flex',alignItems:'center',gap:4}}>→ رجوع</button>
+      <button onClick={onBack} style={{background:'none',border:'none',color:colors.primary,fontSize:storelyTokens.typography.body,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginBottom:12,display:'flex',alignItems:'center',gap:4}}>→ رجوع</button>
       <h1 style={pageTitle}><PageIcon/>تقرير الحضور والانصراف</h1>
       <p style={pageSub}>سجل حضور وانصراف الموظفين حسب الفترة المحددة</p>
       <div style={{display:'flex',gap:10,flexWrap:'wrap' as const,marginTop:16,marginBottom:12,alignItems:'flex-end'}}>
         <div>
-          <label style={{fontSize:11,color:colors.text4,display:'block',marginBottom:4}}>من تاريخ</label>
+          <label style={{fontSize:storelyTokens.typography.supporting,color:colors.text4,display:'block',marginBottom:4}}>من تاريخ</label>
           <input type="date" value={dFrom} onChange={e=>setDFrom(e.target.value)} style={{...inp,width:160}}/>
         </div>
         <div>
-          <label style={{fontSize:11,color:colors.text4,display:'block',marginBottom:4}}>إلى تاريخ</label>
+          <label style={{fontSize:storelyTokens.typography.supporting,color:colors.text4,display:'block',marginBottom:4}}>إلى تاريخ</label>
           <input type="date" value={dTo} onChange={e=>setDTo(e.target.value)} style={{...inp,width:160}}/>
         </div>
         <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="بحث باسم الموظف..." style={{...inp,maxWidth:220}}/>
@@ -1129,22 +1128,22 @@ function AttendanceDetail({ onBack }: { onBack:()=>void }) {
         <div style={{textAlign:'center' as const,padding:40,color:colors.text4}}>ما فيه سجلات حضور بهالفترة</div>
       ) : (
         <div style={{...card,padding:0,overflow:'hidden'}}>
-          <table style={{width:'100%',borderCollapse:'collapse' as const}}>
+          <table className="storely-table" style={{width:'100%',borderCollapse:'collapse' as const}}>
             <thead>
               <tr style={{background:colors.bg,borderBottom:`1px solid ${colors.border}`}}>
-                <th style={{padding:'10px 14px',textAlign:'right' as const,fontSize:11,fontWeight:700,color:colors.text3}}>الموظف</th>
-                <th style={{padding:'10px 14px',textAlign:'right' as const,fontSize:11,fontWeight:700,color:colors.text3}}>التاريخ</th>
-                <th style={{padding:'10px 14px',textAlign:'right' as const,fontSize:11,fontWeight:700,color:colors.text3}}>وقت الحضور</th>
-                <th style={{padding:'10px 14px',textAlign:'right' as const,fontSize:11,fontWeight:700,color:colors.text3}}>وقت الانصراف</th>
+                <th style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,textAlign:'right' as const,fontSize:storelyTokens.typography.body,fontWeight:700,color:colors.text3}}>الموظف</th>
+                <th style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,textAlign:'right' as const,fontSize:storelyTokens.typography.body,fontWeight:700,color:colors.text3}}>التاريخ</th>
+                <th style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,textAlign:'right' as const,fontSize:storelyTokens.typography.body,fontWeight:700,color:colors.text3}}>وقت الحضور</th>
+                <th style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,textAlign:'right' as const,fontSize:storelyTokens.typography.body,fontWeight:700,color:colors.text3}}>وقت الانصراف</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((r:any,i:number)=>(
                 <tr key={i} style={{borderBottom:`1px solid ${colors.border}`}}>
-                  <td style={{padding:'10px 14px',fontSize:12,fontWeight:600,color:colors.text}}>{r.staffName}</td>
-                  <td style={{padding:'10px 14px',fontSize:12,color:colors.text2}}>{fmtDate(r.date)}</td>
-                  <td style={{padding:'10px 14px',fontSize:12,color:colors.text2}}>{fmtTime(r.checkIn)}</td>
-                  <td style={{padding:'10px 14px',fontSize:12,color:colors.text2}}>{fmtTime(r.checkOut)}</td>
+                  <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,fontWeight:600,color:colors.text}}>{r.staffName}</td>
+                  <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:colors.text2}}>{fmtDate(r.date)}</td>
+                  <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:colors.text2}}>{fmtTime(r.checkIn)}</td>
+                  <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:colors.text2}}>{fmtTime(r.checkOut)}</td>
                 </tr>
               ))}
             </tbody>
@@ -1291,7 +1290,7 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
           {label:'إجمالي الزيادة',value:totalSurplus.toFixed(0)+' '+curr,color:colors.info,bg:colors.infoLight,border:colors.infoBorder},
         ].map((s,i)=>(
           <div key={i} style={{...card,padding:'16px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
-            <div style={{fontSize:22,fontWeight:900,color:s.color,letterSpacing:'-1px'}}>{s.value}</div>
+            <div style={{fontSize:22,fontWeight:600,color:s.color,letterSpacing:'-1px'}}>{s.value}</div>
             <div style={{fontSize:font.xs,color:s.color,marginTop:4,fontWeight:700,opacity:.8}}>{s.label}</div>
           </div>
         ))}
@@ -1300,8 +1299,8 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
       {monthComp && (
         <div style={{...card,padding:'16px',marginBottom:16}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-            <span style={{fontSize:13,fontWeight:700,color:colors.text,display:'inline-flex',alignItems:'center',gap:6}}><BarChart3 size={15} strokeWidth={2.25}/> مقارنة الأداء الشهري</span>
-            <span style={{fontSize:10,color:colors.text4}}>مقابل الشهر السابق</span>
+            <span style={{fontSize:storelyTokens.typography.body,fontWeight:700,color:colors.text,display:'inline-flex',alignItems:'center',gap:6}}><BarChart3 size={15} strokeWidth={2.25}/> مقارنة الأداء الشهري</span>
+            <span style={{fontSize:storelyTokens.typography.supporting,color:colors.text4}}>مقابل الشهر السابق</span>
           </div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(120px,1fr))',gap:10}}>
             {[
@@ -1313,10 +1312,10 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
               const color = m.change===null ? colors.text4 : up ? colors.primary : colors.danger
               return (
                 <div key={i} style={{textAlign:'center' as const}}>
-                  <div style={{fontSize:9,color:colors.text4,marginBottom:4}}>{m.label}</div>
-                  <div style={{fontSize:16,fontWeight:700,color:colors.text,fontVariantNumeric:'tabular-nums' as const}}>{m.val.toLocaleString()} <span style={{fontSize:9,fontWeight:400}}>{m.unit}</span></div>
+                  <div style={{fontSize:storelyTokens.typography.supporting,color:colors.text4,marginBottom:4}}>{m.label}</div>
+                  <div style={{fontSize:16,fontWeight:700,color:colors.text,fontVariantNumeric:'tabular-nums' as const}}>{m.val.toLocaleString()} <span style={{fontSize:storelyTokens.typography.supporting,fontWeight:400}}>{m.unit}</span></div>
                   {m.change !== null && (
-                    <div style={{fontSize:10,fontWeight:700,color,marginTop:2}}>
+                    <div style={{fontSize:storelyTokens.typography.supporting,fontWeight:700,color,marginTop:2}}>
                       {up?'▲':'▼'} {Math.abs(m.change)}%
                     </div>
                   )}
@@ -1332,28 +1331,28 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
         ):closings.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><Inbox size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد تقارير إقفال</div></div>
         ):(
           <div style={{overflowX:'auto',overflowY:'auto',maxHeight:480}}>
-            <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
+            <table className="storely-table" style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`,position:'sticky' as const,top:0,zIndex:2}}>
                   {['التاريخ','الكاشير','المبيعات','الشبكة','الكاش الفعلي','المسحوبات','الكاش بعد الخصم','الصافي','النتيجة','المرفقات','إجراء'].map((h,i)=>(
-                    <th key={i} style={{padding:'10px 16px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em',background:colors.bg}}>{h}</th>
+                    <th key={i} style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,color:colors.text4,fontSize:storelyTokens.typography.body,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em',background:colors.bg}}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {closings.map((c:any)=>(
                   <tr key={c.id} style={{borderBottom:`1px solid ${colors.border}`}}>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:colors.text2}}>
                       {editingDateId===c.id ? (
                         <div style={{display:'flex',alignItems:'center',gap:6}}>
                           <input type="date" value={editDateValue} onChange={e=>setEditDateValue(e.target.value)}
                             style={{...inp(),padding:'4px 8px',fontSize:font.xs,width:140}}/>
                           <button onClick={()=>saveClosingDate(c.id)} disabled={savingDate}
-                            style={{background:colors.primary,color:'white',border:'none',borderRadius:6,padding:'4px 8px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                            style={{background:colors.primary,color:'white',border:'none',borderRadius:storelyTokens.radius.control,padding:'4px 8px',fontSize:storelyTokens.typography.supporting,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                             {savingDate?'...':'حفظ'}
                           </button>
                           <button onClick={()=>setEditingDateId(null)}
-                            style={{background:colors.bg,color:colors.text3,border:'none',borderRadius:6,padding:'4px 8px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                            style={{background:colors.bg,color:colors.text3,border:'none',borderRadius:storelyTokens.radius.control,padding:'4px 8px',fontSize:storelyTokens.typography.supporting,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                             إلغاء
                           </button>
                         </div>
@@ -1364,46 +1363,46 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
                         </div>
                       )}
                     </td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{c.staff_name}</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.total_sales).toFixed(0)} {curr}</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.network_amount).toFixed(0)} {curr}</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.cash_amount).toFixed(0)} {curr}</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:Number(c.total_purchases)>0?colors.danger:colors.text4}}>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:colors.text,fontWeight:700}}>{c.staff_name}</td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:colors.text2}}>{Number(c.total_sales).toFixed(0)} {curr}</td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:colors.text2}}>{Number(c.network_amount).toFixed(0)} {curr}</td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:colors.text2}}>{Number(c.cash_amount).toFixed(0)} {curr}</td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:Number(c.total_purchases)>0?colors.danger:colors.text4}}>
                       {Number(c.total_purchases)>0 ? (
                         <div onClick={()=>setExpandedReasons(prev=>({...prev,[c.id]:!prev[c.id]}))} style={{cursor:'pointer'}}>
                           <div style={{fontWeight:700,display:'flex',alignItems:'center',gap:4}}>
                             −{Number(c.total_purchases).toFixed(0)} {curr}
-                            <span style={{fontSize:9,color:colors.text4}}>{expandedReasons[c.id]?'▲':'▼'}</span>
+                            <span style={{fontSize:storelyTokens.typography.supporting,color:colors.text4}}>{expandedReasons[c.id]?'▲':'▼'}</span>
                           </div>
                           {expandedReasons[c.id] && (c.purchases||[]).map((p:any,pi:number)=>(
-                            <div key={pi} style={{fontSize:10,color:colors.text4,fontWeight:500,marginTop:2}}>
+                            <div key={pi} style={{fontSize:storelyTokens.typography.supporting,color:colors.text4,fontWeight:500,marginTop:2}}>
                               {p.reason||'بدون سبب'} ({Number(p.amount).toFixed(0)} {curr})
                             </div>
                           ))}
                         </div>
                       ) : '—'}
                     </td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{(Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} {curr}</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{(Number(c.network_amount)+Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} {curr}</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:statusColor[c.status]}}>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,color:colors.text,fontWeight:700}}>{(Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} {curr}</td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,fontWeight:600,color:colors.primary}}>{(Number(c.network_amount)+Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} {curr}</td>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,fontWeight:600,color:statusColor[c.status]}}>
                       {statusLabel[c.status]}{c.status!=='balanced'?` (${Math.abs(Number(c.difference)).toFixed(0)} ${curr})`:''}
                     </td>
-                    <td style={{padding:'12px 16px'}}>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`}}>
                       <div style={{display:'flex',gap:6}}>
                         {c.sales_image && (
-                          <a href={c.sales_image} target="_blank" rel="noopener noreferrer" title="صورة تقرير المبيعات" style={{width:28,height:28,borderRadius:7,background:colors.infoLight,display:'flex',alignItems:'center',justifyContent:'center',textDecoration:'none',color:colors.info}}><BarChart3 size={13} strokeWidth={2.25}/></a>
+                          <a href={c.sales_image} target="_blank" rel="noopener noreferrer" title="صورة تقرير المبيعات" style={{width:28,height:28,borderRadius:storelyTokens.radius.control,background:colors.infoLight,display:'flex',alignItems:'center',justifyContent:'center',textDecoration:'none',color:colors.info}}><BarChart3 size={13} strokeWidth={2.25}/></a>
                         )}
                         {c.network_image && (
-                          <a href={c.network_image} target="_blank" rel="noopener noreferrer" title="صورة موازنة الشبكة" style={{width:28,height:28,borderRadius:7,background:colors.primaryLight,display:'flex',alignItems:'center',justifyContent:'center',textDecoration:'none',color:colors.primary}}><CreditCard size={13} strokeWidth={2.25}/></a>
+                          <a href={c.network_image} target="_blank" rel="noopener noreferrer" title="صورة موازنة الشبكة" style={{width:28,height:28,borderRadius:storelyTokens.radius.control,background:colors.primaryLight,display:'flex',alignItems:'center',justifyContent:'center',textDecoration:'none',color:colors.primary}}><CreditCard size={13} strokeWidth={2.25}/></a>
                         )}
                         {!c.sales_image && !c.network_image && (
-                          <span style={{fontSize:11,color:colors.text4}}>—</span>
+                          <span style={{fontSize:storelyTokens.typography.supporting,color:colors.text4}}>—</span>
                         )}
                       </div>
                     </td>
-                    <td style={{padding:'12px 16px'}}>
+                    <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`}}>
                       <button onClick={()=>{setConfirmDelete(c);setDeletePassword('');setDeleteError('')}}
-                        style={{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
+                        style={{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:storelyTokens.radius.control,padding:'4px 10px',fontSize:storelyTokens.typography.supporting,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
                         <Trash2 size={12} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> حذف
                       </button>
                     </td>
@@ -1412,14 +1411,14 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
               </tbody>
               <tfoot style={{position:'sticky' as const,bottom:0,zIndex:2}}>
                 <tr style={{background:colors.primaryLight,borderTop:`2px solid ${colors.primaryBorder}`,boxShadow:'0 -2px 8px rgba(0,0,0,.06)'}}>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}} colSpan={2}>الإجمالي ({closings.length})</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_sales),0).toFixed(0)} {curr}</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.network_amount),0).toFixed(0)} {curr}</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.cash_amount),0).toFixed(0)} {curr}</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0)>0?'−'+closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0).toFixed(0)+' '+curr:'—'}</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount)-Number(c.total_purchases)),0).toFixed(0)} {curr}</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{closings.reduce((s:number,c:any)=>s+Number(c.network_amount)+Number(c.cash_amount)-Number(c.total_purchases),0).toFixed(0)} {curr}</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.difference),0).toFixed(0)} {curr}</td>
+                  <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,fontWeight:600,color:colors.text}} colSpan={2}>الإجمالي ({closings.length})</td>
+                  <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,fontWeight:600,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_sales),0).toFixed(0)} {curr}</td>
+                  <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,fontWeight:600,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.network_amount),0).toFixed(0)} {curr}</td>
+                  <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,fontWeight:600,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.cash_amount),0).toFixed(0)} {curr}</td>
+                  <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,fontWeight:600,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0)>0?'−'+closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0).toFixed(0)+' '+curr:'—'}</td>
+                  <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,fontWeight:600,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount)-Number(c.total_purchases)),0).toFixed(0)} {curr}</td>
+                  <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,fontWeight:600,color:colors.primary}}>{closings.reduce((s:number,c:any)=>s+Number(c.network_amount)+Number(c.cash_amount)-Number(c.total_purchases),0).toFixed(0)} {curr}</td>
+                  <td style={{padding:`${storelyTokens.spacing[4]}px ${storelyTokens.spacing[5]}px`,fontSize:storelyTokens.typography.body,fontWeight:600,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.difference),0).toFixed(0)} {curr}</td>
                   <td/><td/>
                 </tr>
               </tfoot>
@@ -1430,25 +1429,25 @@ function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPerio
 
       {confirmDelete && (
         <div style={{position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div style={{position:'absolute',inset:0,background:'rgba(15,23,42,.4)',backdropFilter:'blur(6px)'}} onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}/>
-          <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:360,position:'relative',boxShadow:'0 24px 60px rgba(0,0,0,.2)'}}>
-            <div style={{width:48,height:48,borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',color:'#dc2626'}}><Lock size={22} strokeWidth={2}/></div>
-            <div style={{fontSize:15,fontWeight:800,color:colors.text,textAlign:'center',marginBottom:6}}>تأكيد حذف تقرير الإقفال</div>
-            <div style={{fontSize:12,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
+          <div style={{position:'absolute',inset:0,background:'rgba(15,23,42,.4)'}} onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}/>
+          <div style={{background:'white',borderRadius:storelyTokens.radius.card,padding:24,width:'100%',maxWidth:360,position:'relative',boxShadow:'0 24px 60px rgba(0,0,0,.2)'}}>
+            <div style={{width:48,height:48,borderRadius:storelyTokens.radius.card,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',color:'#dc2626'}}><Lock size={22} strokeWidth={2}/></div>
+            <div style={{fontSize:15,fontWeight:600,color:colors.text,textAlign:'center',marginBottom:6}}>تأكيد حذف تقرير الإقفال</div>
+            <div style={{fontSize:storelyTokens.typography.body,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
               سيتم حذف إقفال <b style={{color:colors.text}}>{confirmDelete.staff_name}</b> بتاريخ {confirmDelete?.closing_date ? new Date(confirmDelete.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn'}) : ''} نهائياً.<br/>أدخل كلمة مرور حسابك للتأكيد
             </div>
             <input type="password" value={deletePassword} onChange={e=>setDeletePassword(e.target.value)}
               onKeyDown={e=>{if(e.key==='Enter'&&deletePassword&&!deleting) confirmDeleteClosing()}}
               placeholder="كلمة المرور" autoFocus
               style={{...inp(),width:'100%',marginBottom:10,boxSizing:'border-box' as const}}/>
-            {deleteError && <div style={{fontSize:12,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><AlertTriangle size={13} strokeWidth={2.25}/> {deleteError}</div>}
+            {deleteError && <div style={{fontSize:storelyTokens.typography.body,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><AlertTriangle size={13} strokeWidth={2.25}/> {deleteError}</div>}
             <div style={{display:'flex',gap:8}}>
               <button onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}
-                style={{flex:1,padding:'11px',background:colors.bg,color:colors.text3,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                style={{flex:1,padding:'11px',background:colors.bg,color:colors.text3,border:'none',borderRadius:storelyTokens.radius.card,fontSize:storelyTokens.typography.body,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                 إلغاء
               </button>
               <button onClick={confirmDeleteClosing} disabled={!deletePassword||deleting}
-                style={{flex:2,padding:'11px',background:!deletePassword||deleting?colors.border2:'#dc2626',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:!deletePassword||deleting?'not-allowed':'pointer',fontFamily:'inherit'}}>
+                style={{flex:2,padding:'11px',background:!deletePassword||deleting?colors.border2:'#dc2626',color:'white',border:'none',borderRadius:storelyTokens.radius.card,fontSize:storelyTokens.typography.body,fontWeight:700,cursor:!deletePassword||deleting?'not-allowed':'pointer',fontFamily:'inherit'}}>
                 {deleting?'جاري الحذف...':'تأكيد الحذف'}
               </button>
             </div>
@@ -1565,7 +1564,7 @@ export default function ReportsPage() {
     <div className="reports-home-shell" style={{'--reports-visible': visible ? 1 : 0} as React.CSSProperties}>
       <style>{reportCss}</style>
 
-      <div className="reports-hero su" style={reportSurface}>
+      <div className="reports-hero su">
         <div>
         <h1 style={{...pageTitle}}><PageIcon/>التقارير</h1>
         <p style={{...pageSub}}>اختر الفترة ثم اضغط على التقرير لعرض التفاصيل</p>
@@ -1582,9 +1581,9 @@ export default function ReportsPage() {
             title="تقرير الصرف"
             subtitle="عمليات الصرف من المخزون"
             icon={<Upload size={20} strokeWidth={1.75}/>}
-            color={colors.danger}
-            bg={colors.dangerLight}
-            border={colors.dangerBorder}
+            color={storelyTokens.color.navy}
+            bg={storelyTokens.color.surface}
+            border={storelyTokens.color.border}
             loading={statsLoading}
             chartData={weeklyD}
             stats={[
@@ -1600,9 +1599,9 @@ export default function ReportsPage() {
             title="تقرير المشتريات"
             subtitle="فواتير المشتريات مع الضريبة 15%"
             icon={<Receipt size={20} strokeWidth={1.75}/>}
-            color={colors.primary}
-            bg={colors.primaryLight}
-            border={colors.primaryBorder}
+            color={storelyTokens.color.navy}
+            bg={storelyTokens.color.surface}
+            border={storelyTokens.color.border}
             loading={statsLoading}
             chartData={weeklyP}
             stats={[
@@ -1618,9 +1617,9 @@ export default function ReportsPage() {
             title="تقرير الجرد اليومي"
             subtitle="ملخص المخزون الحالي والأصناف الناقصة"
             icon={<ClipboardList size={20} strokeWidth={1.75}/>}
-            color={'#717553'}
-            bg={'#F8EEDF'}
-            border={'#D9CDBE'}
+            color={storelyTokens.color.navy}
+            bg={storelyTokens.color.surface}
+            border={storelyTokens.color.border}
             loading={statsLoading}
             chartData={[]}
             stats={[
@@ -1637,9 +1636,9 @@ export default function ReportsPage() {
             title="إقفال الكاشير اليومي"
             subtitle="تقارير إقفال الكاشير والفروقات"
             icon={<Wallet size={20} strokeWidth={1.75}/>}
-            color={'#0891b2'}
-            bg={'#ecfeff'}
-            border={'#a5f3fc'}
+            color={storelyTokens.color.navy}
+            bg={storelyTokens.color.surface}
+            border={storelyTokens.color.border}
             loading={statsLoading}
             chartData={[]}
             stats={[
@@ -1656,9 +1655,9 @@ export default function ReportsPage() {
             title="الحضور والانصراف"
             subtitle="سجل حضور وانصراف الموظفين"
             icon={<CalendarDays size={20} strokeWidth={1.75}/>}
-            color={'#203640'}
-            bg={'#F8EEDF'}
-            border={'#D9CDBE'}
+            color={storelyTokens.color.navy}
+            bg={storelyTokens.color.surface}
+            border={storelyTokens.color.border}
             loading={false}
             chartData={[]}
             stats={[]}
@@ -1670,9 +1669,9 @@ export default function ReportsPage() {
             title="تقرير الهدر"
             subtitle="الأصناف المهدورة وأسبابها"
             icon={<Trash2 size={20} strokeWidth={1.75}/>}
-            color={colors.danger}
-            bg={colors.dangerLight}
-            border={colors.dangerBorder}
+            color={storelyTokens.color.navy}
+            bg={storelyTokens.color.surface}
+            border={storelyTokens.color.border}
             loading={statsLoading}
             chartData={[]}
             stats={[
@@ -1703,27 +1702,27 @@ export default function ReportsPage() {
         return (
           <div className="report-two-column-grid">
             <div style={{...card,padding:'20px 24px'}}>
-              <div style={{fontSize:font.md,fontWeight:900,color:colors.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><Flame size={17} strokeWidth={2.25}/> أكثر المنتجات صرفاً</div>
+              <div style={{fontSize:font.md,fontWeight:600,color:colors.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><Flame size={17} strokeWidth={2.25}/> أكثر المنتجات صرفاً</div>
               <div style={{fontSize:font.xs,color:colors.text3,marginBottom:16}}>الفترة المحددة</div>
               <div style={{display:'flex',flexDirection:'column',gap:10}}>
                 {top.map((p,i)=>(
                   <div key={i}>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
                       <div style={{display:'flex',alignItems:'center',gap:8}}>
-                        <span style={{fontSize:11,fontWeight:800,color:i<3?colors.primary:colors.text4,width:18}}>{i+1}</span>
-                        <span style={{fontSize:12,fontWeight:700,color:colors.text}}>{p.name}</span>
+                        <span style={{fontSize:storelyTokens.typography.supporting,fontWeight:600,color:i<3?colors.primary:colors.text4,width:18}}>{i+1}</span>
+                        <span style={{fontSize:storelyTokens.typography.body,fontWeight:700,color:colors.text}}>{p.name}</span>
                       </div>
-                      <span style={{fontSize:12,fontWeight:800,color:colors.primary}}>{p.qty} {p.unit}</span>
+                      <span style={{fontSize:storelyTokens.typography.body,fontWeight:600,color:colors.primary}}>{p.qty} {p.unit}</span>
                     </div>
-                    <div style={{height:6,background:colors.border,borderRadius:99,overflow:'hidden'}}>
-                      <div style={{height:'100%',width:`${(p.qty/maxVal)*100}%`,background:i===0?colors.primary:i===1?'#4F6678':i===2?'#717553':colors.border2,borderRadius:99}}/>
+                    <div style={{height:6,background:colors.border,borderRadius:storelyTokens.radius.card,overflow:'hidden'}}>
+                      <div style={{height:'100%',width:`${(p.qty/maxVal)*100}%`,background:i===0?colors.primary:i===1?'#4F6678':i===2?'#717553':colors.border2,borderRadius:storelyTokens.radius.card}}/>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
             <div style={{...card,padding:'20px 24px'}}>
-              <div style={{fontSize:font.md,fontWeight:900,color:colors.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><BarChart3 size={17} strokeWidth={2.25}/> الصرف الشهري</div>
+              <div style={{fontSize:font.md,fontWeight:600,color:colors.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><BarChart3 size={17} strokeWidth={2.25}/> الصرف الشهري</div>
               <div style={{fontSize:font.xs,color:colors.text3,marginBottom:16}}>توزيع الكميات</div>
               <div style={{display:'flex',alignItems:'flex-end',gap:6,height:120}}>
                 {(()=>{
@@ -1740,11 +1739,11 @@ export default function ReportsPage() {
                     const mn=new Date(Number(y),Number(m)-1).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short'})
                     return (
                       <div key={key} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-                        <span style={{fontSize:9,color:colors.text4,fontWeight:700}}>{val}</span>
+                        <span style={{fontSize:storelyTokens.typography.supporting,color:colors.text4,fontWeight:700}}>{val}</span>
                         <div style={{width:'100%',background:colors.border,borderRadius:'6px 6px 0 0',height:90,display:'flex',alignItems:'flex-end',overflow:'hidden'}}>
                           <div style={{width:'100%',background:i===months.length-1?colors.primary:`${colors.primary}66`,height:`${Math.max((val/maxM)*100,4)}%`,borderRadius:'6px 6px 0 0'}}/>
                         </div>
-                        <span style={{fontSize:9,color:colors.text4}}>{mn}</span>
+                        <span style={{fontSize:storelyTokens.typography.supporting,color:colors.text4}}>{mn}</span>
                       </div>
                     )
                   })

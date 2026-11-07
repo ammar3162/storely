@@ -8,7 +8,7 @@ import { getMe } from '@/lib/session'
 import { PLAN_PRICING, planKeyOf, billLines } from '@/lib/planPricing'
 import { colors, radius, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 
-const lbl: React.CSSProperties = { fontSize: font.xs, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }
+const lbl: React.CSSProperties = { fontSize: font.base, fontWeight: 600, color: colors.text, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }
 
 const DAYS = [
   {key:'0',label:'أحد'},{key:'1',label:'إثن'},{key:'2',label:'ثلث'},
@@ -326,8 +326,8 @@ export default function SettingsPage() {
   const bill = billLines(pk, billingCycle, billAddons)
 
   if(loading) return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:640,margin:'0 auto'}}>
-      <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.6s ease-in-out infinite}`}</style>
+    <div className="settings-page" style={{fontFamily:font.family,direction:'rtl',maxWidth:640,margin:'0 auto'}}>
+      <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.settings-page .sk{animation:sk 1.6s ease-in-out infinite}`}</style>
       <div className="sk" style={{height:20,width:120,background:colors.border2,borderRadius:6,marginBottom:8}}/>
       <div className="sk" style={{height:12,width:200,background:colors.border,borderRadius:6,marginBottom:24}}/>
       <div className="sk" style={{height:52,borderRadius:radius.lg,background:colors.border,marginBottom:16}}/>
@@ -336,18 +336,18 @@ export default function SettingsPage() {
   )
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:640,margin:'0 auto',opacity:visible?1:0,transition:'opacity .4s ease',position:'relative'}}>
+    <div className="settings-page" style={{fontFamily:font.family,direction:'rtl',maxWidth:640,margin:'0 auto',opacity:visible?1:0,transition:'opacity .4s ease',position:'relative'}}>
       <style>{`
         @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-        .su{animation:slideUp .4s ease both}
-        input:focus,select:focus,textarea:focus{border-color:${colors.primary}!important;box-shadow:0 0 0 3px ${colors.primaryLight}!important}
-        .tab-btn{padding:10px 0;border:none;cursor:pointer;font-family:inherit;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;border-bottom:2.5px solid transparent}
-        .tab-btn.active{border-bottom-color:${colors.primary}}
-        .day-btn{padding:8px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid ${colors.border};background:${colors.surface};color:${colors.text3};font-family:inherit;transition:all .15s}
-        .day-btn.active{border-color:${colors.primary};background:${colors.primaryLight};color:${colors.primary}}
-        .sched-btn{padding:14px 8px;border-radius:${radius.md};cursor:pointer;border:1.5px solid ${colors.border};background:${colors.surface};color:${colors.text3};font-size:${font.sm};font-weight:700;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;transition:all .2s}
-        .sched-btn:hover{border-color:${colors.primary};transform:translateY(-1px)}
-        .sched-btn.active{border-color:${colors.primary};background:${colors.primaryLight};color:${colors.primary};box-shadow:none}
+        .settings-page .su{animation:slideUp .4s ease both}
+
+        .settings-page .tab-btn{min-width:88px;padding:12px 8px;border:none;cursor:pointer;font-family:inherit;transition:color .2s,border-color .2s;display:flex;flex-direction:column;align-items:center;gap:4px;flex:1 0 88px;border-bottom:2px solid transparent}
+        .settings-page .tab-btn.active{border-bottom-color:${colors.primary}}
+        .settings-page .day-btn{padding:8px 10px;border-radius:${radius.sm};min-height:36px;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid ${colors.border};background:${colors.surface};color:${colors.text3};font-family:inherit;transition:all .15s}
+        .settings-page .day-btn.active{border-color:${colors.primary};background:${colors.primaryLight};color:${colors.primary}}
+        .settings-page .sched-btn{padding:14px 8px;border-radius:${radius.md};cursor:pointer;border:1.5px solid ${colors.border};background:${colors.surface};color:${colors.text3};font-size:${font.sm};font-weight:700;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;transition:all .2s}
+        .settings-page .sched-btn:hover{border-color:${colors.primary}}
+        .settings-page .sched-btn.active{border-color:${colors.primary};background:${colors.primaryLight};color:${colors.primary};box-shadow:none}
       `}</style>
 
       {/* Header */}
@@ -380,7 +380,7 @@ export default function SettingsPage() {
               onClick={()=>setActiveTab(t.key)}
               style={{background:'none',color:activeTab===t.key?colors.primary:colors.text3}}>
               <span style={{fontSize:18}}>{t.icon}</span>
-              <span style={{fontSize:10,fontWeight:700}}>{t.label}</span>
+              <span style={{fontSize:13,fontWeight:700}}>{t.label}</span>
             </button>
           ))}
         </div>
@@ -457,7 +457,7 @@ export default function SettingsPage() {
                         {logoUploading && (
                           <div style={{position:'absolute',inset:0,background:'rgba(255,255,255,.85)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>⏳</div>
                         )}
-                        <div style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(0,0,0,.55)',color:'white',fontSize:9,fontWeight:700,textAlign:'center',padding:'3px 0'}}>
+                        <div style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(0,0,0,.55)',color:'white',fontSize:13,fontWeight:700,textAlign:'center',padding:'3px 0'}}>
                           تغيير
                         </div>
                       </div>
@@ -467,22 +467,22 @@ export default function SettingsPage() {
                       <input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} style={inp()} placeholder="مثال: مطعم الأصيل"/>
                     </div>
                   </div>
-                  <div style={{fontSize:11,color:colors.text4,marginTop:6}}>PNG أو JPG · يُفضّل مربع الشكل</div>
+                  <div style={{fontSize:13,color:colors.text4,marginTop:6}}>PNG أو JPG · يُفضّل مربع الشكل</div>
                 </div>
                 <div>
                   <label style={lbl}>رقم واتساب التنبيهات</label>
-                  <div style={{display:'flex',borderRadius:12,overflow:'hidden',border:'1.5px solid #E7E1D8',background:'#F7F3ED'}}>
+                  <div style={{display:'flex',borderRadius:12,overflow:'hidden',border:'1.5px solid var(--storely-border)',background:'var(--storely-background)'}}>
                     <select value={countryCode} onChange={e=>setCountryCode(e.target.value)}
-                      style={{background:'transparent',color:'#43525B',border:'none',borderLeft:'1.5px solid #E7E1D8',padding:'12px 8px',fontSize:13,fontFamily:'inherit',outline:'none',flexShrink:0,cursor:'pointer',direction:'ltr',minWidth:130}}>
+                      style={{background:'transparent',color:'#43525B',border:'none',borderLeft:'1.5px solid var(--storely-border)',padding:'12px 8px',fontSize:13,fontFamily:'inherit',outline:'none',flexShrink:0,cursor:'pointer',direction:'ltr',minWidth:130}}>
                       {COUNTRY_CODES.map(c=>(
                         <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
                       ))}
                     </select>
                     <input value={form.whatsapp_number} onChange={e=>setForm({...form,whatsapp_number:e.target.value})}
                       placeholder={countryCode==='+966'?'5xxxxxxxx':countryCode==='+20'?'1xxxxxxxxx':'xxxxxxxxxx'} dir="ltr"
-                      style={{background:'transparent',border:'none',padding:'12px',fontSize:14,color:'#43525B',flex:1,outline:'none',fontFamily:'inherit'}}/>
+                      style={{background:'transparent',border:'none',padding:'12px',fontSize:14,color:'#43525B',flex:1,minWidth:0,outline:'none',fontFamily:'inherit'}}/>
                   </div>
-                  <div style={{fontSize:11,color:colors.text4,marginTop:6,display:'flex',alignItems:'center',gap:4}}><span>💡</span> يُستخدم لإرسال تنبيهات نقص المخزون</div>
+                  <div style={{fontSize:13,color:colors.text4,marginTop:6,display:'flex',alignItems:'center',gap:4}}><span>💡</span> يُستخدم لإرسال تنبيهات نقص المخزون</div>
                 </div>
 
                 {/* تفاصيل الاشتراك */}
@@ -506,7 +506,7 @@ export default function SettingsPage() {
                     <div style={{fontSize:22}}>📲</div>
                     <div>
                       <div style={{fontSize:13,fontWeight:700,color:'#92400e',marginBottom:2}}>للترقية تواصل معنا عبر واتساب</div>
-                      <div style={{fontSize:11,color:'#b45309'}}>الأساسية 99 · المتوسطة 249 · المتقدمة 399 ريال/شهر</div>
+                      <div style={{fontSize:13,color:'#b45309'}}>الأساسية 99 · المتوسطة 249 · المتقدمة 399 ريال/شهر</div>
                     </div>
                     <a href="https://wa.me/966594351667?text=أريد الترقية في Storely" target="_blank" rel="noopener noreferrer"
                       style={{marginRight:'auto',padding:'8px 16px',background:'#203640',color:'white',borderRadius:8,fontSize:12,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap'}}>
@@ -533,7 +533,7 @@ export default function SettingsPage() {
                       style={{accentColor:colors.primary,width:16,height:16}}/>
                     <div>
                       <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>🏪 تقارير إقفال الكاشير</div>
-                      <div style={{fontSize:11,color:colors.text4,marginTop:2}}>رسالة فورية كل ما موظف يقفل الصندوق</div>
+                      <div style={{fontSize:13,color:colors.text4,marginTop:2}}>رسالة فورية كل ما موظف يقفل الصندوق</div>
                     </div>
                   </label>
                   <label style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',background:colors.bg,borderRadius:radius.md,border:`1.5px solid ${form.notify_supplier_wa?colors.primaryBorder:colors.border}`,cursor:'pointer'}}>
@@ -541,7 +541,7 @@ export default function SettingsPage() {
                       style={{accentColor:colors.primary,width:16,height:16}}/>
                     <div>
                       <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>🚚 تحديثات الموردين</div>
-                      <div style={{fontSize:11,color:colors.text4,marginTop:2}}>تأكيد الاستلام وتصعيد الطلبات المتأخرة</div>
+                      <div style={{fontSize:13,color:colors.text4,marginTop:2}}>تأكيد الاستلام وتصعيد الطلبات المتأخرة</div>
                     </div>
                   </label>
                 </div>
@@ -550,7 +550,7 @@ export default function SettingsPage() {
 
               <div style={{marginBottom:20}}>
                 <label style={lbl}>نوع الجدولة</label>
-                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,150px),1fr))',gap:8}}>
                   {[{key:'daily',label:'يومي',icon:'📅'},{key:'weekly',label:'أسبوعي',icon:'📆'},{key:'manual',label:'يدوي',icon:'👆'}].map(s=>(
                     <button key={s.key} type="button" className={`sched-btn${form.notify_schedule===s.key?' active':''}`}
                       onClick={()=>setForm({...form,notify_schedule:s.key})}>
@@ -584,7 +584,7 @@ export default function SettingsPage() {
                       return <option key={hh} value={hh}>{h12}:00 {period}</option>
                     })}
                   </select>
-                  <div style={{fontSize:11,color:colors.text4,marginTop:6}}>توقيت الرياض (UTC+3) — الإرسال بالساعة كاملة فقط (بدون دقائق)</div>
+                  <div style={{fontSize:13,color:colors.text4,marginTop:6}}>توقيت الرياض (UTC+3) — الإرسال بالساعة كاملة فقط (بدون دقائق)</div>
                 </div>
               )}
 
@@ -599,7 +599,7 @@ export default function SettingsPage() {
                 {form.notify_schedule==='manual'?'الإرسال يدوياً فقط عند الضغط على الزر':scheduleLabel()}
               </div>
 
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,180px),1fr))',gap:10,marginBottom:20}}>
                 <button type="submit" disabled={saving} style={{...btnPrimary,padding:'13px',opacity:saving?0.7:1,cursor:saving?'not-allowed':'pointer'}}>
                   {saving?'⏳ حفظ...':'💾 حفظ الجدولة'}
                 </button>
@@ -640,7 +640,7 @@ export default function SettingsPage() {
                 </div>
               )}
               <p style={{fontSize:font.sm,color:colors.text3,marginBottom:18,lineHeight:1.8}}>يتم إنشاء نسخة احتياطية تلقائياً كل أسبوع. يمكنك إنشاء نسخة يدوياً وتحميلها في أي وقت.</p>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}}>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,180px),1fr))',gap:10,marginBottom:12}}>
                 <button type="button" onClick={runBackup} disabled={backupLoading}
                   style={{...btnPrimary,padding:'13px',opacity:backupLoading?0.7:1,cursor:backupLoading?'not-allowed':'pointer'}}>
                   {backupLoading?'⏳ جاري الإنشاء...':'💾 نسخة احتياطية الآن'}
@@ -723,8 +723,8 @@ export default function SettingsPage() {
 
     {showDelete&&(
       <div style={{position:'fixed',inset:0,zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.6)',backdropFilter:'blur(6px)'}} onClick={()=>{setShowDelete(false);setDeleteConfirm('');setDeleteMsg(null)}}/>
-        <div style={{background:colors.surface,borderRadius:radius.xl,padding:28,width:'100%',maxWidth:420,position:'relative',boxShadow:'0 20px 60px rgba(0,0,0,.3)',fontFamily:font.family,direction:'rtl'}}>
+        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.6)',}} onClick={()=>{setShowDelete(false);setDeleteConfirm('');setDeleteMsg(null)}}/>
+        <div className="storely-dialog-shell" style={{width:'100%',maxWidth:420,position:'relative',direction:'rtl'}}>
           <div style={{textAlign:'center',marginBottom:20}}>
             <div style={{fontSize:44,marginBottom:10}}>⚠️</div>
             <div style={{fontSize:font.lg,fontWeight:900,color:colors.text,marginBottom:8}}>تأكيد حذف الحساب</div>
@@ -732,7 +732,7 @@ export default function SettingsPage() {
           </div>
           {deleteMsg&&<div style={{background:colors.dangerLight,border:`1px solid ${colors.dangerBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:14,fontSize:font.sm,color:colors.danger,fontWeight:600}}>{deleteMsg.text}</div>}
           <div style={{marginBottom:18}}>
-            <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:6}}>اكتب اسم المنشأة للتأكيد: <b style={{color:colors.danger}}>{form.name}</b></label>
+            <label style={{fontSize:font.base,fontWeight:700,color:colors.text3,display:'block',marginBottom:6}}>اكتب اسم المنشأة للتأكيد: <b style={{color:colors.danger}}>{form.name}</b></label>
             <input value={deleteConfirm} onChange={e=>setDeleteConfirm(e.target.value)} style={{...inp(),borderColor:colors.dangerBorder}} placeholder={form.name}/>
           </div>
           <div style={{display:'flex',gap:10}}>

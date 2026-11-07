@@ -1,12 +1,136 @@
 'use client'
-import PageIcon from '@/components/PageIcon'
+import { StorelyPageHeader } from '@/components/ui/page-header'
+import { StorelyButton } from '@/components/ui/button'
+import { StorelyCard } from '@/components/ui/card'
+import { StorelyFormField } from '@/components/ui/form-field'
+import { StorelyStatusBadge } from '@/components/ui/status-badge'
+import { StorelyEmptyState } from '@/components/ui/empty-state'
+import { storelyTokens as T } from '@/components/ui/design-tokens'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
-import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
+import { colors } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { cache } from '@/lib/cache'
 import { Wallet, ThumbsUp, ThumbsDown, ClipboardList, ChevronDown, Plus, Camera, CalendarDays, BarChart3 } from 'lucide-react'
+
+
+const HR_STYLES = `
+  @keyframes hrSpin{to{transform:rotate(360deg)}}
+  .hr-page,.hr-access,.hr-loading{font-family:${T.typography.family};direction:rtl;color:${T.color.text};line-height:${T.typography.lineHeight}}
+  .hr-page{max-width:1200px;min-width:0;margin:0 auto;padding:${T.spacing[6]}px;background:${T.color.background};border-radius:${T.radius.panel};font-size:${T.typography.body}px}
+  .hr-page *,.hr-access *{box-sizing:border-box}
+  .hr-page>header{margin-bottom:${T.spacing[6]}px}
+  .hr-page>header h1{font-size:${T.typography.title}px;line-height:1.6}
+  .hr-page>header p{font-size:${T.typography.body}px;line-height:${T.typography.lineHeight}}
+  .hr-page .hr-workspace{background:${T.color.surface};border-color:${T.color.border};border-radius:${T.radius.card};margin-bottom:${T.spacing[6]}px;min-width:0;overflow:hidden}
+  .hr-locations,.hr-report{padding:${T.spacing[6]}px}
+  .hr-section-title{font-size:${T.typography.section}px;font-weight:600;line-height:${T.typography.lineHeight};margin-bottom:${T.spacing[4]}px}
+  .hr-section-label{font-size:${T.typography.body}px;font-weight:600;margin-bottom:${T.spacing[4]}px}
+  .hr-supporting{font-size:${T.typography.supporting}px;line-height:1.8;color:${T.color.textMuted}}
+  .hr-strong{font-size:${T.typography.body}px;font-weight:600;line-height:${T.typography.lineHeight}}
+  .hr-inline{display:flex;align-items:center;flex-wrap:wrap;gap:${T.spacing[2]}px;min-width:0}
+  .hr-between{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:${T.spacing[2]}px ${T.spacing[4]}px;min-width:0}
+  .hr-list{display:flex;flex-direction:column;gap:${T.spacing[3]}px;min-width:0}
+  .hr-locations>.hr-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:${T.spacing[3]}px}
+  .hr-page .hr-button{height:auto;min-height:40px;max-width:100%;padding:${T.spacing[2]}px ${T.spacing[4]}px;border:1px solid ${T.color.infoBorder};border-radius:${T.radius.control};font-family:inherit;font-size:${T.typography.body}px;font-weight:600;line-height:1.6;white-space:normal;background:${T.color.surface};color:${T.color.navy};gap:${T.spacing[2]}px;cursor:pointer;box-shadow:none}
+  .hr-page .hr-button:hover:not(:disabled){background:${T.color.infoBg};border-color:${T.color.infoBorder}}
+  .hr-page .hr-button:disabled{opacity:.5;cursor:not-allowed}
+  .hr-page .hr-button svg{width:16px;height:16px;flex-shrink:0;stroke-width:1.75}
+  .hr-page .hr-primary{border-color:${T.color.navy};background:${T.color.navy};color:${T.color.surface}}
+  .hr-page .hr-primary:hover:not(:disabled){border-color:${T.color.navy};background:${T.color.navy};color:${T.color.surface}}
+  .hr-page .hr-danger{border-color:${T.color.dangerBorder};background:${T.color.surface};color:${T.color.danger}}
+  .hr-page .hr-danger:hover:not(:disabled){background:${T.color.dangerBg};border-color:${T.color.dangerBorder}}
+  .hr-page .hr-full{width:100%}
+  .hr-page .hr-location-row{display:flex;align-items:flex-start;justify-content:space-between;text-align:start;padding:${T.spacing[3]}px ${T.spacing[4]}px;gap:${T.spacing[4]}px}
+  .hr-location-row>span:first-child{font-size:${T.typography.body}px;font-weight:600}
+  .hr-location-row>span{min-width:0;overflow-wrap:anywhere}
+  .hr-report-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:${T.spacing[4]}px;margin-bottom:${T.spacing[5]}px}
+  .hr-report-header>.hr-section-title{margin-bottom:0}
+  .hr-report-header>.hr-control{width:auto;max-width:100%}
+  .hr-page .hr-control{width:100%;min-width:0;height:44px;padding:${T.spacing[2]}px ${T.spacing[3]}px;border:1px solid ${T.color.infoBorder};border-radius:${T.radius.control};background:${T.color.surface};color:${T.color.text};font-family:inherit;font-size:${T.typography.body}px;line-height:${T.typography.lineHeight}}
+  .hr-page .hr-control::placeholder{color:${T.color.textSubtle};opacity:1}
+  .hr-page input[type=number],.hr-page input[type=month]{direction:ltr;font-variant-numeric:tabular-nums}
+  .hr-page input[type=number]{text-align:right}
+  .hr-page .hr-control:focus-visible,.hr-page button:focus-visible,.hr-page input[type=checkbox]:focus-visible{outline:2px solid ${T.color.navy};outline-offset:2px;box-shadow:${T.shadow.focus}}
+  .hr-table-scroll{overflow-x:auto;max-width:100%;overscroll-behavior-inline:contain;border-block:1px solid ${T.color.border}}
+  .hr-table{width:100%;min-width:980px;border-collapse:collapse;font-size:${T.typography.body}px;text-align:start;font-variant-numeric:tabular-nums}
+  .hr-table th{padding:${T.spacing[3]}px ${T.spacing[4]}px;background:${T.color.background};font-size:${T.typography.supporting}px;font-weight:600;text-align:right;white-space:nowrap;border-bottom:1px solid ${T.color.border}}
+  .hr-table td{height:56px;padding:${T.spacing[3]}px ${T.spacing[4]}px;text-align:right;white-space:nowrap;border-bottom:1px solid ${T.color.border}}
+  .hr-table tr:last-child td{border-bottom:0}
+  .hr-table tbody tr:hover{background:${T.color.background}}
+  .hr-table td:first-child,.hr-table td:nth-child(5){font-weight:600}
+  .hr-rating{display:inline-flex;align-items:center;justify-content:center;min-width:36px;min-height:28px;padding:${T.spacing[1]}px ${T.spacing[2]}px;border:1px solid currentColor;border-radius:${T.radius.control};font-weight:600}
+  .hr-page .hr-staff-list{padding:0}
+  .hr-record{padding:${T.spacing[6]}px;border-bottom:1px solid ${T.color.border};min-width:0}
+  .hr-record:last-child{border-bottom:0}
+  .hr-record-header{display:flex;align-items:flex-start;justify-content:space-between;gap:${T.spacing[4]}px;cursor:pointer}
+  .hr-record-header>div{min-width:0}
+  .hr-record-header>.hr-supporting{font-size:${T.typography.body}px}
+  .hr-record-header .hr-inline>div:first-child{font-size:16px;font-weight:600;line-height:${T.typography.lineHeight};overflow-wrap:anywhere}
+  .hr-record-header>div>.hr-supporting{margin-top:${T.spacing[1]}px}
+  .hr-record-header>svg{flex-shrink:0;margin-top:${T.spacing[1]}px;transition:transform .2s}
+  .hr-count{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 ${T.spacing[1]}px;font-size:${T.typography.supporting}px;font-weight:600;border:1px solid;border-radius:${T.radius.control};font-variant-numeric:tabular-nums}
+  .hr-count-danger{color:${T.color.danger};border-color:${T.color.dangerBorder};background:${T.color.dangerBg}}
+  .hr-count-warning{color:${T.color.warning};border-color:${T.color.warningBorder};background:${T.color.warningBg}}
+  .hr-payroll-summary{margin-top:${T.spacing[4]}px;padding:${T.spacing[4]}px 0 0;border-top:1px solid ${T.color.border};display:flex;flex-direction:column;gap:${T.spacing[3]}px;font-size:${T.typography.supporting}px}
+  .hr-payroll-summary>.hr-between:last-child{padding-top:${T.spacing[3]}px;border-top:1px solid ${T.color.border};font-weight:600;font-size:${T.typography.body}px}
+  .hr-payroll-summary .hr-button{min-height:36px;padding:${T.spacing[1]}px ${T.spacing[3]}px;font-size:${T.typography.supporting}px}
+  .hr-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:${T.spacing[8]}px;margin-top:${T.spacing[6]}px;padding-top:${T.spacing[6]}px;border-top:1px solid ${T.color.border}}
+  .hr-detail-section{min-width:0}
+  .hr-detail-section:last-child{grid-column:1/-1;padding-top:${T.spacing[6]}px;border-top:1px solid ${T.color.border}}
+  .hr-detail-section>.hr-section-title,.hr-detail-section>.hr-between:first-child{color:${T.color.text}!important;font-size:${T.typography.section}px;font-weight:600;margin-bottom:${T.spacing[4]}px}
+  .hr-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:${T.spacing[4]}px;margin-bottom:${T.spacing[5]}px}
+  .hr-page label{font-size:${T.typography.supporting}px;line-height:${T.typography.lineHeight};color:${T.color.textMuted}}
+  .hr-salary-total{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:${T.spacing[2]}px;padding:${T.spacing[4]}px 0;margin-bottom:${T.spacing[4]}px;border-block:1px solid ${T.color.border}}
+  .hr-total-value{font-size:${T.typography.section}px;font-weight:600;font-variant-numeric:tabular-nums}
+  .hr-request{background:${T.color.surface};border:1px solid ${T.color.warningBorder};border-inline-start:3px solid ${T.color.warningBorder};border-radius:${T.radius.control};padding:${T.spacing[4]}px;overflow-wrap:anywhere}
+  .hr-request>.hr-between{margin-bottom:${T.spacing[2]}px}
+  .hr-request>.hr-supporting{margin-bottom:${T.spacing[3]}px}
+  .hr-group{margin-bottom:${T.spacing[5]}px}
+  .hr-group>.hr-supporting{margin-bottom:${T.spacing[3]}px}
+  .hr-actions{display:flex;align-items:center;flex-wrap:wrap;gap:${T.spacing[2]}px;margin-top:${T.spacing[3]}px}
+  .hr-actions>.hr-button{flex:1 1 100px}
+  .hr-entry-form{display:flex;flex-direction:column;gap:${T.spacing[3]}px;padding:${T.spacing[4]}px 0;margin-bottom:${T.spacing[4]}px;border-block:1px solid ${T.color.border}}
+  .hr-adjustment-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:${T.spacing[3]}px}
+  .hr-label{display:flex;align-items:flex-start;gap:${T.spacing[2]}px;cursor:pointer}
+  .hr-label>span{font-size:${T.typography.body}px}
+  .hr-checkbox{width:16px;height:16px;flex-shrink:0;margin-top:${T.spacing[1]}px;accent-color:${T.color.navy}}
+  .hr-list>.hr-between{padding:${T.spacing[3]}px 0;border-bottom:1px solid ${T.color.border};font-size:${T.typography.body}px}
+  .hr-list>.hr-between:last-child{border-bottom:0}
+  .hr-task{padding:${T.spacing[4]}px;border:1px solid ${T.color.border};border-radius:${T.radius.control};background:${T.color.surface};min-width:0;overflow-wrap:anywhere}
+  .hr-task>.hr-between{gap:${T.spacing[3]}px;margin-bottom:${T.spacing[2]}px}
+  .hr-task>.hr-between>.hr-strong{flex:1;min-width:0;display:flex;align-items:center;flex-wrap:wrap;gap:${T.spacing[2]}px}
+  .hr-task>.hr-supporting{margin-bottom:${T.spacing[3]}px;font-size:${T.typography.body}px}
+  .hr-daily-badge{display:inline-flex;align-items:center;padding:${T.spacing[1]}px ${T.spacing[2]}px;border:1px solid ${T.color.infoBorder};border-radius:${T.radius.control};background:${T.color.infoBg};color:${T.color.navy};font-size:${T.typography.supporting}px;font-weight:600}
+  .hr-page .hr-daily-toggle{width:100%;margin-top:${T.spacing[3]}px}
+  .hr-page .hr-daily-toggle[aria-pressed=true]{border-color:${T.color.navy};background:${T.color.infoBg}}
+  .hr-link{display:inline-block;margin-bottom:${T.spacing[3]}px;font-size:${T.typography.supporting}px;color:${T.color.info};text-decoration:underline;text-underline-offset:3px}
+  .hr-inline-empty{padding:${T.spacing[5]}px 0;text-align:center;font-size:${T.typography.supporting}px}
+  .hr-page .hr-empty{padding:${T.spacing[8]}px ${T.spacing[6]}px;border-color:${T.color.border};border-radius:${T.radius.card}}
+  .hr-empty>div:first-child{background:${T.color.background};border-color:${T.color.border}}
+  .hr-loading,.hr-access{min-height:50vh;display:flex;align-items:center;justify-content:center;background:${T.color.surface};padding:${T.spacing[6]}px;text-align:center;border-radius:${T.radius.panel}}
+  .hr-spinner{width:32px;height:32px;border:3px solid ${T.color.border};border-top-color:${T.color.navy};border-radius:50%;animation:hrSpin .7s linear infinite}
+  .hr-access-icon{font-size:32px;margin-bottom:${T.spacing[4]}px}
+  .hr-access .hr-section-title{margin-bottom:${T.spacing[2]}px}
+  @media(max-width:900px){.hr-details{grid-template-columns:minmax(0,1fr)}.hr-detail-section+.hr-detail-section{padding-top:${T.spacing[6]}px;border-top:1px solid ${T.color.border}}}
+  @media(max-width:640px){
+    .hr-page{padding:${T.spacing[4]}px}
+    .hr-locations,.hr-report,.hr-record{padding:${T.spacing[5]}px}
+    .hr-locations>.hr-list{grid-template-columns:minmax(0,1fr)}
+    .hr-page .hr-location-row{flex-wrap:wrap;gap:${T.spacing[1]}px}
+    .hr-location-row>span:last-child{flex-basis:100%}
+    .hr-report-header{align-items:stretch;flex-direction:column}
+    .hr-report-header>.hr-control{width:100%}
+    .hr-details{gap:${T.spacing[6]}px}
+    .hr-adjustment-fields{grid-template-columns:minmax(0,1fr)}
+    .hr-payroll-summary>.hr-between{flex-direction:column;gap:${T.spacing[1]}px}
+    .hr-payroll-summary .hr-inline{justify-content:space-between;width:100%}
+    .hr-detail-section>.hr-between:first-child{align-items:flex-start}
+  }
+  @media(max-width:420px){.hr-fields{grid-template-columns:minmax(0,1fr)}}
+  @media(prefers-reduced-motion:reduce){.hr-page *,.hr-spinner{animation:none!important;transition:none!important}}
+`
 
 export default function HRManagementPage() {
   const [orgId, setOrgId] = useState('')
@@ -378,74 +502,66 @@ export default function HRManagementPage() {
   }
 
   if (loading) return (
-    <div style={{minHeight:'50vh',display:'flex',alignItems:'center',justifyContent:'center'}}>
-      <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:colors.primary,borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div className="hr-loading">
+      <div className="hr-spinner" />
+      <style>{HR_STYLES}</style>
     </div>
   )
 
   if (orgPlan === 'basic' && !hasHrAddon) return (
-    <div style={{minHeight:'50vh',display:'flex',alignItems:'center',justifyContent:'center',textAlign:'center' as const,padding:20}}>
+    <div className="hr-access">
+      <style>{HR_STYLES}</style>
       <div>
-        <div style={{fontSize:44,marginBottom:12}}>🔒</div>
-        <div style={{fontSize:16,fontWeight:800,color:colors.text,marginBottom:8}}>إدارة الموظفين متاحة بالباقة المتوسطة أو المتقدمة</div>
-        <div className="hide-in-app" style={{fontSize:13,color:colors.text3}}>رقّي باقتك عشان تفعّل إدارة الرواتب والمهام لفريقك</div>
+        <div className="hr-access-icon">🔒</div>
+        <div className="hr-section-title" style={{color:T.color.text}}>إدارة الموظفين متاحة بالباقة المتوسطة أو المتقدمة</div>
+        <div className="hide-in-app hr-supporting" style={{color:T.color.textMuted}}>رقّي باقتك عشان تفعّل إدارة الرواتب والمهام لفريقك</div>
       </div>
     </div>
   )
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto'}}>
-      <div style={{marginBottom:20,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap' as const}}>
-        <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <div style={{width:44,height:44,borderRadius:radius.md,background:'#fdf4ff',border:'1px solid #f5d0fe',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-            <Wallet size={20} color="#a21caf" strokeWidth={1.75}/>
-          </div>
-          <div>
-            <h1 style={pageTitle}><PageIcon/>إدارة الموظفين</h1>
-            <p style={pageSub}>الرواتب والبدلات، الخصومات والسلف، والمهام لكل موظف</p>
-          </div>
-        </div>
-        <button onClick={()=>setShowReport(v=>!v)} style={{...btnSecondary,display:'flex',alignItems:'center',gap:6}}>
-          <BarChart3 size={15} strokeWidth={2.25}/> تقرير الموظفين
-        </button>
-      </div>
+    <div className="hr-page">
+      <style>{HR_STYLES}</style>
+      <StorelyPageHeader
+        title="إدارة الموظفين"
+        description="الرواتب والبدلات، الخصومات والسلف، والمهام لكل موظف"
+        actions={<StorelyButton className="hr-button" onClick={()=>setShowReport(v=>!v)}><BarChart3 size={15} strokeWidth={2.25}/> تقرير الموظفين</StorelyButton>}
+      />
 
       {/* مواقع الفروع -- لازمة لتفعيل تسجيل الحضور/الانصراف بكل فرع */}
       {branches.length>0 && (
-        <div style={{...card,padding:14,marginBottom:20}}>
-          <div style={{fontSize:12,fontWeight:700,color:colors.text2,marginBottom:8}}>📍 مواقع الفروع (لتسجيل الحضور)</div>
-          <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
+        <StorelyCard className="hr-workspace hr-locations">
+          <div className="hr-section-label" style={{color:T.color.text}}>📍 مواقع الفروع (لتسجيل الحضور)</div>
+          <div className="hr-list">
             {branches.map((b:any)=>(
-              <button key={b.id} onClick={()=>saveBranchLocation(b.id)} disabled={savingLocationId===b.id}
-                style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:colors.bg,border:`1px solid ${colors.border2}`,borderRadius:8,padding:'8px 12px',cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
-                <span style={{fontSize:12,fontWeight:600,color:colors.text}}>{b.name}</span>
-                <span style={{fontSize:11,color:b.latitude?colors.primary:colors.text4}}>
+              <StorelyButton className="hr-button hr-location-row" key={b.id} onClick={()=>saveBranchLocation(b.id)} disabled={savingLocationId===b.id}>
+                <span className="hr-supporting" style={{color:T.color.text}}>{b.name}</span>
+                <span className="hr-supporting" style={{color:b.latitude?T.color.navy:T.color.textMuted}}>
                   {savingLocationId===b.id ? 'جاري تحديد الموقع...' : b.latitude ? 'تم تحديد الموقع — إعادة الضبط' : 'حدّد موقع الفرع'}
                 </span>
-              </button>
+              </StorelyButton>
             ))}
           </div>
-        </div>
+        </StorelyCard>
       )}
 
       {showReport && (
-        <div style={{...card,padding:'18px 20px',marginBottom:20}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,flexWrap:'wrap' as const,gap:10}}>
-            <div style={{fontSize:14,fontWeight:800,color:colors.text}}>تقرير الموظفين الشهري</div>
-            <input type="month" value={reportMonth} onChange={e=>setReportMonth(e.target.value)} style={{...inp(),width:'auto',fontSize:13,padding:'8px 12px'}}/>
+        <StorelyCard className="hr-workspace hr-report">
+          <div className="hr-report-header">
+            <div className="hr-section-title" style={{color:T.color.text}}>تقرير الموظفين الشهري</div>
+            <input className="hr-control" type="month" value={reportMonth} onChange={e=>setReportMonth(e.target.value)} />
           </div>
           {loadingReport ? (
-            <div style={{fontSize:12,color:colors.text4}}>جاري تحميل التقرير...</div>
+            <div className="hr-supporting" style={{color:T.color.textMuted}}>جاري تحميل التقرير...</div>
           ) : reportData.length===0 ? (
-            <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:16}}>ما فيه بيانات لهذا الشهر</div>
+            <div className="hr-inline-empty" style={{color:T.color.textMuted}}>ما فيه بيانات لهذا الشهر</div>
           ) : (
-            <div style={{overflowX:'auto' as const}}>
-              <table style={{width:'100%',borderCollapse:'collapse' as const,fontSize:12,minWidth:820}}>
+            <div className="hr-table-scroll">
+              <table className="hr-table">
                 <thead>
-                  <tr style={{borderBottom:`2px solid ${colors.border}`}}>
+                  <tr>
                     {['الموظف','الراتب الإجمالي','الخصومات','السلف','صافي الراتب','الحضور','التأخير','الإجازات','المهام','التقييم'].map(h=>(
-                      <th key={h} style={{padding:'8px 10px',textAlign:'right' as const,color:colors.text4,fontWeight:700,whiteSpace:'nowrap' as const}}>{h}</th>
+                      <th className="hr-cell" key={h} style={{color:T.color.textMuted}}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -453,18 +569,18 @@ export default function HRManagementPage() {
                   {reportData.map((r:any)=>{
                     const ratingColor = r.rating>=80?colors.primary:r.rating>=50?colors.warning:colors.danger
                     return (
-                      <tr key={r.staffId} style={{borderBottom:`1px solid ${colors.border}`}}>
-                        <td style={{padding:'10px',fontWeight:700,color:colors.text,whiteSpace:'nowrap' as const}}>{r.name}</td>
-                        <td style={{padding:'10px',color:colors.text2}}>{r.grossSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</td>
-                        <td style={{padding:'10px',color:colors.danger}}>{r.deductionsTotal>0?`-${r.deductionsTotal.toLocaleString('ar-SA',{numberingSystem:'latn'})}`:'—'}</td>
-                        <td style={{padding:'10px',color:colors.danger}}>{r.advancesTotal>0?`-${r.advancesTotal.toLocaleString('ar-SA',{numberingSystem:'latn'})}`:'—'}</td>
-                        <td style={{padding:'10px',fontWeight:800,color:colors.primary}}>{r.netSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</td>
-                        <td style={{padding:'10px',color:colors.text2,whiteSpace:'nowrap' as const}}>{r.daysPresent}/{r.daysInMonth} ({r.attendanceRate}%)</td>
-                        <td style={{padding:'10px',color:r.lateCount>0?colors.warning:colors.text2}}>{r.lateCount} مرة</td>
-                        <td style={{padding:'10px',color:colors.text2,whiteSpace:'nowrap' as const}}>{r.leaveDaysTaken} يوم (متبقي {r.leaveBalance})</td>
-                        <td style={{padding:'10px',color:colors.text2}}>{r.tasksConfirmed}/{r.tasksTotal} ({r.taskCompletionRate}%)</td>
-                        <td style={{padding:'10px'}}>
-                          <span style={{display:'inline-block',padding:'4px 10px',borderRadius:99,fontWeight:800,color:'white',background:ratingColor}}>{r.rating}</span>
+                      <tr key={r.staffId}>
+                        <td className="hr-cell" style={{color:T.color.text}}>{r.name}</td>
+                        <td className="hr-cell" style={{color:T.color.text}}>{r.grossSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</td>
+                        <td className="hr-cell" style={{color:T.color.danger}}>{r.deductionsTotal>0?`-${r.deductionsTotal.toLocaleString('ar-SA',{numberingSystem:'latn'})}`:'—'}</td>
+                        <td className="hr-cell" style={{color:T.color.danger}}>{r.advancesTotal>0?`-${r.advancesTotal.toLocaleString('ar-SA',{numberingSystem:'latn'})}`:'—'}</td>
+                        <td className="hr-cell" style={{color:T.color.navy}}>{r.netSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</td>
+                        <td className="hr-cell" style={{color:T.color.text}}>{r.daysPresent}/{r.daysInMonth} ({r.attendanceRate}%)</td>
+                        <td className="hr-cell" style={{color:r.lateCount>0?T.color.warning:T.color.text}}>{r.lateCount} مرة</td>
+                        <td className="hr-cell" style={{color:T.color.text}}>{r.leaveDaysTaken} يوم (متبقي {r.leaveBalance})</td>
+                        <td className="hr-cell" style={{color:T.color.text}}>{r.tasksConfirmed}/{r.tasksTotal} ({r.taskCompletionRate}%)</td>
+                        <td className="hr-cell">
+                          <span className="hr-rating" style={{color:ratingColor}}>{r.rating}</span>
                         </td>
                       </tr>
                     )
@@ -473,40 +589,38 @@ export default function HRManagementPage() {
               </table>
             </div>
           )}
-        </div>
+        </StorelyCard>
       )}
 
       {staff.length===0 ? (
-        <div style={{...card,padding:56,textAlign:'center' as const}}>
-          <div style={{fontSize:13,color:colors.text4}}>ما فيه موظفين بعد — أضفهم من صفحة "الموظفون" أول</div>
-        </div>
+        <StorelyEmptyState className="hr-empty" icon={<Wallet size={20}/>} title={'ما فيه موظفين بعد — أضفهم من صفحة "الموظفون" أول'}/>
       ) : (
-        <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
+        <StorelyCard className="hr-workspace hr-staff-list">
           {staff.map((s:any)=>{
             const isOpen = expandedId===s.id
             const pendingAdvances = adjustments.filter((a:any)=>a.type==='advance'&&a.status==='pending')
             const totalDeducted = adjustments.filter((a:any)=>a.status==='approved').reduce((sum:number,a:any)=>sum+Number(a.amount),0)
             const savedTotal = (Number(s.monthly_salary)||0)+(Number(s.housing_allowance)||0)+(Number(s.transport_allowance)||0)+(Number(s.food_allowance)||0)
             return (
-              <div key={s.id} style={{...card,padding:'16px 18px'}}>
-                <div onClick={()=>toggleExpand(s)} style={{display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer'}}>
+              <div className="hr-record" key={s.id}>
+                <div className="hr-record-header" onClick={()=>toggleExpand(s)}>
                   <div>
-                    <div style={{display:'flex',alignItems:'center',gap:8}}>
-                      <div style={{fontSize:font.base,fontWeight:700,color:colors.text}}>{s.name}</div>
+                    <div className="hr-inline">
+                      <div className="hr-supporting" style={{color:T.color.text}}>{s.name}</div>
                       {pendingLeaveCounts[s.id] > 0 && (
-                        <span style={{background:colors.danger,color:'white',fontSize:10,fontWeight:800,minWidth:18,height:18,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 5px'}} title="عنده طلب إجازة بانتظار الموافقة">
+                        <span className="hr-count hr-count-danger"  title="عنده طلب إجازة بانتظار الموافقة">
                           {pendingLeaveCounts[s.id]}
                         </span>
                       )}
                       {pendingAdvanceCounts[s.id] > 0 && (
-                        <span style={{background:'#f79009',color:'white',fontSize:10,fontWeight:800,minWidth:18,height:18,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 5px'}} title="عنده طلب سلفة/خصم بانتظار الموافقة">
+                        <span className="hr-count hr-count-warning"  title="عنده طلب سلفة/خصم بانتظار الموافقة">
                           {pendingAdvanceCounts[s.id]}
                         </span>
                       )}
                     </div>
-                    <div style={{fontSize:11,color:colors.text4,marginTop:2}}>إجمالي الراتب: {savedTotal.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</div>
+                    <div className="hr-supporting" style={{color:T.color.textMuted}}>إجمالي الراتب: {savedTotal.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</div>
                   </div>
-                  <ChevronDown size={16} color={colors.text3} strokeWidth={2.25} style={{transition:'transform .2s',transform:isOpen?'rotate(180deg)':'none'}}/>
+                  <ChevronDown size={16} color={colors.text3} strokeWidth={2.25} style={{transform:isOpen?'rotate(180deg)':'none'}}/>
                 </div>
 
                 {(() => {
@@ -518,114 +632,109 @@ export default function HRManagementPage() {
                   const hasAnyDeduction = advDeducted > 0 || cashierDeficit > 0 || pendingPenalty > 0
                   if (!hasAnyDeduction) return null
                   return (
-                    <div style={{marginTop:10,padding:'10px 12px',background:colors.bg,borderRadius:10,display:'flex',flexDirection:'column' as const,gap:6}}>
+                    <div className="hr-payroll-summary">
                       {advDeducted > 0 && (
-                        <div style={{display:'flex',justifyContent:'space-between',fontSize:11}}>
-                          <span style={{color:colors.text3}}>سلف مخصومة (معتمدة)</span>
-                          <span style={{color:colors.warning,fontWeight:700}}>−{advDeducted.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
+                        <div className="hr-between">
+                          <span style={{color:T.color.textMuted}}>سلف مخصومة (معتمدة)</span>
+                          <span className="hr-strong" style={{color:T.color.warning}}>−{advDeducted.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
                         </div>
                       )}
                       {cashierDeficit > 0 && (
-                        <div style={{display:'flex',justifyContent:'space-between',fontSize:11}}>
-                          <span style={{color:colors.text3}}>عجز إقفال كاشير ({cs?.count} إقفال)</span>
-                          <span style={{color:colors.danger,fontWeight:700}}>−{cashierDeficit.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
+                        <div className="hr-between">
+                          <span style={{color:T.color.textMuted}}>عجز إقفال كاشير ({cs?.count} إقفال)</span>
+                          <span className="hr-strong" style={{color:T.color.danger}}>−{cashierDeficit.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
                         </div>
                       )}
                       {pendingPenalty > 0 && (
-                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontSize:11}} onClick={e=>e.stopPropagation()}>
-                          <span style={{color:colors.text3}}>غرامات تأخير (لسه ما اتخصمت)</span>
-                          <div style={{display:'flex',alignItems:'center',gap:8}}>
-                            <span style={{color:colors.danger,fontWeight:700}}>{pendingPenalty.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
-                            <button onClick={()=>applyLatePenalty(s.id)} disabled={applyingPenalty===s.id}
-                              style={{padding:'3px 10px',background:colors.danger,color:'white',border:'none',borderRadius:99,fontSize:10,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
+                        <div className="hr-between"  onClick={e=>e.stopPropagation()}>
+                          <span style={{color:T.color.textMuted}}>غرامات تأخير (لسه ما اتخصمت)</span>
+                          <div className="hr-inline">
+                            <span className="hr-strong" style={{color:T.color.danger}}>{pendingPenalty.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
+                            <StorelyButton className="hr-button hr-danger" variant="danger" onClick={()=>applyLatePenalty(s.id)} disabled={applyingPenalty===s.id}>
                               {applyingPenalty===s.id?'...':'طبّقها كخصم'}
-                            </button>
+                            </StorelyButton>
                           </div>
                         </div>
                       )}
-                      <div style={{display:'flex',justifyContent:'space-between',fontSize:12,fontWeight:800,paddingTop:6,borderTop:`1px dashed ${colors.border}`}}>
-                        <span style={{color:colors.text}}>الصافي المتوقع</span>
-                        <span style={{color:colors.primary}}>{netSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
+                      <div className="hr-between">
+                        <span style={{color:T.color.text}}>الصافي المتوقع</span>
+                        <span style={{color:T.color.navy}}>{netSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
                       </div>
                     </div>
                   )
                 })()}
 
                 {isOpen && (
-                  <div style={{marginTop:18,paddingTop:18,borderTop:`1px solid ${colors.border}`,display:'flex',flexDirection:'column' as const,gap:22}}>
+                  <div className="hr-details">
 
                     {/* الراتب والبدلات */}
-                    <div>
-                      <div style={{fontSize:12,fontWeight:700,color:colors.text3,marginBottom:10}}>الراتب الأساسي والبدلات</div>
-                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
-                        <div>
-                          <label style={{fontSize:10,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>الراتب الأساسي</label>
-                          <input type="number" value={salaryForm.base} onChange={e=>setSalaryForm({...salaryForm,base:e.target.value})} style={{...inp(),fontSize:13}} placeholder="0"/>
-                        </div>
-                        <div>
-                          <label style={{fontSize:10,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>بدل السكن</label>
-                          <input type="number" value={salaryForm.housing} onChange={e=>setSalaryForm({...salaryForm,housing:e.target.value})} style={{...inp(),fontSize:13}} placeholder="0"/>
-                        </div>
-                        <div>
-                          <label style={{fontSize:10,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>بدل المواصلات</label>
-                          <input type="number" value={salaryForm.transport} onChange={e=>setSalaryForm({...salaryForm,transport:e.target.value})} style={{...inp(),fontSize:13}} placeholder="0"/>
-                        </div>
-                        <div>
-                          <label style={{fontSize:10,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>بدل الأكل</label>
-                          <input type="number" value={salaryForm.food} onChange={e=>setSalaryForm({...salaryForm,food:e.target.value})} style={{...inp(),fontSize:13}} placeholder="0"/>
-                        </div>
+                    <div className="hr-detail-section">
+                      <div className="hr-section-title" style={{color:T.color.textMuted}}>الراتب الأساسي والبدلات</div>
+                      <div className="hr-fields">
+                        <StorelyFormField label={<>الراتب الأساسي</>} htmlFor="hr-salary-1">
+                          <input id="hr-salary-1" className="hr-control" type="number" value={salaryForm.base} onChange={e=>setSalaryForm({...salaryForm,base:e.target.value})}  placeholder="0"/>
+                        </StorelyFormField>
+                        <StorelyFormField label={<>بدل السكن</>} htmlFor="hr-salary-2">
+                          <input id="hr-salary-2" className="hr-control" type="number" value={salaryForm.housing} onChange={e=>setSalaryForm({...salaryForm,housing:e.target.value})}  placeholder="0"/>
+                        </StorelyFormField>
+                        <StorelyFormField label={<>بدل المواصلات</>} htmlFor="hr-salary-3">
+                          <input id="hr-salary-3" className="hr-control" type="number" value={salaryForm.transport} onChange={e=>setSalaryForm({...salaryForm,transport:e.target.value})}  placeholder="0"/>
+                        </StorelyFormField>
+                        <StorelyFormField label={<>بدل الأكل</>} htmlFor="hr-salary-4">
+                          <input id="hr-salary-4" className="hr-control" type="number" value={salaryForm.food} onChange={e=>setSalaryForm({...salaryForm,food:e.target.value})}  placeholder="0"/>
+                        </StorelyFormField>
                       </div>
-                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:10}}>
-                        <span style={{fontSize:12,fontWeight:700,color:colors.primary}}>الإجمالي الشهري</span>
-                        <span style={{fontSize:18,fontWeight:900,color:colors.primary}}>{totalSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
+                      <div className="hr-salary-total">
+                        <span className="hr-strong" style={{color:T.color.navy}}>الإجمالي الشهري</span>
+                        <span className="hr-total-value" style={{color:T.color.navy}}>{totalSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</span>
                       </div>
-                      <button onClick={()=>saveSalary(s.id)} disabled={savingSalary} style={{...btnPrimary,width:'100%',padding:'10px',fontSize:13,opacity:savingSalary?0.6:1}}>{savingSalary?'...':'حفظ الراتب والبدلات'}</button>
+                      <StorelyButton className="hr-button hr-primary hr-full" variant="primary" onClick={()=>saveSalary(s.id)} disabled={savingSalary}>{savingSalary?'...':'حفظ الراتب والبدلات'}</StorelyButton>
                     </div>
 
                     {/* السلف والخصومات */}
-                    <div>
-                      <div style={{fontSize:12,fontWeight:700,color:colors.text3,marginBottom:10}}>الخصومات والسلف</div>
+                    <div className="hr-detail-section">
+                      <div className="hr-section-title" style={{color:T.color.textMuted}}>الخصومات والسلف</div>
                       {loadingAdjustments ? (
-                        <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
+                        <div className="hr-supporting" style={{color:T.color.textMuted}}>جاري التحميل...</div>
                       ) : (
                         <>
                           {pendingAdvances.length>0 && (
-                            <div style={{marginBottom:14}}>
-                              <div style={{fontSize:11,fontWeight:700,color:colors.warning,marginBottom:8}}>طلبات سلفة بانتظار الموافقة</div>
-                              <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                            <div className="hr-group">
+                              <div className="hr-supporting" style={{color:T.color.warning}}>طلبات سلفة بانتظار الموافقة</div>
+                              <div className="hr-list">
                                 {pendingAdvances.map((a:any)=>(
-                                  <div key={a.id} style={{background:colors.warningLight,border:`1.5px solid ${colors.warningBorder}`,borderRadius:radius.md,padding:'12px 14px'}}>
-                                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-                                      <span style={{fontSize:15,fontWeight:800,color:colors.warning}}>{a.amount} {curr}</span>
-                                      <span style={{fontSize:10,color:colors.text4}}>{new Date(a.created_at).toLocaleDateString('ar-SA',{numberingSystem:'latn'})}</span>
+                                  <div className="hr-request" key={a.id}>
+                                    <div className="hr-between">
+                                      <span className="hr-strong" style={{color:T.color.warning}}>{a.amount} {curr}</span>
+                                      <span className="hr-supporting" style={{color:T.color.textMuted}}>{new Date(a.created_at).toLocaleDateString('ar-SA',{numberingSystem:'latn'})}</span>
                                     </div>
-                                    {a.reason && <div style={{fontSize:12,color:colors.text3,marginBottom:10}}>{a.reason}</div>}
-                                    <div style={{display:'flex',gap:8}}>
-                                      <button onClick={()=>reviewAdvance(s.id,a.id,'approved')} style={{flex:1,padding:'7px',background:colors.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><ThumbsUp size={13} strokeWidth={2.25}/> موافقة</button>
-                                      <button onClick={()=>reviewAdvance(s.id,a.id,'rejected')} style={{flex:1,padding:'7px',background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><ThumbsDown size={13} strokeWidth={2.25}/> رفض</button>
+                                    {a.reason && <div className="hr-supporting" style={{color:T.color.textMuted}}>{a.reason}</div>}
+                                    <div className="hr-actions">
+                                      <StorelyButton className="hr-button hr-primary" variant="primary" onClick={()=>reviewAdvance(s.id,a.id,'approved')}><ThumbsUp size={13} strokeWidth={2.25}/> موافقة</StorelyButton>
+                                      <StorelyButton className="hr-button hr-danger" variant="danger" onClick={()=>reviewAdvance(s.id,a.id,'rejected')}><ThumbsDown size={13} strokeWidth={2.25}/> رفض</StorelyButton>
                                     </div>
                                   </div>
                                 ))}
                               </div>
                             </div>
                           )}
-                          <div style={{background:colors.bg,borderRadius:radius.md,padding:'14px',marginBottom:12}}>
-                            <div style={{display:'grid',gridTemplateColumns:'1fr 2fr',gap:8,marginBottom:8}}>
-                              <input type="number" value={newAdjAmount} onChange={e=>setNewAdjAmount(e.target.value)} placeholder="المبلغ" style={{...inp(),fontSize:13}}/>
-                              <input value={newAdjReason} onChange={e=>setNewAdjReason(e.target.value)} placeholder="السبب (اختياري)" style={{...inp(),fontSize:13}}/>
+                          <div className="hr-entry-form">
+                            <div className="hr-adjustment-fields">
+                              <input className="hr-control" type="number" value={newAdjAmount} onChange={e=>setNewAdjAmount(e.target.value)} placeholder="المبلغ" />
+                              <input className="hr-control" value={newAdjReason} onChange={e=>setNewAdjReason(e.target.value)} placeholder="السبب (اختياري)" />
                             </div>
-                            <button onClick={()=>addDeduction(s.id)} disabled={savingAdj||!newAdjAmount} style={{...btnSecondary,width:'100%',padding:'9px',fontSize:13,opacity:(savingAdj||!newAdjAmount)?0.6:1}}>{savingAdj?'...':'+ إضافة خصم'}</button>
+                            <StorelyButton className="hr-button hr-full" onClick={()=>addDeduction(s.id)} disabled={savingAdj||!newAdjAmount}>{savingAdj?'...':'+ إضافة خصم'}</StorelyButton>
                           </div>
                           {adjustments.length>0 && (
-                            <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
+                            <div className="hr-list">
                               {adjustments.map((a:any)=>(
-                                <div key={a.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'9px 12px',background:colors.bg,borderRadius:radius.sm,opacity:a.status==='rejected'?0.5:1}}>
+                                <div className="hr-between" key={a.id} style={{opacity:a.status==='rejected'?0.5:1}}>
                                   <div>
-                                    <span style={{fontSize:12,fontWeight:700,color:colors.text}}>{a.type==='advance'?'سلفة':'خصم'}</span>
-                                    {a.reason && <span style={{fontSize:11,color:colors.text4,marginRight:6}}>— {a.reason}</span>}
-                                    {a.status==='pending' && <span style={{fontSize:9,color:colors.warning,marginRight:6,fontWeight:700}}>(معلّق)</span>}
+                                    <span className="hr-strong" style={{color:T.color.text}}>{a.type==='advance'?'سلفة':'خصم'}</span>
+                                    {a.reason && <span className="hr-supporting" style={{color:T.color.textMuted}}>— {a.reason}</span>}
+                                    {a.status==='pending' && <span className="hr-strong" style={{color:T.color.warning}}>(معلّق)</span>}
                                   </div>
-                                  <span style={{fontSize:12,fontWeight:700,color:colors.danger}}>-{a.amount} {curr}</span>
+                                  <span className="hr-strong" style={{color:T.color.danger}}>-{a.amount} {curr}</span>
                                 </div>
                               ))}
                             </div>
@@ -635,40 +744,40 @@ export default function HRManagementPage() {
                     </div>
 
                     {/* الإجازات */}
-                    <div>
-                      <div style={{fontSize:12,fontWeight:700,color:colors.text3,marginBottom:10,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                        <span style={{display:'flex',alignItems:'center',gap:6}}><CalendarDays size={14} strokeWidth={2.25}/> الإجازات</span>
-                        <span style={{fontSize:11,color:colors.primary,fontWeight:800}}>الرصيد المتبقي: {s.leave_balance_days ?? 21} يوم</span>
+                    <div className="hr-detail-section">
+                      <div className="hr-inline" style={{color:T.color.textMuted}}>
+                        <span className="hr-inline"><CalendarDays size={14} strokeWidth={2.25}/> الإجازات</span>
+                        <span className="hr-strong" style={{color:T.color.navy}}>الرصيد المتبقي: {s.leave_balance_days ?? 21} يوم</span>
                       </div>
                       {loadingLeave ? (
-                        <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
+                        <div className="hr-supporting" style={{color:T.color.textMuted}}>جاري التحميل...</div>
                       ) : (
                         <>
                           {leaveRequests.filter((l:any)=>l.status==='pending').length>0 && (
-                            <div style={{display:'flex',flexDirection:'column' as const,gap:8,marginBottom:12}}>
+                            <div className="hr-list">
                               {leaveRequests.filter((l:any)=>l.status==='pending').map((l:any)=>(
-                                <div key={l.id} style={{background:colors.warningLight,border:`1.5px solid ${colors.warningBorder}`,borderRadius:radius.md,padding:'12px 14px'}}>
-                                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-                                    <span style={{fontSize:13,fontWeight:800,color:colors.warning}}>{l.days_count} يوم</span>
-                                    <span style={{fontSize:10,color:colors.text4}}>{l.start_date} → {l.end_date}</span>
+                                <div className="hr-request" key={l.id}>
+                                  <div className="hr-between">
+                                    <span className="hr-strong" style={{color:T.color.warning}}>{l.days_count} يوم</span>
+                                    <span className="hr-supporting" style={{color:T.color.textMuted}}>{l.start_date} → {l.end_date}</span>
                                   </div>
-                                  {l.reason && <div style={{fontSize:12,color:colors.text3,marginBottom:10}}>{l.reason}</div>}
-                                  <div style={{display:'flex',gap:8}}>
-                                    <button onClick={()=>reviewLeave(s.id,l.id,'approved')} style={{flex:1,padding:'7px',background:colors.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><ThumbsUp size={13} strokeWidth={2.25}/> موافقة</button>
-                                    <button onClick={()=>reviewLeave(s.id,l.id,'rejected')} style={{flex:1,padding:'7px',background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><ThumbsDown size={13} strokeWidth={2.25}/> رفض</button>
+                                  {l.reason && <div className="hr-supporting" style={{color:T.color.textMuted}}>{l.reason}</div>}
+                                  <div className="hr-actions">
+                                    <StorelyButton className="hr-button hr-primary" variant="primary" onClick={()=>reviewLeave(s.id,l.id,'approved')}><ThumbsUp size={13} strokeWidth={2.25}/> موافقة</StorelyButton>
+                                    <StorelyButton className="hr-button hr-danger" variant="danger" onClick={()=>reviewLeave(s.id,l.id,'rejected')}><ThumbsDown size={13} strokeWidth={2.25}/> رفض</StorelyButton>
                                   </div>
                                 </div>
                               ))}
                             </div>
                           )}
                           {leaveRequests.length===0 ? (
-                            <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>ما فيه طلبات إجازة بعد</div>
+                            <div className="hr-inline-empty" style={{color:T.color.textMuted}}>ما فيه طلبات إجازة بعد</div>
                           ) : (
-                            <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
+                            <div className="hr-list">
                               {leaveRequests.filter((l:any)=>l.status!=='pending').map((l:any)=>(
-                                <div key={l.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'9px 12px',background:colors.bg,borderRadius:radius.sm}}>
-                                  <span style={{fontSize:12,color:colors.text}}>{l.start_date} → {l.end_date} ({l.days_count} يوم)</span>
-                                  <span style={{fontSize:11,fontWeight:700,color:l.status==='approved'?colors.primary:colors.danger}}>{l.status==='approved'?'موافَق':'مرفوض'}</span>
+                                <div className="hr-between" key={l.id}>
+                                  <span className="hr-supporting" style={{color:T.color.text}}>{l.start_date} → {l.end_date} ({l.days_count} يوم)</span>
+                                  <StorelyStatusBadge status={l.status==='approved'?'success':'danger'} className="hr-strong">{l.status==='approved'?'موافَق':'مرفوض'}</StorelyStatusBadge>
                                 </div>
                               ))}
                             </div>
@@ -678,20 +787,20 @@ export default function HRManagementPage() {
                     </div>
 
                     {/* طلبات الاستئذان */}
-                    <div>
-                      <div style={{fontSize:12,fontWeight:700,color:colors.text3,marginBottom:10}}>طلبات الاستئذان (انصراف مبكر)</div>
+                    <div className="hr-detail-section">
+                      <div className="hr-section-title" style={{color:T.color.textMuted}}>طلبات الاستئذان (انصراف مبكر)</div>
                       {loadingExcuse ? (
-                        <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
+                        <div className="hr-supporting" style={{color:T.color.textMuted}}>جاري التحميل...</div>
                       ) : excuseRequests.filter((e:any)=>e.status==='pending').length===0 ? (
-                        <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>ما فيه طلبات استئذان معلّقة</div>
+                        <div className="hr-inline-empty" style={{color:T.color.textMuted}}>ما فيه طلبات استئذان معلّقة</div>
                       ) : (
-                        <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                        <div className="hr-list">
                           {excuseRequests.filter((e:any)=>e.status==='pending').map((e:any)=>(
-                            <div key={e.id} style={{background:colors.warningLight,border:`1.5px solid ${colors.warningBorder}`,borderRadius:radius.md,padding:'12px 14px'}}>
-                              <div style={{fontSize:12,color:colors.text3,marginBottom:10}}>{e.reason || 'بدون سبب محدد'}</div>
-                              <div style={{display:'flex',gap:8}}>
-                                <button onClick={()=>reviewExcuse(s.id,e.id,'approve')} style={{flex:1,padding:'7px',background:colors.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><ThumbsUp size={13} strokeWidth={2.25}/> موافقة</button>
-                                <button onClick={()=>reviewExcuse(s.id,e.id,'reject')} style={{flex:1,padding:'7px',background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><ThumbsDown size={13} strokeWidth={2.25}/> رفض</button>
+                            <div className="hr-request" key={e.id}>
+                              <div className="hr-supporting" style={{color:T.color.textMuted}}>{e.reason || 'بدون سبب محدد'}</div>
+                              <div className="hr-actions">
+                                <StorelyButton className="hr-button hr-primary" variant="primary" onClick={()=>reviewExcuse(s.id,e.id,'approve')}><ThumbsUp size={13} strokeWidth={2.25}/> موافقة</StorelyButton>
+                                <StorelyButton className="hr-button hr-danger" variant="danger" onClick={()=>reviewExcuse(s.id,e.id,'reject')}><ThumbsDown size={13} strokeWidth={2.25}/> رفض</StorelyButton>
                               </div>
                             </div>
                           ))}
@@ -700,48 +809,48 @@ export default function HRManagementPage() {
                     </div>
 
                     {/* المهام */}
-                    <div>
-                      <div style={{fontSize:12,fontWeight:700,color:colors.text3,marginBottom:10,display:'flex',alignItems:'center',gap:6}}><ClipboardList size={14} strokeWidth={2.25}/> المهام</div>
-                      <div style={{background:colors.bg,borderRadius:radius.md,padding:'14px',marginBottom:12}}>
-                        <input value={newTaskTitle} onChange={e=>setNewTaskTitle(e.target.value)} placeholder="عنوان المهمة" style={{...inp(),fontSize:13,marginBottom:8}}/>
-                        <input value={newTaskDesc} onChange={e=>setNewTaskDesc(e.target.value)} placeholder="تفاصيل إضافية (اختياري)" style={{...inp(),fontSize:13,marginBottom:8}}/>
-                        <label style={{display:'flex',alignItems:'center',gap:8,marginBottom:10,cursor:'pointer'}}>
-                          <input type="checkbox" checked={newTaskPhoto} onChange={e=>setNewTaskPhoto(e.target.checked)} style={{accentColor:colors.primary,width:14,height:14}}/>
-                          <span style={{fontSize:12,color:colors.text2,display:'flex',alignItems:'center',gap:5}}><Camera size={13} strokeWidth={2.25}/> تتطلب صورة إثبات عند الإكمال</span>
+                    <div className="hr-detail-section">
+                      <div className="hr-inline" style={{color:T.color.textMuted}}><ClipboardList size={14} strokeWidth={2.25}/> المهام</div>
+                      <div className="hr-entry-form">
+                        <input className="hr-control" value={newTaskTitle} onChange={e=>setNewTaskTitle(e.target.value)} placeholder="عنوان المهمة" />
+                        <input className="hr-control" value={newTaskDesc} onChange={e=>setNewTaskDesc(e.target.value)} placeholder="تفاصيل إضافية (اختياري)" />
+                        <label className="hr-label">
+                          <input className="hr-checkbox" type="checkbox" checked={newTaskPhoto} onChange={e=>setNewTaskPhoto(e.target.checked)} />
+                          <span className="hr-inline" style={{color:T.color.text}}><Camera size={13} strokeWidth={2.25}/> تتطلب صورة إثبات عند الإكمال</span>
                         </label>
-                        <button onClick={()=>createTask(s.id)} disabled={savingTask||!newTaskTitle.trim()} style={{...btnSecondary,width:'100%',padding:'9px',fontSize:13,opacity:(savingTask||!newTaskTitle.trim())?0.6:1,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Plus size={14} strokeWidth={2.25}/> إنشاء مهمة</button>
+                        <StorelyButton className="hr-button hr-full" onClick={()=>createTask(s.id)} disabled={savingTask||!newTaskTitle.trim()}><Plus size={14} strokeWidth={2.25}/> إنشاء مهمة</StorelyButton>
                       </div>
                       {loadingTasks ? (
-                        <div style={{fontSize:12,color:colors.text4}}>جاري التحميل...</div>
+                        <div className="hr-supporting" style={{color:T.color.textMuted}}>جاري التحميل...</div>
                       ) : tasks.length===0 ? (
-                        <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>ما فيه مهام بعد</div>
+                        <div className="hr-inline-empty" style={{color:T.color.textMuted}}>ما فيه مهام بعد</div>
                       ) : (
-                        <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+                        <div className="hr-list">
                           {tasks.map((t:any)=>{
                             const st = TASK_STATUS_LABEL[t.status] || TASK_STATUS_LABEL.pending
                             return (
-                              <div key={t.id} style={{background:t.is_daily?colors.primaryLight:st.bg,border:`1px solid ${t.is_daily?colors.primaryBorder:colors.border2}`,borderRadius:radius.md,padding:'12px 14px'}}>
-                                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}>
-                                  <span style={{fontSize:13,fontWeight:700,color:colors.text,display:'flex',alignItems:'center',gap:6}}>
+                              <div className="hr-task" key={t.id}>
+                                <div className="hr-between">
+                                  <span className="hr-strong" style={{color:T.color.text}}>
                                     {t.title}
-                                    {t.is_daily && <span style={{fontSize:9,fontWeight:800,color:colors.primary,background:'white',padding:'2px 6px',borderRadius:99}}>🔁 يومية</span>}
+                                    {t.is_daily && <span className="hr-daily-badge" style={{color:T.color.navy}}>🔁 يومية</span>}
                                   </span>
-                                  {!t.template_id && !t.is_daily && <span style={{fontSize:10,fontWeight:700,color:st.color}}>{st.label}</span>}
+                                  {!t.template_id && !t.is_daily && <StorelyStatusBadge status={t.status==='confirmed'?'success':t.status==='rejected'?'danger':t.status==='completed'?'warning':'info'} className="hr-strong">{st.label}</StorelyStatusBadge>}
                                 </div>
-                                {t.description && <div style={{fontSize:12,color:colors.text3,marginBottom:8}}>{t.description}</div>}
+                                {t.description && <div className="hr-supporting" style={{color:T.color.textMuted}}>{t.description}</div>}
                                 {t.photo_url && (
-                                  <a href={t.photo_url} target="_blank" rel="noreferrer" style={{fontSize:11,color:colors.info,textDecoration:'underline',display:'inline-block',marginBottom:8}}>عرض صورة الإثبات</a>
+                                  <a className="hr-link" href={t.photo_url} target="_blank" rel="noreferrer" style={{color:T.color.info}}>عرض صورة الإثبات</a>
                                 )}
                                 {t.status==='completed' && (
-                                  <div style={{display:'flex',gap:8,marginTop:6,marginBottom:6}}>
-                                    <button onClick={()=>reviewTask(s.id,t.id,'confirmed')} style={{flex:1,padding:'7px',background:colors.primary,color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>تأكيد الإتمام</button>
-                                    <button onClick={()=>reviewTask(s.id,t.id,'rejected')} style={{flex:1,padding:'7px',background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>رفض</button>
+                                  <div className="hr-actions">
+                                    <StorelyButton className="hr-button hr-primary" variant="primary" onClick={()=>reviewTask(s.id,t.id,'confirmed')}>تأكيد الإتمام</StorelyButton>
+                                    <StorelyButton className="hr-button hr-danger" variant="danger" onClick={()=>reviewTask(s.id,t.id,'rejected')}>رفض</StorelyButton>
                                   </div>
                                 )}
                                 {!t.template_id && (
-                                  <button onClick={()=>toggleDaily(s.id,t.id)} style={{width:'100%',padding:'6px',marginTop:4,background:'transparent',border:`1px dashed ${t.is_daily?colors.primary:colors.border2}`,borderRadius:8,fontSize:11,fontWeight:700,color:t.is_daily?colors.primary:colors.text4,cursor:'pointer',fontFamily:'inherit'}}>
+                                  <StorelyButton className="hr-button hr-full hr-daily-toggle" aria-pressed={t.is_daily} onClick={()=>toggleDaily(s.id,t.id)}>
                                     {t.is_daily ? 'إيقاف التكرار اليومي' : 'اجعلها مهمة يومية 🔁'}
-                                  </button>
+                                  </StorelyButton>
                                 )}
                               </div>
                             )
@@ -755,7 +864,7 @@ export default function HRManagementPage() {
               </div>
             )
           })}
-        </div>
+        </StorelyCard>
       )}
     </div>
   )

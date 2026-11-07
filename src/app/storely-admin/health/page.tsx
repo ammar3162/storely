@@ -1,8 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { LEGACY_C } from '../_admin/kit'
-
-const C = LEGACY_C
+import { Activity, CircleAlert, CircleCheck } from 'lucide-react'
+import { StorelyButton, StorelyCard, StorelyEmptyState, StorelyPageHeader, StorelyStatusBadge } from '@/components/ui'
+import { storelyTokens } from '@/components/ui/design-tokens'
 
 export default function HealthPage() {
   const [logs, setLogs] = useState<any[]>([])
@@ -46,62 +46,70 @@ export default function HealthPage() {
   const latest = logs[0]
 
   if (!authChecked) return (
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{color:C.text2,fontSize:13}}>⏳ جاري التحقق...</div>
+    <div className="system-health-page" dir="rtl">
+      <style>{healthStyles}</style>
+      <div className="health-placeholder">جاري التحقق...</div>
     </div>
   )
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,flexWrap:'wrap' as const,gap:12}}>
-        <div>
-          <h1 style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:4}}>فحص صحة النظام</h1>
-          <div style={{fontSize:12,color:C.text3}}>فحص تلقائي دوري لمشاكل البيانات (منتجات بدون فرع، مؤسسات بدون فرع فعّال، تكرارات، إلخ)</div>
-        </div>
-        <div style={{display:'flex',gap:10}}>
-          <button onClick={runNow} disabled={running} style={{padding:'8px 16px',background:C.green+'22',color:C.green,border:`1px solid ${C.green}44`,borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-            {running?'جاري الفحص...':'⚡ فحص الآن'}
-          </button>
-        </div>
-      </div>
-
-      {error && <div style={{background:'#fef3f2',color:'#d92d20',padding:'10px 14px',borderRadius:10,fontSize:13,marginBottom:16}}>{error}</div>}
-
+    <div className="system-health-page" dir="rtl">
+      <style>{healthStyles}</style>
+      <StorelyPageHeader title="فحص صحة النظام" description="فحص تلقائي دوري لمشاكل البيانات (منتجات بدون فرع، مؤسسات بدون فرع فعّال، تكرارات، إلخ)"
+        actions={<StorelyButton onClick={runNow} disabled={running} variant="primary" icon={<Activity size={16} />}>{running?'جاري الفحص...':'فحص الآن'}</StorelyButton>} />
+      {error && <div className="health-error">{error}</div>}
       {latest && (
-        <div style={{background: latest.issues_count>0 ? '#fef3f2' : '#e7f6f5', border:`1.5px solid ${latest.issues_count>0?'#fecdca':'#99d9d6'}`, borderRadius:14, padding:'16px 18px', marginBottom:20}}>
-          <div style={{fontSize:14,fontWeight:800,color: latest.issues_count>0 ? '#d92d20' : C.green}}>
-            {latest.issues_count>0 ? `⚠️ ${latest.issues_count} مشكلة مكتشفة` : '✅ كل شي سليم'}
+        <div className="health-latest" data-issues={latest.issues_count>0}>
+          <div className="health-latest-heading">
+            {latest.issues_count>0 ? <CircleAlert size={20} className="shrink-0" /> : <CircleCheck size={20} className="shrink-0" />}
+            <span>{latest.issues_count>0 ? `${latest.issues_count} مشكلة مكتشفة` : 'كل شي سليم'}</span>
           </div>
-          <div style={{fontSize:11,color:C.text3,marginTop:4}}>آخر فحص: {new Date(latest.checked_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
+          <div className="health-date mt-2">آخر فحص: {new Date(latest.checked_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
         </div>
       )}
-
       {loading ? (
-        <div style={{textAlign:'center',padding:60,color:C.text3}}>جاري التحميل...</div>
+        <div className="health-placeholder">جاري التحميل...</div>
       ) : logs.length === 0 ? (
-        <div style={{background:C.card,borderRadius:14,padding:40,textAlign:'center',border:`1px solid ${C.border}`}}>
-          <div style={{fontSize:32,marginBottom:10}}>📭</div>
-          <div style={{color:C.text2}}>ما فيه سجلات فحص بعد</div>
-        </div>
+        <StorelyEmptyState title="ما فيه سجلات فحص بعد" />
       ) : (
-        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+        <StorelyCard className="health-workspace">
           {logs.map((log)=>(
-            <div key={log.id} style={{background:C.card,borderRadius:12,border:`1px solid ${C.border}`,padding:'14px 16px'}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:log.issues_count>0?10:0}}>
-                <div style={{fontSize:12,fontWeight:700,color: log.issues_count>0?C.red:C.green}}>
-                  {log.issues_count>0 ? `${log.issues_count} مشكلة` : 'سليم ✅'}
-                </div>
-                <div style={{fontSize:11,color:C.text3}}>{new Date(log.checked_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
+            <div key={log.id} className="health-record">
+              <div className="health-record-header">
+                <StorelyStatusBadge status={log.issues_count>0?'danger':'success'}>
+                  {log.issues_count>0 ? `${log.issues_count} مشكلة` : 'سليم'}
+                </StorelyStatusBadge>
+                <div className="health-date">{new Date(log.checked_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
               </div>
               {(log.issues||[]).map((issue:any,i:number)=>(
-                <div key={i} style={{fontSize:12,color:issue.severity==='critical'?'#d92d20':'#b54708',padding:'6px 10px',background:'#f9fafb',borderRadius:8,marginTop:6}}>
-                  <b>{issue.severity==='critical'?'🔴':'🟡'} {issue.type}:</b> {issue.detail}
+                <div key={i} className="health-issue" data-critical={issue.severity==='critical'}>
+                  <CircleAlert size={16} className="shrink-0 mt-1" aria-hidden="true" />
+                  <div className="min-w-0"><b>{issue.type}:</b> {issue.detail}</div>
                 </div>
               ))}
             </div>
           ))}
-        </div>
+        </StorelyCard>
       )}
     </div>
   )
 }
+
+const healthStyles = `
+  .system-health-page { min-width: 0; font-family: ${storelyTokens.typography.family}; color: ${storelyTokens.color.text}; font-size: ${storelyTokens.typography.body}px; line-height: ${storelyTokens.typography.lineHeight}; }
+  .system-health-page h1 { font-size: ${storelyTokens.typography.title}px; line-height: 1.5; }
+  .system-health-page .health-workspace { border-radius: ${storelyTokens.radius.card}; }
+  .system-health-page .health-latest { background: ${storelyTokens.color.surface}; border: 1px solid ${storelyTokens.color.successBorder}; border-radius: ${storelyTokens.radius.card}; padding: ${storelyTokens.spacing[5]}px; margin-bottom: ${storelyTokens.spacing[6]}px; }
+  .system-health-page .health-latest[data-issues=true] { border-color: ${storelyTokens.color.dangerBorder}; }
+  .system-health-page .health-latest-heading { display: flex; align-items: center; gap: ${storelyTokens.spacing[3]}px; color: ${storelyTokens.color.success}; font-size: ${storelyTokens.typography.section}px; font-weight: 600; overflow-wrap: anywhere; }
+  .system-health-page .health-latest[data-issues=true] .health-latest-heading { color: ${storelyTokens.color.danger}; }
+  .system-health-page .health-date { color: ${storelyTokens.color.textMuted}; font-size: ${storelyTokens.typography.supporting}px; }
+  .system-health-page .health-record { padding: ${storelyTokens.spacing[5]}px; border-bottom: 1px solid ${storelyTokens.color.border}; }
+  .system-health-page .health-record:last-child { border-bottom: 0; }
+  .system-health-page .health-record-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: ${storelyTokens.spacing[3]}px; }
+  .system-health-page .health-issue { display: flex; align-items: flex-start; gap: ${storelyTokens.spacing[3]}px; padding: ${storelyTokens.spacing[3]}px 0; margin-top: ${storelyTokens.spacing[3]}px; border-top: 1px solid ${storelyTokens.color.border}; color: ${storelyTokens.color.warning}; overflow-wrap: anywhere; }
+  .system-health-page .health-issue[data-critical=true] { color: ${storelyTokens.color.danger}; }
+  .system-health-page .health-error { background: ${storelyTokens.color.dangerBg}; color: ${storelyTokens.color.danger}; border: 1px solid ${storelyTokens.color.dangerBorder}; border-radius: ${storelyTokens.radius.control}; padding: ${storelyTokens.spacing[4]}px; margin-bottom: ${storelyTokens.spacing[4]}px; overflow-wrap: anywhere; }
+  .system-health-page .health-placeholder { padding: ${storelyTokens.spacing[8]}px ${storelyTokens.spacing[5]}px; text-align: center; color: ${storelyTokens.color.textMuted}; }
+  @media (max-width: 640px) { .system-health-page .health-latest, .system-health-page .health-record { padding: ${storelyTokens.spacing[4]}px; } }
+`

@@ -3,6 +3,9 @@ import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter } from 'next/navigation'
 import { getStaffOrg } from '@/lib/session'
+import { ClipboardList, Package, ShoppingCart } from 'lucide-react'
+import { StorelyButton, StorelyCard, StorelyPageHeader } from '@/components/ui'
+import { storelyTokens } from '@/components/ui/design-tokens'
 
 const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 
@@ -11,17 +14,6 @@ interface StaffSession {
   org_name: string; branch_name: string
   permissions: {dispense:boolean,inventory:boolean,purchases:boolean,reports:boolean}
 }
-
-const C = {
-  primary:'#029FA2', primaryD:'#0f766e', primaryL:'#f0fdfa', primaryB:'#99f6e4',
-  danger:'#e24b4a', dangerL:'#fef2f2',
-  warning:'#ba7517', warningL:'#fffbeb',
-  text:'#1c1c1a', text2:'#3d3d3a', text3:'#5f5e5a', text4:'#888780',
-  bg:'#f5f5f4', surface:'#ffffff', border:'#ebebea', border2:'#e0e0dd',
-}
-
-const inp: React.CSSProperties = {width:'100%',padding:'10px 12px',border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box' as const,background:'white',color:C.text,fontFamily:'inherit'}
-const lbl: React.CSSProperties = {fontSize:10,fontWeight:700,color:C.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.06em'}
 
 const UNITS_AR = ['قطعة','كيلو','كيس','كرتون','لتر','علبة','باكيت','درزن','رول','غرام','أخرى']
 const UNITS_EN = ['Piece','Kg','Bag','Carton','Liter','Can','Packet','Dozen','Roll','Gram','Other']
@@ -45,12 +37,12 @@ const PUI: Record<string,Record<'ar'|'en',string>> = {
   withoutVat:       {ar:'بدون ضريبة',en:'Without VAT'},
   vat15:            {ar:'ضريبة 15%',en:'15% VAT'},
   invoiceImage:     {ar:'صورة الفاتورة *',en:'Invoice Photo *'},
-  uploading:        {ar:'⏳ جاري الرفع...',en:'⏳ Uploading...'},
-  clickToUpload:    {ar:'📸 اضغط لرفع الفاتورة',en:'📸 Tap to upload invoice'},
+  uploading:        {ar:'جاري الرفع...',en:'Uploading...'},
+  clickToUpload:    {ar:'اضغط لرفع الفاتورة',en:'Tap to upload invoice'},
   note:             {ar:'ملاحظة (اختياري)',en:'Note (optional)'},
   notePh:           {ar:'أي تفاصيل إضافية...',en:'Any additional details...'},
-  submitting:       {ar:'⏳ جاري التسجيل...',en:'⏳ Submitting...'},
-  submitBtn:        {ar:'✅ تسجيل الشراء',en:'✅ Record Purchase'},
+  submitting:       {ar:'جاري التسجيل...',en:'Submitting...'},
+  submitBtn:        {ar:'تسجيل الشراء',en:'Record Purchase'},
   imgFailed:        {ar:'فشل رفع الصورة',en:'Failed to upload image'},
   imgUploaded:      {ar:'تم رفع الفاتورة ✓',en:'Invoice uploaded ✓'},
   selectVat:        {ar:'حدد هل الفاتورة تشمل الضريبة',en:'Please specify if the invoice includes VAT'},
@@ -168,127 +160,99 @@ export default function StaffPurchasesPage() {
   if(!session) return null
 
   return (
-    <div style={{minHeight:'100vh',background:C.bg,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:lang==='en'?'ltr':'rtl'}}>
+    <div className="min-h-screen bg-[var(--storely-background)] text-[var(--storely-navy)]" dir={lang==='en'?'ltr':'rtl'}>
       {showScan&&<Suspense fallback={null}><BarcodeScanner onScan={(code:string)=>{setShowScan(false);setForm(f=>({...f,sku:code}))}} onClose={()=>setShowScan(false)}/></Suspense>}
-
-      {/* Header */}
-      <div style={{background:'white',padding:'14px 20px',boxShadow:'0 1px 3px rgba(0,0,0,.06)',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100}}>
-        <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <button onClick={()=>router.push('/staff/dispense')}
-            style={{background:'none',border:'none',cursor:'pointer',fontSize:20,padding:'4px 8px',color:C.text2}}>{lang==='en'?'→':'←'}</button>
-          <div>
-            <div style={{fontSize:15,fontWeight:800,color:C.text}}>{pt('title',lang)}</div>
-            <div style={{fontSize:11,color:C.text4}}>{session.name} · {session.org_name}</div>
-          </div>
-        </div>
-      </div>
-
-      {toast&&<div style={{background:toast.startsWith('✅')?C.primaryL:C.dangerL,color:toast.startsWith('✅')?C.primary:C.danger,padding:'12px 20px',fontSize:13,fontWeight:700,textAlign:'center'}}>{toast}</div>}
-
-      <div style={{padding:'16px 20px',maxWidth:520,margin:'0 auto'}}>
-        <form onSubmit={handleSubmit}>
-
-          {/* نوع الفاتورة */}
-          <div style={{marginBottom:14}}>
-            <label style={lbl}>{pt('purchaseType',lang)}</label>
-            <div style={{display:'flex',gap:8}}>
-              {[['مخزون',pt('catInventory',lang),'📦'],['مشتريات',pt('catPurchases',lang),'🛒'],['أخرى',pt('catOther',lang),'📋']].map(([cat,label,icon])=>(
-                <button key={cat} type="button" onClick={()=>setForm(f=>({...f,category:cat}))}
-                  style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.category===cat?C.primary:C.border2}`,background:form.category===cat?C.primaryL:'white',color:form.category===cat?C.primary:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                  {icon} {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* اسم المنتج */}
-          <div style={{marginBottom:12}}>
-            <label style={lbl}>{pt('itemName',lang)}</label>
-            <input style={inp} value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder={pt('itemNamePh',lang)} required/>
-          </div>
-
-          {/* الكمية والوحدة */}
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
+      <div className="!mx-auto max-w-4xl !space-y-6 !px-4 !py-6 sm:!p-8">
+        <StorelyPageHeader title={pt('title',lang)} description={<>{session.name} · {session.org_name}</>}
+          actions={<StorelyButton onClick={()=>router.push('/staff/dispense')}>{lang==='en'?'→':'←'}</StorelyButton>} />
+        {toast&&<div className="storely-notice" style={{color:toast.startsWith('✅')?storelyTokens.color.success:storelyTokens.color.danger,borderColor:toast.startsWith('✅')?storelyTokens.color.successBorder:storelyTokens.color.dangerBorder}}>{toast}</div>}
+        <StorelyCard>
+          <form onSubmit={handleSubmit} className="!space-y-6 !p-5 sm:!p-6">
             <div>
-              <label style={lbl}>{pt('quantity',lang)}</label>
-              <input style={inp} type="number" min="0" value={form.qty} onChange={e=>setForm(f=>({...f,qty:e.target.value}))} placeholder="0"/>
-            </div>
-            <div>
-              <label style={lbl}>{pt('unit',lang)}</label>
-              <select style={inp} value={form.unit} onChange={e=>setForm(f=>({...f,unit:e.target.value}))}>
-                {(lang==='en'?UNITS_EN:UNITS_AR).map((u,i)=><option key={u} value={UNITS_AR[i]}>{u}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {/* المورد */}
-          <div style={{marginBottom:12}}>
-            <label style={lbl}>{pt('supplier',lang)}</label>
-            <input style={inp} list="sup-list" value={form.supplier} onChange={e=>setForm(f=>({...f,supplier:e.target.value}))} placeholder={pt('supplierPh',lang)} required/>
-            <datalist id="sup-list">{suppliers.map(s=><option key={s.id} value={s.name}/>)}</datalist>
-          </div>
-
-          {/* الضريبة */}
-          <div style={{marginBottom:12}}>
-            <label style={lbl}>{pt('vatQuestion',lang)}</label>
-            <div style={{display:'flex',gap:8}}>
-              {[{v:'yes',l:pt('vatYes',lang)},{v:'no',l:pt('vatNo',lang)}].map(o=>(
-                <button key={o.v} type="button" onClick={()=>setForm(f=>({...f,hasVat:o.v}))}
-                  style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.hasVat===o.v?C.primary:C.border2}`,background:form.hasVat===o.v?C.primaryL:'white',color:form.hasVat===o.v?C.primary:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                  {o.l}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* المبلغ */}
-          <div style={{marginBottom:12}}>
-            <label style={lbl}>{pt('totalAmount',lang)} ({curr}) *</label>
-            <input style={{...inp,fontSize:18,fontWeight:700,textAlign:'center' as const}} type="number" min="0" step="0.01" value={form.total_amount} onChange={e=>setForm(f=>({...f,total_amount:e.target.value}))} placeholder="0.00" required/>
-            {inputTotal>0&&form.hasVat&&(
-              <div style={{display:'flex',gap:8,marginTop:6}}>
-                <div style={{flex:1,background:C.bg,borderRadius:8,padding:'8px 10px',textAlign:'center' as const}}>
-                  <div style={{fontSize:9,color:C.text4,fontWeight:700}}>{pt('withoutVat',lang)}</div>
-                  <div style={{fontSize:14,fontWeight:700,color:C.text}}>{displayAmount}</div>
-                </div>
-                <div style={{flex:1,background:C.warningL,borderRadius:8,padding:'8px 10px',textAlign:'center' as const}}>
-                  <div style={{fontSize:9,color:C.warning,fontWeight:700}}>{pt('vat15',lang)}</div>
-                  <div style={{fontSize:14,fontWeight:700,color:C.warning}}>{displayVat}</div>
-                </div>
+              <label className="storely-field-label !mb-3 block">{pt('purchaseType',lang)}</label>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[['مخزون',pt('catInventory',lang),'📦'],['مشتريات',pt('catPurchases',lang),'🛒'],['أخرى',pt('catOther',lang),'📋']].map(([cat,label,icon])=>(
+                  <StorelyButton key={cat} type="button" onClick={()=>setForm(f=>({...f,category:cat}))}
+                    variant={form.category===cat?'primary':'secondary'} icon={icon==='📦'?<Package size={16} />:icon==='🛒'?<ShoppingCart size={16} />:<ClipboardList size={16} />}>
+                    {label}
+                  </StorelyButton>
+                ))}
               </div>
-            )}
-          </div>
-
-          {/* صورة الفاتورة */}
-          {form.hasVat==='yes'&&(
-            <div style={{marginBottom:12}}>
-              <label style={lbl}>{pt('invoiceImage',lang)}</label>
-              {previewUrl?(
-                <div style={{position:'relative' as const,marginBottom:8}}>
-                  <img src={previewUrl} alt="invoice" style={{width:'100%',borderRadius:10,maxHeight:160,objectFit:'cover' as const}}/>
-                  <button type="button" onClick={()=>{setPreviewUrl(null);setForm(f=>({...f,invoice_image:''}))}}
-                    style={{position:'absolute' as const,top:6,left:6,background:'rgba(0,0,0,.5)',color:'white',border:'none',borderRadius:'50%',width:24,height:24,cursor:'pointer',fontSize:14}}>×</button>
+            </div>
+            <div>
+              <label className="storely-field-label !mb-2 block">{pt('itemName',lang)}</label>
+              <input className="storely-input" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder={pt('itemNamePh',lang)} required/>
+            </div>
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="storely-field-label !mb-2 block">{pt('quantity',lang)}</label>
+                <input className="storely-input" type="number" min="0" value={form.qty} onChange={e=>setForm(f=>({...f,qty:e.target.value}))} placeholder="0"/>
+              </div>
+              <div>
+                <label className="storely-field-label !mb-2 block">{pt('unit',lang)}</label>
+                <select className="storely-input" value={form.unit} onChange={e=>setForm(f=>({...f,unit:e.target.value}))}>
+                  {(lang==='en'?UNITS_EN:UNITS_AR).map((u,i)=><option key={u} value={UNITS_AR[i]}>{u}</option>)}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="storely-field-label !mb-2 block">{pt('supplier',lang)}</label>
+              <input className="storely-input" list="sup-list" value={form.supplier} onChange={e=>setForm(f=>({...f,supplier:e.target.value}))} placeholder={pt('supplierPh',lang)} required/>
+              <datalist id="sup-list">{suppliers.map(s=><option key={s.id} value={s.name}/>)}</datalist>
+            </div>
+            <div>
+              <label className="storely-field-label !mb-3 block">{pt('vatQuestion',lang)}</label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[{v:'yes',l:pt('vatYes',lang)},{v:'no',l:pt('vatNo',lang)}].map(o=>(
+                  <StorelyButton key={o.v} type="button" onClick={()=>setForm(f=>({...f,hasVat:o.v}))} variant={form.hasVat===o.v?'primary':'secondary'}>
+                    {o.l}
+                  </StorelyButton>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="storely-field-label !mb-2 block">{pt('totalAmount',lang)} ({curr}) *</label>
+              <input className="storely-input text-center !text-lg font-semibold tabular-nums" type="number" min="0" step="0.01" value={form.total_amount} onChange={e=>setForm(f=>({...f,total_amount:e.target.value}))} placeholder="0.00" required/>
+              {inputTotal>0&&form.hasVat&&(
+                <div className="!mt-4 grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-[var(--radius-sm)] border border-[var(--storely-border)] !p-4">
+                    <div className="text-sm text-[var(--storely-muted)]">{pt('withoutVat',lang)}</div>
+                    <div className="!mt-2 text-lg font-semibold tabular-nums">{displayAmount}</div>
+                  </div>
+                  <div className="rounded-[var(--radius-sm)] border border-[var(--storely-border)] !p-4">
+                    <div className="text-sm text-[var(--storely-muted)]">{pt('vat15',lang)}</div>
+                    <div className="!mt-2 text-lg font-semibold tabular-nums">{displayVat}</div>
+                  </div>
                 </div>
-              ):(
-                <label style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'20px',border:`2px dashed ${C.border2}`,borderRadius:10,cursor:'pointer',background:C.bg}}>
-                  <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>e.target.files?.[0]&&handleImage(e.target.files[0])}/>
-                  <span style={{fontSize:13,color:C.text3,fontWeight:600}}>{uploading?pt('uploading',lang):pt('clickToUpload',lang)}</span>
-                </label>
               )}
             </div>
-          )}
-
-          {/* ملاحظة */}
-          <div style={{marginBottom:16}}>
-            <label style={lbl}>{pt('note',lang)}</label>
-            <textarea style={{...inp,resize:'none' as const,minHeight:60}} value={form.note} onChange={e=>setForm(f=>({...f,note:e.target.value}))} placeholder={pt('notePh',lang)}/>
-          </div>
-
-          <button type="submit" disabled={loading||uploading}
-            style={{width:'100%',padding:'14px',background:loading?'#9ca3af':C.primary,color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:800,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:`0 4px 14px rgba(22,163,74,.3)`}}>
-            {loading?pt('submitting',lang):pt('submitBtn',lang)}
-          </button>
-        </form>
+            {form.hasVat==='yes'&&(
+              <div>
+                <label className="storely-field-label !mb-2 block">{pt('invoiceImage',lang)}</label>
+                {previewUrl?(
+                  <div className="relative !mb-2">
+                    <img src={previewUrl} alt="invoice" className="max-h-64 w-full rounded-[var(--radius-sm)] border border-[var(--storely-border)] object-contain"/>
+                    <StorelyButton type="button" onClick={()=>{setPreviewUrl(null);setForm(f=>({...f,invoice_image:''}))}} variant="danger" className="absolute start-2 top-2 !w-10 !px-0">×</StorelyButton>
+                  </div>
+                ):(
+                  <label className="flex min-h-28 cursor-pointer items-center justify-center gap-3 rounded-[var(--radius-sm)] border border-dashed border-[var(--storely-border)] bg-white !p-5">
+                    <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>e.target.files?.[0]&&handleImage(e.target.files[0])}/>
+                    <span className="text-sm font-medium text-[var(--storely-muted)]">{uploading?pt('uploading',lang):pt('clickToUpload',lang)}</span>
+                  </label>
+                )}
+              </div>
+            )}
+            <div>
+              <label className="storely-field-label !mb-2 block">{pt('note',lang)}</label>
+              <textarea className="storely-input !h-auto min-h-24 resize-y" value={form.note} onChange={e=>setForm(f=>({...f,note:e.target.value}))} placeholder={pt('notePh',lang)}/>
+            </div>
+            <div className="border-t border-[var(--storely-border)] !pt-5">
+              <StorelyButton type="submit" disabled={loading||uploading} variant="primary" className="w-full sm:w-auto">
+                {loading?pt('submitting',lang):pt('submitBtn',lang)}
+              </StorelyButton>
+            </div>
+          </form>
+        </StorelyCard>
       </div>
     </div>
   )

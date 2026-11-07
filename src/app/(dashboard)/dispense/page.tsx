@@ -1,23 +1,27 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import PageIcon from '@/components/PageIcon'
+import { StorelyPageHeader } from '@/components/ui/page-header'
+import { StorelyButton } from '@/components/ui/button'
+import { StorelyCard } from '@/components/ui/card'
+import { StorelyStatusBadge } from '@/components/ui/status-badge'
+import { StorelyEmptyState } from '@/components/ui/empty-state'
+import { storelyTokens as T } from '@/components/ui/design-tokens'
+import { Package } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { toast } from '@/components/toast'
 import { cache } from '@/lib/cache'
 import { api } from '@/lib/api-client'
 import { getMe } from '@/lib/session'
-import { colors as dsColors } from '@/lib/ds'
 
-// موحّد مع نظام التصميم المشترك (@/lib/ds)
+// Aliases retain the existing presentation expressions and inherit central tokens.
 const C = {
-  primary:dsColors.primary, primaryD:dsColors.primaryDark, primaryL:dsColors.primaryLight, primaryB:dsColors.primaryBorder,
-  danger:dsColors.danger, dangerL:dsColors.dangerLight, dangerB:dsColors.dangerBorder,
-  warning:dsColors.warning, warningL:dsColors.warningLight, warningB:dsColors.warningBorder,
-  text:dsColors.text, text2:dsColors.text2, text3:dsColors.text3, text4:dsColors.text4,
-  bg:dsColors.bg, surface:dsColors.surface, border:dsColors.border, border2:dsColors.border2,
+  primary:T.color.navy, primaryD:T.color.navy, primaryL:T.color.infoBg, primaryB:T.color.infoBorder,
+  danger:T.color.danger, dangerL:T.color.dangerBg, dangerB:T.color.dangerBorder,
+  warning:T.color.warning, warningL:T.color.warningBg, warningB:T.color.warningBorder,
+  text:T.color.text, text2:T.color.text, text3:T.color.textMuted, text4:T.color.textSubtle,
+  bg:T.color.background, surface:T.color.surface, border:T.color.border, border2:T.color.infoBorder,
 }
-
-const CAT_COLORS = ['#203640','#4F6678','#dc2626','#d97706','#717553','#0891b2','#db2777','#65a30d']
+const CAT_COLORS = [T.color.navy]
 const OTHER = 'أخرى'
 
 export default function DispensePage() {
@@ -116,154 +120,217 @@ export default function DispensePage() {
   const lowCount=products.filter(p=>p.qty>0&&p.qty<=p.reorder_point).length
 
   if(loading) return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:'0 4px'}}>
-      <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.4s ease infinite}`}</style>
-      <div style={{height:24,width:120,background:'#e5e7eb',borderRadius:6,marginBottom:14}} className="sk"/>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(100px,1fr))',gap:8}}>
-        {Array(12).fill(0).map((_,i)=><div key={i} className="sk" style={{height:80,borderRadius:10,background:'#f0f0f0'}}/>)}
+    <div className="dp-loading">
+      <style>{`
+        @keyframes dispenseSkeleton{0%,100%{opacity:1}50%{opacity:.4}}
+        .dp-loading{font-family:${T.typography.family};direction:rtl;max-width:1200px;margin:auto;padding:${T.spacing[6]}px;background:${C.bg};border-radius:${T.radius.panel}}
+        .dp-loading .sk{animation:dispenseSkeleton 1.4s ease infinite;background:${C.border};border-radius:${T.radius.control}}
+        .dp-loading-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:${T.spacing[4]}px}
+        .dp-loading-grid .sk{height:148px}
+        @media(prefers-reduced-motion:reduce){.dp-loading .sk{animation:none}}
+      `}</style>
+      <div className="sk" style={{height:24,width:120,marginBottom:T.spacing[6]}}/>
+      <div className="dp-loading-grid">
+        {Array(12).fill(0).map((_,i)=><div key={i} className="sk"/>)}
       </div>
     </div>
   )
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',opacity:visible?1:0,transition:'opacity .3s'}}>
+    <div className="dispense-page" style={{opacity:visible?1:0,transition:'opacity .3s'}}>
       <style>{`
-        *{box-sizing:border-box}
-        @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}
-        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-        .chip{padding:5px 12px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;border:1.5px solid;transition:all .15s;font-family:inherit}
-        .chip:active{transform:scale(.95)}
-        .qbtn{width:44px;height:44px;border-radius:10px;border:1.5px solid #e5e7eb;background:#f9fafb;font-size:20px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit}
-        .qbtn:active{background:#F8EEDF;border-color:#203640;color:#203640}
-        input:focus{border-color:#203640!important;box-shadow:0 0 0 3px #F8EEDF!important;outline:none!important}
-        /* Product card */
-        .pcard{
-          background:white;border-radius:12px;padding:10px 8px;
-          cursor:pointer;border:1.5px solid #f0f0f0;
-          box-shadow:0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03);
-          transition:all .15s;font-family:inherit;
-          display:flex;flex-direction:column;align-items:center;
-          text-align:center;gap:6px;
+        @keyframes dispenseSlideUp{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+        .dispense-page{font-family:${T.typography.family};direction:rtl;line-height:${T.typography.lineHeight};max-width:1200px;margin:0 auto;padding:${T.spacing[6]}px;background:${C.bg};border-radius:${T.radius.panel};color:${C.text};min-width:0}
+        .dispense-page *{box-sizing:border-box}
+        .dispense-page>header{margin-bottom:${T.spacing[6]}px;gap:${T.spacing[4]}px}
+        .dispense-page>header h1{font-size:${T.typography.title}px;line-height:1.6}
+        .dispense-page>header p{font-size:${T.typography.supporting}px;line-height:${T.typography.lineHeight}}
+        .dispense-page .dp-workspace{background:${C.surface};border-color:${C.border};border-radius:${T.radius.card};overflow:visible}
+        .dp-toolbar{padding:${T.spacing[6]}px;border-bottom:1px solid ${C.border}}
+        .dp-search{position:relative;margin-bottom:${T.spacing[4]}px}
+        .dp-search>svg{width:16px;height:16px;inset-inline-start:${T.spacing[3]}px!important}
+        .dispense-page input{font-family:inherit;color:${C.text};background:${C.surface};border:1px solid ${C.border2};border-radius:${T.radius.control};font-size:${T.typography.body}px;line-height:${T.typography.lineHeight};height:44px;min-width:0}
+        .dispense-page input:focus-visible,.dispense-page button:focus-visible{outline:2px solid ${C.primary};outline-offset:2px;box-shadow:${T.shadow.focus}}
+        .dp-search-input{width:100%;padding:${T.spacing[2]}px ${T.spacing[8]}px ${T.spacing[2]}px ${T.spacing[3]}px}
+        .dp-categories{display:flex;flex-wrap:wrap;gap:${T.spacing[2]}px}
+        .dispense-page .chip{height:auto;min-height:36px;padding:${T.spacing[2]}px ${T.spacing[3]}px;border:1px solid;border-radius:${T.radius.control};font-size:${T.typography.supporting}px;line-height:1.5;font-weight:600;font-family:inherit;white-space:normal;gap:${T.spacing[1]}px;text-align:start}
+        .dispense-page .chip span{font-size:inherit!important;margin:0!important}
+        .dispense-page .dp-button{min-height:40px;height:auto;padding:${T.spacing[2]}px ${T.spacing[4]}px;gap:${T.spacing[2]}px;border-radius:${T.radius.control};border:1px solid ${C.border2};background:${C.surface};color:${C.primary};font-family:inherit;font-size:${T.typography.body}px;font-weight:600;line-height:1.6;white-space:normal;box-shadow:none;cursor:pointer}
+        .dispense-page .dp-button:hover:not(:disabled){background:${C.primaryL};border-color:${C.primaryB}}
+        .dispense-page .dp-button svg{width:16px;height:16px;flex-shrink:0}
+        .dispense-page .dp-button[aria-pressed=true]{background:${C.primaryL};border-color:${C.primary};color:${C.primary}}
+        .dispense-page .dp-button:disabled{opacity:.5;cursor:not-allowed}
+        .dispense-page .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:${T.spacing[4]}px;padding:${T.spacing[6]}px}
+        .dispense-page .pcard{display:flex;flex-direction:column;align-items:flex-start;gap:${T.spacing[2]}px;min-height:148px;min-width:0;padding:${T.spacing[4]}px;background:${C.surface};border:1px solid ${C.border};border-radius:${T.radius.card};font-family:inherit;text-align:start;cursor:pointer;transition:border-color .15s,background .15s}
+        .dispense-page .pcard:hover{border-color:${C.primaryB};background:${C.bg}}
+        .dispense-page .pcard.selected{border-color:${C.primary};background:${C.primaryL}}
+        .dispense-page .pcard.out{cursor:not-allowed;background:${C.bg}}
+        .dp-product-qty{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.4}
+        .dp-product-name{font-size:${T.typography.body}px;font-weight:600;line-height:${T.typography.lineHeight};overflow-wrap:anywhere;flex:1;color:${C.text}}
+        .dp-product-unit{font-size:${T.typography.supporting}px;color:${C.text3}}
+        .dp-empty{margin:${T.spacing[6]}px;border-color:${C.border};border-radius:${T.radius.card}}
+        .dp-empty>div:first-child{background:${C.bg};border-color:${C.border}}
+        .dp-overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:${T.spacing[6]}px}
+        .dp-backdrop{position:absolute;inset:0;background:${T.color.backdrop}}
+        .dp-sheet{position:relative;width:100%;max-height:calc(100dvh - 48px);background:${C.surface};border:1px solid ${C.border};border-radius:${T.radius.panel};box-shadow:${T.shadow.panel};display:flex;flex-direction:column;min-height:0;overflow-y:auto;overscroll-behavior:contain;animation:dispenseSlideUp .2s ease;direction:rtl;font-family:${T.typography.family}}
+        .dp-selection-sheet{max-width:480px;padding-bottom:env(safe-area-inset-bottom)}
+        .dp-history-sheet{max-width:720px}
+        .dp-sheet-handle{width:32px;height:4px;border-radius:${T.radius.control};background:${C.border2};margin:${T.spacing[3]}px auto 0;flex-shrink:0}
+        .dp-sheet-header,.dp-selection-header{display:flex;justify-content:space-between;align-items:flex-start;gap:${T.spacing[4]}px}
+        .dp-sheet-header{padding:${T.spacing[5]}px ${T.spacing[6]}px;border-bottom:1px solid ${C.border};flex-shrink:0}
+        .dp-sheet-header>.dp-sheet-handle{display:none}
+        .dp-sheet-header>span{font-size:${T.typography.section}px;font-weight:600}
+        .dp-selection-header{margin-bottom:${T.spacing[6]}px}
+        .dp-selection-header>div{min-width:0;overflow-wrap:anywhere}
+        .dp-selection-header>div>div:first-child{font-size:${T.typography.section}px!important;font-weight:600!important}
+        .dp-selection-header>div>div+div{font-size:${T.typography.supporting}px!important;line-height:1.8;margin-top:${T.spacing[1]}px!important}
+        .dispense-page .dp-close{width:36px;height:36px;min-height:36px;padding:0;flex-shrink:0}
+        .dp-sheet-body{padding:${T.spacing[6]}px ${T.spacing[6]}px 0}
+        .dp-modes{display:flex;gap:${T.spacing[2]}px;margin-bottom:${T.spacing[6]}px;padding-bottom:${T.spacing[4]}px;border-bottom:1px solid ${C.border}}
+        .dp-mode{flex:1}
+        .dp-field-group{margin-bottom:${T.spacing[6]}px}
+        .dp-reasons{display:flex;flex-wrap:wrap;gap:${T.spacing[2]}px;margin-top:${T.spacing[2]}px}
+        .dispense-page .dp-reason,.dispense-page .dp-preset{min-height:36px;padding:${T.spacing[2]}px ${T.spacing[3]}px;font-size:${T.typography.supporting}px}
+        .dp-stock-track{height:4px;background:${C.border};border-radius:${T.radius.control};overflow:hidden;margin-bottom:${T.spacing[6]}px}
+        .dp-stock-level{height:100%;border-radius:inherit}
+        .dp-quantity-controls{display:flex;align-items:center;justify-content:center;gap:${T.spacing[3]}px;margin-bottom:${T.spacing[3]}px;direction:ltr}
+        .dispense-page .qbtn{width:44px;height:44px;min-height:44px;padding:0;font-size:22px}
+        .dispense-page .dp-quantity-input{width:100px;text-align:center;font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;padding:${T.spacing[1]}px}
+        .dp-quantity-presets{display:flex;justify-content:center;flex-wrap:wrap;gap:${T.spacing[2]}px}
+        .dp-warning{background:${C.dangerL};border:1px solid ${C.dangerB};border-radius:${T.radius.control};padding:${T.spacing[3]}px ${T.spacing[4]}px;margin-bottom:${T.spacing[4]}px;font-size:${T.typography.body}px;color:${C.danger}}
+        .dp-sheet-footer{position:sticky;bottom:0;flex-shrink:0;background:${C.surface};padding:${T.spacing[4]}px ${T.spacing[6]}px ${T.spacing[6]}px;border-top:1px solid ${C.border}}
+        .dispense-page .dp-submit{width:100%;min-height:44px;background:${C.primary};color:${C.surface};border-color:${C.primary}}
+        .dispense-page .dp-submit:hover:not(:disabled){background:${C.primaryD};border-color:${C.primaryD}}
+        .dp-field-label{font-size:${T.typography.body}px;font-weight:600;color:${C.text3};margin-bottom:${T.spacing[2]}px}
+        .dp-history-empty{padding:${T.spacing[8]}px;text-align:center;color:${C.text3};font-size:${T.typography.body}px}
+        .dp-history-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid;border-radius:${T.radius.control};font-size:${T.typography.body}px}
+        .dp-history-list{overflow-y:auto;min-height:0;flex:1}
+        .dp-history-row{display:flex;align-items:flex-start;gap:${T.spacing[3]}px;padding:${T.spacing[4]}px ${T.spacing[6]}px;border-bottom:1px solid ${C.border}}
+        .dp-history-row:last-child{border-bottom:0}
+        .dp-history-row>div:nth-child(2)>div:first-child{font-size:${T.typography.body}px!important;white-space:normal!important;overflow-wrap:anywhere;line-height:${T.typography.lineHeight}}
+        .dp-history-row>div:nth-child(2)>div+div{font-size:${T.typography.supporting}px!important;margin-top:${T.spacing[1]}px!important;line-height:1.8}
+        @media(max-width:640px){
+          .dispense-page{padding:${T.spacing[4]}px}
+          .dp-toolbar{padding:${T.spacing[4]}px}
+          .dispense-page .pgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:${T.spacing[3]}px;padding:${T.spacing[4]}px}
+          .dispense-page .pcard{padding:${T.spacing[3]}px}
+          .dp-overlay{padding:0;align-items:flex-end}
+          .dp-sheet{max-height:90dvh;border-bottom:0;border-end-start-radius:0;border-end-end-radius:0}
+          .dp-sheet-body{padding:${T.spacing[5]}px ${T.spacing[5]}px 0}
+          .dp-sheet-header,.dp-history-row{padding:${T.spacing[4]}px ${T.spacing[5]}px}
+          .dp-sheet-footer{padding:${T.spacing[4]}px ${T.spacing[5]}px calc(${T.spacing[5]}px + env(safe-area-inset-bottom))}
+          .dp-history-row{flex-wrap:wrap}
+          .dp-history-row>span:last-child{margin-inline-start:auto}
+          .dp-modes{gap:${T.spacing[2]}px}
+          .dispense-page .dp-mode{padding-inline:${T.spacing[2]}px;font-size:${T.typography.supporting}px}
         }
-        .pcard:hover{border-color:#203640;transform:translateY(-1px);box-shadow:0 4px 12px rgba(22,163,74,.1)}
-        .pcard:active{transform:scale(.97)}
-        .pcard.selected{border-color:#203640;background:#F8EEDF;box-shadow:0 0 0 2px #20364040}
-        .pcard.out{opacity:.45;cursor:not-allowed}
-        .pcard.out:hover{transform:none;box-shadow:none;border-color:#f0f0f0}
-        /* Grid — auto fill */
-        .pgrid{
-          display:grid;
-          grid-template-columns:repeat(auto-fill,minmax(110px,1fr));
-          gap:8px;
-        }
-        @media(min-width:640px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}}
-        @media(min-width:1024px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}}
+        @media(prefers-reduced-motion:reduce){.dispense-page,.dispense-page *{animation:none!important;transition:none!important}}
       `}</style>
 
       {/* Header */}
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-        <div>
-          <h1 style={{fontSize:18,fontWeight:800,color:C.text,margin:0,display:'flex',alignItems:'center',gap:10}}><PageIcon size={32}/>الصرف</h1>
-          <p style={{fontSize:10,color:C.text3,margin:'2px 0 0'}}>
+      <StorelyPageHeader
+        title="الصرف"
+        description={<>
             {products.length} صنف
             {outCount>0&&<span style={{color:C.danger,fontWeight:700}}> · {outCount} نفد</span>}
             {lowCount>0&&<span style={{color:C.warning,fontWeight:700}}> · {lowCount} ناقص</span>}
-          </p>
-        </div>
-        <button onClick={()=>setShowHistory(true)}
-          style={{display:'flex',alignItems:'center',gap:5,padding:'7px 12px',background:'white',border:`1.5px solid ${C.border2}`,borderRadius:9,fontSize:11,fontWeight:700,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>
+          </>}
+        actions={<StorelyButton className="dp-button" onClick={()=>setShowHistory(true)}>
           <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           السجل ({history.length})
-        </button>
-      </div>
+        </StorelyButton>}
+      />
 
-      {/* Search */}
-      <div style={{position:'relative',marginBottom:10}}>
-        <svg style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}} width="13" height="13" fill="none" stroke={C.text4} strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input value={search} onChange={e=>{setSearch(e.target.value);setActiveCat('كل المنتجات')}}
-          style={{width:'100%',padding:'9px 32px 9px 12px',border:`1.5px solid ${C.border2}`,borderRadius:9,fontSize:12,background:'white',color:C.text,fontFamily:'inherit'}}
-          placeholder="ابحث..."/>
-      </div>
+      <StorelyCard className="dp-workspace">
+        <div className="dp-toolbar">
+        {/* Search */}
+        <div className="dp-search">
+          <svg style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}} width="13" height="13" fill="none" stroke={C.text4} strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input className="dp-search-input" value={search} onChange={e=>{setSearch(e.target.value);setActiveCat('كل المنتجات')}}
 
-      {/* Category chips */}
-      <div style={{display:'flex',gap:5,overflowX:'auto',paddingBottom:8,marginBottom:12,scrollbarWidth:'none'}}>
-        {allCats.map(cat=>{
-          const active=activeCat===cat
-          const color=cat==='كل المنتجات'?C.primary:catColor(cat)
-          return (
-            <button key={cat} className="chip" onClick={()=>setActiveCat(cat)}
-              style={{background:active?color:'white',color:active?'white':C.text3,borderColor:active?color:C.border2,flexShrink:0}}>
-              {cat==='كل المنتجات'?'الكل':cat}
-              {cat!=='كل المنتجات'&&<span style={{opacity:.6,fontSize:9,marginRight:2}}>({catMap[cat]})</span>}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Products Grid */}
-      {displayed.length===0 ? (
-        <div style={{background:'white',borderRadius:12,padding:'40px 20px',textAlign:'center',border:`1px solid ${C.border}`}}>
-          <div style={{fontSize:36,marginBottom:8}}>📦</div>
-          <div style={{fontSize:13,fontWeight:700,color:C.text2}}>{search?'لا توجد نتائج':'لا يوجد منتجات'}</div>
+            placeholder="ابحث..."/>
         </div>
-      ) : (
-        <div className="pgrid">
-          {displayed.map(p=>{
-            const isOut=p.qty===0
-            const isLow=!isOut&&p.qty<=p.reorder_point
-            const sc=isOut?C.danger:isLow?C.warning:C.primary
-            const isSel=selected?.id===p.id
+
+        {/* Category chips */}
+        <div className="dp-categories">
+          {allCats.map(cat=>{
+            const active=activeCat===cat
+            const color=cat==='كل المنتجات'?C.primary:catColor(cat)
             return (
-              <button key={p.id}
-                className={`pcard${isSel?' selected':''}${isOut?' out':''}`}
-                onClick={()=>{if(isOut)return;setSelected(p);setQty('1')}}>
-                {/* Qty */}
-                <div style={{fontSize:22,fontWeight:900,color:sc,lineHeight:1}}>{p.qty}</div>
-                {/* Name */}
-                <div style={{fontSize:11,fontWeight:700,color:C.text,lineHeight:1.3,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' as any}}>{p.name}</div>
-                {/* Unit */}
-                <div style={{fontSize:9,color:C.text4}}>{p.unit}</div>
-                {/* Status */}
-                <span style={{fontSize:8,fontWeight:700,color:sc,background:isOut?C.dangerL:isLow?C.warningL:C.primaryL,padding:'2px 8px',borderRadius:99,border:`1px solid ${isOut?C.dangerB:isLow?C.warningB:C.primaryB}`}}>
-                  {isOut?'نفد':isLow?'ناقص':'كافٍ'}
-                </span>
-              </button>
+              <StorelyButton key={cat} className="chip" onClick={()=>setActiveCat(cat)}
+                style={{background:active?color:C.surface,color:active?C.surface:C.text3,borderColor:active?color:C.border2}}>
+                {cat==='كل المنتجات'?'الكل':cat}
+                {cat!=='كل المنتجات'&&<span style={{opacity:.6,fontSize:T.typography.supporting,marginRight:T.spacing[1]}}>({catMap[cat]})</span>}
+              </StorelyButton>
             )
           })}
         </div>
-      )}
+
+        </div>
+
+        {/* Products Grid */}
+        {displayed.length===0 ? (
+          <StorelyEmptyState className="dp-empty" icon={<Package size={20}/>} title={search?'لا توجد نتائج':'لا يوجد منتجات'}/>
+        ) : (
+          <div className="pgrid">
+            {displayed.map(p=>{
+              const isOut=p.qty===0
+              const isLow=!isOut&&p.qty<=p.reorder_point
+              const sc=isOut?C.danger:isLow?C.warning:C.primary
+              const isSel=selected?.id===p.id
+              return (
+                <button key={p.id}
+                  className={`pcard${isSel?' selected':''}${isOut?' out':''}`}
+                  onClick={()=>{if(isOut)return;setSelected(p);setQty('1')}}>
+                  {/* Qty */}
+                  <div className="dp-product-qty" style={{color:sc}}>{p.qty}</div>
+                  {/* Name */}
+                  <div className="dp-product-name">{p.name}</div>
+                  {/* Unit */}
+                  <div className="dp-product-unit">{p.unit}</div>
+                  {/* Status */}
+                  <StorelyStatusBadge status={isOut?'danger':isLow?'warning':'success'} >
+                    {isOut?'نفد':isLow?'ناقص':'كافٍ'}
+                  </StorelyStatusBadge>
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+      </StorelyCard>
 
       {/* History Sheet */}
       {showHistory && (
-        <div style={{position:'fixed',inset:0,zIndex:900,display:'flex',alignItems:'flex-end'}}>
-          <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)'}} onClick={()=>setShowHistory(false)}/>
-          <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxHeight:'75vh',display:'flex',flexDirection:'column',position:'relative',animation:'slideUp .3s ease',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
-            <div style={{padding:'14px 20px',borderBottom:`1px solid ${C.border}`,display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
-              <div style={{width:32,height:3,borderRadius:99,background:C.border2,position:'absolute',top:8,left:'50%',transform:'translateX(-50%)'}}/>
-              <span style={{fontSize:14,fontWeight:700,color:C.text}}>آخر الصرف</span>
-              <button onClick={()=>setShowHistory(false)} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:C.text3,padding:4}}>✕</button>
+        <div className="dp-overlay" style={{zIndex:900}}>
+          <div className="dp-backdrop" onClick={()=>setShowHistory(false)}/>
+          <div className="dp-sheet dp-history-sheet">
+            <div className="dp-sheet-header">
+              <div className="dp-sheet-handle" />
+              <span>آخر الصرف</span>
+              <StorelyButton className="dp-button dp-close" onClick={()=>setShowHistory(false)}>✕</StorelyButton>
             </div>
-            <div style={{overflowY:'auto',flex:1}}>
+            <div className="dp-history-list">
               {history.length===0?(
-                <div style={{padding:'32px',textAlign:'center',color:C.text4,fontSize:12}}>لا توجد عمليات بعد</div>
+                <div className="dp-history-empty">لا توجد عمليات بعد</div>
               ):history.map((h,i)=>{
                 const isWaste=h.type==='waste'
-                const badgeColor=isWaste?'#d97706':C.danger
+                const badgeColor=isWaste?C.warning:C.danger
                 const badgeBg=isWaste?C.warningL:C.dangerL
                 const badgeBorder=isWaste?C.warningB:C.dangerB
                 return (
-                <div key={h.id} style={{display:'flex',alignItems:'center',gap:10,padding:'11px 20px',borderBottom:i<history.length-1?`1px solid ${C.border}`:'none'}}>
-                  <div style={{width:30,height:30,borderRadius:8,background:badgeBg,border:`1px solid ${badgeBorder}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:13}}>
+                <div className="dp-history-row" key={h.id} style={{borderBottom:i<history.length-1?`1px solid ${C.border}`:'none'}}>
+                  <div className="dp-history-icon" style={{background:badgeBg,borderColor:badgeBorder}}>
                     {isWaste?'🗑️':<svg width="12" height="12" fill="none" stroke={C.danger} strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                    <div style={{fontSize:T.typography.body,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                       {(h.products as any)?.name}
-                      {isWaste&&<span style={{fontSize:9,fontWeight:700,color:'#b45309',background:'#fffbeb',padding:'1px 6px',borderRadius:99,marginRight:6,border:'1px solid #fde68a'}}>هدر{h.waste_reason?` · ${h.waste_reason}`:''}</span>}
+                      {isWaste&&<span style={{fontSize:T.typography.supporting,fontWeight:700,color:C.warning,background:C.warningL,padding:'1px 6px',borderRadius:T.radius.control,marginRight:T.spacing[2],border:`1px solid ${C.warningB}`}}>هدر{h.waste_reason?` · ${h.waste_reason}`:''}</span>}
                     </div>
-                    <div style={{fontSize:10,color:C.text4,marginTop:1}}>{new Date(h.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                    <div style={{fontSize:T.typography.supporting,color:C.text4,marginTop:T.spacing[1]}}>{new Date(h.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
                   </div>
-                  <span style={{fontSize:13,fontWeight:800,color:badgeColor,flexShrink:0}}>{Math.abs(h.qty_change)} <span style={{fontSize:10,color:C.text4,fontWeight:400}}>{(h.products as any)?.unit}</span></span>
+                  <span style={{fontSize:T.typography.body,fontWeight:800,color:badgeColor,flexShrink:0}}>{Math.abs(h.qty_change)} <span style={{fontSize:T.typography.supporting,color:C.text4,fontWeight:400}}>{(h.products as any)?.unit}</span></span>
                 </div>
               )})}
             </div>
@@ -273,83 +340,77 @@ export default function DispensePage() {
 
       {/* Dispense Sheet */}
       {selected && (
-        <div style={{position:'fixed',inset:0,zIndex:1000,display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
-          <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.5)',backdropFilter:'blur(6px)'}} onClick={()=>{setSelected(null);setQty('')}}/>
-          <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxWidth:480,position:'relative',animation:'slideUp .25s ease',paddingBottom:'env(safe-area-inset-bottom)',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
-            <div style={{width:32,height:3,borderRadius:99,background:C.border2,margin:'10px auto 0'}}/>
-            <div style={{padding:'14px 20px 0'}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+        <div className="dp-overlay" style={{zIndex:1000}}>
+          <div className="dp-backdrop" onClick={()=>{setSelected(null);setQty('')}}/>
+          <div className="dp-sheet dp-selection-sheet">
+            <div className="dp-sheet-handle" />
+            <div className="dp-sheet-body">
+              <div className="dp-selection-header">
                 <div>
-                  <div style={{fontSize:16,fontWeight:800,color:C.text}}>{selected.name}</div>
-                  <div style={{fontSize:11,color:C.text3,marginTop:2}}>متاح: <b style={{color:C.primary,fontSize:14}}>{selected.qty}</b> {selected.unit}</div>
+                  <div style={{fontSize:T.typography.section,fontWeight:800,color:C.text}}>{selected.name}</div>
+                  <div style={{fontSize:T.typography.supporting,color:C.text3,marginTop:T.spacing[1]}}>متاح: <b style={{color:C.primary,fontSize:T.typography.body}}>{selected.qty}</b> {selected.unit}</div>
                 </div>
-                <button onClick={()=>{setSelected(null);setQty('');setWasteMode(false);setWasteReason('')}} style={{width:28,height:28,borderRadius:'50%',background:C.bg,border:`1px solid ${C.border2}`,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}}>✕</button>
+                <StorelyButton className="dp-button dp-close" onClick={()=>{setSelected(null);setQty('');setWasteMode(false);setWasteReason('')}}>✕</StorelyButton>
               </div>
 
-              <div style={{display:'flex',gap:6,marginBottom:14,background:C.bg,padding:4,borderRadius:12}}>
-                <button onClick={()=>{setWasteMode(false);setWasteReason('')}}
-                  style={{flex:1,padding:'9px',borderRadius:9,border:'none',background:!wasteMode?'white':'transparent',color:!wasteMode?C.danger:C.text3,fontWeight:800,fontSize:13,cursor:'pointer',fontFamily:'inherit',boxShadow:!wasteMode?'0 1px 4px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
+              <div className="dp-modes">
+                <StorelyButton className="dp-button dp-mode" aria-pressed={!wasteMode} onClick={()=>{setWasteMode(false);setWasteReason('')}}>
                   📤 صرف عادي
-                </button>
-                <button onClick={()=>setWasteMode(true)}
-                  style={{flex:1,padding:'9px',borderRadius:9,border:'none',background:wasteMode?'white':'transparent',color:wasteMode?'#b45309':C.text3,fontWeight:800,fontSize:13,cursor:'pointer',fontFamily:'inherit',boxShadow:wasteMode?'0 1px 4px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
+                </StorelyButton>
+                <StorelyButton className="dp-button dp-mode" aria-pressed={wasteMode} onClick={()=>setWasteMode(true)}>
                   🗑️ تسجيل هدر
-                </button>
+                </StorelyButton>
               </div>
 
               {wasteMode && (
-                <div style={{marginBottom:14}}>
-                  <div style={{fontSize:12,fontWeight:700,color:C.text3,marginBottom:6}}>سبب الهدر *</div>
-                  <div style={{display:'flex',flexWrap:'wrap' as const,gap:6}}>
+                <div className="dp-field-group">
+                  <div className="dp-field-label">سبب الهدر *</div>
+                  <div className="dp-reasons">
                     {WASTE_REASONS.map(r=>(
-                      <button key={r} onClick={()=>setWasteReason(r)}
-                        style={{padding:'6px 12px',borderRadius:99,border:`1.5px solid ${wasteReason===r?'#d97706':C.border2}`,background:wasteReason===r?'#fffbeb':'white',color:wasteReason===r?'#b45309':C.text3,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                      <StorelyButton className="dp-button dp-reason" aria-pressed={wasteReason===r} key={r} onClick={()=>setWasteReason(r)}>
                         {r}
-                      </button>
+                      </StorelyButton>
                     ))}
                   </div>
                 </div>
               )}
 
-              <div style={{height:5,background:C.border,borderRadius:99,overflow:'hidden',marginBottom:18}}>
-                <div style={{height:'100%',width:Math.min((selected.qty/Math.max(selected.reorder_point*2,selected.qty,1))*100,100)+'%',background:selected.qty<=selected.reorder_point?C.warning:C.primary,borderRadius:99}}/>
+              <div className="dp-stock-track">
+                <div className="dp-stock-level" style={{width:Math.min((selected.qty/Math.max(selected.reorder_point*2,selected.qty,1))*100,100)+'%',background:selected.qty<=selected.reorder_point?C.warning:C.primary}}/>
               </div>
 
-              <div style={{marginBottom:14}}>
-                <div style={{display:'flex',alignItems:'center',gap:12,justifyContent:'center',marginBottom:10}}>
-                  <button className="qbtn" onClick={()=>setQty(q=>String(Math.max(1,Number(q)-1)))}>−</button>
-                  <input type="number" min="1" value={qty} onChange={e=>setQty(e.target.value)} inputMode="numeric"
-                    style={{width:88,padding:'8px',border:`2px solid ${C.border}`,borderRadius:12,fontSize:30,fontWeight:900,textAlign:'center',outline:'none',color:C.text,background:C.bg,fontFamily:'inherit'}}/>
-                  <button className="qbtn" onClick={()=>setQty(q=>String(Number(q)+1))}>+</button>
+              <div className="dp-field-group">
+                <div className="dp-quantity-controls">
+                  <StorelyButton className="qbtn dp-button" onClick={()=>setQty(q=>String(Math.max(1,Number(q)-1)))}>−</StorelyButton>
+                  <input className="dp-quantity-input" type="number" min="1" value={qty} onChange={e=>setQty(e.target.value)} inputMode="numeric"
+                    />
+                  <StorelyButton className="qbtn dp-button" onClick={()=>setQty(q=>String(Number(q)+1))}>+</StorelyButton>
                 </div>
-                <div style={{display:'flex',gap:6,justifyContent:'center'}}>
+                <div className="dp-quantity-presets">
                   {[1,5,10,20].map(v=>(
-                    <button key={v} onClick={()=>setQty(String(v))}
-                      style={{padding:'5px 12px',borderRadius:99,border:`1.5px solid ${Number(qty)===v?C.primary:C.border2}`,background:Number(qty)===v?C.primaryL:'white',color:Number(qty)===v?C.primary:C.text3,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
+                    <StorelyButton className="dp-button dp-preset" aria-pressed={Number(qty)===v} key={v} onClick={()=>setQty(String(v))}>
                       {v}
-                    </button>
+                    </StorelyButton>
                   ))}
                 </div>
               </div>
 
               {Number(qty)>selected.qty&&(
-                <div style={{background:C.dangerL,border:`1px solid ${C.dangerB}`,borderRadius:9,padding:'8px 14px',marginBottom:10,fontSize:12,fontWeight:700,color:C.danger}}>
+                <div className="dp-warning">
                   ⚠️ الكمية تتجاوز المتاح
                 </div>
               )}
             </div>
 
-            <div style={{padding:'8px 20px 16px'}}>
+            <div className="dp-sheet-footer">
               {wasteMode ? (
-                <button disabled={saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason} onClick={handleWaste}
-                  style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason?C.text4:'#d97706',color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason?.6:1,boxShadow:'0 6px 16px #d9770630',transition:'all .2s'}}>
+                <StorelyButton className="dp-button dp-submit" variant="primary" disabled={saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason} onClick={handleWaste}>
                   {saving?'⏳ جاري الحفظ...':`🗑️ تسجيل هدر ${qty||0} ${selected.unit}`}
-                </button>
+                </StorelyButton>
               ) : (
-                <button disabled={saving||!qty||Number(qty)<=0||Number(qty)>selected.qty} onClick={handleDispense}
-                  style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?C.text4:C.danger,color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?.6:1,boxShadow:`0 6px 16px ${C.danger}30`,transition:'all .2s'}}>
+                <StorelyButton className="dp-button dp-submit" variant="primary" disabled={saving||!qty||Number(qty)<=0||Number(qty)>selected.qty} onClick={handleDispense}>
                   {saving?'⏳ جاري الحفظ...':`✓ صرف ${qty||0} ${selected.unit} من ${selected.name}`}
-                </button>
+                </StorelyButton>
               )}
             </div>
           </div>

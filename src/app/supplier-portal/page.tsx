@@ -64,25 +64,24 @@ export default function SupplierPortalAuthPage() {
   return (
     <div style={{minHeight:'100vh',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',background:'#ffffff',display:'flex',flexDirection:'column'}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap');
         *{box-sizing:border-box}
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
         @keyframes spin{to{transform:rotate(360deg)}}
-        .sp-inp{width:100%;padding:13px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;outline:none;background:white;color:#111827;font-family:inherit;transition:border-color .2s}
-        .sp-inp:focus{border-color:#029FA2;box-shadow:0 0 0 3px rgba(22,163,74,.08)}
-        .sp-inp::placeholder{color:#9ca3af}
-        .sp-btn-main{width:100%;padding:14px;background:#029FA2;color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
-        .sp-btn-main:hover{background:#0f766e}
-        .sp-btn-main:disabled{opacity:.6;cursor:not-allowed}
-        @media(max-width:768px){.sp-right-panel{display:none!important}}
+        .sp-inp{min-height:44px;font-size:16px}
+
+
+        .sp-btn-main{width:100%;min-height:44px;font-size:16px}
+
+
+        .sp-auth-content{flex:1;display:flex}.sp-right-panel{width:45%}@media(max-width:768px){.sp-auth-content{flex-direction:column}.sp-right-panel{width:100%}}
       `}</style>
 
       {/* Navbar */}
-      <nav style={{padding:'0 40px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #f3f4f6'}}>
-        <div style={{display:'flex',alignItems:'center',gap:10}}>
+      <nav style={{padding:'16px 24px',minHeight:64,flexWrap:'wrap',gap:16,display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #f3f4f6'}}>
+        <div style={{display:'flex',flexWrap:'wrap',alignItems:'center',gap:10}}>
           <img src="/storely-logo.png" alt="Storely" style={{width:38,height:38,borderRadius:10,objectFit:'cover'}}/>
           <span style={{fontSize:18,fontWeight:800,color:'#111827',letterSpacing:'-0.3px'}}>Storely</span>
-          <span style={{fontSize:12,fontWeight:700,color:'#029FA2',background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'3px 10px',marginRight:4}}>بوابة الموردين</span>
+          <span style={{fontSize:12,fontWeight:700,color:'var(--storely-navy)',background:'var(--storely-background)',border:'1px solid var(--storely-border)',borderRadius:99,padding:'3px 10px',marginRight:4}}>بوابة الموردين</span>
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           <span style={{fontSize:13,color:'#6b7280'}}>{mode==='login'?'ما عندك حساب؟':'عندك حساب؟'}</span>
@@ -95,7 +94,7 @@ export default function SupplierPortalAuthPage() {
         </div>
       </nav>
 
-      <div style={{flex:1,display:'flex'}}>
+      <div className="sp-auth-content">
         {/* Left — Form */}
         <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:'40px 24px'}}>
           <div style={{width:'100%',maxWidth:420,animation:'fadeUp .4s ease'}}>
@@ -110,19 +109,19 @@ export default function SupplierPortalAuthPage() {
                 <form onSubmit={handleLogin} style={{display:'flex',flexDirection:'column',gap:14}}>
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني</label>
-                    <input className="sp-inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
+                    <input className="storely-input sp-inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
                   </div>
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>كلمة المرور</label>
-                    <input className="sp-inp" type="password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••"/>
+                    <input className="storely-input sp-inp" type="password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••"/>
                   </div>
-                  <button type="submit" disabled={loading} className="sp-btn-main" style={{marginTop:8}}>
+                  <button type="submit" disabled={loading} className="storely-button sp-btn-main" data-variant="primary" style={{marginTop:8}}>
                     {loading?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span style={{width:16,height:16,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block'}}/>جاري الدخول...</span>:'دخول'}
                   </button>
                 </form>
                 <div style={{textAlign:'center',marginTop:24,fontSize:13,color:'#6b7280'}}>
                   ما عندك حساب مورد؟{' '}
-                  <button onClick={()=>{setMode('register');setError('')}} style={{background:'none',border:'none',color:'#029FA2',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
+                  <button onClick={()=>{setMode('register');setError('')}} style={{background:'none',border:'none',color:'var(--storely-navy)',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
                     سجّل الآن
                   </button>
                 </div>
@@ -137,24 +136,24 @@ export default function SupplierPortalAuthPage() {
                 <form onSubmit={handleRegister} style={{display:'flex',flexDirection:'column',gap:14}}>
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>اسم المنشأة *</label>
-                    <input className="sp-inp" type="text" required value={businessName} onChange={e=>setBusinessName(e.target.value)} placeholder="مثال: مؤسسة الوفاء للتوريد"/>
+                    <input className="storely-input sp-inp" type="text" required value={businessName} onChange={e=>setBusinessName(e.target.value)} placeholder="مثال: مؤسسة الوفاء للتوريد"/>
                   </div>
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>رقم الجوال</label>
-                    <input className="sp-inp" type="tel" dir="ltr" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="05xxxxxxxx"/>
+                    <input className="storely-input sp-inp" type="tel" dir="ltr" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="05xxxxxxxx"/>
                   </div>
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>الموقع / المدينة</label>
-                    <input className="sp-inp" type="text" value={location} onChange={e=>setLocation(e.target.value)} placeholder="مثال: جدة"/>
+                    <input className="storely-input sp-inp" type="text" value={location} onChange={e=>setLocation(e.target.value)} placeholder="مثال: جدة"/>
                   </div>
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني *</label>
-                    <input className="sp-inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
+                    <input className="storely-input sp-inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
                   </div>
                   <div>
                     <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>كلمة المرور *</label>
                     <div style={{position:'relative'}}>
-                      <input className="sp-inp" type={showPassword?'text':'password'} required value={password} onChange={e=>setPassword(e.target.value)} placeholder="6 أحرف على الأقل" style={{paddingLeft:44}}/>
+                      <input className="storely-input sp-inp" type={showPassword?'text':'password'} required value={password} onChange={e=>setPassword(e.target.value)} placeholder="6 أحرف على الأقل" style={{paddingLeft:44}}/>
                       <button type="button" onClick={()=>setShowPassword(s=>!s)}
                         style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',fontSize:16,color:'#9ca3af',padding:4}}
                         aria-label={showPassword?'إخفاء كلمة المرور':'إظهار كلمة المرور'}>
@@ -162,13 +161,13 @@ export default function SupplierPortalAuthPage() {
                       </button>
                     </div>
                   </div>
-                  <button type="submit" disabled={loading} className="sp-btn-main" style={{marginTop:4}}>
+                  <button type="submit" disabled={loading} className="storely-button sp-btn-main" data-variant="primary" style={{marginTop:4}}>
                     {loading?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span style={{width:16,height:16,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block'}}/>جاري الإنشاء...</span>:'إنشاء حساب مورد'}
                   </button>
                 </form>
                 <div style={{textAlign:'center',marginTop:20,fontSize:13,color:'#6b7280'}}>
                   عندك حساب؟{' '}
-                  <button onClick={()=>{setMode('login');setError('')}} style={{background:'none',border:'none',color:'#029FA2',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
+                  <button onClick={()=>{setMode('login');setError('')}} style={{background:'none',border:'none',color:'var(--storely-navy)',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
                     سجّل الدخول
                   </button>
                 </div>
@@ -178,14 +177,14 @@ export default function SupplierPortalAuthPage() {
         </div>
 
         {/* Right — Branding */}
-        <div className="sp-right-panel" style={{width:'45%',background:'#f9fafb',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'48px 44px',borderRight:'1px solid #f3f4f6'}}>
+        <div className="sp-right-panel" style={{background:'#f9fafb',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'48px 44px',borderRight:'1px solid #f3f4f6'}}>
           <div style={{maxWidth:400,width:'100%'}}>
-            <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'6px 14px',fontSize:12,fontWeight:700,color:'#029FA2',marginBottom:20}}>
+            <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'var(--storely-background)',border:'1px solid var(--storely-border)',borderRadius:99,padding:'6px 14px',fontSize:12,fontWeight:700,color:'var(--storely-navy)',marginBottom:20}}>
               🚚 بوابة الموردين
             </div>
-            <h2 style={{fontSize:30,fontWeight:900,color:'#111827',lineHeight:1.2,marginBottom:12,letterSpacing:'-1px'}}>
+            <h2 style={{fontSize:30,fontWeight:700,color:'#111827',lineHeight:1.6,marginBottom:12,letterSpacing:'-1px'}}>
               نظّم توريدك<br/>
-              <span style={{color:'#029FA2'}}>بذكاء وسهولة</span>
+              <span style={{color:'var(--storely-navy)'}}>بذكاء وسهولة</span>
             </h2>
             <p style={{fontSize:14,color:'#6b7280',lineHeight:1.75,marginBottom:24}}>
               استلم طلبات التوريد فورياً، حدّث أسعارك وأصنافك بضغطة، وتابع حالة كل طلب مع كل فرع من مكان واحد

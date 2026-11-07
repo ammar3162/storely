@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from './utils'
+import { storelyTokens } from './design-tokens'
 
 export type StorelyNavItem = {
   href: string
@@ -32,7 +33,7 @@ export function StorelyAppLayout({ brand, groups, topbar, footer, children }: St
   const [open, setOpen] = useState(false)
 
   const sidebar = (
-    <aside className="flex h-full w-64 flex-col border-l border-[#1E293B] bg-[#0F172A] text-white">
+    <aside className="flex h-full w-64 flex-col border-l border-white/10 text-white" style={{background:storelyTokens.color.navy}}>
       <div className="flex h-16 items-center border-b border-white/10 px-4">
         {brand ?? <span className="text-base font-semibold">Storely</span>}
       </div>
@@ -53,14 +54,14 @@ export function StorelyAppLayout({ brand, groups, topbar, footer, children }: St
                     href={item.href}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      'flex h-10 items-center gap-2.5 rounded-[6px] px-3 text-sm font-medium transition-colors',
+                      'flex min-h-10 items-center gap-2.5 rounded-[6px] px-3 text-sm font-medium transition-colors',
                       active
-                        ? 'bg-white text-[#0F172A]'
+                        ? 'bg-white text-[var(--storely-navy)]'
                         : 'text-slate-300 hover:bg-white/10 hover:text-white',
                     )}
                   >
                     {item.icon ? <span className="inline-flex size-5 items-center justify-center [&>svg]:size-[18px]">{item.icon}</span> : null}
-                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    <span className="min-w-0 flex-1 break-words">{item.label}</span>
                     {item.badge ? <span className="shrink-0">{item.badge}</span> : null}
                   </Link>
                 )
@@ -74,12 +75,12 @@ export function StorelyAppLayout({ brand, groups, topbar, footer, children }: St
   )
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A]">
+    <div className="min-h-screen text-[var(--storely-navy)]" style={{background:storelyTokens.color.background}}>
       <div className="hidden md:fixed md:inset-y-0 md:right-0 md:z-30 md:block">{sidebar}</div>
-      <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#E5E7EB] bg-white px-4 md:mr-64 md:px-7">
+      <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[var(--storely-border)] bg-white px-4 md:mr-64 md:px-7">
         <button
           type="button"
-          className="inline-flex size-9 items-center justify-center rounded-[6px] border border-[#E5E7EB] text-[#0F172A] md:hidden"
+          className="inline-flex size-9 items-center justify-center rounded-[6px] border border-[var(--storely-border)] text-[var(--storely-navy)] md:hidden"
           onClick={() => setOpen(true)}
           aria-label="Open navigation"
         >
@@ -91,7 +92,7 @@ export function StorelyAppLayout({ brand, groups, topbar, footer, children }: St
         <div className="fixed inset-0 z-40 md:hidden">
           <button
             type="button"
-            className="absolute inset-0 bg-[#0F172A]/45"
+            className="absolute inset-0 bg-[var(--storely-navy)]/40"
             onClick={() => setOpen(false)}
             aria-label="Close navigation"
           />

@@ -55,7 +55,7 @@ function formatNumber(value: number) {
 }
 
 function inputClass(extra = '') {
-  return `h-9 w-full rounded-[6px] border border-[#D7CDC2] bg-white px-3 text-sm text-[#203640] outline-none transition placeholder:text-[#8EA0B1] focus:border-[#203640] focus:ring-2 focus:ring-[#203640]/15 ${extra}`
+  return `storely-input ${extra}`
 }
 
 function Modal({
@@ -84,7 +84,7 @@ function Modal({
           </div>
           <button
             type="button"
-            className="inline-flex size-7 shrink-0 items-center justify-center rounded-[5px] text-[#66737C] transition hover:bg-[#F8EEDF] hover:text-[#203640]"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-[#66737C] transition hover:bg-[var(--storely-background)] hover:text-[#203640]"
             onClick={onClose}
             aria-label="إغلاق"
           >

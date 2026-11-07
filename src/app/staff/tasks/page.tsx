@@ -1,6 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Camera, Globe, LoaderCircle } from 'lucide-react'
+import { StorelyButton, StorelyCard, StorelyEmptyState, StorelyPageHeader } from '@/components/ui'
+import { storelyTokens } from '@/components/ui/design-tokens'
 
 interface StaffSession {
   id: string; name: string; org_id: string; branch_id: string | null
@@ -30,10 +33,10 @@ const UI_STRINGS: Record<string, Record<string,string>> = {
 }
 
 const STATUS_KEYS: Record<string, {key:string; color:string; bg:string}> = {
-  pending:   { key: 'statusPending',   color: '#d97706', bg: '#fffbeb' },
-  completed: { key: 'statusCompleted', color: '#2563eb', bg: '#eff6ff' },
-  confirmed: { key: 'statusConfirmed', color: '#029FA2', bg: '#f0fdfa' },
-  rejected:  { key: 'statusRejected',  color: '#dc2626', bg: '#fef2f2' },
+  pending:   { key: 'statusPending',   color: storelyTokens.color.warning, bg: storelyTokens.color.warningBg },
+  completed: { key: 'statusCompleted', color: storelyTokens.color.info, bg: storelyTokens.color.infoBg },
+  confirmed: { key: 'statusConfirmed', color: storelyTokens.color.success, bg: storelyTokens.color.successBg },
+  rejected:  { key: 'statusRejected',  color: storelyTokens.color.danger, bg: storelyTokens.color.dangerBg },
 }
 
 export default function StaffTasksPage() {
@@ -131,90 +134,74 @@ export default function StaffTasksPage() {
   const otherTasks = tasks.filter((t:any)=>t.status!=='pending' && t.status!=='confirmed')
 
   if (!session) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
-      <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:'#029FA2',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div className="flex min-h-screen items-center justify-center bg-[var(--storely-background)] text-[var(--storely-navy)]">
+      <LoaderCircle size={28} className="animate-spin" />
     </div>
   )
 
   return (
-    <div style={{minHeight:'100vh',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',paddingBottom:40}}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-
-      <div style={{background:'white',borderBottom:'1px solid #ece8e2',padding:'16px 20px'}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
-          <div>
-            <div style={{fontSize:16,fontWeight:800,color:'#1c1c1a'}}>{t('myTasks')}</div>
-            <div style={{fontSize:12,color:'#888780',marginTop:2}}>{session.name}</div>
-          </div>
-          <button onClick={()=>router.back()} style={{background:'#f5f5f4',border:'none',borderRadius:8,padding:'8px 14px',fontSize:12,fontWeight:700,color:'#5f5e5a',cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
-        </div>
-        <div style={{position:'relative' as const}}>
-          <button onClick={()=>setShowLangMenu(v=>!v)} disabled={translating}
-            style={{background:'#f5f5f4',color:'#1c1c1a',border:'none',borderRadius:20,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6,opacity:translating?0.6:1}}>
-            🌐 {LANGUAGES.find(l=>l.code===lang)?.label || 'العربية'} {showLangMenu?'▴':'▾'}
-          </button>
+    <div className="min-h-screen bg-[var(--storely-background)] text-[var(--storely-navy)]" dir={isRtl?'rtl':'ltr'}>
+      <div className="!mx-auto max-w-4xl !space-y-6 !px-4 !py-6 sm:!p-8">
+        <StorelyPageHeader title={t('myTasks')} description={session.name}
+          actions={<StorelyButton onClick={()=>router.back()}>{t('back')}</StorelyButton>} />
+        <div className="relative w-fit max-w-full">
+          <StorelyButton onClick={()=>setShowLangMenu(v=>!v)} disabled={translating} icon={<Globe size={16} />}>
+            {LANGUAGES.find(l=>l.code===lang)?.label || 'العربية'} {showLangMenu?'▴':'▾'}
+          </StorelyButton>
           {showLangMenu && (
-            <div style={{position:'absolute' as const,top:'100%',right:0,marginTop:6,background:'white',border:'1px solid #ece8e2',borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.15)',overflow:'hidden',minWidth:140,zIndex:50}}>
+            <div className="absolute start-0 top-full z-50 !mt-2 min-w-40 overflow-hidden rounded-[var(--radius-sm)] border border-[var(--storely-border)] bg-white !p-1 shadow-[var(--storely-panel-shadow)]">
               {LANGUAGES.map(l=>(
                 <button key={l.code}
                   onClick={()=>{setLang(l.code);localStorage.setItem('staff_lang',l.code);if(l.code!=='ar')fetchTranslation(l.code);setShowLangMenu(false)}}
-                  style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#f0fdfa':'white',color:lang===l.code?'#029FA2':'#1c1c1a',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
+                  className={`block w-full cursor-pointer rounded-[var(--radius-sm)] !px-4 !py-3 text-start text-sm hover:bg-[var(--storely-background)] focus-visible:outline-[var(--storely-navy)] ${lang===l.code?'bg-[var(--storely-background)] font-semibold':'bg-white'}`}>
                   {lang===l.code?'✓ ':''}{l.label}
                 </button>
               ))}
             </div>
           )}
         </div>
-      </div>
-
-      <div style={{maxWidth:520,margin:'0 auto',padding:'20px 16px'}}>
         {loading ? (
-          <div style={{textAlign:'center' as const,padding:40,fontSize:13,color:'#888780'}}>{t('loading')}</div>
+          <div className="storely-loading">{t('loading')}</div>
         ) : (
           <>
             {pendingTasks.length===0 ? (
-              <div style={{textAlign:'center' as const,padding:'60px 20px'}}>
-                <div style={{fontSize:44,marginBottom:12,opacity:0.5}}>📋</div>
-                <div style={{fontSize:14,color:'#888780'}}>{t('noTasks')}</div>
-              </div>
+              <StorelyEmptyState title={t('noTasks')} />
             ) : (
-              <div style={{marginBottom:24}}>
-                <div style={{fontSize:12,fontWeight:700,color:'#d97706',marginBottom:10}}>{t('pendingTasks')} ({pendingTasks.length})</div>
-                <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
+              <section className="!space-y-4">
+                <h2 className="text-lg font-semibold">{t('pendingTasks')} ({pendingTasks.length})</h2>
+                <div className="grid min-w-0 gap-4 md:grid-cols-2">
                   {pendingTasks.map((tk:any)=>(
-                    <div key={tk.id} style={{background:'white',border:'1.5px solid #fde68a',borderRadius:14,padding:'16px'}}>
-                      <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:6}}>{lang!=='ar'&&taskTranslations[tk.id]?.title || tk.title}</div>
-                      {(lang!=='ar'&&taskTranslations[tk.id]?.description || tk.description) && <div style={{fontSize:13,color:'#6b7280',marginBottom:12,lineHeight:1.6}}>{lang!=='ar'&&taskTranslations[tk.id]?.description || tk.description}</div>}
+                    <StorelyCard key={tk.id} className="flex flex-col !p-5 sm:!p-6">
+                      <div className="!mb-3 break-words text-base font-semibold leading-7">{lang!=='ar'&&taskTranslations[tk.id]?.title || tk.title}</div>
+                      {(lang!=='ar'&&taskTranslations[tk.id]?.description || tk.description) && <div className="!mb-5 break-words text-sm leading-7 text-[var(--storely-muted)]">{lang!=='ar'&&taskTranslations[tk.id]?.description || tk.description}</div>}
                       <input id={`photo-input-${tk.id}`} type="file" accept="image/*" capture="environment" style={{display:'none'}}
                         onChange={e=>{ const f=e.target.files?.[0]; if(f) handlePhotoSelected(tk.id, f) }}/>
-                      <button onClick={()=>completeTask(tk.id, tk.requires_photo)} disabled={completingId===tk.id||uploadingId===tk.id}
-                        style={{width:'100%',padding:'12px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:(completingId===tk.id||uploadingId===tk.id)?0.6:1}}>
-                        {uploadingId===tk.id ? t('uploadingPhoto') : completingId===tk.id ? t('confirming') : tk.requires_photo ? `📷 ${t('completeWithPhoto')}` : `✓ ${t('completeTask')}`}
-                      </button>
-                    </div>
+                      <StorelyButton onClick={()=>completeTask(tk.id, tk.requires_photo)} disabled={completingId===tk.id||uploadingId===tk.id}
+                        variant="primary" className="!mt-auto w-full" icon={tk.requires_photo?<Camera size={16} />:undefined}>
+                        {uploadingId===tk.id ? t('uploadingPhoto') : completingId===tk.id ? t('confirming') : tk.requires_photo ? t('completeWithPhoto') : `✓ ${t('completeTask')}`}
+                      </StorelyButton>
+                    </StorelyCard>
                   ))}
                 </div>
-              </div>
+              </section>
             )}
-
             {otherTasks.length>0 && (
-              <div>
-                <div style={{fontSize:12,fontWeight:700,color:'#888780',marginBottom:10}}>{t('pastTasks')}</div>
-                <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+              <section className="!space-y-4">
+                <h2 className="text-lg font-semibold">{t('pastTasks')}</h2>
+                <div className="flex min-w-0 flex-col gap-4">
                   {otherTasks.map((tk:any)=>{
                     const st = STATUS_KEYS[tk.status] || STATUS_KEYS.pending
                     return (
-                      <div key={tk.id} style={{background:st.bg,border:'1px solid #ece8e2',borderRadius:12,padding:'12px 14px'}}>
-                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-                          <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{lang!=='ar'&&taskTranslations[tk.id]?.title || tk.title}</span>
-                          <span style={{fontSize:10,fontWeight:700,color:st.color}}>{t(st.key)}</span>
+                      <StorelyCard key={tk.id} className="!p-5 sm:!p-6">
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <span className="min-w-0 flex-1 basis-48 break-words text-sm font-semibold leading-7">{lang!=='ar'&&taskTranslations[tk.id]?.title || tk.title}</span>
+                          <span className="storely-badge" style={{color:st.color,background:st.bg}}>{t(st.key)}</span>
                         </div>
-                      </div>
+                      </StorelyCard>
                     )
                   })}
                 </div>
-              </div>
+              </section>
             )}
           </>
         )}

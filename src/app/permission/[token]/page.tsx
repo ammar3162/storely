@@ -1,6 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import { CheckCircle2, CircleAlert, CircleX, ClipboardCheck } from 'lucide-react'
+import { StorelyButton, StorelyCard, StorelyPageHeader } from '@/components/ui'
+import { storelyTokens } from '@/components/ui/design-tokens'
 
 export default function PermissionPage() {
   const params = useParams()
@@ -40,44 +43,45 @@ export default function PermissionPage() {
   }
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f7fa',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',padding:20}}>
-      <div style={{width:'100%',maxWidth:420,background:'white',borderRadius:20,padding:'32px 28px',boxShadow:'0 4px 24px rgba(0,0,0,.08)',textAlign:'center' as const}}>
+    <div className="flex min-h-screen items-center justify-center bg-[var(--storely-background)] !p-4" dir="rtl">
+      <StorelyCard className="w-full max-w-lg !p-6 text-center sm:!p-8">
         {loading ? (
-          <div style={{color:'#94a3b8',fontSize:13}}>جاري التحميل...</div>
+          <div className="storely-loading">جاري التحميل...</div>
         ) : error ? (
-          <div><div style={{fontSize:40,marginBottom:12}}>⚠️</div><div style={{color:'#dc2626',fontSize:14,fontWeight:700}}>{error}</div></div>
+          <div>
+            <CircleAlert size={28} className="!mx-auto !mb-5" style={{color:storelyTokens.color.danger}} />
+            <div className="break-words text-sm font-semibold leading-7" style={{color:storelyTokens.color.danger}}>{error}</div>
+          </div>
         ) : result ? (
           <div>
-            <div style={{fontSize:48,marginBottom:14}}>{result === 'approved' ? '✅' : '🚫'}</div>
-            <div style={{fontSize:17,fontWeight:800,color:'#0f172a',marginBottom:6}}>
+            <div className="!mb-5 flex justify-center">{result === 'approved' ? <CheckCircle2 size={28} style={{color:storelyTokens.color.success}} /> : <CircleX size={28} style={{color:storelyTokens.color.danger}} />}</div>
+            <div className="!mb-3 text-lg font-semibold leading-8">
               {result === 'approved' ? 'تمت الموافقة على الاستئذان' : 'تم رفض الاستئذان'}
             </div>
-            <div style={{fontSize:12,color:'#64748b'}}>{req?.staff_name} تم إبلاغه بالنتيجة</div>
+            <div className="break-words text-sm leading-7 text-[var(--storely-muted)]">{req?.staff_name} تم إبلاغه بالنتيجة</div>
           </div>
         ) : (
           <div>
-            <div style={{fontSize:40,marginBottom:12}}>🙋</div>
-            <div style={{fontSize:17,fontWeight:800,color:'#0f172a',marginBottom:4}}>طلب استئذان</div>
-            <div style={{fontSize:14,fontWeight:700,color:'#029FA2',marginBottom:10}}>{req?.staff_name}</div>
+            <ClipboardCheck size={28} className="!mx-auto !mb-5 text-[var(--storely-navy)]" />
+            <StorelyPageHeader title="طلب استئذان" className="text-center [&_.storely-page-title]:text-2xl" />
+            <div className="!mb-5 break-words text-base font-semibold">{req?.staff_name}</div>
             {req?.reason && (
-              <div style={{background:'#f8fafc',borderRadius:12,padding:'12px 14px',fontSize:13,color:'#334155',marginBottom:20,lineHeight:1.7,textAlign:'right' as const}}>
+              <div className="!mb-6 rounded-[var(--radius-sm)] border border-[var(--storely-border)] !p-4 text-start text-sm leading-7 text-[var(--storely-muted)]">
                 {req.reason}
               </div>
             )}
-            <div style={{display:'flex',gap:10}}>
-              <button onClick={() => respond('approve')} disabled={resolving}
-                style={{flex:1,padding:'13px',background:'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
-                {resolving ? '...' : '✅ موافقة'}
-              </button>
-              <button onClick={() => respond('reject')} disabled={resolving}
-                style={{flex:1,padding:'13px',background:'#fef2f2',color:'#dc2626',border:'1.5px solid #fecaca',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
-                {resolving ? '...' : '🚫 رفض'}
-              </button>
+            <div className="flex flex-wrap gap-3">
+              <StorelyButton onClick={() => respond('approve')} disabled={resolving} variant="primary" className="flex-1" icon={<CheckCircle2 size={16} />}>
+                {resolving ? '...' : 'موافقة'}
+              </StorelyButton>
+              <StorelyButton onClick={() => respond('reject')} disabled={resolving} variant="danger" className="flex-1" icon={<CircleX size={16} />}>
+                {resolving ? '...' : 'رفض'}
+              </StorelyButton>
             </div>
           </div>
         )}
-        <p style={{fontSize:11,color:'#9ca3af',marginTop:24}}>Storely · storely.dev</p>
-      </div>
+        <p className="!mt-6 border-t border-[var(--storely-border)] !pt-5 text-xs text-[var(--storely-muted)]" dir="ltr">Storely · storely.dev</p>
+      </StorelyCard>
     </div>
   )
 }

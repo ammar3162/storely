@@ -1,8 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { LEGACY_C } from '../_admin/kit'
-
-const C = LEGACY_C
+import { CircleCheck, RefreshCw, TriangleAlert } from 'lucide-react'
+import { StorelyButton, StorelyCard, StorelyEmptyState, StorelyPageHeader, StorelyStatusBadge } from '@/components/ui'
+import { storelyTokens } from '@/components/ui/design-tokens'
 
 export default function NotificationHealthPage() {
   const [orgs, setOrgs] = useState<any[]>([])
@@ -36,66 +36,54 @@ export default function NotificationHealthPage() {
   }
 
   if (!authChecked) return (
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{color:C.text2,fontSize:13}}>⏳ جاري التحقق...</div>
-    </div>
+    <div className="storely-loading" dir="rtl">جاري التحقق...</div>
   )
 
   const problemOrgs = orgs.filter(o => o.failed > 0 && o.sent === 0)
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,flexWrap:'wrap' as const,gap:12}}>
-        <div>
-          <h1 style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:4}}>صحة توصيل واتساب لكل عميل</h1>
-          <div style={{fontSize:12,color:C.text3}}>آخر 7 أيام — يُحدّث تلقائياً مع كل إشعار حقيقي يُرسل لأصحاب الحسابات</div>
-        </div>
-        <div style={{display:'flex',gap:10}}>
-          <button onClick={load} disabled={loading} style={{padding:'8px 16px',background:'#f2f4f7',color:C.text,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-            {loading?'...':'↺ تحديث'}
-          </button>
-        </div>
-      </div>
-
-      {error && <div style={{background:'#fef3f2',color:'#d92d20',padding:'10px 14px',borderRadius:10,fontSize:13,marginBottom:16}}>{error}</div>}
-
+    <div className="min-w-0 space-y-6" dir="rtl">
+      <StorelyPageHeader title="صحة توصيل واتساب لكل عميل" description="آخر 7 أيام — يُحدّث تلقائياً مع كل إشعار حقيقي يُرسل لأصحاب الحسابات"
+        actions={<StorelyButton onClick={load} disabled={loading} icon={<RefreshCw size={16}/>}>{loading?'...':'تحديث'}</StorelyButton>} />
+      {error && <div className="storely-notice" style={{color:storelyTokens.color.danger,borderColor:storelyTokens.color.dangerBorder}}>{error}</div>}
       {loading ? (
-        <div style={{textAlign:'center',padding:60,color:C.text3}}>جاري التحميل...</div>
+        <div className="storely-loading">جاري التحميل...</div>
       ) : orgs.length === 0 ? (
-        <div style={{background:C.card,borderRadius:14,padding:40,textAlign:'center',border:`1px solid ${C.border}`}}>
-          <div style={{fontSize:32,marginBottom:10}}>📭</div>
-          <div style={{color:C.text2}}>ما فيه إشعارات مسجّلة آخر 7 أيام بعد</div>
-        </div>
+        <StorelyEmptyState title="ما فيه إشعارات مسجّلة آخر 7 أيام بعد" />
       ) : (
         <>
-          <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:20}}>
-            {orgs.map((o) => {
-              const total = o.sent + o.failed
-              const allFailed = o.sent === 0 && o.failed > 0
-              return (
-                <div key={o.org_id} style={{background:C.card,border:`1px solid ${allFailed?'#fecdca':'#99d9d6'}`,borderRadius:10,padding:'12px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap' as const,gap:8}}>
-                  <div>
-                    <div style={{fontSize:13,fontWeight:700,color:C.text}}>{o.org_name}</div>
-                    <div style={{fontSize:11,color:C.text3,marginTop:2}}>{o.phone}</div>
-                  </div>
-                  <div style={{textAlign:'left' as const}}>
-                    <div style={{fontSize:11,fontWeight:700,color:allFailed?C.red:C.green}}>
-                      {allFailed?'⚠️':'✅'} {o.sent}/{total} وصلت
+          <StorelyCard>
+            <div className="divide-y divide-[var(--storely-border)]">
+              {orgs.map((o) => {
+                const total = o.sent + o.failed
+                const allFailed = o.sent === 0 && o.failed > 0
+                return (
+                  <div key={o.org_id} className="flex flex-wrap items-start justify-between gap-4 p-5 sm:p-6">
+                    <div className="min-w-0 flex-1 basis-48 break-words">
+                      <div className="text-base font-semibold">{o.org_name}</div>
+                      <div className="mt-2 text-sm text-[var(--storely-muted)]" dir="ltr">{o.phone}</div>
                     </div>
-                    <div style={{fontSize:10,color:C.text3,marginTop:2}}>آخر محاولة: {new Date(o.last_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
+                    <div className="min-w-0 space-y-3">
+                      <StorelyStatusBadge status={allFailed?'danger':'success'}>
+                        {allFailed?<TriangleAlert size={14} className="me-2 shrink-0"/>:<CircleCheck size={14} className="me-2 shrink-0"/>} {o.sent}/{total} وصلت
+                      </StorelyStatusBadge>
+                      <div className="text-[13px] leading-6 text-[var(--storely-muted)]">آخر محاولة: {new Date(o.last_at).toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
+                    </div>
                   </div>
-                </div>
-              )
-            })}
-          </div>
-
+                )
+              })}
+            </div>
+          </StorelyCard>
           {problemOrgs.length > 0 && (
-            <div style={{background:'#fef3f2',border:'1px solid #7f1d1d',borderRadius:10,padding:'12px 16px'}}>
-              {problemOrgs.map(o => (
-                <div key={o.org_id} style={{fontSize:12,color:'#d92d20',marginBottom:4}}>
-                  🔴 {o.org_name} — كل المحاولات فشلت ({o.failed}) آخر 7 أيام. رقمه غالباً غلط أو غير نشط — يستحق تواصل مباشر.
-                </div>
-              ))}
+            <div className="storely-notice" style={{color:storelyTokens.color.danger,borderColor:storelyTokens.color.dangerBorder}}>
+              <div className="storely-notice-body space-y-4">
+                {problemOrgs.map(o => (
+                  <div key={o.org_id} className="flex items-start gap-3">
+                    <TriangleAlert size={18} className="mt-1 shrink-0" aria-hidden="true"/>
+                    <div className="min-w-0 break-words">{o.org_name} — كل المحاولات فشلت ({o.failed}) آخر 7 أيام. رقمه غالباً غلط أو غير نشط — يستحق تواصل مباشر.</div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </>

@@ -44,11 +44,10 @@ function WeeklyBars({ data }: { data:{label:string;value:number}[] }) {
   )
 }
 
-const surfaceClass = 'border-[#DEE6EA] shadow-[0_1px_2px_rgba(32,54,64,0.035)]'
-const cardClass = `${surfaceClass} [&>div:first-child]:border-[#E6ECEF] [&>div:first-child]:px-6 [&>div:first-child]:py-5 [&_h2]:text-[18px] [&_h2]:leading-7 [&_p]:text-[13px] [&_p]:leading-6`
-const compactCardClass = `${surfaceClass} [&>div:first-child]:border-[#E6ECEF] [&>div:first-child]:px-6 [&>div:first-child]:py-4 [&_h2]:text-[17px] [&_h2]:leading-7 [&_p]:text-[13px] [&_p]:leading-6`
-const tableClass = 'border-0 rounded-none [&_table]:text-[15px] [&_thead]:bg-[#F7F9FA] [&_th]:h-12 [&_th]:border-[#E6ECEF] [&_th]:px-6 [&_th]:py-3 [&_th]:text-[13px] [&_th]:font-semibold [&_th]:text-[#5F6F78] [&_td]:h-14 [&_td]:px-6 [&_td]:py-4 [&_tr]:border-[#E6ECEF] [&_tbody_tr:hover]:bg-[#F7F9FA]'
-const secondaryButtonClass = 'border-[#CED8DD] hover:border-[#B9C8CF] hover:bg-[#F6F9FA]'
+const cardClass = ''
+const compactCardClass = ''
+const tableClass = 'border-0 rounded-none'
+const secondaryButtonClass = ''
 
 export default function DashboardPage() {
   const { t, lang, dir } = useTranslation()
@@ -266,11 +265,11 @@ export default function DashboardPage() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-full bg-white text-[#203640] [&_button]:rounded-[6px] [&_button]:font-semibold" dir={dir}>
-        <div className="mx-auto max-w-[1500px] space-y-8 px-1 pb-8">
-        <div className="rounded-[8px] border border-[#DEE6EA] bg-white px-5 py-6 shadow-[0_1px_2px_rgba(32,54,64,0.035)] md:px-8 md:py-7">
+      <div className="min-h-full text-[#203640] [&_button]:rounded-[6px] [&_button]:font-semibold" dir={dir}>
+        <div className="mx-auto max-w-[1500px] space-y-6 pb-8">
+        <div className="py-2">
         <StorelyPageHeader
-          className="mb-0 gap-6 [&_h1]:text-[28px] [&_h1]:font-semibold [&_h1]:leading-10 [&_p]:mt-2 [&_p]:text-[15px] [&_p]:leading-7 [&_div:first-child>div:first-child]:text-[#66737C]"
+          className="mb-0"
           eyebrow={orgName || undefined}
           title={greeting + '، ' + (userName || t('dashboard.defaultGreeting'))}
           description={branchName ? branchName + ' - ' + new Date().toLocaleDateString(lang==='ar'?'ar-SA':'en-US',{numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'}) : new Date().toLocaleDateString(lang==='ar'?'ar-SA':'en-US',{numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'})}
@@ -278,10 +277,7 @@ export default function DashboardPage() {
         />
         </div>
 
-        <div className="grid gap-5 xl:grid-cols-2">
-          <StorelyMetricStrip metrics={metrics.slice(0,3)} className={`${surfaceClass} [&>div]:divide-[#E6ECEF] [&>div>div]:px-6 [&>div>div]:py-5 md:[&>div>div]:px-7 [&_div[class*='text-xl']]:text-[28px] [&_div[class*='text-xl']]:leading-9 [&_div[class*='text-xs']]:text-[13px] [&_div[class*='text-xs']]:leading-5`} />
-          <StorelyMetricStrip metrics={metrics.slice(3)} className={`${surfaceClass} [&>div]:divide-[#E6ECEF] [&>div>div]:px-6 [&>div>div]:py-5 md:[&>div>div]:px-7 [&_div[class*='text-xl']]:text-[28px] [&_div[class*='text-xl']]:leading-9 [&_div[class*='text-xs']]:text-[13px] [&_div[class*='text-xs']]:leading-5`} />
-        </div>
+        <StorelyMetricStrip metrics={metrics} className="[&_.storely-metric-grid]:grid-cols-2 lg:[&_.storely-metric-grid]:grid-cols-3 xl:[&_.storely-metric-grid]:grid-cols-6" />
 
         {monthComp?.success ? (
           <StorelyCard title="هذا الشهر" description="مقارنة بالشهر الماضي" className={cardClass}>
@@ -289,7 +285,7 @@ export default function DashboardPage() {
               {performanceRows.map((m,i)=>(
                 <div key={i} className="min-w-0 px-6 py-6 md:px-7">
                   <div className="text-[13px] font-semibold leading-5 text-[#66737C]">{m.metric}</div>
-                  <div className="mt-2 truncate text-[27px] font-semibold leading-9 tabular-nums text-[#203640]">{m.current}</div>
+                  <div className="mt-2 break-words text-[27px] font-semibold leading-9 tabular-nums text-[#203640]">{m.current}</div>
                   {m.change!==null && m.change!==undefined ? (
                     <div className={((m.change>=0)!==!!m.inverse ? 'text-[#047857]' : 'text-[#B45309]') + ' mt-2 inline-flex items-center gap-1 text-[13px] font-semibold'} dir="ltr">
                       {(m.change>=0)!==!!m.inverse ? <TrendingUp size={14}/> : <TrendingDown size={14}/>}
@@ -303,7 +299,7 @@ export default function DashboardPage() {
         ) : null}
 
         <div className="grid items-start gap-7 xl:grid-cols-[minmax(0,1.08fr)_minmax(380px,0.92fr)]">
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             {attention ? (
               <StorelyCard title="تحتاج انتباهك" className={`${cardClass} border-[#D7E3E8]`} actions={<StorelyStatusBadge status="warning" className="h-7 px-2.5 text-[13px]">{notifs.length + smartSuggestions.length + (subAlert ? 1 : 0)}</StorelyStatusBadge>}>
                 <div className="divide-y divide-[#E6ECEF]">
@@ -346,13 +342,13 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <StorelyCard title="أداء الفرع" description="ملخص تشغيلي مختصر مقارنة بالشهر السابق." className={compactCardClass}>
               {performanceRows.length>0 ? <StorelyDataTable columns={performanceColumns} data={performanceRows} rowKey="metric" searchable={false} pageSize={8} dense={false} className={tableClass} /> : <StorelyEmptyState icon={<AlertTriangle size={16}/>} title="لا توجد مقارنة بعد" description="تظهر المقارنة عند توفر بيانات شهرية كافية." />}
             </StorelyCard>
 
             <StorelyCard title="آخر الإشعارات" description="آخر إشعارات وصلت للمنشأة." className={compactCardClass}>
-              {notifs.length>0 ? <div className="divide-y divide-[#E6ECEF]">{notifs.slice(0,5).map((n:any)=><div key={n.id} className="flex items-start gap-3 px-6 py-5 text-[15px]"><span className="mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-[6px] bg-[#F4F7F8] text-[#66737C]"><Bell size={15} /></span><div className="min-w-0 flex-1"><div className="truncate font-semibold leading-7 text-[#203640]">{n.title}</div><div className="mt-1.5 line-clamp-2 text-[13px] leading-6 text-[#66737C]">{n.message}</div></div></div>)}</div> : <StorelyEmptyState icon={<Bell size={16}/>} title="لا توجد إشعارات" description="ستظهر الإشعارات التشغيلية هنا عند توفرها." />}
+              {notifs.length>0 ? <div className="divide-y divide-[#E6ECEF]">{notifs.slice(0,5).map((n:any)=><div key={n.id} className="flex items-start gap-3 px-6 py-5 text-[15px]"><span className="mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-[6px] bg-[#F4F7F8] text-[#66737C]"><Bell size={15} /></span><div className="min-w-0 flex-1"><div className="break-words font-semibold leading-7 text-[#203640]">{n.title}</div><div className="mt-1.5 text-[13px] leading-6 text-[#66737C]">{n.message}</div></div></div>)}</div> : <StorelyEmptyState icon={<Bell size={16}/>} title="لا توجد إشعارات" description="ستظهر الإشعارات التشغيلية هنا عند توفرها." />}
             </StorelyCard>
           </div>
         </div>

@@ -112,13 +112,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <img src="/icon-192.png" alt="" width={32} height={32} style={{ borderRadius: 8 }} />
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: 'white' }}>Storely</div>
-          <div style={{ fontSize: 11, color: '#8fb3b1' }}>لوحة الإدارة</div>
+          <div style={{ fontSize: 13, color: '#CBD4DC' }}>لوحة الإدارة</div>
         </div>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 10px 12px' }}>
         {groups.map(g => (
           <div key={g.title} style={{ marginTop: 14 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#6f9593', padding: '0 10px 6px' }}>{g.title}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#CBD4DC', padding: '0 10px 6px' }}>{g.title}</div>
             {g.items.map(item => {
               const active = isActive(item.href)
               const Icon = item.icon
@@ -139,10 +139,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 12.5, fontWeight: 700, color: 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{admin.full_name}</div>
-          <div style={{ fontSize: 11, color: '#8fb3b1' }}>{admin.role === 'super_admin' ? 'مشرف كامل' : 'مشرف'}</div>
+          <div style={{ fontSize: 13, color: '#CBD4DC' }}>{admin.role === 'super_admin' ? 'مشرف كامل' : 'مشرف'}</div>
         </div>
         <button onClick={logout} title="تسجيل الخروج" aria-label="تسجيل الخروج"
-          style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', color: '#b9d3d2', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', color: '#CBD4DC', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <LogOut size={16} />
         </button>
       </div>
@@ -172,12 +172,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
 const SHELL_CSS = `
   .adm-side{position:fixed;top:0;right:0;bottom:0;width:248px;background:${A.sidebar};z-index:50}
-  .adm-main{margin-right:248px;padding:28px 32px 48px;max-width:1360px}
+  .adm-main{min-width:0;margin-right:248px;padding:28px 32px 48px;max-width:1360px}
   .adm-topbar{display:none}
-  .adm-nav{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:#c4d8d7;font-size:13.5px;font-weight:600;text-decoration:none;margin-bottom:2px}
+  .adm-nav{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:#CBD4DC;font-size:13.5px;font-weight:600;text-decoration:none;margin-bottom:2px}
   .adm-nav:hover{background:rgba(255,255,255,.06);color:white}
-  .adm-nav.on{background:rgba(45,212,191,.14);color:white}
-  .adm-nav.on svg{color:#5eead4}
+  .adm-nav.on{background:white;color:${A.primary}}
+  .adm-nav.on svg{color:${A.primary}}
   .adm-mob-menu{position:fixed;inset:0;z-index:900}
   @media(max-width:900px){
     .adm-side{display:none}

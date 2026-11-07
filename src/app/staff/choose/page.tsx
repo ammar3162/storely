@@ -1,7 +1,9 @@
 'use client'
+import { StorelyButton, StorelyCard, StorelyPageHeader } from '@/components/ui'
+import { storelyTokens as uiTokens } from '@/components/ui/design-tokens'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bell, MapPin, Package, Store, ClipboardList, Send, Wallet, Plane, UserCheck, Boxes, ShoppingCart } from 'lucide-react'
+import { Bell, Boxes, CircleX, ClipboardList, Clock3, MapPin, Package, Plane, Send, ShoppingCart, Store, UserCheck, Wallet, UserRound } from 'lucide-react'
 import { getStaffOrg } from '@/lib/session'
 
 const CS: Record<string, Record<'ar'|'en', string>> = {
@@ -301,68 +303,58 @@ export default function ChoosePage() {
   }
 
   return (
-    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#042f2e,#0C213B)',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:lang==='en'?'ltr':'rtl'}}>
-      <div style={{background:'white',borderRadius:0,padding:'32px 24px 40px',maxWidth:480,width:'100%',minHeight:'100vh',boxSizing:'border-box' as const,textAlign:'center',position:'relative' as const,display:'flex',flexDirection:'column' as const,justifyContent:'center'}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-          <button onClick={()=>{
+    <div className="min-h-screen !p-4 sm:!p-8 flex flex-col items-center text-[var(--storely-navy)]" style={{background:uiTokens.color.background, direction:lang==='en'?'ltr':'rtl'}}>
+      <div className="storely-card !p-5 sm:!p-8 max-w-4xl w-full text-center relative flex flex-col text-[var(--storely-navy)]" style={{background:uiTokens.color.surface}}>
+        <div className="flex justify-between items-center !mb-2 flex-wrap gap-4">
+          <StorelyButton onClick={()=>{
               const nl=lang==='ar'?'en':'ar'; setLang(nl); localStorage.setItem('staff_lang',nl)
               const token = localStorage.getItem('staff_token')
               fetch('/api/staff-set-lang',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},body:JSON.stringify({lang:nl})}).catch(()=>{})
-            }}
-            style={{background:'#f1f5f9',border:'none',borderRadius:20,padding:'6px 12px',fontSize:12,fontWeight:700,color:'#475569',cursor:'pointer',fontFamily:'inherit'}}>
+            }} variant="secondary">
             {lang==='ar'?'EN':'عربي'}
-          </button>
-          <button onClick={()=>{ setShowNotifications(true); markNotificationsRead() }}
-            style={{position:'relative' as const,background:'#f1f5f9',border:'none',borderRadius:'50%',width:34,height:34,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontSize:16}}>
+          </StorelyButton>
+          <StorelyButton onClick={()=>{ setShowNotifications(true); markNotificationsRead() }} className="relative flex items-center justify-center !px-0" style={{width:40, height:40}} variant="secondary">
             <Bell size={17} strokeWidth={2.25}/>
             {notifications.some((n:any)=>!n.is_read) && (
-              <span style={{position:'absolute' as const,top:-2,left:-2,width:10,height:10,borderRadius:'50%',background:'#dc2626',border:'2px solid white'}}/>
+              <span className="absolute rounded-full" style={{top:-2, left:-2, width:10, height:10, background:uiTokens.color.danger, border:'2px solid white'}}/>
             )}
-          </button>
+          </StorelyButton>
         </div>
-        <div style={{width:60,height:60,borderRadius:18,background: orgLogo ? 'white' : 'linear-gradient(135deg,#029FA2,#0f766e)',border: orgLogo ? '1px solid #e5e7eb' : 'none',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 16px',boxShadow: orgLogo ? '0 4px 12px rgba(0,0,0,.08)' : '0 8px 20px rgba(22,163,74,.28)',overflow:'hidden' as const}}>
+        <div className="rounded-[var(--radius)] flex items-center justify-center !mt-0 !mx-auto !mb-4" style={{width:60, height:60, background:orgLogo ? uiTokens.color.surface : uiTokens.color.surface, border:orgLogo ? `1px solid ${uiTokens.color.border}` : 'none', boxShadow:uiTokens.shadow.surface, overflow:'hidden' as const}}>
           {orgLogo ? (
-            <img src={orgLogo} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+            <img src={orgLogo} alt="" className="w-full object-cover" style={{height:'100%'}}/>
           ) : (
-            <span style={{fontSize:24,fontWeight:800,color:'white'}}>{name?.trim()?.[0] || '👤'}</span>
+            <span className="text-2xl font-semibold" style={{color:uiTokens.color.navy}}>{name?.trim()?.[0] || <UserRound size={24}/>}</span>
           )}
         </div>
-        <h2 style={{fontSize:21,fontWeight:800,color:'#0f172a',marginBottom:5,letterSpacing:'-.2px'}}>{t('welcome')} {name}</h2>
-        <p style={{fontSize:13.5,color:'#94a3b8',marginBottom:28}}>{t('chooseTask')}</p>
+        <StorelyPageHeader title={<> {t('welcome')} {name} </>} className="!mb-2" />
+        <p className="text-sm !mb-6" style={{color:uiTokens.color.textMuted}}>{t('chooseTask')}</p>
 
         {/* تسجيل الحضور والانصراف */}
         {!loadingToday && !attendanceLocked && (
-          <div style={{
-            background: isCheckedIn ? 'linear-gradient(135deg,#f0fdfa,#f0fdfa)' : '#f8fafc',
-            border: `1.5px solid ${isCheckedIn ? '#99f6e4' : '#e2e8f0'}`,
-            borderRadius: 18, padding: 18, marginBottom: 24, textAlign: 'right'
-          }}>
+          <div className="rounded-[var(--radius)] !p-4 !mb-6 text-right" style={{background:isCheckedIn ? uiTokens.color.surface : uiTokens.color.background, border:`1.5px solid ${isCheckedIn ? uiTokens.color.successBorder : uiTokens.color.border}`}}>
             {/* حالة الموظف الآن */}
-            <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:8,marginBottom:14}}>
-              <span style={{fontSize:12,fontWeight:800,color: isCheckedIn ? '#0f766e' : '#64748b'}}>
+            <div className="flex items-center justify-end gap-2 !mb-3">
+              <span className="text-sm font-semibold" style={{color:isCheckedIn ? uiTokens.color.success : uiTokens.color.textMuted}}>
                 {isCheckedIn ? t('checkedIn') : lastCheckOut ? t('checkedOutToday') : t('notCheckedIn')}
               </span>
-              <span style={{
-                width:9,height:9,borderRadius:'50%',
-                background: isCheckedIn ? '#029FA2' : lastCheckOut ? '#94a3b8' : '#f59e0b',
-                boxShadow: isCheckedIn ? '0 0 0 4px rgba(22,163,74,.15)' : 'none',
-              }}/>
+              <span className="rounded-full" style={{width:9, height:9, background:isCheckedIn ? uiTokens.color.success : lastCheckOut ? uiTokens.color.background : uiTokens.color.warning, boxShadow:uiTokens.shadow.surface}}/>
             </div>
 
             {/* أوقات الحضور والانصراف */}
             {(lastCheckIn || lastCheckOut) && (
-              <div style={{display:'flex',gap:8,marginBottom:16}}>
+              <div className="flex gap-2 !mb-4">
                 {lastCheckIn && (
-                  <div style={{flex:1,background:'white',borderRadius:12,padding:'10px 12px',border:'1px solid #e2e8f0'}}>
-                    <div style={{fontSize:9,color:'#94a3b8',fontWeight:700,marginBottom:3}}>{t('checkInTime')}</div>
-                    <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>{new Date(lastCheckIn.recorded_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit'})}</div>
-                  </div>
+                  <StorelyCard className="min-w-0 flex-1 rounded-[var(--radius)] !py-2 !px-3" style={{background:uiTokens.color.surface, border:`1px solid ${uiTokens.color.border}`}}>
+                    <div className="text-xs font-semibold !mb-1" style={{color:uiTokens.color.textMuted}}>{t('checkInTime')}</div>
+                    <div className="text-base font-semibold" style={{color:uiTokens.color.text}}>{new Date(lastCheckIn.recorded_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit'})}</div>
+                  </StorelyCard>
                 )}
                 {lastCheckOut && (
-                  <div style={{flex:1,background:'white',borderRadius:12,padding:'10px 12px',border:'1px solid #e2e8f0'}}>
-                    <div style={{fontSize:9,color:'#94a3b8',fontWeight:700,marginBottom:3}}>{t('checkOutTime')}</div>
-                    <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>{new Date(lastCheckOut.recorded_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit'})}</div>
-                  </div>
+                  <StorelyCard className="min-w-0 flex-1 rounded-[var(--radius)] !py-2 !px-3" style={{background:uiTokens.color.surface, border:`1px solid ${uiTokens.color.border}`}}>
+                    <div className="text-xs font-semibold !mb-1" style={{color:uiTokens.color.textMuted}}>{t('checkOutTime')}</div>
+                    <div className="text-base font-semibold" style={{color:uiTokens.color.text}}>{new Date(lastCheckOut.recorded_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit'})}</div>
+                  </StorelyCard>
                 )}
               </div>
             )}
@@ -370,170 +362,155 @@ export default function ChoosePage() {
             {/* الزر الرئيسي */}
             {!lastCheckOut && (
               !isCheckedIn ? (
-                <button onClick={()=>markAttendance('check_in')} disabled={marking!==null}
-                  style={{width:'100%',padding:'15px',background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow:'0 6px 16px rgba(22,163,74,.3)'}}>
-                  <span style={{width:26,height:26,borderRadius:'50%',background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center'}}><MapPin size={14} strokeWidth={2.25}/></span>
+                <StorelyButton onClick={()=>markAttendance('check_in')} disabled={marking!==null} className="w-full flex items-center justify-center gap-2" variant="primary">
+                  <span className="rounded-[var(--radius-sm)] flex items-center justify-center" style={{width:40, height:40, background:uiTokens.color.surface}}><MapPin size={14} strokeWidth={2.25}/></span>
                   {marking==='check_in' ? t('markingLocation') : t('checkIn')}
-                </button>
+                </StorelyButton>
               ) : (
                 <>
-                  <button onClick={()=>markAttendance('check_out')} disabled={marking!==null || !canCheckOut}
-                    style={{width:'100%',padding:'15px',background: canCheckOut ? 'linear-gradient(135deg,#ef4444,#dc2626)' : '#cbd5e1',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor: canCheckOut ? 'pointer' : 'not-allowed',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10,boxShadow: canCheckOut ? '0 6px 16px rgba(220,38,38,.3)' : 'none'}}>
-                    <span style={{width:26,height:26,borderRadius:'50%',background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center'}}><MapPin size={14} strokeWidth={2.25}/></span>
+                  <StorelyButton onClick={()=>markAttendance('check_out')} disabled={marking!==null || !canCheckOut} className="w-full flex items-center justify-center gap-2" style={{background:canCheckOut ? uiTokens.color.surface : uiTokens.color.background}} variant="danger">
+                    <span className="rounded-[var(--radius-sm)] flex items-center justify-center" style={{width:40, height:40, background:uiTokens.color.surface}}><MapPin size={14} strokeWidth={2.25}/></span>
                     {marking==='check_out' ? t('markingLocation') : t('checkOut')}
-                  </button>
+                  </StorelyButton>
                   {!canCheckOut && checkOutHint && (
-                    <div style={{textAlign:'center' as const,fontSize:11,color:'#94a3b8',fontWeight:600,marginTop:8}}>⏰ {checkOutHint}</div>
+                    <div className="text-center text-xs font-semibold !mt-2" style={{color:uiTokens.color.textMuted}}><Clock3 size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> {checkOutHint}</div>
                   )}
                   {!canCheckOut && (
                     permReq?.status === 'pending' ? (
-                      <div style={{textAlign:'center' as const,fontSize:12,color:'#d97706',fontWeight:700,marginTop:10,background:'#fffbeb',border:'1px solid #fde68a',borderRadius:10,padding:'8px 10px'}}>⏳ طلب الاستئذان بانتظار رد المالك</div>
+                      <div className="text-center text-sm font-semibold !mt-2 rounded-[var(--radius-sm)] !py-2 !px-2" style={{color:uiTokens.color.warning, background:uiTokens.color.warningBg, border:`1px solid ${uiTokens.color.warningBorder}`}}><Clock3 size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> طلب الاستئذان بانتظار رد المالك</div>
                     ) : permReq?.status === 'rejected' ? (
-                      <div style={{textAlign:'center' as const,fontSize:12,color:'#dc2626',fontWeight:700,marginTop:10,background:'#fef2f2',border:'1px solid #fecaca',borderRadius:10,padding:'8px 10px'}}>🚫 تم رفض طلب الاستئذان</div>
+                      <div className="text-center text-sm font-semibold !mt-2 rounded-[var(--radius-sm)] !py-2 !px-2" style={{color:uiTokens.color.danger, background:uiTokens.color.dangerBg, border:`1px solid ${uiTokens.color.dangerBorder}`}}><CircleX size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> تم رفض طلب الاستئذان</div>
                     ) : showPermForm ? (
-                      <div style={{marginTop:10}}>
-                        <textarea value={permReason} onChange={e=>setPermReason(e.target.value)} placeholder={t('excuseReasonPh')} rows={2}
-                          style={{width:'100%',padding:'10px 12px',border:'1px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',resize:'vertical' as const,marginBottom:8,boxSizing:'border-box' as const}}/>
-                        <div style={{display:'flex',gap:8}}>
-                          <button onClick={submitPermissionRequest} disabled={submittingPerm}
-                            style={{flex:1,padding:'10px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                      <div className="!mt-2">
+                        <textarea value={permReason} onChange={e=>setPermReason(e.target.value)} placeholder={t('excuseReasonPh')} rows={2} className="w-full rounded-[var(--radius-sm)] text-sm resize-y !mb-2 storely-input min-w-0 !h-auto" style={{border:`1px solid ${uiTokens.color.border}`}}/>
+                        <div className="flex flex-wrap gap-3">
+                          <StorelyButton onClick={submitPermissionRequest} disabled={submittingPerm} className="min-w-0 flex-1" variant="primary">
                             {submittingPerm ? 'جاري الإرسال...' : 'إرسال الطلب'}
-                          </button>
-                          <button onClick={()=>setShowPermForm(false)} style={{padding:'10px 16px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                          </StorelyButton>
+                          <StorelyButton onClick={()=>setShowPermForm(false)} variant="secondary">إلغاء</StorelyButton>
                         </div>
                       </div>
                     ) : (
-                      <button onClick={()=>setShowPermForm(true)} style={{width:'100%',marginTop:10,padding:'11px',background:'#fffbeb',color:'#b45309',border:'1.5px solid #fde68a',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                        <UserCheck size={13} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> طلب استئذان (ظرف طارئ)
-                      </button>
+                      <StorelyButton onClick={()=>setShowPermForm(true)} className="w-full !mt-2" variant="secondary">
+                        <UserCheck  size={13} strokeWidth={2.25} className="!ml-1" style={{display:'inline', verticalAlign:'-2px'}}/> طلب استئذان (ظرف طارئ)
+                      </StorelyButton>
                     )
                   )}
                 </>
               )
             )}
             {lastCheckOut && (
-              <div style={{textAlign:'center' as const,fontSize:11,color:'#94a3b8',fontWeight:600,padding:'6px 0'}}>✓ اكتمل دوامك لهذا اليوم</div>
+              <div className="text-center text-xs font-semibold !py-1 !px-0" style={{color:uiTokens.color.textMuted}}>✓ اكتمل دوامك لهذا اليوم</div>
             )}
-            {locatingHint && <div style={{fontSize:11,color:'#64748b',marginTop:10,textAlign:'center' as const}}>📍 {locatingHint}</div>}
-            {attError && <div style={{fontSize:11,color:'#dc2626',marginTop:10,lineHeight:1.6,textAlign:'center' as const}}>{attError}</div>}
+            {locatingHint && <div className="text-xs !mt-2 text-center" style={{color:uiTokens.color.textMuted}}><MapPin size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> {locatingHint}</div>}
+            {attError && <div className="text-xs !mt-2 text-center" style={{color:uiTokens.color.danger, lineHeight:1.6}}>{attError}</div>}
           </div>
         )}
 
-        <div style={{display:'flex',flexDirection:'column',gap:12}}>
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2">
           {canDispense && (
-            <button onClick={()=>router.push('/staff/dispense')}
-              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#042f2e,#029FA2)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
-              <span style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Package size={22} strokeWidth={2}/></span>
-              <div style={{textAlign:'right'}}>
-                <div style={{fontSize:16,fontWeight:800}}>{t('dispense')}</div>
-                <div style={{fontSize:12,opacity:.8}}>{t('dispenseSub')}</div>
+            <StorelyButton onClick={()=>router.push('/staff/dispense')} className="w-full !h-auto !min-h-28 !p-5 !justify-start gap-4 text-start" variant="secondary">
+              <span className="rounded-[var(--radius)] flex items-center justify-center shrink-0" style={{width:44, height:44, background:uiTokens.color.surface}}><Package size={22} strokeWidth={2}/></span>
+              <div className="text-right">
+                <div className="text-base font-semibold">{t('dispense')}</div>
+                <div className="text-sm" style={{opacity:.8}}>{t('dispenseSub')}</div>
               </div>
-            </button>
+            </StorelyButton>
           )}
           {isCashier && hasCashierFeature && (
-            <button onClick={()=>router.push('/staff/cashier-closing')}
-              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#1e293b,#334155)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
-              <span style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Store size={22} strokeWidth={2}/></span>
-              <div style={{textAlign:'right'}}>
-                <div style={{fontSize:16,fontWeight:800}}>{t('cashierClosing')}</div>
-                <div style={{fontSize:12,opacity:.8}}>{t('cashierSub')}</div>
+            <StorelyButton onClick={()=>router.push('/staff/cashier-closing')} className="w-full flex items-center justify-center gap-3" variant="primary">
+              <span className="rounded-[var(--radius)] flex items-center justify-center shrink-0" style={{width:44, height:44, background:uiTokens.color.surface}}><Store size={22} strokeWidth={2}/></span>
+              <div className="text-right">
+                <div className="text-base font-semibold">{t('cashierClosing')}</div>
+                <div className="text-sm" style={{opacity:.8}}>{t('cashierSub')}</div>
               </div>
-            </button>
+            </StorelyButton>
           )}
           {canInventory && (
-            <button onClick={()=>router.push('/staff/inventory')}
-              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#5b21b6,#7c3aed)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
-              <span style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Boxes size={22} strokeWidth={2}/></span>
-              <div style={{textAlign:'right'}}>
-                <div style={{fontSize:16,fontWeight:800}}>{t('inventory')}</div>
-                <div style={{fontSize:12,opacity:.8}}>{t('inventorySub')}</div>
+            <StorelyButton onClick={()=>router.push('/staff/inventory')} className="w-full flex items-center justify-center gap-3" variant="primary">
+              <span className="rounded-[var(--radius)] flex items-center justify-center shrink-0" style={{width:44, height:44, background:uiTokens.color.surface}}><Boxes size={22} strokeWidth={2}/></span>
+              <div className="text-right">
+                <div className="text-base font-semibold">{t('inventory')}</div>
+                <div className="text-sm" style={{opacity:.8}}>{t('inventorySub')}</div>
               </div>
-            </button>
+            </StorelyButton>
           )}
           {canPurchases && (
-            <button onClick={()=>router.push('/staff/purchases')}
-              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#1d4ed8,#2563eb)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
-              <span style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><ShoppingCart size={22} strokeWidth={2}/></span>
-              <div style={{textAlign:'right'}}>
-                <div style={{fontSize:16,fontWeight:800}}>{t('purchases')}</div>
-                <div style={{fontSize:12,opacity:.8}}>{t('purchasesSub')}</div>
+            <StorelyButton onClick={()=>router.push('/staff/purchases')} className="w-full flex items-center justify-center gap-3" variant="primary">
+              <span className="rounded-[var(--radius)] flex items-center justify-center shrink-0" style={{width:44, height:44, background:uiTokens.color.surface}}><ShoppingCart size={22} strokeWidth={2}/></span>
+              <div className="text-right">
+                <div className="text-base font-semibold">{t('purchases')}</div>
+                <div className="text-sm" style={{opacity:.8}}>{t('purchasesSub')}</div>
               </div>
-            </button>
+            </StorelyButton>
           )}
           {!canDispense && !isCashier && (
-            <button onClick={()=>router.push('/staff/dispense')}
-              style={{width:'100%',padding:'20px',background:'linear-gradient(135deg,#042f2e,#029FA2)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:12}}>
-              <span style={{fontSize:28}}>📦</span>
-              <div style={{textAlign:'right'}}>
-                <div style={{fontSize:16,fontWeight:800}}>{t('enterSystem')}</div>
+            <StorelyButton onClick={()=>router.push('/staff/dispense')} className="w-full flex items-center justify-center gap-3" variant="primary">
+              <span className="text-[28px]"><Package size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></span>
+              <div className="text-right">
+                <div className="text-base font-semibold">{t('enterSystem')}</div>
               </div>
-            </button>
+            </StorelyButton>
           )}
         </div>
         {hasHrFeature && (
-        <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:10,marginTop:12}}>
-          <button onClick={()=>router.push('/staff/tasks')}
-            style={{position:'relative' as const,padding:'16px 8px',background:'white',color:'#1c1c1a',border:'1.5px solid #e5e7eb',borderRadius:16,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,alignItems:'center',gap:6}}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 !mt-3">
+          <StorelyButton onClick={()=>router.push('/staff/tasks')} className="relative flex flex-col items-center gap-2" variant="secondary">
             {taskCount>0 && (
-              <span style={{position:'absolute' as const,top:6,left:6,background:'#dc2626',color:'white',fontSize:10,fontWeight:800,minWidth:18,height:18,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 4px'}}>{taskCount}</span>
+              <span className="absolute text-xs font-semibold rounded-[var(--radius)] flex items-center justify-center !py-0 !px-1" style={{top:6, left:6, background:uiTokens.color.danger, color:uiTokens.color.onPrimary, minWidth:20, height:18}}>{taskCount}</span>
             )}
-            <span style={{width:38,height:38,borderRadius:11,background:'#f0fdfa',display:'flex',alignItems:'center',justifyContent:'center',color:'#029FA2'}}><ClipboardList size={19} strokeWidth={2}/></span>
+            <span className="rounded-[var(--radius)] flex items-center justify-center" style={{width:38, height:38, background:uiTokens.color.surface, color:uiTokens.color.navy}}><ClipboardList size={19} strokeWidth={2}/></span>
             {t('myTasksLabel')}
-          </button>
-          <button onClick={()=>{setShowRequests(true);loadRequestHistory()}}
-            style={{padding:'16px 8px',background:'white',color:'#1c1c1a',border:'1.5px solid #e5e7eb',borderRadius:16,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column' as const,alignItems:'center',gap:6}}>
-            <span style={{width:38,height:38,borderRadius:11,background:'#eff6ff',display:'flex',alignItems:'center',justifyContent:'center',color:'#2563eb'}}><Send size={19} strokeWidth={2}/></span>
+          </StorelyButton>
+          <StorelyButton onClick={()=>{setShowRequests(true);loadRequestHistory()}} className="flex flex-col items-center gap-2" variant="secondary">
+            <span className="rounded-[var(--radius)] flex items-center justify-center" style={{width:38, height:38, background:uiTokens.color.infoBg, color:uiTokens.color.info}}><Send size={19} strokeWidth={2}/></span>
             {t('myRequests')}
-          </button>
+          </StorelyButton>
         </div>
         )}
 
-        <button onClick={()=>{localStorage.removeItem('staff_session');router.replace('/staff')}}
-          style={{marginTop:20,background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>
+        <StorelyButton onClick={()=>{localStorage.removeItem('staff_session');router.replace('/staff')}} className="!mt-5" variant="secondary">
           {t('logout')}
-        </button>
+        </StorelyButton>
       </div>
 
       {/* نافذة طلباتي */}
       {showRequests && !showAdvanceForm && (
-        <div onClick={()=>setShowRequests(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:200,display:'flex',alignItems:'flex-end',justifyContent:'center',padding:0}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:'24px 24px 0 0',padding:'24px 20px 32px',width:'100%',maxWidth:420,textAlign:'right' as const}}>
-            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>{t('myRequests')}</div>
-            <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
-              <button onClick={()=>setShowAdvanceForm(true)}
-                style={{width:'100%',padding:'16px',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:14,fontSize:14,fontWeight:700,color:'#1c1c1a',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
+        <div onClick={()=>setShowRequests(false)} className="fixed flex items-end justify-center !p-0 overflow-y-auto" style={{inset:0, background:uiTokens.color.backdrop, zIndex:200}}>
+          <div onClick={e=>e.stopPropagation()} className="rounded-[var(--radius)] !pt-6 !px-5 !pb-8 w-full max-w-lg text-right" style={{background:uiTokens.color.surface}}>
+            <div className="text-base font-semibold !mb-4" style={{color:uiTokens.color.text}}>{t('myRequests')}</div>
+            <div className="flex flex-col gap-2">
+              <StorelyButton onClick={()=>setShowAdvanceForm(true)} className="w-full flex items-center gap-3" variant="secondary">
                 <Wallet size={18} strokeWidth={2}/> {t('requestAdvance')}
-              </button>
-              <button onClick={()=>{setShowRequests(false);router.push('/staff/leave')}}
-                style={{width:'100%',padding:'16px',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:14,fontSize:14,fontWeight:700,color:'#1c1c1a',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
+              </StorelyButton>
+              <StorelyButton onClick={()=>{setShowRequests(false);router.push('/staff/leave')}} className="w-full flex items-center gap-3" variant="secondary">
                 <Plane size={18} strokeWidth={2}/> {t('requestLeave')}
-              </button>
-              <button onClick={()=>{setShowRequests(false);setShowPermRequestModal(true)}}
-                style={{width:'100%',padding:'16px',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:14,fontSize:14,fontWeight:700,color:'#1c1c1a',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
+              </StorelyButton>
+              <StorelyButton onClick={()=>{setShowRequests(false);setShowPermRequestModal(true)}} className="w-full flex items-center gap-3" variant="secondary">
                 <UserCheck size={18} strokeWidth={2}/> {t('requestExcuse')}
-              </button>
+              </StorelyButton>
             </div>
 
             {/* سجل الطلبات السابقة -- كل الأنواع الثلاثة مع حالتها */}
-            <div style={{marginTop:18,paddingTop:16,borderTop:'1px solid #f1f5f9'}}>
-              <div style={{fontSize:12,fontWeight:700,color:'#64748b',marginBottom:10}}>سجل طلباتي</div>
+            <div className="!mt-4 !pt-4" style={{borderTop:`1px solid ${uiTokens.color.border}`}}>
+              <div className="text-sm font-semibold !mb-2" style={{color:uiTokens.color.textMuted}}>سجل طلباتي</div>
               {loadingHistory ? (
-                <div style={{fontSize:12,color:'#94a3b8',textAlign:'center' as const,padding:'12px 0'}}>جاري التحميل...</div>
+                <div className="text-sm text-center !py-3 !px-0" style={{color:uiTokens.color.textMuted}}>جاري التحميل...</div>
               ) : requestHistory.length===0 ? (
-                <div style={{fontSize:12,color:'#94a3b8',textAlign:'center' as const,padding:'12px 0'}}>ما فيه طلبات سابقة بعد</div>
+                <div className="text-sm text-center !py-3 !px-0" style={{color:uiTokens.color.textMuted}}>ما فيه طلبات سابقة بعد</div>
               ) : (
-                <div style={{display:'flex',flexDirection:'column' as const,gap:6,maxHeight:220,overflowY:'auto' as const}}>
+                <div className="flex flex-col gap-2 overflow-y-auto" style={{maxHeight:220}}>
                   {requestHistory.map((r:any)=>{
                     const statusStyle = r.status==='approved'||r.status==='approve' ? {bg:'#f0fdf4',color:'#16a34a',label:'مقبول'}
                       : r.status==='rejected'||r.status==='reject' ? {bg:'#fef2f2',color:'#dc2626',label:'مرفوض'}
                       : {bg:'#fffbeb',color:'#d97706',label:'قيد الانتظار'}
                     return (
-                      <div key={r.kind+r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 10px',background:'#f8fafc',borderRadius:10}}>
+                      <div key={r.kind+r.id} className="flex justify-between items-center !py-2 !px-2 rounded-[var(--radius-sm)] flex-wrap gap-4" style={{background:uiTokens.color.background}}>
                         <div>
-                          <div style={{fontSize:12,fontWeight:600,color:'#1c1c1a'}}>{r.label}</div>
-                          <div style={{fontSize:10,color:'#94a3b8',marginTop:1}}>{new Date(r.date).toLocaleDateString('ar-SA',{numberingSystem:'latn',day:'numeric',month:'short'})}</div>
+                          <div className="text-sm font-semibold" style={{color:uiTokens.color.text}}>{r.label}</div>
+                          <div className="text-xs !mt-0" style={{color:uiTokens.color.textMuted}}>{new Date(r.date).toLocaleDateString('ar-SA',{numberingSystem:'latn',day:'numeric',month:'short'})}</div>
                         </div>
-                        <span style={{fontSize:10,fontWeight:700,color:statusStyle.color,background:statusStyle.bg,padding:'3px 9px',borderRadius:99}}>{statusStyle.label}</span>
+                        <span className="text-xs font-semibold !py-1 !px-2 rounded-[var(--radius)]" style={{color:statusStyle.color, background:statusStyle.bg}}>{statusStyle.label}</span>
                       </div>
                     )
                   })}
@@ -541,78 +518,73 @@ export default function ChoosePage() {
               )}
             </div>
 
-            <button onClick={()=>setShowRequests(false)} style={{width:'100%',padding:'12px',marginTop:14,background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('cancel')}</button>
+            <StorelyButton onClick={()=>setShowRequests(false)} className="w-full !mt-3" variant="secondary">{t('cancel')}</StorelyButton>
           </div>
         </div>
       )}
 
       {/* نموذج طلب السلفة */}
       {showAdvanceForm && (
-        <div onClick={()=>{setShowAdvanceForm(false);setShowRequests(false)}} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:210,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:360,textAlign:'right' as const}}>
-            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>{t('advanceTitle')}</div>
-            <label style={{fontSize:12,color:'#64748b',display:'block',marginBottom:6}}>{t('amount')}</label>
-            <input type="number" value={advanceAmount} onChange={e=>setAdvanceAmount(e.target.value)} placeholder="0"
-              style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:16,fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:12}}/>
-            <label style={{fontSize:12,color:'#64748b',display:'block',marginBottom:6}}>{t('reasonOptional')}</label>
-            <textarea value={advanceReason} onChange={e=>setAdvanceReason(e.target.value)} placeholder={t('advanceReasonPh')}
-              style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const,minHeight:60,resize:'none' as const,marginBottom:12}}/>
-            {advanceMsg && <div style={{fontSize:12,color:'#dc2626',marginBottom:10}}>{advanceMsg}</div>}
-            <button onClick={submitAdvanceRequest} disabled={submittingAdvance||!advanceAmount}
-              style={{width:'100%',padding:'12px',background:(submittingAdvance||!advanceAmount)?'#94a3b8':'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:(submittingAdvance||!advanceAmount)?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
+        <div onClick={()=>{setShowAdvanceForm(false);setShowRequests(false)}} className="fixed flex items-center justify-center !p-5 overflow-y-auto" style={{inset:0, background:uiTokens.color.backdrop, zIndex:210}}>
+          <StorelyCard onClick={e=>e.stopPropagation()} className="min-w-0 max-h-[90dvh] overflow-y-auto rounded-[var(--radius)] !p-6 w-full max-w-lg text-right" style={{background:uiTokens.color.surface}}>
+            <div className="text-base font-semibold !mb-4" style={{color:uiTokens.color.text}}>{t('advanceTitle')}</div>
+            <label className="text-sm block !mb-1" style={{color:uiTokens.color.textMuted}}>{t('amount')}</label>
+            <input type="number" value={advanceAmount} onChange={e=>setAdvanceAmount(e.target.value)} placeholder="0" className="w-full rounded-[var(--radius-sm)] !text-base !mb-3 storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`}}/>
+            <label className="text-sm block !mb-1" style={{color:uiTokens.color.textMuted}}>{t('reasonOptional')}</label>
+            <textarea value={advanceReason} onChange={e=>setAdvanceReason(e.target.value)} placeholder={t('advanceReasonPh')} className="w-full rounded-[var(--radius-sm)] text-sm resize-y !mb-3 storely-input min-w-0 !h-auto" style={{border:`1px solid ${uiTokens.color.border}`, minHeight:60}}/>
+            {advanceMsg && <div className="text-sm !mb-2" style={{color:uiTokens.color.danger}}>{advanceMsg}</div>}
+            <StorelyButton onClick={submitAdvanceRequest} disabled={submittingAdvance||!advanceAmount} className="w-full !mb-2" variant="primary">
               {submittingAdvance?t('sending'):t('sendRequest')}
-            </button>
-            <button onClick={()=>setShowAdvanceForm(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
-          </div>
+            </StorelyButton>
+            <StorelyButton onClick={()=>setShowAdvanceForm(false)} className="w-full" variant="secondary">{t('back')}</StorelyButton>
+          </StorelyCard>
         </div>
       )}
 
       {/* نموذج طلب استئذان مستقل (يشتغل بأي حالة، مو بس أثناء الحضور) */}
       {showPermRequestModal && (
-        <div onClick={()=>setShowPermRequestModal(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:210,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:360,textAlign:'right' as const}}>
-            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:4}}>{t('excuseTitle')}</div>
-            <p style={{fontSize:12,color:'#64748b',marginBottom:16}}>{t('excuseDesc')}</p>
+        <div onClick={()=>setShowPermRequestModal(false)} className="fixed flex items-center justify-center !p-5 overflow-y-auto" style={{inset:0, background:uiTokens.color.backdrop, zIndex:210}}>
+          <StorelyCard onClick={e=>e.stopPropagation()} className="min-w-0 max-h-[90dvh] overflow-y-auto rounded-[var(--radius)] !p-6 w-full max-w-lg text-right" style={{background:uiTokens.color.surface}}>
+            <div className="text-base font-semibold !mb-1" style={{color:uiTokens.color.text}}>{t('excuseTitle')}</div>
+            <p className="text-sm !mb-4" style={{color:uiTokens.color.textMuted}}>{t('excuseDesc')}</p>
             {permReq?.status === 'pending' ? (
-              <div style={{textAlign:'center' as const,fontSize:13,color:'#d97706',fontWeight:700,background:'#fffbeb',border:'1px solid #fde68a',borderRadius:10,padding:'12px'}}>{t('excusePending')}</div>
+              <div className="text-center text-sm font-semibold rounded-[var(--radius-sm)] !p-3" style={{color:uiTokens.color.warning, background:uiTokens.color.warningBg, border:`1px solid ${uiTokens.color.warningBorder}`}}>{t('excusePending')}</div>
             ) : (
               <>
-                <textarea value={permReason} onChange={e=>setPermReason(e.target.value)} placeholder={t('excuseReasonPh')} rows={3}
-                  style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',resize:'none' as const,marginBottom:12,boxSizing:'border-box' as const}}/>
-                {attError && <div style={{fontSize:12,color:'#dc2626',marginBottom:10}}>{attError}</div>}
-                <button onClick={async ()=>{ await submitPermissionRequest(); setShowPermRequestModal(false) }} disabled={submittingPerm}
-                  style={{width:'100%',padding:'12px',background:submittingPerm?'#94a3b8':'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:submittingPerm?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
+                <textarea value={permReason} onChange={e=>setPermReason(e.target.value)} placeholder={t('excuseReasonPh')} rows={3} className="w-full rounded-[var(--radius-sm)] text-sm resize-y !mb-3 storely-input min-w-0 !h-auto" style={{border:`1px solid ${uiTokens.color.border}`}}/>
+                {attError && <div className="text-sm !mb-2" style={{color:uiTokens.color.danger}}>{attError}</div>}
+                <StorelyButton onClick={async ()=>{ await submitPermissionRequest(); setShowPermRequestModal(false) }} disabled={submittingPerm} className="w-full !mb-2" variant="secondary">
                   {submittingPerm?t('sending'):t('sendRequest')}
-                </button>
+                </StorelyButton>
               </>
             )}
-            <button onClick={()=>setShowPermRequestModal(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
-          </div>
+            <StorelyButton onClick={()=>setShowPermRequestModal(false)} className="w-full" variant="secondary">{t('back')}</StorelyButton>
+          </StorelyCard>
         </div>
       )}
 
       {/* نافذة الإشعارات */}
       {showNotifications && (
-        <div onClick={()=>setShowNotifications(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:220,display:'flex',alignItems:'flex-end',justifyContent:'center',padding:0}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:'24px 24px 0 0',padding:'24px 20px 32px',width:'100%',maxWidth:420,maxHeight:'75vh',overflowY:'auto' as const,textAlign:lang==='en'?'left' as const:'right' as const}}>
-            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>{t('notifications')}</div>
+        <div onClick={()=>setShowNotifications(false)} className="fixed flex items-end justify-center !p-0 overflow-y-auto" style={{inset:0, background:uiTokens.color.backdrop, zIndex:220}}>
+          <div onClick={e=>e.stopPropagation()} className="rounded-[var(--radius)] !pt-6 !px-5 !pb-8 w-full max-w-lg overflow-y-auto" style={{background:uiTokens.color.surface, maxHeight:'75vh', textAlign:lang==='en'?'left' as const:'right' as const}}>
+            <div className="text-base font-semibold !mb-4" style={{color:uiTokens.color.text}}>{t('notifications')}</div>
             {notifications.length===0 ? (
-              <div style={{textAlign:'center' as const,padding:'30px 0',fontSize:13,color:'#94a3b8'}}>{t('noNotifications')}</div>
+              <div className="text-center !py-8 !px-0 text-sm" style={{color:uiTokens.color.textMuted}}>{t('noNotifications')}</div>
             ) : (
-              <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
+              <div className="flex flex-col gap-2">
                 {notifications.map((n:any)=>{
                   const bg = n.type==='success'?'#f0fdfa':n.type==='danger'?'#fef2f2':n.type==='warning'?'#fffbeb':'#f8fafc'
                   const border = n.type==='success'?'#99f6e4':n.type==='danger'?'#fecaca':n.type==='warning'?'#fde68a':'#e2e8f0'
                   return (
-                    <div key={n.id} style={{background:bg,border:`1px solid ${border}`,borderRadius:14,padding:'12px 14px'}}>
-                      <div style={{fontSize:13,fontWeight:800,color:'#0f172a',marginBottom:4}}>{n.title}</div>
-                      <div style={{fontSize:12,color:'#475569',lineHeight:1.6}}>{n.message}</div>
+                    <div key={n.id} className="rounded-[var(--radius)] !py-3 !px-3" style={{background:bg, border:`1px solid ${border}`}}>
+                      <div className="text-sm font-semibold !mb-1" style={{color:uiTokens.color.text}}>{n.title}</div>
+                      <div className="text-sm" style={{color:uiTokens.color.textMuted, lineHeight:1.6}}>{n.message}</div>
                     </div>
                   )
                 })}
               </div>
             )}
-            <button onClick={()=>setShowNotifications(false)} style={{width:'100%',padding:'12px',marginTop:16,background:'#f1f5f9',color:'#334155',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
+            <StorelyButton onClick={()=>setShowNotifications(false)} className="w-full !mt-4" variant="secondary">{t('back')}</StorelyButton>
           </div>
         </div>
       )}

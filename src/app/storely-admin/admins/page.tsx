@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 import { UserPlus } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { toast } from '@/components/toast'
-import { A, Badge, Btn, Card, Drawer, Empty, Field, Loading, PageHeader, adminFetch, inputStyle, useAdmin } from '../_admin/kit'
+import { Btn, Drawer, Empty, Field, Loading, Notice, adminFetch, useAdmin } from '../_admin/kit'
+import { StorelyCard, StorelyPageHeader, StorelyStatusBadge } from '@/components/ui'
 
 const PERMS: Record<string, string> = {
   manage_users: 'إدارة العملاء (تفعيل، إيقاف، حذف، الباقات)',
@@ -33,7 +34,7 @@ export default function AdminsPage() {
   }
   useEffect(() => { load() }, [])
 
-  if (admin.role !== 'super_admin') return <><PageHeader title="المشرفون" /><Card><Empty title="هذي الصفحة للمشرف الكامل فقط" /></Card></>
+  if (admin.role !== 'super_admin') return <div className="min-w-0 space-y-6" dir="rtl"><StorelyPageHeader title="المشرفون" /><StorelyCard><Empty title="هذي الصفحة للمشرف الكامل فقط" /></StorelyCard></div>
 
   async function save() {
     if (!form) return
@@ -62,29 +63,29 @@ export default function AdminsPage() {
   }
 
   return (
-    <>
-      <PageHeader title="المشرفون" subtitle="من يقدر يدخل لوحة الإدارة، وبأي صلاحيات"
+    <div className="min-w-0 space-y-6" dir="rtl">
+      <StorelyPageHeader title="المشرفون" description="من يقدر يدخل لوحة الإدارة، وبأي صلاحيات"
         actions={<Btn kind="primary" onClick={() => { setError(''); setForm({ ...EMPTY }) }}><UserPlus size={15} /> إضافة مشرف</Btn>} />
 
-      <Card pad={0}>
+      <StorelyCard>
         {loading ? <Loading /> : list.length === 0 ? <Empty title="ما فيه مشرفين" /> : list.map((a, i) => (
-          <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', borderTop: i ? `1px solid ${A.border}` : 'none', flexWrap: 'wrap' }}>
-            <div style={{ flex: '1 1 260px', minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 14, fontWeight: 700 }}>{a.full_name}</span>
-                {a.role === 'super_admin' ? <Badge tone="primary">مشرف كامل</Badge> : <Badge>مشرف</Badge>}
-                {!a.is_active && <Badge tone="danger">معطّل</Badge>}
-                {a.id === admin.id && <Badge tone="info">أنت</Badge>}
+          <div key={a.id} className={`flex min-w-0 flex-wrap items-center gap-5 p-5 sm:p-6 ${i ? 'border-t border-[var(--storely-border)]' : ''}`}>
+            <div className="min-w-0 flex-1 basis-64">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="break-words text-base font-semibold">{a.full_name}</span>
+                {a.role === 'super_admin' ? <span className="text-[13px] font-semibold text-[var(--storely-muted)]">مشرف كامل</span> : <span className="text-[13px] text-[var(--storely-muted)]">مشرف</span>}
+                {!a.is_active && <StorelyStatusBadge status="danger">معطّل</StorelyStatusBadge>}
+                {a.id === admin.id && <StorelyStatusBadge status="info">أنت</StorelyStatusBadge>}
               </div>
-              <div style={{ fontSize: 12.5, color: A.text3, marginTop: 3 }} dir="ltr">{a.email}</div>
+              <div className="mt-2 break-all text-start text-sm text-[var(--storely-muted)]" dir="ltr">{a.email}</div>
               {a.role !== 'super_admin' && (
-                <div style={{ fontSize: 12, color: A.text2, marginTop: 6 }}>
+                <div className="mt-3 text-sm leading-7 text-[var(--storely-muted)]">
                   {Object.entries(a.permissions || {}).filter(([, v]) => v).map(([k]) => PERMS[k] || k).join(' · ') || 'بدون صلاحيات'}
                 </div>
               )}
             </div>
             {a.role !== 'super_admin' && (
-              <div style={{ display: 'flex', gap: 6 }}>
+              <div className="storely-actions">
                 <Btn small onClick={() => { setError(''); setForm({ id: a.id, full_name: a.full_name, email: a.email, password: '', permissions: a.permissions || {} }) }}>تعديل</Btn>
                 <Btn small onClick={() => toggle(a)}>{a.is_active ? 'تعطيل' : 'تفعيل'}</Btn>
                 <Btn small kind="danger" onClick={() => remove(a)}>حذف</Btn>
@@ -92,35 +93,32 @@ export default function AdminsPage() {
             )}
           </div>
         ))}
-      </Card>
+      </StorelyCard>
 
       <Drawer open={!!form} onClose={() => setForm(null)} title={form?.id ? 'تعديل مشرف' : 'إضافة مشرف'} width={460}>
         {form && (
-          <Card>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <Field label="الاسم الكامل"><input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} style={inputStyle} /></Field>
-              <Field label="البريد الإلكتروني"><input type="email" dir="ltr" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} style={inputStyle} /></Field>
-              <Field label={form.id ? 'كلمة مرور جديدة' : 'كلمة المرور'} hint={form.id ? 'اتركها فاضية لو ما تبي تغيّرها' : '8 أحرف على الأقل'}>
-                <input type="password" dir="ltr" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} style={inputStyle} />
-              </Field>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: A.text2, marginBottom: 8 }}>الصلاحيات</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {Object.entries(PERMS).map(([k, l]) => (
-                    <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 13,
-                      border: `1px solid ${form.permissions[k] ? A.primary + '66' : A.border}`, background: form.permissions[k] ? A.primarySoft : A.surface }}>
-                      <input type="checkbox" checked={!!form.permissions[k]} onChange={e => setForm({ ...form, permissions: { ...form.permissions, [k]: e.target.checked } })} />
-                      {l}
-                    </label>
-                  ))}
-                </div>
+          <div className="space-y-6">
+            <Field label="الاسم الكامل"><input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} className="storely-input" /></Field>
+            <Field label="البريد الإلكتروني"><input type="email" dir="ltr" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="storely-input" /></Field>
+            <Field label={form.id ? 'كلمة مرور جديدة' : 'كلمة المرور'} hint={form.id ? 'اتركها فاضية لو ما تبي تغيّرها' : '8 أحرف على الأقل'}>
+              <input type="password" dir="ltr" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} className="storely-input" />
+            </Field>
+            <div>
+              <div className="mb-3 text-base font-semibold">الصلاحيات</div>
+              <div className="flex flex-col gap-3">
+                {Object.entries(PERMS).map(([k, l]) => (
+                  <label key={k} className={`flex cursor-pointer items-start gap-3 rounded-[var(--radius-sm)] border bg-white p-4 text-sm leading-6 ${form.permissions[k] ? 'border-[var(--storely-navy)]' : 'border-[var(--storely-border)]'}`}>
+                    <input className="mt-1 size-4 shrink-0 accent-[var(--storely-navy)]" type="checkbox" checked={!!form.permissions[k]} onChange={e => setForm({ ...form, permissions: { ...form.permissions, [k]: e.target.checked } })} />
+                    {l}
+                  </label>
+                ))}
               </div>
-              {error && <div style={{ fontSize: 12.5, color: A.danger, fontWeight: 600 }}>{error}</div>}
-              <Btn kind="primary" full loading={saving} onClick={save}>{form.id ? 'حفظ التعديلات' : 'إضافة المشرف'}</Btn>
             </div>
-          </Card>
+            {error && <Notice tone="danger">{error}</Notice>}
+            <Btn kind="primary" full loading={saving} onClick={save}>{form.id ? 'حفظ التعديلات' : 'إضافة المشرف'}</Btn>
+          </div>
         )}
       </Drawer>
-    </>
+    </div>
   )
 }

@@ -1,4 +1,5 @@
 'use client'
+import { storelyTokens } from '@/components/ui/design-tokens'
 import { useEffect, useState } from 'react'
 import { MessageCircle, Send, Trash2, PauseCircle, PlayCircle } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
@@ -142,7 +143,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         {dl !== null && <Badge tone={dl <= 0 ? 'danger' : dl <= 7 ? 'warning' : 'neutral'}>{dl <= 0 ? 'الاشتراك منتهي' : `باقي ${dl} يوم`}</Badge>}
       </div>
       <Card pad={16}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="storely-detail-grid">
           {[
             ['تاريخ التسجيل', fmtDate(c.created_at)],
             ['ينتهي الاشتراك', fmtDate(c.subscription_ends_at)],
@@ -150,13 +151,13 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
             ['فروع الباقة', `${c.max_branches}`],
           ].map(([k, v]) => (
             <div key={k}>
-              <div style={{ fontSize: 11.5, color: A.text3, fontWeight: 600 }}>{k}</div>
-              <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 3 }}>{v}</div>
+              <div style={{ fontSize: storelyTokens.typography.supporting, color: A.text3, fontWeight: 600 }}>{k}</div>
+              <div style={{ fontSize: storelyTokens.typography.body, fontWeight: 700, marginTop: 3 }}>{v}</div>
             </div>
           ))}
         </div>
         {hasPhone && (
-          <a href={waLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize: 13, fontWeight: 700, color: A.primary, textDecoration: 'none' }}>
+          <a href={waLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize: storelyTokens.typography.body, fontWeight: 700, color: A.primary, textDecoration: 'none' }}>
             <MessageCircle size={15} /> مراسلة على واتساب
           </a>
         )}
@@ -164,16 +165,16 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
 
       {/* الاشتراك */}
       <Card title="الاشتراك" subtitle="تفعيل أو تجديد لمدة تبدأ من اليوم">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginBottom: 12 }}>
+        <div className="storely-duration-grid">
           {DURATIONS.map(x => (
             <button key={x.d} onClick={() => setDays(x.d)} className="adm-btn"
-              style={{ padding: '8px 4px', borderRadius: 8, fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+              style={{ padding: '8px 4px', borderRadius: storelyTokens.radius.control, fontSize: storelyTokens.typography.body, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
                 border: `1px solid ${days === x.d ? A.primary : A.borderStrong}`, background: days === x.d ? A.primarySoft : A.surface, color: days === x.d ? A.primary : A.text2 }}>
               {x.l}
             </button>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="storely-actions">
           <Btn kind="primary" full loading={busy === 'activate'} onClick={() => activate('paid', days)}>تفعيل مدفوع</Btn>
           <Btn full disabled={!!busy} onClick={() => activate('trial', days)}>تجربة مجانية</Btn>
         </div>
@@ -181,10 +182,10 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
 
       {/* الباقة */}
       <Card title="الباقة" actions={
-        <div style={{ display: 'inline-flex', border: `1px solid ${A.borderStrong}`, borderRadius: 8, overflow: 'hidden' }}>
+        <div style={{ display: 'inline-flex', border: `1px solid ${A.borderStrong}`, borderRadius: storelyTokens.radius.control, overflow: 'hidden' }}>
           {(['monthly', 'yearly'] as const).map(cy => (
             <button key={cy} onClick={() => changeCycle(cy)} disabled={!!busy}
-              style={{ padding: '5px 12px', border: 'none', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', background: c.billing_cycle === cy ? A.primary : A.surface, color: c.billing_cycle === cy ? 'white' : A.text2 }}>
+              style={{ padding: '5px 12px', border: 'none', fontSize: storelyTokens.typography.body, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', background: c.billing_cycle === cy ? A.primary : A.surface, color: c.billing_cycle === cy ? 'white' : A.text2 }}>
               {cy === 'monthly' ? 'شهري' : 'سنوي'}
             </button>
           ))}
@@ -196,13 +197,13 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
             const price = c.billing_cycle === 'yearly' ? `${PLAN_PRICING[k].yearly} ر.س/سنة` : `${PLAN_PRICING[k].monthly} ر.س/شهر`
             return (
               <button key={k} onClick={() => changePlan(k)} disabled={!!busy} className="adm-hover"
-                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, textAlign: 'right', fontFamily: 'inherit', cursor: on ? 'default' : 'pointer',
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: storelyTokens.radius.card, textAlign: 'right', fontFamily: 'inherit', cursor: on ? 'default' : 'pointer',
                   border: `1.5px solid ${on ? A.primary : A.border}`, background: on ? A.primarySoft : A.surface }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 800, color: on ? A.primary : A.text }}>{planLabel(k)} {on && '· الحالية'}</div>
-                  <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>{PLAN_LIMITS[k].desc}</div>
+                  <div style={{ fontSize: storelyTokens.typography.body, fontWeight: 600, color: on ? A.primary : A.text }}>{planLabel(k)} {on && '· الحالية'}</div>
+                  <div style={{ fontSize: storelyTokens.typography.supporting, color: A.text3, marginTop: 2 }}>{PLAN_LIMITS[k].desc}</div>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: on ? A.primary : A.text2, whiteSpace: 'nowrap' }}>{price}</div>
+                <div style={{ fontSize: storelyTokens.typography.body, fontWeight: 600, color: on ? A.primary : A.text2, whiteSpace: 'nowrap' }}>{price}</div>
               </button>
             )
           })}
@@ -211,8 +212,8 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
 
       {/* الإضافات */}
       <Card title="الإضافات" subtitle="تنتهي وتتجدد مع الباقة، والدفع بالتناسب">
-        {loadingAddons ? <div style={{ fontSize: 12.5, color: A.text3 }}>جاري التحميل...</div>
-          : addons.length === 0 ? <div style={{ fontSize: 12.5, color: A.text3 }}>ما فيه إضافات متاحة</div>
+        {loadingAddons ? <div style={{ fontSize: storelyTokens.typography.body, color: A.text3 }}>جاري التحميل...</div>
+          : addons.length === 0 ? <div style={{ fontSize: storelyTokens.typography.body, color: A.text3 }}>ما فيه إضافات متاحة</div>
           : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {addons.map(a => {
@@ -221,10 +222,10 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
                 const q = qty[a.id] || (on ? a.subscription?.quantity || 1 : 1)
                 const canEditQty = isQty && (!on || a.slug === 'extra_branch')
                 return (
-                  <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: `1px solid ${on ? A.primary + '55' : A.border}`, background: on ? A.primarySoft : A.surface }}>
+                  <div key={a.id} className="storely-detail-row" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: storelyTokens.radius.card, border: `1px solid ${on ? A.primary + '55' : A.border}`, background: on ? A.primarySoft : A.surface }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700 }}>{a.name}</div>
-                      <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>
+                      <div style={{ fontSize: storelyTokens.typography.body, fontWeight: 700 }}>{a.name}</div>
+                      <div style={{ fontSize: storelyTokens.typography.supporting, color: A.text3, marginTop: 2 }}>
                         {on ? `مفعّلة${isQty ? ` (${a.subscription?.quantity || 1})` : ''} حتى ${fmtDate(a.subscription.expires_at)}` : `${a.monthly_price} ر.س${isQty ? ' للوحدة' : ''} / شهر`}
                       </div>
                     </div>
@@ -248,11 +249,11 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
       <Card title="الفاتورة الدورية" subtitle="الباقة + الإضافات المفعّلة">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {bill.lines.map((l, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 13, color: A.text2 }}>
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: storelyTokens.typography.body, color: A.text2 }}>
               <span>{l.label}</span><span style={{ fontWeight: 700, color: A.text, whiteSpace: 'nowrap' }}>{l.amount} ر.س</span>
             </div>
           ))}
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${A.border}`, paddingTop: 8, marginTop: 4, fontSize: 14, fontWeight: 800 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${A.border}`, paddingTop: 8, marginTop: 4, fontSize: 14, fontWeight: 600 }}>
             <span>الإجمالي</span><span>{bill.total} ر.س</span>
           </div>
         </div>
@@ -260,7 +261,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
           <Btn full loading={busy === 'invoice'} disabled={!hasPhone || (!!busy && busy !== 'invoice')} onClick={() => sendInvoice()}>
             <Send size={14} /> إرسال الفاتورة عبر واتساب
           </Btn>
-          {!hasPhone && <div style={{ fontSize: 12, color: A.danger, marginTop: 6 }}>ما فيه رقم جوال مسجّل لهذا العميل</div>}
+          {!hasPhone && <div style={{ fontSize: storelyTokens.typography.body, color: A.danger, marginTop: 6 }}>ما فيه رقم جوال مسجّل لهذا العميل</div>}
         </div>
       </Card>
 

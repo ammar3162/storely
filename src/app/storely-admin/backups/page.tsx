@@ -1,8 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { LEGACY_C } from '../_admin/kit'
-
-const C = LEGACY_C
+import { Download, RefreshCw } from 'lucide-react'
+import { StorelyButton, StorelyCard, StorelyEmptyState, StorelyPageHeader } from '@/components/ui'
 
 export default function BackupsPage() {
   const [backups, setBackups] = useState<any[]>([])
@@ -38,47 +37,33 @@ export default function BackupsPage() {
   function fmtSize(bytes:number) { return bytes > 1024 ? (bytes/1024).toFixed(1)+' KB' : bytes+' B' }
 
   if (!authChecked) return (
-    <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{color:C.text2,fontSize:13}}>⏳ جاري التحقق...</div>
-    </div>
+    <div className="storely-loading" dir="rtl">جاري التحقق...</div>
   )
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24}}>
-        <div>
-          <h1 style={{fontSize:22,fontWeight:800,color:C.text,marginBottom:4}}>النسخ الاحتياطية</h1>
-          <div style={{fontSize:12,color:C.text3}}>عرض وتحميل ملفات CSV لكل مؤسسة — للمراجعة اليدوية فقط</div>
-        </div>
-        <div style={{display:'flex',gap:10}}>
-          <button onClick={load} disabled={loading} style={{padding:'8px 16px',background:'#f2f4f7',color:C.text,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{loading?'جاري التحميل...':'🔄 تحديث'}</button>
-        </div>
-      </div>
-
+    <div className="min-w-0 space-y-6" dir="rtl">
+      <StorelyPageHeader title="النسخ الاحتياطية" description="عرض وتحميل ملفات CSV لكل مؤسسة — للمراجعة اليدوية فقط"
+        actions={<StorelyButton onClick={load} disabled={loading} icon={<RefreshCw size={16}/>}>{loading?'جاري التحميل...':'تحديث'}</StorelyButton>} />
       {loading ? (
-        <div style={{textAlign:'center',padding:60,color:C.text3}}>جاري التحميل...</div>
+        <div className="storely-loading">جاري التحميل...</div>
       ) : backups.length === 0 ? (
-        <div style={{background:C.card,borderRadius:14,padding:40,textAlign:'center',border:`1px solid ${C.border}`}}>
-          <div style={{fontSize:32,marginBottom:10}}>📭</div>
-          <div style={{color:C.text2}}>لا توجد نسخ احتياطية بعد</div>
-        </div>
+        <StorelyEmptyState title="لا توجد نسخ احتياطية بعد" />
       ) : (
-        <div style={{display:'flex',flexDirection:'column',gap:14}}>
+        <div className="grid min-w-0 gap-6">
           {backups.map((b,i)=>(
-            <div key={i} style={{background:C.card,borderRadius:14,padding:18,border:`1px solid ${C.border}`}}>
-              <div style={{fontSize:15,fontWeight:700,color:C.text,marginBottom:12}}>{b.org_name}</div>
-              <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            <StorelyCard key={i} title={b.org_name}>
+              <div className="divide-y divide-[var(--storely-border)]">
                 {b.files.map((f:any,j:number)=>(
-                  <div key={j} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',background:'#f9fafb',borderRadius:8}}>
-                    <div>
-                      <div style={{fontSize:13,color:C.text,fontWeight:600}}>{f.name}</div>
-                      <div style={{fontSize:11,color:C.text3,marginTop:2}}>{new Date(f.created_at).toLocaleString('ar-SA', {numberingSystem:'latn'})} · {fmtSize(f.size)}</div>
+                  <div key={j} className="flex flex-wrap items-center justify-between gap-4 p-5 sm:p-6">
+                    <div className="min-w-0 flex-1 basis-48">
+                      <div className="break-all text-sm font-semibold" dir="auto">{f.name}</div>
+                      <div className="mt-2 text-[13px] leading-6 text-[var(--storely-muted)]">{new Date(f.created_at).toLocaleString('ar-SA', {numberingSystem:'latn'})} · <span dir="ltr">{fmtSize(f.size)}</span></div>
                     </div>
-                    {f.url && <a href={f.url} target="_blank" rel="noopener noreferrer" style={{padding:'6px 14px',background:C.green+'22',color:C.green,border:`1px solid ${C.green}44`,borderRadius:8,fontSize:12,fontWeight:700,textDecoration:'none'}}>⬇ تحميل</a>}
+                    {f.url && <a href={f.url} target="_blank" rel="noopener noreferrer" className="storely-button" data-variant="secondary" data-size="md"><Download size={16}/> تحميل</a>}
                   </div>
                 ))}
               </div>
-            </div>
+            </StorelyCard>
           ))}
         </div>
       )}

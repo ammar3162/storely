@@ -1,4 +1,7 @@
 'use client'
+import { StorelyButton, StorelyCard, StorelyPageHeader } from '@/components/ui'
+import { ChartNoAxesCombined, CheckCircle2, CircleAlert, Clock3, FilePenLine, Globe, LockKeyhole, MapPin, Package, PackageOpen, Pencil, Plus, ShoppingCart, Trash2, UserRound, Zap, Wheat, Milk, SprayCan, CupSoda, Beef, Carrot, FileText, Tag } from 'lucide-react'
+import { storelyTokens as uiTokens } from '@/components/ui/design-tokens'
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getStaffOrg } from '@/lib/session'
@@ -9,7 +12,9 @@ interface StaffSession {
   permissions: {dispense:boolean,inventory:boolean,purchases:boolean,reports:boolean}
 }
 
-const CATEGORY_COLORS = ['#029FA2','#2563eb','#dc2626','#d97706','#7c3aed','#0891b2','#db2777','#65a30d','#ea580c','#4f46e5']
+const CATEGORY_ICONS: Record<string, React.ReactNode> = { '🍞':<Wheat size={22}/>, '🥛':<Milk size={22}/>, '🧴':<SprayCan size={22}/>, '🥤':<CupSoda size={22}/>, '🍗':<Beef size={22}/>, '🥦':<Carrot size={22}/>, '📄':<FileText size={22}/>, '📦':<Package size={22}/>, '🏷️':<Tag size={22}/> }
+
+const CATEGORY_COLORS = [uiTokens.color.navy,uiTokens.color.navy,uiTokens.color.navy,uiTokens.color.navy,uiTokens.color.navy,uiTokens.color.navy,uiTokens.color.navy,uiTokens.color.navy,uiTokens.color.navy,uiTokens.color.navy]
 const OTHER_CATEGORY = 'أخرى'
 const UNITS = ['قطعة','كيلو','كيس','كرتون','لتر','علبة','باكيت','رول','غرام']
 
@@ -330,14 +335,13 @@ function StaffPageInner() {
   const hasAnyPermission = !!(session.permissions?.dispense || session.permissions?.inventory || session.permissions?.purchases || session.permissions?.reports)
   if (!hasAnyPermission) {
     return (
-      <div style={{minHeight:'100vh',display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',background:'#f5f5f4',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:20,textAlign:'center' as const}}>
-        <div style={{fontSize:48,marginBottom:16}}>🔒</div>
-        <div style={{fontSize:16,fontWeight:800,color:'#1c1c1a',marginBottom:8}}>ما عندك أي صلاحية مفعّلة</div>
-        <div style={{fontSize:13,color:'#5f5e5a',marginBottom:20}}>تواصل مع صاحب المنشأة عشان يفعّل لك صلاحية دخول</div>
-        <button onClick={()=>{localStorage.removeItem('staff_session');localStorage.removeItem('staff_token');router.push('/staff')}}
-          style={{padding:'10px 24px',borderRadius:10,border:'1px solid #e5e5e3',background:'white',fontSize:13,fontWeight:700,cursor:'pointer',color:'#5f5e5a'}}>
+      <div className="min-h-screen flex flex-col items-center justify-center !p-5 text-center text-[var(--storely-navy)]" style={{background:uiTokens.color.background, direction:'rtl'}}>
+        <div className="text-2xl !mb-4"><LockKeyhole size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></div>
+        <div className="text-base font-semibold !mb-2" style={{color:uiTokens.color.text}}>ما عندك أي صلاحية مفعّلة</div>
+        <div className="text-sm !mb-5" style={{color:uiTokens.color.textMuted}}>تواصل مع صاحب المنشأة عشان يفعّل لك صلاحية دخول</div>
+        <StorelyButton onClick={()=>{localStorage.removeItem('staff_session');localStorage.removeItem('staff_token');router.push('/staff')}} variant="secondary">
           خروج
-        </button>
+        </StorelyButton>
       </div>
     )
   }
@@ -351,122 +355,94 @@ function StaffPageInner() {
   ].filter(t=>t.show)
 
   return (
-    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:isRTL?'rtl':'ltr'}}>
-      <style>{`
-        @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
-        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-        .card{background:white;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:transform .15s,box-shadow .15s}
-        .card:active{transform:scale(.98)}
-        .tab-btn{padding:10px 18px;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;transition:all .2s}
-        .lang-btn{padding:6px 12px;border-radius:20px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;transition:all .2s}
-        .prod-btn{background:white;border:none;border-radius:14px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-family:inherit;text-align:right;width:100%;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:all .15s}
-        .prod-btn:active{transform:scale(.97);box-shadow:0 1px 4px rgba(0,0,0,.1)}
-        input:focus,select:focus{border-color:#029FA2!important;outline:none!important;box-shadow:0 0 0 3px rgba(22,163,74,.1)!important}
-        @keyframes fadeUpStagger{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-        .cat-card{animation:fadeUpStagger .4s cubic-bezier(0.34,1.56,0.64,1) both;transition:transform .15s,box-shadow .15s}
-        .cat-card:active{transform:scale(.94)}
-        @media(hover:hover){.cat-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.16)}}
-        .mu-btn{animation:fadeUpStagger .35s ease both;transition:transform .15s}
-        .mu-btn:active{transform:scale(.95)}
-      `}</style>
+    <div className="min-h-screen text-[var(--storely-navy)]" style={{background:uiTokens.color.background, direction:isRTL?'rtl':'ltr'}}>
 
       {subscriptionExpired && (
-        <div style={{position:'fixed',inset:0,zIndex:6000,background:'#0C213B',display:'flex',alignItems:'center',justifyContent:'center',padding:24,textAlign:'center' as const}}>
+        <div className="fixed flex items-center justify-center !p-6 text-center overflow-y-auto" style={{inset:0, zIndex:6000, background:uiTokens.color.surface}}>
           <div>
-            <div style={{fontSize:56,marginBottom:16}}>⏰</div>
-            <div style={{fontSize:18,fontWeight:800,color:'white',marginBottom:8}}>انتهت صلاحية اشتراك المنشأة</div>
-            <div style={{fontSize:13,color:'rgba(255,255,255,.7)',lineHeight:1.8,maxWidth:320,marginLeft:'auto',marginRight:'auto',marginBottom:24}}>
+            <div className="text-2xl !mb-4"><Clock3 size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></div>
+            <div className="text-lg font-semibold !mb-2" style={{color:uiTokens.color.navy}}>انتهت صلاحية اشتراك المنشأة</div>
+            <div className="text-sm max-w-lg !ml-auto !mr-auto !mb-6" style={{color:uiTokens.color.textMuted, lineHeight:1.8}}>
               انتهت فترة الاشتراك. يرجى إبلاغ صاحب المنشأة لتجديد الاشتراك
             </div>
-            <button onClick={logout} style={{padding:'12px 28px',background:'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+            <StorelyButton onClick={logout} variant="primary">
               تسجيل خروج
-            </button>
+            </StorelyButton>
           </div>
         </div>
       )}
 
       {needsReauth && (
-        <div style={{position:'fixed',inset:0,zIndex:5000,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,animation:'fadeIn .2s ease'}}>
-          <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:340,padding:28,textAlign:'center' as const,animation:'slideUp .3s ease'}}>
-            <div style={{fontSize:40,marginBottom:10}}>🔒</div>
-            <div style={{fontSize:15,fontWeight:800,color:'#0f172a',marginBottom:4}}>انتهت الجلسة</div>
-            <div style={{fontSize:12,color:'#64748b',marginBottom:18}}>أدخل رمز PIN للمتابعة، {session?.name}</div>
+        <div className="fixed flex items-center justify-center !p-5 overflow-y-auto" style={{inset:0, zIndex:5000, background:uiTokens.color.backdrop}}>
+          <StorelyCard className="min-w-0 max-h-[90dvh] overflow-y-auto rounded-[var(--radius)] w-full max-w-lg !p-6 text-center" style={{background:uiTokens.color.surface}}>
+            <div className="text-2xl !mb-2"><LockKeyhole size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></div>
+            <div className="text-base font-semibold !mb-1" style={{color:uiTokens.color.text}}>انتهت الجلسة</div>
+            <div className="text-sm !mb-4" style={{color:uiTokens.color.textMuted}}>أدخل رمز PIN للمتابعة، {session?.name}</div>
             <input
-              type="password" inputMode="numeric" maxLength={6} autoFocus
-              value={reauthPin}
-              onChange={e=>{setReauthPin(e.target.value.replace(/\D/g,'')); setReauthError('')}}
-              onKeyDown={e=>{if(e.key==='Enter') submitReauth()}}
-              style={{width:'100%',padding:'14px',fontSize:22,fontWeight:700,textAlign:'center' as const,letterSpacing:8,border:`1.5px solid ${reauthError?'#ef4444':'#e2e8f0'}`,borderRadius:12,marginBottom:10,fontFamily:'inherit',boxSizing:'border-box' as const}}
-              placeholder="••••"
+               type="password" inputMode="numeric" maxLength={6} autoFocus value={reauthPin} onChange={e=>{setReauthPin(e.target.value.replace(/\D/g,'')); setReauthError('')}} onKeyDown={e=>{if(e.key==='Enter') submitReauth()}} placeholder="••••" className="w-full !text-2xl font-semibold text-center rounded-[var(--radius)] !mb-2 storely-input min-w-0" style={{letterSpacing:8, border:`1.5px solid ${reauthError?uiTokens.color.danger:uiTokens.color.border}`}}
             />
-            {reauthError && <div style={{fontSize:12,color:'#ef4444',fontWeight:600,marginBottom:10}}>{reauthError}</div>}
-            <button onClick={submitReauth} disabled={!reauthPin||reauthLoading}
-              style={{width:'100%',padding:13,background:!reauthPin||reauthLoading?'#cbd5e1':'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:!reauthPin||reauthLoading?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:10}}>
+            {reauthError && <div className="text-sm font-semibold !mb-2" style={{color:uiTokens.color.danger}}>{reauthError}</div>}
+            <StorelyButton onClick={submitReauth} disabled={!reauthPin||reauthLoading} className="w-full !mb-2" variant="primary">
               {reauthLoading?'جاري التحقق...':'دخول'}
-            </button>
-            <button onClick={logout} style={{width:'100%',padding:10,background:'none',border:'none',fontSize:12,color:'#94a3b8',cursor:'pointer',fontFamily:'inherit'}}>
+            </StorelyButton>
+            <StorelyButton onClick={logout} className="w-full" variant="secondary">
               تسجيل خروج كامل
-            </button>
-          </div>
+            </StorelyButton>
+          </StorelyCard>
         </div>
       )}
 
       {/* Toast */}
       {toast && (
-        <div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:9999,background:toast.type==='success'?'#029FA2':'#ef4444',color:'white',padding:'12px 24px',borderRadius:40,fontSize:14,fontWeight:700,boxShadow:'0 8px 24px rgba(0,0,0,.2)',animation:'slideUp .3s ease',whiteSpace:'nowrap'}}>
+        <div className="fixed w-[calc(100%-32px)] max-w-lg border border-[var(--storely-border)] !py-3 !px-6 rounded-[var(--radius)] text-sm font-semibold whitespace-normal break-words" style={{top:20, left:'50%', transform:'translateX(-50%)', zIndex:9999, background:uiTokens.color.surface, color:toast.type==='success'?uiTokens.color.success:uiTokens.color.danger, boxShadow:uiTokens.shadow.surface}}>
           {toast.msg}
         </div>
       )}
 
       {/* Header */}
-      <div style={{background:'linear-gradient(135deg,#042f2e,#0C213B)',padding:'0',position:'sticky',top:0,zIndex:100,boxShadow:'0 4px 20px rgba(0,0,0,.2)'}}>
+      <div className="!p-0" style={{background:uiTokens.color.surface, top:0, zIndex:100, boxShadow:uiTokens.shadow.surface}}>
         {/* Top bar */}
-        <div style={{padding:'14px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-          <div style={{display:'flex',alignItems:'center',gap:10}}>
+        <div className="!py-3 !px-5 flex justify-between items-center flex-wrap gap-4">
+          <div className="flex flex-wrap items-center gap-3">
             {orgLogo ? (
-              <img src={orgLogo} alt="" style={{width:38,height:38,borderRadius:10,objectFit:'cover',border:'2px solid rgba(255,255,255,.2)'}}/>
+              <img src={orgLogo} alt="" className="rounded-[var(--radius-sm)] object-cover" style={{width:38, height:38, border:'2px solid rgba(255,255,255,.2)'}}/>
             ) : (
-              <div style={{width:38,height:38,borderRadius:10,background:'rgba(255,255,255,.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>👤</div>
+              <div className="rounded-[var(--radius-sm)] flex items-center justify-center text-lg" style={{width:38, height:38, background:uiTokens.color.surface}}><UserRound size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></div>
             )}
-            <div>
-              <div style={{fontSize:15,fontWeight:800,color:'white'}}>{session.name}</div>
-              <div style={{fontSize:11,color:'rgba(255,255,255,.6)',marginTop:1}}>{session.org_name}{session.branch_name?` · ${session.branch_name}`:''}</div>
-            </div>
+            <StorelyPageHeader title={session.name} description={<>{session.org_name}{session.branch_name?` · ${session.branch_name}`:''}</>} className="!mb-0" />
           </div>
-          <button onClick={()=>router.push('/staff/choose')} style={{background:'rgba(255,255,255,.1)',color:'white',border:'1px solid rgba(255,255,255,.2)',borderRadius:10,padding:'7px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',gap:5}}>
-            📍 الحضور
-          </button>
-          <button onClick={logout} style={{background:'rgba(255,255,255,.1)',color:'white',border:'1px solid rgba(255,255,255,.2)',borderRadius:10,padding:'7px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',backdropFilter:'blur(4px)'}}>
+          <StorelyButton onClick={()=>router.push('/staff/choose')} className="flex items-center gap-2" variant="secondary">
+
+            <MapPin size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> الحضور
+          </StorelyButton>
+          <StorelyButton onClick={logout} variant="secondary">
             {T('logout',lang)}
-          </button>
+          </StorelyButton>
         </div>
 
         {/* Tabs — تختفي لو وصلنا برابط مباشر لصلاحية محددة (?tab=) */}
         {tabs.length > 1 && !forcedTab && (
-          <div style={{display:'flex',gap:4,padding:'0 16px',overflowX:'auto'}}>
+          <div className="flex gap-2 !py-0 !px-4 overflow-x-auto">
             {tabs.map(t=>(
-              <button key={t.key} className="tab-btn" onClick={()=>{setTab(t.key as any);if(t.key==='inventory'&&session)loadProducts(session)}}
-                style={{background:tab===t.key?'white':'transparent',color:tab===t.key?'#042f2e':'rgba(255,255,255,.7)',borderBottom:tab===t.key?'none':'2px solid transparent',borderRadius:tab===t.key?'12px 12px 0 0':'12px 12px 0 0',paddingBottom:tab===t.key?12:10,marginBottom:tab===t.key?-2:0}}>
+              <StorelyButton key={t.key} onClick={()=>{setTab(t.key as any);if(t.key==='inventory'&&session)loadProducts(session)}} className="" style={{background:tab===t.key?uiTokens.color.infoBg:uiTokens.color.surface, color:tab===t.key?uiTokens.color.text:uiTokens.color.textMuted, borderBottom:tab===t.key?'none':'2px solid transparent', marginBottom:tab===t.key?-2:0}} variant="secondary">
                 {t.label}
-              </button>
+              </StorelyButton>
             ))}
           </div>
         )}
 
         {/* Language selector — زر واحد + قائمة منسدلة */}
-        <div style={{padding:'10px 16px',background:'rgba(0,0,0,.1)',position:'relative' as const}}>
-          <button onClick={()=>setShowLangMenu(v=>!v)} disabled={translating}
-            style={{background:'rgba(255,255,255,.15)',color:'white',border:'none',borderRadius:20,padding:'6px 14px',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:6,opacity:translating?0.6:1}}>
-            🌐 {LANGUAGES.find(l=>l.code===lang)?.label || 'العربية'} {showLangMenu?'▴':'▾'}
-          </button>
+        <div className="!py-2 !px-4 relative" style={{background:uiTokens.color.surface}}>
+          <StorelyButton onClick={()=>setShowLangMenu(v=>!v)} disabled={translating} className="flex items-center gap-2" variant="secondary">
+
+            <Globe size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> {LANGUAGES.find(l=>l.code===lang)?.label || 'العربية'} {showLangMenu?'▴':'▾'}
+          </StorelyButton>
           {showLangMenu && (
-            <div style={{position:'absolute' as const,top:'100%',right:16,marginTop:6,background:'white',borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.2)',overflow:'hidden',minWidth:140,zIndex:50}}>
+            <div className="absolute !mt-1 rounded-[var(--radius-sm)]" style={{top:'100%', right:16, background:uiTokens.color.surface, boxShadow:uiTokens.shadow.surface, overflow:'hidden', minWidth:140, zIndex:50}}>
               {LANGUAGES.map(l=>(
-                <button key={l.code}
-                  onClick={()=>{setLang(l.code);localStorage.setItem('staff_lang',l.code);if(l.code!=='ar'&&session)fetchTranslation(session,l.code);setShowLangMenu(false)}}
-                  style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#f0fdfa':'white',color:lang===l.code?'#029FA2':'#1c1c1a',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
+                <StorelyButton key={l.code} onClick={()=>{setLang(l.code);localStorage.setItem('staff_lang',l.code);if(l.code!=='ar'&&session)fetchTranslation(session,l.code);setShowLangMenu(false)}} className="w-full text-right block" style={{background:lang===l.code?uiTokens.color.surface:uiTokens.color.surface, color:lang===l.code?uiTokens.color.navy:uiTokens.color.text}} variant="secondary">
                   {lang===l.code?'✓ ':''}{l.label}
-                </button>
+                </StorelyButton>
               ))}
             </div>
           )}
@@ -475,84 +451,81 @@ function StaffPageInner() {
 
       {/* Translating banner */}
       {translating && (
-        <div style={{background:'#eff6ff',color:'#2563eb',padding:'10px 20px',fontSize:13,fontWeight:700,textAlign:'center'}}>
+        <div className="!py-2 !px-5 text-sm font-semibold text-center" style={{background:uiTokens.color.infoBg, color:uiTokens.color.info}}>
           {T('translating',lang)}
         </div>
       )}
 
       {/* ═══ DISPENSE TAB ═══ */}
-      <div style={{display:tab==='dispense'&&session.permissions?.dispense?'block':'none',padding:'16px 20px',maxWidth:560,margin:'0 auto'}}>
-        <input value={search} onChange={e=>{setSearch(e.target.value);setActiveCategory(null)}}
-          style={{width:'100%',padding:'13px 16px',border:'2px solid #e2e8f0',borderRadius:14,fontSize:15,background:'white',color:'#1e293b',fontFamily:'inherit',fontWeight:500,boxSizing:'border-box' as const,marginBottom:16}}
-          placeholder={`🔍 ${T('search',lang)}`}/>
+      <div className="!py-4 !px-5 max-w-4xl !my-0 !mx-auto" style={{display:tab==='dispense'&&session.permissions?.dispense?'block':'none'}}>
+        <input value={search} onChange={e=>{setSearch(e.target.value);setActiveCategory(null)}} placeholder={T('search',lang)} className="w-full rounded-[var(--radius)] !text-base font-normal !mb-4 storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`, background:uiTokens.color.surface, color:uiTokens.color.text}}/>
 
         {loading ? (
-          <div style={{textAlign:'center',padding:60,color:'#94a3b8',fontSize:15}}>{T('loading',lang)}</div>
+          <div className="text-center !p-8 text-base" style={{color:uiTokens.color.textMuted}}>{T('loading',lang)}</div>
         ) : search.trim() ? (
-          <div style={{display:'flex',flexDirection:'column',gap:8,animation:'fadeIn .3s'}}>
+          <div className="flex flex-col gap-2">
             {searchResults.length===0 ? (
-              <div className="card" style={{padding:32,textAlign:'center',color:'#94a3b8'}}>{T('noResults',lang)}</div>
+              <StorelyCard className="min-w-0 !p-8 text-center" style={{color:uiTokens.color.textMuted}}>{T('noResults',lang)}</StorelyCard>
             ) : searchResults.map(p=>(
-              <button key={p.id} className="prod-btn" onClick={()=>setSelected(p)}>
+              <StorelyButton key={p.id} onClick={()=>setSelected(p)} className="w-full !justify-between !p-5 text-start">
                 <div>
-                  <div style={{fontSize:15,fontWeight:700,color:'#0f172a'}}>{tx(p.name)}</div>
-                  {lang!=='ar'&&<div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>{p.name}</div>}
+                  <div className="text-base font-semibold" style={{color:uiTokens.color.text}}>{tx(p.name)}</div>
+                  {lang!=='ar'&&<div className="text-xs !mt-0" style={{color:uiTokens.color.textMuted}}>{p.name}</div>}
                 </div>
-                <span style={{fontSize:13,fontWeight:800,color:p.qty<=p.reorder_point?'#ef4444':'#029FA2',background:p.qty<=p.reorder_point?'#fef2f2':'#f0fdfa',padding:'5px 12px',borderRadius:10}}>{p.qty} {p.unit}</span>
-              </button>
+                <span className="text-sm font-semibold !py-1 !px-3 rounded-[var(--radius-sm)]" style={{color:p.qty<=p.reorder_point?uiTokens.color.danger:uiTokens.color.success, background:p.qty<=p.reorder_point?uiTokens.color.dangerBg:uiTokens.color.successBg}}>{p.qty} {p.unit}</span>
+              </StorelyButton>
             ))}
           </div>
         ) : !activeCategory ? (
-          <div style={{animation:'fadeIn .3s'}}>
+          <div >
             {todayCount>0 && (
-              <div style={{display:'flex',alignItems:'center',gap:8,background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:14,padding:'10px 16px',marginBottom:14}}>
-                <span style={{fontSize:18}}>✅</span>
-                <span style={{fontSize:13,fontWeight:700,color:'#0f766e'}}>صرفت {todayCount} صنف اليوم — استمر!</span>
+              <div className="flex items-center gap-2 rounded-[var(--radius)] !py-2 !px-4 !mb-3" style={{background:uiTokens.color.surface, border:`1px solid ${uiTokens.color.border}`}}>
+                <span className="text-lg"><CheckCircle2 size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></span>
+                <span className="text-sm font-semibold" style={{color:uiTokens.color.navy}}>صرفت {todayCount} صنف اليوم — استمر!</span>
               </div>
             )}
             {mostUsed.length>0 && (
-              <div style={{marginBottom:16}}>
-                <div style={{fontSize:12,fontWeight:700,color:'#64748b',marginBottom:8}}>⚡ الأكثر استخداماً</div>
-                <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}}>
+              <div className="!mb-4">
+                <div className="text-sm font-semibold !mb-2" style={{color:uiTokens.color.textMuted}}><Zap size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> الأكثر استخداماً</div>
+                <div className="flex gap-2 overflow-x-auto !pb-1">
                   {mostUsed.map((p:any,i:number)=>(
-                    <button key={p.id} className="mu-btn" onClick={()=>setSelected(p)} style={{animationDelay:`${i*0.06}s`,flexShrink:0,background:'white',border:'1.5px solid #e2e8f0',borderRadius:14,padding:'10px 14px',cursor:'pointer',fontFamily:'inherit',minWidth:110,textAlign:'right' as const,boxShadow:'0 2px 6px rgba(0,0,0,.05)'}}>
-                      <div style={{fontSize:12,fontWeight:700,color:'#0f172a',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis',maxWidth:110}}>{tx(p.name)}</div>
-                      <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>صُرف {p.dispense_count} مرة (آخر 14 يوم)</div>
-                    </button>
+                    <StorelyButton key={p.id} onClick={()=>setSelected(p)} className="shrink-0 text-right !p-4 text-start" style={{order:i,minWidth:160}} variant="secondary">
+                      <div className="text-sm font-semibold whitespace-normal break-words" style={{color:uiTokens.color.text, maxWidth:180}}>{tx(p.name)}</div>
+                      <div className="text-xs !mt-0" style={{color:uiTokens.color.textMuted}}>صُرف {p.dispense_count} مرة (آخر 14 يوم)</div>
+                    </StorelyButton>
                   ))}
                 </div>
               </div>
             )}
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {categories.map((cat,i)=>(
-                <button key={cat} className="cat-card" onClick={()=>setActiveCategory(cat)}
-                  style={{animationDelay:`${i*0.06}s`,background:colorFor(cat),color:'white',border:'none',borderRadius:20,padding:'28px 16px',cursor:'pointer',fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:8,boxShadow:`0 8px 24px ${colorFor(cat)}44`,minHeight:120}}>
-                  <div style={{fontSize:30}}>{iconFor(cat)}</div>
-                  <div style={{fontSize:18,fontWeight:800}}>{tx(cat)}</div>
-                  {lang!=='ar'&&<div style={{fontSize:11,opacity:.7}}>{cat}</div>}
-                  <div style={{fontSize:12,opacity:.85,background:'rgba(255,255,255,.2)',padding:'3px 10px',borderRadius:20}}>{categoriesMap[cat]} {T('items',lang)}</div>
-                </button>
+                <StorelyButton key={cat} onClick={()=>setActiveCategory(cat)} className="flex flex-col items-center gap-2 !p-6 !flex-col" style={{color:colorFor(cat),order:i}} variant="secondary">
+                  <div className="text-[28px]">{CATEGORY_ICONS[iconFor(cat)]}</div>
+                  <div className="text-lg font-semibold">{tx(cat)}</div>
+                  {lang!=='ar'&&<div className="text-xs" style={{opacity:.7}}>{cat}</div>}
+                  <div className="text-sm !py-1 !px-2 rounded-[var(--radius)]" style={{opacity:.85, background:uiTokens.color.surface}}>{categoriesMap[cat]} {T('items',lang)}</div>
+                </StorelyButton>
               ))}
             </div>
           </div>
         ) : (
-          <div style={{animation:'fadeIn .3s'}}>
-            <button onClick={()=>setActiveCategory(null)} style={{background:'none',border:'none',color:'#029FA2',fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginBottom:16,padding:0,display:'flex',alignItems:'center',gap:6}}>
+          <div >
+            <StorelyButton onClick={()=>setActiveCategory(null)} className="!mb-4 flex items-center gap-2" variant="secondary">
               ← {T('back',lang)}
-            </button>
-            <div style={{marginBottom:16}}>
-              <div style={{fontSize:18,fontWeight:800,color:'#0f172a'}}>{tx(activeCategory)}</div>
-              {lang!=='ar'&&<div style={{fontSize:12,color:'#94a3b8'}}>{activeCategory}</div>}
+            </StorelyButton>
+            <div className="!mb-4">
+              <div className="text-lg font-semibold" style={{color:uiTokens.color.text}}>{tx(activeCategory)}</div>
+              {lang!=='ar'&&<div className="text-sm" style={{color:uiTokens.color.textMuted}}>{activeCategory}</div>}
             </div>
-            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            <div className="flex flex-col gap-2">
               {categoryProducts.map(p=>(
-                <button key={p.id} className="prod-btn" onClick={()=>setSelected(p)}>
+                <StorelyButton key={p.id} onClick={()=>setSelected(p)} className="w-full !justify-between !p-5 text-start">
                   <div>
-                    <div style={{fontSize:15,fontWeight:700,color:'#0f172a'}}>{tx(p.name)}</div>
-                    {lang!=='ar'&&<div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>{p.name}</div>}
+                    <div className="text-base font-semibold" style={{color:uiTokens.color.text}}>{tx(p.name)}</div>
+                    {lang!=='ar'&&<div className="text-xs !mt-0" style={{color:uiTokens.color.textMuted}}>{p.name}</div>}
                   </div>
-                  <span style={{fontSize:13,fontWeight:800,color:p.qty<=p.reorder_point?'#ef4444':'#029FA2',background:p.qty<=p.reorder_point?'#fef2f2':'#f0fdfa',padding:'5px 12px',borderRadius:10}}>{p.qty} {p.unit}</span>
-                </button>
+                  <span className="text-sm font-semibold !py-1 !px-3 rounded-[var(--radius-sm)]" style={{color:p.qty<=p.reorder_point?uiTokens.color.danger:uiTokens.color.success, background:p.qty<=p.reorder_point?uiTokens.color.dangerBg:uiTokens.color.successBg}}>{p.qty} {p.unit}</span>
+                </StorelyButton>
               ))}
             </div>
           </div>
@@ -561,33 +534,31 @@ function StaffPageInner() {
 
       {/* ═══ INVENTORY TAB ═══ */}
       {tab==='inventory' && (
-        <div style={{padding:'16px 20px',maxWidth:560,margin:'0 auto',animation:'fadeIn .3s'}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-            <div style={{fontSize:18,fontWeight:800,color:'#0f172a'}}>📦 المخزون</div>
-            <button onClick={()=>setShowAddProduct(true)}
-              style={{padding:'9px 16px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 12px rgba(22,163,74,.3)'}}>
+        <div className="!py-4 !px-5 max-w-4xl !my-0 !mx-auto">
+          <div className="flex justify-between items-center !mb-3 flex-wrap gap-4">
+            <div className="text-lg font-semibold" style={{color:uiTokens.color.text}}><Package size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> المخزون</div>
+            <StorelyButton onClick={()=>setShowAddProduct(true)} variant="primary">
               ＋ إضافة منتج
-            </button>
+            </StorelyButton>
           </div>
-          <input value={invSearch} onChange={e=>setInvSearch(e.target.value)} placeholder="🔍 ابحث عن منتج..."
-            style={{width:'100%',padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:14,background:'white',fontFamily:'inherit',marginBottom:14,boxSizing:'border-box' as const}}/>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+          <input value={invSearch} onChange={e=>setInvSearch(e.target.value)} placeholder="ابحث عن منتج..." className="w-full rounded-[var(--radius)] text-sm !mb-3 storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`, background:uiTokens.color.surface}}/>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {filteredInventory.length===0 ? (
-              <div className="card" style={{padding:40,textAlign:'center',color:'#94a3b8',gridColumn:'span 2'}}>لا توجد منتجات</div>
+              <StorelyCard className="min-w-0 !p-8 text-center" style={{color:uiTokens.color.textMuted, gridColumn:'span 2'}}>لا توجد منتجات</StorelyCard>
             ) : filteredInventory.map(p=>(
-              <div key={p.id} className="card" style={{padding:'16px',display:'flex',flexDirection:'column' as const,gap:6}}>
-                <div style={{fontSize:14,fontWeight:700,color:'#0f172a',lineHeight:1.3}}>{tx(p.name)}</div>
-                <div style={{fontSize:11,color:'#64748b'}}>{p.category||'—'}</div>
-                <div style={{display:'flex',alignItems:'baseline',gap:4,margin:'4px 0'}}>
-                  <span style={{fontSize:30,fontWeight:900,color:p.qty<=p.reorder_point?'#ef4444':'#029FA2',lineHeight:1}}>{p.qty}</span>
-                  <span style={{fontSize:12,color:'#94a3b8'}}>{p.unit}</span>
+              <StorelyCard key={p.id} className="min-w-0 !p-4 flex flex-col gap-2">
+                <div className="text-sm font-semibold" style={{color:uiTokens.color.text, lineHeight:1.3}}>{tx(p.name)}</div>
+                <div className="text-xs" style={{color:uiTokens.color.textMuted}}>{p.category||'—'}</div>
+                <div className="flex items-baseline gap-2 !my-1 !mx-0">
+                  <span className="text-[28px] font-semibold" style={{color:p.qty<=p.reorder_point?uiTokens.color.danger:uiTokens.color.success, lineHeight:1}}>{p.qty}</span>
+                  <span className="text-sm" style={{color:uiTokens.color.textMuted}}>{p.unit}</span>
                 </div>
-                {p.qty<=p.reorder_point && <div style={{fontSize:10,color:'#ef4444',fontWeight:700}}>⚠️ مخزون منخفض</div>}
-                <button onClick={()=>{setEditingProduct(p);setEditQty(String(p.qty))}}
-                  style={{width:'100%',padding:'8px',background:'#f0fdfa',color:'#029FA2',border:'1.5px solid #99f6e4',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginTop:'auto'}}>
-                  ✏️ تعديل
-                </button>
-              </div>
+                {p.qty<=p.reorder_point && <div className="text-xs font-semibold" style={{color:uiTokens.color.danger}}><CircleAlert size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> مخزون منخفض</div>}
+                <StorelyButton onClick={()=>{setEditingProduct(p);setEditQty(String(p.qty))}} className="w-full !mt-auto" variant="secondary">
+
+                  <Pencil size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> تعديل
+                </StorelyButton>
+              </StorelyCard>
             ))}
           </div>
         </div>
@@ -595,23 +566,23 @@ function StaffPageInner() {
 
       {/* ═══ PURCHASES TAB ═══ */}
       {tab==='purchases' && (
-        <div style={{padding:'60px 20px',textAlign:'center',animation:'fadeIn .3s'}}>
-          <div style={{fontSize:64,marginBottom:16}}>🛒</div>
-          <div style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:8}}>تسجيل المشتريات</div>
-          <div style={{fontSize:14,color:'#64748b',marginBottom:28,maxWidth:300,margin:'0 auto 28px'}}>سجّل فواتير الشراء مع الضريبة وصور الفواتير</div>
-          <button onClick={()=>router.push('/staff/purchases')}
-            style={{padding:'16px 36px',background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 8px 24px rgba(22,163,74,.35)',display:'inline-flex',alignItems:'center',gap:8}}>
-            📝 تسجيل شراء جديد
-          </button>
+        <div className="!py-8 !px-5 text-center">
+          <div className="text-2xl !mb-4"><ShoppingCart size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></div>
+          <div className="text-lg font-semibold !mb-2" style={{color:uiTokens.color.text}}>تسجيل المشتريات</div>
+          <div className="text-sm !mb-6 max-w-lg !mt-0 !mx-auto !mb-6" style={{color:uiTokens.color.textMuted}}>سجّل فواتير الشراء مع الضريبة وصور الفواتير</div>
+          <StorelyButton onClick={()=>router.push('/staff/purchases')} className="inline-flex items-center gap-2" variant="primary">
+
+            <FilePenLine size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> تسجيل شراء جديد
+          </StorelyButton>
         </div>
       )}
 
       {/* ═══ REPORTS TAB ═══ */}
       {tab==='reports' && (
-        <div style={{padding:'60px 20px',textAlign:'center',animation:'fadeIn .3s'}}>
-          <div style={{fontSize:64,marginBottom:16}}>📊</div>
-          <div style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:8}}>التقارير</div>
-          <div style={{fontSize:14,color:'#64748b'}}>هذه الميزة ستكون متاحة قريباً</div>
+        <div className="!py-8 !px-5 text-center">
+          <div className="text-2xl !mb-4"><ChartNoAxesCombined size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /></div>
+          <div className="text-lg font-semibold !mb-2" style={{color:uiTokens.color.text}}>التقارير</div>
+          <div className="text-sm" style={{color:uiTokens.color.textMuted}}>هذه الميزة ستكون متاحة قريباً</div>
         </div>
       )}
 
@@ -619,70 +590,61 @@ function StaffPageInner() {
 
       {/* Dispense modal */}
       {selected && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:200,backdropFilter:'blur(4px)'}} onClick={()=>{setSelected(null);setDispenseQty('');setWasteMode(false);setWasteReason('');setWasteNote('')}}>
-          <div style={{background:'white',borderRadius:'24px 24px 0 0',padding:28,width:'100%',maxWidth:480,animation:'slideUp .3s ease'}} onClick={e=>e.stopPropagation()}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20}}>
+        <div onClick={()=>{setSelected(null);setDispenseQty('');setWasteMode(false);setWasteReason('');setWasteNote('')}} className="fixed flex items-end justify-center overflow-y-auto" style={{inset:0, background:uiTokens.color.backdrop, zIndex:200}}>
+          <div onClick={e=>e.stopPropagation()} className="rounded-[var(--radius)] !p-6 w-full max-w-lg max-h-[90dvh] overflow-y-auto" style={{background:uiTokens.color.surface}}>
+            <div className="flex justify-between items-start !mb-5 flex-wrap gap-4">
               <div>
-                <div style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{tx(selected.name)}</div>
-                {lang!=='ar'&&<div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>{selected.name}</div>}
-                <div style={{fontSize:13,color:'#64748b',marginTop:4}}>{T('available',lang)}: <b style={{color:selected.qty<=selected.reorder_point?'#ef4444':'#029FA2'}}>{selected.qty} {selected.unit}</b></div>
+                <div className="text-lg font-semibold" style={{color:uiTokens.color.text}}>{tx(selected.name)}</div>
+                {lang!=='ar'&&<div className="text-sm !mt-0" style={{color:uiTokens.color.textMuted}}>{selected.name}</div>}
+                <div className="text-sm !mt-1" style={{color:uiTokens.color.textMuted}}>{T('available',lang)}: <b  style={{color:selected.qty<=selected.reorder_point?uiTokens.color.danger:uiTokens.color.success}}>{selected.qty} {selected.unit}</b></div>
               </div>
-              <button onClick={()=>{setSelected(null);setDispenseQty('');setWasteMode(false);setWasteReason('');setWasteNote('')}} style={{background:'#f1f5f9',border:'none',borderRadius:'50%',width:36,height:36,color:'#64748b',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+              <StorelyButton onClick={()=>{setSelected(null);setDispenseQty('');setWasteMode(false);setWasteReason('');setWasteNote('')}} className="flex items-center justify-center !px-0" style={{width:40, height:40}} variant="secondary">✕</StorelyButton>
             </div>
-            <div style={{display:'flex',gap:8,marginBottom:20,background:'#f1f5f9',borderRadius:12,padding:4}}>
-              <button onClick={()=>setWasteMode(false)} style={{flex:1,padding:'10px',borderRadius:9,border:'none',background:!wasteMode?'white':'transparent',color:!wasteMode?'#029FA2':'#64748b',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:!wasteMode?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
-                📤 صرف عادي
-              </button>
-              <button onClick={()=>setWasteMode(true)} style={{flex:1,padding:'10px',borderRadius:9,border:'none',background:wasteMode?'white':'transparent',color:wasteMode?'#d97706':'#64748b',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:wasteMode?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
-                🗑️ تسجيل هدر
-              </button>
+            <div className="flex gap-2 !mb-5 rounded-[var(--radius)] !p-1" style={{background:uiTokens.color.background}}>
+              <StorelyButton onClick={()=>setWasteMode(false)} className="min-w-0 flex-1" style={{background:!wasteMode?uiTokens.color.surface:'transparent', color:!wasteMode?uiTokens.color.navy:uiTokens.color.textMuted}} variant="secondary">
+
+                <PackageOpen size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> صرف عادي
+              </StorelyButton>
+              <StorelyButton onClick={()=>setWasteMode(true)} className="min-w-0 flex-1" style={{background:wasteMode?uiTokens.color.surface:'transparent', color:wasteMode?uiTokens.color.warning:uiTokens.color.textMuted}} variant="secondary">
+
+                <Trash2 size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> تسجيل هدر
+              </StorelyButton>
             </div>
             {wasteMode && (
               <>
-                <div style={{fontSize:13,fontWeight:700,color:'#64748b',marginBottom:8}}>سبب الهدر *</div>
-                <div style={{display:'flex',flexWrap:'wrap' as const,gap:8,marginBottom:16}}>
+                <div className="text-sm font-semibold !mb-2" style={{color:uiTokens.color.textMuted}}>سبب الهدر *</div>
+                <div className="flex flex-wrap gap-2 !mb-4">
                   {WASTE_REASONS.map(r=>(
-                    <button key={r} onClick={()=>setWasteReason(r)}
-                      style={{padding:'8px 14px',borderRadius:99,border:`1.5px solid ${wasteReason===r?'#d97706':'#e2e8f0'}`,background:wasteReason===r?'#fffbeb':'white',color:wasteReason===r?'#b45309':'#64748b',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                    <StorelyButton key={r} onClick={()=>setWasteReason(r)} style={{border:`1.5px solid ${wasteReason===r?uiTokens.color.warning:uiTokens.color.border}`, background:wasteReason===r?uiTokens.color.warningBg:uiTokens.color.surface, color:wasteReason===r?uiTokens.color.warning:uiTokens.color.textMuted}} variant="secondary">
                       {r}
-                    </button>
+                    </StorelyButton>
                   ))}
                 </div>
-                <div style={{fontSize:13,fontWeight:700,color:'#64748b',marginBottom:8}}>ملاحظة (اختياري)</div>
-                <textarea value={wasteNote} onChange={e=>setWasteNote(e.target.value)}
-                  placeholder="أي تفاصيل إضافية عن الهدر..."
-                  style={{width:'100%',padding:'12px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:14,fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:16,minHeight:60,resize:'none' as const}}/>
+                <div className="text-sm font-semibold !mb-2" style={{color:uiTokens.color.textMuted}}>ملاحظة (اختياري)</div>
+                <textarea value={wasteNote} onChange={e=>setWasteNote(e.target.value)} placeholder="أي تفاصيل إضافية عن الهدر..." className="w-full rounded-[var(--radius)] text-sm !mb-4 resize-y storely-input min-w-0 !h-auto" style={{border:`1px solid ${uiTokens.color.border}`, minHeight:60}}/>
               </>
             )}
-            <div style={{fontSize:13,fontWeight:700,color:'#64748b',marginBottom:10}}>{T('qty',lang)}</div>
-            <input value={dispenseQty} readOnly
-              style={{width:'100%',padding:'16px',border:'2px solid #e2e8f0',borderRadius:14,fontSize:28,fontWeight:800,textAlign:'center',fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:12,background:'#f8fafc',caretColor:'transparent'}}
-              placeholder="0"/>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:16}}>
+            <div className="text-sm font-semibold !mb-2" style={{color:uiTokens.color.textMuted}}>{T('qty',lang)}</div>
+            <input value={dispenseQty} readOnly placeholder="0" className="w-full rounded-[var(--radius)] text-[28px] font-semibold text-center !mb-3 storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`, background:uiTokens.color.background, caretColor:'transparent'}}/>
+            <div className="grid grid-cols-3 gap-2 !mb-4">
               {['1','2','3','4','5','6','7','8','9','.','0','⌫'].map(k=>(
-                <button key={k} type="button"
-                  onClick={()=>{
+                <StorelyButton key={k} type="button" onClick={()=>{
                     if(k==='⌫'){ setDispenseQty(q=>q.slice(0,-1)); return }
                     if(k==='.' && dispenseQty.includes('.')) return
                     setDispenseQty(q=>(q+k).replace(/[^0-9.]/g,''))
-                  }}
-                  style={{padding:'16px 0',borderRadius:12,border:'1.5px solid #e2e8f0',background:'white',fontSize:20,fontWeight:800,color:k==='⌫'?'#dc2626':'#0f172a',cursor:'pointer',fontFamily:'inherit',transition:'background .1s'}}
-                  onTouchStart={e=>{(e.currentTarget as HTMLButtonElement).style.background='#f0fdfa'}}
-                  onTouchEnd={e=>{(e.currentTarget as HTMLButtonElement).style.background='white'}}>
+                  }} onTouchStart={e=>{(e.currentTarget as HTMLButtonElement).style.background='#f0fdfa'}} onTouchEnd={e=>{(e.currentTarget as HTMLButtonElement).style.background='white'}} style={{color:k==='⌫'?uiTokens.color.danger:uiTokens.color.text}} variant="danger">
                   {k}
-                </button>
+                </StorelyButton>
               ))}
             </div>
             {wasteMode ? (
-              <button onClick={handleWaste} disabled={!dispenseQty||!wasteReason||submitting}
-                style={{width:'100%',padding:18,background:(!dispenseQty||!wasteReason||submitting)?'#94a3b8':'linear-gradient(135deg,#d97706,#b45309)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:800,cursor:(!dispenseQty||!wasteReason||submitting)?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:(!dispenseQty||!wasteReason||submitting)?'none':'0 8px 24px rgba(217,119,6,.35)'}}>
+              <StorelyButton onClick={handleWaste} disabled={!dispenseQty||!wasteReason||submitting} className="w-full" variant="primary">
                 {submitting?T('saving',lang):`🗑️ تسجيل هدر ${dispenseQty||''} ${selected.unit}`}
-              </button>
+              </StorelyButton>
             ) : (
-              <button onClick={handleDispense} disabled={!dispenseQty||submitting}
-                style={{width:'100%',padding:18,background:(!dispenseQty||submitting)?'#94a3b8':'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:800,cursor:(!dispenseQty||submitting)?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:(!dispenseQty||submitting)?'none':'0 8px 24px rgba(22,163,74,.35)'}}>
+              <StorelyButton onClick={handleDispense} disabled={!dispenseQty||submitting} className="w-full" variant="primary">
                 {submitting?T('saving',lang):T('confirm',lang)}
-              </button>
+              </StorelyButton>
             )}
           </div>
         </div>
@@ -690,22 +652,19 @@ function StaffPageInner() {
 
       {/* Edit qty modal */}
       {editingProduct && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:200,backdropFilter:'blur(4px)'}} onClick={()=>setEditingProduct(null)}>
-          <div style={{background:'white',borderRadius:'24px 24px 0 0',padding:28,width:'100%',maxWidth:480,animation:'slideUp .3s ease'}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:18,fontWeight:800,color:'#0f172a',marginBottom:4}}>{editingProduct.name}</div>
-            <div style={{fontSize:13,color:'#64748b',marginBottom:20}}>الكمية الحالية: <b>{editingProduct.qty}</b> {editingProduct.unit}</div>
-            <div style={{fontSize:13,fontWeight:700,color:'#374151',marginBottom:8}}>الكمية الجديدة</div>
-            <input type="number" value={editQty} onChange={e=>setEditQty(e.target.value)} min="0" autoFocus
-              style={{width:'100%',padding:'16px',border:'2px solid #e2e8f0',borderRadius:14,fontSize:28,fontWeight:800,textAlign:'center',fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:16}}/>
-            <div style={{display:'flex',gap:8}}>
-              <button onClick={updateQty} disabled={savingQty}
-                style={{flex:2,padding:16,background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>
+        <div onClick={()=>setEditingProduct(null)} className="fixed flex items-end justify-center overflow-y-auto" style={{inset:0, background:uiTokens.color.backdrop, zIndex:200}}>
+          <div onClick={e=>e.stopPropagation()} className="rounded-[var(--radius)] !p-6 w-full max-w-lg max-h-[90dvh] overflow-y-auto" style={{background:uiTokens.color.surface}}>
+            <div className="text-lg font-semibold !mb-1" style={{color:uiTokens.color.text}}>{editingProduct.name}</div>
+            <div className="text-sm !mb-5" style={{color:uiTokens.color.textMuted}}>الكمية الحالية: <b>{editingProduct.qty}</b> {editingProduct.unit}</div>
+            <div className="text-sm font-semibold !mb-2" style={{color:uiTokens.color.text}}>الكمية الجديدة</div>
+            <input type="number" value={editQty} onChange={e=>setEditQty(e.target.value)} min="0" autoFocus className="w-full rounded-[var(--radius)] text-[28px] font-semibold text-center !mb-4 storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`}}/>
+            <div className="flex flex-wrap gap-3">
+              <StorelyButton onClick={updateQty} disabled={savingQty} style={{flex:2}} variant="primary">
                 {savingQty?'جاري الحفظ...':'✅ حفظ الكمية'}
-              </button>
-              <button onClick={()=>setEditingProduct(null)}
-                style={{flex:1,padding:16,background:'#f3f4f6',color:'#374151',border:'none',borderRadius:14,fontSize:15,cursor:'pointer',fontFamily:'inherit'}}>
+              </StorelyButton>
+              <StorelyButton onClick={()=>setEditingProduct(null)} className="min-w-0 flex-1" variant="secondary">
                 إلغاء
-              </button>
+              </StorelyButton>
             </div>
           </div>
         </div>
@@ -713,32 +672,26 @@ function StaffPageInner() {
 
       {/* Add product modal */}
       {showAddProduct && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:200,backdropFilter:'blur(4px)'}} onClick={()=>setShowAddProduct(false)}>
-          <div style={{background:'white',borderRadius:'24px 24px 0 0',padding:28,width:'100%',maxWidth:480,animation:'slideUp .3s ease'}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:18,fontWeight:800,color:'#0f172a',marginBottom:20}}>➕ إضافة منتج جديد</div>
-            <div style={{display:'flex',flexDirection:'column' as const,gap:10,marginBottom:20}}>
-              <input value={newProduct.name} onChange={e=>setNewProduct(p=>({...p,name:e.target.value}))} placeholder="اسم المنتج *" autoFocus
-                style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',boxSizing:'border-box' as const}}/>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                <input type="number" value={newProduct.qty} onChange={e=>setNewProduct(p=>({...p,qty:e.target.value}))} placeholder="الكمية *"
-                  style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit'}}/>
-                <select value={newProduct.unit} onChange={e=>setNewProduct(p=>({...p,unit:e.target.value}))}
-                  style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',background:'white'}}>
+        <div onClick={()=>setShowAddProduct(false)} className="fixed flex items-end justify-center overflow-y-auto" style={{inset:0, background:uiTokens.color.backdrop, zIndex:200}}>
+          <div onClick={e=>e.stopPropagation()} className="rounded-[var(--radius)] !p-6 w-full max-w-lg max-h-[90dvh] overflow-y-auto" style={{background:uiTokens.color.surface}}>
+            <div className="text-lg font-semibold !mb-5" style={{color:uiTokens.color.text}}><Plus size={18} className="inline-block shrink-0 align-middle" aria-hidden="true" /> إضافة منتج جديد</div>
+            <div className="flex flex-col gap-2 !mb-5">
+              <input value={newProduct.name} onChange={e=>setNewProduct(p=>({...p,name:e.target.value}))} placeholder="اسم المنتج *" autoFocus className="rounded-[var(--radius)] !text-base storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`}}/>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input type="number" value={newProduct.qty} onChange={e=>setNewProduct(p=>({...p,qty:e.target.value}))} placeholder="الكمية *" className="rounded-[var(--radius)] !text-base storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`}}/>
+                <select value={newProduct.unit} onChange={e=>setNewProduct(p=>({...p,unit:e.target.value}))} className="rounded-[var(--radius)] text-base storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`, background:uiTokens.color.surface}}>
                   {UNITS.map(u=><option key={u}>{u}</option>)}
                 </select>
               </div>
-              <input value={newProduct.category} onChange={e=>setNewProduct(p=>({...p,category:e.target.value}))} placeholder="الفئة (اختياري)"
-                style={{padding:'12px 16px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:15,fontFamily:'inherit',boxSizing:'border-box' as const}}/>
+              <input value={newProduct.category} onChange={e=>setNewProduct(p=>({...p,category:e.target.value}))} placeholder="الفئة (اختياري)" className="rounded-[var(--radius)] !text-base storely-input min-w-0" style={{border:`1px solid ${uiTokens.color.border}`}}/>
             </div>
-            <div style={{display:'flex',gap:8}}>
-              <button onClick={addProduct} disabled={savingProduct||!newProduct.name||!newProduct.qty}
-                style={{flex:2,padding:16,background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',opacity:savingProduct||!newProduct.name||!newProduct.qty?0.6:1}}>
+            <div className="flex flex-wrap gap-3">
+              <StorelyButton onClick={addProduct} disabled={savingProduct||!newProduct.name||!newProduct.qty} style={{flex:2}} variant="primary">
                 {savingProduct?'جاري الإضافة...':'✅ إضافة'}
-              </button>
-              <button onClick={()=>setShowAddProduct(false)}
-                style={{flex:1,padding:16,background:'#f3f4f6',color:'#374151',border:'none',borderRadius:14,fontSize:15,cursor:'pointer',fontFamily:'inherit'}}>
+              </StorelyButton>
+              <StorelyButton onClick={()=>setShowAddProduct(false)} className="min-w-0 flex-1" variant="secondary">
                 إلغاء
-              </button>
+              </StorelyButton>
             </div>
           </div>
         </div>

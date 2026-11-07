@@ -4,7 +4,7 @@ import PageIcon from '@/components/PageIcon'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
-import { colors, radius, shadow, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
+import { colors, radius, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { currencySymbol } from '@/lib/currencySymbol'
@@ -293,10 +293,10 @@ export default function StaffManagementPage() {
   const inactiveCount = visibleStaff.filter(s=>!s.is_active).length
 
   if(loading) return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto'}}>
-      <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.6s ease-in-out infinite}`}</style>
+    <div className="staff-management-page" style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto'}}>
+      <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.staff-management-page .sk{animation:sk 1.6s ease-in-out infinite}`}</style>
       <div style={{height:20,width:120,background:colors.border2,borderRadius:6,marginBottom:8}} className="sk"/>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:20}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,150px),1fr))',gap:10,marginBottom:20}}>
         {[1,2,3].map(i=>(<div key={i} className="sk" style={{height:80,borderRadius:radius.lg,background:colors.border}}/>))}
       </div>
       <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
@@ -306,20 +306,19 @@ export default function StaffManagementPage() {
   )
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto',opacity:visible?1:0,transition:'opacity .4s ease'}}>
+    <div className="staff-management-page" style={{fontFamily:font.family,direction:'rtl',maxWidth:900,margin:'0 auto',opacity:visible?1:0,transition:'opacity .4s ease'}}>
       <style>{`
         @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
         @keyframes modalIn{from{opacity:0;transform:scale(.96) translateY(10px)}to{opacity:1;transform:none}}
-        .su{animation:slideUp .4s ease both}
-        input:focus,select:focus{border-color:${colors.primary}!important;box-shadow:0 0 0 3px ${colors.primaryLight}!important}
-        .staff-card{transition:all .2s cubic-bezier(.4,0,.2,1)}
-        .staff-card:hover{border-color:${colors.border2}!important}
-        .act-btn{border:none;border-radius:8px;padding:6px 12px;font-size:${font.xs};font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
-        .act-btn:hover{transform:scale(1.05)}
+        .staff-management-page .su{animation:slideUp .4s ease both}
+
+        .staff-management-page .staff-card{transition:all .2s cubic-bezier(.4,0,.2,1)}
+        .staff-management-page .staff-card:hover{border-color:${colors.primaryBorder}}
+        .staff-management-page .act-btn{min-height:36px;border:none;border-radius:${radius.sm};padding:6px 12px;font-size:${font.xs};font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s}
       `}</style>
 
       {/* Header */}
-      <div style={{marginBottom:20,display:'flex',justifyContent:'space-between',alignItems:'flex-start'}} className="su">
+      <div style={{marginBottom:24,display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:16}} className="su">
         <div style={{display:'flex',alignItems:'center',gap:12}}>
           <div style={{width:44,height:44,borderRadius:radius.md,background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
             <Users size={20} color={colors.primary} strokeWidth={1.75}/>
@@ -366,15 +365,15 @@ export default function StaffManagementPage() {
                     <button onClick={()=>setPickerFor(prev=>prev===p.id?null:p.id)}
                       style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>
                       <span style={{fontSize:font.xs,fontWeight:600,color:colors.text2}}>{p.name}</span>
-                      <span style={{fontSize:11,color:colors.primary,fontWeight:700}}>{pickerFor===p.id?'إغلاق ×':'+ تخصيص لموظف'}</span>
+                      <span style={{fontSize:13,color:colors.primary,fontWeight:700}}>{pickerFor===p.id?'إغلاق ×':'+ تخصيص لموظف'}</span>
                     </button>
                     {pickerFor===p.id && (
                       <div style={{display:'flex',flexWrap:'wrap' as const,gap:6,padding:'0 12px 10px'}}>
                         {staff.length===0 ? (
-                          <span style={{fontSize:11,color:colors.text4}}>لا يوجد موظفون بعد</span>
+                          <span style={{fontSize:13,color:colors.text4}}>لا يوجد موظفون بعد</span>
                         ) : staff.map((s:any)=>(
                           <button key={s.id} disabled={assigning} onClick={()=>quickAssignProduct(p.id,s.id)}
-                            style={{fontSize:11,fontWeight:600,padding:'5px 10px',borderRadius:99,border:`1px solid ${colors.primaryBorder}`,background:colors.primaryLight,color:colors.primary,cursor:assigning?'not-allowed':'pointer',fontFamily:'inherit',opacity:assigning?.6:1}}>
+                            style={{fontSize:13,fontWeight:600,padding:'5px 10px',borderRadius:99,border:`1px solid ${colors.primaryBorder}`,background:colors.primaryLight,color:colors.primary,cursor:assigning?'not-allowed':'pointer',fontFamily:'inherit',opacity:assigning?.6:1}}>
                             {s.name}
                           </button>
                         ))}
@@ -389,18 +388,18 @@ export default function StaffManagementPage() {
       })()}
 
       {/* Stats */}
-      <div className="su" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:20,animationDelay:'.05s'}}>
+      <div className="su" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,150px),1fr))',gap:10,marginBottom:20,animationDelay:'.05s'}}>
         {[
           {label:'إجمالي الموظفين',value:visibleStaff.length,      color:colors.info,    bg:colors.infoLight,    border:colors.infoBorder,    Icon:Users},
           {label:'موظفون نشطون',   value:activeCount,         color:colors.primary, bg:colors.primaryLight, border:colors.primaryBorder, Icon:UserCheck},
           {label:'موقوفون',        value:inactiveCount,       color:colors.danger,  bg:colors.dangerLight,  border:colors.dangerBorder,  Icon:PauseCircle},
         ].map((s,i)=>(
-          <div key={i} style={{background:s.bg,borderRadius:radius.lg,padding:'16px',border:`1.5px solid ${s.border}`}}>
+          <div key={i} style={{background:colors.surface,borderRadius:radius.lg,padding:'16px',border:`1px solid ${colors.border}`}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
-              <div style={{fontSize:10,fontWeight:700,color:s.color,textTransform:'uppercase' as const,letterSpacing:'.06em'}}>{s.label}</div>
+              <div style={{fontSize:13,fontWeight:600,color:colors.text3}}>{s.label}</div>
               <s.Icon size={18} color={s.color} strokeWidth={1.75}/>
             </div>
-            <div style={{fontSize:28,fontWeight:900,color:s.color}}>{s.value}</div>
+            <div style={{fontSize:28,fontWeight:600,color:s.color,fontVariantNumeric:'tabular-nums'}}>{s.value}</div>
           </div>
         ))}
       </div>
@@ -417,7 +416,7 @@ export default function StaffManagementPage() {
             </div>
           </div>
           <div style={{background:'white',borderRadius:radius.md,padding:'14px 16px',marginBottom:14,border:`1px solid ${colors.primaryBorder}`}}>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:12}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,180px),1fr))',gap:16,marginBottom:12}}>
               <div>
                 <div style={{fontSize:font.xs,color:colors.text4,fontWeight:700,marginBottom:4}}>رقم الجوال</div>
                 <div style={{fontSize:font.lg,fontWeight:800,color:colors.text,direction:'ltr',textAlign:'right' as const}}>{revealedPin.phone}</div>
@@ -443,8 +442,8 @@ export default function StaffManagementPage() {
 
       {/* Add staff modal */}
       {showAdd && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:500,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
-          <div style={{background:colors.surface,borderRadius:radius.xl,padding:26,width:'100%',maxWidth:440,animation:'modalIn .2s ease',boxShadow:shadow.lg}}>
+        <div className="storely-overlay" style={{zIndex:500}}>
+          <div className="storely-dialog-shell" style={{width:'100%',maxWidth:440,animation:'modalIn .2s ease'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
               <div>
                 <div style={{fontSize:font.md,fontWeight:800,color:colors.text}}>إضافة موظف جديد</div>
@@ -454,14 +453,14 @@ export default function StaffManagementPage() {
             </div>
             <div style={{display:'flex',flexDirection:'column' as const,gap:12,marginBottom:18}}>
               <div>
-                <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>اسم الموظف *</label>
+                <label style={{fontSize:font.base,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>اسم الموظف *</label>
                 <input value={newName} onChange={e=>setNewName(e.target.value)} style={inp()} placeholder="مثال: أحمد محمد"/>
               </div>
               <div>
-                <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>رقم الجوال *</label>
+                <label style={{fontSize:font.base,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>رقم الجوال *</label>
                 <div style={{display:'flex',gap:8}}>
                   <select value={staffCountry} onChange={e=>setStaffCountry(e.target.value)}
-                    style={{padding:'10px 8px',border:`1px solid ${colors.border}`,borderRadius:8,fontFamily:'inherit',fontSize:12,color:colors.text,background:'white',cursor:'pointer'}}>
+                    style={{minHeight:40,maxWidth:120,padding:'8px 12px',border:`1px solid ${colors.border}`,borderRadius:radius.sm,fontFamily:'inherit',fontSize:14,color:colors.text,background:'white',cursor:'pointer'}}>
                     {[['+966','🇸🇦'],['+971','🇦🇪'],['+965','🇰🇼'],['+973','🇧🇭'],['+974','🇶🇦'],['+968','🇴🇲'],['+20','🇪🇬'],['+962','🇯🇴'],['+1','🇺🇸'],['+44','🇬🇧'],['+91','🇮🇳'],['+92','🇵🇰']].map(([code,flag])=>(
                       <option key={code} value={code}>{flag} {code}</option>
                     ))}
@@ -471,7 +470,7 @@ export default function StaffManagementPage() {
               </div>
               {branches.length>1 && (
                 <div>
-                  <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>الفرع</label>
+                  <label style={{fontSize:font.base,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>الفرع</label>
                   {/* الموظف ينضاف للفرع اللي شغّال فيه المالك حالياً — لتغييره بدّل الفرع من القائمة الجانبية */}
                   <div style={{...inp(),background:colors.bg,color:colors.text2,fontWeight:700}}>
                     {branches.find((b:any)=>b.id===newBranch)?.name||'—'}
@@ -479,35 +478,35 @@ export default function StaffManagementPage() {
                 </div>
               )}
               <div>
-                <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>نوع الموظف</label>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                <label style={{fontSize:font.base,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>نوع الموظف</label>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,180px),1fr))',gap:8}}>
                   <button type="button" onClick={()=>setNewRole('staff')} style={{padding:'12px 10px',borderRadius:10,border:`1.5px solid ${newRole==='staff'?colors.primary:colors.border}`,background:newRole==='staff'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='staff'?`0 2px 8px ${colors.primary}22`:'none'}}>
                     <div style={{fontWeight:800,fontSize:font.sm,color:newRole==='staff'?colors.primary:colors.text2,marginBottom:3,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><User size={14} strokeWidth={2.25}/> موظف عادي</div>
-                    <div style={{fontSize:10,color:newRole==='staff'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يستخدم نظام الصرف والمخزون</div>
+                    <div style={{fontSize:13,color:newRole==='staff'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يستخدم نظام الصرف والمخزون</div>
                   </button>
                   <button type="button" onClick={()=>{
                       if(orgPlan==='basic'){toast('ميزة الكاشير تتطلب الباقة المتوسطة فأعلى — يرجى الترقية','warning');return}
                       setNewRole('cashier')
                     }} style={{padding:'12px 10px',borderRadius:10,border:`1.5px solid ${newRole==='cashier'?colors.primary:colors.border}`,background:newRole==='cashier'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='cashier'?`0 2px 8px ${colors.primary}22`:'none',opacity:orgPlan==='basic'?.55:1,position:'relative' as const}}>
                     {orgPlan==='basic' && (
-                      <div style={{position:'absolute',top:-8,left:-6,background:'#1c1c1a',color:'white',fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:99,display:'flex',alignItems:'center',gap:4}}><Lock size={9} strokeWidth={2.5}/> المتوسطة</div>
+                      <div style={{position:'absolute',top:-8,left:-6,background:'#1c1c1a',color:'white',fontSize:13,fontWeight:700,padding:'2px 8px',borderRadius:99,display:'flex',alignItems:'center',gap:4}}><Lock size={9} strokeWidth={2.5}/> المتوسطة</div>
                     )}
                     <div style={{fontWeight:800,fontSize:font.sm,color:newRole==='cashier'?colors.primary:colors.text2,marginBottom:3,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><Wallet size={14} strokeWidth={2.25}/> كاشير</div>
-                    <div style={{fontSize:10,color:newRole==='cashier'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يقفل الصندوق يومياً فقط</div>
+                    <div style={{fontSize:13,color:newRole==='cashier'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يقفل الصندوق يومياً فقط</div>
                   </button>
                 </div>
               </div>
               {newRole==='cashier' && (
                 <div style={{background:colors.bg,borderRadius:radius.md,padding:'12px 14px'}}>
                   <div style={{fontSize:font.xs,fontWeight:700,color:colors.text3,marginBottom:4,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>ساعات عمل المحل</div>
-                  <div style={{fontSize:10,color:colors.text4,marginBottom:10,lineHeight:1.5}}>يستخدمها النظام ليحدد تاريخ يوم العمل الصحيح لو المحل يقفل بعد منتصف الليل</div>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                  <div style={{fontSize:13,color:colors.text4,marginBottom:10,lineHeight:1.5}}>يستخدمها النظام ليحدد تاريخ يوم العمل الصحيح لو المحل يقفل بعد منتصف الليل</div>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,180px),1fr))',gap:8}}>
                     <div>
-                      <label style={{fontSize:10,fontWeight:700,color:colors.text3,display:'block',marginBottom:4}}>وقت الفتح</label>
+                      <label style={{fontSize:14,fontWeight:700,color:colors.text3,display:'block',marginBottom:4}}>وقت الفتح</label>
                       <input type="time" value={shopOpenTime} onChange={e=>setShopOpenTime(e.target.value)} style={inp()}/>
                     </div>
                     <div>
-                      <label style={{fontSize:10,fontWeight:700,color:colors.text3,display:'block',marginBottom:4}}>وقت الإغلاق</label>
+                      <label style={{fontSize:14,fontWeight:700,color:colors.text3,display:'block',marginBottom:4}}>وقت الإغلاق</label>
                       <input type="time" value={shopCloseTime} onChange={e=>setShopCloseTime(e.target.value)} style={inp()}/>
                     </div>
                   </div>
@@ -516,7 +515,7 @@ export default function StaffManagementPage() {
                       style={{accentColor:colors.primary,width:14,height:14}}/>
                     <div>
                       <div style={{fontSize:12,fontWeight:700,color:newSendClosingWA?colors.primary:colors.text2,display:'flex',alignItems:'center',gap:5}}><Smartphone size={13} strokeWidth={2.25}/> إرسال تفاصيل الإقفال للمالك عبر واتساب</div>
-                      <div style={{fontSize:10,color:colors.text4,marginTop:2,lineHeight:1.4}}>{newSendClosingWA?'تفعّل: يوصل المالك تقرير الإقفال الكامل':'موقّف: يوصل المالك بس إشعار "الكاشير أقفل"، بدون تفاصيل'}</div>
+                      <div style={{fontSize:13,color:colors.text4,marginTop:2,lineHeight:1.4}}>{newSendClosingWA?'تفعّل: يوصل المالك تقرير الإقفال الكامل':'موقّف: يوصل المالك بس إشعار "الكاشير أقفل"، بدون تفاصيل'}</div>
                     </div>
                   </label>
                 </div>
@@ -529,7 +528,7 @@ export default function StaffManagementPage() {
             {newRole==='staff' && (
               <div style={{background:colors.bg,borderRadius:radius.md,padding:'14px 16px',marginTop:12}}>
                 <div style={{fontSize:font.xs,fontWeight:700,color:colors.text3,marginBottom:10,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>صلاحيات الموظف</div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,180px),1fr))',gap:8}}>
                   {[
                     {key:'dispense',   label:'الصرف',      Icon:Send, locked:false},
                     {key:'inventory',  label:'المخزون',    Icon:Package, locked:false},
@@ -541,7 +540,7 @@ export default function StaffManagementPage() {
                         onChange={e=>!p.locked&&setNewPermissions(prev=>({...prev,[p.key]:e.target.checked}))}
                         style={{accentColor:colors.primary,width:14,height:14}}/>
                       <span style={{fontSize:12,fontWeight:600,color:(newPermissions as any)[p.key]?colors.primary:colors.text2,display:'flex',alignItems:'center',gap:5}}><p.Icon size={13} strokeWidth={2.25}/> {p.label}</span>
-                      {p.locked&&<span style={{fontSize:9,color:colors.text4}}>(افتراضي)</span>}
+                      {p.locked&&<span style={{fontSize:13,color:colors.text4}}>(افتراضي)</span>}
                     </label>
                   ))}
                 </div>
@@ -553,8 +552,8 @@ export default function StaffManagementPage() {
 
       {/* Assign Products Modal */}
       {assigningId && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:600,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
-          <div style={{background:colors.surface,borderRadius:radius.xl,padding:26,width:'100%',maxWidth:480,maxHeight:'80vh',display:'flex',flexDirection:'column' as const,boxShadow:'0 32px 80px rgba(0,0,0,.3)'}}>
+        <div className="storely-overlay" style={{zIndex:600}}>
+          <div className="storely-dialog-shell" style={{width:'100%',maxWidth:480,maxHeight:'80vh',display:'flex',flexDirection:'column' as const}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
               <div>
                 <div style={{fontSize:font.md,fontWeight:800,color:colors.text}}>تخصيص المنتجات</div>
@@ -562,7 +561,7 @@ export default function StaffManagementPage() {
               </div>
               <button onClick={()=>setAssigningId(null)} style={{width:32,height:32,borderRadius:radius.sm,border:`1.5px solid ${colors.border2}`,background:colors.bg,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',color:colors.text3}}>×</button>
             </div>
-            
+
             {/* اختيار الكل */}
             <div style={{display:'flex',gap:8,marginBottom:12}}>
               <button onClick={()=>setSelectedProds(products.filter((p:any)=>!takenProducts[p.id]).map((p:any)=>p.id))}
@@ -599,9 +598,9 @@ export default function StaffManagementPage() {
                       <div style={{width:20,height:20,borderRadius:6,border:`2px solid ${colors.border2}`,background:'white',flexShrink:0}}/>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:font.sm,fontWeight:700,color:colors.text3}}>{p.name}</div>
-                        <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit} · دوس لنقله من {takenBy}</div>
+                        <div style={{fontSize:13,color:colors.text4}}>{p.category||'—'} · {p.unit} · دوس لنقله من {takenBy}</div>
                       </div>
-                      <span style={{fontSize:9,fontWeight:700,color:colors.warning||'#d97706',background:colors.warningLight||'#fffbeb',padding:'3px 8px',borderRadius:20,whiteSpace:'nowrap' as const,flexShrink:0,display:'flex',alignItems:'center',gap:3}}><Lock size={9} strokeWidth={2.5}/> {takenBy}</span>
+                      <span style={{fontSize:13,fontWeight:700,color:colors.warning||'#d97706',background:colors.warningLight||'#fffbeb',padding:'3px 8px',borderRadius:20,whiteSpace:'nowrap' as const,flexShrink:0,display:'flex',alignItems:'center',gap:3}}><Lock size={9} strokeWidth={2.5}/> {takenBy}</span>
                     </div>
                   )
                 }
@@ -613,7 +612,7 @@ export default function StaffManagementPage() {
                     </div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{p.name}</div>
-                      <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit}</div>
+                      <div style={{fontSize:13,color:colors.text4}}>{p.category||'—'} · {p.unit}</div>
                     </div>
                   </div>
                 )
@@ -631,11 +630,11 @@ export default function StaffManagementPage() {
       {/* Staff Report Modal */}
       {/* modal صلاحيات */}
       {editingNameId && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
-          <div style={{background:colors.surface,borderRadius:radius.xl,padding:24,width:'100%',maxWidth:360,boxShadow:shadow.lg}}>
+        <div className="storely-overlay" style={{zIndex:700}}>
+          <div className="storely-dialog-shell" style={{width:'100%',maxWidth:360}}>
             <div style={{fontSize:font.md,fontWeight:800,color:colors.text,marginBottom:16}}>تعديل اسم الموظف</div>
             <div style={{marginBottom:18}}>
-              <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5}}>الاسم</label>
+              <label style={{fontSize:font.base,fontWeight:700,color:colors.text3,display:'block',marginBottom:5}}>الاسم</label>
               <input value={editNameValue} onChange={e=>setEditNameValue(e.target.value)} style={inp()} placeholder="اسم الموظف"
                 onKeyDown={e=>{if(e.key==='Enter')saveName()}}/>
             </div>
@@ -648,17 +647,17 @@ export default function StaffManagementPage() {
       )}
 
       {showHoursModal && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
-          <div style={{background:colors.surface,borderRadius:radius.xl,padding:24,width:'100%',maxWidth:380,boxShadow:shadow.lg}}>
+        <div className="storely-overlay" style={{zIndex:700}}>
+          <div className="storely-dialog-shell" style={{width:'100%',maxWidth:380}}>
             <div style={{fontSize:font.md,fontWeight:800,color:colors.text,marginBottom:6}}>ساعات عمل المحل</div>
-            <div style={{fontSize:11,color:colors.text4,marginBottom:16,lineHeight:1.5}}>يستخدمها النظام ليحدد تاريخ يوم العمل الصحيح لو المحل يقفل بعد منتصف الليل</div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:18}}>
+            <div style={{fontSize:13,color:colors.text4,marginBottom:16,lineHeight:1.5}}>يستخدمها النظام ليحدد تاريخ يوم العمل الصحيح لو المحل يقفل بعد منتصف الليل</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,180px),1fr))',gap:10,marginBottom:18}}>
               <div>
-                <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5}}>وقت الفتح</label>
+                <label style={{fontSize:font.base,fontWeight:700,color:colors.text3,display:'block',marginBottom:5}}>وقت الفتح</label>
                 <input type="time" value={shopOpenTime} onChange={e=>setShopOpenTime(e.target.value)} style={inp()}/>
               </div>
               <div>
-                <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5}}>وقت الإغلاق</label>
+                <label style={{fontSize:font.base,fontWeight:700,color:colors.text3,display:'block',marginBottom:5}}>وقت الإغلاق</label>
                 <input type="time" value={shopCloseTime} onChange={e=>setShopCloseTime(e.target.value)} style={inp()}/>
               </div>
             </div>
@@ -671,11 +670,11 @@ export default function StaffManagementPage() {
       )}
 
       {editingPerms && (
-        <div style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={()=>setEditingPerms(null)}>
-          <div style={{background:'white',borderRadius:20,padding:28,width:'100%',maxWidth:400,fontFamily:'inherit'}} onClick={e=>e.stopPropagation()}>
+        <div className="storely-overlay" style={{zIndex:1000}} onClick={()=>setEditingPerms(null)}>
+          <div className="storely-dialog-shell" style={{width:'100%',maxWidth:400}} onClick={e=>e.stopPropagation()}>
             <div style={{fontSize:16,fontWeight:800,color:'#1c1c1a',marginBottom:4,display:'flex',alignItems:'center',gap:6}}><ShieldCheck size={17} strokeWidth={2.25}/> صلاحيات الموظف</div>
             <div style={{fontSize:12,color:'#888780',marginBottom:20}}>{staff.find(s=>s.id===editingPerms)?.name}</div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,180px),1fr))',gap:10,marginBottom:20}}>
               {[
                 {key:'dispense',   label:'الصرف',      Icon:Send, locked:false},
                 {key:'inventory',  label:'المخزون',    Icon:Package, locked:false},
@@ -688,7 +687,7 @@ export default function StaffManagementPage() {
                     style={{accentColor:'#203640',width:16,height:16}}/>
                   <div>
                     <div style={{fontSize:13,fontWeight:700,color:(editPerms as any)[p.key]?'#203640':'#374151',display:'flex',alignItems:'center',gap:5}}><p.Icon size={14} strokeWidth={2.25}/> {p.label}</div>
-                    {p.locked&&<div style={{fontSize:10,color:'#9ca3af'}}>افتراضي</div>}
+                    {p.locked&&<div style={{fontSize:13,color:'#9ca3af'}}>افتراضي</div>}
                   </div>
                 </label>
               ))}
@@ -702,18 +701,18 @@ export default function StaffManagementPage() {
       )}
 
       {reportStaff && reportStaff.role==='cashier' && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
-          <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:560,maxHeight:'85vh',display:'flex',flexDirection:'column',fontFamily:'inherit',direction:'rtl'}}>
+        <div className="storely-overlay" style={{zIndex:700}}>
+          <div className="storely-dialog-shell" data-padding="none" style={{width:'100%',maxWidth:560,maxHeight:'85vh',display:'flex',flexDirection:'column',direction:'rtl'}}>
             <div style={{padding:'18px 20px',borderBottom:'1px solid #f0f0f0',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
               <div>
                 <div style={{fontSize:15,fontWeight:700,color:'#1c1c1a'}}>تقارير إقفال {reportStaff.name}</div>
-                <div style={{fontSize:11,color:'#888780',marginTop:2}}>آخر 50 تقرير إقفال</div>
+                <div style={{fontSize:13,color:'#888780',marginTop:2}}>آخر 50 تقرير إقفال</div>
               </div>
               <button onClick={()=>setReportStaff(null)} style={{width:30,height:30,borderRadius:'50%',border:'1px solid #e0e0dd',background:'#f5f5f4',cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',color:'#5f5e5a'}}>✕</button>
             </div>
 
             {/* Stats */}
-            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,padding:'14px 20px',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,150px),1fr))',gap:8,padding:'14px 20px',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
               {[
                 {label:'عدد التقارير', value:staffClosings.length, color:'#0891b2'},
                 {label:'حالات عجز', value:staffClosings.filter((c:any)=>c.status==='deficit').length, color:'#e24b4a'},
@@ -721,7 +720,7 @@ export default function StaffManagementPage() {
               ].map((s,i)=>(
                 <div key={i} style={{background:'#f9f9f8',borderRadius:10,padding:'10px 12px',textAlign:'center'}}>
                   <div style={{fontSize:20,fontWeight:700,color:s.color,fontVariantNumeric:'tabular-nums'}}>{s.value}</div>
-                  <div style={{fontSize:10,color:'#888780',marginTop:2}}>{s.label}</div>
+                  <div style={{fontSize:13,color:'#888780',marginTop:2}}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -742,9 +741,9 @@ export default function StaffManagementPage() {
                     </div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:13,fontWeight:600,color:'#1c1c1a'}}>{new Date(c.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'short',month:'short',day:'numeric'})}</div>
-                      <div style={{fontSize:10,color:'#888780',marginTop:1}}>مبيعات {Number(c.total_sales).toFixed(0)} {curr} · شبكة {Number(c.network_amount).toFixed(0)} {curr}</div>
+                      <div style={{fontSize:13,color:'#888780',marginTop:1}}>مبيعات {Number(c.total_sales).toFixed(0)} {curr} · شبكة {Number(c.network_amount).toFixed(0)} {curr}</div>
                     </div>
-                    <div style={{fontSize:11,fontWeight:700,color:statusColor[c.status],flexShrink:0}}>
+                    <div style={{fontSize:13,fontWeight:700,color:statusColor[c.status],flexShrink:0}}>
                       {statusLabel[c.status]}{c.status!=='balanced'?` (${Math.abs(Number(c.difference)).toFixed(0)} ${curr})`:''}
                     </div>
                   </div>
@@ -756,18 +755,18 @@ export default function StaffManagementPage() {
       )}
 
       {reportStaff && reportStaff.role!=='cashier' && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
-          <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:540,maxHeight:'85vh',display:'flex',flexDirection:'column',fontFamily:'inherit',direction:'rtl'}}>
+        <div className="storely-overlay" style={{zIndex:700}}>
+          <div className="storely-dialog-shell" data-padding="none" style={{width:'100%',maxWidth:540,maxHeight:'85vh',display:'flex',flexDirection:'column',direction:'rtl'}}>
             <div style={{padding:'18px 20px',borderBottom:'1px solid #f0f0f0',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
               <div>
                 <div style={{fontSize:15,fontWeight:700,color:'#1c1c1a'}}>تقرير {reportStaff.name}</div>
-                <div style={{fontSize:11,color:'#888780',marginTop:2}}>آخر 50 عملية صرف</div>
+                <div style={{fontSize:13,color:'#888780',marginTop:2}}>آخر 50 عملية صرف</div>
               </div>
               <button onClick={()=>setReportStaff(null)} style={{width:30,height:30,borderRadius:'50%',border:'1px solid #e0e0dd',background:'#f5f5f4',cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',color:'#5f5e5a'}}>✕</button>
             </div>
 
             {/* Stats */}
-            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,padding:'14px 20px',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,150px),1fr))',gap:8,padding:'14px 20px',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
               {[
                 {label:'عمليات الصرف', value:staffReport.length, color:'#378add'},
                 {label:'أصناف مختلفة', value:new Set(staffReport.map((m:any)=>(m.products as any)?.name)).size, color:'#203640'},
@@ -775,7 +774,7 @@ export default function StaffManagementPage() {
               ].map((s,i)=>(
                 <div key={i} style={{background:'#f9f9f8',borderRadius:10,padding:'10px 12px',textAlign:'center'}}>
                   <div style={{fontSize:20,fontWeight:700,color:s.color,fontVariantNumeric:'tabular-nums'}}>{s.value}</div>
-                  <div style={{fontSize:10,color:'#888780',marginTop:2}}>{s.label}</div>
+                  <div style={{fontSize:13,color:'#888780',marginTop:2}}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -793,10 +792,10 @@ export default function StaffManagementPage() {
                   </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:600,color:'#1c1c1a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(m.products as any)?.name||'—'}</div>
-                    <div style={{fontSize:10,color:'#888780',marginTop:1}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                    <div style={{fontSize:13,color:'#888780',marginTop:1}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
                   </div>
-                  <div style={{fontSize:11,fontWeight:600,color:'#e24b4a',flexShrink:0}}>
-                    -{Math.abs(m.qty_change)} <span style={{fontSize:10,color:'#888780',fontWeight:400}}>{(m.products as any)?.unit}</span>
+                  <div style={{fontSize:13,fontWeight:600,color:'#e24b4a',flexShrink:0}}>
+                    -{Math.abs(m.qty_change)} <span style={{fontSize:13,color:'#888780',fontWeight:400}}>{(m.products as any)?.unit}</span>
                   </div>
                 </div>
               ))}
@@ -826,7 +825,7 @@ export default function StaffManagementPage() {
                       <button onClick={e=>{e.stopPropagation();setEditingNameId(s.id);setEditNameValue(s.name)}} style={{background:'transparent',border:'none',cursor:'pointer',padding:2,display:'flex',alignItems:'center',color:colors.text4,opacity:.7}} title="تعديل الاسم">
                         <svg width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                       </button>
-                      {!s.is_active&&<span style={{fontSize:10,color:colors.danger,background:colors.dangerLight,padding:'2px 8px',borderRadius:20,fontWeight:700,border:`1px solid ${colors.dangerBorder}`}}>موقوف</span>}
+                      {!s.is_active&&<span style={{fontSize:13,color:colors.danger,background:colors.dangerLight,padding:'2px 8px',borderRadius:20,fontWeight:700,border:`1px solid ${colors.dangerBorder}`}}>موقوف</span>}
                     </div>
                     <div style={{fontSize:font.xs,color:colors.text4,marginTop:2,direction:'ltr',textAlign:'right' as const}}>
                       {toLocalPhone(s.phone)}{s.branches?.name?` · ${s.branches.name}`:''}
@@ -867,15 +866,15 @@ export default function StaffManagementPage() {
 
               {expandedId===s.id&&(
                 <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${colors.border}`,animation:'slideUp .2s ease'}}>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:14}}>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,180px),1fr))',gap:14,marginBottom:14}}>
                     <div style={{background:colors.bg,borderRadius:radius.md,padding:'12px 14px',border:`1px solid ${colors.border}`}}>
-                      <div style={{fontSize:10,fontWeight:700,color:colors.text4,marginBottom:6,textTransform:'uppercase' as const}}>رقم الجوال</div>
+                      <div style={{fontSize:13,fontWeight:700,color:colors.text4,marginBottom:6,textTransform:'uppercase' as const}}>رقم الجوال</div>
                       {editingStaffPhoneId===s.id ? (
                         <div onClick={e=>e.stopPropagation()} style={{display:'flex',alignItems:'center',gap:6}}>
                           <input value={editStaffPhoneVal} onChange={e=>setEditStaffPhoneVal(e.target.value)} dir="ltr" autoFocus
                             style={{fontSize:13,padding:'5px 8px',border:`1.5px solid ${colors.primary}`,borderRadius:6,width:120,fontFamily:'inherit'}}/>
-                          <button onClick={()=>saveStaffPhone(s.id)} disabled={savingStaffPhone} style={{fontSize:11,fontWeight:700,color:'white',background:colors.primary,border:'none',borderRadius:6,padding:'5px 10px',cursor:'pointer',fontFamily:'inherit'}}>{savingStaffPhone?'...':'حفظ'}</button>
-                          <button onClick={()=>setEditingStaffPhoneId(null)} style={{fontSize:11,fontWeight:700,color:colors.text3,background:colors.bg,border:'none',borderRadius:6,padding:'5px 10px',cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                          <button onClick={()=>saveStaffPhone(s.id)} disabled={savingStaffPhone} style={{fontSize:13,fontWeight:700,color:'white',background:colors.primary,border:'none',borderRadius:6,padding:'5px 10px',cursor:'pointer',fontFamily:'inherit'}}>{savingStaffPhone?'...':'حفظ'}</button>
+                          <button onClick={()=>setEditingStaffPhoneId(null)} style={{fontSize:13,fontWeight:700,color:colors.text3,background:colors.bg,border:'none',borderRadius:6,padding:'5px 10px',cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
                         </div>
                       ) : (
                         <div onClick={e=>{e.stopPropagation();setEditingStaffPhoneId(s.id);setEditStaffPhoneVal(s.phone||'')}} style={{fontSize:font.base,fontWeight:800,color:colors.text,direction:'ltr',textAlign:'right' as const,cursor:'pointer',display:'flex',alignItems:'center',gap:6,justifyContent:'flex-end'}}>
@@ -884,11 +883,11 @@ export default function StaffManagementPage() {
                       )}
                     </div>
                     <div style={{background:colors.primaryLight,borderRadius:radius.md,padding:'12px 14px',border:`1px solid ${colors.primaryBorder}`}}>
-                      <div style={{fontSize:10,fontWeight:700,color:colors.primary,marginBottom:6,textTransform:'uppercase' as const}}>رمز PIN الحالي</div>
+                      <div style={{fontSize:13,fontWeight:700,color:colors.primary,marginBottom:6,textTransform:'uppercase' as const}}>رمز PIN الحالي</div>
                       {String(s.pin||'').startsWith('$2') ? (
                         <div>
                           <div style={{fontSize:13,fontWeight:700,color:colors.danger||'#dc2626',marginBottom:6}}>PIN قديم — لا يمكن استرجاعه</div>
-                          <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} style={{fontSize:11,fontWeight:700,color:'white',background:colors.primary,border:'none',borderRadius:6,padding:'6px 12px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:5}}>
+                          <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} style={{fontSize:13,fontWeight:700,color:'white',background:colors.primary,border:'none',borderRadius:6,padding:'6px 12px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:5}}>
                             <RefreshCw size={12} strokeWidth={2.25}/> إعادة توليد PIN جديد
                           </button>
                         </div>
@@ -910,7 +909,7 @@ export default function StaffManagementPage() {
                               </svg>
                             )}
                           </button>
-                          <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} style={{fontSize:11,fontWeight:700,color:colors.primary,background:'transparent',border:`1px solid ${colors.primaryBorder}`,borderRadius:6,padding:'4px 8px',cursor:'pointer',fontFamily:'inherit'}}>
+                          <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} style={{fontSize:13,fontWeight:700,color:colors.primary,background:'transparent',border:`1px solid ${colors.primaryBorder}`,borderRadius:6,padding:'4px 8px',cursor:'pointer',fontFamily:'inherit'}}>
                             إعادة توليد
                           </button>
                         </div>
@@ -918,7 +917,7 @@ export default function StaffManagementPage() {
                     </div>
                   </div>
                   <div>
-                    <div style={{fontSize:10,fontWeight:700,color:colors.text4,marginBottom:6,textTransform:'uppercase' as const}}>رابط دخول الموظف</div>
+                    <div style={{fontSize:13,fontWeight:700,color:colors.text4,marginBottom:6,textTransform:'uppercase' as const}}>رابط دخول الموظف</div>
                     <div style={{display:'flex',gap:8,alignItems:'center'}}>
                       <div style={{fontSize:font.xs,color:colors.text,background:colors.bg,padding:'9px 12px',borderRadius:8,border:`1px solid ${colors.border}`,flex:1,direction:'ltr',textAlign:'left' as const,overflowX:'auto',whiteSpace:'nowrap' as const}}>https://storely.dev/staff</div>
                       <button onClick={()=>{navigator.clipboard.writeText('https://storely.dev/staff');toast('تم نسخ الرابط ✓')}} style={{background:colors.primary,color:'white',border:'none',borderRadius:8,padding:'9px 14px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family,whiteSpace:'nowrap' as const,display:'flex',alignItems:'center',gap:5}}>

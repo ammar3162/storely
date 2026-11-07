@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:webpack": "next dev --webpack",
     "prebuild": "vitest run --exclude \"tests/integration/**\"",
     "build": "next build",
     "start": "next start",

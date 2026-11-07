@@ -2,29 +2,31 @@
 // مكوّنات وألوان لوحة الإدارة — مصدر واحد لكل صفحات /storely-admin
 import { createContext, useContext, type CSSProperties, type ReactNode } from 'react'
 import { Loader2, X } from 'lucide-react'
+import { StorelyButton, StorelyCard, StorelyEmptyState, StorelyPageHeader } from '@/components/ui'
+import { storelyTokens } from '@/components/ui/design-tokens'
 
 export const A = {
-  bg: '#f6f7f9',
-  surface: '#ffffff',
-  sidebar: '#0b1f1e',
-  border: '#e6e8ec',
-  borderStrong: '#d5d9df',
-  text: '#101828',
-  text2: '#475467',
-  text3: '#98a2b3',
-  primary: '#0f8f8c',
-  primaryHover: '#0b7573',
-  primarySoft: '#e7f6f5',
-  danger: '#d92d20',
-  dangerSoft: '#fef3f2',
-  warning: '#b54708',
-  warningSoft: '#fffaeb',
-  info: '#175cd3',
-  infoSoft: '#eff8ff',
-  violet: '#6941c6',
-  violetSoft: '#f4f3ff',
-  radius: 10,
-  font: "'IBM Plex Sans Arabic', system-ui, sans-serif",
+  bg: storelyTokens.color.background,
+  surface: storelyTokens.color.surface,
+  sidebar: storelyTokens.color.navy,
+  border: storelyTokens.color.border,
+  borderStrong: storelyTokens.color.border,
+  text: storelyTokens.color.text,
+  text2: storelyTokens.color.textMuted,
+  text3: storelyTokens.color.textMuted,
+  primary: storelyTokens.color.navy,
+  primaryHover: storelyTokens.color.navyHover,
+  primarySoft: storelyTokens.color.background,
+  danger: storelyTokens.color.danger,
+  dangerSoft: storelyTokens.color.dangerBg,
+  warning: storelyTokens.color.warning,
+  warningSoft: storelyTokens.color.warningBg,
+  info: storelyTokens.color.info,
+  infoSoft: storelyTokens.color.infoBg,
+  violet: storelyTokens.color.info,
+  violetSoft: storelyTokens.color.infoBg,
+  radius: storelyTokens.radius.card,
+  font: storelyTokens.typography.family,
 }
 
 // ألوان الصفحات القديمة (كانت داكنة) — نفس المفاتيح، بثيم اللوحة الفاتح
@@ -69,178 +71,123 @@ export const daysLeft = (d?: string | null) => (d ? Math.ceil((new Date(d).getTi
 
 // ── عناصر ──
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
-      <div>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: A.text, letterSpacing: '-.2px' }}>{title}</h1>
-        {subtitle && <p style={{ fontSize: 13, color: A.text2, marginTop: 4 }}>{subtitle}</p>}
-      </div>
-      {actions && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{actions}</div>}
-    </div>
-  )
+  return <StorelyPageHeader title={title} description={subtitle} actions={actions} />
 }
 
 export function Card({ title, subtitle, actions, children, pad = 20, style }: { title?: string; subtitle?: string; actions?: ReactNode; children: ReactNode; pad?: number; style?: CSSProperties }) {
-  return (
-    <section style={{ background: A.surface, border: `1px solid ${A.border}`, borderRadius: 12, ...style }}>
-      {(title || actions) && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: `14px ${Math.max(pad, 18)}px`, borderBottom: `1px solid ${A.border}` }}>
-          <div>
-            {title && <div style={{ fontSize: 14, fontWeight: 700, color: A.text }}>{title}</div>}
-            {subtitle && <div style={{ fontSize: 12, color: A.text3, marginTop: 2 }}>{subtitle}</div>}
-          </div>
-          {actions}
-        </div>
-      )}
-      <div style={{ padding: pad }}>{children}</div>
-    </section>
-  )
+  return <StorelyCard title={title} description={(title || actions) ? subtitle : undefined} actions={actions} style={style}>
+    <div style={{ padding: pad }}>{children}</div>
+  </StorelyCard>
 }
 
 export function Stat({ label, value, hint, tone = 'default', onClick }: { label: string; value: ReactNode; hint?: string; tone?: 'default' | 'primary' | 'warning' | 'danger' | 'violet'; onClick?: () => void }) {
   const color = { default: A.text, primary: A.primary, warning: A.warning, danger: A.danger, violet: A.violet }[tone]
   return (
-    <div onClick={onClick} className={onClick ? 'adm-hover' : undefined}
-      style={{ background: A.surface, border: `1px solid ${A.border}`, borderRadius: 12, padding: '16px 18px', cursor: onClick ? 'pointer' : 'default' }}>
-      <div style={{ fontSize: 12, fontWeight: 600, color: A.text2 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 800, color, marginTop: 6, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-      {hint && <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>{hint}</div>}
+    <div onClick={onClick} className={`storely-metric${onClick ? ' adm-hover' : ''}`} style={{cursor:onClick?'pointer':'default'}}>
+      <div className="storely-metric-label">{label}</div>
+      <div className="storely-metric-value" style={{color}}>{value}</div>
+      {hint && <div className="storely-metric-helper">{hint}</div>}
     </div>
   )
 }
 
 const TONES = {
-  neutral: { bg: '#f2f4f7', fg: '#344054' },
-  primary: { bg: A.primarySoft, fg: A.primary },
-  warning: { bg: A.warningSoft, fg: A.warning },
-  danger: { bg: A.dangerSoft, fg: A.danger },
-  info: { bg: A.infoSoft, fg: A.info },
-  violet: { bg: A.violetSoft, fg: A.violet },
+  neutral: { bg: storelyTokens.color.background, fg: A.text2, border: A.border },
+  primary: { bg: storelyTokens.color.successBg, fg: storelyTokens.color.success, border: storelyTokens.color.successBorder },
+  warning: { bg: A.warningSoft, fg: A.warning, border: storelyTokens.color.warningBorder },
+  danger: { bg: A.dangerSoft, fg: A.danger, border: storelyTokens.color.dangerBorder },
+  info: { bg: A.infoSoft, fg: A.info, border: storelyTokens.color.infoBorder },
+  violet: { bg: A.violetSoft, fg: A.violet, border: storelyTokens.color.infoBorder },
 }
 export type Tone = keyof typeof TONES
 export function Badge({ tone = 'neutral', children }: { tone?: Tone; children: ReactNode }) {
   const t = TONES[tone]
-  return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: t.bg, color: t.fg, fontSize: 11.5, fontWeight: 700, padding: '3px 9px', borderRadius: 99, whiteSpace: 'nowrap' }}>{children}</span>
+  return <span className="storely-badge" style={{background:t.bg,color:t.fg,borderColor:t.border}}>{children}</span>
 }
 
 type BtnKind = 'primary' | 'secondary' | 'danger' | 'ghost'
 export function Btn({ kind = 'secondary', children, onClick, disabled, loading, type = 'button', full, small, title }: {
   kind?: BtnKind; children: ReactNode; onClick?: () => void; disabled?: boolean; loading?: boolean; type?: 'button' | 'submit'; full?: boolean; small?: boolean; title?: string
 }) {
-  const s: Record<BtnKind, CSSProperties> = {
-    primary: { background: A.primary, color: 'white', border: `1px solid ${A.primary}` },
-    secondary: { background: A.surface, color: A.text, border: `1px solid ${A.borderStrong}` },
-    danger: { background: A.surface, color: A.danger, border: `1px solid #fecdca` },
-    ghost: { background: 'transparent', color: A.text2, border: '1px solid transparent' },
-  }
   return (
-    <button type={type} onClick={onClick} disabled={disabled || loading} title={title} className={`adm-btn adm-btn-${kind}`}
-      style={{ ...s[kind], display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: small ? '6px 10px' : '9px 14px', borderRadius: 8,
-        fontSize: small ? 12 : 13, fontWeight: 700, fontFamily: 'inherit', cursor: disabled || loading ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
-        width: full ? '100%' : undefined, whiteSpace: 'nowrap' }}>
+    <StorelyButton type={type} onClick={onClick} disabled={disabled || loading} title={title} variant={kind} size={small?'sm':'md'} className={`adm-btn adm-btn-${kind}`} style={{width:full?'100%':undefined}}>
       {loading && <Loader2 size={14} className="adm-spin" />}
       {children}
-    </button>
+    </StorelyButton>
   )
 }
 
 export const inputStyle: CSSProperties = {
-  width: '100%', padding: '9px 12px', border: `1px solid ${A.borderStrong}`, borderRadius: 8, fontSize: 13,
-  fontFamily: 'inherit', background: A.surface, color: A.text, outline: 'none',
+  width: '100%', minHeight: storelyTokens.control.medium,
+  padding: `${storelyTokens.spacing[2]}px ${storelyTokens.spacing[3]}px`,
+  border: `1px solid ${A.borderStrong}`, borderRadius: storelyTokens.radius.control,
+  fontSize: storelyTokens.typography.body, fontFamily: 'inherit', background: A.surface, color: A.text, outline: 'none',
 }
 
 export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
-  return (
-    <label style={{ display: 'block' }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: A.text2, marginBottom: 6 }}>{label}</div>
-      {children}
-      {hint && <div style={{ fontSize: 11.5, color: A.text3, marginTop: 4 }}>{hint}</div>}
-    </label>
-  )
+  return <label className="storely-field block">
+    <div className="storely-field-label">{label}</div>
+    <div className="storely-field-control">{children}</div>
+    {hint && <div className="storely-field-description">{hint}</div>}
+  </label>
 }
 
 export function Loading({ label = 'جاري التحميل...' }: { label?: string }) {
-  return (
-    <div style={{ padding: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: A.text3, fontSize: 13 }}>
-      <Loader2 size={16} className="adm-spin" /> {label}
-    </div>
-  )
+  return <div className="storely-loading"><Loader2 size={16} className="adm-spin" /> {label}</div>
 }
 
 export function Empty({ title, hint }: { title: string; hint?: string }) {
-  return (
-    <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: A.text2 }}>{title}</div>
-      {hint && <div style={{ fontSize: 12.5, color: A.text3, marginTop: 4 }}>{hint}</div>}
-    </div>
-  )
+  return <StorelyEmptyState title={title} description={hint} className="!border-0" />
 }
 
 export function Notice({ tone = 'info', children, action }: { tone?: Tone; children: ReactNode; action?: ReactNode }) {
   const t = TONES[tone]
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: t.bg, color: t.fg, border: `1px solid ${t.fg}22`, borderRadius: 10, padding: '11px 14px', fontSize: 13, fontWeight: 600 }}>
-      <div style={{ flex: 1 }}>{children}</div>
-      {action}
-    </div>
-  )
+  return <div className="storely-notice" style={{color:t.fg,borderColor:t.fg+'44'}}>
+    <div className="storely-notice-body">{children}</div>{action}
+  </div>
 }
 
-/** لوحة جانبية تنزلق من اليسار (الواجهة عربية: القائمة يمين والتفاصيل يسار) */
+/** Keep the existing left-hand drawer workflow. */
 export function Drawer({ open, onClose, title, subtitle, children, width = 520 }: { open: boolean; onClose: () => void; title: ReactNode; subtitle?: ReactNode; children: ReactNode; width?: number }) {
   if (!open) return null
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000 }}>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(16,24,40,.35)' }} />
-      <aside style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: `min(${width}px, 100vw)`, background: A.bg, boxShadow: '8px 0 32px rgba(16,24,40,.15)', display: 'flex', flexDirection: 'column', animation: 'admDrawer .2s ease' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: A.surface, borderBottom: `1px solid ${A.border}` }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: A.text }}>{title}</div>
-            {subtitle && <div style={{ fontSize: 12.5, color: A.text2, marginTop: 2 }}>{subtitle}</div>}
+    <div className="storely-drawer">
+      <div onClick={onClose} className="storely-drawer-backdrop" />
+      <aside className="storely-drawer-panel" style={{width:`min(${width}px, 100vw)`}}>
+        <div className="storely-drawer-header">
+          <div className="min-w-0 flex-1 break-words">
+            <div className="storely-dialog-title">{title}</div>
+            {subtitle && <div className="storely-card-description">{subtitle}</div>}
           </div>
-          <button onClick={onClose} aria-label="إغلاق" className="adm-btn" style={{ width: 34, height: 34, borderRadius: 8, border: `1px solid ${A.border}`, background: A.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: A.text2 }}>
-            <X size={16} />
-          </button>
+          <StorelyButton onClick={onClose} aria-label="إغلاق" size="sm" className="!w-9 !px-0"><X size={16} /></StorelyButton>
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>{children}</div>
+        <div className="storely-drawer-body">{children}</div>
       </aside>
     </div>
   )
 }
 
-/** جدول بسيط: رؤوس + صفوف، مع تمرير أفقي على الشاشات الصغيرة */
 export function Table({ head, children, minWidth = 720 }: { head: string[]; children: ReactNode; minWidth?: number }) {
-  return (
-    <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', minWidth }}>
-        <thead>
-          <tr>
-            {head.map((h, i) => (
-              <th key={i} style={{ textAlign: 'right', padding: '10px 16px', fontSize: 12, fontWeight: 700, color: A.text2, background: '#f9fafb', borderBottom: `1px solid ${A.border}`, whiteSpace: 'nowrap' }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>{children}</tbody>
-      </table>
-    </div>
-  )
+  return <div className="storely-table-scroll"><table className="storely-table" style={{minWidth}}>
+    <thead><tr>{head.map((h,i)=><th key={i}>{h}</th>)}</tr></thead>
+    <tbody>{children}</tbody>
+  </table></div>
 }
 
-export const td: CSSProperties = { padding: '12px 16px', borderBottom: `1px solid ${A.border}`, fontSize: 13, color: A.text, verticalAlign: 'middle' }
+export const td: CSSProperties = {
+  padding: `${storelyTokens.spacing[5]}px`, borderBottom: `1px solid ${A.border}`,
+  fontSize: storelyTokens.typography.body, color: A.text, verticalAlign: 'middle',
+}
 
 export const ADMIN_CSS = `
   .adm-root *{box-sizing:border-box}
-  .adm-root input:focus,.adm-root select:focus,.adm-root textarea:focus{border-color:${A.primary}!important;box-shadow:0 0 0 3px ${A.primary}22!important;outline:none}
+  .adm-root input:focus,.adm-root select:focus,.adm-root textarea:focus{border-color:${A.primary}!important;box-shadow:${storelyTokens.shadow.focus}!important;outline:none}
   .adm-btn{transition:background .12s,border-color .12s,color .12s}
-  .adm-btn-primary:hover:not(:disabled){background:${A.primaryHover}!important}
-  .adm-btn-secondary:hover:not(:disabled){background:#f9fafb!important}
-  .adm-btn-danger:hover:not(:disabled){background:${A.dangerSoft}!important}
-  .adm-btn-ghost:hover:not(:disabled){background:#f2f4f7!important}
   .adm-hover{transition:border-color .12s,box-shadow .12s}
   .adm-hover:hover{border-color:${A.borderStrong}!important;box-shadow:0 1px 3px rgba(16,24,40,.08)}
   .adm-row{cursor:pointer;transition:background .1s}
-  .adm-row:hover td{background:#f9fafb}
-  .adm-row-btn:hover{background:#f9fafb!important}
+  .adm-row:hover td{background:${storelyTokens.color.background}}
+  .adm-row-btn:hover{background:${storelyTokens.color.background}!important}
   .adm-row-btn:last-child{border-bottom:none!important}
   .adm-spin{animation:admSpin .8s linear infinite}
   @keyframes admSpin{to{transform:rotate(360deg)}}

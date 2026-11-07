@@ -1,6 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { LoaderCircle } from 'lucide-react'
+import { StorelyButton, StorelyCard, StorelyEmptyState, StorelyFormField, StorelyPageHeader } from '@/components/ui'
+import { storelyTokens } from '@/components/ui/design-tokens'
 
 interface StaffSession {
   id: string; name: string; org_id: string; branch_id: string | null
@@ -8,9 +11,9 @@ interface StaffSession {
 }
 
 const STATUS_LABEL: Record<string, {label:string; color:string; bg:string}> = {
-  pending:  { label: 'بانتظار الموافقة', color: '#d97706', bg: '#fffbeb' },
-  approved: { label: 'موافَق عليها ✓',   color: '#029FA2', bg: '#f0fdfa' },
-  rejected: { label: 'مرفوضة',           color: '#dc2626', bg: '#fef2f2' },
+  pending:  { label: 'بانتظار الموافقة', color: storelyTokens.color.warning, bg: storelyTokens.color.warningBg },
+  approved: { label: 'موافَق عليها ✓',   color: storelyTokens.color.success, bg: storelyTokens.color.successBg },
+  rejected: { label: 'مرفوضة',           color: storelyTokens.color.danger, bg: storelyTokens.color.dangerBg },
 }
 
 export default function StaffLeavePage() {
@@ -62,74 +65,66 @@ export default function StaffLeavePage() {
   }
 
   if (!session) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
-      <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:'#029FA2',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div className="flex min-h-screen items-center justify-center bg-[var(--storely-background)] text-[var(--storely-navy)]">
+      <LoaderCircle size={28} className="animate-spin" />
     </div>
   )
 
   return (
-    <div style={{minHeight:'100vh',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',paddingBottom:40}}>
-      <div style={{background:'white',borderBottom:'1px solid #ece8e2',padding:'16px 20px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-        <div>
-          <div style={{fontSize:16,fontWeight:800,color:'#1c1c1a'}}>طلب إجازة</div>
-          <div style={{fontSize:12,color:'#888780',marginTop:2}}>{session.name}</div>
-        </div>
-        <button onClick={()=>router.back()} style={{background:'#f5f5f4',border:'none',borderRadius:8,padding:'8px 14px',fontSize:12,fontWeight:700,color:'#5f5e5a',cursor:'pointer',fontFamily:'inherit'}}>رجوع</button>
-      </div>
-
-      <div style={{maxWidth:520,margin:'0 auto',padding:'20px 16px'}}>
+    <div className="min-h-screen bg-[var(--storely-background)] text-[var(--storely-navy)]" dir="rtl">
+      <div className="!mx-auto max-w-4xl !space-y-6 !px-4 !py-6 sm:!p-8">
+        <StorelyPageHeader title="طلب إجازة" description={session.name}
+          actions={<StorelyButton onClick={()=>router.back()}>رجوع</StorelyButton>} />
         {balance !== null && (
-          <div style={{background:'linear-gradient(135deg,#042f2e,#029FA2)',borderRadius:16,padding:'18px 20px',marginBottom:20,textAlign:'center' as const}}>
-            <div style={{fontSize:12,color:'rgba(255,255,255,.8)',marginBottom:4}}>رصيدك المتبقي</div>
-            <div style={{fontSize:32,fontWeight:900,color:'white'}}>{balance} <span style={{fontSize:15,fontWeight:600}}>يوم</span></div>
-          </div>
-        )}
-
-        <div style={{background:'white',border:'1.5px solid #ece8e2',borderRadius:14,padding:'16px',marginBottom:20}}>
-          <div style={{fontSize:13,fontWeight:700,color:'#374151',marginBottom:10}}>طلب إجازة جديد</div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
-            <div>
-              <label style={{fontSize:11,color:'#6b7280',display:'block',marginBottom:5}}>من تاريخ</label>
-              <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}
-                style={{width:'100%',padding:'10px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const}}/>
+          <StorelyCard>
+            <div className="flex flex-wrap items-center justify-between gap-4 !p-5 sm:!p-6">
+              <div className="text-sm text-[var(--storely-muted)]">رصيدك المتبقي</div>
+              <div className="text-[28px] font-semibold tabular-nums">{balance} <span className="text-base font-medium">يوم</span></div>
             </div>
-            <div>
-              <label style={{fontSize:11,color:'#6b7280',display:'block',marginBottom:5}}>إلى تاريخ</label>
-              <input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}
-                style={{width:'100%',padding:'10px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const}}/>
-            </div>
-          </div>
-          <textarea value={reason} onChange={e=>setReason(e.target.value)} placeholder="السبب (اختياري)"
-            style={{width:'100%',padding:'10px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const,minHeight:60,resize:'none' as const,marginBottom:12}}/>
-          {error && <div style={{fontSize:12,color:'#dc2626',marginBottom:10}}>{error}</div>}
-          <button onClick={submitRequest} disabled={submitting||!startDate||!endDate}
-            style={{width:'100%',padding:'12px',background:(submitting||!startDate||!endDate)?'#94a3b8':'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:(submitting||!startDate||!endDate)?'not-allowed':'pointer',fontFamily:'inherit'}}>
-            {submitting?'جاري الإرسال...':'إرسال الطلب'}
-          </button>
-        </div>
-
-        <div style={{fontSize:12,fontWeight:700,color:'#888780',marginBottom:10}}>طلباتي</div>
-        {loading ? (
-          <div style={{textAlign:'center' as const,padding:20,fontSize:13,color:'#888780'}}>جاري التحميل...</div>
-        ) : requests.length===0 ? (
-          <div style={{textAlign:'center' as const,padding:'40px 20px',fontSize:13,color:'#888780'}}>ما فيه طلبات إجازة بعد</div>
-        ) : (
-          <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
-            {requests.map((r:any)=>{
-              const st = STATUS_LABEL[r.status] || STATUS_LABEL.pending
-              return (
-                <div key={r.id} style={{background:st.bg,border:'1px solid #ece8e2',borderRadius:12,padding:'12px 14px'}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
-                    <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{r.start_date} → {r.end_date}</span>
-                    <span style={{fontSize:10,fontWeight:700,color:st.color}}>{st.label}</span>
-                  </div>
-                  <div style={{fontSize:11,color:'#6b7280'}}>{r.days_count} يوم{r.reason?` — ${r.reason}`:''}</div>
-                </div>
-              )
-            })}
-          </div>
+          </StorelyCard>
         )}
+        <StorelyCard title="طلب إجازة جديد">
+          <div className="!space-y-5 !p-5 sm:!p-6">
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+              <StorelyFormField label="من تاريخ" htmlFor="leave-start">
+                <input id="leave-start" type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} className="storely-input min-w-0" />
+              </StorelyFormField>
+              <StorelyFormField label="إلى تاريخ" htmlFor="leave-end">
+                <input id="leave-end" type="date" value={endDate} onChange={e=>setEndDate(e.target.value)} className="storely-input min-w-0" />
+              </StorelyFormField>
+            </div>
+            <textarea value={reason} onChange={e=>setReason(e.target.value)} placeholder="السبب (اختياري)" className="storely-input !h-auto min-h-24 resize-y" />
+            {error && <div className="storely-notice" style={{color:storelyTokens.color.danger,borderColor:storelyTokens.color.dangerBorder}}>{error}</div>}
+            <StorelyButton onClick={submitRequest} disabled={submitting||!startDate||!endDate} variant="primary" className="w-full sm:w-auto">
+              {submitting?'جاري الإرسال...':'إرسال الطلب'}
+            </StorelyButton>
+          </div>
+        </StorelyCard>
+        <section className="!space-y-4">
+          <h2 className="text-lg font-semibold">طلباتي</h2>
+          {loading ? (
+            <div className="storely-loading">جاري التحميل...</div>
+          ) : requests.length===0 ? (
+            <StorelyEmptyState title="ما فيه طلبات إجازة بعد" />
+          ) : (
+            <div className="flex min-w-0 flex-col gap-4">
+              {requests.map((r:any)=>{
+                const st = STATUS_LABEL[r.status] || STATUS_LABEL.pending
+                return (
+                  <StorelyCard key={r.id}>
+                    <div className="!space-y-3 !p-5 sm:!p-6">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <span className="text-sm font-semibold tabular-nums">{r.start_date} → {r.end_date}</span>
+                        <span className="storely-badge" style={{color:st.color,background:st.bg}}>{st.label}</span>
+                      </div>
+                      <div className="break-words text-sm leading-7 text-[var(--storely-muted)]">{r.days_count} يوم{r.reason?` — ${r.reason}`:''}</div>
+                    </div>
+                  </StorelyCard>
+                )
+              })}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   )

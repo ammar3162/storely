@@ -2,9 +2,11 @@
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Search, RefreshCw } from 'lucide-react'
-import { A, Badge, Btn, Card, Empty, Loading, PageHeader, Table, adminFetch, daysLeft, fmtDate, inputStyle, td } from '../_admin/kit'
-import { type Customer, STATUS, PLAN_TONE, mapCustomer, planLabel } from '../_admin/customers'
+import { Empty, Loading, Table, adminFetch, daysLeft, fmtDate, td } from '../_admin/kit'
+import { type Customer, STATUS, mapCustomer, planLabel } from '../_admin/customers'
 import CustomerDrawer from '../_admin/CustomerDrawer'
+import { StorelyButton, StorelyCard, StorelyPageHeader, StorelyStatusBadge } from '@/components/ui'
+import { storelyTokens } from '@/components/ui/design-tokens'
 
 const FILTERS = [
   { k: 'all', l: 'الكل' },
@@ -58,23 +60,22 @@ function CustomersPage() {
   const selected = list.find(u => u.id === selectedId) || null
 
   return (
-    <>
-      <PageHeader title="العملاء" subtitle={`${list.length} منشأة مسجّلة`}
-        actions={<Btn onClick={load} loading={loading}><RefreshCw size={14} /> تحديث</Btn>} />
+    <div className="storely-admin-page admin-customers" dir="rtl">
+      <style>{customerStyles}</style>
+      <StorelyPageHeader title="العملاء" description={`${list.length} منشأة مسجّلة`}
+        actions={<StorelyButton onClick={load} disabled={loading}><RefreshCw size={14} /> تحديث</StorelyButton>} />
 
-      <Card pad={0}>
-        <div style={{ padding: 14, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', borderBottom: `1px solid ${A.border}` }}>
-          <div style={{ position: 'relative', flex: '1 1 240px' }}>
-            <Search size={15} style={{ position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)', color: A.text3 }} />
-            <input value={q} onChange={e => setQ(e.target.value)} placeholder="ابحث بالاسم أو المنشأة أو الجوال" style={{ ...inputStyle, paddingRight: 34 }} />
+      <StorelyCard className="admin-panel">
+        <div className="storely-toolbar">
+          <div className="storely-search">
+            <Search size={15} className="storely-search-icon" />
+            <input value={q} onChange={e => setQ(e.target.value)} placeholder="ابحث بالاسم أو المنشأة أو الجوال" className="storely-input" />
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {FILTERS.map(f => (
-              <button key={f.k} onClick={() => setFilter(f.k)} className="adm-btn"
-                style={{ padding: '6px 11px', borderRadius: 99, fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
-                  border: `1px solid ${filter === f.k ? A.primary : A.border}`, background: filter === f.k ? A.primary : A.surface, color: filter === f.k ? 'white' : A.text2 }}>
-                {f.l} <span style={{ opacity: .75 }}>{counts[f.k] ?? 0}</span>
-              </button>
+              <StorelyButton key={f.k} onClick={() => setFilter(f.k)} variant={filter === f.k ? 'primary' : 'secondary'} aria-pressed={filter === f.k}>
+                {f.l} <span className="text-xs">{counts[f.k] ?? 0}</span>
+              </StorelyButton>
             ))}
           </div>
         </div>
@@ -88,25 +89,28 @@ function CustomersPage() {
                 <tr key={u.id} className="adm-row" onClick={() => setSelectedId(u.id)}>
                   <td style={{ ...td, fontWeight: 700 }}>{u.org_name}</td>
                   <td style={td}>{u.full_name}</td>
-                  <td style={{ ...td, color: A.text2 }}><span dir="ltr">{u.phone || '—'}</span></td>
-                  <td style={td}><Badge tone={PLAN_TONE[u.plan]}>{planLabel(u.plan)}</Badge></td>
+                  <td style={{ ...td, color: storelyTokens.color.textMuted }}><span dir="ltr">{u.phone || '—'}</span></td>
+                  <td style={td}><span className="customer-plan">{planLabel(u.plan)}</span></td>
                   <td style={td}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
                       <span style={{ fontSize: 12.5, fontWeight: 600 }}>{u.subscription_type === 'paid' ? 'مدفوع' : 'تجربة'} · {u.billing_cycle === 'yearly' ? 'سنوي' : 'شهري'}</span>
-                      {d !== null && <span style={{ fontSize: 11.5, fontWeight: 600, color: d <= 0 ? A.danger : d <= 7 ? A.warning : A.text3 }}>{d <= 0 ? 'منتهي' : `باقي ${d} يوم`}</span>}
+                      {d !== null && <span style={{ fontSize: 11.5, fontWeight: 600, color: d <= 0 ? storelyTokens.color.danger : d <= 7 ? storelyTokens.color.warning : storelyTokens.color.textMuted }}>{d <= 0 ? 'منتهي' : `باقي ${d} يوم`}</span>}
                     </div>
                   </td>
-                  <td style={td}><Badge tone={st.tone}>{st.label}</Badge></td>
-                  <td style={{ ...td, color: A.text3, fontSize: 12.5 }}>{fmtDate(u.created_at)}</td>
+                  <td style={td}><StorelyStatusBadge status={st.tone === 'primary' ? 'success' : st.tone === 'danger' ? 'danger' : st.tone === 'warning' ? 'warning' : 'info'}>{st.label}</StorelyStatusBadge></td>
+                  <td style={{ ...td, color: storelyTokens.color.textMuted, fontSize: 12.5 }}>{fmtDate(u.created_at)}</td>
                 </tr>
               )
             })}
           </Table>
         )}
-      </Card>
+      </StorelyCard>
 
-      <CustomerDrawer customer={selected} onClose={() => setSelectedId(null)}
-        onChanged={patch => patch ? setList(prev => prev.map(u => u.id === selectedId ? { ...u, ...patch } : u)) : load()} />
-    </>
+      <div className="admin-drawer"><CustomerDrawer customer={selected} onClose={() => setSelectedId(null)}
+        onChanged={patch => patch ? setList(prev => prev.map(u => u.id === selectedId ? { ...u, ...patch } : u)) : load()} /></div>
+    </div>
   )
 }
+
+const customerStyles = `
+`
