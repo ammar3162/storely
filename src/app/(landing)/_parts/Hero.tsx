@@ -2,6 +2,7 @@
 import { Check, Play, ArrowLeft } from 'lucide-react'
 import { WA_ICON, PhoneVideo } from './constants'
 import type { LandingState } from './useLanding'
+import { CUSTOM_MIN_MONTHLY } from '@/lib/planPricing'  // أقل سعر ممكن: «ابنِ باقتك» بميزة وحدة
 
 export default function Hero({ m }: { m: LandingState }) {
   const { partners, lang, router, top, t } = m
@@ -52,7 +53,7 @@ export default function Hero({ m }: { m: LandingState }) {
 
         <div className="lp-wrap">
           <div className="lp-stats">
-            {[['99 '+(lang==='ar'?'⃁':'SAR'),t('statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('statFree')],['7',t('statLangs')],['24/7',t('statAlerts')]].map(([n,l])=>(
+            {[[CUSTOM_MIN_MONTHLY+' '+(lang==='ar'?'⃁':'SAR'),t('statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('statFree')],['7',t('statLangs')],['24/7',t('statAlerts')]].map(([n,l])=>(
               <div key={l}><strong>{n}</strong><span>{l}</span></div>
             ))}
           </div>
