@@ -41,7 +41,7 @@ export async function proxy(request: NextRequest) {
   const isStatic   = path.startsWith('/_next') || path.startsWith('/favicon') || path.includes('.')
   const isAdminPanel = path.startsWith('/storely-admin')
   const isStaff    = path.startsWith('/staff')
-  const isLanding  = path === '/' || path.startsWith('/privacy') || path.startsWith('/terms') || path.startsWith('/permission') || path.startsWith('/book') || path.startsWith('/accountant/') || path === '/accountant-portal' || path.startsWith('/accountant-portal/') || path.startsWith('/r/') || path === '/suppliers-join' || path === '/agents' || path.startsWith('/agents/') || path === '/unsubscribe'
+  const isLanding  = path === '/' || path === '/pricing' || path.startsWith('/privacy') || path.startsWith('/terms') || path.startsWith('/permission') || path.startsWith('/book') || path.startsWith('/accountant/') || path === '/accountant-portal' || path.startsWith('/accountant-portal/') || path.startsWith('/r/') || path === '/suppliers-join' || path === '/agents' || path.startsWith('/agents/') || path === '/unsubscribe'
   const isReset    = path.startsWith('/reset-password')
   const isSupplierPortalAuth = path === '/supplier-portal' || path === '/supplier-portal/'
   const isSupplierDashboard  = path.startsWith('/supplier-portal/dashboard')
@@ -142,5 +142,5 @@ export async function proxy(request: NextRequest) {
 // الـ proxy يشتغل في سيدني قبل كاش الـ CDN — نستثني اللي ما يحتاجه عشان ينخدم من أقرب نقطة للزائر:
 // الصفحة الرئيسية (".+" ما تطابق "/")، صفحات الموقع العامة، صفحات الموظفين (رقم سري، مو جلسة)، والملفات الثابتة
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|staff|privacy|terms|permission|book|suppliers-join|unsubscribe|r/|videos/|fonts/|images/|.*\\.(?:png|jpg|jpeg|svg|ico|webp|gif|mp4|woff2|txt|xml|webmanifest)$).+)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|staff|pricing|privacy|terms|permission|book|suppliers-join|unsubscribe|r/|videos/|fonts/|images/|.*\\.(?:png|jpg|jpeg|svg|ico|webp|gif|mp4|woff2|txt|xml|webmanifest)$).+)'],
 }

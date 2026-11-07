@@ -83,7 +83,7 @@ export function useLanding(initialMarquee?: string[]) {
     setSubmitting(false)
   }
 
-  const navLinks: [string,string][] = [[t('navHow'),'#how'],[t('navFeatures'),'#features'],[t('navPricing'),'#pricing'],[t('navFaq'),'#faq']]
+  const navLinks: [string,string][] = [[t('navFeatures'),'/#features'],[t('navHow'),'/#how'],[t('navPricing'),'/pricing'],[t('navFaq'),'/#faq']]
   const top = hasMarquee ? 36 : 0
 
   return { billing, setBilling, scrolled, setScrolled, menuOpen, setMenuOpen, form, setForm, agreed, setAgreed, submitting, setSubmitting, submitMsg, setSubmitMsg, partners, setPartners, lang, setLangState, marqueeMsgs, setMarqueeMsgs, router, rootRef, hasMarquee, navLinks, top, t, submitDemoRequest }

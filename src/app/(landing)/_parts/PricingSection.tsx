@@ -48,7 +48,7 @@ export default function PricingSection({ m }: { m: LandingState }) {
                 <div className="lp-plan-limits">{((lang as string)==='ar'?p.limits:p.limitsEn).join(' · ')}</div>
                 {p.extra && <div className="lp-plan-extra">{(lang as string)==='ar'?p.extra:p.extraEn}</div>}
                 {p.custom
-                  ? <a href="#demo" className="lp-btn lp-btn-lg lp-btn-line" style={{width:'100%'}}>{(lang as string)==='ar'?'تواصل معنا':'Contact us'}</a>
+                  ? <a href="/#demo" className="lp-btn lp-btn-lg lp-btn-line" style={{width:'100%'}}>{(lang as string)==='ar'?'تواصل معنا':'Contact us'}</a>
                   : <button onClick={()=>router.push(`/login?mode=register&plan=${p.key}&billing=${billing}`)} className={`lp-btn lp-btn-lg ${p.popular?'lp-btn-dark':'lp-btn-line'}`} style={{width:'100%'}}>{t('startNow')}</button>}
                 <ul>
                   {((lang as string)==='ar'?p.features:p.featuresEn).map((f:string,j:number)=><li key={j}><Check size={15}/>{f}</li>)}

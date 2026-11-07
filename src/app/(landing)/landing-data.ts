@@ -55,6 +55,7 @@ export const LS: Record<string, {ar:string, en:string}> = {
   navPricing:    { ar:'الأسعار', en:'Pricing' },
   navFaq:        { ar:'الأسئلة', en:'FAQ' },
   navLogin:      { ar:'دخول', en:'Log in' },
+  heroDemo:      { ar:'اطلب عرض توضيحي', en:'Book a demo' },
   navDemo:       { ar:'اطلب عرض النظام', en:'Book a demo' },
   heroBadge:     { ar:'تجربة مجانية 14 يوماً — بدون بطاقة ائتمانية', en:'14-day free trial — no credit card required' },
   heroH1a:       { ar:'نصمّم مستقبل الإدارة الذكية', en:'We design the future of smart management' },

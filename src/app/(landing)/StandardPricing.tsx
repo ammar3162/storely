@@ -204,7 +204,7 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
       <div className="st-ent">
         <span className="st-ent-ic"><Store size={22} /></span>
         <div><b>المؤسسات</b><span>أكثر من 10 فروع؟ سعر خاص، ومدير حساب مخصص، وتجهيز كامل.</span></div>
-        <a href="#demo">تواصل معنا <ArrowLeft size={16} /></a>
+        <a href="/#demo">تواصل معنا <ArrowLeft size={16} /></a>
       </div>
 
       <style>{`

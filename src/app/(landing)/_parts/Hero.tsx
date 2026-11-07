@@ -1,5 +1,5 @@
 'use client'
-import { Check, Play, ArrowLeft } from 'lucide-react'
+import { Check, ArrowLeft } from 'lucide-react'
 import { WA_ICON, PhoneVideo } from './constants'
 import type { LandingState } from './useLanding'
 import { CUSTOM_MIN_MONTHLY } from '@/lib/planPricing'  // أقل سعر ممكن: «ابنِ باقتك» بميزة وحدة
@@ -19,7 +19,7 @@ export default function Hero({ m }: { m: LandingState }) {
             <p className="lp-lead">{t('heroSub')}</p>
             <div className="lp-cta-row">
               <button className="lp-btn lp-btn-dark lp-btn-lg" onClick={()=>router.push('/login?mode=register')}>{t('heroStart')} <ArrowLeft size={18}/></button>
-              <a className="lp-btn lp-btn-soft lp-btn-lg" href="#how"><span className="lp-play"><Play size={13} fill="currentColor"/></span>{t('heroWatch')}</a>
+              <a className="lp-btn lp-btn-soft lp-btn-lg" href="#demo">{t('heroDemo')}</a>
             </div>
             <ul className="lp-ticks">
               {['heroPoint1','heroPoint2','heroPoint3'].map(k=><li key={k}><Check size={16}/>{t(k)}</li>)}
