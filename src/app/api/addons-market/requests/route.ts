@@ -44,7 +44,7 @@ export async function POST(req: Request) {
       branchIds = wanted as string[]
     }
     const row = {
-      org_id, addon_id, quantity: Math.max(1, Math.min(20, Number(quantity) || 1)), branch_ids: branchIds,
+      org_id, addon_id, quantity: branchIds ? branchIds.length : Math.max(1, Math.min(20, Number(quantity) || 1)), branch_ids: branchIds,
       note: typeof note === 'string' ? note.trim().slice(0, 300) || null : null, status: 'pending', requested_by: access.userId,
     }
     // طلب معلّق لنفس الإضافة يتحدّث بدل ما يتكرر

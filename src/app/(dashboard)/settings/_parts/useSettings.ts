@@ -266,9 +266,9 @@ export function useSettings() {
   }
 
   const pk = planKeyOf(planKey, maxBranches)
-  const planPrice = planPriceFor(pk, lockedPlan)
+  const planPrice = planPriceFor(pk, lockedPlan, maxBranches)
   const planLabel = `الباقة ${planPrice.label} — ${billingCycle==='yearly' ? `${planPrice.yearly} ⃁/سنة` : `${planPrice.monthly} ⃁/شهر`}`
-  const bill = billLines(pk, billingCycle, billAddons, lockedPlan, discount)
+  const bill = billLines(pk, billingCycle, billAddons, lockedPlan, discount, maxBranches)
 
   return { loading, setLoading, showDelete, setShowDelete, deleteConfirm, setDeleteConfirm, deleting, setDeleting, deleteMsg, setDeleteMsg, saving, setSaving, sending, setSending, saveOk, setSaveOk, sendMsg, setSendMsg, orgId, setOrgId, isOwner, setIsOwner, lastSent, setLastSent, lastBackup, setLastBackup, backups, setBackups, backupLoading, setBackupLoading, backupMsg, setBackupMsg, branches, setBranches, inactiveBranches, setInactiveBranches, reactivatingId, setReactivatingId, maxBranches, setMaxBranches, newBranch, setNewBranch, editingPhoneId, setEditingPhoneId, editPhoneValue, setEditPhoneValue, savingPhone, setSavingPhone, branchSaving, setBranchSaving, pwForm, setPwForm, pwSaving, setPwSaving, pwMsg, setPwMsg, activeTab, setActiveTab, visible, setVisible, countryCode, setCountryCode, logoUrl, setLogoUrl, logoUploading, setLogoUploading, planName, setPlanName, billingCycle, setBillingCycle, userEmail, setUserEmail, userPhone, setUserPhone, userFullName, setUserFullName, userId, setUserId, savingPersonal, setSavingPersonal, personalSaveOk, setPersonalSaveOk, subEndsAt, setSubEndsAt, planKey, setPlanKey, lockedPlan, setLockedPlan, billAddons, setBillAddons, discount, setDiscount, form, setForm, sb, pk, planPrice, planLabel, bill, loadInactiveBranches, reactivateBranch, saveBranchPhone, savePersonalInfo, changePassword, load, handleSave, uploadLogo, sendNow, loadBackups, runBackup, addBranch, deleteBranch, toggleDay, scheduleLabel, deleteAccount }
 }

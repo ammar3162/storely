@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { orgHasFeature, lockedMessage } from '@/lib/planFeatures'
+import { branchFeatureError } from '@/lib/planFeatures'
 import { lockedFor, lockedFromError } from '@/lib/periodLock'
 import { createClient } from '@supabase/supabase-js'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
@@ -59,9 +59,9 @@ export async function POST(req: Request) {
     const branch_id: string | null = (staffRow as any).branch_id ?? auth.data.branch_id ?? null
 
     const { data: orgCheck } = await sb().from('organizations').select('plan,delivery_apps').eq('id', org_id).single()
-    if (!(await orgHasFeature(sb(), org_id, 'cashier', (orgCheck as any)?.plan))) {
-      return NextResponse.json({ error: lockedMessage('cashier') }, { status: 403 })
-    }
+    // الميزة لازم تكون مفعّلة لفرع الكاشير (الإضافة ممكن تكون لفروع معيّنة)
+    const featureLocked = await branchFeatureError(sb(), org_id, 'cashier', (orgCheck as any)?.plan, branch_id)
+    if (featureLocked) return NextResponse.json({ error: featureLocked }, { status: 403 })
 
     // نفس حساب التعديل (lib/cashierClosingCalc) — مبالغ موجبة ومعقولة بس، وأي قيمة غريبة تنرفض
     // التوصيل: الكاشير يختار التطبيق ويكتب مبلغه

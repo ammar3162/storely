@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { orgHasFeature, lockedMessage } from '@/lib/planFeatures'
+import { orgHasFeature, branchFeatureError } from '@/lib/planFeatures'
 import { notifyStaffDeduction } from '@/lib/staffDeductionNotice'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
@@ -86,9 +86,8 @@ export async function POST(req: Request) {
     const supabase = sb()
 
     const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
-    if (!(await orgHasFeature(supabase, org_id, 'hr', (orgCheck as any)?.plan))) {
-      return NextResponse.json({ error: lockedMessage('hr') }, { status: 403 })
-    }
+    const locked = await branchFeatureError(supabase, org_id, 'hr', (orgCheck as any)?.plan, branch_id)
+    if (locked) return NextResponse.json({ error: locked }, { status: 403 })
 
     // تأكد الموظف فعلاً تابع لهذا الفرع/المنشأة
     const { data: staff } = await supabase.from('staff_members').select(`id,name,branch_id,${SCHEDULE_COLS},weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates,monthly_salary`).eq('id', staff_id).eq('org_id', org_id).maybeSingle()
@@ -251,7 +250,7 @@ export async function GET(req: Request) {
     const supabase = sb()
 
     const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
-    if (!(await orgHasFeature(supabase, org_id, 'hr', (orgCheck as any)?.plan))) {
+    if (!(await orgHasFeature(supabase, org_id, 'hr', (orgCheck as any)?.plan, auth.data.branch_id || null))) {
       return NextResponse.json({ success: true, locked: true, today: [], shift: null })
     }
 

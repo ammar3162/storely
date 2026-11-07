@@ -52,11 +52,13 @@ export const PHONE_RULES: Record<string,{length:number, prefix:string, placehold
 }
 
 // v = عدد الفروع (يحدد الباقة المطلوبة بعد التجربة) — التجربة نفسها بكل المميزات
-export const PLANS = [
-  { v:1, label:'الأساسية', price:'99',  yearlyPrice:'950',  desc:'فرع واحد · 3 موظفين · 5 موردين',          color:'#029FA2' },
-  { v:3, label:'الشاملة',  price:'249', yearlyPrice:'2390', desc:'كل المميزات · 3 فروع · 15 موظف · 20 مورد', color:'#029FA2' },
-  { v:6, label:'المتقدمة', price:'499', yearlyPrice:'4790', desc:'6 فروع · 50 موظف · 50 مورد',              color:'#7c3aed' },
+// الباقات الجديدة (2026-11) — السعر لكل فرع من lib/planPricing
+export const PLANS: { v: 'essential' | 'ops' | 'full'; desc: string; descEn: string; color: string }[] = [
+  { v:'essential', desc:'المخزون والموردين والمشتريات والفواتير',          descEn:'Inventory, suppliers, purchases & invoices', color:'#029FA2' },
+  { v:'ops',       desc:'كل الأساسية + إقفال الكاشير اليومي',             descEn:'Essential + daily cashier closing',          color:'#029FA2' },
+  { v:'full',      desc:'كل المميزات: الحضور والرواتب والذكاء الاصطناعي', descEn:'Everything: attendance, payroll & AI',       color:'#7c3aed' },
 ]
+export const PLAN_EN: Record<string, string> = { essential: 'Essential', ops: 'Operations', full: 'Complete' }
 
 export function GoogleIcon() {
   return (

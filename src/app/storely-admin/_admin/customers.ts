@@ -1,4 +1,4 @@
-import { PLAN_CAPS, planKeyOf, planPriceFor, planLabel as planLabelLib, type PlanKey, type OrgDiscount } from '@/lib/planPricing'
+import { PLAN_CAPS, isNewPlan, planKeyOf, planPriceFor, adminPlanLabel, type PlanKey, type OrgDiscount } from '@/lib/planPricing'
 import type { Tone } from './kit'
 
 export type Customer = {
@@ -21,17 +21,22 @@ export const STATUS: Record<string, { label: string; tone: Tone }> = {
 
 // حدود كل باقة (فروع الباقة الأساسية — الفروع الإضافية تنحسب من الإضافات)
 // من مصدر واحد (lib/planPricing PLAN_CAPS) — الموظفين والموردين للمنشأة كلها
-const capsDesc = (k: PlanKey) => { const c = PLAN_CAPS[k]; return `${c.branches === 1 ? 'فرع' : c.branches + ' فروع'} · ${c.staff} موظف · ${c.suppliers} مورد · ${k === 'basic' ? 'المميزات بالإضافات' : 'كل المميزات'} · يوصل ${c.maxBranches} فروع` }
-export const PLAN_LIMITS: Record<PlanKey, { branches: number; staff: number; suppliers: number; desc: string }> = {
-  basic: { ...PLAN_CAPS.basic, desc: capsDesc('basic') },
-  pro: { ...PLAN_CAPS.pro, desc: capsDesc('pro') },
-  advanced: { ...PLAN_CAPS.advanced, desc: capsDesc('advanced') },
+const NEW_DESC: Record<string, string> = { essential: 'المخزون والمشتريات', ops: '+ إقفال الكاشير', full: 'كل المميزات' }
+const capsDesc = (k: PlanKey) => {
+  const c = PLAN_CAPS[k]
+  if (isNewPlan(k)) return `لكل فرع: ${c.staff} موظفين · ${c.suppliers} مورد · ${NEW_DESC[k]} · الفرع الإضافي ${c.branchPrice} ⃁ · يوصل ${c.maxBranches} فروع`
+  return `${c.branches === 1 ? 'فرع' : c.branches + ' فروع'} · ${c.staff} موظف · ${c.suppliers} مورد · ${k === 'basic' ? 'المميزات بالإضافات' : 'كل المميزات'} · يوصل ${c.maxBranches} فروع`
 }
+export const PLAN_LIMITS = Object.fromEntries(
+  (Object.keys(PLAN_CAPS) as PlanKey[]).map(k => [k, { ...PLAN_CAPS[k], desc: capsDesc(k) }]),
+) as unknown as Record<PlanKey, { branches: number; staff: number; suppliers: number; desc: string }>
 
-export const PLAN_KEYS: PlanKey[] = ['basic', 'pro', 'advanced']
+// الجديدة أول (للمشتركين الجدد) — القديمة باقية للمشتركين قبل 2026-11
+export const PLAN_KEYS: PlanKey[] = ['essential', 'ops', 'full', 'basic', 'pro', 'advanced']
 // المتقدمة بفروع فوق حدها = «المؤسسات»
-export const planLabel = (k: PlanKey, maxBranches?: number | null) => planLabelLib(k, maxBranches)
-export const PLAN_TONE: Record<PlanKey, Tone> = { basic: 'primary', pro: 'info', advanced: 'violet' }
+// بالأدمن نميّز الباقات القديمة «(قديمة)» عن الجديدة اللي بنفس الاسم
+export const planLabel = (k: PlanKey, maxBranches?: number | null) => adminPlanLabel(k, maxBranches)
+export const PLAN_TONE: Record<PlanKey, Tone> = { basic: 'primary', pro: 'info', advanced: 'violet', essential: 'primary', ops: 'info', full: 'violet' }
 
 export function mapCustomer(p: any): Customer {
   const maxB = p.organizations?.max_branches || 1

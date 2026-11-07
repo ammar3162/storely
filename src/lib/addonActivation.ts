@@ -2,7 +2,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
 import { syncStaffToLimit } from '@/lib/staffCapacity'
-import { addonPeriodEnd, branchPriceFor, planKeyOf, proratedCharge, unitPrice, YEARLY_FACTOR } from '@/lib/planPricing'
+import { addonPeriodEnd, addonPriceFor, branchPriceFor, isNewPlan, NEW_ADDON_PRICES, planKeyOf, proratedCharge, unitPrice, YEARLY_FACTOR } from '@/lib/planPricing'
 
 export type ActivateResult =
   | { ok: true; expiresAt: string; quantity: number; proratedAmount: number; proratedDays: number; branchIds: string[] | null; slug: string; name: string }
@@ -19,17 +19,35 @@ export async function activateAddon(db: SupabaseClient, input: { orgId: string; 
   if (!addonRow) return { ok: false, status: 404, error: 'الإضافة غير موجودة' }
   const slug = (addonRow as any).slug as string
 
+  const { data: org } = await db.from('organizations').select('plan,max_branches,billing_cycle').eq('id', orgId).maybeSingle()
+  const plan = (org as any)?.plan as string | null
+
   // الفرع الإضافي: سعره وخصم السنوي حسب باقة المنشأة — حتى لو فعّله الأدمن
   if (slug === 'extra_branch' && !(Number(input.unitPrice) > 0)) {
-    const { data: org } = await db.from('organizations').select('plan,max_branches,billing_cycle').eq('id', orgId).maybeSingle()
-    input = { ...input, unitPrice: branchPriceFor(planKeyOf((org as any)?.plan, (org as any)?.max_branches)), yearly: (org as any)?.billing_cycle === 'yearly' }
+    input = { ...input, unitPrice: branchPriceFor(planKeyOf(plan, (org as any)?.max_branches)), yearly: (org as any)?.billing_cycle === 'yearly' }
+  }
+  // الباقات الجديدة: سعر الإضافة من جدولها (المشتركين القدامى يكملون بسعر الإضافة العادي)
+  if (!(Number(input.unitPrice) > 0)) {
+    const p = addonPriceFor(plan, slug)
+    if (p && p > 0) input = { ...input, unitPrice: p }
+  }
+
+  // إضافة لكل فرع (الباقات الجديدة): الفروع المختارة (افتراضياً كل الفروع النشطة) والكمية = عددها
+  let branchIds: string[] | null = null
+  if (isNewPlan(plan) && NEW_ADDON_PRICES[slug]?.perBranch) {
+    const { data: branches } = await db.from('branches').select('id').eq('org_id', orgId).eq('is_active', true)
+    const live = ((branches || []) as any[]).map(b => b.id as string)
+    const wanted = Array.isArray(input.branchIds) && input.branchIds.length ? input.branchIds.filter(id => live.includes(id)) : live
+    if (!wanted.length) return { ok: false, status: 400, error: 'اختر فرع واحد على الأقل' }
+    branchIds = Array.from(new Set(wanted))
+    input = { ...input, quantity: branchIds.length }
   }
 
   // الإضافة تنتهي مع الباقة — المستحق الحين بالتناسب عن الأيام الباقية
   const { data: owner } = await db.from('profiles').select('subscription_ends_at').eq('org_id', orgId).eq('role', 'owner').maybeSingle()
   const periodEnd = addonPeriodEnd((owner as any)?.subscription_ends_at)
   const expiresAt = periodEnd.toISOString()
-  const qty = Math.max(1, Math.min(20, Number(input.quantity) || 1))
+  const qty = Math.max(1, Math.min(branchIds ? 50 : 20, Number(input.quantity) || 1))
 
   const { data: existingRow } = await db.from('org_addon_subscriptions').select('id,quantity,status,expires_at,locked_price').eq('org_id', orgId).eq('addon_id', addonId).maybeSingle()
   // سارية فعلاً = active وما انتهت — المنتهية تنحسب كاشتراك جديد بالكامل
@@ -38,7 +56,7 @@ export async function activateAddon(db: SupabaseClient, input: { orgId: string; 
   const qtyDelta = qty - oldQty
 
   const { error } = await db.from('org_addon_subscriptions').upsert({
-    org_id: orgId, addon_id: addonId, status: 'active', activated_at: new Date().toISOString(), expires_at: expiresAt, cancelled_at: null, quantity: qty,
+    org_id: orgId, addon_id: addonId, status: 'active', activated_at: new Date().toISOString(), expires_at: expiresAt, cancelled_at: null, quantity: qty, branch_ids: branchIds,
     // اشتراك جديد أو بعد انتهاء = السعر الحالي (أو سعر الباقة للفرع الإضافي)؛ الساري يحتفظ بسعره المثبّت
     ...(wasActive ? {} : { locked_price: Number(input.unitPrice) > 0 ? Number(input.unitPrice) : null }),
   } as any, { onConflict: 'org_id,addon_id' })
@@ -61,5 +79,5 @@ export async function activateAddon(db: SupabaseClient, input: { orgId: string; 
   const chargedQty = wasActive ? Math.max(0, qtyDelta) : qty
   const unit = wasActive ? unitPrice((addonRow as any).monthly_price, existingRow as any) : (Number(input.unitPrice) > 0 ? Number(input.unitPrice) : Number((addonRow as any).monthly_price) || 0)
   const prorated = proratedCharge(input.yearly && slug === 'extra_branch' ? unit * YEARLY_FACTOR : unit, chargedQty, periodEnd)
-  return { ok: true, expiresAt, quantity: qty, proratedAmount: prorated.amount, proratedDays: prorated.days, branchIds: null, slug, name: (addonRow as any).name }
+  return { ok: true, expiresAt, quantity: qty, proratedAmount: prorated.amount, proratedDays: prorated.days, branchIds, slug, name: (addonRow as any).name }
 }

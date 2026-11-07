@@ -1,5 +1,5 @@
 import { managerMay } from '@/lib/managerPerms'
-import { orgHasFeature, lockedMessage } from '@/lib/planFeatures'
+import { orgHasFeature, lockedMessage, branchFeatureError } from '@/lib/planFeatures'
 import { NextResponse } from 'next/server'
 import { notifyStaffDeduction } from '@/lib/staffDeductionNotice'
 import { createClient } from '@supabase/supabase-js'
@@ -79,6 +79,8 @@ export async function POST(req: Request) {
       const { data: target } = await supabase.from('staff_members').select('id,branch_id').eq('id', body.staff_id).eq('org_id', body.org_id).maybeSingle()
       const forced = enforcedBranchId(access)
       if (!target || (forced && (target as any).branch_id !== forced)) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
+      const branchLocked = await branchFeatureError(supabase, body.org_id, 'hr', (orgCheck as any)?.plan, (target as any).branch_id)
+      if (branchLocked) return NextResponse.json({ error: branchLocked }, { status: 403 })
       if (amountNum > 1_000_000) return NextResponse.json({ error: 'مبلغ غير صالح' }, { status: 400 })
 
       const { error } = await supabase.from('staff_payroll_adjustments').insert({

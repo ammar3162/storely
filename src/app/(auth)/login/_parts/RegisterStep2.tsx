@@ -1,10 +1,12 @@
 'use client'
 import { SIGNUP_SOURCES } from '@/lib/signupSource'
-import { PLANS } from './constants'
+import { Minus, Plus } from 'lucide-react'
+import { PLAN_PRICING, planPriceFor } from '@/lib/planPricing'
+import { PLANS, PLAN_EN } from './constants'
 import type { LoginState } from './useLogin'
 
 export default function RegisterStep2({ m }: { m: LoginState }) {
-  const { t, lang, mode, step, setStep, branchCount, setBranchCount, billing, setBilling, loading, error, setError, agreedTerms, setAgreedTerms, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, handleRegister } = m
+  const { t, lang, mode, step, setStep, planChoice, setPlanChoice, branchCount, setBranchCount, billing, setBilling, loading, error, setError, agreedTerms, setAgreedTerms, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, handleRegister } = m
   return (
     <>
             {/* Register Step 2 */}
@@ -33,21 +35,35 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                       </button>
                     </div>
                   </div>
-                  {PLANS.map(p=>(
-                    <button key={p.v} type="button" onClick={()=>setBranchCount(p.v)}
-                      style={{padding:'16px 18px',borderRadius:12,border:`1.5px solid ${branchCount===p.v?p.color:'#e5e7eb'}`,background:branchCount===p.v?p.color+'08':'white',cursor:'pointer',fontFamily:'inherit',textAlign:'right',transition:'all .2s',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  {/* عدد الفروع — السعر لكل باقة يتحدّث حسبه */}
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',border:'1.5px solid #e5e7eb',borderRadius:12,padding:'10px 14px'}}>
+                    <span style={{fontSize:15,fontWeight:700,color:'#111827'}}>{lang==='ar'?'عدد الفروع':'Branches'}</span>
+                    <div style={{display:'flex',alignItems:'center',gap:10}}>
+                      <button type="button" aria-label={lang==='ar'?'نقص':'Less'} disabled={branchCount<=1} onClick={()=>setBranchCount(b=>Math.max(1,b-1))}
+                        style={{width:36,height:36,borderRadius:99,border:'none',background:'#f3f4f6',cursor:branchCount<=1?'default':'pointer',opacity:branchCount<=1?.4:1,display:'grid',placeItems:'center',color:'#111827'}}><Minus size={16}/></button>
+                      <b style={{minWidth:22,textAlign:'center',fontSize:17,color:'#111827'}}>{branchCount}</b>
+                      <button type="button" aria-label={lang==='ar'?'زيادة':'More'} disabled={branchCount>=10} onClick={()=>setBranchCount(b=>Math.min(10,b+1))}
+                        style={{width:36,height:36,borderRadius:99,border:'none',background:'#f3f4f6',cursor:branchCount>=10?'default':'pointer',opacity:branchCount>=10?.4:1,display:'grid',placeItems:'center',color:'#111827'}}><Plus size={16}/></button>
+                    </div>
+                  </div>
+                  {PLANS.map(p=>{
+                    const price = planPriceFor(p.v, null, branchCount)
+                    const on = planChoice===p.v
+                    return (
+                    <button key={p.v} type="button" onClick={()=>setPlanChoice(p.v)}
+                      style={{padding:'16px 18px',borderRadius:12,border:`1.5px solid ${on?p.color:'#e5e7eb'}`,background:on?p.color+'08':'white',cursor:'pointer',fontFamily:'inherit',textAlign:'right',transition:'all .2s',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                       <div>
-                        <div style={{fontSize:15,fontWeight:700,color:branchCount===p.v?p.color:'#111827',marginBottom:3}}>{p.label}</div>
-                        <div style={{fontSize:12,color:'#6b7280'}}>{p.desc}</div>
+                        <div style={{fontSize:15,fontWeight:700,color:on?p.color:'#111827',marginBottom:3}}>{lang==='ar'?PLAN_PRICING[p.v].label:PLAN_EN[p.v]}</div>
+                        <div style={{fontSize:12,color:'#374151'}}>{lang==='ar'?p.desc:p.descEn}</div>
                       </div>
                       <div className="hide-in-app" style={{flexShrink:0,marginRight:12,textAlign:'left'}}>
-                        <span style={{fontSize:20,fontWeight:800,color:branchCount===p.v?p.color:'#111827'}}>{billing==='yearly'?p.yearlyPrice:p.price}</span>
-                        <span style={{fontSize:12,color:'#9ca3af'}}> {lang==='ar'?'⃁':'SAR'}/{billing==='yearly'?(lang==='ar'?'سنة':'yr'):(lang==='ar'?'شهر':'mo')}</span>
+                        <span style={{fontSize:20,fontWeight:800,color:on?p.color:'#111827'}}>{billing==='yearly'?price.yearly:price.monthly}</span>
+                        <span style={{fontSize:12,color:'#4b5563'}}> {lang==='ar'?'⃁':'SAR'}/{billing==='yearly'?(lang==='ar'?'سنة':'yr'):(lang==='ar'?'شهر':'mo')}</span>
                       </div>
                     </button>
-                  ))}
+                  )})}
 
-                  {branchCount && (
+                  {planChoice && (
                     <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:8,padding:'11px 14px',fontSize:13,color:'#029FA2',fontWeight:600,display:'flex',alignItems:'center',gap:8}}>
                       ✓ {t('login.freeTrialConfirm')}
                     </div>
@@ -80,7 +96,7 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                     </span>
                   </label>
 
-                  <button type="submit" disabled={loading||!branchCount||!agreedTerms} className="btn-main" style={{marginTop:8,opacity:(!branchCount||!agreedTerms)?.6:1}}>
+                  <button type="submit" disabled={loading||!planChoice||!agreedTerms} className="btn-main" style={{marginTop:8,opacity:(!planChoice||!agreedTerms)?.6:1}}>
                     {loading?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span style={{width:16,height:16,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block'}}/>{t('login.creatingAccount')}</span>:t('login.createAccountBtn')}
                   </button>
                 </form>

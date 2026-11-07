@@ -22,7 +22,7 @@ export function computeOrgRevenue(orgs: Org[], addons: AddonRow[], subs: SubRow[
     }))
     const cycle: BillingCycle = o.billing_cycle === 'yearly' ? 'yearly' : 'monthly'
     const div = cycle === 'yearly' ? 12 : 1
-    const { lines, total } = billLines(planKeyOf(o.plan, o.max_branches), cycle, rows as any, o.locked_plan_monthly, o)
+    const { lines, total } = billLines(planKeyOf(o.plan, o.max_branches), cycle, rows as any, o.locked_plan_monthly, o, o.max_branches)
     const plan = lines[0]?.amount || 0
     const discount = lines.filter(l => l.amount < 0).reduce((s, l) => s - l.amount, 0)
     const r = (n: number) => Math.round(n / div)

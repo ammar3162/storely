@@ -326,4 +326,54 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
       }
     })
   })
+  describe('new plans (2026-11): per-branch add-ons, bill, upgrade within the family', () => {
+    it('essential + cashier on one branch only; upgrading to ops keeps the branches and drops the add-on', async () => {
+      const { activateAddon } = await import('@/lib/addonActivation')
+      const { orgHasFeature } = await import('@/lib/planFeatures')
+      const { monthlyBill } = await import('@/lib/orgBill')
+      const reqs = await import('@/app/api/plan-requests/route')
+      const adminReqs = await import('@/app/api/admin/plan-requests/route')
+      const approve = async (id: string) => (await adminReqs.POST(new Request('http://test/api/admin/plan-requests', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify({ id, action: 'approve' }) }))).status
+
+      const { data: b2 } = await db.from('branches').insert({ org_id: orgId, name: 'الفرع الثاني', is_active: true } as any).select('id').single()
+      const branchB = (b2 as any).id
+      const end = new Date(Date.now() + 20 * 864e5).toISOString()
+      await db.from('profiles').update({ subscription_type: 'paid', subscription_ends_at: end } as any).eq('id', userId)
+      await db.from('organizations').update({ plan: 'essential', max_branches: 2, max_staff: 12, max_suppliers: 30, billing_cycle: 'monthly', locked_plan_monthly: null } as any).eq('id', orgId)
+      const { data: ca } = await db.from('marketplace_addons').select('id').eq('slug', 'cashier_closing').single()
+      const cashierId = (ca as any).id
+      try {
+        expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential', branchA)).toBe(false)
+        expect(await orgHasFeature(db as any, orgId, 'profitability', 'essential')).toBe(true)
+
+        // الكاشير لفرع واحد بس — فرع من منشأة ثانية ينشال، والسعر الجديد يتثبّت
+        const r = await activateAddon(db as any, { orgId, addonId: cashierId, branchIds: [branchA, '00000000-0000-0000-0000-000000000000'] })
+        expect(r).toMatchObject({ ok: true, quantity: 1, branchIds: [branchA] })
+        const sub = (await db.from('org_addon_subscriptions').select('locked_price,branch_ids').eq('org_id', orgId).eq('addon_id', cashierId).single()).data as any
+        expect(Number(sub.locked_price)).toBe(40)
+        expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential', branchA)).toBe(true)
+        expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential', branchB)).toBe(false)
+        expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential')).toBe(true)
+        // الفاتورة: 119 + فرع 30 + كاشير فرع واحد 40
+        expect(await monthlyBill(db as any, orgId)).toBe(189)
+
+        // الترقية من نفس العائلة بس
+        expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'pro' })).status).toBe(400)
+        expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'ops' })).status).toBe(200)
+        const mine = (await call(reqs.GET, 'GET', `/api/plan-requests?org_id=${orgId}`)).json.requests[0]
+        expect(await approve(mine.id)).toBe(200)
+        const { data: org } = await db.from('organizations').select('plan,max_branches').eq('id', orgId).single()
+        expect(org).toMatchObject({ plan: 'ops', max_branches: 2 })
+        const st = (await db.from('org_addon_subscriptions').select('status').eq('org_id', orgId).eq('addon_id', cashierId).single()).data as any
+        expect(st.status).toBe('cancelled')
+        expect(await orgHasFeature(db as any, orgId, 'cashier', 'ops', branchB)).toBe(true)
+        expect(await monthlyBill(db as any, orgId)).toBe(199)
+      } finally {
+        await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).eq('addon_id', cashierId)
+        await db.from('plan_requests').delete().eq('org_id', orgId)
+        await db.from('branches').delete().eq('id', branchB)
+        await db.from('organizations').update({ plan: 'pro', max_branches: 1, max_staff: 1, max_suppliers: 20 } as any).eq('id', orgId)
+      }
+    }, 180_000)
+  })
 })

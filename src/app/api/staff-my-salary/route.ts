@@ -22,7 +22,7 @@ export async function GET(req: Request) {
 
     const db = sb()
     const { data: org } = await db.from('organizations').select('plan,currency,staff_salary_visible').eq('id', org_id).single()
-    if (!(org as any)?.staff_salary_visible || !(await orgHasHrFeature(db, org_id, (org as any)?.plan))) {
+    if (!(org as any)?.staff_salary_visible || !(await orgHasHrFeature(db, org_id, (org as any)?.plan, auth.data.branch_id || null))) {
       return NextResponse.json({ error: 'صفحة الراتب غير مفعّلة', reason: 'disabled' }, { status: 403 })
     }
 

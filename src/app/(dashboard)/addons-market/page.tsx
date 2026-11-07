@@ -10,7 +10,8 @@ import { getMe } from '@/lib/session'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { colors, font, card, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
-import { billLines, planKeyOf, addonPeriodEnd, proratedCharge, unitPrice, branchPriceFor, PLAN_PRICING } from '@/lib/planPricing'
+import { billLines, planKeyOf, addonPeriodEnd, proratedCharge, unitPrice, branchPriceFor, PLAN_PRICING, isNewPlan, nextPlanOf, planPriceFor } from '@/lib/planPricing'
+import { Check, Trash2 } from 'lucide-react'
 import { isInApp } from '@/lib/inApp'
 import { ListSkeleton } from '@/components/PageSkeleton'
 
@@ -46,6 +47,8 @@ export default function AddonsMarketPage() {
 
   const [qtyMap, setQtyMap] = useState<Record<string, number>>({})
   const [staffBranchMap, setStaffBranchMap] = useState<Record<string, string>>({})
+  // إضافة لكل فرع (الكاشير/الحضور بالباقات الجديدة): الفروع اللي اختارها العميل
+  const [branchPick, setBranchPick] = useState<Record<string, string[]>>({})
 
   async function load(oid: string) {
     // آخر نسخة محفوظة تطلع على طول، وبعدها تتحدث من الخادم
@@ -156,7 +159,11 @@ export default function AddonsMarketPage() {
       </div>
 
       {plan && (() => {
-        const bill = billLines(planKeyOf(plan.key, plan.maxBranches), plan.cycle, addons, plan.locked, plan.discount)
+        const pk = planKeyOf(plan.key, plan.maxBranches)
+        const bill = billLines(pk, plan.cycle, addons, plan.locked, plan.discount, plan.maxBranches)
+        // الباقات الجديدة: لو فاتورته وصلت سعر الباقة الأعلى (لنفس الفروع) نقترحها
+        const up = isNewPlan(pk) ? nextPlanOf(pk) : null
+        const upPrice = up ? planPriceFor(up, null, plan.maxBranches).monthly : 0
         return (
           <div style={{ ...card, padding: 18, marginBottom: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10 }}>فاتورتك الحالية</div>
@@ -168,7 +175,12 @@ export default function AddonsMarketPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${colors.border}`, marginTop: 8, paddingTop: 10, fontSize: 14, fontWeight: 900, color: colors.primary }}>
               <span>الإجمالي</span><span>{bill.total} ⃁</span>
             </div>
-            {planKeyOf(plan.key, plan.maxBranches) === 'basic' && plan.cycle === 'monthly' && bill.total >= PLAN_PRICING.pro.monthly && (
+            {up && plan.cycle === 'monthly' && bill.total >= upPrice && (
+              <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, fontSize: 12, color: colors.text, lineHeight: 1.8 }}>
+                <b style={{ color: colors.primary }}>باقة «{PLAN_PRICING[up].label}» أوفر لك:</b> {upPrice} ⃁ شهرياً{plan.maxBranches > 1 ? ` لـ ${plan.maxBranches} فروع` : ''}، وفيها {up === 'ops' ? 'إقفال الكاشير لكل الفروع' : 'كل المميزات لكل الفروع'}. <a href="/settings" style={{ color: colors.primary, fontWeight: 800 }}>اطلب الترقية</a>
+              </div>
+            )}
+            {pk === 'basic' && plan.cycle === 'monthly' && bill.total >= PLAN_PRICING.pro.monthly && (
               <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, fontSize: 12, color: colors.text, lineHeight: 1.8 }}>
                 <b style={{ color: colors.primary }}>الشاملة أوفر لك:</b> {PLAN_PRICING.pro.monthly} ⃁ شهرياً وفيها كل المميزات و3 فروع و15 موظف. <a href="/settings" style={{ color: colors.primary, fontWeight: 800 }}>اطلب الترقية</a>
               </div>
@@ -237,13 +249,68 @@ export default function AddonsMarketPage() {
             }
 
             const active = a.subscription?.isValid
+            // إضافة لكل فرع: يختار الفروع، والسعر × عددها
+            if (a.per_branch) {
+              const subBranches: string[] = (active && a.subscription?.branch_ids) || branches.map((b: any) => b.id)
+              const chosen: string[] = branchPick[a.id] || subBranches
+              const changed = active && (chosen.length !== subBranches.length || chosen.some(id => !subBranches.includes(id)))
+              const added = active ? chosen.filter(id => !subBranches.includes(id)).length : chosen.length
+              return (
+                <div key={a.id} style={{ ...card, padding: 20, border: active ? `1.5px solid ${colors.primaryBorder}` : undefined, background: active ? colors.primaryLight : undefined }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
+                  <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14, minHeight: 40 }}>{a.description}</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 12 }}>
+                    {a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text3 }}>⃁ / فرع / شهر</span>
+                  </div>
+                  {active && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 10 }}>
+                      <Check size={15} /> مفعّلة لـ {subBranches.length} {subBranches.length === 1 ? 'فرع' : 'فروع'} حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA', { numberingSystem: 'latn' })}
+                    </div>
+                  )}
+                  {branches.length > 1 && (
+                    <>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: colors.text, marginBottom: 6 }}>الفروع اللي تبيها فيها:</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                        {branches.map((b: any) => {
+                          const sel = chosen.includes(b.id)
+                          return (
+                            <button key={b.id} type="button" onClick={() => setBranchPick(p => ({ ...p, [a.id]: sel ? chosen.filter(x => x !== b.id) : [...chosen, b.id] }))}
+                              style={{ padding: '6px 12px', borderRadius: 99, fontSize: 12, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+                                border: `1px solid ${sel ? colors.primary : colors.border2}`, background: sel ? colors.primary : 'white', color: sel ? 'white' : colors.text }}>
+                              {b.name}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </>
+                  )}
+                  {(!active || changed) && chosen.length > 0 && (
+                    <>
+                      <div style={{ fontSize: 12, color: colors.text, marginBottom: 8 }}>
+                        الشهري: <b>{chosen.length * a.monthly_price} ⃁</b> ({chosen.length} {chosen.length === 1 ? 'فرع' : 'فروع'})
+                        {active && chosen.length < subBranches.length && <span style={{ display: 'block', color: colors.text3, fontSize: 11 }}>الفروع اللي تشيلها تتوقف من تجديد باقتك الجاي.</span>}
+                      </div>
+                      {added > 0 && <DueNote addon={a} qty={added} />}
+                      <RequestBtn addon={a} quantity={chosen.length} branchIds={chosen} label={active ? 'اطلب تعديل الفروع' : 'اطلب الإضافة'} />
+                    </>
+                  )}
+                  {chosen.length === 0 && <div style={{ fontSize: 12, color: colors.danger }}>اختر فرع واحد على الأقل</div>}
+                  {active && !changed && (
+                    <button onClick={() => cancelAddon(a)} disabled={cancelling === a.id}
+                      style={{ marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 6, border: 'none', background: 'none', color: colors.danger, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      <Trash2 size={14} /> {cancelling === a.id ? 'جاري الإلغاء…' : 'إلغاء الإضافة'}
+                    </button>
+                  )}
+                </div>
+              )
+            }
             return (
               <div key={a.id} style={{ ...card, padding: 20, position: 'relative' as const, border: active ? `1.5px solid ${colors.primaryBorder}` : undefined, background: active ? colors.primaryLight : undefined }}>
                 {active && (
                   <button onClick={() => cancelAddon(a)} disabled={cancelling === a.id}
                     title="إلغاء الاشتراك"
                     style={{ position: 'absolute' as const, top: 12, left: 12, width: 26, height: 26, borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>
-                    {cancelling === a.id ? '…' : '🗑️'}
+                    {cancelling === a.id ? '…' : <Trash2 size={14} />}
                   </button>
                 )}
                 <div style={{ fontSize: 32, marginBottom: 10 }}>{a.icon}</div>
@@ -265,7 +332,7 @@ export default function AddonsMarketPage() {
 
                 {active ? (
                   <div style={{ textAlign: 'center' as const }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 4 }}>✅ مفعّلة{(a.slug==='extra_suppliers'||a.slug==='extra_branch') ? ` (${a.subscription?.quantity||1})` : ''}</div>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 4 }}><Check size={15} /> مفعّلة{(a.slug==='extra_suppliers'||a.slug==='extra_branch') ? ` (${a.subscription?.quantity||1})` : ''}</div>
                     <div style={{ fontSize: 10, color: colors.text4 }}>حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA', { numberingSystem: 'latn' })}</div>
                     {a.slug === 'extra_branch' && (
                       <a href="/branches" style={{ display: 'block', marginTop: 8, fontSize: 12, fontWeight: 700, color: colors.primary, textDecoration: 'none' }}>تحتاج فرع زيادة؟ اطلبه من صفحة الفروع</a>

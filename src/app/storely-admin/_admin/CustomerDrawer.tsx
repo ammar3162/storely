@@ -4,7 +4,7 @@ import NumberInput from '@/components/NumberInput'
 import { MessageCircle, Send, Trash2, PauseCircle, PlayCircle, KeyRound } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { toast } from '@/components/toast'
-import { billLines, activeDiscount, PLAN_PRICING, PLAN_CAPS, ENTERPRISE_LABEL, addonPeriodEnd, proratedCharge, planPriceFor, unitPrice, type PlanKey } from '@/lib/planPricing'
+import { billLines, activeDiscount, PLAN_CAPS, ENTERPRISE_LABEL, addonPeriodEnd, proratedCharge, planPriceFor, unitPrice, isNewPlan, type PlanKey } from '@/lib/planPricing'
 import { A, Badge, Btn, Card, Drawer, adminFetch, daysLeft, fmtDate, inputStyle } from './kit'
 import { type Customer, STATUS, PLAN_KEYS, PLAN_LIMITS, planLabel } from './customers'
 import ActivityCard from './ActivityCard'
@@ -24,6 +24,8 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   const [deviceCode, setDeviceCode] = useState<string | null>(null)
   const [days, setDays] = useState(30)
   const [qty, setQty] = useState<Record<string, number>>({})
+  // فروع الإضافة (الباقات الجديدة: الكاشير والحضور لفروع معيّنة)
+  const [pick, setPick] = useState<Record<string, string[]>>({})
   const [branches, setBranches] = useState<{ id: string; name: string }[]>([])
   const [staffUsage, setStaffUsage] = useState<{ active: number; limit: number } | null>(null)
   const [ent, setEnt] = useState({ branches: '', staff: '', suppliers: '', price: '' })
@@ -39,14 +41,17 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   async function loadAddons(orgId: string) {
     setLoadingAddons(true)
     const j = await adminFetch(`/api/admin/addon-subscriptions?org_id=${orgId}`)
-    if (j.success) { setAddons(j.addons || []); setBranches(j.branches || []); setStaffUsage(j.staff_usage || null) }
+    if (j.success) { setAddons(j.addons || []); setBranches(j.branches || []); setStaffUsage(j.staff_usage || null); setPick({}) }
     setLoadingAddons(false)
   }
 
   if (!c) return null
   const st = STATUS[c.status] || STATUS.pending
   const dl = daysLeft(c.subscription_ends_at)
-  const bill = billLines(c.plan, c.billing_cycle, addons, c.locked_plan_monthly, c.discount)
+  const bill = billLines(c.plan, c.billing_cycle, addons, c.locked_plan_monthly, c.discount, c.max_branches)
+  const newPlan = isNewPlan(c.plan)
+  // الجديدة: فروع الباقة الحالية (1–10) — القديمة تنتقل بنفس عدد فروعها
+  const planBranches = Math.max(1, Math.min(10, c.max_branches || 1))
   const curDiscount = activeDiscount(c.discount)
   const hasPhone = !!c.phone
 
@@ -79,18 +84,26 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
     onChanged({ status: 'suspended' })
   }
 
-  async function changePlan(k: typeof PLAN_KEYS[number]) {
-    if (k === c!.plan) return
+  // branchesOverride = تغيير عدد فروع الباقة الجديدة (نفس الباقة)
+  async function changePlan(k: typeof PLAN_KEYS[number], branchesOverride?: number) {
+    if (k === c!.plan && branchesOverride == null) return
     const lim = PLAN_LIMITS[k]
-    if (!(await confirmDialog({ title: 'تغيير الباقة', message: `تغيير الباقة إلى "${planLabel(k)}"؟\n\nلو فروعه أكثر من ${lim.branches} (+ الفروع المشتراة)، الأحدث تتوقف مؤقتاً مع موظفينها. ولو موظفينه أكثر من ${lim.staff} (+ الإضافات)، يتوقف الأحدث مؤقتاً. البيانات كلها تبقى وترجع لو رقّى.` }))) return
+    // الجديدة: الحد لكل فرع × فروع الباقة — القديمة: حدود الباقة الثابتة
+    const br = isNewPlan(k) ? Math.max(1, Math.min(10, branchesOverride ?? planBranches)) : lim.branches
+    const staff = isNewPlan(k) ? lim.staff * br : lim.staff, sup = isNewPlan(k) ? lim.suppliers * br : lim.suppliers
+    const price = planPriceFor(k, null, br)
+    const msg = branchesOverride != null
+      ? `فروع باقة "${planLabel(k)}" تصير ${br} — الفاتورة ${price.monthly} ⃁ شهرياً (${staff} موظف، ${sup} مورد).`
+      : `تغيير الباقة إلى "${planLabel(k)}"${isNewPlan(k) ? ` بـ ${br} ${br === 1 ? 'فرع' : 'فروع'} (${price.monthly} ⃁ شهرياً)` : ''}؟\n\nلو فروعه أكثر من ${br} (+ الفروع المشتراة)، الأحدث تتوقف مؤقتاً مع موظفينها. ولو موظفينه أكثر من ${staff} (+ الإضافات)، يتوقف الأحدث مؤقتاً. البيانات كلها تبقى وترجع لو رقّى.${!isNewPlan(c!.plan) && isNewPlan(k) ? '\n\nعميل على باقة قديمة: سعره المثبّت يتلغى وينتقل للسعر الجديد.' : ''}`
+    if (!(await confirmDialog({ title: branchesOverride != null ? 'فروع الباقة' : 'تغيير الباقة', message: msg }))) return
     setBusy('plan')
-    const j = await adminFetch('/api/admin/update-plan', { method: 'POST', body: { orgId: c!.org_id, maxBranches: lim.branches, maxStaff: lim.staff, maxSuppliers: lim.suppliers, planName: k, orgName: c!.org_name, billingCycle: c!.billing_cycle } })
+    const j = await adminFetch('/api/admin/update-plan', { method: 'POST', body: { orgId: c!.org_id, maxBranches: br, maxStaff: staff, maxSuppliers: sup, planName: k, orgName: c!.org_name, billingCycle: c!.billing_cycle } })
     setBusy(null)
     if (!j.success) { toast(j.error || 'فشل تغيير الباقة', 'error'); return }
     const notes = [j.locked && `توقف ${j.locked} فرع`, j.restored && `رجع ${j.restored} فرع`, j.staffLocked && `توقف ${j.staffLocked} موظف (الأحدث) زايدين عن الحد`, j.staffRestored && `رجع ${j.staffRestored} موظف`].filter(Boolean)
     toast(notes.length ? `تم — ${notes.join('، ')}` : 'تم تغيير الباقة', 'success')
     loadAddons(c!.org_id)
-    onChanged({ plan: k, max_branches: lim.branches })
+    onChanged({ plan: k, max_branches: br, ...(k !== c!.plan ? { locked_plan_monthly: null } : {}) })
   }
 
   async function changeCycle(cycle: 'monthly' | 'yearly') {
@@ -142,7 +155,10 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   }
 
   async function setAddon(a: any, on: boolean, quantity?: number) {
-    const q = quantity || qty[a.id] || (a.subscription?.quantity || 1)
+    // إضافة لكل فرع: الكمية = عدد الفروع المختارة
+    const branchIds = a.per_branch ? (pick[a.id] || a.subscription?.branch_ids || branches.map(b => b.id)) : null
+    if (on && branchIds && !branchIds.length) { toast('اختر فرع واحد على الأقل', 'error'); return }
+    const q = branchIds ? branchIds.length : quantity || qty[a.id] || (a.subscription?.quantity || 1)
     if (on) {
       const wasActive = !!a.subscription?.isValid
       const oldQty = wasActive ? (a.subscription?.quantity || 1) : 0
@@ -158,7 +174,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         `تنتهي مع الباقة بتاريخ ${fmtDate(end.toISOString())}.\n\nالمستحق الحين: ${pr.amount} ر.س (${pr.days} يوم)\nومن التجديد: ${q * unit} ر.س شهرياً${lessNote}` }))) return
     } else if (!(await confirmDialog({ title: `إلغاء "${a.name}"`, message: 'تتوقف الإضافة فوراً، وأي فروع أو موظفين زايدين عن الحد يتوقفون مؤقتاً.' }))) return
     setBusy('addon:' + a.id)
-    const j = await adminFetch('/api/admin/addon-subscriptions', { method: on ? 'POST' : 'DELETE', body: { org_id: c!.org_id, addon_id: a.id, org_name: c!.org_name, addon_name: a.name, quantity: q } })
+    const j = await adminFetch('/api/admin/addon-subscriptions', { method: on ? 'POST' : 'DELETE', body: { org_id: c!.org_id, addon_id: a.id, org_name: c!.org_name, addon_name: a.name, quantity: q, ...(branchIds ? { branch_ids: branchIds } : {}) } })
     setBusy(null)
     if (!j.success) { toast(j.error || 'فشل', 'error'); return }
     await loadAddons(c!.org_id)
@@ -254,10 +270,11 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         </div>
       }>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {PLAN_KEYS.map(k => {
+          {/* الباقات القديمة تنعرض بس لعميل عليها (المشتركين قبل 2026-11) — الجديد ما يرجع لها */}
+          {PLAN_KEYS.filter(k => isNewPlan(k) || !newPlan).map(k => {
             const on = c.plan === k
-            // باقته الحالية بسعره المثبّت (لو مشترك قبل تغيير الأسعار)، والباقي بالسعر الحالي
-            const pp = c.plan === k ? planPriceFor(k, c.locked_plan_monthly) : PLAN_PRICING[k]
+            // باقته الحالية بسعره المثبّت (لو مشترك قبل تغيير الأسعار)، والباقي بالسعر الحالي — الجديدة لعدد فروعه
+            const pp = planPriceFor(k, on ? c.locked_plan_monthly : null, planBranches)
             const price = c.billing_cycle === 'yearly' ? `${pp.yearly} ⃁/سنة` : `${pp.monthly} ⃁/شهر`
             return (
               <button key={k} onClick={() => changePlan(k)} disabled={!!busy} className="adm-hover"
@@ -271,6 +288,14 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
               </button>
             )
           })}
+          {newPlan && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 10, border: `1px solid ${A.border}` }}>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>فروع الباقة <span style={{ fontSize: 11.5, fontWeight: 600, color: A.text3 }}>(الفرع الإضافي {PLAN_CAPS[c.plan].branchPrice} ⃁)</span></span>
+              <Btn small disabled={!!busy || planBranches <= 1} onClick={() => changePlan(c.plan, planBranches - 1)}>−</Btn>
+              <b style={{ minWidth: 20, textAlign: 'center' }}>{planBranches}</b>
+              <Btn small disabled={!!busy || planBranches >= 10} onClick={() => changePlan(c.plan, planBranches + 1)}>+</Btn>
+            </div>
+          )}
           <div style={{ border: `1.5px dashed ${A.border}`, borderRadius: 10, padding: '11px 14px' }}>
             <div style={{ fontSize: 13.5, fontWeight: 800, color: A.text }}>{ENTERPRISE_LABEL} <span style={{ fontSize: 11.5, fontWeight: 600, color: A.text3 }}>— أكثر من {PLAN_CAPS.advanced.maxBranches} فروع، بسعر متفق عليه</span></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginTop: 8 }}>
@@ -303,13 +328,17 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
                 const q = qty[a.id] || (on ? a.subscription?.quantity || 1 : 1)
                 const canEditQty = isQty
                 const curQty = on ? (a.subscription?.quantity || 1) : 0
+                // فروع الإضافة (لكل فرع): المختارة الحين، أو فروع الاشتراك، أو كلها
+                const subBranches: string[] = a.subscription?.branch_ids || branches.map(b => b.id)
+                const chosen: string[] = pick[a.id] || subBranches
+                const branchesChanged = on && a.per_branch && (chosen.length !== subBranches.length || chosen.some(id => !subBranches.includes(id)))
                 return (
                   <div key={a.id} style={{ padding: '10px 12px', borderRadius: 10, border: `1px solid ${on ? A.primary + '55' : A.border}`, background: on ? A.primarySoft : A.surface }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 700 }}>{a.name}</div>
                       <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>
-                        {on ? `مفعّلة${isQty ? ` (${a.subscription?.quantity || 1})` : ''} حتى ${fmtDate(a.subscription.expires_at)}` : `${a.monthly_price} ⃁${isQty ? ' للوحدة' : ''} / شهر`}
+                        {on ? `مفعّلة${isQty ? ` (${a.subscription?.quantity || 1})` : a.per_branch ? ` لـ ${a.subscription?.quantity || 1} ${(a.subscription?.quantity || 1) === 1 ? 'فرع' : 'فروع'}` : ''} حتى ${fmtDate(a.subscription.expires_at)}` : `${a.monthly_price} ⃁${isQty ? ' للوحدة' : a.per_branch ? ' لكل فرع' : ''} / شهر`}
                       </div>
                     </div>
                     {canEditQty && (
@@ -318,10 +347,26 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
                         style={{ ...inputStyle, width: 58, padding: '6px', textAlign: 'center' }} />
                     )}
                     {on && isQty && q !== curQty && <Btn small kind="primary" disabled={!!busy} onClick={() => setAddon(a, true, q)}>حفظ الكمية</Btn>}
+                    {branchesChanged && <Btn small kind="primary" disabled={!!busy} onClick={() => setAddon(a, true)}>حفظ الفروع</Btn>}
                     <Btn small kind={on ? 'danger' : 'primary'} loading={busy === 'addon:' + a.id} disabled={!!busy && busy !== 'addon:' + a.id} onClick={() => setAddon(a, !on, q)}>
                       {on ? 'إلغاء' : 'تفعيل'}
                     </Btn>
                   </div>
+                  {a.per_branch && branches.length > 1 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                      {branches.map(b => {
+                        const sel = chosen.includes(b.id)
+                        return (
+                          <button key={b.id} type="button" disabled={!!busy}
+                            onClick={() => setPick(p => ({ ...p, [a.id]: sel ? chosen.filter(x => x !== b.id) : [...chosen, b.id] }))}
+                            style={{ padding: '4px 10px', borderRadius: 99, fontSize: 12, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+                              border: `1px solid ${sel ? A.primary : A.border}`, background: sel ? A.primary : A.surface, color: sel ? 'white' : A.text2 }}>
+                            {b.name}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
                   </div>
                 )
               })}

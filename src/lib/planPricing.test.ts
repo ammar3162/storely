@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { billLines, activeDiscount, planKeyOf, addonPeriodEnd, proratedCharge, staffBase, supplierBase, maxSelfServeBranches, branchPriceFor, planLabel, PLAN_CAPS } from './planPricing'
+import { billLines, activeDiscount, planKeyOf, addonPeriodEnd, proratedCharge, staffBase, supplierBase, maxSelfServeBranches, branchPriceFor, planLabel, PLAN_CAPS, planPriceFor, addonPriceFor, addonIncludedIn, addonsForPlan, nextPlanOf } from './planPricing'
 
 const branch = (qty: number, isValid = true) => ({ name: 'فرع إضافي', slug: 'extra_branch', monthly_price: 49, subscription: { isValid, quantity: qty } })
 
@@ -110,5 +110,56 @@ describe('org discount (from the admin panel)', () => {
     expect(activeDiscount({ discount_type: 'percent', discount_value: 10, discount_until: '2026-11-10' }, now)).toBeNull()
     expect(activeDiscount({ discount_type: 'percent', discount_value: 0 })).toBeNull()
     expect(billLines('basic', 'monthly', [], null, null).total).toBe(99)
+  })
+})
+
+describe('new plans (2026-11): price per branch', () => {
+  it('first branch + extra branch × the rest, yearly −20%', () => {
+    expect(planPriceFor('essential', null, 1).monthly).toBe(119)
+    expect(planPriceFor('ops', null, 3).monthly).toBe(239)
+    expect(planPriceFor('full', null, 3).monthly).toBe(329)
+    expect(planPriceFor('full', null, 1).yearly).toBe(Math.round(219 * 12 * 0.8))
+    expect(planPriceFor('ops', 500, 3).monthly).toBe(500)
+  })
+  it('legacy plans ignore the branch count', () => {
+    expect(planPriceFor('pro', null, 3).monthly).toBe(249)
+    expect(planPriceFor('basic', null, 2).monthly).toBe(99)
+  })
+  it('bill: plan line for N branches + per-branch add-ons × branches', () => {
+    const cashier = { name: 'إقفال الكاشير', slug: 'cashier_closing', monthly_price: 29, subscription: { isValid: true, quantity: 2, locked_price: 40 } }
+    const ai = { name: 'الذكاء', slug: 'ai_tools', monthly_price: 29, subscription: { isValid: true, quantity: 1, locked_price: 15 } }
+    const { lines, total } = billLines('essential', 'monthly', [cashier, ai], null, null, 3)
+    expect(lines[0]).toEqual({ label: 'اشتراك باقة "الأساسية" (3 فروع) (شهرياً)', amount: 179 })
+    expect(lines[1]).toEqual({ label: 'إضافة "إقفال الكاشير" (2 فروع × 40 ر.س)', amount: 80 })
+    expect(total).toBe(179 + 80 + 15)
+  })
+  it('full plan is 24 cheaper than essential + every add-on (1 branch)', () => {
+    const add = (slug: string, p: number) => ({ name: slug, slug, monthly_price: p, subscription: { isValid: true, quantity: 1, locked_price: p } })
+    const allAddons = billLines('essential', 'monthly', [add('cashier_closing', 40), add('hr_full', 69), add('ai_tools', 15)], null, null, 1).total
+    expect(allAddons - billLines('full', 'monthly', [], null, null, 1).total).toBe(24)
+  })
+  it('staff 6 and suppliers 15 per branch', () => {
+    expect(staffBase('ops', 6, 0, 3)).toBe(18)
+    expect(staffBase('ops', 6, 2, 1)).toBe(18)
+    expect(supplierBase('full', 15, 0, 2)).toBe(30)
+    expect(staffBase('basic', 3, 1, 1)).toBe(6)   // القديمة بدون تغيير
+  })
+  it('add-on prices and inclusion per plan', () => {
+    expect(addonPriceFor('essential', 'cashier_closing')).toBe(40)
+    expect(addonPriceFor('ops', 'hr_full')).toBe(69)
+    expect(addonPriceFor('ops', 'extra_branch')).toBe(40)
+    expect(addonPriceFor('basic', 'cashier_closing')).toBeNull()
+    expect(addonIncludedIn('ops', 'cashier_closing')).toBe(true)
+    expect(addonIncludedIn('essential', 'cashier_closing')).toBe(false)
+    expect(addonIncludedIn('pro', 'hr_full')).toBe(true)
+    expect(addonIncludedIn('basic', 'hr_full')).toBe(false)
+    const list = addonsForPlan('ops', [{ slug: 'cashier_closing', monthly_price: 29 }, { slug: 'hr_full', monthly_price: 59 }, { slug: 'extra_suppliers', monthly_price: 5 }])
+    expect(list).toEqual([{ slug: 'hr_full', monthly_price: 69, per_branch: true }])
+  })
+  it('next plan follows the same family', () => {
+    expect(nextPlanOf('essential')).toBe('ops')
+    expect(nextPlanOf('full')).toBeNull()
+    expect(nextPlanOf('basic')).toBe('pro')
+    expect(planKeyOf('ops', 1)).toBe('ops')
   })
 })

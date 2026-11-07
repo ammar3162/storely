@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react'
 import { api } from '@/lib/api-client'
 import { colors, font, radius } from '@/lib/ds'
 import { toast } from '@/components/toast'
-import { PLAN_CAPS, PLAN_PRICING, planKeyOf, type PlanKey } from '@/lib/planPricing'
+import { PLAN_CAPS, PLAN_PRICING, planKeyOf, planPriceFor, higherPlans, isNewPlan, type PlanKey } from '@/lib/planPricing'
 
-const ORDER: PlanKey[] = ['basic', 'pro', 'advanced']
+const NEW_DESC: Record<string, string> = { ops: 'كل الأساسية + إقفال الكاشير لكل الفروع', full: 'كل المميزات: الكاشير والحضور والرواتب والذكاء' }
 const desc = (k: PlanKey) => {
   const c = PLAN_CAPS[k]
+  if (isNewPlan(k)) return `${NEW_DESC[k] || ''} · ${c.staff} موظفين و${c.suppliers} مورد لكل فرع`
   return `${k === 'basic' ? 'المميزات بالإضافات' : 'كل المميزات'} · ${c.branches === 1 ? 'فرع واحد' : c.branches + ' فروع'} · ${c.staff} موظف · ${c.suppliers} مورد`
 }
 
@@ -33,7 +34,7 @@ export default function PlanUpgrade({ orgId, plan, maxBranches }: { orgId: strin
     if (j.success) setPending(null)
   }
 
-  const higher = ORDER.slice(ORDER.indexOf(current) + 1)
+  const higher = higherPlans(current)
   if (!higher.length) return null
   return (
     <div className="hide-in-app" style={{ marginTop: 16, display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
@@ -45,7 +46,7 @@ export default function PlanUpgrade({ orgId, plan, maxBranches }: { orgId: strin
       ) : higher.map(k => (
         <div key={k} style={{ padding: '12px 14px', borderRadius: radius.md, border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: font.sm, fontWeight: 800, color: colors.text }}>{PLAN_PRICING[k].label} — {PLAN_PRICING[k].monthly} ريال شهرياً</div>
+            <div style={{ fontSize: font.sm, fontWeight: 800, color: colors.text }}>{PLAN_PRICING[k].label} — {planPriceFor(k, null, isNewPlan(k) ? maxBranches : 1).monthly} ريال شهرياً{isNewPlan(k) && maxBranches > 1 ? ` لـ ${maxBranches} فروع` : ''}</div>
             <div style={{ fontSize: 11, color: colors.text3, marginTop: 2 }}>{desc(k)}</div>
           </div>
           <button type="button" onClick={() => request(k)} disabled={!!sending}

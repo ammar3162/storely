@@ -17,7 +17,7 @@ export async function checkStaffCapacity(db: SupabaseClient, org_id: string, _br
     db.from('organizations').select('plan,max_staff').eq('id', org_id).single(),
     getBranchLimit(db, org_id),
   ])
-  const baseLimit = staffBase((org as any)?.plan, (org as any)?.max_staff, branchLimit.extra)
+  const baseLimit = staffBase((org as any)?.plan, (org as any)?.max_staff, branchLimit.extra, branchLimit.base)
 
   const { count: baseUsed } = await db.from('staff_members').select('id', { count: 'exact', head: true })
     .eq('org_id', org_id).eq('is_active', true).is('addon_subscription_id', null)
@@ -62,7 +62,7 @@ export async function staffLimitFor(db: SupabaseClient, org_id: string): Promise
   const now = Date.now()
   const extra = ((subs || []) as any[]).filter(s => !s.expires_at || new Date(s.expires_at).getTime() > now)
     .reduce((n, s) => n + Math.max(0, Number(s.quantity) || 0), 0)
-  return staffBase((org as any)?.plan, (org as any)?.max_staff, branchLimit.extra) + extra
+  return staffBase((org as any)?.plan, (org as any)?.max_staff, branchLimit.extra, branchLimit.base) + extra
 }
 
 /**

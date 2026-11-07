@@ -20,7 +20,8 @@ export async function GET(req: Request) {
     if (error || !org) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
     // الميزات المتاحة للموظف — من السيرفر (الموظف ما يقدر يقرأ متجر الإضافات حق المالك)
     const plan = (org as any).plan || 'basic'
-    const { hr, cashier } = await orgFeatures(db, auth.data.org_id, plan)
+    // ميزات فرع الموظف (الإضافة ممكن تكون لفروع معيّنة)
+    const { hr, cashier } = await orgFeatures(db, auth.data.org_id, plan, auth.data.branch_id || null)
 
     return NextResponse.json({
       success: true,

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { PLAN_CAPS, type PlanKey } from '@/lib/planPricing'
+import { PLAN_CAPS, isNewPlan, type PlanKey } from '@/lib/planPricing'
 import { normalizeWhatsapp } from '@/lib/phoneNormalize'
 import { SIGNUP_BUSINESS_TYPES } from '@/lib/businessTypes'
 import { attachReferral } from '@/lib/agentReferral'
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    let { orgName, fullPhone, businessType, branchCount, billing, phone, trialEnds, countryCode, termsAcceptedAt, agentCode } = body
+    let { orgName, fullPhone, businessType, branchCount, billing, phone, trialEnds, countryCode, termsAcceptedAt, agentCode, plan: chosenPlan } = body
     const userId = authedUser.id
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null
     const userAgent = req.headers.get('user-agent') || null
@@ -62,10 +62,12 @@ export async function POST(req: Request) {
     const TERMS_VERSION = (settingsRow as any)?.terms_version || '2026-06-b'
 
     // التجربة المجانية على الباقة اللي اختارها (الفروع والموظفين والموردين حسبها)، والمميزات كلها مفتوحة طول التجربة (lib/planFeatures)
-    const requestedPlan: PlanKey = branchCount===1?'basic':branchCount<=5?'pro':'advanced'
-    const plan: PlanKey = requestedPlan
+    // الباقات الجديدة (2026-11): الباقة اللي اختارها وعدد فروعها (1–10). نسخة قديمة من التطبيق ما ترسل plan → التشغيل
+    const plan: PlanKey = isNewPlan(chosenPlan) ? chosenPlan : 'ops'
+    const requestedPlan: PlanKey = plan
     const caps = PLAN_CAPS[plan]
-    const maxB = caps.branches, maxStaff = caps.staff, maxSup = caps.suppliers
+    const maxB = Math.max(1, Math.min(caps.maxBranches, Math.round(Number(branchCount)) || 1))
+    const maxStaff = caps.staff * maxB, maxSup = caps.suppliers * maxB
 
     const { data: org, error: orgErr } = await supabase
       .from('organizations')

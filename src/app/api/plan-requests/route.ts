@@ -3,6 +3,7 @@ import { notifyAdminsLater } from '@/lib/adminNotify'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { monthlyBill } from '@/lib/orgBill'
+import { higherPlans } from '@/lib/planPricing'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -19,7 +20,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const { org_id, target_plan } = await req.json()
-    if (!org_id || !['pro', 'advanced'].includes(target_plan)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+    if (!org_id || !['pro', 'advanced', 'ops', 'full'].includes(target_plan)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
     if (access.role === 'manager') return NextResponse.json({ error: 'طلب الترقية لمالك المنشأة' }, { status: 403 })
@@ -27,8 +28,8 @@ export async function POST(req: Request) {
     const db = sb()
     const { data: org } = await db.from('organizations').select('plan').eq('id', org_id).maybeSingle()
     const current = (org as any)?.plan || 'basic'
-    const rank = { basic: 0, pro: 1, advanced: 2 } as Record<string, number>
-    if ((rank[current] ?? 0) >= rank[target_plan]) return NextResponse.json({ error: 'باقتك الحالية نفسها أو أعلى' }, { status: 400 })
+    // نفس العائلة بس: القديمة ترقّى للقديمة، والجديدة للجديدة
+    if (!higherPlans(current).includes(target_plan)) return NextResponse.json({ error: 'باقتك الحالية نفسها أو أعلى' }, { status: 400 })
 
     const { data: pending } = await db.from('plan_requests').select('id').eq('org_id', org_id).eq('status', 'pending').maybeSingle()
     if (pending) return NextResponse.json({ error: 'عندك طلب ترقية قيد المراجعة' }, { status: 409 })

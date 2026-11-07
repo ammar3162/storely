@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { PLAN_PRICING } from '@/lib/planPricing'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { changeOrgPlan } from '@/lib/changePlan'
@@ -17,6 +18,7 @@ export async function POST(req: Request) {
 
   const { orgId, maxBranches, maxStaff, maxSuppliers, planName, orgName, billingCycle, lockedMonthly } = await req.json()
   if (!orgId || !maxBranches) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+  if (!(planName in PLAN_PRICING)) return NextResponse.json({ error: 'باقة غير معروفة' }, { status: 400 })
 
   const res = await changeOrgPlan(supabase, orgId, { planName, maxBranches, maxStaff, maxSuppliers, billingCycle, lockedMonthly })
   if (!res.ok) return NextResponse.json({ error: res.error }, { status: 500 })
