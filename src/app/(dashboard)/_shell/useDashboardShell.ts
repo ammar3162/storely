@@ -19,6 +19,8 @@ import type { Feature } from '@/lib/planFeatures'
 const PAGE_FEATURES: Record<string, Feature[]> = {
   '/inventory': ['inventory'], '/dispense': ['inventory'], '/transfer-stock': ['inventory'],
   '/purchases': ['purchases'], '/suppliers': ['inventory', 'purchases'], '/marketplace': ['inventory', 'purchases'],
+  // أدوات الذكاء: تنخفي مثل المخزون لو ما هي باشتراكه (طلب المالك)
+  '/ai-tools': ['ai'],
 }
 
 let _cache: any = null
