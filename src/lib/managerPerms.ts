@@ -68,6 +68,7 @@ export const API_GUARDS: Record<string, { read?: Rule; write?: Rule }> = {
   '/api/branch-transfer': { read: OWNER, write: OWNER },
   '/api/delete-branch': { read: OWNER, write: OWNER },
   '/api/delete-account': { read: OWNER, write: OWNER },
+  '/api/setup-progress': { read: OWNER, write: OWNER },
   '/api/branch-managers': { read: OWNER, write: OWNER },
   '/api/branches/copy-products': { read: OWNER, write: OWNER },
   '/api/branches/extra': { read: OWNER, write: OWNER },

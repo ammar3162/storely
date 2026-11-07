@@ -14,6 +14,7 @@ import { TONES } from '@/lib/pageTones'
 import { VatThresholdBanner } from '@/components/VatRegistration'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
 import TodayDecisions from '@/components/TodayDecisions'
+import SetupChecklist from '@/components/SetupChecklist'
 
 class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|null}> {
   state = { error: null }
@@ -222,6 +223,9 @@ export default function DashboardPage() {
       </div>
 
       {vatOrg&&<VatThresholdBanner orgId={vatOrg}/>}
+
+      {/* جهّز حسابك — أول 30 يوم */}
+      <SetupChecklist/>
 
       {/* الأرقام */}
       <div className="dh-kpis">
