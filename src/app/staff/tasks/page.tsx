@@ -38,7 +38,7 @@ const UI_STRINGS: Record<string, Record<string,string>> = {
 const STATUS_KEYS: Record<string, {key:string; color:string; bg:string}> = {
   pending:   { key: 'statusPending',   color: '#d97706', bg: '#fffbeb' },
   completed: { key: 'statusCompleted', color: '#2563eb', bg: '#eff6ff' },
-  confirmed: { key: 'statusConfirmed', color: '#0f766e', bg: '#f0fdfa' },
+  confirmed: { key: 'statusConfirmed', color: '#0f766e', bg: '#e7f3f1' },
   rejected:  { key: 'statusRejected',  color: '#dc2626', bg: '#fef2f2' },
 }
 
@@ -140,14 +140,14 @@ export default function StaffTasksPage() {
   const otherTasks = tasks.filter((t:any)=>t.status!=='pending' && t.status!=='confirmed')
 
   if (!session) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
-      <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:'#0f766e',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f4f5f6',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
+      <div style={{width:32,height:32,border:'3px solid #e5e7eb',borderTopColor:'#0f766e',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 
   return (
-    <div style={{minHeight:'100vh',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:isRtlLang(lang as any)?'rtl':'ltr',paddingBottom:40}}>
+    <div style={{minHeight:'100vh',background:'#f4f5f6',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:isRtlLang(lang as any)?'rtl':'ltr',paddingBottom:40}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       <StaffHeader title={t('myTasks')} subtitle={session.name} rtl={isRtlLang(lang as any)} end={
@@ -157,11 +157,11 @@ export default function StaffTasksPage() {
             <Globe size={14} strokeWidth={2.25}/> {LANGUAGES.find(l=>l.code===lang)?.label || 'العربية'}
           </button>
           {showLangMenu && (
-            <div style={{position:'absolute' as const,top:'100%',insetInlineEnd:0,marginTop:6,background:'white',border:'1px solid #ece8e2',borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.15)',overflow:'hidden',minWidth:140,zIndex:50}}>
+            <div style={{position:'absolute' as const,top:'100%',insetInlineEnd:0,marginTop:6,background:'white',border:'1px solid #eceef1',borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.15)',overflow:'hidden',minWidth:140,zIndex:50}}>
               {LANGUAGES.map(l=>(
                 <button key={l.code}
                   onClick={()=>{setLang(l.code as any);setShowLangMenu(false)}}
-                  style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#f0fdfa':'white',color:lang===l.code?'#0f766e':'#1c1c1a',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
+                  style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#e7f3f1':'white',color:lang===l.code?'#0f766e':'#111827',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
                   {l.label}
                 </button>
               ))}
@@ -172,26 +172,26 @@ export default function StaffTasksPage() {
 
       <div style={{maxWidth:520,margin:'0 auto',padding:'20px 16px'}}>
         {loading ? (
-          <div style={{textAlign:'center' as const,padding:40,fontSize:13,color:'#475569'}}>{t('loading')}</div>
+          <div style={{textAlign:'center' as const,padding:40,fontSize:13,color:'#4b5565'}}>{t('loading')}</div>
         ) : (
           <>
             {pendingTasks.length===0 ? (
               <div style={{textAlign:'center' as const,padding:'60px 20px'}}>
-                <div style={{display:'flex',justifyContent:'center',marginBottom:12,color:'#98A2B3'}}><ClipboardList size={44}/></div>
-                <div style={{fontSize:14,color:'#475569'}}>{t('noTasks')}</div>
+                <div style={{display:'flex',justifyContent:'center',marginBottom:12,color:'#6b7487'}}><ClipboardList size={44}/></div>
+                <div style={{fontSize:14,color:'#4b5565'}}>{t('noTasks')}</div>
               </div>
             ) : (
               <div style={{marginBottom:24}}>
-                <div style={{fontSize:12,fontWeight:700,color:'#d97706',marginBottom:10}}>{t('pendingTasks')} ({pendingTasks.length})</div>
+                <div style={{fontSize:12,fontWeight:600,color:'#d97706',marginBottom:10}}>{t('pendingTasks')} ({pendingTasks.length})</div>
                 <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
                   {pendingTasks.map((tk:any)=>(
                     <div key={tk.id} style={{background:'white',border:'1.5px solid #fde68a',borderRadius:14,padding:'16px'}}>
-                      <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:6}}>{lang!=='ar'&&taskTranslations[tk.id]?.title || tk.title}</div>
-                      {(lang!=='ar'&&taskTranslations[tk.id]?.description || tk.description) && <div style={{fontSize:13,color:'#6b7280',marginBottom:12,lineHeight:1.6}}>{lang!=='ar'&&taskTranslations[tk.id]?.description || tk.description}</div>}
+                      <div style={{fontSize:15,fontWeight:600,color:'#111827',marginBottom:6}}>{lang!=='ar'&&taskTranslations[tk.id]?.title || tk.title}</div>
+                      {(lang!=='ar'&&taskTranslations[tk.id]?.description || tk.description) && <div style={{fontSize:13,color:'#6b7487',marginBottom:12,lineHeight:1.6}}>{lang!=='ar'&&taskTranslations[tk.id]?.description || tk.description}</div>}
                       <input id={`photo-input-${tk.id}`} type="file" accept="image/*" capture="environment" style={{display:'none'}}
                         onChange={e=>{ const f=e.target.files?.[0]; if(f) handlePhotoSelected(tk.id, f) }}/>
                       <button onClick={()=>completeTask(tk.id, tk.requires_photo)} disabled={completingId===tk.id||uploadingId===tk.id}
-                        style={{width:'100%',padding:'12px',background:'#0f766e',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:(completingId===tk.id||uploadingId===tk.id)?0.6:1}}>
+                        style={{width:'100%',padding:'12px',background:'#0f766e',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',opacity:(completingId===tk.id||uploadingId===tk.id)?0.6:1}}>
                         {uploadingId===tk.id ? t('uploadingPhoto') : completingId===tk.id ? t('confirming') : tk.requires_photo ? <span style={{display:'inline-flex',alignItems:'center',gap:6}}><Camera size={16}/>{t('completeWithPhoto')}</span> : <span style={{display:'inline-flex',alignItems:'center',gap:6}}><Check size={16}/>{t('completeTask')}</span>}
                       </button>
                     </div>
@@ -202,15 +202,15 @@ export default function StaffTasksPage() {
 
             {otherTasks.length>0 && (
               <div>
-                <div style={{fontSize:12,fontWeight:700,color:'#475569',marginBottom:10}}>{t('pastTasks')}</div>
+                <div style={{fontSize:12,fontWeight:600,color:'#4b5565',marginBottom:10}}>{t('pastTasks')}</div>
                 <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
                   {otherTasks.map((tk:any)=>{
                     const st = STATUS_KEYS[tk.status] || STATUS_KEYS.pending
                     return (
-                      <div key={tk.id} style={{background:st.bg,border:'1px solid #ece8e2',borderRadius:12,padding:'12px 14px'}}>
+                      <div key={tk.id} style={{background:st.bg,border:'1px solid #eceef1',borderRadius:12,padding:'12px 14px'}}>
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-                          <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{lang!=='ar'&&taskTranslations[tk.id]?.title || tk.title}</span>
-                          <span style={{fontSize:10,fontWeight:700,color:st.color}}>{t(st.key)}</span>
+                          <span style={{fontSize:13,fontWeight:600,color:'#111827'}}>{lang!=='ar'&&taskTranslations[tk.id]?.title || tk.title}</span>
+                          <span style={{fontSize:10,fontWeight:600,color:st.color}}>{t(st.key)}</span>
                         </div>
                       </div>
                     )

@@ -2,7 +2,8 @@
 import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, ChevronLeft, CalendarCheck, Clock, TrendingUp, Globe } from 'lucide-react'
+import { ChevronRight, ChevronLeft, Globe } from 'lucide-react'
+import { C, card, paper, receiptEdge, receiptNum, cutLine, sectionLabel } from '../_ui/theme'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useStaffLang } from '@/lib/staffLang'
 import { useLiveRefresh, liveStaffOrg } from '@/lib/useLiveRefresh'
@@ -77,10 +78,9 @@ export default function PayslipPage() {
   useLiveRefresh(liveStaffOrg(), ['staff_payroll_adjustments','staff_attendance','staff_members'], () => load(month))
 
   const isCurrent = month === thisMonth()
-  const card: React.CSSProperties = { background: 'white', border: '1px solid #e8ecf1', borderRadius: 16, boxShadow: '0 1px 2px rgba(16,24,40,.04)' }
   const money = (v: number, sign?: '+' | '−', color?: string) => (
-    <span dir="ltr" style={{ fontSize: 14.5, fontWeight: 800, color: color || '#0f172a', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-      {sign || ''}{num(v)} <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>{curr}</span>
+    <span style={{ ...receiptNum, fontSize: 14, color: color || C.t1, whiteSpace: 'nowrap' }}>
+      {sign === '−' ? '-' : sign || ''}{num(v)}
     </span>
   )
   // النص اللي كتبه المالك/الكاشير يبقى بلغته — <bdi> يمنعه يتلخبط مع التاريخ بالصفحات اللي من اليسار
@@ -93,30 +93,31 @@ export default function PayslipPage() {
     return m ? { date: m[1], reason: m[2] || null } : null
   }
   const line = (key: string, label: string, value: number, opts: { sub?: React.ReactNode; sign?: '+' | '−'; color?: string; strong?: boolean; first?: boolean } = {}) => (
-    <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '12px 0', borderTop: opts.first ? 'none' : '1px solid #f1f5f9' }}>
+    <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, padding: opts.strong ? '8px 0 2px' : '5px 0' }}>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 13.5, fontWeight: opts.strong ? 800 : 600, color: '#0f172a' }}>{label}</div>
-        {opts.sub && <div style={{ fontSize: 11.5, color: '#94a3b8', marginTop: 2, lineHeight: 1.5, overflowWrap: 'anywhere' }}>{opts.sub}</div>}
+        <div style={{ fontSize: 14, fontWeight: opts.strong ? 600 : 400, color: opts.strong ? C.t1 : C.t2 }}>{label}</div>
+        {opts.sub && <div style={{ fontSize: 12, color: C.t3, marginTop: 2, lineHeight: 1.5, overflowWrap: 'anywhere' }}>{opts.sub}</div>}
       </div>
       {money(value, opts.sign, opts.color)}
     </div>
   )
-  const sectionTitle = (txt: string) => <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b', margin: '18px 4px 8px' }}>{txt}</div>
+  const sectionTitle = (txt: string) => <div style={sectionLabel}>{txt}</div>
+  const receiptHead = (txt: string) => <div style={{ fontSize: 12, color: C.t3, margin: '2px 0 4px' }}>{txt}</div>
   const deductionLabel = (src: string) => src === 'cashier_deficit' ? t('deficit') : src === 'late_bundle' ? t('lateBundle') : t('manual')
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f4f6f8', fontFamily: "'IBM Plex Sans Arabic',system-ui", direction: rtl ? 'rtl' : 'ltr', paddingBottom: 40 }}>
+    <div style={{ minHeight: '100vh', background: '#f4f5f6', fontFamily: "'IBM Plex Sans Arabic',system-ui", direction: rtl ? 'rtl' : 'ltr', paddingBottom: 40 }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <StaffHeader title={t('title')} subtitle={name} rtl={rtl} backLabel={t('back')} end={
         <div style={{ position: 'relative' }}>
           <button onClick={() => setShowLang(v => !v)} aria-label={t('language')} style={staffHeaderBtn}>
-            <Globe size={15} strokeWidth={2.25} />{L.label}
+            <Globe size={16} strokeWidth={1.75} />{L.label}
           </button>
           {showLang && (
-            <div style={{ position: 'absolute', top: '100%', insetInlineEnd: 0, marginTop: 6, background: 'white', borderRadius: 12, border: '1px solid #e8ecf1', boxShadow: '0 12px 28px rgba(15,23,42,.16)', overflow: 'hidden', minWidth: 150, zIndex: 50 }}>
+            <div style={{ position: 'absolute', top: '100%', insetInlineEnd: 0, marginTop: 6, background: 'white', borderRadius: 12, border: '1px solid #e5e7eb', boxShadow: '0 12px 28px rgba(15,23,42,.16)', overflow: 'hidden', minWidth: 150, zIndex: 50 }}>
               {PAYSLIP_LANGS.map(l => (
                 <button key={l.code} onClick={() => chooseLang(l.code)}
-                  style={{ width: '100%', padding: '11px 14px', border: 'none', borderBottom: '1px solid #f1f5f9', background: lang === l.code ? '#f0fdfa' : 'white', color: lang === l.code ? '#0f766e' : '#1e293b', fontSize: 13, fontWeight: lang === l.code ? 700 : 500, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'start', display: 'block' }}>
+                  style={{ width: '100%', padding: '11px 14px', border: 'none', borderBottom: '1px solid #eceef1', background: lang === l.code ? '#e7f3f1' : 'white', color: lang === l.code ? '#0f766e' : '#111827', fontSize: 13, fontWeight: lang === l.code ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'start', display: 'block' }}>
                   {l.label}
                 </button>
               ))}
@@ -125,109 +126,95 @@ export default function PayslipPage() {
         </div>
       } />
 
-      <div style={{ maxWidth: 560, margin: '0 auto', padding: '14px 16px' }}>
+      <div style={{ maxWidth: 560, margin: '0 auto', padding: 16 }}>
         {/* الشهر */}
-        <div style={{ ...card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px' }}>
-          <button aria-label={t('prev')} onClick={() => setMonth(shiftMonth(month, -1))} style={{ width: 38, height: 38, border: 'none', borderRadius: 10, background: '#f1f5f9', cursor: 'pointer', display: 'grid', placeItems: 'center', color: '#334155' }}>
+        <div style={{ ...card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 8 }}>
+          <button aria-label={t('prev')} onClick={() => setMonth(shiftMonth(month, -1))} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: 'transparent', cursor: 'pointer', display: 'grid', placeItems: 'center', color: C.t1 }}>
             {rtl ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a' }}>{monthLabel(month)}</div>
-            {isCurrent && <div style={{ fontSize: 11, color: '#0f766e', fontWeight: 600 }}>{t('current')}</div>}
+            <div style={{ fontSize: 16, fontWeight:600, color: C.t1 }}>{monthLabel(month)}</div>
+            {isCurrent && <div style={{ fontSize: 12, color: C.t3 }}>{t('current')}</div>}
           </div>
-          <button aria-label={t('next')} disabled={isCurrent} onClick={() => setMonth(shiftMonth(month, 1))} style={{ width: 38, height: 38, border: 'none', borderRadius: 10, background: '#f1f5f9', cursor: isCurrent ? 'default' : 'pointer', opacity: isCurrent ? .35 : 1, display: 'grid', placeItems: 'center', color: '#334155' }}>
+          <button aria-label={t('next')} disabled={isCurrent} onClick={() => setMonth(shiftMonth(month, 1))} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: 'transparent', cursor: isCurrent ? 'default' : 'pointer', opacity: isCurrent ? .35 : 1, display: 'grid', placeItems: 'center', color: C.t1 }}>
             {rtl ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
           </button>
         </div>
 
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}><div style={{ width: 30, height: 30, border: '3px solid #e2e8f0', borderTopColor: '#0f766e', borderRadius: '50%', animation: 'spin .7s linear infinite' }} /></div>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}><div style={{ width: 30, height: 30, border: '3px solid #e5e7eb', borderTopColor: '#0f766e', borderRadius: '50%', animation: 'spin .7s linear infinite' }} /></div>
         ) : error ? (
-          <div style={{ ...card, marginTop: 14, padding: '36px 20px', textAlign: 'center', fontSize: 14, color: '#475569', fontWeight: 600 }}>{t(error)}</div>
+          <div style={{ ...card, marginTop: 16, padding: '36px 20px', textAlign: 'center', fontSize: 14, color: C.t2 }}>{t(error)}</div>
         ) : data && (
           <>
-            {/* الصافي */}
-            <div style={{ background: 'linear-gradient(160deg,#0b3b3a,#0f766e)', borderRadius: 20, padding: '20px 22px', color: 'white', marginTop: 14 }}>
-              <div style={{ fontSize: 13, opacity: .8, fontWeight: 600 }}>{isCurrent ? t('netSoFar') : t('net')}</div>
-              <div style={{ fontSize: 38, fontWeight: 900, marginTop: 4, fontVariantNumeric: 'tabular-nums' }}><span dir="ltr">{num(data.netSalary)} <span style={{ fontSize: 15, fontWeight: 700, opacity: .8 }}>{curr}</span></span></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 14 }}>
-                <div style={{ background: 'rgba(255,255,255,.12)', borderRadius: 12, padding: '9px 12px' }}>
-                  <div style={{ fontSize: 11, opacity: .8 }}>{t('totalEarnings')}</div>
-                  <div style={{ fontSize: 15, fontWeight: 800 }}><span dir="ltr">+{num(data.grossSalary + data.overtime.pay + (data.bonusesTotal || 0))}</span></div>
-                </div>
-                <div style={{ background: 'rgba(255,255,255,.12)', borderRadius: 12, padding: '9px 12px' }}>
-                  <div style={{ fontSize: 11, opacity: .8 }}>{t('totalDeductions')}</div>
-                  <div style={{ fontSize: 15, fontWeight: 800 }}><span dir="ltr">−{num(data.deductionsTotal + data.advancesTotal)}</span></div>
-                </div>
+            {/* إيصال الراتب: الصافي فوق، وتحته المستحقات والخصومات بخط الإيصال */}
+            <div style={{ ...paper, marginTop: 16 }}>
+              <div style={{ fontSize: 14, color: C.t2 }}>{isCurrent ? t('netSoFar') : t('net')}</div>
+              <div style={{ marginTop: 4, display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                <span style={{ ...receiptNum, fontSize: 34, fontWeight: 500, color: C.t1 }}>{num(data.netSalary)}</span>
+                <span style={{ fontSize: 13, color: C.t3 }}>{curr}</span>
               </div>
-            </div>
-
-            {/* المستحقات */}
-            {sectionTitle(t('earnings'))}
-            <div style={{ ...card, padding: '0 16px' }}>
+              <div style={{ ...cutLine, margin: '16px 0 10px' }} />
+              {receiptHead(t('earnings'))}
               {line('basic', t('basic'), data.basic, { first: true })}
               {data.allowances.housing > 0 && line('housing', t('housing'), data.allowances.housing, { sign: '+' })}
               {data.allowances.transport > 0 && line('transport', t('transport'), data.allowances.transport, { sign: '+' })}
               {data.allowances.food > 0 && line('food', t('food'), data.allowances.food, { sign: '+' })}
-              {data.overtime.pay > 0 && line('ot', t('overtime'), data.overtime.pay, { sign: '+', color: '#047857', sub: `${dur(data.overtime.minutes)} × ${num(data.overtime.hourRate)} ${curr} ${t('perHour')}` })}
+              {data.overtime.pay > 0 && line('ot', t('overtime'), data.overtime.pay, { sign: '+', sub: `${dur(data.overtime.minutes)} × ${num(data.overtime.hourRate)} ${curr} ${t('perHour')}` })}
               {(data.bonuses || []).map((b, i) => {
                 const m = /^تعويض يوم إضافي (\d{4}-\d{2}-\d{2})$/.exec(b.reason || '')
-                return line(`b${i}`, m ? t('extraPay') : t('bonus'), b.amount, { sign: '+', color: '#047857', sub: m ? dayLabel(m[1]) : subLine(b.date, b.reason) })
+                return line(`b${i}`, m ? t('extraPay') : t('bonus'), b.amount, { sign: '+', sub: m ? dayLabel(m[1]) : subLine(b.date, b.reason) })
               })}
               {line('te', t('totalEarnings'), data.grossSalary + data.overtime.pay + (data.bonusesTotal || 0), { strong: true })}
-            </div>
-
-            {/* الخصومات — كل خصم بسببه وتاريخه */}
-            {sectionTitle(t('deductions'))}
-            <div style={{ ...card, padding: '0 16px' }}>
+              <div style={cutLine} />
+              {receiptHead(t('deductions'))}
               {data.latePenalties.length + data.deductions.length + data.advances.length === 0 ? (
-                <div style={{ padding: '18px 0', textAlign: 'center', fontSize: 13, color: '#64748b', fontWeight: 600 }}>{t('noDeductions')}</div>
+                <div style={{ padding: '6px 0', fontSize: 13, color: C.t3 }}>{t('noDeductions')}</div>
               ) : (
                 <>
                   {[
-                    ...data.latePenalties.map((p, i) => line(`l${i}`, t('late'), p.amount, { sign: '−', color: '#dc2626', sub: <>{dayLabel(p.date)} · {t('lateBy', { m: dur(p.minutes) })}</>, first: i === 0 })),
+                    ...data.latePenalties.map((p, i) => line(`l${i}`, t('late'), p.amount, { sign: '−', sub: <>{dayLabel(p.date)} · {t('lateBy', { m: dur(p.minutes) })}</>, first: i === 0 })),
                     ...data.deductions.map((d, i) => {
                       const df = d.source === 'cashier_deficit' ? deficitParts(d.reason) : null
                       const sub = df ? subLine(df.date, df.reason, t('reason'))
                         : d.source === 'late_bundle' ? subLine(d.date)
                         : subLine(d.date, d.reason, t('reason'))
-                      return line(`d${i}`, deductionLabel(d.source), d.amount, { sign: '−', color: '#dc2626', sub, first: i === 0 && !data.latePenalties.length })
+                      return line(`d${i}`, deductionLabel(d.source), d.amount, { sign: '−', sub, first: i === 0 && !data.latePenalties.length })
                     }),
-                    ...data.advances.map((a, i) => line(`a${i}`, t('advance'), a.amount, { sign: '−', color: '#dc2626', sub: subLine(a.date, a.reason), first: i === 0 && !data.latePenalties.length && !data.deductions.length })),
+                    ...data.advances.map((a, i) => line(`a${i}`, t('advance'), a.amount, { sign: '−', sub: subLine(a.date, a.reason), first: i === 0 && !data.latePenalties.length && !data.deductions.length })),
                   ]}
-                  {line('td', t('totalDeductions'), data.deductionsTotal + data.advancesTotal, { sign: '−', color: '#dc2626', strong: true })}
+                  {line('td', t('totalDeductions'), data.deductionsTotal + data.advancesTotal, { sign: '−', strong: true })}
                 </>
               )}
+              <div style={cutLine} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 2 }}>
+                <span style={{ fontSize: 15, fontWeight: 600, color: C.t1 }}>{t('net')}</span>
+                <span style={{ ...receiptNum, fontSize: 20, fontWeight: 500, color: C.t1 }}>{num(data.netSalary)}</span>
+              </div>
             </div>
-
-            {/* الصافي */}
-            <div style={{ ...card, marginTop: 10, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f0fdfa', borderColor: '#b2e3df' }}>
-              <div style={{ fontSize: 15, fontWeight: 900, color: '#0f172a' }}>{t('net')}</div>
-              {money(data.netSalary, undefined, '#0f766e')}
-            </div>
+            <div style={receiptEdge} />
 
             {/* بانتظار قرار الإدارة — ما ينخصم */}
             {data.pendingAdvances.length + data.pendingDeficits.length > 0 && (
               <>
                 {sectionTitle(t('pending'))}
-                <div style={{ ...card, padding: '0 16px', background: '#fffbeb', borderColor: '#fde68a' }}>
-                  {data.pendingDeficits.map((d, i) => line(`pd${i}`, t('pendingDeficit'), d.amount, { color: '#b45309', sub: subLine(d.date, d.reason, t('reason')), first: i === 0 }))}
-                  {data.pendingAdvances.map((a, i) => line(`pa${i}`, t('pendingAdvance'), a.amount, { color: '#b45309', sub: subLine(a.date), first: i === 0 && !data.pendingDeficits.length }))}
+                <div style={{ ...card, padding: '6px 16px' }}>
+                  {data.pendingDeficits.map((d, i) => line(`pd${i}`, t('pendingDeficit'), d.amount, { color: C.warn, sub: subLine(d.date, d.reason, t('reason')), first: i === 0 }))}
+                  {data.pendingAdvances.map((a, i) => line(`pa${i}`, t('pendingAdvance'), a.amount, { color: C.warn, sub: subLine(a.date), first: i === 0 && !data.pendingDeficits.length }))}
                 </div>
               </>
             )}
 
-            {/* الحضور */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginTop: 18 }}>
+            {/* الحضور: ثلاث أرقام في بطاقة وحدة */}
+            <div style={{ ...card, display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', marginTop: 24 }}>
               {[
-                { icon: <CalendarCheck size={16} />, v: `${data.attendance.daysPresent}`, l: data.attendance.extraDays ? `${t('daysPresent')} · ${t('extraDays', { n: String(data.attendance.extraDays) })}` : t('daysPresent'), c: '#0f766e' },
-                { icon: <Clock size={16} />, v: data.attendance.lateMinutes ? dur(data.attendance.lateMinutes) : '0', l: `${t('lateStat')} (${data.attendance.lateCount} ${t('times')})`, c: data.attendance.lateCount ? '#c2410c' : '#0f766e' },
-                { icon: <TrendingUp size={16} />, v: data.overtime.minutes ? dur(data.overtime.minutes) : '0', l: t('overtimeStat'), c: '#4f46e5' },
+                { v: `${data.attendance.daysPresent}`, l: data.attendance.extraDays ? `${t('daysPresent')} · ${t('extraDays', { n: String(data.attendance.extraDays) })}` : t('daysPresent') },
+                { v: data.attendance.lateMinutes ? dur(data.attendance.lateMinutes) : '0', l: `${t('lateStat')} (${data.attendance.lateCount} ${t('times')})` },
+                { v: data.overtime.minutes ? dur(data.overtime.minutes) : '0', l: t('overtimeStat') },
               ].map((k, i) => (
-                <div key={i} style={{ ...card, padding: '12px 8px', textAlign: 'center' }}>
-                  <div style={{ color: k.c, display: 'flex', justifyContent: 'center' }}>{k.icon}</div>
-                  <div style={{ fontSize: 15, fontWeight: 900, color: k.c, marginTop: 4 }}>{k.v}</div>
-                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{k.l}</div>
+                <div key={i} style={{ padding: '12px 8px', textAlign: 'center', borderInlineStart: i ? `1px solid ${C.line}` : 'none' }}>
+                  <div style={{ fontSize: 18, fontWeight: 500, color: C.t1, fontVariantNumeric: 'tabular-nums' }}>{k.v}</div>
+                  <div style={{ fontSize: 12, color: C.t3, marginTop: 2 }}>{k.l}</div>
                 </div>
               ))}
             </div>
@@ -236,13 +223,13 @@ export default function PayslipPage() {
             {data.overtime.days.length > 0 && (
               <>
                 {sectionTitle(t('overtimeDays'))}
-                <div style={{ ...card, padding: '0 16px' }}>
-                  {data.overtime.days.map((d, i) => line(`o${i}`, dayLabel(d.date), d.pay, { sign: '+', color: '#047857', sub: dur(d.minutes), first: i === 0 }))}
+                <div style={{ ...card, padding: '6px 16px' }}>
+                  {data.overtime.days.map((d, i) => line(`o${i}`, dayLabel(d.date), d.pay, { sign: '+', sub: dur(d.minutes), first: i === 0 }))}
                 </div>
               </>
             )}
 
-            <p style={{ fontSize: 11.5, color: '#94a3b8', textAlign: 'center', lineHeight: 1.8, marginTop: 16 }}>
+            <p style={{ fontSize: 13, color: C.t3, textAlign: 'center', lineHeight: 1.7, marginTop: 16 }}>
               {data.overtime.mode === 'off' ? t('noteOff') : t(data.overtime.mode === 'fixed' ? 'noteFixed' : 'noteAuto', { rate: `${num(data.overtime.hourRate)} ${curr}` })}
               {isCurrent && <><br />{t('noteCurrent')}</>}
             </p>

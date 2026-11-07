@@ -171,6 +171,7 @@ export const translations = {
     staffLogin: {
       pageTitle: 'Storely — دخول الموظف',
       welcome: 'مرحباً بك',
+      title: 'دخول الموظف',
       subtitle: 'سجّل دخولك برقم جوالك',
       continueBtn: 'متابعة',
       changeNumber: '← تغيير الرقم',
@@ -357,6 +358,7 @@ export const translations = {
     staffLogin: {
       pageTitle: 'Storely — Staff Login',
       welcome: 'Welcome',
+      title: 'Staff sign in',
       subtitle: 'Log in with your phone number',
       continueBtn: 'Continue',
       changeNumber: '← Change number',

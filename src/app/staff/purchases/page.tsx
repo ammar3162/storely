@@ -29,15 +29,15 @@ interface StaffSession {
 }
 
 const C = {
-  primary:'#0f766e', primaryD:'#0f766e', primaryL:'#f0fdfa', primaryB:'#99f6e4',
-  danger:'#e24b4a', dangerL:'#fef2f2',
-  warning:'#ba7517', warningL:'#fffbeb',
-  text:'#000000', text2:'#0f172a', text3:'#1e293b', text4:'#334155',   // كتابة سوداء واضحة
-  bg:'#f5f5f4', surface:'#ffffff', border:'#ebebea', border2:'#e0e0dd',
+  primary:'#0f766e', primaryD:'#0f766e', primaryL:'#e7f3f1', primaryB:'#b9dcd7',
+  danger:'#dc2626', dangerL:'#fef2f2',
+  warning:'#b45309', warningL:'#fffbeb',
+  text:'#111827', text2:'#111827', text3:'#4b5565', text4:'#1f2937',   // تصميم «كاونتر»: نص غامق واضح
+  bg:'#f4f5f6', surface:'#ffffff', border:'#e5e7eb', border2:'#e5e7eb',
 }
 
-const inp: React.CSSProperties = {width:'100%',padding:'11px 12px',border:`1.5px solid #cbd5e1`,borderRadius:10,fontSize:16,outline:'none',boxSizing:'border-box' as const,background:'white',color:C.text,fontFamily:'inherit'}
-const lbl: React.CSSProperties = {fontSize:12.5,fontWeight:800,color:'#000',display:'block',marginBottom:6}
+const inp: React.CSSProperties = {width:'100%',padding:'11px 12px',border:`1.5px solid #d1d5db`,borderRadius:10,fontSize:16,outline:'none',boxSizing:'border-box' as const,background:'white',color:C.text,fontFamily:'inherit'}
+const lbl: React.CSSProperties = {fontSize:14,fontWeight:500,color:'#111827',display:'block',marginBottom:8}
 
 
 const PUI: Record<string,Record<'ar'|'en',string>> = {
@@ -305,17 +305,17 @@ export default function StaffPurchasesPage() {
       <StaffHeader title={pt('title',lang)} subtitle={`${session.name} · ${session.org_name}`} rtl={rtl} end={<StaffLangButton/>} />
 
       {/* الرسالة ثابتة بأسفل الشاشة — كانت فوق الصفحة وما تبين لو الموظف نازل عند زر الحفظ */}
-      {toast&&<div role="status" style={{position:'fixed',left:16,right:16,bottom:20,zIndex:1000,maxWidth:520,margin:'0 auto',background:toastOk?C.primaryL:C.dangerL,color:toastOk?C.primary:C.danger,border:`1.5px solid ${toastOk?C.primary:C.danger}`,borderRadius:12,padding:'12px 16px',fontSize:13.5,fontWeight:800,textAlign:'center',boxShadow:'0 10px 30px rgba(0,0,0,.18)'}}>{toast}</div>}
+      {toast&&<div role="status" style={{position:'fixed',left:16,right:16,bottom:20,zIndex:1000,maxWidth:520,margin:'0 auto',background:toastOk?C.primaryL:C.dangerL,color:toastOk?C.primary:C.danger,border:`1.5px solid ${toastOk?C.primary:C.danger}`,borderRadius:12,padding:'12px 16px',fontSize:13.5,fontWeight:600,textAlign:'center',boxShadow:'0 10px 30px rgba(0,0,0,.18)'}}>{toast}</div>}
 
       <div style={{padding:'16px 20px',maxWidth:520,margin:'0 auto'}}>
         {/* صوّر الفاتورة — كاميرا أو من الصور */}
-        <div style={{background:'white',border:`1.5px solid ${previewUrl?C.primary:C.border2}`,borderRadius:14,padding:14,marginBottom:14}}>
-          <div style={{fontSize:13.5,fontWeight:800,color:C.text,marginBottom:10}}>{pt('snapTitle',lang)}</div>
+        <div style={{background:'white',border:`1px solid ${previewUrl?C.primary:C.border2}`,borderRadius:14,padding:16,marginBottom:16}}>
+          <div style={{fontSize:15,fontWeight:600,color:C.text,marginBottom:12}}>{pt('snapTitle',lang)}</div>
           {previewUrl && <img src={previewUrl} alt="invoice" style={{width:'100%',maxHeight:180,objectFit:'cover' as const,borderRadius:10,marginBottom:10}}/>}
-          {pdfName && <div style={{background:C.primaryL,color:C.primary,borderRadius:10,padding:'10px 12px',marginBottom:10,fontSize:13,fontWeight:700,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{pt('pdfAttached',lang)} · {pdfName}</div>}
+          {pdfName && <div style={{background:C.primaryL,color:C.primary,borderRadius:10,padding:'10px 12px',marginBottom:10,fontSize:13,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{pt('pdfAttached',lang)} · {pdfName}</div>}
           <InvoicePickButtons onFile={handleImage} disabled={uploading} primary={C.primary} primaryL={C.primaryL}
             labels={{camera:pt('camera',lang),gallery:previewUrl||pdfName?pt('changePhoto',lang):pt('gallery',lang),file:pt('fileBtn',lang)}}/>
-          {readState&&<div style={{marginTop:10,fontSize:12.5,fontWeight:700,lineHeight:1.6,color:readState==='fail'?C.warning:readState==='reading'?C.text3:C.primary}}>
+          {readState&&<div style={{marginTop:10,fontSize:12.5,fontWeight:600,lineHeight:1.6,color:readState==='fail'?C.warning:readState==='reading'?C.text3:C.primary}}>
             {readState==='fail'&&readErr&&lang==='ar'?`${readErr}`:pt(readState==='reading'?'reading':readState==='qr'?'readQr':readState==='ok'?'readOk':'readFail',lang)}
           </div>}
         </div>
@@ -330,7 +330,7 @@ export default function StaffPurchasesPage() {
             <div style={{display:'flex',gap:8}}>
               {([['مخزون',pt('catInventory',lang),Package],['مشتريات',pt('catPurchases',lang),ShoppingCart],['أخرى',pt('catOther',lang),FileText]] as [string,string,typeof Package][]).filter(([cat])=>invOn||cat!=='مخزون').map(([cat,label,Icon])=>(
                 <button key={cat} type="button" onClick={()=>setForm(f=>({...f,category:cat}))}
-                  style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.category===cat?C.primary:C.border2}`,background:form.category===cat?C.primaryL:'white',color:form.category===cat?C.primary:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                  style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.category===cat?C.primary:C.border2}`,background:form.category===cat?C.primaryL:'white',color:form.category===cat?C.primary:C.text2,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                   <span style={{display:'inline-flex',alignItems:'center',gap:6,justifyContent:'center'}}><Icon size={15} strokeWidth={2.25}/>{label}</span>
                 </button>
               ))}
@@ -375,7 +375,7 @@ export default function StaffPurchasesPage() {
             <div style={{display:'flex',gap:8}}>
               {[{v:'yes',l:pt('vatYes',lang)},{v:'no',l:pt('vatNo',lang)}].map(o=>(
                 <button key={o.v} type="button" onClick={()=>{ if(o.v==='no') setZatca(null); setForm(f=>({...f,hasVat:o.v})) }}
-                  style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.hasVat===o.v?C.primary:C.border2}`,background:form.hasVat===o.v?C.primaryL:'white',color:form.hasVat===o.v?C.primary:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                  style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.hasVat===o.v?C.primary:C.border2}`,background:form.hasVat===o.v?C.primaryL:'white',color:form.hasVat===o.v?C.primary:C.text2,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                   {o.l}
                 </button>
               ))}
@@ -385,16 +385,16 @@ export default function StaffPurchasesPage() {
           {/* المبلغ */}
           {!multi&&<div style={{marginBottom:12}}>
             <label style={lbl}>{pt('totalAmount',lang)} ({curr}) *</label>
-            <NumberInput style={{...inp,fontSize:18,fontWeight:700,textAlign:'center' as const}} min="0" step="any" inputMode="decimal" value={form.total_amount} onChange={e=>setForm(f=>({...f,total_amount:e.target.value}))} placeholder="0.00" required/>
+            <NumberInput style={{...inp,fontSize:18,fontWeight:600,textAlign:'center' as const}} min="0" step="any" inputMode="decimal" value={form.total_amount} onChange={e=>setForm(f=>({...f,total_amount:e.target.value}))} placeholder="0.00" required/>
             {inputTotal>0&&form.hasVat&&(
               <div style={{display:'flex',gap:8,marginTop:6}}>
                 <div style={{flex:1,background:C.bg,borderRadius:8,padding:'8px 10px',textAlign:'center' as const}}>
-                  <div style={{fontSize:9,color:C.text4,fontWeight:700}}>{pt('withoutVat',lang)}</div>
-                  <div style={{fontSize:14,fontWeight:700,color:C.text}}>{displayAmount}</div>
+                  <div style={{fontSize:9,color:C.text4,fontWeight:600}}>{pt('withoutVat',lang)}</div>
+                  <div style={{fontSize:14,fontWeight:600,color:C.text}}>{displayAmount}</div>
                 </div>
                 <div style={{flex:1,background:C.warningL,borderRadius:8,padding:'8px 10px',textAlign:'center' as const}}>
-                  <div style={{fontSize:9,color:C.warning,fontWeight:700}}>{pt('vat15',lang)}</div>
-                  <div style={{fontSize:14,fontWeight:700,color:C.warning}}>{displayVat}</div>
+                  <div style={{fontSize:9,color:C.warning,fontWeight:600}}>{pt('vat15',lang)}</div>
+                  <div style={{fontSize:14,fontWeight:600,color:C.warning}}>{displayVat}</div>
                 </div>
               </div>
             )}
@@ -404,8 +404,8 @@ export default function StaffPurchasesPage() {
           {form.hasVat==='yes'&&(
             <div style={{marginBottom:12,borderRadius:12,padding:12,border:`1.5px ${form.invoice_image?'solid':'dashed'} ${form.invoice_image?C.primary:C.danger}`,background:form.invoice_image?C.primaryL:C.dangerL}}>
               {form.invoice_image
-                ? <div style={{fontSize:13,fontWeight:700,color:C.primary}}>{lang==='ar'?'الفاتورة مرفقة':lang==='en'?'Invoice attached':pt('invoiceAttached',lang)}</div>
-                : <><div style={{fontSize:13,fontWeight:700,color:C.danger,marginBottom:8}}>{lang==='ar'?'الفاتورة ضريبية — أرفق صورتها أو ملفها (مطلوب)':lang==='en'?'Tax invoice — attach a photo or file (required)':pt('taxInvoiceReq',lang)}</div>
+                ? <div style={{fontSize:13,fontWeight:600,color:C.primary}}>{lang==='ar'?'الفاتورة مرفقة':lang==='en'?'Invoice attached':pt('invoiceAttached',lang)}</div>
+                : <><div style={{fontSize:13,fontWeight:600,color:C.danger,marginBottom:8}}>{lang==='ar'?'الفاتورة ضريبية — أرفق صورتها أو ملفها (مطلوب)':lang==='en'?'Tax invoice — attach a photo or file (required)':pt('taxInvoiceReq',lang)}</div>
                   <InvoicePickButtons onFile={handleImage} disabled={uploading} primary={C.primary} primaryL={'white'}
                     labels={{camera:pt('camera',lang),gallery:pt('gallery',lang),file:pt('fileBtn',lang)}}/>
                   {uploading&&<div style={{fontSize:12,color:C.text3,marginTop:6}}>{lang==='ar'?'جاري الرفع…':lang==='en'?'Uploading…':pt('uploadingShort',lang)}</div>}</>}
@@ -428,7 +428,7 @@ export default function StaffPurchasesPage() {
           </div>
 
           {!multi&&<button type="submit" disabled={loading||uploading}
-            style={{width:'100%',padding:'14px',background:loading?'#9ca3af':C.primary,color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:800,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:`0 4px 14px rgba(22,163,74,.3)`}}>
+            style={{width:'100%',padding:'14px',background:loading?'#9ca3af':C.primary,color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:`0 4px 14px rgba(22,163,74,.3)`}}>
             {loading?pt('submitting',lang):pt('submitBtn',lang)}
           </button>}
         </form>
