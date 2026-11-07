@@ -24,6 +24,9 @@ export default function ReportsPage() {
   const orgPlan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
   // تبويب الكاشير: الشاملة/المتقدمة أو إضافة «إقفال الكاشير»
   const [hasCashier, setHasCashier] = useState(['ops','full','pro','advanced'].includes(orgPlan))
+  // كل تقرير يطلع بس لو ميزته باشتراك الفرع («ابنِ باقتك» أو إضافة لفروع معيّنة) — الافتراضي ظاهر
+  const [feat, setFeat]           = useState<{ inventory?: boolean; purchases?: boolean; hr?: boolean }>({})
+  const hasInv = feat.inventory !== false, hasPur = feat.purchases !== false, hasHr = feat.hr !== false
   const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'|'cashier'|'waste'|'attendance'|'staffMonthly'>('home')
   const [period, setPeriod]       = useState<FilterPeriod>('today')
   const [from, setFrom]           = useState('')
@@ -48,7 +51,10 @@ export default function ReportsPage() {
   async function loadStats() {
     setSL(true)
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setSL(false);return}
-    getMe().then(me=>{ if(me?.org?.currency) setHomeCurr(currencySymbol(me.org.currency)); if(me?.org?.features) setHasCashier(!!me.org.features.cashier) })
+    getMe().then(me=>{ if(me?.org?.currency) setHomeCurr(currencySymbol(me.org.currency))
+      const bid = sessionStorage.getItem('s_branch_id')
+      const f = (bid && me?.org?.branch_features?.[bid]) || me?.org?.features
+      if(f){ setHasCashier(!!f.cashier); setFeat({ inventory: f.inventory, purchases: f.purchases, hr: f.hr }) } })
     const{start,end}=getRange(period,from,to)
     const sum=await reportData('summary',start,end)
     if(!sum.success){setSL(false);return}
@@ -77,6 +83,8 @@ export default function ReportsPage() {
     setTimeout(()=>setVisible(true),50)
   }
 
+  // تقرير ميزته مو مفعّلة: نرجع للرئيسية
+  if (((view==='dispense'||view==='inventory'||view==='waste') && !hasInv) || (view==='purchase' && !hasPur) || ((view==='attendance'||view==='staffMonthly') && !hasHr)) { setView('home'); return null }
   if (view==='inventory') return (
     <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} .spin-icon{animation:spin .8s linear infinite}`}</style>
@@ -150,7 +158,7 @@ export default function ReportsPage() {
       </div>
 
       <div style={{display:'flex',flexDirection:'column' as const,gap:14}}>
-        <div className="su" style={{animationDelay:'.1s'}}>
+        {hasInv && <div className="su" style={{animationDelay:'.1s'}}>
           <ReportCard
             title="تقرير الصرف"
             subtitle="عمليات الصرف من المخزون"
@@ -167,8 +175,8 @@ export default function ReportsPage() {
             ]}
             onClick={()=>setView('dispense')}
           />
-        </div>
-        <div className="su" style={{animationDelay:'.15s'}}>
+        </div>}
+        {hasPur && <div className="su" style={{animationDelay:'.15s'}}>
           <ReportCard
             title="تقرير المشتريات"
             subtitle="فواتير المشتريات مع الضريبة 15%"
@@ -185,8 +193,8 @@ export default function ReportsPage() {
             ]}
             onClick={()=>setView('purchase')}
           />
-        </div>
-        <div className="su" style={{animationDelay:'.2s'}}>
+        </div>}
+        {hasInv && <div className="su" style={{animationDelay:'.2s'}}>
           <ReportCard
             title="تقرير الجرد اليومي"
             subtitle="ملخص المخزون الحالي والأصناف الناقصة"
@@ -203,7 +211,7 @@ export default function ReportsPage() {
             ]}
             onClick={()=>setView('inventory')}
           />
-        </div>
+        </div>}
         {hasCashier && (
         <div className="su" style={{animationDelay:'.25s'}}>
           <ReportCard
@@ -224,7 +232,7 @@ export default function ReportsPage() {
           />
         </div>
         )}
-        <div className="su" style={{animationDelay:'.28s'}}>
+        {hasHr && <div className="su" style={{animationDelay:'.28s'}}>
           <ReportCard
             title="الحضور والانصراف"
             subtitle="الحضور والتأخير والأوفر تايم لكل موظف"
@@ -237,8 +245,8 @@ export default function ReportsPage() {
             stats={[]}
             onClick={()=>setView('attendance')}
           />
-        </div>
-        <div className="su" style={{animationDelay:'.29s'}}>
+        </div>}
+        {hasHr && <div className="su" style={{animationDelay:'.29s'}}>
           <ReportCard
             title="تقرير الموظف الشهري"
             subtitle="الرواتب والأوفر تايم والتأخير والخصومات والسلف"
@@ -251,8 +259,8 @@ export default function ReportsPage() {
             stats={[]}
             onClick={()=>setView('staffMonthly')}
           />
-        </div>
-        <div className="su" style={{animationDelay:'.3s'}}>
+        </div>}
+        {hasInv && <div className="su" style={{animationDelay:'.3s'}}>
           <ReportCard
             title="تقرير الهدر"
             subtitle="الأصناف المهدورة وأسبابها"
@@ -269,14 +277,14 @@ export default function ReportsPage() {
             ]}
             onClick={()=>setView('waste')}
           />
-        </div>
+        </div>}
       </div>
 
       {/* أكثر المنتجات صرفاً */}
 
 
-      {/* أكثر المنتجات صرفاً ومقارنة الأشهر */}
-      {(()=>{
+      {/* أكثر المنتجات صرفاً ومقارنة الأشهر — من المخزون */}
+      {hasInv && (()=>{
         const productMap: Record<string,{name:string,qty:number,unit:string}> = {}
         topMovements.filter((m:any)=>m.type==='out').forEach((m:any)=>{
           const name = (m.products as any)?.name||'—'
@@ -343,7 +351,7 @@ export default function ReportsPage() {
       })()}
 
       {/* آخر العمليات — 3 أقسام */}
-      <RecentOpsSection recentOps={recentOps} colors={colors}/>
+      {hasInv && <RecentOpsSection recentOps={recentOps} colors={colors}/>}
     </div>
   )
 }

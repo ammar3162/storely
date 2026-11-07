@@ -29,7 +29,8 @@ export type BranchReport = {
 /** وش يشوف المستلم: المالك ورقم الفرع كل الأقسام المفعّلة، والمدير حسب صلاحياته */
 export type ReportView = { decisions: boolean; sales: boolean; staff: boolean; stock: boolean; purchases: boolean }
 
-export const fullView = (f: Features): ReportView => ({ decisions: f.ai, sales: f.cashier, staff: f.hr, stock: true, purchases: true })
+// المخزون والمشتريات: كل الباقات فيها — تنشال بس لـ «ابنِ باقتك» لو ما اختارها
+export const fullView = (f: Features): ReportView => ({ decisions: f.ai, sales: f.cashier, staff: f.hr, stock: f.inventory !== false, purchases: f.purchases !== false })
 
 export async function buildBranchReports(db: SupabaseClient, orgId: string, branches: { id: string; name: string }[], f: Features, nowMs = Date.now()): Promise<BranchReport[]> {
   const today = saudiDate(nowMs), yesterday = saudiDate(nowMs - DAY)
