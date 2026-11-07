@@ -8,7 +8,7 @@ export function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-export function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconColor, error, currency }: any) {
+export function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconColor, error, currency, onEnter }: any) {
   return (
     <div>
       <div style={{position:'relative'}}>
@@ -16,6 +16,7 @@ export function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconCol
           {icon}
         </div>
         <NumberInput value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
+          enterKeyHint={onEnter ? 'next' : undefined} onKeyDown={onEnter ? (e:any)=>{ if(e.key==='Enter'){ e.preventDefault(); (e.target as HTMLInputElement).blur(); onEnter() } } : undefined}
           style={{width:'100%',height:52,padding:'0 54px 0 46px',border:`1px solid ${error?'#dc2626':'#e5e7eb'}`,borderRadius:10,fontSize:18,fontWeight:500,fontVariantNumeric:'tabular-nums',fontFamily:'inherit',outline:'none',boxSizing:'border-box',direction:'ltr',textAlign:'right',color:'#111827',transition:'border-color .15s',background:error?'#fef7f7':'white'}}
           onFocus={e=>{if(!error)e.target.style.borderColor='#0f766e'}}
           onBlur={e=>{if(!error)e.target.style.borderColor='#e5e7eb'}}

@@ -1,7 +1,7 @@
 'use client'
 import { canCloseCashier } from '@/lib/staffRoles'
 import { computeBusinessDate } from '@/lib/businessDate'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter } from 'next/navigation'
 import { getStaffOrg } from '@/lib/session'
@@ -20,6 +20,7 @@ export function useCashierClosing() {
   const [dayStartHour, setDayStartHour] = useState<number|null>(null)
   const [clockTick, setClockTick] = useState(0)  // يحدّث التاريخ المعروض لو الصفحة مفتوحة وقت تغيّر اليوم
   const [step, setStep] = useState(1)
+  const [stepDir, setStepDir] = useState<'fwd'|'back'>('fwd')
   const [closingDate, setClosingDate] = useState(() => new Date().toISOString().slice(0,10))
     const [totalSales, setTotalSales] = useState('')
   const [madaAmount, setMadaAmount] = useState('')
@@ -111,6 +112,8 @@ export function useCashierClosing() {
       if(kind==='network'){ setNetworkImage(j.url); setNetworkPreview(local) }
       else { setSalesImage(j.url); setSalesPreview(local) }
       showToast(ct('imgUploaded',lang))
+      // الصورة الثانية اكتملت → المراجعة على طول
+      if(kind==='network' ? salesImage : networkImage) autoAdvanceFrom(3, 700)
     } catch {
       showToast(ct('imgUploadFailed',lang),'error')
     }
@@ -171,9 +174,19 @@ export function useCashierClosing() {
       showToast(ct('uploadBothPhotos',lang),'error')
       return
     }
-    setStep(s=>Math.min(4,s+1))
+    setStepDir('fwd'); setStep(s=>Math.min(4,s+1))
   }
-  function goBack() { setStep(s=>Math.max(1,s-1)) }
+  function goBack() { setStepDir('back'); setStep(s=>Math.max(1,s-1)) }
+  // تنقّل تلقائي: بعد إجابة تكفي للخطوة (مثل «لا» للمسحوبات أو رفع الصورتين) نروح للي بعدها بعد لحظة
+  // عشان الموظف يشوف اختياره — وما نتحرك لو رجع أو تغيّرت الخطوة بالنص
+  const autoTimer = useRef<ReturnType<typeof setTimeout>|null>(null)
+  function autoAdvanceFrom(from: number, delay = 380) {
+    if(autoTimer.current) clearTimeout(autoTimer.current)
+    autoTimer.current = setTimeout(()=>{ setStepDir('fwd'); setStep(s => s===from ? Math.min(4, from+1) : s) }, delay)
+  }
+  useEffect(() => () => { if(autoTimer.current) clearTimeout(autoTimer.current) }, [])
+  // كل خطوة تبدأ من فوق
+  useEffect(() => { if(typeof window!=='undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }, [step])
 
   const deficitOption = DEFICIT_REASONS.find(r=>r.key===deficitChoice)
   // النص اللي يتحفظ ويطلع بالتقرير — دايماً بالعربي عشان التقرير يكون موحّد للمالك
@@ -228,7 +241,7 @@ export function useCashierClosing() {
     setStep(1); setSaved(false)
   }
 
-  return { lang, session, setSession, orgLogo, setOrgLogo, dayStartHour, setDayStartHour, clockTick, setClockTick, step, setStep, closingDate, setClosingDate, madaAmount, setMadaAmount, visaAmount, setVisaAmount, mastercardAmount, setMastercardAmount, cashAmount, setCashAmount, deliveryChoices, setDeliveryChoices, deliveryApps, setDeliveryApps, appPickerOpen, setAppPickerOpen, deliveryAmounts, setDeliveryAmounts, otherAppOpen, setOtherAppOpen, otherAppName, setOtherAppName, hasPurchases, setHasPurchases, purchases, setPurchases, deficitChoice, setDeficitChoice, deficitNote, setDeficitNote, networkImage, setNetworkImage, salesImage, setSalesImage, networkPreview, salesPreview, uploadingNetwork, setUploadingNetwork, uploadingSales, setUploadingSales, submitting, setSubmitting, saved, setSaved, locked, setLocked, thankYouMsg, setThankYouMsg, curr, setCurr, toast, setToast, totalSales, setTotalSales, rtl, router, sales, mada, visa, mastercard, network, cash, deliveryList, delivery, anyNetworkEntered, networkError, validPurchasesNow, totalPurchasesNow, expectedCash, cashAfterWithdrawal, difference, status, step1Valid, step2Valid, step3Valid, deficitOption, deficitReason, deficitReasonOk, businessDate, businessDateLabel, isAfterMidnightCarry, logout, showToast, uploadImage, addDeliveryApp, removeDeliveryApp, addPurchaseRow, removePurchaseRow, updatePurchase, goNext, goBack, saveClosing, resetForm }
+  return { lang, stepDir, autoAdvanceFrom, session, setSession, orgLogo, setOrgLogo, dayStartHour, setDayStartHour, clockTick, setClockTick, step, setStep, closingDate, setClosingDate, madaAmount, setMadaAmount, visaAmount, setVisaAmount, mastercardAmount, setMastercardAmount, cashAmount, setCashAmount, deliveryChoices, setDeliveryChoices, deliveryApps, setDeliveryApps, appPickerOpen, setAppPickerOpen, deliveryAmounts, setDeliveryAmounts, otherAppOpen, setOtherAppOpen, otherAppName, setOtherAppName, hasPurchases, setHasPurchases, purchases, setPurchases, deficitChoice, setDeficitChoice, deficitNote, setDeficitNote, networkImage, setNetworkImage, salesImage, setSalesImage, networkPreview, salesPreview, uploadingNetwork, setUploadingNetwork, uploadingSales, setUploadingSales, submitting, setSubmitting, saved, setSaved, locked, setLocked, thankYouMsg, setThankYouMsg, curr, setCurr, toast, setToast, totalSales, setTotalSales, rtl, router, sales, mada, visa, mastercard, network, cash, deliveryList, delivery, anyNetworkEntered, networkError, validPurchasesNow, totalPurchasesNow, expectedCash, cashAfterWithdrawal, difference, status, step1Valid, step2Valid, step3Valid, deficitOption, deficitReason, deficitReasonOk, businessDate, businessDateLabel, isAfterMidnightCarry, logout, showToast, uploadImage, addDeliveryApp, removeDeliveryApp, addPurchaseRow, removePurchaseRow, updatePurchase, goNext, goBack, saveClosing, resetForm }
 }
 
 export type CashierClosing = ReturnType<typeof useCashierClosing>

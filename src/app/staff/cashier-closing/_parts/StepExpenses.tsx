@@ -6,7 +6,7 @@ import type { CashierClosing } from './useCashierClosing'
 import { Receipt } from 'lucide-react'
 
 export default function StepExpenses({ m }: { m: CashierClosing }) {
-  const { lang, step, hasPurchases, setHasPurchases, purchases, curr, totalPurchasesNow, addPurchaseRow, removePurchaseRow, updatePurchase } = m
+  const { lang, step, hasPurchases, setHasPurchases, purchases, curr, totalPurchasesNow, addPurchaseRow, removePurchaseRow, updatePurchase, autoAdvanceFrom } = m
   return (
     <>
             {/* خطوة 2: المصاريف */}
@@ -17,7 +17,7 @@ export default function StepExpenses({ m }: { m: CashierClosing }) {
                   {ct('step2Title',lang)}
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:hasPurchases==='yes'?16:0}}>
-                  <button onClick={()=>setHasPurchases('no')} style={{padding:'11px',borderRadius:10,border:`1px solid ${hasPurchases==='no'?'#0f766e':'#e5e7eb'}`,background:hasPurchases==='no'?'#e7f3f1':'white',color:hasPurchases==='no'?'#0f766e':'#4b5565',fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
+                  <button onClick={()=>{ setHasPurchases('no'); autoAdvanceFrom(2) }} style={{padding:'11px',borderRadius:10,border:`1px solid ${hasPurchases==='no'?'#0f766e':'#e5e7eb'}`,background:hasPurchases==='no'?'#e7f3f1':'white',color:hasPurchases==='no'?'#0f766e':'#4b5565',fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
                     {ct('no',lang)}
                   </button>
                   <button onClick={()=>setHasPurchases('yes')} style={{padding:'11px',borderRadius:10,border:`1px solid ${hasPurchases==='yes'?'#0f766e':'#e5e7eb'}`,background:hasPurchases==='yes'?'#e7f3f1':'white',color:hasPurchases==='yes'?'#0f766e':'#4b5565',fontWeight:600,fontSize:13,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>

@@ -5,7 +5,7 @@ import type { CashierClosing } from './useCashierClosing'
 import { BarChart3, Banknote, AlertTriangle } from 'lucide-react'
 
 export default function StepData({ m }: { m: CashierClosing }) {
-  const { lang, step, madaAmount, setMadaAmount, visaAmount, setVisaAmount, mastercardAmount, setMastercardAmount, cashAmount, setCashAmount, deliveryChoices, deliveryApps, appPickerOpen, setAppPickerOpen, deliveryAmounts, setDeliveryAmounts, otherAppOpen, setOtherAppOpen, otherAppName, setOtherAppName, curr, totalSales, setTotalSales, network, delivery, anyNetworkEntered, networkError, expectedCash, addDeliveryApp, removeDeliveryApp } = m
+  const { lang, step, madaAmount, setMadaAmount, visaAmount, setVisaAmount, mastercardAmount, setMastercardAmount, cashAmount, setCashAmount, deliveryChoices, deliveryApps, appPickerOpen, setAppPickerOpen, deliveryAmounts, setDeliveryAmounts, otherAppOpen, setOtherAppOpen, otherAppName, setOtherAppName, curr, totalSales, setTotalSales, network, delivery, anyNetworkEntered, networkError, expectedCash, addDeliveryApp, removeDeliveryApp, goNext } = m
   return (
     <>
             {/* خطوة 1: البيانات */}
@@ -85,7 +85,7 @@ export default function StepData({ m }: { m: CashierClosing }) {
                 </div>
                 <div style={{marginBottom: (totalSales && anyNetworkEntered && !networkError) ? 16 : 0}}>
                   <label style={{fontSize:14,fontWeight:500,color:'#111827',display:'block',marginBottom:7}}>{ct('cashInDrawer',lang)}</label>
-                  <MoneyInput value={cashAmount} onChange={setCashAmount} placeholder="0.00" icon={<Banknote size={16} strokeWidth={1.75}/>} currency={curr}/>
+                  <MoneyInput value={cashAmount} onChange={setCashAmount} onEnter={goNext} placeholder="0.00" icon={<Banknote size={16} strokeWidth={1.75}/>} currency={curr}/>
                 </div>
                 {totalSales && anyNetworkEntered && !networkError && (
                   <div style={{display:'flex',justifyContent:'space-between',padding:'12px 14px',background:'#f4f5f6',borderRadius:10,fontSize:14}}>
