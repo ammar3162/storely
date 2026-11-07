@@ -32,7 +32,8 @@ export default function MoreMenuSheet({ m }: { m: DashboardShell }) {
                       onClick={()=>{ if(external) window.open(item.href,'_blank'); else router.push(item.href); setShowMore(false) }}>
                       <Icon d={item.icon} size={18} width={1.75}/>
                       <span style={{flex:1}}>{t(item.labelKey)}</span>
-                      {badge>0&&<span className="sh-count">{badge}</span>}
+                      {m.navTrialTag(item.href)&&<span className="sh-trial-tag">تجربة</span>}
+                        {badge>0&&<span className="sh-count">{badge}</span>}
                     </button>
                   )
                 })}

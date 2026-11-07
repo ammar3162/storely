@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/verifyOrgAccess'
 import { combineBranchLimit, EXTRA_BRANCH_SLUG } from '@/lib/branchLimit'
-import { orgFeatures, branchFeaturesMap } from '@/lib/planFeatures'
+import { orgFeatures, branchFeaturesMap, featuresFrom, activeAddonSlugs, orgOnTrial, type Feature } from '@/lib/planFeatures'
 import { DEVICE_UNVERIFIED_ERROR, DEVICE_UNVERIFIED_REASON } from '@/lib/deviceMessages'
 import { readDeviceId, deviceCookie } from '@/lib/deviceTrust'
 
@@ -41,6 +41,12 @@ export async function GET() {
     const features = await orgFeatures(db, profile.orgId, o.plan || 'basic')
     // ميزات كل فرع (الإضافات ممكن تكون لفروع معيّنة) — الواجهة تقفل الصفحة للفرع اللي ما فيه الميزة
     const branchFeatures = await branchFeaturesMap(db, profile.orgId, o.plan || 'basic', ((branches || []) as any[]).map(b => b.id))
+    // التجربة تفتح كل شي — نعرف العميل وش اللي ينقفل بعدها (الباقة + إضافاته بدون التجربة)
+    let trialLocked: Feature[] = []
+    if (await orgOnTrial(db, profile.orgId)) {
+      const paid = featuresFrom(o.plan || 'basic', await activeAddonSlugs(db, profile.orgId), false)
+      trialLocked = (Object.keys(paid) as Feature[]).filter(f => !paid[f])
+    }
     const e: any = extra || {}
 
     const res = NextResponse.json({
@@ -75,6 +81,7 @@ export async function GET() {
         onboarding_done: o.onboarding_done !== false,
         features,
         branch_features: branchFeatures,
+        trial_locked: trialLocked,
         locked_plan_monthly: o.locked_plan_monthly ?? null,
         staff_included: o.staff_included ?? null,
         // الخصم الخاص (من لوحة الإدارة) — يطلع سطر بالفاتورة
