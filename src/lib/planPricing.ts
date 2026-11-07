@@ -67,6 +67,14 @@ export function addonsForPlan<T extends { slug: string; monthly_price: number | 
     })
 }
 
+/** الإضافات اللي يقدر يختارها وقت التسجيل مع الباقة (غير المضمّنة فيها) */
+export const SIGNUP_ADDONS = ['cashier_closing', 'hr_full', 'ai_tools'] as const
+export const signupAddonsFor = (plan: string | null | undefined) => SIGNUP_ADDONS.filter(slug => !addonIncludedIn(plan, slug))
+/** سعر إضافات التسجيل الشهري لعدد الفروع (لكل فرع × الفروع، أو مرة وحدة للمنشأة) */
+export const signupAddonsMonthly = (plan: string | null | undefined, slugs: string[], branches: number) =>
+  signupAddonsFor(plan).filter(s => slugs.includes(s))
+    .reduce((t, s) => t + NEW_ADDON_PRICES[s].monthly * (NEW_ADDON_PRICES[s].perBranch ? Math.max(1, branches) : 1), 0)
+
 /** الباقات الأعلى من نفس العائلة (طلب الترقية) — القديم يرقّى للقديمة، والانتقال للجديدة من الأدمن */
 export function higherPlans(plan: string | null | undefined): PlanKey[] {
   const order: PlanKey[] = isNewPlan(plan) ? NEW_PLANS : LEGACY_PLANS

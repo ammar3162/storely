@@ -44,6 +44,8 @@ export function useLogin() {
     }
     return null
   })
+  // إضافات يختارها مع الباقة (الكاشير / الحضور والرواتب / الذكاء)
+  const [signupAddons, setSignupAddons] = useState<string[]>([])
   const [branchCount, setBranchCount] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       const b = Math.round(Number(new URLSearchParams(window.location.search).get('branches')))
@@ -237,7 +239,7 @@ export function useLogin() {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
-          orgName: orgName.trim(), fullPhone, businessType: businessType||'مطعم', plan: planChoice, branchCount, billing,
+          orgName: orgName.trim(), fullPhone, businessType: businessType||'مطعم', plan: planChoice, addons: signupAddons, branchCount, billing,
           phone: phone.trim(), countryCode,
           trialEnds: new Date(Date.now() + 14*24*60*60*1000).toISOString(),
           termsAcceptedAt: new Date().toISOString(),
@@ -274,6 +276,7 @@ export function useLogin() {
           fullPhone,
           businessType: businessType||'مطعم',
           plan: planChoice,
+          addons: signupAddons,
           branchCount,
           billing,
           phone: phone.trim(),
@@ -313,7 +316,7 @@ export function useLogin() {
   const phoneRule = PHONE_RULES[countryCode] || { length:10, prefix:'', placeholder:'xxxxxxxxxx' }
   const phonePlaceholder = phoneRule.placeholder
 
-  return { t, lang, forgotMethod, setForgotMethod, forgotPhone, setForgotPhone, oauth, setOauth, mode, setMode, step, setStep, otpSent, setOtpSent, otp, setOtp, otpVerified, setOtpVerified, sendingOtp, setSendingOtp, email, setEmail, password, setPassword, orgName, setOrgName, phone, setPhone, countryCode, setCountryCode, businessType, setBusinessType, planChoice, setPlanChoice, branchCount, setBranchCount, billing, setBilling, loading, setLoading, error, setError, accountStatus, setAccountStatus, agreedTerms, setAgreedTerms, agentCode, setAgentCode, showPassword, setShowPassword, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, utm, setUtm, supabase, phoneRule, phonePlaceholder, handleGoogle, leaveOauth, handleLogin, handleForgot, handleForgotWhatsapp, nextStep, validatePassword, sendOtp, verifyOtp, handleRegister }
+  return { t, lang, forgotMethod, setForgotMethod, forgotPhone, setForgotPhone, oauth, setOauth, mode, setMode, step, setStep, otpSent, setOtpSent, otp, setOtp, otpVerified, setOtpVerified, sendingOtp, setSendingOtp, email, setEmail, password, setPassword, orgName, setOrgName, phone, setPhone, countryCode, setCountryCode, businessType, setBusinessType, planChoice, setPlanChoice, signupAddons, setSignupAddons, branchCount, setBranchCount, billing, setBilling, loading, setLoading, error, setError, accountStatus, setAccountStatus, agreedTerms, setAgreedTerms, agentCode, setAgentCode, showPassword, setShowPassword, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, utm, setUtm, supabase, phoneRule, phonePlaceholder, handleGoogle, leaveOauth, handleLogin, handleForgot, handleForgotWhatsapp, nextStep, validatePassword, sendOtp, verifyOtp, handleRegister }
 }
 
 export type LoginState = ReturnType<typeof useLogin>

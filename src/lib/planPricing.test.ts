@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { billLines, activeDiscount, planKeyOf, addonPeriodEnd, proratedCharge, staffBase, supplierBase, maxSelfServeBranches, branchPriceFor, planLabel, PLAN_CAPS, planPriceFor, addonPriceFor, addonIncludedIn, addonsForPlan, nextPlanOf } from './planPricing'
+import { billLines, activeDiscount, planKeyOf, addonPeriodEnd, proratedCharge, staffBase, supplierBase, maxSelfServeBranches, branchPriceFor, planLabel, PLAN_CAPS, planPriceFor, addonPriceFor, addonIncludedIn, addonsForPlan, nextPlanOf, signupAddonsFor, signupAddonsMonthly } from './planPricing'
 
 const branch = (qty: number, isValid = true) => ({ name: 'فرع إضافي', slug: 'extra_branch', monthly_price: 49, subscription: { isValid, quantity: qty } })
 
@@ -161,5 +161,17 @@ describe('new plans (2026-11): price per branch', () => {
     expect(nextPlanOf('full')).toBeNull()
     expect(nextPlanOf('basic')).toBe('pro')
     expect(planKeyOf('ops', 1)).toBe('ops')
+  })
+})
+
+describe('add-ons chosen at signup', () => {
+  it('offers only what the plan lacks and prices per branch', () => {
+    expect(signupAddonsFor('essential')).toEqual(['cashier_closing', 'hr_full', 'ai_tools'])
+    expect(signupAddonsFor('ops')).toEqual(['hr_full', 'ai_tools'])
+    expect(signupAddonsFor('full')).toEqual([])
+    // الأساسية بفرعين + كاشير (40×2) + ذكاء 15
+    expect(signupAddonsMonthly('essential', ['cashier_closing', 'ai_tools'], 2)).toBe(95)
+    // الكاشير مضمّن بالتشغيل فما ينحسب
+    expect(signupAddonsMonthly('ops', ['cashier_closing', 'hr_full'], 1)).toBe(69)
   })
 })

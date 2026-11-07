@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { PLAN_CAPS, isNewPlan, type PlanKey } from '@/lib/planPricing'
+import { PLAN_CAPS, NEW_ADDON_PRICES, isNewPlan, signupAddonsFor, type PlanKey } from '@/lib/planPricing'
 import { normalizeWhatsapp } from '@/lib/phoneNormalize'
 import { SIGNUP_BUSINESS_TYPES } from '@/lib/businessTypes'
 import { attachReferral } from '@/lib/agentReferral'
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    let { orgName, fullPhone, businessType, branchCount, billing, phone, trialEnds, countryCode, termsAcceptedAt, agentCode, plan: chosenPlan } = body
+    let { orgName, fullPhone, businessType, branchCount, billing, phone, trialEnds, countryCode, termsAcceptedAt, agentCode, plan: chosenPlan, addons: chosenAddons } = body
     const userId = authedUser.id
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null
     const userAgent = req.headers.get('user-agent') || null
@@ -116,6 +116,21 @@ export async function POST(req: Request) {
       ip_address: ip,
       user_agent: userAgent,
     }).then(({ error }: any) => { if (error) console.log('consent_logs insert error:', error.message) })
+
+    // الإضافات اللي اختارها مع الباقة: تنحفظ طلبات بـ«طلبات الإضافات» ويفعّلها الأدمن مع الاشتراك المدفوع
+    // (التجربة فيها كل المميزات). المسموحة بس، واللي باقته فيها الميزة أصلاً ما تنحفظ
+    try {
+      const wanted = signupAddonsFor(plan).filter(s => Array.isArray(chosenAddons) && chosenAddons.includes(s))
+      if (wanted.length) {
+        const { data: ads } = await supabase.from('marketplace_addons').select('id,slug').in('slug', wanted)
+        const rows = ((ads || []) as any[]).map(a => ({
+          org_id: org.id, addon_id: a.id, status: 'pending', requested_by: userId,
+          quantity: NEW_ADDON_PRICES[a.slug]?.perBranch ? maxB : 1,
+          note: 'اختارها وقت التسجيل مع الباقة',
+        }))
+        if (rows.length) await supabase.from('addon_requests').insert(rows as any)
+      }
+    } catch (e) { console.error('SIGNUP_ADDONS_FAILED (non-fatal):', e) }
 
     // سفير: الكود المكتوب في التسجيل، وإلا كوكي رابطه (أفضل جهد — ما يوقف التسجيل)
     try {

@@ -1,12 +1,12 @@
 'use client'
 import { SIGNUP_SOURCES } from '@/lib/signupSource'
-import { Minus, Plus } from 'lucide-react'
-import { PLAN_PRICING, planPriceFor } from '@/lib/planPricing'
+import { Check, Minus, Plus } from 'lucide-react'
+import { NEW_ADDON_PRICES, PLAN_PRICING, higherPlans, planPriceFor, signupAddonsFor, signupAddonsMonthly, yearlyOf, type NewPlanKey } from '@/lib/planPricing'
 import { PLANS, PLAN_EN } from './constants'
 import type { LoginState } from './useLogin'
 
 export default function RegisterStep2({ m }: { m: LoginState }) {
-  const { t, lang, mode, step, setStep, planChoice, setPlanChoice, branchCount, setBranchCount, billing, setBilling, loading, error, setError, agreedTerms, setAgreedTerms, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, handleRegister } = m
+  const { t, lang, mode, step, setStep, planChoice, setPlanChoice, signupAddons, setSignupAddons, branchCount, setBranchCount, billing, setBilling, loading, error, setError, agreedTerms, setAgreedTerms, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, handleRegister } = m
   return (
     <>
             {/* Register Step 2 */}
@@ -62,6 +62,52 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                       </div>
                     </button>
                   )})}
+
+                  {/* إضافات مع الباقة — تختارها الحين، وتحدد فروعها من داخل النظام */}
+                  {planChoice && signupAddonsFor(planChoice).length > 0 && (() => {
+                    const AD: Record<string, { ar: string; en: string }> = {
+                      cashier_closing: { ar: 'إقفال الكاشير', en: 'Cashier closing' },
+                      hr_full: { ar: 'الحضور والرواتب', en: 'Attendance & payroll' },
+                      ai_tools: { ar: 'أدوات الذكاء الاصطناعي', en: 'AI tools' },
+                    }
+                    const monthly = planPriceFor(planChoice, null, branchCount).monthly + signupAddonsMonthly(planChoice, signupAddons, branchCount)
+                    // باقة أعلى تعطيه نفس اختياره بسعر أقل؟ (مثلاً الأساسية + كاشير لفرعين أغلى من التشغيل)
+                    const better = (higherPlans(planChoice) as NewPlanKey[])
+                      .map(k => ({ k, total: planPriceFor(k, null, branchCount).monthly + signupAddonsMonthly(k, signupAddons, branchCount) }))
+                      .filter(x => x.total <= monthly).sort((a, b) => a.total - b.total)[0]
+                    return (
+                      <div style={{border:'1.5px solid #e5e7eb',borderRadius:12,padding:'12px 14px',display:'flex',flexDirection:'column',gap:8}}>
+                        <div style={{fontSize:14,fontWeight:800,color:'#111827'}}>{lang==='ar'?'تبي تضيف لباقتك؟':'Add to your plan?'}</div>
+                        {signupAddonsFor(planChoice).map(slug => {
+                          const on = signupAddons.includes(slug), a = NEW_ADDON_PRICES[slug]
+                          const amount = a.monthly * (a.perBranch ? branchCount : 1)
+                          return (
+                            <button key={slug} type="button" onClick={()=>setSignupAddons(prev => on ? prev.filter(x=>x!==slug) : [...prev, slug])}
+                              style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${on?'#029FA2':'#e5e7eb'}`,background:on?'#f0fdfa':'white',cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
+                              <span style={{width:20,height:20,borderRadius:6,border:`1.5px solid ${on?'#029FA2':'#9ca3af'}`,background:on?'#029FA2':'white',display:'grid',placeItems:'center',color:'white',flexShrink:0}}>{on && <Check size={14} strokeWidth={3}/>}</span>
+                              <span style={{flex:1,fontSize:14,fontWeight:700,color:'#111827'}}>{lang==='ar'?AD[slug].ar:AD[slug].en}</span>
+                              <span className="hide-in-app" style={{fontSize:13,fontWeight:800,color:'#111827',whiteSpace:'nowrap'}}>+{billing==='yearly'?yearlyOf(amount):amount} {lang==='ar'?'⃁':'SAR'}{a.perBranch && branchCount>1 ? (lang==='ar'?` (${branchCount} فروع)`:` (${branchCount} branches)`) : ''}</span>
+                            </button>
+                          )
+                        })}
+                        <div style={{fontSize:12,color:'#374151',lineHeight:1.7}}>{lang==='ar'?'تقدر تحدد أي فرع ياخذ الإضافة، أو تضيف وتشيل، من داخل النظام بأي وقت.':'You can pick which branch gets each add-on, or change them, anytime inside the app.'}</div>
+                        {better && (
+                          <button type="button" onClick={()=>setPlanChoice(better.k)}
+                            style={{padding:'10px 12px',borderRadius:10,border:'1.5px solid #029FA2',background:'#f0fdfa',color:'#0f766e',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',textAlign:'right',lineHeight:1.7}}>
+                            {lang==='ar'
+                              ? `باقة «${PLAN_PRICING[better.k].label}» تعطيك نفس اختيارك بـ ${billing==='yearly'?yearlyOf(better.total):better.total} ⃁${better.total < monthly ? ` (توفّر ${billing==='yearly'?yearlyOf(monthly-better.total):monthly-better.total} ⃁)` : ''} — اضغط للتحويل`
+                              : `The ${better.k === 'ops' ? 'Operations' : 'Complete'} plan gives you the same for ${billing==='yearly'?yearlyOf(better.total):better.total} SAR — tap to switch`}
+                          </button>
+                        )}
+                        {signupAddons.some(s=>signupAddonsFor(planChoice).includes(s as any)) && (
+                          <div className="hide-in-app" style={{display:'flex',justifyContent:'space-between',borderTop:'1px solid #e5e7eb',paddingTop:8,fontSize:14,fontWeight:800,color:'#111827'}}>
+                            <span>{lang==='ar'?'المجموع':'Total'}</span>
+                            <span>{billing==='yearly'?yearlyOf(monthly):monthly} {lang==='ar'?'⃁':'SAR'}/{billing==='yearly'?(lang==='ar'?'سنة':'yr'):(lang==='ar'?'شهر':'mo')}</span>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
 
                   {planChoice && (
                     <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:8,padding:'11px 14px',fontSize:13,color:'#029FA2',fontWeight:600,display:'flex',alignItems:'center',gap:8}}>

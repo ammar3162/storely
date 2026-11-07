@@ -376,4 +376,37 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
       }
     }, 180_000)
   })
+  describe('signup on a new plan with add-ons', () => {
+    it('creates the org on the chosen plan and branches, and turns the chosen add-ons into pending requests (included ones are dropped)', async () => {
+      const s2 = newStamp()
+      const { data: u } = await db.auth.admin.createUser({ email: `it-sig-${s2}@storely.test`, password: `It-${s2}-x!`, email_confirm: true })
+      const uid = u.user!.id
+      vi.resetModules()
+      vi.doMock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: uid, email: `it-sig-${s2}@storely.test` } } }) } }) }))
+      const reg = await import('@/app/api/register-org/route')
+      let oid = ''
+      try {
+        const res = await reg.POST(new Request('http://test/api/register-org', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+          orgName: `__it_sig_${s2}`, fullPhone: '966500000000', phone: uniqPhone(), countryCode: '+966', businessType: 'كوفي', billing: 'monthly',
+          plan: 'ops', branchCount: 3, addons: ['cashier_closing', 'hr_full', 'bogus'], trialEnds: new Date(Date.now() + 14 * 864e5).toISOString(),
+        }) }))
+        const j = await res.json() as any
+        expect(res.status).toBe(200)
+        oid = j.org_id
+        const { data: org } = await db.from('organizations').select('plan,max_branches,max_staff,max_suppliers').eq('id', oid).single()
+        expect(org).toMatchObject({ plan: 'ops', max_branches: 3, max_staff: 18, max_suppliers: 45 })
+        // التشغيل فيها الكاشير أصلاً → ينحفظ الحضور بس، بكمية الفروع
+        const { data: reqs } = await db.from('addon_requests').select('quantity,status,note,marketplace_addons(slug)').eq('org_id', oid)
+        expect((reqs as any[]).map(r => [r.marketplace_addons.slug, r.quantity, r.status])).toEqual([['hr_full', 3, 'pending']])
+      } finally {
+        vi.doUnmock('@/lib/supabase/server')
+        if (oid) {
+          const { deleteOrgCompletely } = await import('@/lib/deleteOrg')
+          await deleteOrgCompletely(oid, uid).catch(() => {})
+          await db.from('organizations').delete().eq('id', oid)
+        }
+        await db.auth.admin.deleteUser(uid).catch(() => {})
+      }
+    }, 180_000)
+  })
 })

@@ -102,7 +102,7 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
 
       <section className="st-sec">
         <h3 className="st-h">الإضافات</h3>
-        <p className="st-hsub">أضف اللي تحتاجه لباقتك في أي وقت</p>
+        <p className="st-hsub">اختر الإضافات مع باقتك وقت التسجيل أو بعدين، وحدد من داخل النظام أي فرع ياخذ كل إضافة</p>
         <div className="st-addons">
           {ADDONS.map(a => (
             <div key={a.name} className="st-addon-card">
@@ -130,7 +130,6 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
         </div>
       </section>
 
-      <a className="st-more" href="#demo">تحتاج تركيبة خاصة؟ مثلاً إقفال الكاشير لحاله، أو مزايا مختلفة لكل فرع — تواصل معنا ونضبطها لك</a>
 
       <div className="st-ent">
         <span className="st-ent-ic"><Store size={22} /></span>
@@ -201,7 +200,6 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
 .st-yes{color:var(--teal2)}
 .st-no{color:#c4ccca}
 .st-addon{font-size:12px;font-weight:700;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:999px;padding:2px 10px}
-.st-more{display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;text-decoration:none;line-height:1.7;border:1px dashed var(--line);background:none;border-radius:14px;padding:14px;font:700 14px 'IBM Plex Sans Arabic',sans-serif;color:var(--teal);cursor:pointer}
 .st-ent{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:#0b2f2b;color:#fff;border-radius:22px;padding:22px 24px}
 .st-ent-ic{width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,.1);display:grid;place-items:center}
 .st-ent div{flex:1;min-width:220px;display:flex;flex-direction:column;gap:3px}
