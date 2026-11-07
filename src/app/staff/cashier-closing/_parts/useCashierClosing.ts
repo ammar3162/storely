@@ -1,7 +1,7 @@
 'use client'
 import { canCloseCashier } from '@/lib/staffRoles'
 import { computeBusinessDate } from '@/lib/businessDate'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { useRouter } from 'next/navigation'
 import { getStaffOrg } from '@/lib/session'
@@ -21,6 +21,7 @@ export function useCashierClosing() {
   const [clockTick, setClockTick] = useState(0)  // يحدّث التاريخ المعروض لو الصفحة مفتوحة وقت تغيّر اليوم
   const [step, setStep] = useState(1)
   const [stepDir, setStepDir] = useState<'fwd'|'back'>('fwd')
+  const [sub, setSub] = useState(0)   // رقم الشاشة داخل الخطوة
   const [closingDate, setClosingDate] = useState(() => new Date().toISOString().slice(0,10))
     const [totalSales, setTotalSales] = useState('')
   const [madaAmount, setMadaAmount] = useState('')
@@ -112,8 +113,6 @@ export function useCashierClosing() {
       if(kind==='network'){ setNetworkImage(j.url); setNetworkPreview(local) }
       else { setSalesImage(j.url); setSalesPreview(local) }
       showToast(ct('imgUploaded',lang))
-      // الصورة الثانية اكتملت → المراجعة على طول
-      if(kind==='network' ? salesImage : networkImage) autoAdvanceFrom(3, 700)
     } catch {
       showToast(ct('imgUploadFailed',lang),'error')
     }
@@ -161,7 +160,20 @@ export function useCashierClosing() {
   const step2Valid = hasPurchases!==null
   const step3Valid = !!salesImage && !!networkImage
 
+  // كل سؤال بشاشة لحاله: خطوة البيانات 4 شاشات (المبيعات، الشبكة، التطبيقات، الكاش) والصور شاشتين.
+  // الانتقال دايماً بضغطة «التالي» من الموظف — ما فيه انتقال تلقائي.
+  const SUBS: Record<number, number> = { 1: 4, 2: 1, 3: 2, 4: 1 }
   function goNext() {
+    if(step===1 && sub<3){
+      if(sub===0 && !totalSales){ showToast(ct('needSales',lang),'error'); return }
+      if(sub===1 && (!anyNetworkEntered || networkError)){ showToast(networkError || ct('needNetwork',lang),'error'); return }
+      setStepDir('fwd'); setSub(s=>s+1); return
+    }
+    if(step===3 && sub===0){
+      if(!salesImage){ showToast(ct('needPhoto',lang),'error'); return }
+      setStepDir('fwd'); setSub(1); return
+    }
+    if(step===1 && !cashAmount){ showToast(ct('needCash',lang),'error'); return }
     if(step===1 && !step1Valid){
       showToast(networkError || ct('fillSalesNetworkCash',lang),'error')
       return
@@ -171,22 +183,19 @@ export function useCashierClosing() {
       return
     }
     if(step===3 && !step3Valid){
-      showToast(ct('uploadBothPhotos',lang),'error')
+      showToast(step===3 && !networkImage ? ct('needPhoto',lang) : ct('uploadBothPhotos',lang),'error')
       return
     }
-    setStepDir('fwd'); setStep(s=>Math.min(4,s+1))
+    setStepDir('fwd'); setSub(0); setStep(s=>Math.min(4,s+1))
   }
-  function goBack() { setStepDir('back'); setStep(s=>Math.max(1,s-1)) }
-  // تنقّل تلقائي: بعد إجابة تكفي للخطوة (مثل «لا» للمسحوبات أو رفع الصورتين) نروح للي بعدها بعد لحظة
-  // عشان الموظف يشوف اختياره — وما نتحرك لو رجع أو تغيّرت الخطوة بالنص
-  const autoTimer = useRef<ReturnType<typeof setTimeout>|null>(null)
-  function autoAdvanceFrom(from: number, delay = 380) {
-    if(autoTimer.current) clearTimeout(autoTimer.current)
-    autoTimer.current = setTimeout(()=>{ setStepDir('fwd'); setStep(s => s===from ? Math.min(4, from+1) : s) }, delay)
+  function goBack() {
+    setStepDir('back')
+    if(sub>0){ setSub(s=>s-1); return }
+    const prev = Math.max(1, step-1)
+    setSub(prev===step ? 0 : (SUBS[prev]||1)-1); setStep(prev)
   }
-  useEffect(() => () => { if(autoTimer.current) clearTimeout(autoTimer.current) }, [])
-  // كل خطوة تبدأ من فوق
-  useEffect(() => { if(typeof window!=='undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }, [step])
+  // كل شاشة تبدأ من فوق
+  useEffect(() => { if(typeof window!=='undefined') window.scrollTo({ top: 0 }) }, [step, sub])
 
   const deficitOption = DEFICIT_REASONS.find(r=>r.key===deficitChoice)
   // النص اللي يتحفظ ويطلع بالتقرير — دايماً بالعربي عشان التقرير يكون موحّد للمالك
@@ -238,10 +247,10 @@ export function useCashierClosing() {
     setTotalSales(''); setMadaAmount(''); setVisaAmount(''); setMastercardAmount(''); setCashAmount(''); setDeliveryApps([]); setDeliveryAmounts({}); setAppPickerOpen(false); setOtherAppOpen(false); setOtherAppName('')
     setHasPurchases(null); setPurchases([{amount:'',reason:''}])
     setNetworkImage(''); setSalesImage(''); setNetworkPreview(''); setSalesPreview(''); setDeficitChoice(''); setDeficitNote('')
-    setStep(1); setSaved(false)
+    setStep(1); setSub(0); setSaved(false)
   }
 
-  return { lang, stepDir, autoAdvanceFrom, session, setSession, orgLogo, setOrgLogo, dayStartHour, setDayStartHour, clockTick, setClockTick, step, setStep, closingDate, setClosingDate, madaAmount, setMadaAmount, visaAmount, setVisaAmount, mastercardAmount, setMastercardAmount, cashAmount, setCashAmount, deliveryChoices, setDeliveryChoices, deliveryApps, setDeliveryApps, appPickerOpen, setAppPickerOpen, deliveryAmounts, setDeliveryAmounts, otherAppOpen, setOtherAppOpen, otherAppName, setOtherAppName, hasPurchases, setHasPurchases, purchases, setPurchases, deficitChoice, setDeficitChoice, deficitNote, setDeficitNote, networkImage, setNetworkImage, salesImage, setSalesImage, networkPreview, salesPreview, uploadingNetwork, setUploadingNetwork, uploadingSales, setUploadingSales, submitting, setSubmitting, saved, setSaved, locked, setLocked, thankYouMsg, setThankYouMsg, curr, setCurr, toast, setToast, totalSales, setTotalSales, rtl, router, sales, mada, visa, mastercard, network, cash, deliveryList, delivery, anyNetworkEntered, networkError, validPurchasesNow, totalPurchasesNow, expectedCash, cashAfterWithdrawal, difference, status, step1Valid, step2Valid, step3Valid, deficitOption, deficitReason, deficitReasonOk, businessDate, businessDateLabel, isAfterMidnightCarry, logout, showToast, uploadImage, addDeliveryApp, removeDeliveryApp, addPurchaseRow, removePurchaseRow, updatePurchase, goNext, goBack, saveClosing, resetForm }
+  return { lang, stepDir, sub, setSub, session, setSession, orgLogo, setOrgLogo, dayStartHour, setDayStartHour, clockTick, setClockTick, step, setStep, closingDate, setClosingDate, madaAmount, setMadaAmount, visaAmount, setVisaAmount, mastercardAmount, setMastercardAmount, cashAmount, setCashAmount, deliveryChoices, setDeliveryChoices, deliveryApps, setDeliveryApps, appPickerOpen, setAppPickerOpen, deliveryAmounts, setDeliveryAmounts, otherAppOpen, setOtherAppOpen, otherAppName, setOtherAppName, hasPurchases, setHasPurchases, purchases, setPurchases, deficitChoice, setDeficitChoice, deficitNote, setDeficitNote, networkImage, setNetworkImage, salesImage, setSalesImage, networkPreview, salesPreview, uploadingNetwork, setUploadingNetwork, uploadingSales, setUploadingSales, submitting, setSubmitting, saved, setSaved, locked, setLocked, thankYouMsg, setThankYouMsg, curr, setCurr, toast, setToast, totalSales, setTotalSales, rtl, router, sales, mada, visa, mastercard, network, cash, deliveryList, delivery, anyNetworkEntered, networkError, validPurchasesNow, totalPurchasesNow, expectedCash, cashAfterWithdrawal, difference, status, step1Valid, step2Valid, step3Valid, deficitOption, deficitReason, deficitReasonOk, businessDate, businessDateLabel, isAfterMidnightCarry, logout, showToast, uploadImage, addDeliveryApp, removeDeliveryApp, addPurchaseRow, removePurchaseRow, updatePurchase, goNext, goBack, saveClosing, resetForm }
 }
 
 export type CashierClosing = ReturnType<typeof useCashierClosing>

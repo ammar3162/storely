@@ -38,7 +38,7 @@ export default function CashierClosingPage() {
   const v: PageVals = { session }
   return (
     <div style={{minHeight:'100dvh',display:'flex',flexDirection:'column' as const,background:'#f4f5f6',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:rtl?'rtl':'ltr'}}>
-      <style>{`.amt-tile:focus-within{border-color:#0f766e!important;background:white!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)} .dl-row:focus-within .dl-field{border-color:#0f766e!important;background:white!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)} @keyframes spin{to{transform:rotate(360deg)}} @keyframes stepIn{from{opacity:0;transform:translateX(var(--dx,0))}to{opacity:1;transform:none}} .fu{animation:stepIn .34s cubic-bezier(.22,1,.36,1) both} @media (prefers-reduced-motion:reduce){.fu{animation:none}}`}</style>
+      <style>{`.big-money input,.big-money input:focus,.dl-field input,.dl-field input:focus{border:none!important;box-shadow:none!important;outline:none!important} .big-money:focus-within{box-shadow:0 0 0 3px rgba(15,118,110,.14)} .amt-tile:focus-within{border-color:#0f766e!important;background:white!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)} .dl-row:focus-within .dl-field{border-color:#0f766e!important;background:white!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)} @keyframes spin{to{transform:rotate(360deg)}} @keyframes stepIn{from{opacity:0;transform:translateX(var(--dx,0))}to{opacity:1;transform:none}} .fu{animation:stepIn .34s cubic-bezier(.22,1,.36,1) both} @media (prefers-reduced-motion:reduce){.fu{animation:none}}`}</style>
 
       {toast && (
         <div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:9999,background:toast.type==='success'?'#111827':'#dc2626',color:'white',padding:'12px 20px',borderRadius:10,fontSize:14,fontWeight:500,boxShadow:'0 8px 24px rgba(0,0,0,.12)',whiteSpace:'nowrap'}}>
@@ -49,7 +49,7 @@ export default function CashierClosingPage() {
       <StaffHeader title={ct('pageTitle',lang)} subtitle={`${session.branch_name || session.org_name}  ${businessDateLabel}`} rtl={rtl}
         end={<div style={{display:'flex',gap:8}}><StaffLangButton/><button onClick={logout} aria-label={ct('logout',lang)} style={{...staffHeaderBtn,padding:0}}><LogOut size={16} strokeWidth={1.75}/></button></div>} />
 
-      {!saved && <ProgressBar step={step} lang={lang}/>}
+      {!saved && <ProgressBar step={step} lang={lang} sub={m.sub}/>}
       <div style={{flex:1,width:'100%',maxWidth:520,margin:'0 auto',padding:'20px 16px',['--dx' as any]:`${(m.stepDir==='fwd')===rtl?-28:28}px`}}>
 
         {saved ? (

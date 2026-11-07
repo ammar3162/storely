@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import type { CashierClosing } from './useCashierClosing'
 
 export default function StepNav({ m }: { m: CashierClosing }) {
-  const { lang, step, submitting, deficitReasonOk, goNext, goBack, saveClosing } = m
+  const { lang, step, sub, submitting, deficitReasonOk, goNext, goBack, saveClosing } = m
   // زر فيديو المساعدة العائم يرتفع فوق الشريط
   useEffect(() => {
     document.documentElement.style.setProperty('--sticky-footer', '72px')
@@ -15,7 +15,7 @@ export default function StepNav({ m }: { m: CashierClosing }) {
             {/* أزرار التنقل — شريط ثابت أسفل الشاشة */}
             <div style={{position:'sticky',bottom:0,zIndex:40,background:'rgba(244,245,246,.96)',backdropFilter:'blur(8px)',WebkitBackdropFilter:'blur(8px)',borderTop:'1px solid #e5e7eb',padding:'12px 16px calc(12px + env(safe-area-inset-bottom))'}}>
             <div style={{display:'flex',gap:8,maxWidth:520,margin:'0 auto'}}>
-              {step>1 && (
+              {(step>1 || sub>0) && (
                 <button onClick={goBack} style={{flex:1,height:48,background:'white',color:'#111827',border:'1px solid #e5e7eb',borderRadius:10,fontSize:16,fontWeight:500,cursor:'pointer',fontFamily:'inherit'}}>
                   {ct('back',lang)}
                 </button>

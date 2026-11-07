@@ -57,12 +57,56 @@ export function DeliveryRow({ name, value, onChange, onRemove, currency, last }:
   )
 }
 
+// شاشة سؤال كاملة: سؤال كبير، سطر توضيح، وتحته الإجابة
+export function Question({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="fu" style={{paddingTop:8,paddingBottom:24}}>
+      <h2 style={{fontSize:24,fontWeight:600,lineHeight:'34px',color:'#111827'}}>{title}</h2>
+      {hint && <p style={{fontSize:15,lineHeight:'22px',color:'#4b5565',marginTop:6}}>{hint}</p>}
+      <div style={{marginTop:24}}>{children}</div>
+    </div>
+  )
+}
+
+// خانة مبلغ كبيرة لشاشة السؤال — الرقم بخط الإيصال، و«انتقال» في الكيبورد = التالي
+export function BigMoney({ value, onChange, currency, onEnter, autoFocus, error }: { value: string; onChange: (v: string) => void; currency: string; onEnter?: () => void; autoFocus?: boolean; error?: boolean }) {
+  return (
+    <label className="big-money" style={{display:'flex',alignItems:'center',gap:12,height:76,padding:'0 18px',background:'white',border:`1.5px solid ${error?'#dc2626':'#111827'}`,borderRadius:14,cursor:'text'}}>
+      <NumberInput value={value} onChange={e=>onChange(e.target.value)} placeholder="0.00" autoFocus={autoFocus}
+        enterKeyHint={onEnter ? 'next' : undefined}
+        onKeyDown={onEnter ? (e:any)=>{ if(e.key==='Enter'){ e.preventDefault(); onEnter() } } : undefined}
+        style={{flex:1,minWidth:0,border:'none',outline:'none',background:'transparent',fontSize:32,fontWeight:500,fontFamily:"'IBM Plex Mono',ui-monospace,monospace",fontVariantNumeric:'tabular-nums',direction:'ltr',textAlign:'right',color:'#111827',padding:0}}/>
+      <span style={{fontSize:15,color:'#6b7487',flexShrink:0}}>{currency || '⃁'}</span>
+    </label>
+  )
+}
+
+// سطر مبلغ في قائمة (الشبكة): الاسم بجهة والخانة بالجهة الثانية
+export function MoneyRow({ label, value, onChange, currency, onEnter, last }: { label: string; value: string; onChange: (v: string) => void; currency: string; onEnter?: () => void; last?: boolean }) {
+  return (
+    <label className="dl-row" style={{display:'flex',alignItems:'center',gap:12,minHeight:64,padding:'8px 16px',borderBottom:last?'none':'1px solid #e5e7eb',background:'white',cursor:'text'}}>
+      <span style={{flex:1,fontSize:17,fontWeight:500,color:'#111827'}}>{label}</span>
+      <span className="dl-field" style={{display:'flex',alignItems:'center',gap:6,width:'52%',flexShrink:0,background:'#f4f5f6',border:'1px solid transparent',borderRadius:10,padding:'0 12px'}}>
+        <NumberInput value={value} onChange={e=>onChange(e.target.value)} placeholder="0.00"
+          enterKeyHint={onEnter ? 'next' : undefined}
+          onKeyDown={onEnter ? (e:any)=>{ if(e.key==='Enter'){ e.preventDefault(); onEnter() } } : undefined}
+          style={{flex:1,minWidth:0,border:'none',outline:'none',background:'transparent',fontSize:20,fontWeight:500,fontFamily:"'IBM Plex Mono',ui-monospace,monospace",padding:'11px 0',direction:'ltr',textAlign:'right',color:'#111827'}}/>
+        <span style={{fontSize:13,color:'#6b7487'}}>{currency}</span>
+      </span>
+    </label>
+  )
+}
+
 export const STEP_KEYS = ['s_data','s_expenses','s_photos','s_review']
-export function ProgressBar({ step, lang }: { step: number; lang: string }) {
+export function ProgressBar({ step, lang, sub = 0 }: { step: number; lang: string; sub?: number }) {
+  // تقدّم كل الشاشات (8): البيانات 4، المسحوبات 1، الصور 2، المراجعة 1
+  const idx = (step===1 ? sub : step===2 ? 4 : step===3 ? 5 + sub : 7)
+  const pct = Math.round(((idx + 1) / 8) * 100)
   const STEPS = lang==='en' ? STEPS_EN : lang==='ar' ? STEPS_AR : STEPS_AR.map((s,i)=>({ ...s, label: (CASHIER_EXTRA[STEP_KEYS[i]] as any)?.[lang] || STEPS_EN[i].label }))
   // شريط خطوات أبيض تحت الرأس: المكتمل رمادي، الحالي أسود، والخطوط رفيعة
   return (
-    <div style={{background:'white',borderBottom:'1px solid #e5e7eb'}}>
+    <div style={{background:'white',borderBottom:'1px solid #e5e7eb',position:'relative'}}>
+      <div style={{position:'absolute',insetInlineStart:0,bottom:-1,height:2,width:`${pct}%`,background:'#0f766e',transition:'width .3s cubic-bezier(.22,1,.36,1)'}}/>
       <div style={{maxWidth:520,margin:'0 auto',padding:'12px 16px',display:'flex',alignItems:'center',gap:6}}>
         {STEPS.map((s, i) => (
           <div key={s.key} style={{display:'flex',alignItems:'center',gap:6,flex:i<STEPS.length-1?1:'unset',minWidth:0}}>
