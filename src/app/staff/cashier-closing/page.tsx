@@ -37,7 +37,7 @@ export default function CashierClosingPage() {
 
   const v: PageVals = { session }
   return (
-    <div style={{minHeight:'100vh',background:'#f4f5f6',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:rtl?'rtl':'ltr',paddingBottom:50}}>
+    <div style={{minHeight:'100dvh',display:'flex',flexDirection:'column' as const,background:'#f4f5f6',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:rtl?'rtl':'ltr'}}>
       <style>{`.amt-tile:focus-within{border-color:#0f766e!important;background:white!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)} .dl-row:focus-within .dl-field{border-color:#0f766e!important;background:white!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)} @keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}} .fu{animation:fadeUp .3s cubic-bezier(.22,1,.36,1) both} @media (prefers-reduced-motion:reduce){.fu{animation:none}}`}</style>
 
       {toast && (
@@ -50,7 +50,7 @@ export default function CashierClosingPage() {
         end={<div style={{display:'flex',gap:8}}><StaffLangButton/><button onClick={logout} aria-label={ct('logout',lang)} style={{...staffHeaderBtn,padding:0}}><LogOut size={16} strokeWidth={1.75}/></button></div>} />
 
       {!saved && <ProgressBar step={step} lang={lang}/>}
-      <div style={{maxWidth:520,margin:'0 auto',padding:'20px 16px'}}>
+      <div style={{flex:1,width:'100%',maxWidth:520,margin:'0 auto',padding:'20px 16px'}}>
 
         {saved ? (
           <SavedScreen m={m}/>
@@ -63,11 +63,11 @@ export default function CashierClosingPage() {
             <StepPhotos m={m}/>
 
             <StepReview m={m}/>
-
-            <StepNav m={m}/>
           </>
         )}
       </div>
+      {/* أزرار التنقل مثبتة أسفل الشاشة — ما يبقى فراغ تحت الخطوة القصيرة */}
+      {!saved && <StepNav m={m}/>}
     </div>
   )
 }

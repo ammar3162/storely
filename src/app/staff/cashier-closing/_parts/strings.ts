@@ -71,6 +71,8 @@ export const CUI: Record<string,Record<'ar'|'en',string>> = {
   networkBalanceCheck: {ar:'موازنة الشبكة',en:'Network balance'},
   back:             {ar:'رجوع',en:'Back'},
   next:             {ar:'التالي',en:'Next'},
+  photoHint:        {ar:'صوّر الورقة كاملة وبوضوح',en:'Capture the whole slip clearly'},
+  photoRetake:      {ar:'إعادة التصوير',en:'Retake'},
   saving:           {ar:'جاري الحفظ...',en:'Saving...'},
   confirmSave:       {ar:'تأكيد وحفظ التقرير',en:'Confirm and Save Report'},
   imgUploadFailed:  {ar:'فشل رفع الصورة',en:'Failed to upload image'},

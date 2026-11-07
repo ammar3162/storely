@@ -1,13 +1,20 @@
 'use client'
 import { ct } from './strings'
+import { useEffect } from 'react'
 import type { CashierClosing } from './useCashierClosing'
 
 export default function StepNav({ m }: { m: CashierClosing }) {
   const { lang, step, submitting, deficitReasonOk, goNext, goBack, saveClosing } = m
+  // زر فيديو المساعدة العائم يرتفع فوق الشريط
+  useEffect(() => {
+    document.documentElement.style.setProperty('--sticky-footer', '72px')
+    return () => { document.documentElement.style.removeProperty('--sticky-footer') }
+  }, [])
   return (
     <>
-            {/* أزرار التنقل */}
-            <div className="fu" style={{display:'flex',gap:10}}>
+            {/* أزرار التنقل — شريط ثابت أسفل الشاشة */}
+            <div style={{position:'sticky',bottom:0,zIndex:40,background:'rgba(244,245,246,.96)',backdropFilter:'blur(8px)',WebkitBackdropFilter:'blur(8px)',borderTop:'1px solid #e5e7eb',padding:'12px 16px calc(12px + env(safe-area-inset-bottom))'}}>
+            <div style={{display:'flex',gap:8,maxWidth:520,margin:'0 auto'}}>
               {step>1 && (
                 <button onClick={goBack} style={{flex:1,height:48,background:'white',color:'#111827',border:'1px solid #e5e7eb',borderRadius:10,fontSize:16,fontWeight:500,cursor:'pointer',fontFamily:'inherit'}}>
                   {ct('back',lang)}
@@ -22,6 +29,7 @@ export default function StepNav({ m }: { m: CashierClosing }) {
                   {submitting ? ct('saving',lang) : ct('confirmSave',lang)}
                 </button>
               )}
+            </div>
             </div>
     </>
   )
