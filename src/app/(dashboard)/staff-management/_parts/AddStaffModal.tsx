@@ -98,9 +98,9 @@ export default function AddStaffModal({ m }: { m: StaffPage }) {
                 <div style={{fontSize:font.xs,fontWeight:700,color:colors.text3,marginBottom:10,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>صلاحيات الموظف</div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                   {[
-                    {key:'dispense',   label:'الصرف',      Icon:Send, locked:false},
-                    {key:'inventory',  label:'المخزون',    Icon:Package, locked:false},
-                    {key:'purchases',  label:'المشتريات',  Icon:ShoppingCart, locked:false},
+                    {key:'dispense',   label:'الصرف من المخزون', Icon:Send, locked:false},
+                    {key:'inventory',  label:'الإضافة للمخزون',  Icon:Package, locked:false},
+                    {key:'purchases',  label:'تسجيل المشتريات', Icon:ShoppingCart, locked:false},
                     {key:'reports',    label:'التقارير',   Icon:BarChart3, locked:false},
                     {key:'cashier',    label:'إقفال الكاشير', Icon:Wallet, locked:!hasCashier},
                   ].filter(p=>p.key==='reports'||p.key==='cashier'||permOk(p.key)).map(p=>(
