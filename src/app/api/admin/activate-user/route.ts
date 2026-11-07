@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { planPriceFor, planKeyOf, PRICE_UPDATE_ON_RENEWAL } from '@/lib/planPricing'
+import { planPriceFor, planKeyOf, PRICE_UPDATE_ON_RENEWAL, isNewPlan } from '@/lib/planPricing'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
@@ -41,7 +41,9 @@ export async function POST(req: Request) {
     // إضافات تغيّر سعرها: من التجديد تنحسب بالسعر الجديد (يفك السعر المثبّت القديم)
     const { data: repriced } = await supabase.from('marketplace_addons').select('id').in('slug', PRICE_UPDATE_ON_RENEWAL)
     const repricedIds = ((repriced || []) as any[]).map(a => a.id)
-    if (repricedIds.length) await supabase.from('org_addon_subscriptions').update({ locked_price: null } as any)
+    // للباقات القديمة بس — الجديدة أسعارها من جدولها (lib/planPricing)
+    const { data: orgPlanRow } = await supabase.from('organizations').select('plan').eq('id', orgIdForUpdate).maybeSingle()
+    if (repricedIds.length && !isNewPlan((orgPlanRow as any)?.plan)) await supabase.from('org_addon_subscriptions').update({ locked_price: null } as any)
       .eq('org_id', orgIdForUpdate).eq('status', 'active').in('addon_id', repricedIds)
     await syncBranchesToLimit(supabase, orgIdForUpdate)
     // ما نوقف موظفين وقت التجديد — لو المنشأة فوق حدها يبان للأدمن تنبيه بملف العميل ويقرر

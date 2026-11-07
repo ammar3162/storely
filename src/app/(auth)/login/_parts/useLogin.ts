@@ -36,16 +36,31 @@ export function useLogin() {
   const [countryCode, setCountryCode] = useState('+966')
   const [businessType, setBusinessType] = useState('')
   // الباقة وعدد الفروع من رابط صفحة الأسعار (?plan=ops&branches=3)
-  const [planChoice, setPlanChoice] = useState<'essential'|'ops'|'full'|null>(() => {
+  const [planChoice, setPlanChoice] = useState<'essential'|'ops'|'full'|'custom'|null>(() => {
     if (typeof window !== 'undefined') {
       const p = new URLSearchParams(window.location.search).get('plan')
-      if (p === 'essential' || p === 'ops' || p === 'full') return p
+      if (p === 'essential' || p === 'ops' || p === 'full' || p === 'custom') return p
       if (p === 'basic') return 'essential'
     }
     return null
   })
   // إضافات يختارها مع الباقة (الكاشير / الحضور والرواتب / الذكاء)
-  const [signupAddons, setSignupAddons] = useState<string[]>([])
+  const [signupAddons, setSignupAddons] = useState<string[]>(() => {
+    // «ابنِ باقتك» من صفحة الأسعار: ?modules=cashier_closing,mod_purchases
+    if (typeof window !== 'undefined') {
+      const m = new URLSearchParams(window.location.search).get('modules')
+      if (m) return m.split(',').filter(x => /^[a-z_]{3,30}$/.test(x)).slice(0, 6)
+    }
+    return []
+  })
+  // عدد الموظفين («ابنِ باقتك») — null = 6 لكل فرع
+  const [staffCount, setStaffCount] = useState<number | null>(() => {
+    if (typeof window !== 'undefined') {
+      const n = Math.round(Number(new URLSearchParams(window.location.search).get('staff')))
+      if (n >= 1 && n <= 500) return n
+    }
+    return null
+  })
   const [branchCount, setBranchCount] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       const b = Math.round(Number(new URLSearchParams(window.location.search).get('branches')))
@@ -231,6 +246,7 @@ export function useLogin() {
     e.preventDefault()
     // تم تعطيل إجبارية تحقق الـOTP مؤقتاً (2026-07-24) لحين حل مشكلة توصيل واتساب — راجع notification_logs
     if (!planChoice) { setError('اختر الباقة المناسبة'); return }
+    if (planChoice === 'custom' && !signupAddons.length) { setError('اختر ميزة وحدة على الأقل'); return }
     if (!agreedTerms) { setError('يجب الموافقة على الشروط والأحكام للمتابعة'); return }
     setLoading(true); setError('')
     if (oauth) {
@@ -239,7 +255,7 @@ export function useLogin() {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
-          orgName: orgName.trim(), fullPhone, businessType: businessType||'مطعم', plan: planChoice, addons: signupAddons, branchCount, billing,
+          orgName: orgName.trim(), fullPhone, businessType: businessType||'مطعم', plan: planChoice, addons: signupAddons, staff: staffCount ?? 6 * branchCount, branchCount, billing,
           phone: phone.trim(), countryCode,
           trialEnds: new Date(Date.now() + 14*24*60*60*1000).toISOString(),
           termsAcceptedAt: new Date().toISOString(),
@@ -277,6 +293,7 @@ export function useLogin() {
           businessType: businessType||'مطعم',
           plan: planChoice,
           addons: signupAddons,
+          staff: staffCount ?? 6 * branchCount,
           branchCount,
           billing,
           phone: phone.trim(),
@@ -316,7 +333,7 @@ export function useLogin() {
   const phoneRule = PHONE_RULES[countryCode] || { length:10, prefix:'', placeholder:'xxxxxxxxxx' }
   const phonePlaceholder = phoneRule.placeholder
 
-  return { t, lang, forgotMethod, setForgotMethod, forgotPhone, setForgotPhone, oauth, setOauth, mode, setMode, step, setStep, otpSent, setOtpSent, otp, setOtp, otpVerified, setOtpVerified, sendingOtp, setSendingOtp, email, setEmail, password, setPassword, orgName, setOrgName, phone, setPhone, countryCode, setCountryCode, businessType, setBusinessType, planChoice, setPlanChoice, signupAddons, setSignupAddons, branchCount, setBranchCount, billing, setBilling, loading, setLoading, error, setError, accountStatus, setAccountStatus, agreedTerms, setAgreedTerms, agentCode, setAgentCode, showPassword, setShowPassword, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, utm, setUtm, supabase, phoneRule, phonePlaceholder, handleGoogle, leaveOauth, handleLogin, handleForgot, handleForgotWhatsapp, nextStep, validatePassword, sendOtp, verifyOtp, handleRegister }
+  return { t, lang, forgotMethod, setForgotMethod, forgotPhone, setForgotPhone, oauth, setOauth, mode, setMode, step, setStep, otpSent, setOtpSent, otp, setOtp, otpVerified, setOtpVerified, sendingOtp, setSendingOtp, email, setEmail, password, setPassword, orgName, setOrgName, phone, setPhone, countryCode, setCountryCode, businessType, setBusinessType, planChoice, setPlanChoice, signupAddons, setSignupAddons, staffCount, setStaffCount, branchCount, setBranchCount, billing, setBilling, loading, setLoading, error, setError, accountStatus, setAccountStatus, agreedTerms, setAgreedTerms, agentCode, setAgentCode, showPassword, setShowPassword, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, utm, setUtm, supabase, phoneRule, phonePlaceholder, handleGoogle, leaveOauth, handleLogin, handleForgot, handleForgotWhatsapp, nextStep, validatePassword, sendOtp, verifyOtp, handleRegister }
 }
 
 export type LoginState = ReturnType<typeof useLogin>

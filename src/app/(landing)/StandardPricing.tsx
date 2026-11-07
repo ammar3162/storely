@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check, Minus, Plus, Wallet, UserCheck, Sparkles, Users, Store, ArrowLeft, Sun, MessageCircle, TrendingUp, GitCompare, Calculator, UserCog, Languages, Truck, Bell, FileDown, Percent, type LucideIcon } from 'lucide-react'
 import type { Billing } from './landing-data'
-import { NEW_ADDON_PRICES, PLAN_CAPS, PLAN_PRICING, YEARLY_FACTOR, type NewPlanKey } from '@/lib/planPricing'
+import { CUSTOM_MIN_STAFF_PER_BRANCH, CUSTOM_MODULES, CUSTOM_MODULE_ORDER, CUSTOM_STAFF_STEP, NEW_ADDON_PRICES, NEW_PLANS, PLAN_CAPS, PLAN_PRICING, YEARLY_FACTOR, customModuleAmount, customMonthly, planPriceFor, signupAddonsMonthly, type NewPlanKey } from '@/lib/planPricing'
 
 type PlanKey = NewPlanKey
 const price = (k: PlanKey) => PLAN_PRICING[k].monthly
@@ -26,6 +26,10 @@ const ADDONS: { icon: typeof Wallet; name: string; price: number; unit: string; 
   { icon: Users, name: 'موظف إضافي', price: NEW_ADDON_PRICES.extra_staff.monthly, unit: '⃁ / شهرياً', note: `فوق ${PLAN_CAPS.essential.staff} موظفين لكل فرع` },
 ]
 // الكاملة أوفر من الأساسية + كل الإضافات (لفرع واحد)
+const MOD_NAME: Record<string, string> = {
+  mod_inventory: 'المخزون والموردين', mod_purchases: 'المشتريات والفواتير', cashier_closing: 'إقفال الكاشير',
+  hr_full: 'الحضور والرواتب', ai_tools: 'أدوات الذكاء الاصطناعي',
+}
 const FULL_SAVES = price('essential') + NEW_ADDON_PRICES.cashier_closing.monthly + NEW_ADDON_PRICES.hr_full.monthly + NEW_ADDON_PRICES.ai_tools.monthly - price('full')
 type Cell = boolean | 'addon' | string
 // كل المميزات: [المجموعة، المميزات، حالتها في (الأساسية، التشغيل، الكاملة)]
@@ -56,6 +60,25 @@ const cumulative = (i: number) => PLANS.slice(0, i + 1).flatMap((p, j) => p.feat
 export default function StandardPricing({ billing, onBilling }: { billing: Billing; onBilling: (b: Billing) => void }) {
   const router = useRouter()
   const [branches, setBranches] = useState(1)
+  // «ابنِ باقتك»: المزايا المختارة وعدد الموظفين (null = 6 لكل فرع)
+  const [mods, setMods] = useState<string[]>(['cashier_closing'])
+  const [staffSel, setStaffSel] = useState<number | null>(null)
+  const [focus, setFocus] = useState<PlanKey | null>(null)
+  const minStaff = CUSTOM_MIN_STAFF_PER_BRANCH * branches
+  const staff = Math.max(minStaff, staffSel ?? PLAN_CAPS.custom.staff * branches)
+  const picked = CUSTOM_MODULE_ORDER.filter(s => mods.includes(s))
+  const buildTotal = customMonthly(Object.fromEntries(picked.map(s => [s, CUSTOM_MODULES[s].perBranch ? branches : 1])), branches, staff)
+  const extraStaffCost = Math.max(0, staff - PLAN_CAPS.custom.staff * branches) * CUSTOM_STAFF_STEP
+  // باقة جاهزة أرخص (أو بنفس السعر) لنفس الاختيار؟
+  const better = picked.length ? NEW_PLANS
+    .map(k => ({ k, total: planPriceFor(k, null, branches).monthly + signupAddonsMonthly(k, picked as unknown as string[], branches) + extraStaffCost }))
+    // التعادل: الباقة الأعلى (فيها مزايا أكثر)
+    .filter(x => x.total <= buildTotal).sort((a, b) => a.total - b.total || NEW_PLANS.indexOf(b.k) - NEW_PLANS.indexOf(a.k))[0] : undefined
+  const goPlan = (k: PlanKey) => {
+    setFocus(k)
+    document.getElementById(`plan-${k}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    window.setTimeout(() => setFocus(null), 2600)
+  }
   const branchWord = branches === 2 ? 'فرعين' : `${branches} فروع`
   const yearly = billing === 'yearly'
   const shown = (m: number) => (yearly ? Math.round(m * YEARLY_FACTOR) : m)
@@ -78,7 +101,7 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
 
       <div className="st-cards">
         {PLANS.map(p => (
-          <div key={p.key} id={`plan-${p.key}`} className={`st-card${p.popular ? ' pop' : ''}`}>
+          <div key={p.key} id={`plan-${p.key}`} className={`st-card${p.popular ? ' pop' : ''}${focus === p.key ? ' focus' : ''}`}>
             {p.popular && <div className="st-badge">الأكثر اختياراً</div>}
             {p.key === 'full' && <div className="st-save">وفّر {shown(FULL_SAVES)} ⃁ مقارنة بالإضافات</div>}
             <h3>{p.name}</h3>
@@ -94,6 +117,45 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
         ))}
       </div>
       <p className="st-trial">جرّب أي باقة مجاناً 14 يوم بكل المميزات</p>
+
+      <a className="st-build-link" href="#build">تحتاج ميزة وحدة بس، مثل إقفال الكاشير لحاله؟ ابنِ باقتك بنفسك</a>
+
+      <section className="st-sec st-build" id="build">
+        <h3 className="st-h">ابنِ باقتك بنفسك</h3>
+        <p className="st-hsub">اختر المزايا اللي تحتاجها بس. السعر حسب عدد الفروع اللي فوق، وتقدر تحدد من داخل النظام أي فرع ياخذ كل ميزة.</p>
+        <div className="st-mods">
+          {CUSTOM_MODULE_ORDER.map(slug => {
+            const m = CUSTOM_MODULES[slug], on = mods.includes(slug)
+            return (
+              <button key={slug} type="button" className={`st-mod${on ? ' on' : ''}`} onClick={() => setMods(v => on ? v.filter(x => x !== slug) : [...v, slug])} aria-pressed={on}>
+                <span className="st-mod-check">{on && <Check size={15} strokeWidth={3} />}</span>
+                <b>{MOD_NAME[slug]}</b>
+                <small>{m.perBranch ? `${shown(m.first)} ⃁ للفرع الأول، و${shown(m.extra)} ⃁ لكل فرع إضافي` : `${shown(m.first)} ⃁ شهرياً للمنشأة كلها`}</small>
+              </button>
+            )
+          })}
+        </div>
+        <div className="st-build-row">
+          <span>عدد الموظفين <small>({PLAN_CAPS.custom.staff * branches} مشمولين، وكل موظف أقل أو أكثر {shown(CUSTOM_STAFF_STEP)} ⃁)</small></span>
+          <div className="st-br st-br-in">
+            <button type="button" onClick={() => setStaffSel(v => Math.max(minStaff, (v ?? PLAN_CAPS.custom.staff * branches) - 1))} disabled={staff <= minStaff} aria-label="نقص"><Minus size={15} /></button>
+            <b>{staff}</b>
+            <button type="button" onClick={() => setStaffSel(v => Math.min(200, Math.max(minStaff, v ?? PLAN_CAPS.custom.staff * branches) + 1))} disabled={staff >= 200} aria-label="زيادة"><Plus size={15} /></button>
+          </div>
+        </div>
+        {better && (
+          <button type="button" className="st-better" onClick={() => goPlan(better.k)}>
+            باقة «{PLAN_PRICING[better.k].label}» تعطيك نفس اختيارك{better.total < buildTotal ? ` بـ ${shown(better.total)} ⃁ (توفّر ${shown(buildTotal - better.total)} ⃁)` : ' بنفس السعر وفيها مزايا أكثر'} — اعرضها
+          </button>
+        )}
+        <div className="st-build-total">
+          <div><span>المجموع الشهري{branches > 1 ? ` لـ ${branchWord}` : ''}</span><strong>{picked.length ? `${shown(buildTotal)} ⃁` : '—'}</strong>{yearly && picked.length > 0 && <small>تُدفع سنوياً</small>}</div>
+          <button type="button" className="st-cta dark" disabled={!picked.length}
+            onClick={() => router.push(`/login?mode=register&plan=custom&modules=${picked.join(',')}&branches=${branches}&staff=${staff}&billing=${billing}`)}>
+            ابدأ تجربتك المجانية
+          </button>
+        </div>
+      </section>
 
       <section className="st-sec">
         <h3 className="st-h">مشمول مع كل الباقات</h3>
@@ -200,6 +262,26 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
 .st-yes{color:var(--teal2)}
 .st-no{color:#c4ccca}
 .st-addon{font-size:12px;font-weight:700;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:999px;padding:2px 10px}
+.st-card.focus{box-shadow:0 0 0 5px rgba(20,184,166,.35),0 24px 50px -28px rgba(15,118,110,.55);transition:box-shadow .3s}
+.st-build-link{align-self:center;text-align:center;color:var(--teal2);font-weight:700;font-size:15px;text-decoration:underline;text-underline-offset:4px}
+.st-build{background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px;scroll-margin-top:90px}
+.st-mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:14px}
+.st-mod{position:relative;display:flex;flex-direction:column;gap:4px;text-align:right;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:14px 14px 14px 42px;cursor:pointer;font-family:inherit;color:var(--ink)}
+.st-mod.on{border-color:var(--teal2);background:#f0faf8}
+.st-mod b{font-size:15px}.st-mod small{font-size:13px;color:var(--ink2);line-height:1.6}
+.st-mod-check{position:absolute;left:14px;top:14px;width:20px;height:20px;border-radius:6px;border:1.5px solid #9ca3af;display:grid;place-items:center;color:#fff}
+.st-mod.on .st-mod-check{background:var(--teal2);border-color:var(--teal2)}
+.st-build-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:16px;font-weight:700}
+.st-build-row small{font-weight:600;color:var(--ink2)}
+.st-br-in{padding:4px}
+.st-better{margin-top:14px;width:100%;text-align:right;border:1.5px solid var(--teal2);background:#f0faf8;color:var(--teal2);border-radius:12px;padding:12px 14px;font:800 14px 'IBM Plex Sans Arabic',sans-serif;cursor:pointer;line-height:1.7}
+.st-build-total{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:16px;border-top:1px solid var(--line);padding-top:16px}
+.st-build-total div{display:flex;flex-direction:column}
+.st-build-total span{font-size:14px;color:var(--ink2);font-weight:700}
+.st-build-total strong{font-size:30px}
+.st-build-total small{font-size:12px;color:var(--ink2)}
+.st-build-total .st-cta{width:auto;padding-inline:28px}
+.st-build-total .st-cta:disabled{opacity:.5;cursor:default}
 .st-ent{display:flex;align-items:center;gap:16px;flex-wrap:wrap;background:#0b2f2b;color:#fff;border-radius:22px;padding:22px 24px}
 .st-ent-ic{width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,.1);display:grid;place-items:center}
 .st-ent div{flex:1;min-width:220px;display:flex;flex-direction:column;gap:3px}

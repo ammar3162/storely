@@ -10,7 +10,7 @@ import { getMe } from '@/lib/session'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { colors, font, card, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
-import { billLines, planKeyOf, addonPeriodEnd, proratedCharge, unitPrice, branchPriceFor, PLAN_PRICING, isNewPlan, nextPlanOf, planPriceFor } from '@/lib/planPricing'
+import { billLines, planKeyOf, addonPeriodEnd, proratedCharge, unitPrice, branchPriceFor, PLAN_PRICING, isNewPlan, nextPlanOf, planPriceFor, customModuleAmount, isCustomPlan, NEW_PLANS, CUSTOM_MODULES, signupAddonsMonthly, CUSTOM_STAFF_STEP, PLAN_CAPS } from '@/lib/planPricing'
 import { Check, Trash2 } from 'lucide-react'
 import { isInApp } from '@/lib/inApp'
 import { ListSkeleton } from '@/components/PageSkeleton'
@@ -22,7 +22,7 @@ export default function AddonsMarketPage() {
   const [orgName, setOrgName] = useState('')
   const [orgId, setOrgId] = useState('')
   const [cancelling, setCancelling] = useState<string|null>(null)
-  const [plan, setPlan] = useState<{ key: string; cycle: 'monthly'|'yearly'; maxBranches: number; locked?: number | null; discount?: any } | null>(null)
+  const [plan, setPlan] = useState<{ key: string; cycle: 'monthly'|'yearly'; maxBranches: number; planBranches: number; staffIncluded?: number | null; locked?: number | null; discount?: any } | null>(null)
   const [subEndsAt, setSubEndsAt] = useState<string | null>(null)
   const [inApp, setInApp] = useState(false)
   useEffect(() => { setInApp(isInApp()) }, [])
@@ -39,7 +39,7 @@ export default function AddonsMarketPage() {
     if (!me) return
     setOrgId(me.org_id)
     setOrgName(me.org?.name || '')
-    setPlan({ key: me.org?.plan || '', cycle: me.org?.billing_cycle || 'monthly', maxBranches: me.org?.max_branches || 1, locked: me.org?.locked_plan_monthly ?? null, discount: me.org })
+    setPlan({ key: me.org?.plan || '', cycle: me.org?.billing_cycle || 'monthly', maxBranches: me.org?.max_branches || 1, planBranches: me.org?.plan_branches || 1, staffIncluded: me.org?.staff_included ?? null, locked: me.org?.locked_plan_monthly ?? null, discount: me.org })
     setSubEndsAt(me.subscription_ends_at || null)
     if (!cachedOid) await load(me.org_id)
     setLoading(false)
@@ -73,8 +73,11 @@ export default function AddonsMarketPage() {
     return { ...pr, endStr: end.toLocaleDateString('ar-SA', { numberingSystem: 'latn', month: 'long', day: 'numeric' }) }
   }
 
-  function DueNote({ addon, qty }: { addon: any; qty: number }) {
-    const d = dueNow(addon, qty)
+  function DueNote({ addon, qty, monthlyDelta }: { addon: any; qty: number; monthlyDelta?: number }) {
+    // «ابنِ باقتك»: الفرق الشهري (الفرع الأول + الإضافي) بالتناسب
+    const d = monthlyDelta != null
+      ? (() => { const end = addonPeriodEnd(subEndsAt); return { ...proratedCharge(monthlyDelta, 1, end), endStr: end.toLocaleDateString('ar-SA', { numberingSystem: 'latn', month: 'long', day: 'numeric' }) } })()
+      : dueNow(addon, qty)
     return (
       <div style={{ fontSize: 11, color: colors.text3, lineHeight: 1.7, marginBottom: 12 }}>
         تدفع الحين <b style={{ color: colors.text }}>{d.amount} ⃁</b> عن {d.days} يوم لين تجديد باقتك ({d.endStr})، وبعدها تتجدد مع الباقة.
@@ -160,10 +163,20 @@ export default function AddonsMarketPage() {
 
       {plan && (() => {
         const pk = planKeyOf(plan.key, plan.maxBranches)
-        const bill = billLines(pk, plan.cycle, addons, plan.locked, plan.discount, plan.maxBranches)
+        const bill = billLines(pk, plan.cycle, addons, plan.locked, plan.discount, plan.planBranches, plan.staffIncluded)
         // الباقات الجديدة: لو فاتورته وصلت سعر الباقة الأعلى (لنفس الفروع) نقترحها
-        const up = isNewPlan(pk) ? nextPlanOf(pk) : null
-        const upPrice = up ? planPriceFor(up, null, plan.maxBranches).monthly : 0
+        let up = isNewPlan(pk) ? nextPlanOf(pk) : null
+        let upPrice = up ? planPriceFor(up, null, plan.planBranches).monthly : 0
+        // «ابنِ باقتك»: باقة جاهزة تغطي مزاياه الحالية بسعر أقل؟
+        if (isCustomPlan(pk) && !plan.locked) {
+          const mods = addons.filter((a: any) => a.subscription?.isValid && CUSTOM_MODULES[a.slug]).map((a: any) => a.slug as string)
+          const n = plan.planBranches
+          const extraStaff = Math.max(0, (plan.staffIncluded ?? PLAN_CAPS.custom.staff * n) - PLAN_CAPS.custom.staff * n) * CUSTOM_STAFF_STEP
+          const best = mods.length ? NEW_PLANS.map(k => ({ k, total: planPriceFor(k, null, n).monthly + signupAddonsMonthly(k, mods, n) + extraStaff }))
+            .sort((x, y) => x.total - y.total || NEW_PLANS.indexOf(y.k) - NEW_PLANS.indexOf(x.k))[0] : null
+          up = best && best.total < bill.total ? best.k : null
+          upPrice = best?.total || 0
+        }
         return (
           <div style={{ ...card, padding: 18, marginBottom: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10 }}>فاتورتك الحالية</div>
@@ -177,7 +190,7 @@ export default function AddonsMarketPage() {
             </div>
             {up && plan.cycle === 'monthly' && bill.total >= upPrice && (
               <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, fontSize: 12, color: colors.text, lineHeight: 1.8 }}>
-                <b style={{ color: colors.primary }}>باقة «{PLAN_PRICING[up].label}» أوفر لك:</b> {upPrice} ⃁ شهرياً{plan.maxBranches > 1 ? ` لـ ${plan.maxBranches} فروع` : ''}، وفيها {up === 'ops' ? 'إقفال الكاشير لكل الفروع' : 'كل المميزات لكل الفروع'}. <a href="/settings" style={{ color: colors.primary, fontWeight: 800 }}>اطلب الترقية</a>
+                <b style={{ color: colors.primary }}>باقة «{PLAN_PRICING[up].label}» أوفر لك:</b> {upPrice} ⃁ شهرياً{plan.maxBranches > 1 ? ` لـ ${plan.maxBranches} فروع` : ''}، وفيها {up === 'essential' ? 'المخزون والمشتريات لكل الفروع' : up === 'ops' ? 'المخزون والمشتريات وإقفال الكاشير لكل الفروع' : 'كل المميزات لكل الفروع'}. <a href="/settings" style={{ color: colors.primary, fontWeight: 800 }}>اطلب الترقية</a>
               </div>
             )}
             {pk === 'basic' && plan.cycle === 'monthly' && bill.total >= PLAN_PRICING.pro.monthly && (
@@ -255,12 +268,16 @@ export default function AddonsMarketPage() {
               const chosen: string[] = branchPick[a.id] || subBranches
               const changed = active && (chosen.length !== subBranches.length || chosen.some(id => !subBranches.includes(id)))
               const added = active ? chosen.filter(id => !subBranches.includes(id)).length : chosen.length
+              // «ابنِ باقتك»: الفرع الأول بسعر والباقي بسعر الفرع الإضافي
+              const isMod = a.extra_price != null
+              const monthlyFor = (n: number) => n <= 0 ? 0 : isMod ? customModuleAmount(a.slug, n, a.subscription?.locked_price) : n * a.monthly_price
+              const delta = monthlyFor(chosen.length) - (active ? monthlyFor(subBranches.length) : 0)
               return (
                 <div key={a.id} style={{ ...card, padding: 20, border: active ? `1.5px solid ${colors.primaryBorder}` : undefined, background: active ? colors.primaryLight : undefined }}>
                   <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
                   <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14, minHeight: 40 }}>{a.description}</div>
                   <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 12 }}>
-                    {a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text3 }}>⃁ / فرع / شهر</span>
+                    {a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text3 }}>{isMod ? `⃁ للفرع الأول، و${a.extra_price} ⃁ لكل فرع إضافي` : '⃁ / فرع / شهر'}</span>
                   </div>
                   {active && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 10 }}>
@@ -287,10 +304,10 @@ export default function AddonsMarketPage() {
                   {(!active || changed) && chosen.length > 0 && (
                     <>
                       <div style={{ fontSize: 12, color: colors.text, marginBottom: 8 }}>
-                        الشهري: <b>{chosen.length * a.monthly_price} ⃁</b> ({chosen.length} {chosen.length === 1 ? 'فرع' : 'فروع'})
+                        الشهري: <b>{monthlyFor(chosen.length)} ⃁</b> ({chosen.length} {chosen.length === 1 ? 'فرع' : 'فروع'})
                         {active && chosen.length < subBranches.length && <span style={{ display: 'block', color: colors.text3, fontSize: 11 }}>الفروع اللي تشيلها تتوقف من تجديد باقتك الجاي.</span>}
                       </div>
-                      {added > 0 && <DueNote addon={a} qty={added} />}
+                      {added > 0 && (isMod ? delta > 0 && <DueNote addon={a} qty={added} monthlyDelta={delta} /> : <DueNote addon={a} qty={added} />)}
                       <RequestBtn addon={a} quantity={chosen.length} branchIds={chosen} label={active ? 'اطلب تعديل الفروع' : 'اطلب الإضافة'} />
                     </>
                   )}

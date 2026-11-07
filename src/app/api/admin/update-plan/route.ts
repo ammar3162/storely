@@ -16,11 +16,11 @@ export async function POST(req: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { orgId, maxBranches, maxStaff, maxSuppliers, planName, orgName, billingCycle, lockedMonthly } = await req.json()
+  const { orgId, maxBranches, maxStaff, maxSuppliers, planName, orgName, billingCycle, lockedMonthly, staffIncluded } = await req.json()
   if (!orgId || !maxBranches) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
   if (!(planName in PLAN_PRICING)) return NextResponse.json({ error: 'باقة غير معروفة' }, { status: 400 })
 
-  const res = await changeOrgPlan(supabase, orgId, { planName, maxBranches, maxStaff, maxSuppliers, billingCycle, lockedMonthly })
+  const res = await changeOrgPlan(supabase, orgId, { planName, maxBranches, maxStaff, maxSuppliers, billingCycle, lockedMonthly, ...(staffIncluded !== undefined ? { staffIncluded } : {}) })
   if (!res.ok) return NextResponse.json({ error: res.error }, { status: 500 })
   await logAdminAction(admin, 'update_plan', orgId, orgName || null, { new_plan: planName, maxBranches, maxStaff, maxSuppliers, lockedMonthly: lockedMonthly ?? null })
   const { ok: _ok, ...branchSync } = res

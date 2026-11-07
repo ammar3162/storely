@@ -11,7 +11,8 @@ export { PLAN_CAPS }
 export const INCLUDED_FROM_STANDARD = ['hr_full', 'profitability', 'ai_tools', 'cashier_closing', 'mod_inventory', 'mod_purchases']
 
 /** lockedMonthly = سعر شهري خاص (باقة المؤسسات) — يتثبّت للمنشأة */
-export async function changeOrgPlan(db: SupabaseClient, orgId: string, input: { planName: string; maxBranches: number; maxStaff?: number; maxSuppliers?: number; billingCycle?: string; lockedMonthly?: number | null }) {
+/** staffIncluded = عدد موظفين «ابنِ باقتك» (يأثر على الفاتورة والحد) */
+export async function changeOrgPlan(db: SupabaseClient, orgId: string, input: { planName: string; maxBranches: number; maxStaff?: number; maxSuppliers?: number; billingCycle?: string; lockedMonthly?: number | null; staffIncluded?: number | null }) {
   const { planName, maxBranches, maxStaff, maxSuppliers, billingCycle } = input
   const { data: oldOrg } = await db.from('organizations').select('max_branches,max_staff,max_suppliers,plan,locked_plan_monthly').eq('id', orgId).maybeSingle()
   const samePlan = (oldOrg as any)?.plan === planName
@@ -31,6 +32,7 @@ export async function changeOrgPlan(db: SupabaseClient, orgId: string, input: { 
   // باقة مختلفة = سعرها الحالي؛ نفس الباقة = يبقى سعره المثبّت
   if (!samePlan) updatePayload.locked_plan_monthly = null
   if (Number(input.lockedMonthly) > 0) updatePayload.locked_plan_monthly = Number(input.lockedMonthly)
+  if (input.staffIncluded !== undefined) updatePayload.staff_included = Number(input.staffIncluded) > 0 ? Math.min(500, Math.round(Number(input.staffIncluded))) : null
 
   // الفروع المشتراة اللي صارت داخل الباقة الجديدة (ترقية) ما تنحسب عليه بعد — نخلي بس اللي فوق فروع الباقة
   const { data: branchSub } = await db.from('org_addon_subscriptions')

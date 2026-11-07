@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { PLAN_CAPS, NEW_ADDON_PRICES, isNewPlan, signupAddonsFor, type PlanKey } from '@/lib/planPricing'
+import { PLAN_CAPS, CUSTOM_MODULE_ORDER, CUSTOM_MIN_STAFF_PER_BRANCH, isCustomPlan, isNewPlan, isPerBranchAddon, signupAddonsFor, type PlanKey } from '@/lib/planPricing'
+import { activateAddon } from '@/lib/addonActivation'
 import { normalizeWhatsapp } from '@/lib/phoneNormalize'
 import { SIGNUP_BUSINESS_TYPES } from '@/lib/businessTypes'
 import { attachReferral } from '@/lib/agentReferral'
@@ -67,7 +68,9 @@ export async function POST(req: Request) {
     const requestedPlan: PlanKey = plan
     const caps = PLAN_CAPS[plan]
     const maxB = Math.max(1, Math.min(caps.maxBranches, Math.round(Number(branchCount)) || 1))
-    const maxStaff = caps.staff * maxB, maxSup = caps.suppliers * maxB
+    // «ابنِ باقتك»: عدد الموظفين اللي اختاره (أقل شي 3 لكل فرع)
+    const staffIncluded = isCustomPlan(plan) ? Math.max(CUSTOM_MIN_STAFF_PER_BRANCH * maxB, Math.min(500, Math.round(Number(body.staff)) || caps.staff * maxB)) : null
+    const maxStaff = staffIncluded ?? caps.staff * maxB, maxSup = caps.suppliers * maxB
 
     const { data: org, error: orgErr } = await supabase
       .from('organizations')
@@ -83,6 +86,7 @@ export async function POST(req: Request) {
         max_staff: maxStaff,
         max_suppliers: maxSup,
         plan: plan,
+        staff_included: staffIncluded,
         billing_cycle: billing === 'yearly' ? 'yearly' : 'monthly'
       })
       .select().single()
@@ -117,18 +121,17 @@ export async function POST(req: Request) {
       user_agent: userAgent,
     }).then(({ error }: any) => { if (error) console.log('consent_logs insert error:', error.message) })
 
-    // الإضافات اللي اختارها مع الباقة: تنحفظ طلبات بـ«طلبات الإضافات» ويفعّلها الأدمن مع الاشتراك المدفوع
-    // (التجربة فيها كل المميزات). المسموحة بس، واللي باقته فيها الميزة أصلاً ما تنحفظ
+    // الإضافات (أو مزايا «ابنِ باقتك») اللي اختارها: تتفعّل الحين لكل فروعه وتنتهي مع التجربة،
+    // ويجددها الأدمن مع الاشتراك المدفوع (activate-user يجدد كل الإضافات المفعّلة). المسموحة بس.
     try {
-      const wanted = signupAddonsFor(plan).filter(s => Array.isArray(chosenAddons) && chosenAddons.includes(s))
+      const allowed = isCustomPlan(plan) ? [...CUSTOM_MODULE_ORDER] as string[] : signupAddonsFor(plan) as unknown as string[]
+      const wanted = allowed.filter(s => Array.isArray(chosenAddons) && chosenAddons.includes(s))
       if (wanted.length) {
         const { data: ads } = await supabase.from('marketplace_addons').select('id,slug').in('slug', wanted)
-        const rows = ((ads || []) as any[]).map(a => ({
-          org_id: org.id, addon_id: a.id, status: 'pending', requested_by: userId,
-          quantity: NEW_ADDON_PRICES[a.slug]?.perBranch ? maxB : 1,
-          note: 'اختارها وقت التسجيل مع الباقة',
-        }))
-        if (rows.length) await supabase.from('addon_requests').insert(rows as any)
+        for (const a of (ads || []) as any[]) {
+          const r = await activateAddon(supabase, { orgId: org.id, addonId: a.id, allBranches: true, quantity: isPerBranchAddon(plan, a.slug) ? maxB : 1 })
+          if (!r.ok) console.error('SIGNUP_ADDON_ACTIVATE_FAILED (non-fatal):', a.slug, r.error)
+        }
       }
     } catch (e) { console.error('SIGNUP_ADDONS_FAILED (non-fatal):', e) }
 

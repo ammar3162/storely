@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { customMonthly, customModuleAmount, billLines, activeDiscount, planKeyOf, addonPeriodEnd, proratedCharge, staffBase, supplierBase, maxSelfServeBranches, branchPriceFor, planLabel, PLAN_CAPS, planPriceFor, addonPriceFor, addonIncludedIn, addonsForPlan, nextPlanOf, signupAddonsFor, signupAddonsMonthly } from './planPricing'
+import { customMonthly, customModuleAmount, billLines, activeDiscount, planKeyOf, addonPeriodEnd, proratedCharge, staffBase, supplierBase, maxSelfServeBranches, branchPriceFor, planLabel, PLAN_CAPS, planPriceFor, addonPriceFor, addonIncludedIn, addonsForPlan, nextPlanOf, signupAddonsFor, signupAddonsMonthly, higherPlans } from './planPricing'
 
 const branch = (qty: number, isValid = true) => ({ name: 'فرع إضافي', slug: 'extra_branch', monthly_price: 49, subscription: { isValid, quantity: qty } })
 
@@ -204,5 +204,11 @@ describe('«ابنِ باقتك» (custom)', () => {
     expect(list).toEqual([{ slug: 'mod_inventory', monthly_price: 69, per_branch: true, extra_price: 35 }, { slug: 'cashier_closing', monthly_price: 40, per_branch: true, extra_price: 25 }])
     expect(addonsForPlan('ops', [{ slug: 'mod_inventory', monthly_price: 69 }])).toEqual([])
     expect(addonsForPlan('basic', [{ slug: 'mod_purchases', monthly_price: 50 }])).toEqual([])
+  })
+})
+
+describe('custom plan upgrades', () => {
+  it('can move to any ready plan', () => {
+    expect(higherPlans('custom')).toEqual(['essential', 'ops', 'full'])
   })
 })

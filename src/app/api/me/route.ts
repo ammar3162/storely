@@ -68,6 +68,8 @@ export async function GET() {
         max_staff: o.max_staff ?? 1,
         max_suppliers: o.max_suppliers ?? 1,
         max_branches: combineBranchLimit(o.max_branches, (branchSubs || []) as any[]).total,
+        // فروع الباقة نفسها (بدون «فرع إضافي») — للفاتورة
+        plan_branches: o.max_branches ?? 1,
         country_code: o.country_code || '+966',
         business_type: o.business_type || null,
         onboarding_done: o.onboarding_done !== false,

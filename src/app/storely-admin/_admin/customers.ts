@@ -5,7 +5,7 @@ export type Customer = {
   id: string; full_name: string; phone: string; reg_phone: string; role: string
   status: string; created_at: string; org_id: string; org_name: string
   subscription_type: string; subscription_ends_at: string | null; billing_cycle: 'monthly' | 'yearly'
-  max_branches: number; plan: PlanKey; requested_plan: string
+  max_branches: number; plan: PlanKey; requested_plan: string; staff_included?: number | null
   locked_plan_monthly: number | null   // سعر مثبّت لمشترك قبل تغيير الأسعار
   monthly_bill: number | null          // الباقة + الإضافات السارية شهرياً (بعد الخصم، السنوي ÷ 12)
   bill_addons: number | null           // منها: الإضافات
@@ -24,6 +24,7 @@ export const STATUS: Record<string, { label: string; tone: Tone }> = {
 const NEW_DESC: Record<string, string> = { essential: 'المخزون والمشتريات', ops: '+ إقفال الكاشير', full: 'كل المميزات', custom: 'يختار المزايا بنفسه (من الإضافات)' }
 const capsDesc = (k: PlanKey) => {
   const c = PLAN_CAPS[k]
+  if (k === 'custom') return `يختار المزايا بنفسه (من الإضافات تحت) · ${c.staff} موظفين لكل فرع (±10) · أقل فاتورة 49`
   if (isNewPlan(k)) return `لكل فرع: ${c.staff} موظفين · ${c.suppliers} مورد · ${NEW_DESC[k]} · الفرع الإضافي ${c.branchPrice} ⃁ · يوصل ${c.maxBranches} فروع`
   return `${c.branches === 1 ? 'فرع' : c.branches + ' فروع'} · ${c.staff} موظف · ${c.suppliers} مورد · ${k === 'basic' ? 'المميزات بالإضافات' : 'كل المميزات'} · يوصل ${c.maxBranches} فروع`
 }
@@ -52,6 +53,7 @@ export function mapCustomer(p: any): Customer {
     plan: planKeyOf(p.organizations?.plan, maxB),
     requested_plan: p.organizations?.requested_plan || '',
     locked_plan_monthly: p.organizations?.locked_plan_monthly ?? null,
+    staff_included: p.organizations?.staff_included ?? null,
     monthly_bill: p.monthly_bill ?? null,
     bill_addons: p.bill_addons ?? null,
     discount: { discount_type: p.organizations?.discount_type ?? null, discount_value: p.organizations?.discount_value ?? null, discount_note: p.organizations?.discount_note ?? null, discount_until: p.organizations?.discount_until ?? null },

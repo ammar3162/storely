@@ -150,11 +150,11 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
       await db.from('branches').update({ is_active: false, plan_locked_at: null } as any).eq('org_id', orgId).neq('id', branchA)
       await db.from('organizations').update({ plan: 'basic', max_branches: 1, max_staff: 3, max_suppliers: 5 } as any).eq('id', orgId)
       await db.from('profiles').update({ subscription_type: 'trial', subscription_ends_at: new Date(Date.now() + 5 * 864e5).toISOString() } as any).eq('id', userId)
-      expect(await orgFeatures(db as any, orgId)).toEqual({ cashier: true, hr: true, ai: true, profitability: true })
+      expect(await orgFeatures(db as any, orgId)).toEqual({ inventory: true, purchases: true, cashier: true, hr: true, ai: true, profitability: true })
       for (let i = 0; i < 3; i++) await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: `تجربة ${i}`, phone: uniqPhone(), pin: 'x', is_active: true, role: 'staff' } as any)
       expect((await checkStaffCapacity(db as any, orgId, branchA)).ok).toBe(false)   // العدد حسب الأساسية
       await db.from('profiles').update({ subscription_type: 'paid' } as any).eq('id', userId)
-      expect(await orgFeatures(db as any, orgId)).toEqual({ cashier: false, hr: false, ai: false, profitability: false })
+      expect(await orgFeatures(db as any, orgId)).toEqual({ inventory: true, purchases: true, cashier: false, hr: false, ai: false, profitability: false })
       await db.from('staff_members').delete().eq('org_id', orgId).like('name', 'تجربة %')
       await db.from('organizations').update({ plan: 'pro', max_branches: 1, max_staff: 1 } as any).eq('id', orgId)
     }, 120_000)

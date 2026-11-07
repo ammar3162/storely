@@ -26,6 +26,7 @@ export type Me = {
     branch_features?: Record<string, { inventory?: boolean; purchases?: boolean; cashier: boolean; hr: boolean; ai: boolean; profitability: boolean }>
     locked_plan_monthly?: number | null
     staff_included?: number | null
+    plan_branches?: number
     discount_type?: string | null; discount_value?: number | null; discount_note?: string | null; discount_until?: string | null
   } | null
   branches: { id: string; name: string; location: string | null }[]

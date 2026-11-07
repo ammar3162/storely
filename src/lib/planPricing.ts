@@ -122,6 +122,8 @@ export const signupAddonsMonthly = (plan: string | null | undefined, slugs: stri
 
 /** الباقات الأعلى من نفس العائلة (طلب الترقية) — القديم يرقّى للقديمة، والانتقال للجديدة من الأدمن */
 export function higherPlans(plan: string | null | undefined): PlanKey[] {
+  // «ابنِ باقتك» يقدر ينتقل لأي باقة جاهزة
+  if (isCustomPlan(plan)) return [...NEW_PLANS]
   const order: PlanKey[] = isNewPlan(plan) ? NEW_PLANS : LEGACY_PLANS
   const i = order.indexOf((plan || 'basic') as PlanKey)
   return i >= 0 ? order.slice(i + 1) : []
@@ -267,11 +269,13 @@ export function billLines(plan: PlanKey, cycle: BillingCycle, addons: AddonRow[]
     // الإضافات تتجدد مع الباقة: بالباقة السنوية = سعرها الشهري × 12 (الفرع الإضافي بنفس خصم السنوي 20%)
     const months = cycle === 'yearly' ? (a.slug === 'extra_branch' ? 12 * YEARLY_FACTOR : 12) : 1
     const per = cycle === 'yearly' ? 'سنوياً' : 'شهرياً'
-    const price = unitPrice(a.monthly_price, active[0])
+    // الباقات الجديدة: سعر الإضافة من جدولها (مو سعر الإضافة القديم) لو ما فيه سعر مثبّت
+    const listPrice = addonPriceFor(plan, a.slug) ?? a.monthly_price
+    const price = unitPrice(listPrice, active[0])
     if (QTY_ADDON_SLUGS.includes(a.slug)) {
       const qty = active.reduce((s, x) => s + Math.max(1, Number(x.quantity) || 1), 0)
-      const amount = active.reduce((s, x) => s + Math.max(1, Number(x.quantity) || 1) * unitPrice(a.monthly_price, x), 0)
-      const same = active.every(x => unitPrice(a.monthly_price, x) === price)
+      const amount = active.reduce((s, x) => s + Math.max(1, Number(x.quantity) || 1) * unitPrice(listPrice, x), 0)
+      const same = active.every(x => unitPrice(listPrice, x) === price)
       lines.push({ label: `إضافة "${a.name}" (${same ? `${qty} × ${price} ر.س` : `${qty} وحدات`}${months > 1 ? ' × 12 شهر' : ''})`, amount: Math.round(amount * months) })
     } else {
       // إضافة لكل فرع (الباقات الجديدة): السعر × عدد الفروع المختارة — القديمة كميتها 1

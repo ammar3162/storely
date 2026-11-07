@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
 import { getAddonsMarket } from '@/lib/addonsCache'
 import { getMe } from '@/lib/session'
-import { planKeyOf, billLines, planPriceFor, planLabel as planLabelFor } from '@/lib/planPricing'
+import { planKeyOf, billLines, planPriceFor, planLabel as planLabelFor, isCustomPlan } from '@/lib/planPricing'
 import { DAYS, TABS, parsePhone } from './constants'
 
 /** حالة صفحة الإعدادات ودوالها — منقولة كما هي من page.tsx */
@@ -81,6 +81,8 @@ export function useSettings() {
   const [subEndsAt, setSubEndsAt]       = useState<string|null>(null)
   const [planKey, setPlanKey]           = useState<string>('')
   const [lockedPlan, setLockedPlan]     = useState<number|null>(null)  // سعر مثبّت لمشترك قبل تغيير الأسعار
+  const [planBranches, setPlanBranches] = useState(1)                 // فروع الباقة (بدون «فرع إضافي»)
+  const [staffIncluded, setStaffIncluded] = useState<number|null>(null) // «ابنِ باقتك»
   const [billAddons, setBillAddons]     = useState<any[]>([])
   const [discount, setDiscount]         = useState<any>(null)  // خصم خاص من لوحة الإدارة
   const [form, setForm] = useState({
@@ -152,6 +154,8 @@ export function useSettings() {
       setPlanName(planLabelFor(org.plan, me.org?.max_branches||org.max_branches))
       setPlanKey(org.plan||'')
       setLockedPlan(org.locked_plan_monthly ?? null)
+      setPlanBranches(me.org?.plan_branches || org.max_branches || 1)
+      setStaffIncluded(me.org?.staff_included ?? null)
       setDiscount(me.org || null)
       setBillingCycle(org.billing_cycle==='yearly'?'yearly':'monthly')
       setSubEndsAt(org.subscription_ends_at||null)
@@ -266,9 +270,11 @@ export function useSettings() {
   }
 
   const pk = planKeyOf(planKey, maxBranches)
-  const planPrice = planPriceFor(pk, lockedPlan, maxBranches)
-  const planLabel = `الباقة ${planPrice.label} — ${billingCycle==='yearly' ? `${planPrice.yearly} ⃁/سنة` : `${planPrice.monthly} ⃁/شهر`}`
-  const bill = billLines(pk, billingCycle, billAddons, lockedPlan, discount, maxBranches)
+  const planPrice = planPriceFor(pk, lockedPlan, planBranches)
+  const bill = billLines(pk, billingCycle, billAddons, lockedPlan, discount, planBranches, staffIncluded)
+  // «ابنِ باقتك» ما لها سعر باقة — نعرض مجموع مزاياها
+  const shownPrice = isCustomPlan(pk) && !lockedPlan ? { monthly: bill.total, yearly: bill.total } : planPrice
+  const planLabel = `الباقة ${planPrice.label} — ${billingCycle==='yearly' ? `${shownPrice.yearly} ⃁/سنة` : `${shownPrice.monthly} ⃁/شهر`}`
 
   return { loading, setLoading, showDelete, setShowDelete, deleteConfirm, setDeleteConfirm, deleting, setDeleting, deleteMsg, setDeleteMsg, saving, setSaving, sending, setSending, saveOk, setSaveOk, sendMsg, setSendMsg, orgId, setOrgId, isOwner, setIsOwner, lastSent, setLastSent, lastBackup, setLastBackup, backups, setBackups, backupLoading, setBackupLoading, backupMsg, setBackupMsg, branches, setBranches, inactiveBranches, setInactiveBranches, reactivatingId, setReactivatingId, maxBranches, setMaxBranches, newBranch, setNewBranch, editingPhoneId, setEditingPhoneId, editPhoneValue, setEditPhoneValue, savingPhone, setSavingPhone, branchSaving, setBranchSaving, pwForm, setPwForm, pwSaving, setPwSaving, pwMsg, setPwMsg, activeTab, setActiveTab, visible, setVisible, countryCode, setCountryCode, logoUrl, setLogoUrl, logoUploading, setLogoUploading, planName, setPlanName, billingCycle, setBillingCycle, userEmail, setUserEmail, userPhone, setUserPhone, userFullName, setUserFullName, userId, setUserId, savingPersonal, setSavingPersonal, personalSaveOk, setPersonalSaveOk, subEndsAt, setSubEndsAt, planKey, setPlanKey, lockedPlan, setLockedPlan, billAddons, setBillAddons, discount, setDiscount, form, setForm, sb, pk, planPrice, planLabel, bill, loadInactiveBranches, reactivateBranch, saveBranchPhone, savePersonalInfo, changePassword, load, handleSave, uploadLogo, sendNow, loadBackups, runBackup, addBranch, deleteBranch, toggleDay, scheduleLabel, deleteAccount }
 }

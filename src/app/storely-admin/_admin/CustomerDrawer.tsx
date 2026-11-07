@@ -48,7 +48,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   if (!c) return null
   const st = STATUS[c.status] || STATUS.pending
   const dl = daysLeft(c.subscription_ends_at)
-  const bill = billLines(c.plan, c.billing_cycle, addons, c.locked_plan_monthly, c.discount, c.max_branches)
+  const bill = billLines(c.plan, c.billing_cycle, addons, c.locked_plan_monthly, c.discount, c.max_branches, c.staff_included)
   const newPlan = isNewPlan(c.plan)
   // الجديدة: فروع الباقة الحالية (1–10) — القديمة تنتقل بنفس عدد فروعها
   const planBranches = Math.max(1, Math.min(10, c.max_branches || 1))
@@ -94,7 +94,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
     const price = planPriceFor(k, null, br)
     const msg = branchesOverride != null
       ? `فروع باقة "${planLabel(k)}" تصير ${br} — الفاتورة ${price.monthly} ⃁ شهرياً (${staff} موظف، ${sup} مورد).`
-      : `تغيير الباقة إلى "${planLabel(k)}"${isNewPlan(k) ? ` بـ ${br} ${br === 1 ? 'فرع' : 'فروع'} (${price.monthly} ⃁ شهرياً)` : ''}؟\n\nلو فروعه أكثر من ${br} (+ الفروع المشتراة)، الأحدث تتوقف مؤقتاً مع موظفينها. ولو موظفينه أكثر من ${staff} (+ الإضافات)، يتوقف الأحدث مؤقتاً. البيانات كلها تبقى وترجع لو رقّى.${!isNewPlan(c!.plan) && isNewPlan(k) ? '\n\nعميل على باقة قديمة: سعره المثبّت يتلغى وينتقل للسعر الجديد.' : ''}`
+      : `تغيير الباقة إلى "${planLabel(k)}"${k === 'custom' ? ` بـ ${br} ${br === 1 ? 'فرع' : 'فروع'}` : isNewPlan(k) ? ` بـ ${br} ${br === 1 ? 'فرع' : 'فروع'} (${price.monthly} ⃁ شهرياً)` : ''}؟${k === 'custom' ? '\n\nمهم: «ابنِ باقتك» ما فيها مزايا لين تفعّلها من الإضافات تحت (المخزون، المشتريات، الكاشير…) — بدونها يقفل عليه المخزون والمشتريات.' : ''}\n\nلو فروعه أكثر من ${br} (+ الفروع المشتراة)، الأحدث تتوقف مؤقتاً مع موظفينها. ولو موظفينه أكثر من ${staff} (+ الإضافات)، يتوقف الأحدث مؤقتاً. البيانات كلها تبقى وترجع لو رقّى.${!isNewPlan(c!.plan) && isNewPlan(k) ? '\n\nعميل على باقة قديمة: سعره المثبّت يتلغى وينتقل للسعر الجديد.' : ''}`
     if (!(await confirmDialog({ title: branchesOverride != null ? 'فروع الباقة' : 'تغيير الباقة', message: msg }))) return
     setBusy('plan')
     const j = await adminFetch('/api/admin/update-plan', { method: 'POST', body: { orgId: c!.org_id, maxBranches: br, maxStaff: staff, maxSuppliers: sup, planName: k, orgName: c!.org_name, billingCycle: c!.billing_cycle } })
@@ -114,6 +114,17 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
     setBusy(null)
     if (!j.success) { toast(j.error || 'فشل التغيير', 'error'); return }
     onChanged({ billing_cycle: cycle })
+  }
+
+  // «ابنِ باقتك»: عدد الموظفين (يأثر على الفاتورة وحد الموظفين)
+  async function setStaffIncluded(n: number) {
+    if (!(await confirmDialog({ title: 'عدد الموظفين', message: `عدد موظفين "${c!.org_name}" يصير ${n}؟ الفاتورة تتحدّث، ولو موظفينه أكثر يتوقف الأحدث مؤقتاً.`, type: 'warning', confirmText: 'تأكيد' }))) return
+    setBusy('plan')
+    const j = await adminFetch('/api/admin/update-plan', { method: 'POST', body: { orgId: c!.org_id, maxBranches: c!.max_branches, planName: c!.plan, orgName: c!.org_name, billingCycle: c!.billing_cycle, staffIncluded: n, maxStaff: n } })
+    setBusy(null)
+    if (!j.success) { toast(j.error || 'فشل الحفظ', 'error'); return }
+    onChanged({ staff_included: n })
+    loadAddons(c!.org_id)
   }
 
   // باقة المؤسسات: المتقدمة بحدود وسعر يتفق عليها مع العميل
@@ -275,7 +286,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
             const on = c.plan === k
             // باقته الحالية بسعره المثبّت (لو مشترك قبل تغيير الأسعار)، والباقي بالسعر الحالي — الجديدة لعدد فروعه
             const pp = planPriceFor(k, on ? c.locked_plan_monthly : null, planBranches)
-            const price = c.billing_cycle === 'yearly' ? `${pp.yearly} ⃁/سنة` : `${pp.monthly} ⃁/شهر`
+            const price = k === 'custom' ? (on ? `${bill.total} ⃁${c.billing_cycle === 'yearly' ? '/سنة' : '/شهر'}` : 'حسب المزايا') : c.billing_cycle === 'yearly' ? `${pp.yearly} ⃁/سنة` : `${pp.monthly} ⃁/شهر`
             return (
               <button key={k} onClick={() => changePlan(k)} disabled={!!busy} className="adm-hover"
                 style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, textAlign: 'right', fontFamily: 'inherit', cursor: on ? 'default' : 'pointer',
@@ -288,6 +299,14 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
               </button>
             )
           })}
+          {c.plan === 'custom' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 10, border: `1px solid ${A.border}` }}>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>عدد الموظفين <span style={{ fontSize: 11.5, fontWeight: 600, color: A.text3 }}>({6 * planBranches} مشمولين، الأقل −10 ⃁ لكل موظف، أقل شي {3 * planBranches})</span></span>
+              <Btn small disabled={!!busy || (c.staff_included ?? 6 * planBranches) <= 3 * planBranches} onClick={() => setStaffIncluded((c.staff_included ?? 6 * planBranches) - 1)}>−</Btn>
+              <b style={{ minWidth: 24, textAlign: 'center' }}>{c.staff_included ?? 6 * planBranches}</b>
+              <Btn small disabled={!!busy} onClick={() => setStaffIncluded((c.staff_included ?? 6 * planBranches) + 1)}>+</Btn>
+            </div>
+          )}
           {newPlan && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 10, border: `1px solid ${A.border}` }}>
               <span style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>فروع الباقة <span style={{ fontSize: 11.5, fontWeight: 600, color: A.text3 }}>(الفرع الإضافي {PLAN_CAPS[c.plan].branchPrice} ⃁)</span></span>

@@ -1,12 +1,12 @@
 'use client'
 import { SIGNUP_SOURCES } from '@/lib/signupSource'
 import { Check, Minus, Plus } from 'lucide-react'
-import { NEW_ADDON_PRICES, PLAN_PRICING, higherPlans, planPriceFor, signupAddonsFor, signupAddonsMonthly, yearlyOf, type NewPlanKey } from '@/lib/planPricing'
+import { CUSTOM_MIN_STAFF_PER_BRANCH, CUSTOM_MODULES, CUSTOM_MODULE_ORDER, CUSTOM_STAFF_STEP, NEW_ADDON_PRICES, NEW_PLANS, PLAN_PRICING, customModuleAmount, customMonthly, higherPlans, planPriceFor, signupAddonsFor, signupAddonsMonthly, yearlyOf, type NewPlanKey } from '@/lib/planPricing'
 import { PLANS, PLAN_EN } from './constants'
 import type { LoginState } from './useLogin'
 
 export default function RegisterStep2({ m }: { m: LoginState }) {
-  const { t, lang, mode, step, setStep, planChoice, setPlanChoice, signupAddons, setSignupAddons, branchCount, setBranchCount, billing, setBilling, loading, error, setError, agreedTerms, setAgreedTerms, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, handleRegister } = m
+  const { t, lang, mode, step, setStep, planChoice, setPlanChoice, signupAddons, setSignupAddons, staffCount, setStaffCount, branchCount, setBranchCount, billing, setBilling, loading, error, setError, agreedTerms, setAgreedTerms, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, handleRegister } = m
   return (
     <>
             {/* Register Step 2 */}
@@ -63,16 +63,84 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                     </button>
                   )})}
 
+                  {/* «ابنِ باقتك» — يختار المزايا اللي يحتاجها بس */}
+                  <button type="button" onClick={()=>setPlanChoice('custom')}
+                    style={{padding:'16px 18px',borderRadius:12,border:`1.5px ${planChoice==='custom'?'solid #029FA2':'dashed #9ca3af'}`,background:planChoice==='custom'?'#029FA208':'white',cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
+                    <div style={{fontSize:15,fontWeight:700,color:planChoice==='custom'?'#029FA2':'#111827',marginBottom:3}}>{lang==='ar'?'ابنِ باقتك بنفسك':'Build your own plan'}</div>
+                    <div style={{fontSize:12,color:'#374151'}}>{lang==='ar'?'اختر المزايا اللي تحتاجها بس — مثلاً إقفال الكاشير لحاله':'Pick only the features you need — e.g. cashier closing alone'}</div>
+                  </button>
+
+                  {planChoice === 'custom' && (() => {
+                    const MOD: Record<string, { ar: string; en: string }> = {
+                      mod_inventory: { ar: 'المخزون والموردين', en: 'Inventory & suppliers' },
+                      mod_purchases: { ar: 'المشتريات والفواتير', en: 'Purchases & invoices' },
+                      cashier_closing: { ar: 'إقفال الكاشير', en: 'Cashier closing' },
+                      hr_full: { ar: 'الحضور والرواتب', en: 'Attendance & payroll' },
+                      ai_tools: { ar: 'أدوات الذكاء الاصطناعي', en: 'AI tools' },
+                    }
+                    const minStaff = CUSTOM_MIN_STAFF_PER_BRANCH * branchCount
+                    const staff = Math.max(minStaff, staffCount ?? 6 * branchCount)
+                    const picked = CUSTOM_MODULE_ORDER.filter(s => signupAddons.includes(s))
+                    const monthly = customMonthly(Object.fromEntries(picked.map(s => [s, CUSTOM_MODULES[s].perBranch ? branchCount : 1])), branchCount, staff)
+                    const cur = (m: number) => billing==='yearly' ? yearlyOf(m) : m
+                    // باقة جاهزة تعطيه نفس اختياره بسعر أقل أو مساوي؟
+                    const extraStaff = Math.max(0, staff - 6 * branchCount) * CUSTOM_STAFF_STEP
+                    const better = picked.length ? NEW_PLANS
+                      .map(k => ({ k, total: planPriceFor(k, null, branchCount).monthly + signupAddonsMonthly(k, picked as unknown as string[], branchCount) + extraStaff }))
+                      .filter(x => x.total <= monthly).sort((a, b) => a.total - b.total || NEW_PLANS.indexOf(b.k) - NEW_PLANS.indexOf(a.k))[0] : undefined
+                    return (
+                      <div style={{border:'1.5px solid #e5e7eb',borderRadius:12,padding:'12px 14px',display:'flex',flexDirection:'column',gap:8}}>
+                        <div style={{fontSize:14,fontWeight:800,color:'#111827'}}>{lang==='ar'?'اختر المزايا':'Pick your features'}</div>
+                        {CUSTOM_MODULE_ORDER.map(slug => {
+                          const on = signupAddons.includes(slug), m = CUSTOM_MODULES[slug]
+                          const amount = customModuleAmount(slug, m.perBranch ? branchCount : 1)
+                          return (
+                            <button key={slug} type="button" onClick={()=>setSignupAddons(prev => on ? prev.filter(x=>x!==slug) : [...prev, slug])}
+                              style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${on?'#029FA2':'#e5e7eb'}`,background:on?'#f0fdfa':'white',cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
+                              <span style={{width:20,height:20,borderRadius:6,border:`1.5px solid ${on?'#029FA2':'#9ca3af'}`,background:on?'#029FA2':'white',display:'grid',placeItems:'center',color:'white',flexShrink:0}}>{on && <Check size={14} strokeWidth={3}/>}</span>
+                              <span style={{flex:1,fontSize:14,fontWeight:700,color:'#111827'}}>{lang==='ar'?MOD[slug].ar:MOD[slug].en}</span>
+                              <span className="hide-in-app" style={{fontSize:13,fontWeight:800,color:'#111827',whiteSpace:'nowrap'}}>{cur(amount)} {lang==='ar'?'⃁':'SAR'}</span>
+                            </button>
+                          )
+                        })}
+                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 2px'}}>
+                          <span style={{fontSize:14,fontWeight:700,color:'#111827'}}>{lang==='ar'?'عدد الموظفين':'Staff'} <span style={{fontSize:12,fontWeight:600,color:'#374151'}}>{lang==='ar'?`(${6*branchCount} مشمولين، كل موظف ±${CUSTOM_STAFF_STEP} ⃁)`:`(${6*branchCount} included, ±${CUSTOM_STAFF_STEP} SAR each)`}</span></span>
+                          <div style={{display:'flex',alignItems:'center',gap:10}}>
+                            <button type="button" aria-label={lang==='ar'?'نقص':'Less'} disabled={staff<=minStaff} onClick={()=>setStaffCount(v => Math.max(minStaff, (v ?? 6*branchCount) - 1))}
+                              style={{width:34,height:34,borderRadius:99,border:'none',background:'#f3f4f6',cursor:staff<=minStaff?'default':'pointer',opacity:staff<=minStaff?.4:1,display:'grid',placeItems:'center',color:'#111827'}}><Minus size={15}/></button>
+                            <b style={{minWidth:22,textAlign:'center',fontSize:16,color:'#111827'}}>{staff}</b>
+                            <button type="button" aria-label={lang==='ar'?'زيادة':'More'} disabled={staff>=200} onClick={()=>setStaffCount(v => Math.min(200, Math.max(minStaff, v ?? 6*branchCount) + 1))}
+                              style={{width:34,height:34,borderRadius:99,border:'none',background:'#f3f4f6',cursor:'pointer',display:'grid',placeItems:'center',color:'#111827'}}><Plus size={15}/></button>
+                          </div>
+                        </div>
+                        {better && (
+                          <button type="button" onClick={()=>{ setPlanChoice(better.k); setSignupAddons(picked.filter(s => signupAddonsFor(better.k).includes(s as any))) }}
+                            style={{padding:'10px 12px',borderRadius:10,border:'1.5px solid #029FA2',background:'#f0fdfa',color:'#0f766e',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',textAlign:'right',lineHeight:1.7}}>
+                            {lang==='ar'
+                              ? `باقة «${PLAN_PRICING[better.k].label}» تعطيك نفس اختيارك${better.total < monthly ? ` بـ ${cur(better.total)} ⃁ (توفّر ${cur(monthly - better.total)} ⃁)` : ' بنفس السعر وفيها مزايا أكثر'} — اضغط للتحويل`
+                              : `The ${better.k} plan covers the same for ${cur(better.total)} SAR — tap to switch`}
+                          </button>
+                        )}
+                        <div style={{fontSize:12,color:'#374151',lineHeight:1.7}}>{lang==='ar'?'تقدر تحدد أي فرع ياخذ كل ميزة، وتضيف وتشيل، من داخل النظام بأي وقت.':'Pick which branch gets each feature, or change them, anytime inside the app.'}</div>
+                        <div className="hide-in-app" style={{display:'flex',justifyContent:'space-between',borderTop:'1px solid #e5e7eb',paddingTop:8,fontSize:14,fontWeight:800,color:'#111827'}}>
+                          <span>{lang==='ar'?'المجموع':'Total'}</span>
+                          <span>{picked.length ? `${cur(monthly)} ${lang==='ar'?'⃁':'SAR'}/${billing==='yearly'?(lang==='ar'?'سنة':'yr'):(lang==='ar'?'شهر':'mo')}` : (lang==='ar'?'اختر ميزة':'Pick a feature')}</span>
+                        </div>
+                      </div>
+                    )
+                  })()}
+
                   {/* إضافات مع الباقة — تختارها الحين، وتحدد فروعها من داخل النظام */}
-                  {planChoice && signupAddonsFor(planChoice).length > 0 && (() => {
+                  {planChoice && planChoice !== 'custom' && signupAddonsFor(planChoice).length > 0 && (() => {
                     const AD: Record<string, { ar: string; en: string }> = {
                       cashier_closing: { ar: 'إقفال الكاشير', en: 'Cashier closing' },
                       hr_full: { ar: 'الحضور والرواتب', en: 'Attendance & payroll' },
                       ai_tools: { ar: 'أدوات الذكاء الاصطناعي', en: 'AI tools' },
                     }
-                    const monthly = planPriceFor(planChoice, null, branchCount).monthly + signupAddonsMonthly(planChoice, signupAddons, branchCount)
+                    const pc = planChoice as NewPlanKey
+                    const monthly = planPriceFor(pc, null, branchCount).monthly + signupAddonsMonthly(pc, signupAddons, branchCount)
                     // باقة أعلى تعطيه نفس اختياره بسعر أقل؟ (مثلاً الأساسية + كاشير لفرعين أغلى من التشغيل)
-                    const better = (higherPlans(planChoice) as NewPlanKey[])
+                    const better = (higherPlans(pc) as NewPlanKey[])
                       .map(k => ({ k, total: planPriceFor(k, null, branchCount).monthly + signupAddonsMonthly(k, signupAddons, branchCount) }))
                       .filter(x => x.total <= monthly).sort((a, b) => a.total - b.total)[0]
                     return (

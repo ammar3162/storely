@@ -181,7 +181,9 @@ export default function DashboardPage() {
     setNotifs(prev=>prev.filter(x=>x.id!==id))
   }
   const toneColor:Record<string,string>={danger:dsColors.danger,warning:dsColors.warning,success:dsColors.primary,info:dsColors.info}
-  const attention = notifs.length>0 || smartSuggestions.length>0 || !!subAlert
+  // اقتراحات الطلب من المخزون — بس لو المخزون باشتراكه
+  const suggestions = inv ? smartSuggestions : []
+  const attention = notifs.length>0 || suggestions.length>0 || !!subAlert
 
   if(loading) return (
     <div className="dh">
@@ -250,7 +252,7 @@ export default function DashboardPage() {
                 <button className="sh-btn sh-btn-sm hide-in-app" onClick={()=>router.push('/settings')}>التفاصيل</button>
               </div>
             )}
-            {smartSuggestions.slice(0,4).map((s:any,i:number)=>(
+            {suggestions.slice(0,4).map((s:any,i:number)=>(
               <div key={'s'+i} className="dh-row">
                 <span className="dh-dot" style={{background:s.urgency==='now'?dsColors.danger:dsColors.warning}}/>
                 <div className="dh-row-main">
@@ -283,10 +285,10 @@ export default function DashboardPage() {
             <div className="dh-month">
               {[
                 {label:'المبيعات', value:fmtMoney(monthComp.current.sales), change:monthComp.changes.sales},
-                {label:'المشتريات', value:fmtMoney(monthComp.current.purchasesTotal), change:monthComp.changes.purchases, inverse:true},
+                pur && {label:'المشتريات', value:fmtMoney(monthComp.current.purchasesTotal), change:monthComp.changes.purchases, inverse:true},
                 {label:'الصافي', value:fmtMoney(monthComp.current.net), change:monthComp.changes.net},
-                {label:'عمليات الصرف', value:Number(monthComp.current.dispenseCount).toLocaleString('en-US'), change:monthComp.changes.dispenseCount},
-              ].map((m,i)=>(
+                inv && {label:'عمليات الصرف', value:Number(monthComp.current.dispenseCount).toLocaleString('en-US'), change:monthComp.changes.dispenseCount},
+              ].filter((m): m is Exclude<typeof m, false> => !!m).map((m,i)=>(
                 <div key={i} className="dh-month-cell">
                   <div className="dh-kpi-label">{m.label}</div>
                   <div className="dh-month-val">{m.value}</div>

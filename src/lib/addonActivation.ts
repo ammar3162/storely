@@ -14,7 +14,8 @@ export type ActivateResult =
  * unitPrice = سعر الوحدة للاشتراك الجديد لو يختلف عن سعر الإضافة (الفرع الإضافي سعره حسب الباقة) — يتثبّت بـ locked_price.
  * yearly = باقة سنوية: المستحق بالتناسب للفرع الإضافي بخصم السنوي.
  */
-export async function activateAddon(db: SupabaseClient, input: { orgId: string; addonId: string; quantity?: number; branchIds?: string[] | null; unitPrice?: number; yearly?: boolean }): Promise<ActivateResult> {
+/** allBranches = لكل فروع المنشأة (حتى اللي تنضاف بعدين) بكمية quantity — للتسجيل قبل ما تنشأ الفروع */
+export async function activateAddon(db: SupabaseClient, input: { orgId: string; addonId: string; quantity?: number; branchIds?: string[] | null; unitPrice?: number; yearly?: boolean; allBranches?: boolean }): Promise<ActivateResult> {
   const { orgId, addonId } = input
   const { data: addonRow } = await db.from('marketplace_addons').select('slug,name,monthly_price').eq('id', addonId).maybeSingle()
   if (!addonRow) return { ok: false, status: 404, error: 'الإضافة غير موجودة' }
@@ -35,7 +36,7 @@ export async function activateAddon(db: SupabaseClient, input: { orgId: string; 
 
   // إضافة لكل فرع (الباقات الجديدة): الفروع المختارة (افتراضياً كل الفروع النشطة) والكمية = عددها
   let branchIds: string[] | null = null
-  if (isPerBranchAddon(plan, slug)) {
+  if (isPerBranchAddon(plan, slug) && !input.allBranches) {
     const { data: branches } = await db.from('branches').select('id').eq('org_id', orgId).eq('is_active', true)
     const live = ((branches || []) as any[]).map(b => b.id as string)
     const wanted = Array.isArray(input.branchIds) && input.branchIds.length ? input.branchIds.filter(id => live.includes(id)) : live
@@ -79,7 +80,7 @@ export async function activateAddon(db: SupabaseClient, input: { orgId: string; 
 
   // المستحق الحين: الوحدات الجديدة فقط × الأيام الباقية لين التجديد
   const chargedQty = wasActive ? Math.max(0, qtyDelta) : qty
-  const unit = wasActive ? unitPrice((addonRow as any).monthly_price, existingRow as any) : (Number(input.unitPrice) > 0 ? Number(input.unitPrice) : Number((addonRow as any).monthly_price) || 0)
+  const unit = wasActive ? unitPrice(addonPriceFor(plan, slug) ?? (addonRow as any).monthly_price, existingRow as any) : (Number(input.unitPrice) > 0 ? Number(input.unitPrice) : Number((addonRow as any).monthly_price) || 0)
   const prorated = proratedCharge(input.yearly && slug === 'extra_branch' ? unit * YEARLY_FACTOR : unit, chargedQty, periodEnd)
   return { ok: true, expiresAt, quantity: qty, proratedAmount: prorated.amount, proratedDays: prorated.days, branchIds, slug, name: (addonRow as any).name }
 }

@@ -174,14 +174,14 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
       await admin({ orgId, planName: 'pro', maxBranches: 3, maxStaff: 10, maxSuppliers: 10 })
       const { data: br2 } = await db.from('branches').insert({ org_id: orgId, name: 'فرع ترقية', is_active: true } as any).select('id').single()
       const before = await counts()
-      expect(await orgFeatures(db as any, orgId)).toEqual({ cashier: true, hr: true, ai: true, profitability: true })
+      expect(await orgFeatures(db as any, orgId)).toEqual({ inventory: true, purchases: true, cashier: true, hr: true, ai: true, profitability: true })
 
       // تخفيض للأساسية: الفرع الزايد يتوقف مؤقتاً، والبيانات كلها باقية
       const down = await admin({ orgId, planName: 'basic', maxBranches: 1, maxStaff: 3, maxSuppliers: 3 })
       expect(down.status).toBe(200)
       expect(await counts()).toEqual(before)
       expect((await db.from('branches').select('is_active').eq('id', (br2 as any).id).single()).data).toMatchObject({ is_active: false })
-      expect(await orgFeatures(db as any, orgId)).toEqual({ cashier: false, hr: false, ai: false, profitability: false })
+      expect(await orgFeatures(db as any, orgId)).toEqual({ inventory: true, purchases: true, cashier: false, hr: false, ai: false, profitability: false })
 
       // إضافة «موظف إضافي» منتهية ما تعطي رصيد
       const { data: es } = await db.from('marketplace_addons').select('id').eq('slug', 'extra_staff').single()
@@ -377,7 +377,7 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
     }, 180_000)
   })
   describe('signup on a new plan with add-ons', () => {
-    it('creates the org on the chosen plan and branches, and turns the chosen add-ons into pending requests (included ones are dropped)', async () => {
+    it('creates the org on the chosen plan and branches and activates the chosen add-ons for all branches (included ones are dropped)', async () => {
       const s2 = newStamp()
       const { data: u } = await db.auth.admin.createUser({ email: `it-sig-${s2}@storely.test`, password: `It-${s2}-x!`, email_confirm: true })
       const uid = u.user!.id
@@ -395,9 +395,54 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         oid = j.org_id
         const { data: org } = await db.from('organizations').select('plan,max_branches,max_staff,max_suppliers').eq('id', oid).single()
         expect(org).toMatchObject({ plan: 'ops', max_branches: 3, max_staff: 18, max_suppliers: 45 })
-        // التشغيل فيها الكاشير أصلاً → ينحفظ الحضور بس، بكمية الفروع
-        const { data: reqs } = await db.from('addon_requests').select('quantity,status,note,marketplace_addons(slug)').eq('org_id', oid)
-        expect((reqs as any[]).map(r => [r.marketplace_addons.slug, r.quantity, r.status])).toEqual([['hr_full', 3, 'pending']])
+        // التشغيل فيها الكاشير أصلاً → يتفعّل الحضور بس، لكل الفروع (حتى اللي تنضاف بعدين) بكمية 3 وسعر 69
+        const { data: subs } = await db.from('org_addon_subscriptions').select('quantity,status,branch_ids,locked_price,marketplace_addons(slug)').eq('org_id', oid)
+        expect((subs as any[]).map(r => [r.marketplace_addons.slug, r.quantity, r.status, r.branch_ids, Number(r.locked_price)])).toEqual([['hr_full', 3, 'active', null, 69]])
+        const { monthlyBill } = await import('@/lib/orgBill')
+        expect(await monthlyBill(db as any, oid)).toBe(239 + 3 * 69)
+      } finally {
+        vi.doUnmock('@/lib/supabase/server')
+        if (oid) {
+          const { deleteOrgCompletely } = await import('@/lib/deleteOrg')
+          await deleteOrgCompletely(oid, uid).catch(() => {})
+          await db.from('organizations').delete().eq('id', oid)
+        }
+        await db.auth.admin.deleteUser(uid).catch(() => {})
+      }
+    }, 180_000)
+  })
+  describe('«ابنِ باقتك» (custom plan)', () => {
+    it('cashier only, 1 branch, 3 staff: only the cashier opens, inventory/purchase writes are locked, bill = minimum 49', async () => {
+      const s3 = newStamp()
+      const { data: u } = await db.auth.admin.createUser({ email: `it-cus-${s3}@storely.test`, password: `It-${s3}-x!`, email_confirm: true })
+      const uid = u.user!.id
+      vi.resetModules()
+      vi.doMock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: uid, email: `it-cus-${s3}@storely.test` } } }) } }) }))
+      const reg = await import('@/app/api/register-org/route')
+      let oid = ''
+      try {
+        const res = await reg.POST(new Request('http://test/api/register-org', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+          orgName: `__it_cus_${s3}`, fullPhone: '966500000000', phone: uniqPhone(), countryCode: '+966', businessType: 'كوفي', billing: 'monthly',
+          plan: 'custom', branchCount: 1, staff: 3, addons: ['cashier_closing', 'bogus'], trialEnds: new Date(Date.now() + 14 * 864e5).toISOString(),
+        }) }))
+        expect(res.status).toBe(200)
+        oid = ((await res.json()) as any).org_id
+        const { data: org } = await db.from('organizations').select('plan,max_branches,staff_included').eq('id', oid).single()
+        expect(org).toMatchObject({ plan: 'custom', max_branches: 1, staff_included: 3 })
+        // بعد التجربة (مدفوع): الكاشير بس
+        await db.from('profiles').update({ subscription_type: 'paid' } as any).eq('id', uid)
+        const { orgFeatures } = await import('@/lib/planFeatures')
+        expect(await orgFeatures(db as any, oid)).toMatchObject({ cashier: true, inventory: false, purchases: false, hr: false, profitability: true })
+        const { routeFeatureError, clearFeatureCache } = await import('@/lib/featureRoutes')
+        clearFeatureCache(oid)
+        expect(await routeFeatureError(oid, '/api/products', 'POST', db as any)).toMatch(/المخزون/)
+        expect(await routeFeatureError(oid, '/api/purchases', 'POST', db as any)).toMatch(/المشتريات/)
+        expect(await routeFeatureError(oid, '/api/products', 'GET', db as any)).toBeNull()
+        expect(await routeFeatureError(oid, '/api/cashier-closing', 'POST', db as any)).toBeNull()
+        const { monthlyBill } = await import('@/lib/orgBill')
+        expect(await monthlyBill(db as any, oid)).toBe(49)
+        const { staffLimitFor } = await import('@/lib/staffCapacity')
+        expect(await staffLimitFor(db as any, oid)).toBe(3)
       } finally {
         vi.doUnmock('@/lib/supabase/server')
         if (oid) {

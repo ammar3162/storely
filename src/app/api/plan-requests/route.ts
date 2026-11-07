@@ -20,7 +20,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const { org_id, target_plan } = await req.json()
-    if (!org_id || !['pro', 'advanced', 'ops', 'full'].includes(target_plan)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+    if (!org_id || !['pro', 'advanced', 'essential', 'ops', 'full'].includes(target_plan)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
     if (access.role === 'manager') return NextResponse.json({ error: 'طلب الترقية لمالك المنشأة' }, { status: 403 })
