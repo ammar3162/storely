@@ -212,3 +212,11 @@ describe('custom plan upgrades', () => {
     expect(higherPlans('custom')).toEqual(['essential', 'ops', 'full'])
   })
 })
+
+describe('custom HR price (89) keeps «الكاملة» the better deal', () => {
+  it('inventory + cashier + HR, 1 branch, 6 staff = 198 (vs full 219)', () => {
+    expect(customModuleAmount('hr_full', 1)).toBe(89)
+    expect(customModuleAmount('hr_full', 2)).toBe(124)
+    expect(customMonthly({ mod_inventory: 1, cashier_closing: 1, hr_full: 1 }, 1, 6)).toBe(198)
+  })
+})

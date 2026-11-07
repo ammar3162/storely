@@ -22,7 +22,7 @@ export const CUSTOM_MODULES: Record<string, { first: number; extra: number; perB
   mod_inventory:   { first: 69, extra: 35, perBranch: true },
   mod_purchases:   { first: 50, extra: 20, perBranch: true },
   cashier_closing: { first: 40, extra: 25, perBranch: true },
-  hr_full:         { first: 69, extra: 35, perBranch: true },
+  hr_full:         { first: 89, extra: 35, perBranch: true },   // أغلى من إضافتها للباقات (69) عشان «الكاملة» تبقى الأوفر
   ai_tools:        { first: 15, extra: 0,  perBranch: false },
 }
 export const CUSTOM_MODULE_ORDER = ['mod_inventory', 'mod_purchases', 'cashier_closing', 'hr_full', 'ai_tools'] as const
