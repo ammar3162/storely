@@ -2,6 +2,7 @@ import { managerMay } from '@/lib/managerPerms'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { branchFeatureDenied } from '@/lib/featureRoutes'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -58,6 +59,8 @@ export async function POST(req: Request) {
     if (effectiveBranchId && (product as any).branch_id !== effectiveBranchId) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
     }
+    const denied = await branchFeatureDenied(org_id, ['inventory'], (product as any).branch_id, supabase)
+    if (denied) return NextResponse.json({ error: denied }, { status: 403 })
     if (Number((product as any).qty) < qn) return NextResponse.json({ error: 'الكمية أكبر من المتاح!' }, { status: 400 })
 
     const { error } = await supabase.from('stock_movements').insert({

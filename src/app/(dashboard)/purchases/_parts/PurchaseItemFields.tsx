@@ -8,14 +8,15 @@ import { C, CATS, CAT_ICONS, lbl, inp } from './constants'
 import type { PurchasesState } from './usePurchases'
 
 export default function PurchaseItemFields({ m }: { m: PurchasesState }) {
-  const { products, isExisting, setIsExisting, uploading, bizType, setShowScan, previewUrl, form, setForm, handleImage } = m
+  const { invOn, products, isExisting, setIsExisting, uploading, bizType, setShowScan, previewUrl, form, setForm, handleImage } = m
+  const cats = CATS.filter(c => invOn || c !== 'مخزون')
   return (
     <>
             {/* Category */}
             <div style={{marginBottom:12}}>
               <label style={lbl}>نوع الشراء</label>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
-                {CATS.map(c=>(
+              <div style={{display:'grid',gridTemplateColumns:`repeat(${cats.length},1fr)`,gap:6}}>
+                {cats.map(c=>(
                   <button key={c} type="button" onClick={()=>setForm({...form,category:c,name:'',sku:'',unit:'قطعة'})}
                     style={{padding:'10px 6px',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer',border:`1px solid ${form.category===c?C.primary:C.border2}`,background:form.category===c?C.primaryL:'white',color:form.category===c?C.primary:C.text3,fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:4,transition:'all .15s'}}>
                     <span style={{fontSize:18}}>{CAT_ICONS[c]}</span>

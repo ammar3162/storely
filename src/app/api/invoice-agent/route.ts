@@ -7,6 +7,7 @@ import { readInvoice } from '@/lib/invoiceOcr'
 import { noteInvoiceScan } from '@/lib/scanUsage'
 import { classifyItems, applyAnswer, draftStatus, aliasKey, type AgentItem } from '@/lib/invoiceAgent'
 import { guard, limit } from '@/lib/rateLimit'
+import { branchFeatureDenied } from '@/lib/featureRoutes'
 
 // قراءة فاتورة مفصّلة تاخذ أكثر من ١٠ ثواني
 export const maxDuration = 60
@@ -43,6 +44,8 @@ export async function POST(req: Request) {
     if (invoice_image && !isStoredInvoiceUrl(invoice_image)) return NextResponse.json({ error: 'رابط الفاتورة غير صالح — ارفع الصورة من جديد' }, { status: 400 })
     const db = sb()
     const bid = enforcedBranchId(access, branch_id) || null
+    const denied = await branchFeatureDenied(org_id, ['purchases'], bid, db)
+    if (denied) return NextResponse.json({ error: denied }, { status: 403 })
     if (bid) {
       const { data: b } = await db.from('branches').select('id').eq('id', bid).eq('org_id', org_id).maybeSingle()
       if (!b) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })

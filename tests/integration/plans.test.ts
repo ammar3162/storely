@@ -454,4 +454,40 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
       }
     }, 180_000)
   })
+  describe('«ابنِ باقتك»: purchases without inventory, inventory on one branch only', () => {
+    it('an inventory purchase is saved as an expense with no stock; inventory writes are locked per branch', async () => {
+      const purchases = await import('@/app/api/purchases/route')
+      const { activateAddon } = await import('@/lib/addonActivation')
+      const { branchFeatureDenied, clearFeatureCache } = await import('@/lib/featureRoutes')
+      const { data: b2 } = await db.from('branches').insert({ org_id: orgId, name: 'فرع ب', is_active: true } as any).select('id').single()
+      const branchB = (b2 as any).id
+      const { data: ads } = await db.from('marketplace_addons').select('id,slug').in('slug', ['mod_purchases', 'mod_inventory'])
+      const idOf = (sl: string) => (ads as any[]).find(a => a.slug === sl).id
+      await db.from('profiles').update({ subscription_type: 'paid', subscription_ends_at: new Date(Date.now() + 20 * 864e5).toISOString() } as any).eq('id', userId)
+      await db.from('organizations').update({ plan: 'custom', max_branches: 2, staff_included: 12 } as any).eq('id', orgId)
+      try {
+        expect((await activateAddon(db as any, { orgId, addonId: idOf('mod_purchases') })).ok).toBe(true)
+        clearFeatureCache(orgId)
+        const tag = `مصروف-${stamp}`
+        const res = await call(purchases.POST, 'POST', '/api/purchases', { org_id: orgId, branch_id: branchA, category: 'مخزون', name: tag, qty: 3, unit: 'كيلو',
+          total_amount: 90, supplier: 'مورد اختبار', has_vat: false, invoice_date: today })
+        expect(res.status).toBe(200)
+        const { data: row } = await db.from('purchases').select('category').eq('org_id', orgId).eq('name', tag).single()
+        expect((row as any).category).toBe('مشتريات')
+        expect((await db.from('products').select('id').eq('org_id', orgId).eq('name', tag)).data).toEqual([])
+
+        // المخزون لفرع أ بس
+        expect((await activateAddon(db as any, { orgId, addonId: idOf('mod_inventory'), branchIds: [branchA] })).ok).toBe(true)
+        clearFeatureCache(orgId)
+        expect(await branchFeatureDenied(orgId, ['inventory'], branchA, db as any)).toBeNull()
+        expect(await branchFeatureDenied(orgId, ['inventory'], branchB, db as any)).toMatch(/لهذا الفرع/)
+        await db.from('purchases').delete().eq('org_id', orgId).eq('name', tag)
+      } finally {
+        await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).in('addon_id', [idOf('mod_purchases'), idOf('mod_inventory')])
+        await db.from('branches').delete().eq('id', branchB)
+        await db.from('organizations').update({ plan: 'pro', max_branches: 1, max_staff: 1, staff_included: null } as any).eq('id', orgId)
+        clearFeatureCache(orgId)
+      }
+    }, 180_000)
+  })
 })

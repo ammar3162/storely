@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { branchFeatureDenied } from '@/lib/featureRoutes'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -78,6 +79,9 @@ export async function POST(req: Request) {
     const db = sb()
     const bid = await targetBranch(db, access, org_id, body.branch_id || null)
     if (bid === undefined) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
+    // «ابنِ باقتك»: الأصناف تحتاج المخزون أو المشتريات لهالفرع
+    const denied = await branchFeatureDenied(org_id, ['inventory', 'purchases'], bid, db)
+    if (denied) return NextResponse.json({ error: denied }, { status: 403 })
 
     if (Array.isArray(body.items)) {
       const rows = body.items.slice(0, 500).filter((i: any) => String(i.name || '').trim()).map((i: any) => ({

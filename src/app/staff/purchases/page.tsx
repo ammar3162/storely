@@ -125,6 +125,7 @@ export default function StaffPurchasesPage() {
     if(!z) return
     setForm(f=>({...f, hasVat:'yes', supplier: f.supplier || z.inv.sellerName, supplier_vat_number: z.inv.vatNumber, total_amount: f.total_amount || String(z.inv.total)}))
   }
+  const [invOn, setInvOn] = useState(true)
   const [form, setForm] = useState({
     category:'مخزون', name:'', sku:'', qty:'', unit:'قطعة',
     reorder_point:'5', total_amount:'', supplier:'', note:'',
@@ -143,7 +144,9 @@ export default function StaffPurchasesPage() {
     loadSuppliers(s.org_id)
     fetch('/api/staff-products',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('staff_token')}`},body:'{}'})
       .then(r=>r.json()).then(j=>setProducts(j.products||[])).catch(()=>{})
-    getStaffOrg().then(org=>{ if(org?.currency) setCurr(currencySymbol(org.currency)); setBizType(org?.business_type??null) })
+    getStaffOrg().then(org=>{ if(org?.currency) setCurr(currencySymbol(org.currency)); setBizType(org?.business_type??null)
+      // «ابنِ باقتك»: فرع الموظف بدون المخزون — الفاتورة مشتريات (مصروف)
+      if(org?.inventory_feature===false){ setInvOn(false); setForm(f=>f.category==='مخزون'?{...f,category:'مشتريات'}:f) } })
   },[])
 
   // تحديث فوري: لو المالك أضاف مورد أو منتج، يظهر على طول
@@ -277,7 +280,7 @@ export default function StaffPurchasesPage() {
     if(!res.ok){showToast(pt('errorPrefix',lang)+resData.error);setLoading(false);submitting.current=false;return}
     showToast(form.category==='مخزون'?`${pt('inventoryUpdated',lang)} (+${form.qty||0})`:pt('purchaseRecorded',lang))
 
-    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_number:'',supplier_vat_number:''})
+    setForm({category:invOn?'مخزون':'مشتريات',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_number:'',supplier_vat_number:''})
     setVatFromSupplier(false); setZatca(null)
     setPreviewUrl(null);setPdfName('');setReadState('');setOcrItems([]);setLoading(false);submitting.current=false
     // بعد 2 ثانية ارجع لصفحة الموظف
@@ -322,7 +325,7 @@ export default function StaffPurchasesPage() {
           <div style={{marginBottom:14}}>
             <label style={lbl}>{pt('purchaseType',lang)}</label>
             <div style={{display:'flex',gap:8}}>
-              {[['مخزون',pt('catInventory',lang),'📦'],['مشتريات',pt('catPurchases',lang),'🛒'],['أخرى',pt('catOther',lang),'📋']].map(([cat,label,icon])=>(
+              {[['مخزون',pt('catInventory',lang),'📦'],['مشتريات',pt('catPurchases',lang),'🛒'],['أخرى',pt('catOther',lang),'📋']].filter(([cat])=>invOn||cat!=='مخزون').map(([cat,label,icon])=>(
                 <button key={cat} type="button" onClick={()=>setForm(f=>({...f,category:cat}))}
                   style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.category===cat?C.primary:C.border2}`,background:form.category===cat?C.primaryL:'white',color:form.category===cat?C.primary:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                   {icon} {label}

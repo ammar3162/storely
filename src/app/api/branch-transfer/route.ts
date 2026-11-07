@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { branchFeatureDenied } from '@/lib/featureRoutes'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -51,6 +52,10 @@ export async function POST(req: Request) {
     }
 
     const db = sb()
+    for (const b of [from_branch_id, to_branch_id]) {
+      const denied = await branchFeatureDenied(org_id, ['inventory'], b, db)
+      if (denied) return NextResponse.json({ error: denied }, { status: 403 })
+    }
 
     const { data: sourceProduct } = await db
       .from('products')

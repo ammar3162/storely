@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { netFromTotal } from '@/lib/vat'
 import { bestMatch } from '@/lib/productMatch'
 import type { PurchaseTax } from '@/lib/taxInvoice'
+import { branchFeatureDenied } from '@/lib/featureRoutes'
 
 // حفظ أصناف فاتورة وحدة (بعد قراءة الصورة): كل صنف سطر مشتريات، والمخزون:
 //   صنف موجود (اختاره المستخدم أو تطابق قوي بالاسم) → تزيد كميته ويتحدّث متوسط التكلفة
@@ -22,6 +23,8 @@ export async function saveInvoiceItems(db: SupabaseClient, o: {
   orgId: string; branchId: string | null; items: InvoiceItem[]; hasVat: boolean; supplier: string; invoiceImage: string | null
   tax: PurchaseTax; createdAt?: string; profileId?: string | null; staffName?: string; staffCreatesHidden?: boolean
 }): Promise<ItemResult[]> {
+  // الفرع بدون المخزون («ابنِ باقتك»): كل الأصناف تنحفظ مشتريات (مصروف) بدون حركة مخزون
+  const noInventory = !!(await branchFeatureDenied(o.orgId, ['inventory'], o.branchId, db))
   let pq = db.from('products').select('id,name,unit,qty,avg_cost').eq('org_id', o.orgId).eq('is_active', true)
   if (o.branchId) pq = pq.eq('branch_id', o.branchId)
   const { data: prods } = await pq.limit(2000)
@@ -32,7 +35,7 @@ export async function saveInvoiceItems(db: SupabaseClient, o: {
 
   for (const it of o.items) {
     // «مشتريات»: مصروف بدون مخزون (أدوات تنظيف، غاز، صيانة...) — سطر مشتريات بس
-    if (it.product_id === 'expense') {
+    if (it.product_id === 'expense' || noInventory) {
       const { error } = await db.from('purchases').insert({
         org_id: o.orgId, branch_id: o.branchId, profile_id: o.profileId ?? null, category: 'مشتريات', name: it.name, qty: it.qty || null, unit: it.unit,
         amount: netFromTotal(it.total, o.hasVat), has_vat: o.hasVat, supplier: o.supplier, note: o.staffName ? `تسجيل بواسطة الموظف: ${o.staffName}` : null,

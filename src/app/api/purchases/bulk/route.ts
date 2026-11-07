@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { saveInvoice } from '@/lib/saveInvoice'
+import { branchFeatureDenied } from '@/lib/featureRoutes'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,6 +18,8 @@ export async function POST(req: Request) {
     const access = await verifyOrgAccess(body.org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
+    const denied = await branchFeatureDenied(body.org_id, ['purchases'], enforcedBranchId(access, body.branch_id) || null)
+    if (denied) return NextResponse.json({ error: denied }, { status: 403 })
     const r = await saveInvoice(sb(), { orgId: body.org_id, branchId: enforcedBranchId(access, body.branch_id) || null, profileId: access.userId ?? null, body })
     if (!r.ok) return NextResponse.json({ error: r.error, duplicate: r.duplicate, results: r.results }, { status: r.status })
     return NextResponse.json({ success: true, saved: r.saved, results: r.results, summary: r.summary })

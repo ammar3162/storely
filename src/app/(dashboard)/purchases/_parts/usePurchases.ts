@@ -43,6 +43,7 @@ export function usePurchases() {
   function todayRiyadh() {
     return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
   }
+  const [invOn, setInvOn] = useState(true)
   const [form, setForm] = useState({
     category:'مخزون', name:'', sku:'', qty:'', unit:'قطعة',
     reorder_point:'5', total_amount:'', supplier:'',
@@ -84,7 +85,12 @@ export function usePurchases() {
       oid=me.org_id
     }
     setOrgId(oid)
-    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setBizType(me?.org?.business_type??null); setIsOwner(me?.role==='owner') })
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setBizType(me?.org?.business_type??null); setIsOwner(me?.role==='owner')
+      // «ابنِ باقتك»: الفرع بدون المخزون — الفاتورة تنحفظ مشتريات (مصروف) والخيار «مخزون» ينخفي
+      const bid = typeof window!=='undefined' ? sessionStorage.getItem('s_branch_id') : null
+      const inv = ((bid && me?.org?.branch_features?.[bid]) || me?.org?.features)?.inventory !== false
+      setInvOn(inv)
+      if(!inv) setForm(f=>f.category==='مخزون'?{...f,category:'مشتريات'}:f) })
     loadProducts(oid);loadHistory(oid);loadPayables(oid)
     api.get('/api/suppliers',{org_id:oid}).then(j=>{ if(j.success) setSuppliers((j.suppliers||[]).map((x:any)=>({name:x.name,vat_number:x.vat_number||null}))) }).catch(()=>{})
   }
@@ -220,7 +226,7 @@ export function usePurchases() {
       setPendingThanks({ productId: res.product_id, productName: form.name, supplierName: form.supplier.trim() })
     }
 
-    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:'',invoice_number:'',supplier_vat_number:''});setZatca(null);setVatFromSupplier(false)
+    setForm({category:invOn?'مخزون':'مشتريات',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:'',invoice_number:'',supplier_vat_number:''});setZatca(null);setVatFromSupplier(false)
     setPreviewUrl(null);setLoading(false);submitting.current=false
     cache.invalidate('purchases:');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
     loadHistory(orgId);loadPayables(orgId)
@@ -246,7 +252,7 @@ export function usePurchases() {
   const totalVat=filteredHistory.reduce((s,p)=>s+Number(p.vat_amount||0),0)
   const totalNet=filteredHistory.reduce((s,p)=>s+Number(p.amount||0),0)
 
-  return { history, setHistory, isOwner, setIsOwner, editLog, setEditLog, payables, setPayables, showPayables, setShowPayables, payingId, setPayingId, deletingId, setDeletingId, products, setProducts, isExisting, setIsExisting, orgId, setOrgId, curr, setCurr, loading, setLoading, uploading, setUploading, showManual, setShowManual, bizType, setBizType, showScan, setShowScan, previewUrl, setPreviewUrl, pendingThanks, setPendingThanks, filterCat, setFilterCat, filterPeriod, setFilterPeriod, filterSupplier, setFilterSupplier, form, setForm, suppliers, setSuppliers, vatFromSupplier, setVatFromSupplier, zatca, setZatcaState, submitting, zatcaRef, sb, inputTotal, displayAmount, displayVat, filteredHistory, totalSpent, totalVat, totalNet, todayRiyadh, setZatca, setSupplierName, init, loadProducts, loadHistory, loadPayables, markPaid, deletePurchase, handleImage, confirmSupplierThanks, pickOcrItem, handleSubmit }
+  return { invOn, history, setHistory, isOwner, setIsOwner, editLog, setEditLog, payables, setPayables, showPayables, setShowPayables, payingId, setPayingId, deletingId, setDeletingId, products, setProducts, isExisting, setIsExisting, orgId, setOrgId, curr, setCurr, loading, setLoading, uploading, setUploading, showManual, setShowManual, bizType, setBizType, showScan, setShowScan, previewUrl, setPreviewUrl, pendingThanks, setPendingThanks, filterCat, setFilterCat, filterPeriod, setFilterPeriod, filterSupplier, setFilterSupplier, form, setForm, suppliers, setSuppliers, vatFromSupplier, setVatFromSupplier, zatca, setZatcaState, submitting, zatcaRef, sb, inputTotal, displayAmount, displayVat, filteredHistory, totalSpent, totalVat, totalNet, todayRiyadh, setZatca, setSupplierName, init, loadProducts, loadHistory, loadPayables, markPaid, deletePurchase, handleImage, confirmSupplierThanks, pickOcrItem, handleSubmit }
 }
 
 export type PurchasesState = ReturnType<typeof usePurchases>
