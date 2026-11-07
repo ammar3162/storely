@@ -4,16 +4,16 @@ import { useEffect, useState } from 'react'
 import { api } from '@/lib/api-client'
 import { colors, font, radius } from '@/lib/ds'
 import { toast } from '@/components/toast'
-import { PLAN_CAPS, PLAN_PRICING, planKeyOf, planPriceFor, higherPlans, isNewPlan, type PlanKey } from '@/lib/planPricing'
+import { PLAN_CAPS, PLAN_PRICING, planKeyOf, planPriceFor, upgradeTargets, isNewPlan, type PlanKey } from '@/lib/planPricing'
 
-const NEW_DESC: Record<string, string> = { ops: 'كل الأساسية + إقفال الكاشير لكل الفروع', full: 'كل المميزات: الكاشير والحضور والرواتب والذكاء' }
+const NEW_DESC: Record<string, string> = { essential: 'المخزون والموردين والمشتريات والفواتير', ops: 'كل الأساسية + إقفال الكاشير لكل الفروع', full: 'كل المميزات: الكاشير والحضور والرواتب والذكاء' }
 const desc = (k: PlanKey) => {
   const c = PLAN_CAPS[k]
   if (isNewPlan(k)) return `${NEW_DESC[k] || ''} · ${c.staff} موظفين و${c.suppliers} مورد لكل فرع`
   return `${k === 'basic' ? 'المميزات بالإضافات' : 'كل المميزات'} · ${c.branches === 1 ? 'فرع واحد' : c.branches + ' فروع'} · ${c.staff} موظف · ${c.suppliers} مورد`
 }
 
-export default function PlanUpgrade({ orgId, plan, maxBranches }: { orgId: string; plan: string; maxBranches: number }) {
+export default function PlanUpgrade({ orgId, plan, maxBranches, activeSlugs = [] }: { orgId: string; plan: string; maxBranches: number; activeSlugs?: string[] }) {
   const current = planKeyOf(plan, maxBranches)
   const [pending, setPending] = useState<any>(null)
   const [sending, setSending] = useState<string | null>(null)
@@ -34,7 +34,8 @@ export default function PlanUpgrade({ orgId, plan, maxBranches }: { orgId: strin
     if (j.success) setPending(null)
   }
 
-  const higher = higherPlans(current)
+  // «ابنِ باقتك»: الباقات اللي فيها مزاياه وزيادة بس — ما نعرض باقة بنفس اللي عنده
+  const higher = upgradeTargets(current, activeSlugs)
   if (!higher.length) return null
   return (
     <div className="hide-in-app" style={{ marginTop: 16, display: 'flex', flexDirection: 'column' as const, gap: 8 }}>

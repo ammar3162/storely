@@ -1,12 +1,21 @@
 'use client'
 import VatRegistration from '@/components/VatRegistration'
 import PlanUpgrade from '@/components/PlanUpgrade'
+
+const FEATURE_NAMES: Record<string, string> = {
+  mod_inventory: 'المخزون والموردين', mod_purchases: 'المشتريات والفواتير', cashier_closing: 'إقفال الكاشير',
+  hr_full: 'الحضور والرواتب', ai_tools: 'أدوات الذكاء الاصطناعي',
+}
 import { colors, radius, font, btnPrimary, inp } from '@/lib/ds'
 import { lbl, COUNTRY_CODES } from './constants'
 import type { SettingsState } from './useSettings'
 
 export default function OrgTab({ m }: { m: SettingsState }) {
-  const { saving, orgId, maxBranches, activeTab, countryCode, setCountryCode, logoUrl, logoUploading, planName, subEndsAt, planKey, form, setForm, planLabel, handleSave, uploadLogo } = m
+  const { saving, orgId, maxBranches, activeTab, countryCode, setCountryCode, logoUrl, logoUploading, planName, subEndsAt, planKey, billAddons, form, setForm, planLabel, handleSave, uploadLogo } = m
+  // المزايا/الإضافات المفعّلة (لـ «ابنِ باقتك» هي باقته نفسها) — تطلع تحت اسم الباقة، والترقية تعرض الأعلى منها بس
+  const activeSlugs: string[] = (billAddons || [])
+    .filter((a: any) => FEATURE_NAMES[a.slug] && (a.subscriptions || (a.subscription ? [a.subscription] : [])).some((x: any) => x?.isValid))
+    .map((a: any) => a.slug)
   return (
     <>
           {activeTab==='org'&&(
@@ -67,6 +76,12 @@ export default function OrgTab({ m }: { m: SettingsState }) {
                       <span style={{fontSize:font.sm,color:colors.text3}}>الباقة الحالية</span>
                       <span style={{fontSize:font.sm,fontWeight:800,color:colors.primary}}>{planName||planLabel}</span>
                     </div>
+                    {activeSlugs.length>0 && (
+                      <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:subEndsAt?10:0,marginTop:subEndsAt?-2:10}}>
+                        <span style={{fontSize:12,color:colors.text3,alignSelf:'center'}}>{planKey==='custom'?'مزاياك:':'الإضافات:'}</span>
+                        {activeSlugs.map(sl=><span key={sl} style={{fontSize:12,fontWeight:600,color:colors.text,background:'white',border:`1px solid ${colors.border}`,borderRadius:6,padding:'3px 8px'}}>{FEATURE_NAMES[sl]}</span>)}
+                      </div>
+                    )}
                     {subEndsAt && (
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:10,borderTop:`1px solid ${colors.border}`}}>
                         <span style={{fontSize:font.sm,color:colors.text3}}>ينتهي في</span>
@@ -75,12 +90,12 @@ export default function OrgTab({ m }: { m: SettingsState }) {
                     )}
                   </div>
 
-                  {orgId && planKey && <PlanUpgrade orgId={orgId} plan={planKey} maxBranches={maxBranches}/>}
+                  {orgId && planKey && <PlanUpgrade orgId={orgId} plan={planKey} maxBranches={maxBranches} activeSlugs={activeSlugs}/>}
                 </div>
 
               </div>
               <button type="submit" disabled={saving} style={{...btnPrimary,width:'100%',padding:'13px',marginTop:20,opacity:saving?0.7:1,cursor:saving?'not-allowed':'pointer'}}>
-                {saving?'⏳ جاري الحفظ...':'💾 حفظ البيانات'}
+                {saving?'جاري الحفظ...':'حفظ البيانات'}
               </button>
             </form>
           )}
