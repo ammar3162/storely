@@ -3,7 +3,7 @@ import { Package, BarChart3, ShieldCheck, Wallet, Send, ShoppingCart, Save } fro
 import type { StaffPage } from './useStaffManagement'
 
 export default function PermissionsModal({ m }: { m: StaffPage }) {
-  const { staff, editingPerms, setEditingPerms, editingRole, editPerms, setEditPerms, hasCashier, savePermissions } = m
+  const { permOk, staff, editingPerms, setEditingPerms, editingRole, editPerms, setEditPerms, hasCashier, savePermissions } = m
   return (
     <>
       {editingPerms && (
@@ -18,7 +18,7 @@ export default function PermissionsModal({ m }: { m: StaffPage }) {
                 {key:'purchases',  label:'المشتريات',  Icon:ShoppingCart, locked:false},
                 {key:'reports',    label:'التقارير',   Icon:BarChart3, locked:false},
                 {key:'cashier',    label:'إقفال الكاشير', Icon:Wallet, locked:!hasCashier||editingRole==='cashier'},
-              ].map(p=>(
+              ].filter(p=>p.key==='reports'||p.key==='cashier'||permOk(p.key)).map(p=>(
                 <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'12px',background:(editPerms as any)[p.key]?'#f0fdfa':'#f9fafb',borderRadius:10,border:`1.5px solid ${(editPerms as any)[p.key]?'#029FA2':'#e5e7eb'}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                   <input type="checkbox" checked={(editPerms as any)[p.key]} disabled={p.locked}
                     onChange={e=>!p.locked&&setEditPerms(prev=>({...prev,[p.key]:e.target.checked}))}

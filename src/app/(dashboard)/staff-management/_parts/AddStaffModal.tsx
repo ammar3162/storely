@@ -5,7 +5,7 @@ import { Package, BarChart3, User, Lock, Wallet, Smartphone, Check, Send, Shoppi
 import type { StaffPage } from './useStaffManagement'
 
 export default function AddStaffModal({ m }: { m: StaffPage }) {
-  const { branches, showAdd, setShowAdd, newPermissions, setNewPermissions, newName, setNewName, newPhone, setNewPhone, staffCountry, setStaffCountry, newBranch, newRole, setNewRole, hasCashier, newSendClosingWA, setNewSendClosingWA, dayStartHour, setDayStartHour, addStaff } = m
+  const { permOk, branches, showAdd, setShowAdd, newPermissions, setNewPermissions, newName, setNewName, newPhone, setNewPhone, staffCountry, setStaffCountry, newBranch, newRole, setNewRole, hasCashier, newSendClosingWA, setNewSendClosingWA, dayStartHour, setDayStartHour, addStaff } = m
   return (
     <>
       {/* Add staff modal */}
@@ -50,7 +50,7 @@ export default function AddStaffModal({ m }: { m: StaffPage }) {
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                   <button type="button" onClick={()=>setNewRole('staff')} style={{padding:'12px 10px',borderRadius:10,border:`1.5px solid ${newRole==='staff'?colors.primary:colors.border}`,background:newRole==='staff'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='staff'?`0 2px 8px ${colors.primary}22`:'none'}}>
                     <div style={{fontWeight:800,fontSize:font.sm,color:newRole==='staff'?colors.primary:colors.text2,marginBottom:3,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><User size={14} strokeWidth={2.25}/> موظف عادي</div>
-                    <div style={{fontSize:10,color:newRole==='staff'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يستخدم نظام الصرف والمخزون</div>
+                    <div style={{fontSize:10,color:newRole==='staff'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>{permOk('dispense')?'يستخدم نظام الصرف والمخزون':permOk('purchases')?'يسجّل المشتريات':'يسجّل حضوره ومهامه'}</div>
                   </button>
                   <button type="button" onClick={()=>{
                       if(!hasCashier){toast('الكاشير يحتاج باقة فيها إقفال الكاشير أو إضافة «إقفال الكاشير» لهذا الفرع من صفحة الإضافات','warning');return}
@@ -103,7 +103,7 @@ export default function AddStaffModal({ m }: { m: StaffPage }) {
                     {key:'purchases',  label:'المشتريات',  Icon:ShoppingCart, locked:false},
                     {key:'reports',    label:'التقارير',   Icon:BarChart3, locked:false},
                     {key:'cashier',    label:'إقفال الكاشير', Icon:Wallet, locked:!hasCashier},
-                  ].map(p=>(
+                  ].filter(p=>p.key==='reports'||p.key==='cashier'||permOk(p.key)).map(p=>(
                     <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:'white',borderRadius:8,border:`1.5px solid ${(newPermissions as any)[p.key]?colors.primary:colors.border}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                       <input type="checkbox" checked={(newPermissions as any)[p.key]} disabled={p.locked}
                         onChange={e=>!p.locked&&setNewPermissions(prev=>({...prev,[p.key]:e.target.checked}))}

@@ -33,7 +33,7 @@ export default function StaffCard({ m, s, i }: { m: StaffPage; s: any; i: number
                   <button onClick={e=>{e.stopPropagation();setEditingPerms(s.id);setEditPerms({dispense:true,inventory:false,purchases:false,reports:false,cashier:false,...(s.permissions||{}),...(s.role==='cashier'?{cashier:true}:{})});setEditingRole(s.role)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
                     <ShieldCheck size={13} strokeWidth={2.25}/> صلاحيات
                   </button>
-                  {s.permissions?.dispense && (
+                  {s.permissions?.dispense && m.permOk('dispense') && (
                     <button onClick={e=>{e.stopPropagation();openAssign(s)}} className="act-btn" style={{background:colors.bg,color:colors.text2,border:`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
                       <Package size={13} strokeWidth={2.25}/> {s.assigned_products?.length>0?`${s.assigned_products.length} منتج`:'كل المنتجات'}
                     </button>

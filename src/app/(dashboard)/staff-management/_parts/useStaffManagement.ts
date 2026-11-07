@@ -8,6 +8,7 @@ import { currencySymbol } from '@/lib/currencySymbol'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { cache } from '@/lib/cache'
 import { generatePin } from './helpers'
+import { permAvailable } from '@/lib/managerPerms'
 
 /** كل حالة ودوال صفحة الموظفين — منقولة كما هي من page.tsx */
 export function useStaffManagement() {
@@ -38,6 +39,9 @@ export function useStaffManagement() {
   const [newRole, setNewRole]       = useState<'staff'|'cashier'>('staff')
   // الكاشير متاح بالشاملة/المتقدمة أو بإضافة «إقفال الكاشير» — من نفس مصدر الخادم (/api/me)
   const [hasCashier, setHasCashier] = useState(['ops','full','pro','advanced'].includes(orgPlan))
+  // «ابنِ باقتك»: ميزات المنشأة — نخفي صلاحيات الصرف/المخزون/المشتريات لو ما هي باشتراكه
+  const [orgFeat, setOrgFeat] = useState<Record<string, boolean | undefined>>({})
+  const permOk = (key: string) => permAvailable(key, orgFeat)
   const [newSendClosingWA, setNewSendClosingWA] = useState(true)
   const [revealedPin, setRevealedPin] = useState<{name:string,phone:string,pin:string}|null>(null)
   const [visiblePins, setVisiblePins] = useState<Record<string,boolean>>({})
@@ -93,7 +97,7 @@ export function useStaffManagement() {
       oid = await getOrgId(); if(!oid) return
     }
     setOrgId(oid)
-    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setIsOwnerSM(me?.role==='owner'); if(me?.org?.features) setHasCashier(!!me.org.features.cashier) })
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setIsOwnerSM(me?.role==='owner'); if(me?.org?.features){ setHasCashier(!!me.org.features.cashier); setOrgFeat(me.org.features) } })
     const settingsRes = await api.get('/api/org-settings', { org_id: oid })
     const orgLimits = settingsRes.settings
     const h = Number((orgLimits as any)?.business_day_start_hour ?? 4)
@@ -313,7 +317,7 @@ export function useStaffManagement() {
   const activeCount   = visibleStaff.filter(s=>s.is_active).length
   const inactiveCount = visibleStaff.filter(s=>!s.is_active).length
 
-  return { showUnassigned, setShowUnassigned, pickerFor, setPickerFor, assigning, setAssigning, staff, setStaff, branches, setBranches, isOwnerSM, setIsOwnerSM, moveFor, setMoveFor, moveTo, setMoveTo, moving, setMoving, orgId, setOrgId, curr, setCurr, orgNotifyClosingWA, setOrgNotifyClosingWA, loading, setLoading, showAdd, setShowAdd, newPermissions, setNewPermissions, editingPerms, setEditingPerms, editingRole, setEditingRole, reportMode, setReportMode, editPerms, setEditPerms, newName, setNewName, newPhone, setNewPhone, staffCountry, setStaffCountry, newBranch, setNewBranch, newRole, setNewRole, hasCashier, setHasCashier, newSendClosingWA, setNewSendClosingWA, revealedPin, setRevealedPin, visiblePins, setVisiblePins, revealedPins, setRevealedPins, expandedId, setExpandedId, editingStaffPhoneId, setEditingStaffPhoneId, editStaffPhoneVal, setEditStaffPhoneVal, savingStaffPhone, setSavingStaffPhone, visible, setVisible, maxStaff, setMaxStaff, products, setProducts, assigningId, setAssigningId, editingNameId, setEditingNameId, editNameValue, setEditNameValue, savingName, setSavingName, reportStaff, setReportStaff, staffReport, setStaffReport, staffClosings, setStaffClosings, reportLoading, setReportLoading, selectedProds, setSelectedProds, assignSearch, setAssignSearch, sharedProducts, setSharedProducts, dayStartHour, setDayStartHour, dayStartLoaded, setDayStartLoaded, showHoursModal, setShowHoursModal, savingHours, setSavingHours, orphans, setOrphans, orgPlan, visibleStaff, activeCount, inactiveCount, saveStaffPhone, init, loadStaff, moveOrphanHere, loadProducts, openReport, openAssign, saveAssigned, quickAssignProduct, confirmMove, loadBranches, addStaff, savePermissions, saveName, saveShopHours, toggleActive, deleteStaff, toggleSendClosingWA, togglePin, regeneratePin }
+  return { orgFeat, permOk, showUnassigned, setShowUnassigned, pickerFor, setPickerFor, assigning, setAssigning, staff, setStaff, branches, setBranches, isOwnerSM, setIsOwnerSM, moveFor, setMoveFor, moveTo, setMoveTo, moving, setMoving, orgId, setOrgId, curr, setCurr, orgNotifyClosingWA, setOrgNotifyClosingWA, loading, setLoading, showAdd, setShowAdd, newPermissions, setNewPermissions, editingPerms, setEditingPerms, editingRole, setEditingRole, reportMode, setReportMode, editPerms, setEditPerms, newName, setNewName, newPhone, setNewPhone, staffCountry, setStaffCountry, newBranch, setNewBranch, newRole, setNewRole, hasCashier, setHasCashier, newSendClosingWA, setNewSendClosingWA, revealedPin, setRevealedPin, visiblePins, setVisiblePins, revealedPins, setRevealedPins, expandedId, setExpandedId, editingStaffPhoneId, setEditingStaffPhoneId, editStaffPhoneVal, setEditStaffPhoneVal, savingStaffPhone, setSavingStaffPhone, visible, setVisible, maxStaff, setMaxStaff, products, setProducts, assigningId, setAssigningId, editingNameId, setEditingNameId, editNameValue, setEditNameValue, savingName, setSavingName, reportStaff, setReportStaff, staffReport, setStaffReport, staffClosings, setStaffClosings, reportLoading, setReportLoading, selectedProds, setSelectedProds, assignSearch, setAssignSearch, sharedProducts, setSharedProducts, dayStartHour, setDayStartHour, dayStartLoaded, setDayStartLoaded, showHoursModal, setShowHoursModal, savingHours, setSavingHours, orphans, setOrphans, orgPlan, visibleStaff, activeCount, inactiveCount, saveStaffPhone, init, loadStaff, moveOrphanHere, loadProducts, openReport, openAssign, saveAssigned, quickAssignProduct, confirmMove, loadBranches, addStaff, savePermissions, saveName, saveShopHours, toggleActive, deleteStaff, toggleSendClosingWA, togglePin, regeneratePin }
 }
 
 export type StaffPage = ReturnType<typeof useStaffManagement>

@@ -15,6 +15,15 @@ export const MANAGER_PERMS: ManagerPerm[] = [
   { key: 'ai_tools', label: 'أدوات الذكاء', hint: 'التوقعات واقتراحات الطلب', group: 'أخرى', pages: ['/ai-tools'] },
 ]
 export const MANAGER_PERM_KEYS = MANAGER_PERMS.map(p => p.key)
+/** كل صلاحية ← الميزة اللي تحتاجها (يكفي وحدة) — الصلاحية تنخفي لو الميزة مو باشتراكه */
+export const PERM_FEATURES: Record<string, ('inventory' | 'purchases' | 'cashier' | 'hr' | 'ai' | 'profitability')[]> = {
+  inventory: ['inventory'], dispense: ['inventory'], purchases: ['purchases'], suppliers: ['inventory', 'purchases'],
+  marketplace: ['inventory', 'purchases'], attendance: ['hr'], hr: ['hr'], profitability: ['profitability'], ai_tools: ['ai'],
+  cashier: ['cashier'],
+}
+/** الصلاحية متاحة حسب ميزات المنشأة (الميزة غير معروفة = متاحة) */
+export const permAvailable = (key: string, f: Partial<Record<string, boolean>> | null | undefined) =>
+  !PERM_FEATURES[key] || PERM_FEATURES[key].some(x => f?.[x] !== false)
 
 // صفحات المالك فقط — مدير الفرع ما يشوفها أبداً
 export const OWNER_ONLY_PAGES = ['/settings', '/branches', '/branch-compare', '/branch-managers', '/transfer-stock', '/addons-market']

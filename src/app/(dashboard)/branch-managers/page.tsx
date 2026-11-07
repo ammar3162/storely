@@ -3,15 +3,21 @@ import PageIcon from '@/components/PageIcon'
 import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
-import { getOrgId } from '@/lib/session'
+import { getOrgId, getMe } from '@/lib/session'
 import { colors, font, card, btnPrimary, btnSecondary, inp, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { cache } from '@/lib/cache'
-import { MANAGER_PERMS } from '@/lib/managerPerms'
+import { MANAGER_PERMS as ALL_MANAGER_PERMS, permAvailable } from '@/lib/managerPerms'
 import { Eye, EyeOff, Pencil, Trash2, Store, ShieldCheck } from 'lucide-react'
 
-const GROUPS = Array.from(new Set(MANAGER_PERMS.map(p => p.group)))
+let MANAGER_PERMS = ALL_MANAGER_PERMS
+let GROUPS = Array.from(new Set(MANAGER_PERMS.map(p => p.group)))
+// «ابنِ باقتك»: صلاحيات المزايا اللي مو باشتراكه ما تنعرض
+function applyOrgFeatures(f: Partial<Record<string, boolean>> | null | undefined) {
+  MANAGER_PERMS = ALL_MANAGER_PERMS.filter(p => permAvailable(p.key, f))
+  GROUPS = Array.from(new Set(MANAGER_PERMS.map(p => p.group)))
+}
 const ALL_OFF = Object.fromEntries(MANAGER_PERMS.map(p => [p.key, false])) as Record<string, boolean>
 const countOn = (p: Record<string, boolean> | null | undefined) => MANAGER_PERMS.filter(x => p?.[x.key]).length
 
@@ -100,12 +106,20 @@ export default function BranchManagersPage() {
   const [editWa, setEditWa] = useState('')
   const [editWaConsent, setEditWaConsent] = useState(false)
 
+  // يعيد الرسم بعد ما نعرف ميزات المنشأة (الصلاحيات المتاحة)
+  const [, setFeatVer] = useState(0)
   useEffect(() => { init() }, [])
 
   async function init() {
     const oid = await getOrgId()
     if (!oid) return
     setOrgId(oid)
+    // «ابنِ باقتك»: نخفي صلاحيات المزايا اللي مو باشتراكه، ونشيلها من اختيار المدير الجديد
+    getMe().then(me => {
+      applyOrgFeatures(me?.org?.features)
+      setPerms(p => Object.fromEntries(Object.entries(p).filter(([k]) => MANAGER_PERMS.some(x => x.key === k) || !(k in ALL_OFF))))
+      setFeatVer(v => v + 1)
+    }).catch(() => {})
     const bj = await api.get('/api/branches', { org_id: oid })
     setBranches(bj.branches || [])
     const cached = cache.get('branch-managers:' + oid)
