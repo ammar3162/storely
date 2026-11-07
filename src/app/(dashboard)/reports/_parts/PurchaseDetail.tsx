@@ -12,6 +12,7 @@ import { toast } from '@/components/toast'
 import { ListSkeleton } from '@/components/PageSkeleton'
 import { pdfOrgInfo, reportData, getRange, formatRange, BackBtn, PeriodBadge } from './shared'
 import type { FilterPeriod } from './shared'
+import { fileLink } from '@/lib/invoiceUrl'
 
 export default function PurchaseDetail({ period, from, to, onBack }: { period:FilterPeriod; from:string; to:string; onBack:()=>void }) {
   const [purchases, setPurchases] = useState<any[]>([])
@@ -213,7 +214,7 @@ export default function PurchaseDetail({ period, from, to, onBack }: { period:Fi
                     <td style={{padding:'11px 12px',fontSize:font.xs,color:colors.text4,maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.supplier||'—'}</td>
                     <td style={{padding:'11px 12px',textAlign:'center' as const}}>
                       {p.invoice_image
-                        ? <a href={p.invoice_image} target="_blank" rel="noreferrer" style={{background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap' as const,display:'inline-flex',alignItems:'center',gap:4}}><Paperclip size={11} strokeWidth={2.25}/> عرض</a>
+                        ? <a href={fileLink(p.invoice_image)} target="_blank" rel="noreferrer" style={{background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap' as const,display:'inline-flex',alignItems:'center',gap:4}}><Paperclip size={11} strokeWidth={2.25}/> عرض</a>
                         : <span style={{color:colors.border2}}>—</span>}
                     </td>
                     <td style={{padding:'11px 12px',textAlign:'center' as const}}>

@@ -10,6 +10,7 @@ import { toast } from '@/components/toast'
 import { ListSkeleton } from '@/components/PageSkeleton'
 import { netOf, pdfOrgInfo, getRange, formatRange, BackBtn, PeriodBadge } from './shared'
 import type { FilterPeriod } from './shared'
+import { fileLink } from '@/lib/invoiceUrl'
 
 const CashierClosingEditor = lazy(() => import('@/components/CashierClosingEditor'))
 const EditHistoryDialog = lazy(() => import('@/components/EditHistoryDialog'))
@@ -291,10 +292,10 @@ export default function CashierClosingDetail({ period, from, to, onBack }: { per
                     <td style={{padding:'12px 16px'}}>
                       <div style={{display:'flex',gap:6}}>
                         {c.sales_image && (
-                          <a href={c.sales_image} target="_blank" rel="noopener noreferrer" title="صورة تقرير المبيعات" style={{width:28,height:28,borderRadius:7,background:colors.infoLight,display:'flex',alignItems:'center',justifyContent:'center',textDecoration:'none',color:colors.info}}><BarChart3 size={13} strokeWidth={2.25}/></a>
+                          <a href={fileLink(c.sales_image)} target="_blank" rel="noopener noreferrer" title="صورة تقرير المبيعات" style={{width:28,height:28,borderRadius:7,background:colors.infoLight,display:'flex',alignItems:'center',justifyContent:'center',textDecoration:'none',color:colors.info}}><BarChart3 size={13} strokeWidth={2.25}/></a>
                         )}
                         {c.network_image && (
-                          <a href={c.network_image} target="_blank" rel="noopener noreferrer" title="صورة موازنة الشبكة" style={{width:28,height:28,borderRadius:7,background:colors.primaryLight,display:'flex',alignItems:'center',justifyContent:'center',textDecoration:'none',color:colors.primary}}><CreditCard size={13} strokeWidth={2.25}/></a>
+                          <a href={fileLink(c.network_image)} target="_blank" rel="noopener noreferrer" title="صورة موازنة الشبكة" style={{width:28,height:28,borderRadius:7,background:colors.primaryLight,display:'flex',alignItems:'center',justifyContent:'center',textDecoration:'none',color:colors.primary}}><CreditCard size={13} strokeWidth={2.25}/></a>
                         )}
                         {!c.sales_image && !c.network_image && (
                           <span style={{fontSize:11,color:colors.text4}}>—</span>

@@ -6,6 +6,7 @@ import { colors, radius, font, inp, btnPrimary } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { REQUEST_KINDS, type RequestKind } from '@/lib/accountantRequests'
 import { normalizeVat, isValidVat } from '@/lib/taxInvoice'
+import { fileLink } from '@/lib/invoiceUrl'
 
 // طلبات المحاسب (جهة المالك): يرد، ويكمّل رقم الفاتورة والرقم الضريبي مباشرة
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -38,7 +39,7 @@ function RequestCard({ r, orgId, onDone }: { r: any; orgId: string; onDone: () =
       </div>
       {r.invoice && <div style={{ fontSize: 12.5, color: colors.text3, marginTop: 5 }}>
         فاتورة {r.invoice.supplier || '—'} · {r.invoice.date} · <span dir="ltr">{fmt(r.invoice.total)}</span>
-        {r.invoice.invoice_image && /^https:\/\//.test(r.invoice.invoice_image) && <> · <a href={r.invoice.invoice_image} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>صورة الفاتورة</a></>}
+        {r.invoice.invoice_image && /^https:\/\//.test(r.invoice.invoice_image) && <> · <a href={fileLink(r.invoice.invoice_image)} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>صورة الفاتورة</a></>}
       </div>}
       {r.message && <div style={{ fontSize: 13.5, marginTop: 5 }}>«{r.message}»</div>}
       {r.owner_reply && <div style={{ fontSize: 12.5, marginTop: 6, color: colors.text3, whiteSpace: 'pre-line' as const }}>ردك: {r.owner_reply}</div>}

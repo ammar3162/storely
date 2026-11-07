@@ -5,7 +5,7 @@ import { fmt } from './inputs'
 import type { CashierClosing } from './useCashierClosing'
 
 export default function StepReview({ m }: { m: CashierClosing }) {
-  const { lang, step, deficitChoice, setDeficitChoice, deficitNote, setDeficitNote, networkImage, salesImage, curr, sales, mada, visa, mastercard, cash, deliveryList, totalPurchasesNow, expectedCash, difference, status, deficitReasonOk, businessDateLabel, isAfterMidnightCarry } = m
+  const { lang, step, deficitChoice, setDeficitChoice, deficitNote, setDeficitNote, networkImage, salesImage, networkPreview, salesPreview, curr, sales, mada, visa, mastercard, cash, deliveryList, totalPurchasesNow, expectedCash, difference, status, deficitReasonOk, businessDateLabel, isAfterMidnightCarry } = m
   return (
     <>
             {/* خطوة 4: المراجعة */}
@@ -92,11 +92,11 @@ export default function StepReview({ m }: { m: CashierClosing }) {
                 )}
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                   <div style={{padding:8,borderRadius:9,background:'#f7f7f5',textAlign:'center' as const}}>
-                    <img src={salesImage} alt="" style={{width:'100%',height:60,borderRadius:6,objectFit:'cover',marginBottom:4}}/>
+                    <img src={salesPreview || salesImage} alt="" style={{width:'100%',height:60,borderRadius:6,objectFit:'cover',marginBottom:4}}/>
                     <span style={{fontSize:10,color:'#8b8a84',fontWeight:700}}>{ct('salesReportCheck',lang)}</span>
                   </div>
                   <div style={{padding:8,borderRadius:9,background:'#f7f7f5',textAlign:'center' as const}}>
-                    <img src={networkImage} alt="" style={{width:'100%',height:60,borderRadius:6,objectFit:'cover',marginBottom:4}}/>
+                    <img src={networkPreview || networkImage} alt="" style={{width:'100%',height:60,borderRadius:6,objectFit:'cover',marginBottom:4}}/>
                     <span style={{fontSize:10,color:'#8b8a84',fontWeight:700}}>{ct('networkBalanceCheck',lang)}</span>
                   </div>
                 </div>

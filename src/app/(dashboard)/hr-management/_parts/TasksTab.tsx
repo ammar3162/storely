@@ -3,6 +3,7 @@ import { colors, radius, btnPrimary, inp } from '@/lib/ds'
 import { Plus, Camera } from 'lucide-react'
 import { ListSkeleton } from '@/components/PageSkeleton'
 import type { HrPage } from './useHrManagement'
+import { fileLink } from '@/lib/invoiceUrl'
 
 export default function TasksTab({ m, s }: { m: HrPage; s: any }) {
   const { tasks, loadingTasks, newTaskTitle, setNewTaskTitle, newTaskDesc, setNewTaskDesc, newTaskPhoto, setNewTaskPhoto, savingTask, hrTab, TASK_STATUS_LABEL, createTask, reviewTask, toggleDaily } = m
@@ -40,7 +41,7 @@ export default function TasksTab({ m, s }: { m: HrPage; s: any }) {
                                 </div>
                                 {t.description && <div style={{fontSize:12,color:colors.text3,marginBottom:8}}>{t.description}</div>}
                                 {t.photo_url && (
-                                  <a href={t.photo_url} target="_blank" rel="noreferrer" style={{fontSize:11,color:colors.info,textDecoration:'underline',display:'inline-block',marginBottom:8}}>عرض صورة الإثبات</a>
+                                  <a href={fileLink(t.photo_url)} target="_blank" rel="noreferrer" style={{fontSize:11,color:colors.info,textDecoration:'underline',display:'inline-block',marginBottom:8}}>عرض صورة الإثبات</a>
                                 )}
                                 {t.status==='completed' && (
                                   <div style={{display:'flex',gap:8,marginTop:6,marginBottom:6}}>

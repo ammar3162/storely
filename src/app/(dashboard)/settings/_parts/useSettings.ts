@@ -184,9 +184,9 @@ export function useSettings() {
     setLogoUploading(true)
     const ext = file.name.split('.').pop()
     const path = `${orgId}/logo-${Date.now()}.${ext}`   // مجلد المنشأة (سياسة التخزين تسمح بمجلدها بس)
-    const { error: upErr } = await sb.storage.from('invoices').upload(path, file, { upsert: true })
+    const { error: upErr } = await sb.storage.from('org-logos').upload(path, file, { upsert: true })   // الشعار بمجلد عام (الفواتير خاصة)
     if (upErr) { alert('فشل رفع الصورة: ' + upErr.message); setLogoUploading(false); return }
-    const { data: pub } = sb.storage.from('invoices').getPublicUrl(path)
+    const { data: pub } = sb.storage.from('org-logos').getPublicUrl(path)
     const updRes = await api.patch('/api/org-settings', { org_id: orgId, logo_url: pub.publicUrl })
     if (!updRes.success) { alert('فشل حفظ رابط الصورة: ' + (updRes.error||'')); setLogoUploading(false); return }
     setLogoUrl(pub.publicUrl)

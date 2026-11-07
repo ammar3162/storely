@@ -6,6 +6,7 @@ const loadExcel = async () => (await import('exceljs')).default
 
 export { ACC_SECTIONS, type AccSection } from './accountantSections'
 import type { AccSection } from './accountantSections'
+import { fileLink, siteOrigin } from '@/lib/invoiceUrl'
 
 export type AccPurchase = { date: string; branch?: string | null; supplier: string | null; name: string; category: string | null; qty: number | null; unit: string | null
   net: number; vat: number; total: number; paid: boolean; invoiceUrl: string | null
@@ -248,7 +249,7 @@ export async function buildAccountantWorkbook(r: AccountantReport, opts: { water
       if (!i.complete) row.getCell('status').font = { bold: true, color: { argb: 'FFDC2626' } }
       else row.getCell('status').font = { bold: true, color: { argb: 'FF059669' } }
       if (i.invoiceUrl && /^https:\/\//.test(i.invoiceUrl)) {
-        const cell = row.getCell('invoice'); cell.value = { text: 'عرض الفاتورة', hyperlink: i.invoiceUrl }; cell.font = { color: { argb: 'FF2563EB' }, underline: true }
+        const cell = row.getCell('invoice'); cell.value = { text: 'عرض الفاتورة', hyperlink: fileLink(i.invoiceUrl, siteOrigin()) }; cell.font = { color: { argb: 'FF2563EB' }, underline: true }
       }
     })
   }
@@ -270,7 +271,7 @@ export async function buildAccountantWorkbook(r: AccountantReport, opts: { water
     r.purchases.forEach((p, i) => {
       if (!p.invoiceUrl || !/^https:\/\//.test(p.invoiceUrl)) return
       const cell = pws.getRow(i + 2).getCell('invoice')
-      cell.value = { text: 'عرض الفاتورة', hyperlink: p.invoiceUrl }
+      cell.value = { text: 'عرض الفاتورة', hyperlink: fileLink(p.invoiceUrl, siteOrigin()) }
       cell.font = { color: { argb: 'FF2563EB' }, underline: true }
     })
   }

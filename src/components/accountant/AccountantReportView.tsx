@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Download, FileSpreadsheet } from 'lucide-react'
 import { colors, radius } from '@/lib/ds'
 import { invoicesLabel, staffLabel, taxInvoices, vatReturn, payrollName } from '@/lib/accountantExport'
+import { fileLink } from '@/lib/invoiceUrl'
 
 // عرض تقرير المحاسب — صفحة الرابط وبوابة المحاسب تستخدمه
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -99,7 +100,7 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
       </div>}
       <Table head={['التاريخ', 'رقم الفاتورة', 'المورد', 'الرقم الضريبي', 'الضريبة', 'الإجمالي', 'الحالة', 'الفاتورة', ...(onRequest ? [''] : []), ...(onEditPurchase ? [''] : [])]} moneyCols={[4, 5]}
         rows={(onlyMissing ? missing : allTax).map(i => [<Edited key="d" date={i.date} src={i.editedSource} />, i.invoiceNumber || '—', i.supplier || '—', i.supplierVat || '—', i.vat, i.total, (i.mismatch ? '⚠️ أكبر من الأصلية · ' : '') + (!i.complete ? `ناقص: ${i.missing.filter(m => m !== 'صورة الفاتورة').join('، ')}` : i.verified ? '✓ موثقة' : '✓ مكتملة'),
-          i.invoiceUrl && /^https:\/\//.test(i.invoiceUrl) ? <a href={i.invoiceUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>عرض</a> : '—',
+          i.invoiceUrl && /^https:\/\//.test(i.invoiceUrl) ? <a href={fileLink(i.invoiceUrl)} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>عرض</a> : '—',
           ...(onRequest ? [<button key="rq" onClick={() => onRequest(i)} style={{ fontSize: 12, fontWeight: 800, color: colors.primary, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, borderRadius: 8, padding: '4px 9px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>اطلب</button>] : []), ...(onEditPurchase ? [i.firstId ? editBtn(() => onEditPurchase({ id: i.firstId!, mode: 'invoice', label: `${i.supplier || '—'} · ${i.date}`, invoiceNumber: i.invoiceNumber, supplierVat: i.supplierVat })) : ''] : [])])} />
     </Card></div>}
 

@@ -3,7 +3,7 @@ import { ct } from './strings'
 import type { CashierClosing } from './useCashierClosing'
 
 export default function StepPhotos({ m }: { m: CashierClosing }) {
-  const { lang, step, networkImage, setNetworkImage, salesImage, setSalesImage, uploadingNetwork, uploadingSales, uploadImage } = m
+  const { lang, step, networkImage, setNetworkImage, salesImage, setSalesImage, networkPreview, salesPreview, uploadingNetwork, uploadingSales, uploadImage } = m
   return (
     <>
             {/* خطوة 3: الصور */}
@@ -18,7 +18,7 @@ export default function StepPhotos({ m }: { m: CashierClosing }) {
                     <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}}>{ct('salesReportImg',lang)}</label>
                     {salesImage ? (
                       <div style={{position:'relative'}}>
-                        <img src={salesImage} alt="sales report" style={{width:'100%',height:130,borderRadius:10,objectFit:'cover'}}/>
+                        <img src={salesPreview || salesImage} alt="sales report" style={{width:'100%',height:130,borderRadius:10,objectFit:'cover'}}/>
                         <button type="button" onClick={()=>setSalesImage('')} style={{position:'absolute',top:6,left:6,background:'rgba(0,0,0,.55)',color:'white',border:'none',borderRadius:'50%',width:24,height:24,cursor:'pointer',fontSize:14}}>×</button>
                       </div>
                     ):(
@@ -32,7 +32,7 @@ export default function StepPhotos({ m }: { m: CashierClosing }) {
                     <label style={{fontSize:11,fontWeight:700,color:'#5f5e5a',display:'block',marginBottom:6}}>{ct('networkBalanceImg',lang)}</label>
                     {networkImage ? (
                       <div style={{position:'relative'}}>
-                        <img src={networkImage} alt="network balance" style={{width:'100%',height:130,borderRadius:10,objectFit:'cover'}}/>
+                        <img src={networkPreview || networkImage} alt="network balance" style={{width:'100%',height:130,borderRadius:10,objectFit:'cover'}}/>
                         <button type="button" onClick={()=>setNetworkImage('')} style={{position:'absolute',top:6,left:6,background:'rgba(0,0,0,.55)',color:'white',border:'none',borderRadius:'50%',width:24,height:24,cursor:'pointer',fontSize:14}}>×</button>
                       </div>
                     ):(

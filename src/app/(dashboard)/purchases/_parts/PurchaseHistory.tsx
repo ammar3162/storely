@@ -2,6 +2,7 @@
 import { Pencil } from 'lucide-react'
 import { C, CAT_ICONS } from './constants'
 import type { PurchasesState } from './usePurchases'
+import { fileLink } from '@/lib/invoiceUrl'
 
 export default function PurchaseHistory({ m }: { m: PurchasesState }) {
   const { isOwner, setEditLog, deletingId, curr, filterCat, setFilterCat, filterPeriod, setFilterPeriod, filterSupplier, setFilterSupplier, filteredHistory, deletePurchase } = m
@@ -59,7 +60,7 @@ export default function PurchaseHistory({ m }: { m: PurchasesState }) {
                           {CAT_ICONS[p.category]} {p.category}
                         </span>
                         {p.invoice_image&&(
-                          <a href={p.invoice_image} target="_blank" rel="noreferrer"
+                          <a href={fileLink(p.invoice_image)} target="_blank" rel="noreferrer"
                             style={{color:C.info,fontSize:10,fontWeight:600,textDecoration:'none',background:C.infoL,padding:'2px 8px',borderRadius:99,border:`1px solid ${C.infoB}`}}>
                             📎 فاتورة
                           </a>

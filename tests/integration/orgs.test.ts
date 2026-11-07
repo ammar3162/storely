@@ -171,4 +171,36 @@ describe.skipIf(!enabled)('integration (staging) — orgs', async () => {
       await db.from('demo_requests').delete().eq('phone', '966500000001')
     })
   })
+  describe('private invoice files (/api/file)', () => {
+    it('opens only for the same org: owner session or org staff token; refuses outsiders, other orgs and bad links', async () => {
+      process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
+      const { generateStaffToken } = await import('@/lib/staffAuth')
+      const file = await import('@/app/api/file/route')
+      const path = `${orgId}/invoice-it-${Date.now()}.txt`
+      const { error: upErr } = await db.storage.from('invoices').upload(path, new Blob(['فاتورة']), { contentType: 'text/plain' })
+      expect(upErr).toBeNull()
+      const stored = `${URL_.replace(/\/+$/, '')}/storage/v1/object/public/invoices/${path}`
+      const get = (headers: Record<string, string> = {}, u = stored) => file.GET(new Request(`http://test/api/file?u=${encodeURIComponent(u)}`, { headers }))
+      try {
+        auth.current = null
+        expect((await get()).status).toBe(403)                       // رابط منرسل لأحد برا
+        auth.current = { userId, orgId: '00000000-0000-0000-0000-000000000000', role: 'owner', branchId: null }
+        expect((await get()).status).toBe(403)                       // منشأة ثانية
+        auth.current = { userId, orgId, role: 'owner', branchId: null }
+        const ok = await get()
+        expect(ok.status).toBe(302)                                  // المالك: يتحوّل لرابط موقّع قصير
+        expect(ok.headers.get('location')).toMatch(/\/object\/sign\/invoices\//)
+        auth.current = null
+        const { data: st } = await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: 'موظف ملفات', phone: uniqPhone(), pin: 'x', is_active: true, role: 'staff' } as any).select('id').single()
+        const tok = generateStaffToken((st as any).id, orgId, branchA)
+        expect((await get({ Authorization: `Bearer ${tok}` })).status).toBe(302)   // موظف المنشأة
+        const otherTok = generateStaffToken((st as any).id, '00000000-0000-0000-0000-000000000000', null)
+        expect((await get({ Authorization: `Bearer ${otherTok}` })).status).toBe(403)
+        expect((await get({}, 'https://evil.com/x.jpg')).status).toBe(400)
+      } finally {
+        auth.current = { userId, orgId, role: 'owner', branchId: null }
+        await db.storage.from('invoices').remove([path])
+      }
+    })
+  })
 })

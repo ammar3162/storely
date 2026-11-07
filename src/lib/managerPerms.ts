@@ -163,4 +163,5 @@ export function managerApiAllowed(path: string, method: string, perms: Record<st
 export const API_OPEN = [
   '/api/ai-assistant', '/api/branches', '/api/dashboard-summary', '/api/month-comparison', '/api/nav-counts',
   '/api/notifications', '/api/onboarding', '/api/org-settings', '/api/push-subscribe', '/api/smart-reorder-timing', '/api/vat-status',
+  '/api/file',   // صور الفواتير — تتحقق بنفسها إن الملف من منشأة المستخدم
 ]
