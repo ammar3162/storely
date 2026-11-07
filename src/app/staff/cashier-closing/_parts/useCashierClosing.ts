@@ -19,9 +19,7 @@ export function useCashierClosing() {
   const [orgLogo, setOrgLogo] = useState<string|null>(null)
   const [dayStartHour, setDayStartHour] = useState<number|null>(null)
   const [clockTick, setClockTick] = useState(0)  // يحدّث التاريخ المعروض لو الصفحة مفتوحة وقت تغيّر اليوم
-  const [step, setStep] = useState(1)
-  const [stepDir, setStepDir] = useState<'fwd'|'back'>('fwd')
-  const [sub, setSub] = useState(0)   // رقم الشاشة داخل الخطوة
+  const [reviewOpen, setReviewOpen] = useState(false)   // نافذة تأكيد الإقفال (الإيصال)
   const [closingDate, setClosingDate] = useState(() => new Date().toISOString().slice(0,10))
     const [totalSales, setTotalSales] = useState('')
   const [madaAmount, setMadaAmount] = useState('')
@@ -34,7 +32,7 @@ export function useCashierClosing() {
   const [deliveryAmounts, setDeliveryAmounts] = useState<Record<string,string>>({})
   const [otherAppOpen, setOtherAppOpen] = useState(false)
   const [otherAppName, setOtherAppName] = useState('')
-  const [hasPurchases, setHasPurchases] = useState<'yes'|'no'|null>(null)
+  const [hasPurchases, setHasPurchases] = useState<'yes'|'no'|null>('no')   // مفتاح «فيه مسحوبات» مطفي افتراضياً
   const [purchases, setPurchases] = useState<Purchase[]>([{amount:'',reason:''}])
   const [deficitChoice, setDeficitChoice] = useState('')   // مفتاح من DEFICIT_REASONS
   const [deficitNote, setDeficitNote] = useState('')
@@ -156,46 +154,21 @@ export function useCashierClosing() {
   const difference = cash - expectedCash
   const status = Math.abs(difference)<0.01 ? 'balanced' : (difference<0 ? 'deficit' : 'surplus')
 
-  const step1Valid = !!totalSales && !!cashAmount && anyNetworkEntered && !networkError
-  const step2Valid = hasPurchases!==null
-  const step3Valid = !!salesImage && !!networkImage
 
-  // كل سؤال بشاشة لحاله: خطوة البيانات 4 شاشات (المبيعات، الشبكة، التطبيقات، الكاش) والصور شاشتين.
-  // الانتقال دايماً بضغطة «التالي» من الموظف — ما فيه انتقال تلقائي.
-  const SUBS: Record<number, number> = { 1: 4, 2: 1, 3: 2, 4: 1 }
-  function goNext() {
-    if(step===1 && sub<3){
-      if(sub===0 && !totalSales){ showToast(ct('needSales',lang),'error'); return }
-      if(sub===1 && (!anyNetworkEntered || networkError)){ showToast(networkError || ct('needNetwork',lang),'error'); return }
-      setStepDir('fwd'); setSub(s=>s+1); return
+  // صفحة إقفال وحدة (مثل أنظمة الكاشير): «مراجعة وإقفال» يتأكد من الناقص ويودّي لقسمه، ثم يفتح الإيصال للتأكيد.
+  // الحفظ ما يصير إلا بضغطة «إقفال الدرج» داخل النافذة.
+  function openReview() {
+    const miss = (key: string, section: string) => {
+      showToast(ct(key,lang),'error')
+      document.getElementById(section)?.scrollIntoView({ behavior:'smooth', block:'center' })
     }
-    if(step===3 && sub===0){
-      if(!salesImage){ showToast(ct('needPhoto',lang),'error'); return }
-      setStepDir('fwd'); setSub(1); return
-    }
-    if(step===1 && !cashAmount){ showToast(ct('needCash',lang),'error'); return }
-    if(step===1 && !step1Valid){
-      showToast(networkError || ct('fillSalesNetworkCash',lang),'error')
-      return
-    }
-    if(step===2 && !step2Valid){
-      showToast(ct('specifyWithdrawals',lang),'error')
-      return
-    }
-    if(step===3 && !step3Valid){
-      showToast(step===3 && !networkImage ? ct('needPhoto',lang) : ct('uploadBothPhotos',lang),'error')
-      return
-    }
-    setStepDir('fwd'); setSub(0); setStep(s=>Math.min(4,s+1))
+    if(!totalSales) return miss('needSales','sec-sales')
+    if(!anyNetworkEntered) return miss('needNetwork','sec-network')
+    if(networkError){ showToast(networkError,'error'); document.getElementById('sec-network')?.scrollIntoView({ behavior:'smooth', block:'center' }); return }
+    if(!cashAmount) return miss('needCash','sec-cash')
+    if(!salesImage || !networkImage) return miss('uploadBothPhotos','sec-photos')
+    setReviewOpen(true)
   }
-  function goBack() {
-    setStepDir('back')
-    if(sub>0){ setSub(s=>s-1); return }
-    const prev = Math.max(1, step-1)
-    setSub(prev===step ? 0 : (SUBS[prev]||1)-1); setStep(prev)
-  }
-  // كل شاشة تبدأ من فوق
-  useEffect(() => { if(typeof window!=='undefined') window.scrollTo({ top: 0 }) }, [step, sub])
 
   const deficitOption = DEFICIT_REASONS.find(r=>r.key===deficitChoice)
   // النص اللي يتحفظ ويطلع بالتقرير — دايماً بالعربي عشان التقرير يكون موحّد للمالك
@@ -235,7 +208,7 @@ export function useCashierClosing() {
       const templates = lang==='en' ? THANK_YOU_TEMPLATES_EN : lang==='ar' ? THANK_YOU_TEMPLATES_AR : ((THANKS_EXTRA as any)[lang] || THANK_YOU_TEMPLATES_EN)
       const template = templates[Math.floor(Math.random()*templates.length)]
       setThankYouMsg(template.replace('{name}', session?.name || ''))
-      setSaved(true)
+      setReviewOpen(false); setSaved(true)
       showToast(ct('savedClosingReport',lang))
     } catch {
       showToast(ct('genericError',lang),'error')
@@ -245,12 +218,12 @@ export function useCashierClosing() {
 
   function resetForm() {
     setTotalSales(''); setMadaAmount(''); setVisaAmount(''); setMastercardAmount(''); setCashAmount(''); setDeliveryApps([]); setDeliveryAmounts({}); setAppPickerOpen(false); setOtherAppOpen(false); setOtherAppName('')
-    setHasPurchases(null); setPurchases([{amount:'',reason:''}])
+    setHasPurchases('no'); setPurchases([{amount:'',reason:''}])
     setNetworkImage(''); setSalesImage(''); setNetworkPreview(''); setSalesPreview(''); setDeficitChoice(''); setDeficitNote('')
-    setStep(1); setSub(0); setSaved(false)
+    setReviewOpen(false); setSaved(false)
   }
 
-  return { lang, stepDir, sub, setSub, session, setSession, orgLogo, setOrgLogo, dayStartHour, setDayStartHour, clockTick, setClockTick, step, setStep, closingDate, setClosingDate, madaAmount, setMadaAmount, visaAmount, setVisaAmount, mastercardAmount, setMastercardAmount, cashAmount, setCashAmount, deliveryChoices, setDeliveryChoices, deliveryApps, setDeliveryApps, appPickerOpen, setAppPickerOpen, deliveryAmounts, setDeliveryAmounts, otherAppOpen, setOtherAppOpen, otherAppName, setOtherAppName, hasPurchases, setHasPurchases, purchases, setPurchases, deficitChoice, setDeficitChoice, deficitNote, setDeficitNote, networkImage, setNetworkImage, salesImage, setSalesImage, networkPreview, salesPreview, uploadingNetwork, setUploadingNetwork, uploadingSales, setUploadingSales, submitting, setSubmitting, saved, setSaved, locked, setLocked, thankYouMsg, setThankYouMsg, curr, setCurr, toast, setToast, totalSales, setTotalSales, rtl, router, sales, mada, visa, mastercard, network, cash, deliveryList, delivery, anyNetworkEntered, networkError, validPurchasesNow, totalPurchasesNow, expectedCash, cashAfterWithdrawal, difference, status, step1Valid, step2Valid, step3Valid, deficitOption, deficitReason, deficitReasonOk, businessDate, businessDateLabel, isAfterMidnightCarry, logout, showToast, uploadImage, addDeliveryApp, removeDeliveryApp, addPurchaseRow, removePurchaseRow, updatePurchase, goNext, goBack, saveClosing, resetForm }
+  return { lang, reviewOpen, setReviewOpen, openReview, session, setSession, orgLogo, setOrgLogo, dayStartHour, setDayStartHour, clockTick, setClockTick, closingDate, setClosingDate, madaAmount, setMadaAmount, visaAmount, setVisaAmount, mastercardAmount, setMastercardAmount, cashAmount, setCashAmount, deliveryChoices, setDeliveryChoices, deliveryApps, setDeliveryApps, appPickerOpen, setAppPickerOpen, deliveryAmounts, setDeliveryAmounts, otherAppOpen, setOtherAppOpen, otherAppName, setOtherAppName, hasPurchases, setHasPurchases, purchases, setPurchases, deficitChoice, setDeficitChoice, deficitNote, setDeficitNote, networkImage, setNetworkImage, salesImage, setSalesImage, networkPreview, salesPreview, uploadingNetwork, setUploadingNetwork, uploadingSales, setUploadingSales, submitting, setSubmitting, saved, setSaved, locked, setLocked, thankYouMsg, setThankYouMsg, curr, setCurr, toast, setToast, totalSales, setTotalSales, rtl, router, sales, mada, visa, mastercard, network, cash, deliveryList, delivery, anyNetworkEntered, networkError, validPurchasesNow, totalPurchasesNow, expectedCash, cashAfterWithdrawal, difference, status, deficitOption, deficitReason, deficitReasonOk, businessDate, businessDateLabel, isAfterMidnightCarry, logout, showToast, uploadImage, addDeliveryApp, removeDeliveryApp, addPurchaseRow, removePurchaseRow, updatePurchase, saveClosing, resetForm }
 }
 
 export type CashierClosing = ReturnType<typeof useCashierClosing>
