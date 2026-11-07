@@ -103,6 +103,14 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
 
       const bad = await post({ name: 'ملح', qty: 0 })
       expect(bad.status).toBe(400)
+
+      // «منتج موجود»: يختار المنتج من القائمة (product_id) ويضيف الكمية — بدون اسم
+      const r3 = await post({ product_id: j1.product_id, qty: 4 })
+      const j3 = await r3.json()
+      expect(r3.status).toBe(200); expect(j3).toMatchObject({ created: false, product_id: j1.product_id })
+      expect(((await db.from('products').select('qty').eq('id', j1.product_id).single()).data as any).qty).toBe(9)
+      // منتج من منشأة ثانية أو مو موجود: ينرفض
+      expect((await post({ product_id: '00000000-0000-0000-0000-000000000000', qty: 1 })).status).toBe(404)
     })
   })
 

@@ -22,11 +22,12 @@ export async function POST(req: Request) {
     const { org_id, staff_id } = auth.data
 
     const body = await req.json().catch(() => ({}))
-    const name = String(body.name || '').trim().slice(0, 120)
+    const productIdIn = typeof body.product_id === 'string' ? body.product_id : null   // منتج موجود اختاره الموظف
+    let name = String(body.name || '').trim().slice(0, 120)
     const qty = Number(body.qty)
     const unit = UNITS.includes(String(body.unit)) ? String(body.unit) : 'قطعة'
     const category = String(body.category || '').trim().slice(0, 60) || null
-    if (!name) return NextResponse.json({ error: 'اكتب اسم المنتج' }, { status: 400 })
+    if (!name && !productIdIn) return NextResponse.json({ error: 'اكتب اسم المنتج' }, { status: 400 })
     if (!Number.isFinite(qty) || qty <= 0 || qty > 1_000_000) return NextResponse.json({ error: 'اكتب كمية صحيحة' }, { status: 400 })
 
     const db = sb()
@@ -36,9 +37,13 @@ export async function POST(req: Request) {
     const branch_id: string | null = (staff as any).branch_id ?? null
     const staffName: string = (staff as any).name
 
-    let q = db.from('products').select('id,name').eq('org_id', org_id).eq('is_active', true).ilike('name', name)
+    // منتج موجود: من نفس المنشأة وفرع الموظف — وإلا نطابق بالاسم
+    let q = db.from('products').select('id,name,unit').eq('org_id', org_id).eq('is_active', true)
+    q = productIdIn ? q.eq('id', productIdIn) : q.ilike('name', name)
     q = branch_id ? q.eq('branch_id', branch_id) : q.is('branch_id', null)
     const { data: existing } = await q.limit(1).maybeSingle()
+    if (productIdIn && !existing) return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 })
+    if (existing) name = (existing as any).name
 
     let productId: string
     let created = false
@@ -72,7 +77,7 @@ export async function POST(req: Request) {
     await db.from('notifications').insert({
       org_id, branch_id, type: 'info', read: false,
       title: created ? `منتج جديد من ${staffName}` : `إضافة كمية من ${staffName}`,
-      message: `${name} — ${qty} ${unit}${created ? ' (منتج جديد)' : ''}`,
+      message: `${name} — ${qty} ${created ? unit : ((existing as any)?.unit || unit)}${created ? ' (منتج جديد)' : ''}`,
     } as any)
 
     return NextResponse.json({ success: true, product_id: productId, created })

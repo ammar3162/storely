@@ -45,6 +45,10 @@ export function useStaffDispense() {
   const [savingQty, setSavingQty] = useState(false)
   const [showAddProduct, setShowAddProduct] = useState(false)
   const [newProduct, setNewProduct] = useState({name:'',qty:'',unit:'قطعة',category:''})
+  // إضافة للمخزون: منتج موجود (بحث واختيار + كمية) أو منتج جديد
+  const [addMode, setAddMode] = useState<'existing'|'new'>('existing')
+  const [pickSearch, setPickSearch] = useState('')
+  const [picked, setPicked] = useState<any>(null)
   const [savingProduct, setSavingProduct] = useState(false)
   const [invCategory, setInvCategory] = useState<string|null>(null)
 
@@ -235,15 +239,18 @@ export function useStaffDispense() {
   }
 
   async function addProduct() {
-    if(!newProduct.name.trim()||!newProduct.qty||!session||savingProduct) return
+    const existing = addMode==='existing'
+    if((existing ? !picked : !newProduct.name.trim())||!newProduct.qty||!session||savingProduct) return
     setSavingProduct(true)
+    const name = existing ? picked.name : newProduct.name.trim()
     try {
       const res = await fetch('/api/staff-add-product',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('staff_token')}`},
-        body:JSON.stringify({name:newProduct.name.trim(),qty:Number(newProduct.qty),unit:newProduct.unit,category:newProduct.category.trim()||null})})
+        body:JSON.stringify(existing ? {product_id:picked.id,qty:Number(newProduct.qty)} : {name,qty:Number(newProduct.qty),unit:newProduct.unit,category:newProduct.category.trim()||null})})
       const j = await res.json().catch(()=>({}))
       if(!res.ok || !j.success){ showMsg(j.error || T('addFailed',lang),'error'); setSavingProduct(false); return }
-      showMsg(T(j.created ? 'added' : 'qtyAdded',lang,{name:newProduct.name.trim()}),'success')
+      showMsg(T(j.created ? 'added' : 'qtyAdded',lang,{name}),'success')
       setNewProduct({name:'',qty:'',unit:'قطعة',category:''})
+      setPicked(null); setPickSearch(''); setAddMode('existing')
       setShowAddProduct(false)
       loadProducts(session)
     } catch { showMsg(T('netRetry',lang),'error') }
@@ -284,7 +291,7 @@ export function useStaffDispense() {
   products.forEach(p=>{ const c=p.category?.trim()||OTHER_CATEGORY; invCategoriesMap[c]=(invCategoriesMap[c]||0)+1 })
   const invCategories = Object.keys(invCategoriesMap).sort((a,b)=>{ if(a===OTHER_CATEGORY)return 1; if(b===OTHER_CATEGORY)return -1; return invCategoriesMap[b]-invCategoriesMap[a] })
 
-  return { lang, setLang, session, setSession, needsReauth, setNeedsReauth, subscriptionExpired, setSubscriptionExpired, reauthPin, setReauthPin, reauthError, setReauthError, reauthLoading, setReauthLoading, tab, setTab, products, setProducts, translations, setTranslations, showLangMenu, setShowLangMenu, translating, setTranslating, loading, setLoading, orgLogo, setOrgLogo, bizType, setBizType, search, setSearch, activeCategory, setActiveCategory, mostUsed, setMostUsed, todayCount, setTodayCount, selected, setSelected, dispenseQty, setDispenseQty, wasteMode, setWasteMode, wasteReason, setWasteReason, wasteNote, setWasteNote, submitting, setSubmitting, toast, setToast, invSearch, setInvSearch, editingProduct, setEditingProduct, editQty, setEditQty, savingQty, setSavingQty, showAddProduct, setShowAddProduct, newProduct, setNewProduct, savingProduct, setSavingProduct, invCategory, setInvCategory, searchParams, forcedTab, router, WASTE_REASONS, categoriesMap, categories, searchResults, categoryProducts, filteredInventory, invCategoriesMap, invCategories, loadStats, loadProducts, refreshProductsQuietly, fetchTranslation, showMsg, tx, handleDispense, handleWaste, updateQty, addProduct, logout, submitReauth }
+  return { lang, setLang, session, setSession, needsReauth, setNeedsReauth, subscriptionExpired, setSubscriptionExpired, reauthPin, setReauthPin, reauthError, setReauthError, reauthLoading, setReauthLoading, tab, setTab, products, setProducts, translations, setTranslations, showLangMenu, setShowLangMenu, translating, setTranslating, loading, setLoading, orgLogo, setOrgLogo, bizType, setBizType, search, setSearch, activeCategory, setActiveCategory, mostUsed, setMostUsed, todayCount, setTodayCount, selected, setSelected, dispenseQty, setDispenseQty, wasteMode, setWasteMode, wasteReason, setWasteReason, wasteNote, setWasteNote, submitting, setSubmitting, toast, setToast, invSearch, setInvSearch, editingProduct, setEditingProduct, editQty, setEditQty, savingQty, setSavingQty, showAddProduct, setShowAddProduct, newProduct, setNewProduct, savingProduct, setSavingProduct, addMode, setAddMode, pickSearch, setPickSearch, picked, setPicked, invCategory, setInvCategory, searchParams, forcedTab, router, WASTE_REASONS, categoriesMap, categories, searchResults, categoryProducts, filteredInventory, invCategoriesMap, invCategories, loadStats, loadProducts, refreshProductsQuietly, fetchTranslation, showMsg, tx, handleDispense, handleWaste, updateQty, addProduct, logout, submitReauth }
 }
 
 export type StaffDispense = ReturnType<typeof useStaffDispense>
