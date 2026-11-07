@@ -37,7 +37,7 @@ export function useStaffManagement() {
   const [newBranch, setNewBranch]   = useState(typeof window!=='undefined' ? (sessionStorage.getItem('s_branch_id')||'') : '')
   const [newRole, setNewRole]       = useState<'staff'|'cashier'>('staff')
   // الكاشير متاح بالشاملة/المتقدمة أو بإضافة «إقفال الكاشير» — من نفس مصدر الخادم (/api/me)
-  const [hasCashier, setHasCashier] = useState(orgPlan!=='basic')
+  const [hasCashier, setHasCashier] = useState(['ops','full','pro','advanced'].includes(orgPlan))
   const [newSendClosingWA, setNewSendClosingWA] = useState(true)
   const [revealedPin, setRevealedPin] = useState<{name:string,phone:string,pin:string}|null>(null)
   const [visiblePins, setVisiblePins] = useState<Record<string,boolean>>({})

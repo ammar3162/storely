@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { PLAN_PRICING, PLAN_CAPS, ENTERPRISE_LABEL } from '@/lib/planPricing'
+import { PLAN_PRICING, PLAN_CAPS, ENTERPRISE_LABEL, isNewPlan } from '@/lib/planPricing'
 import { A, Badge, Card, Loading, PageHeader, adminFetch, useAdmin } from '../_admin/kit'
-import { type Customer, PLAN_KEYS, PLAN_LIMITS, PLAN_TONE, mapCustomer } from '../_admin/customers'
+import { type Customer, PLAN_KEYS, PLAN_LIMITS, PLAN_TONE, mapCustomer, planLabel } from '../_admin/customers'
 
 const lim = (n: number, unit: string) => (n >= 999 ? `${unit} بلا حد` : `${n} ${unit}`)
 
@@ -28,17 +28,23 @@ export default function PackagesPage() {
             const paid = active.filter(u => u.subscription_type === 'paid').length
             return (
               <Card key={k}>
-                <Badge tone={PLAN_TONE[k]}>{p.label}</Badge>
+                <Badge tone={PLAN_TONE[k]}>{planLabel(k)}</Badge>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 12 }}>
                   <span style={{ fontSize: 30, fontWeight: 800 }}>{p.monthly}</span>
-                  <span style={{ fontSize: 13, color: A.text2 }}>⃁ / شهر</span>
+                  <span style={{ fontSize: 13, color: A.text2 }}>⃁ / شهر{isNewPlan(k) ? ' للفرع الأول' : ''}</span>
                 </div>
                 <div style={{ fontSize: 12.5, color: A.text3, marginTop: 2 }}>{p.yearly} ⃁ / سنة</div>
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16, fontSize: 13, color: A.text2 }}>
+                  {isNewPlan(k) ? (<>
+                    <li>كل فرع إضافي {PLAN_CAPS[k].branchPrice} ⃁ — يوصل {PLAN_CAPS[k].maxBranches} فروع</li>
+                    <li>{PLAN_CAPS[k].staff} موظفين و{PLAN_CAPS[k].suppliers} مورد لكل فرع</li>
+                    <li>{k === 'essential' ? 'المخزون والمشتريات — الكاشير 40 والحضور 69 لكل فرع، والذكاء 15' : k === 'ops' ? '+ إقفال الكاشير — الحضور 69 لكل فرع، والذكاء 15' : 'كل المميزات مشمولة'}</li>
+                  </>) : (<>
                   <li>{lim(l.branches, 'فروع')} — ويوصل {PLAN_CAPS[k].maxBranches} بفرع إضافي {PLAN_CAPS[k].branchPrice} ⃁</li>
                   <li>{lim(l.staff, 'موظفين')} للمنشأة كلها (+{PLAN_CAPS[k].branchStaff} مع كل فرع إضافي)</li>
                   <li>{lim(l.suppliers, 'موردين')} (+{PLAN_CAPS[k].branchSuppliers} مع كل فرع إضافي)</li>
                   <li>{k === 'basic' ? 'المميزات بالإضافات: الكاشير، إدارة الموظفين، الربحية، الذكاء الاصطناعي' : 'كل المميزات مشمولة'}</li>
+                  </>)}
                 </ul>
                 {can('manage_users') && (
                   <div style={{ borderTop: `1px solid ${A.border}`, marginTop: 16, paddingTop: 12, display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>

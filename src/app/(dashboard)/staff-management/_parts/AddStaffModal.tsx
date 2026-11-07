@@ -53,11 +53,11 @@ export default function AddStaffModal({ m }: { m: StaffPage }) {
                     <div style={{fontSize:10,color:newRole==='staff'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يستخدم نظام الصرف والمخزون</div>
                   </button>
                   <button type="button" onClick={()=>{
-                      if(!hasCashier){toast('الكاشير يحتاج الباقة الشاملة أو إضافة «إقفال الكاشير» من صفحة الإضافات','warning');return}
+                      if(!hasCashier){toast('الكاشير يحتاج باقة فيها إقفال الكاشير أو إضافة «إقفال الكاشير» لهذا الفرع من صفحة الإضافات','warning');return}
                       setNewRole('cashier')
                     }} style={{padding:'12px 10px',borderRadius:10,border:`1.5px solid ${newRole==='cashier'?colors.primary:colors.border}`,background:newRole==='cashier'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='cashier'?`0 2px 8px ${colors.primary}22`:'none',opacity:!hasCashier?.55:1,position:'relative' as const}}>
                     {!hasCashier && (
-                      <div style={{position:'absolute',top:-8,left:-6,background:'#1c1c1a',color:'white',fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:99,display:'flex',alignItems:'center',gap:4}}><Lock size={9} strokeWidth={2.5}/> الشاملة</div>
+                      <div style={{position:'absolute',top:-8,left:-6,background:'#1c1c1a',color:'white',fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:99,display:'flex',alignItems:'center',gap:4}}><Lock size={9} strokeWidth={2.5}/> إضافة</div>
                     )}
                     <div style={{fontWeight:800,fontSize:font.sm,color:newRole==='cashier'?colors.primary:colors.text2,marginBottom:3,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><Wallet size={14} strokeWidth={2.25}/> كاشير</div>
                     <div style={{fontSize:10,color:newRole==='cashier'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يقفل الصندوق يومياً فقط</div>

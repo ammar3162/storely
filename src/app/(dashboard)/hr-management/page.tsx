@@ -1,13 +1,14 @@
 'use client'
 import PageIcon from '@/components/PageIcon'
 import { colors, font, card, btnSecondary, pageTitle, pageSub } from '@/lib/ds'
-import { BarChart3 } from 'lucide-react'
+import { BarChart3, Lock } from 'lucide-react'
 import { useHrManagement } from './_parts/useHrManagement'
 import ExtraDaysAlert from './_parts/ExtraDaysAlert'
 import PayslipVisibility from './_parts/PayslipVisibility'
 import BranchLocationNote from './_parts/BranchLocationNote'
 import HrReportModal from './_parts/HrReportModal'
 import HrStaffCard from './_parts/HrStaffCard'
+import { planIncludes } from '@/lib/planFeatures'
 
 export default function HRManagementPage() {
   const m = useHrManagement()
@@ -20,11 +21,11 @@ export default function HRManagementPage() {
     </div>
   )
 
-  if (orgPlan === 'basic' && !hasHrAddon) return (
+  if (!planIncludes(orgPlan, 'hr') && !hasHrAddon) return (
     <div style={{minHeight:'50vh',display:'flex',alignItems:'center',justifyContent:'center',textAlign:'center' as const,padding:20}}>
       <div>
-        <div style={{fontSize:44,marginBottom:12}}>🔒</div>
-        <div style={{fontSize:16,fontWeight:800,color:colors.text,marginBottom:8}}>إدارة الموظفين متاحة بالباقة الشاملة أو المتقدمة</div>
+        <div style={{display:'flex',justifyContent:'center',marginBottom:12,color:colors.text3}}><Lock size={40}/></div>
+        <div style={{fontSize:16,fontWeight:800,color:colors.text,marginBottom:8}}>الحضور والرواتب متاحة بالباقة الكاملة أو بإضافة «الحضور والرواتب»</div>
         <div className="hide-in-app" style={{fontSize:13,color:colors.text3}}>رقّي باقتك عشان تفعّل إدارة الرواتب والمهام لفريقك</div>
       </div>
     </div>

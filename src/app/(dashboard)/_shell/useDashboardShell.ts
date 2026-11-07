@@ -12,6 +12,8 @@ import { toast } from '@/components/toast'
 import { isInApp } from '@/lib/inApp'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
 import { NAV_GROUPS } from './nav'
+import { planIncludes } from '@/lib/planFeatures'
+import { isNewPlan } from '@/lib/planPricing'
 
 let _cache: any = null
 
@@ -389,9 +391,9 @@ export function useDashboardShell() {
   function navAllowed(href:string){
     if(href==='/addons-market' && inApp) return false
     const branchPages=['/branches','/branch-compare','/branch-managers','/transfer-stock']
-    if(branchPages.includes(href) && orgPlan==='basic' && !hasExtraBranchAddon && orgMaxBranches<=1) return false
-    if((href==='/attendance'||href==='/hr-management') && orgPlan==='basic' && !hasHrAddon && !orgFeat.hr) return false
-    if(href==='/profitability' && orgPlan==='basic' && !hasProfitAddon && !orgFeat.profitability) return false
+    if(branchPages.includes(href) && (orgPlan==='basic'||isNewPlan(orgPlan)) && !hasExtraBranchAddon && orgMaxBranches<=1) return false
+    if((href==='/attendance'||href==='/hr-management') && !planIncludes(orgPlan,'hr') && !hasHrAddon && !orgFeat.hr) return false
+    if(href==='/profitability' && !planIncludes(orgPlan,'profitability') && !hasProfitAddon && !orgFeat.profitability) return false
     if(['/branch-compare','/branch-managers','/transfer-stock'].includes(href) && branches.length<=1) return false
     return navVisible(href)
   }

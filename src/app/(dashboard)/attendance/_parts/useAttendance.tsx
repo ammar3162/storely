@@ -9,6 +9,7 @@ import { confirmDialog } from '@/components/ConfirmDialog'
 import { type OffPatch } from '@/components/StaffDaysOffEditor'
 import { type SchedulePatch } from '@/components/StaffDayShiftsEditor'
 import { saudiToday, fmtTime, fmtMinutes } from './format'
+import { planIncludes } from '@/lib/planFeatures'
 
 /** حالة صفحة الحضور ودوالها — منقولة كما هي من page.tsx */
 export function useAttendance() {
@@ -72,7 +73,7 @@ export function useAttendance() {
     setOrgName(orgName)
     setIsOwner(me.role === 'owner')
     // نفس قرار الخادم (/api/me features): الباقة، أو إضافة «إدارة الموظفين»، أو التجربة المجانية
-    if (orgPlan === 'basic' && !me.org?.features?.hr) setLocked(true)  // ما نوقف التحميل -- نخلي المالك يشوف سجلاته القديمة، السيرفر أصلاً يرفض أي تسجيل جديد بدون اشتراك
+    if (!planIncludes(orgPlan, 'hr') && !me.org?.features?.hr) setLocked(true)  // ما نوقف التحميل -- نخلي المالك يشوف سجلاته القديمة، السيرفر أصلاً يرفض أي تسجيل جديد بدون اشتراك
     const bid = sessionStorage.getItem('s_branch_id')
     setBranchId(bid)
     load(oid, date)

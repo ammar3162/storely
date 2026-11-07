@@ -1,73 +1,52 @@
 import { Package, MessageCircle, Users, Wallet, Globe, BarChart3, Store, Bot, TrendingUp } from 'lucide-react'
+import { PLAN_CAPS, PLAN_PRICING } from '@/lib/planPricing'
 
 export type Billing = 'monthly'|'yearly'
 
-export const PLAN_BRANCHES = [1, 3, 6, 11]
-
-// معاينة محلية للترتيب الجديد (لم تُعتمد بعد)
+// الباقات الجديدة (2026-11) — صفحة الأسعار العربية في StandardPricing، وهذي للنسخة الإنجليزية.
+// الأسعار من lib/planPricing (مصدر واحد مع التسجيل والفاتورة)
+const pr = (k: 'essential'|'ops'|'full') => String(PLAN_PRICING[k].monthly)
+const yr = (k: 'essential'|'ops'|'full') => String(PLAN_PRICING[k].yearly)
 export const PLANS = [
-  { name:'الأساسية', nameEn:'Basic', price:'99', yearlyPrice:'950', color:'#0f766e', popular:false,
-    who:'لمنشأة بفرع واحد تبدأ', whoEn:'For a single-branch business getting started',
-    extra:'+ 79 ⃁ لفرع ثاني (معه 3 موظفين و5 موردين)', extraEn:'+ 79 SAR for a second branch (adds 3 staff and 5 suppliers)',
-    limits:['فرع واحد','3 موظفين','5 موردين'],
-    limitsEn:['1 branch','3 staff','5 suppliers'],
-    features:['تتبع المخزون لحظياً','الصرف اليومي برمز PIN للموظفين','المشتريات وإدارة الموردين','تنبيهات واتساب تلقائية','التقارير الأساسية','نسخ احتياطي يومي','دعم فني عبر واتساب'],
-    featuresEn:['Real-time inventory','Daily dispensing with staff PIN','Purchasing and suppliers','Automatic WhatsApp alerts','Basic reports','Daily backups','WhatsApp support'],
-    addons:[['إقفال الكاشير اليومي','29'],['إدارة الموظفين (الحضور، الشفتات، الرواتب)','59'],['الربحية والمصروفات','29'],['الذكاء الاصطناعي (قرارات اليوم، الطلب الذكي، مسح الفواتير)','29']],
-    addonsEn:[['Daily cashier closing','29'],['Staff management (attendance, shifts, payroll)','59'],['Profitability and expenses','29'],['AI tools (daily decisions, smart ordering, invoice scan)','29']] },
-  { name:'الشاملة', nameEn:'Complete', price:'249', yearlyPrice:'2390', color:'#0f766e', popular:true,
-    who:'كل المميزات + لين 3 فروع', whoEn:'All features + up to 3 branches',
-    extra:'+ 79 ⃁ لكل فرع إضافي لين 5 فروع (معه 5 موظفين و5 موردين)', extraEn:'+ 79 SAR per extra branch up to 5 (adds 5 staff and 5 suppliers)',
-    limits:['3 فروع','15 موظف','20 مورد'],
-    limitsEn:['3 branches','15 staff','20 suppliers'],
-    features:['كل مميزات الأساسية','إقفال الكاشير اليومي','إدارة الموظفين والحضور بـGPS','الشفتات والرواتب','الربحية والمصروفات','قرارات اليوم والطلب الذكي','مسح الفواتير بالذكاء الاصطناعي','تقارير متقدمة ومقارنة الفروع','المخزون الراكد وكشف الهدر','نقل المخزون بين الفروع'],
-    featuresEn:['Everything in Basic','Daily cashier closing','Staff and GPS attendance','Shifts and payroll','Profitability and expenses','Daily decisions and smart ordering','AI invoice scanning','Advanced reports and branch comparison','Slow stock and waste detection','Stock transfer between branches'] },
-  { name:'المتقدمة', nameEn:'Advanced', price:'499', yearlyPrice:'4790', color:'#0f766e', popular:false,
-    who:'كل المميزات للمنشآت من 6 فروع وفوق', whoEn:'All features for 6+ branches',
-    extra:'+ 59 ⃁ لكل فرع إضافي لين 10 فروع (معه 5 موظفين و5 موردين)', extraEn:'+ 59 SAR per extra branch up to 10 (adds 5 staff and 5 suppliers)',
-    limits:['6 فروع','50 موظف','50 مورد'],
-    limitsEn:['6 branches','50 staff','50 suppliers'],
-    features:['كل مميزات الشاملة','فروع أكثر بسعر أقل للفرع','50 موظف و50 مورد'],
-    featuresEn:['Everything in Complete','More branches at a lower price per branch','50 staff and 50 suppliers'] },
-  { name:'المؤسسات', nameEn:'Enterprise', price:'', yearlyPrice:'', color:'#0f766e', popular:false, custom:true,
+  { key:'essential', name:'الأساسية', nameEn:'Essential', price:pr('essential'), yearlyPrice:yr('essential'), color:'#0f766e', popular:false,
+    who:'لضبط المخزون والمشتريات والموردين', whoEn:'Inventory, purchasing and suppliers',
+    extra:`+ ${PLAN_CAPS.essential.branchPrice} ⃁ لكل فرع إضافي`, extraEn:`+ ${PLAN_CAPS.essential.branchPrice} SAR per extra branch`,
+    limits:['لكل فرع: 6 موظفين و15 مورد'], limitsEn:['Per branch: 6 staff, 15 suppliers'],
+    features:['إدارة المخزون','الصرف والهدر','الجرد بالباركود','الوصفات','الطلب التلقائي من الموردين','المشتريات والفواتير','قراءة الفواتير بالذكاء الاصطناعي','إقرار ضريبة القيمة المضافة'],
+    featuresEn:['Inventory management','Dispensing and waste','Barcode stock count','Recipes','Automatic supplier orders','Purchases and invoices','AI invoice reading','VAT return'] },
+  { key:'ops', name:'التشغيل', nameEn:'Operations', price:pr('ops'), yearlyPrice:yr('ops'), color:'#0f766e', popular:true,
+    who:'للمطاعم والكوفيهات اللي تقفل كاشير كل يوم', whoEn:'For restaurants and cafés closing the cashier daily',
+    extra:`+ ${PLAN_CAPS.ops.branchPrice} ⃁ لكل فرع إضافي`, extraEn:`+ ${PLAN_CAPS.ops.branchPrice} SAR per extra branch`,
+    limits:['لكل فرع: 6 موظفين و15 مورد'], limitsEn:['Per branch: 6 staff, 15 suppliers'],
+    features:['كل مميزات الأساسية','إقفال الكاشير اليومي','متابعة العجز والزيادة','صور الإيصالات','تطبيقات التوصيل'],
+    featuresEn:['Everything in Essential','Daily cashier closing','Shortage and overage tracking','Receipt photos','Delivery apps'] },
+  { key:'full', name:'الكاملة', nameEn:'Complete', price:pr('full'), yearlyPrice:yr('full'), color:'#0f766e', popular:false,
+    who:'كل شي، ومعه الموظفين والرواتب والذكاء', whoEn:'Everything, plus staff, payroll and AI',
+    extra:`+ ${PLAN_CAPS.full.branchPrice} ⃁ لكل فرع إضافي`, extraEn:`+ ${PLAN_CAPS.full.branchPrice} SAR per extra branch`,
+    limits:['لكل فرع: 6 موظفين و15 مورد'], limitsEn:['Per branch: 6 staff, 15 suppliers'],
+    features:['كل مميزات التشغيل','الحضور والانصراف','الورديات والإجازات','مسير الرواتب','أدوات الذكاء الاصطناعي'],
+    featuresEn:['Everything in Operations','GPS attendance','Shifts and leave','Monthly payroll','AI tools'] },
+  { key:'', name:'المؤسسات', nameEn:'Enterprise', price:'', yearlyPrice:'', color:'#0f766e', popular:false, custom:true,
     who:'لأكثر من 10 فروع', whoEn:'For more than 10 branches',
-    limits:['فروع وموظفين وموردين حسب احتياجك'],
-    limitsEn:['Branches, staff and suppliers as you need'],
-    features:['كل مميزات المتقدمة','سعر مخصص لحجم منشأتك','متابعة وتجهيز خاص لمنشأتك','تدريب الموظفين وتجهيز البيانات','أولوية في التطوير حسب احتياجكم'],
-    featuresEn:['Everything in Advanced','Custom price for your size','Dedicated follow-up and setup','Staff training and data setup','Priority support and roadmap'] },
+    limits:['فروع وموظفين وموردين حسب احتياجك'], limitsEn:['Branches, staff and suppliers as you need'],
+    features:['كل مميزات الكاملة','سعر مخصص لحجم منشأتك','متابعة وتجهيز خاص','تدريب الموظفين وتجهيز البيانات'],
+    featuresEn:['Everything in Complete','Custom price for your size','Dedicated follow-up and setup','Staff training and data setup'] },
 ]
 
-// جدول مقارنة الباقات (معاينة) — true/false أو نص؛ 'addon' = متاح كإضافة
+// جدول المقارنة (النسخة الإنجليزية) — 'addon' = متاح كإضافة
 type Cell = boolean | string
 export const COMPARE: { group: string; rows: [string, Cell, Cell, Cell, Cell][] }[] = [
-  { group: 'الحجم', rows: [
-    ['الفروع المشمولة', '1', '3', '6', 'حسب الاتفاق'],
-    ['أقصى عدد فروع', '2', '5', '10', 'بدون حد'],
-    ['الموظفين', '3 (و6 مع الفرع الثاني)', '15', '50', 'حسب الاتفاق'],
-    ['الموردين', '5', '20', '50', 'حسب الاتفاق'],
+  { group: 'Size', rows: [
+    ['Staff per branch', '6', '6', '6', 'Custom'],
+    ['Suppliers per branch', '15', '15', '15', 'Custom'],
+    ['Branches', 'Up to 10', 'Up to 10', 'Up to 10', '10+'],
   ]},
-  { group: 'المخزون والمشتريات', rows: [
-    ['تتبع المخزون لحظياً', true, true, true, true],
-    ['الصرف اليومي برمز PIN للموظفين', true, true, true, true],
-    ['المشتريات وطلبات التوريد للموردين', true, true, true, true],
-    ['تنبيهات واتساب تلقائية', true, true, true, true],
-    ['نقل المخزون بين الفروع', false, true, true, true],
-  ]},
-  { group: 'التشغيل والموظفين', rows: [
-    ['إقفال الكاشير اليومي', 'addon', true, true, true],
-    ['الحضور والانصراف بالموقع', 'addon', true, true, true],
-    ['الشفتات والرواتب', 'addon', true, true, true],
-    ['واجهة موظفين بـ7 لغات', true, true, true, true],
-  ]},
-  { group: 'الربحية والذكاء الاصطناعي', rows: [
-    ['الربحية والمصروفات', 'addon', true, true, true],
-    ['قرارات اليوم والطلب الذكي', 'addon', true, true, true],
-    ['مسح الفواتير بالذكاء الاصطناعي', 'addon', true, true, true],
-    ['مقارنة الفروع والمخزون الراكد', false, true, true, true],
-  ]},
-  { group: 'الدعم', rows: [
-    ['دعم فني عبر واتساب', true, true, true, true],
-    ['متابعة وتجهيز خاص وتدريب الموظفين', false, false, false, true],
+  { group: 'Features', rows: [
+    ['Inventory, purchases and AI invoice reading', true, true, true, true],
+    ['Daily cashier closing', 'addon', true, true, true],
+    ['Attendance, shifts and payroll', 'addon', 'addon', true, true],
+    ['AI tools', 'addon', 'addon', true, true],
+    ['Profitability, branch comparison, accountant portal', true, true, true, true],
   ]},
 ]
 

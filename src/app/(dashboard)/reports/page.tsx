@@ -23,7 +23,7 @@ const StaffMonthlyDetail = lazy(() => import('@/components/reports/StaffMonthlyR
 export default function ReportsPage() {
   const orgPlan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
   // تبويب الكاشير: الشاملة/المتقدمة أو إضافة «إقفال الكاشير»
-  const [hasCashier, setHasCashier] = useState(orgPlan!=='basic')
+  const [hasCashier, setHasCashier] = useState(['ops','full','pro','advanced'].includes(orgPlan))
   const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'|'cashier'|'waste'|'attendance'|'staffMonthly'>('home')
   const [period, setPeriod]       = useState<FilterPeriod>('today')
   const [from, setFrom]           = useState('')

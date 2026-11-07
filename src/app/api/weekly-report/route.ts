@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 import { isCronRequest } from '@/lib/cronAuth'
 import { isSubscriptionActive } from '@/lib/subscription'
+import { PLAN_PRICING } from '@/lib/planPricing'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -13,7 +14,7 @@ export async function GET(req: Request) {
 
   const { data: orgs } = await db.from('organizations')
     .select('id,name,whatsapp_number,plan')
-    .in('plan', ['basic','pro','advanced'])
+    .in('plan', Object.keys(PLAN_PRICING))   // كل الباقات (القديمة والجديدة)
 
   if (!orgs?.length) return NextResponse.json({ sent: 0 })
 

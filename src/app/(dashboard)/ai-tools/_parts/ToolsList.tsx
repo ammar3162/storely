@@ -1,5 +1,6 @@
 'use client'
 import { C, TOOLS, planAllows } from './config'
+import { Lock } from 'lucide-react'
 import type { AiToolsPage } from './useAiTools'
 
 export default function ToolsList({ m }: { m: AiToolsPage }) {
@@ -16,7 +17,7 @@ export default function ToolsList({ m }: { m: AiToolsPage }) {
               onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='none';(e.currentTarget as HTMLElement).style.boxShadow=`0 2px 8px ${tool.color}10`}}>
               {aiKnown && !planAllows(plan,tool.minPlan,!!hasAiAddon) && (
                 <div style={{position:'absolute',top:12,left:12,background:'#1c1c1a',color:'white',fontSize:10,fontWeight:700,padding:'4px 10px',borderRadius:99,display:'flex',alignItems:'center',gap:4,zIndex:1}}>
-                  🔒 {tool.minPlan==='advanced'?'المتقدمة':'الشاملة'}
+                  <Lock size={11} strokeWidth={2.5}/> أدوات الذكاء
                 </div>
               )}
               <div style={{display:'flex',alignItems:'flex-start',gap:14}}>

@@ -25,7 +25,7 @@ export default function PermissionsModal({ m }: { m: StaffPage }) {
                     style={{accentColor:'#029FA2',width:16,height:16}}/>
                   <div>
                     <div style={{fontSize:13,fontWeight:700,color:(editPerms as any)[p.key]?'#029FA2':'#374151',display:'flex',alignItems:'center',gap:5}}><p.Icon size={14} strokeWidth={2.25}/> {p.label}</div>
-                    {p.locked&&<div style={{fontSize:10,color:'#9ca3af'}}>{p.key==='cashier'?(!hasCashier?'يحتاج الشاملة أو إضافة الكاشير':'دوره كاشير'):'افتراضي'}</div>}
+                    {p.locked&&<div style={{fontSize:10,color:'#9ca3af'}}>{p.key==='cashier'?(!hasCashier?'يحتاج إضافة إقفال الكاشير':'دوره كاشير'):'افتراضي'}</div>}
                   </div>
                 </label>
               ))}

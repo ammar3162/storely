@@ -44,9 +44,8 @@ export const TOOLS = [
   },
 ]
 
-export function planAllows(userPlan:string, minPlan:string, hasAiAddon:boolean){
-  if (userPlan === 'basic' && hasAiAddon) return true // عميل الأساسية اللي اشترى إضافة الذكاء الاصطناعي
-  const order = ['basic','pro','advanced']
-  return order.indexOf(userPlan) >= order.indexOf(minPlan)
+// الأدوات المتقدمة تفتح بميزة الذكاء (features.ai من /api/me: الباقة أو الإضافة) — مو باسم الباقة
+export function planAllows(_userPlan:string, minPlan:string, hasAi:boolean){
+  return minPlan === 'basic' || hasAi
 }
 

@@ -62,7 +62,7 @@ export function mapCustomer(p: any): Customer {
  *  لو ما وصلت الفاتورة من الخادم نرجع لسعر الباقة بس */
 export function monthlyRevenue(list: Customer[]) {
   const paid = list.filter(u => u.subscription_type === 'paid' && u.status === 'active')
-  const planOnly = (u: Customer) => { const p = planPriceFor(u.plan, u.locked_plan_monthly); return u.billing_cycle === 'yearly' ? p.yearly / 12 : p.monthly }
+  const planOnly = (u: Customer) => { const p = planPriceFor(u.plan, u.locked_plan_monthly, u.max_branches); return u.billing_cycle === 'yearly' ? p.yearly / 12 : p.monthly }
   const total = paid.reduce((s, u) => s + (u.monthly_bill ?? planOnly(u)), 0)
   const addons = paid.reduce((s, u) => s + (u.bill_addons ?? 0), 0)
   return { total, addons }

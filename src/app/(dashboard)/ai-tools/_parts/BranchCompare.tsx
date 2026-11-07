@@ -3,11 +3,11 @@ import { C } from './config'
 import type { AiToolsPage } from './useAiTools'
 
 export default function BranchCompare({ m }: { m: AiToolsPage }) {
-  const { branchComp, setBranchComp, branchLoading, setBranchLoading, isOwner, plan, hasAiAddon } = m
+  const { branchComp, setBranchComp, branchLoading, setBranchLoading, isOwner, hasAiAddon } = m
   return (
     <>
       {/* مقارنة الفروع — الباقة الشاملة أو المتقدمة */}
-      {(plan!=='basic'||hasAiAddon) && isOwner && (
+      {hasAiAddon && isOwner && (
       <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
           <div>

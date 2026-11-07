@@ -53,8 +53,8 @@ export async function POST(req: Request) {
   try {
     const orgId = (profile as any)?.org_id
     const maxBranches = (profile as any)?.organizations?.max_branches || 1
-    const planName = maxBranches === 1 ? 'basic' : maxBranches <= 3 ? 'pro' : 'advanced'
-    const amount = planPriceFor(planKeyOf((profile as any)?.organizations?.plan, maxBranches), (profile as any)?.organizations?.locked_plan_monthly).monthly
+    const planName = planKeyOf((profile as any)?.organizations?.plan, maxBranches)
+    const amount = planPriceFor(planName, (profile as any)?.organizations?.locked_plan_monthly, maxBranches).monthly
     if (orgId) {
       await (supabase as any).from('subscription_events').insert({
         org_id: orgId,

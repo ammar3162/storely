@@ -3,11 +3,11 @@ import { C } from './config'
 import type { AiToolsPage } from './useAiTools'
 
 export default function WasteTools({ m }: { m: AiToolsPage }) {
-  const { setWasteReport, wasteLoading, setWasteLoading, setRealWasteReport, realWasteLoading, setRealWasteLoading, plan, hasAiAddon } = m
+  const { setWasteReport, wasteLoading, setWasteLoading, setRealWasteReport, realWasteLoading, setRealWasteLoading, hasAiAddon } = m
   return (
     <>
       {/* أدوات الهدر — الباقة الشاملة أو المتقدمة */}
-      {(plan!=='basic'||hasAiAddon) && (
+      {hasAiAddon && (
       <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
         <div id="waste" style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:10,scrollMarginTop:80}}>وين تخسر فلوس؟</div>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
