@@ -4,20 +4,17 @@ import { ct, DEFICIT_REASONS } from './strings'
 import { fmt } from './inputs'
 import { CheckCircle2, AlertTriangle } from 'lucide-react'
 import { C, card, paper, receiptEdge, receiptNum, cutLine } from '../../_ui/theme'
-import type { CashierClosing } from './useCashierClosing'
 
 const line: React.CSSProperties = { display:'flex', justifyContent:'space-between', alignItems:'baseline', fontSize:14, lineHeight:'28px' }
+import type { CashierClosing } from './useCashierClosing'
 
-// نافذة من تحت: الإيصال للتأكيد — الحفظ ما يصير إلا بزر «إقفال الدرج»
-export default function ConfirmSheet({ m }: { m: CashierClosing }) {
-  const { lang, session, reviewOpen, setReviewOpen, submitting, saveClosing, deficitChoice, setDeficitChoice, deficitNote, setDeficitNote, curr, sales, mada, visa, mastercard, cash, deliveryList, totalPurchasesNow, expectedCash, difference, status, deficitReasonOk, businessDateLabel, isAfterMidnightCarry } = m
-  if(!reviewOpen) return null
+export default function StepReview({ m }: { m: CashierClosing }) {
+  const { lang, session, step, deficitChoice, setDeficitChoice, deficitNote, setDeficitNote, networkImage, salesImage, networkPreview, salesPreview, curr, sales, mada, visa, mastercard, cash, deliveryList, totalPurchasesNow, expectedCash, difference, status, deficitReasonOk, businessDateLabel, isAfterMidnightCarry } = m
   return (
-    <div style={{position:'fixed',inset:0,zIndex:300,display:'flex',flexDirection:'column' as const,justifyContent:'flex-end'}}>
-      <div onClick={()=>!submitting&&setReviewOpen(false)} style={{position:'absolute',inset:0,background:'rgba(17,24,39,.45)',animation:'fadeIn .2s ease both'}}/>
-      <div className="sheet" style={{position:'relative',background:'#f4f5f6',borderRadius:'20px 20px 0 0',maxHeight:'92dvh',overflowY:'auto' as const,padding:'8px 16px calc(20px + env(safe-area-inset-bottom))',width:'100%',maxWidth:560,margin:'0 auto'}}>
-        <div style={{width:40,height:4,borderRadius:2,background:'#d1d5db',margin:'4px auto 12px'}}/>
-        <div style={{fontSize:18,fontWeight:600,color:C.t1,marginBottom:12}}>{ct('confirmTitle',lang)}</div>
+    <>
+            {/* خطوة 4: المراجعة */}
+            {step===4 && (
+              <div className="fu" style={{marginBottom:16}}>
                 {/* الإيصال: نفس أرقام الحساب، بشكل إيصال كاشير مطبوع */}
                 <div style={{...paper,margin:'0 4px'}}>
                   <div style={{textAlign:'center' as const,marginBottom:14}}>
@@ -47,13 +44,25 @@ export default function ConfirmSheet({ m }: { m: CashierClosing }) {
                 </div>
                 <div style={{...receiptEdge,margin:'0 4px'}}/>
 
-                <div style={{...card,padding:'12px 14px',marginTop:12,textAlign:'start' as const}}>
-                  <div style={{fontSize:13,color:C.t1,fontWeight:500}}>{ct('recordedOn',lang)} {businessDateLabel}</div>
-                  {isAfterMidnightCarry && <div style={{fontSize:12,color:C.t2,marginTop:4,lineHeight:1.5}}>{ct('afterMidnight',lang)}</div>}
-                  {totalPurchasesNow>0 && <div style={{fontSize:12,color:C.t2,marginTop:4}}>{ct('recordedWithdrawals',lang)}: {fmt(totalPurchasesNow)} {curr}</div>}
+                <div style={{marginTop:16,display:'grid',gap:8}}>
+                  {totalPurchasesNow>0 && (
+                    <div style={{...card,padding:'12px 14px'}}>
+                      <div style={{display:'flex',justifyContent:'space-between',fontSize:13}}>
+                        <span style={{color:C.t2}}>{ct('recordedWithdrawals',lang)}</span>
+                        <span style={{...receiptNum,color:C.t1}}>{fmt(totalPurchasesNow)}</span>
+                      </div>
+                      <div style={{fontSize:12,color:C.t3,marginTop:4}}>{ct('withdrawalsNote',lang)}</div>
+                    </div>
+                  )}
+                  <div style={{...card,padding:'12px 14px',textAlign:'start' as const}}>
+                    <div style={{fontSize:13,color:C.t1,fontWeight:500}}>{ct('recordedOn',lang)} {businessDateLabel}</div>
+                    {isAfterMidnightCarry && <div style={{fontSize:12,color:C.t2,marginTop:4,lineHeight:1.5}}>{ct('afterMidnight',lang)}</div>}
+                  </div>
                 </div>
-
-                <div style={{marginTop:16}}>
+              </div>
+            )}
+            {step===4 && (
+              <div className="fu" style={{...card,padding:16,marginBottom:16}}>
                 {status==='deficit' && (
                   <div style={{marginBottom:16,textAlign:'start' as const}}>
                     <div style={{fontSize:14,fontWeight:600,color:'#111827',marginBottom:8}}>{ct('deficitReasonLbl',lang)}</div>
@@ -82,19 +91,18 @@ export default function ConfirmSheet({ m }: { m: CashierClosing }) {
                     {!deficitReasonOk && <div style={{fontSize:11.5,color:'#b42318',marginTop:5,fontWeight:600}}>{ct(deficitChoice==='other'?'deficitOtherReq':'deficitReasonReq',lang)}</div>}
                   </div>
                 )}
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                  <div style={{padding:8,borderRadius:10,background:'#f4f5f6',textAlign:'center' as const}}>
+                    <img src={salesPreview || salesImage} alt="" style={{width:'100%',height:60,borderRadius:6,objectFit:'cover',marginBottom:4}}/>
+                    <span style={{fontSize:12,color:'#4b5565'}}>{ct('salesReportCheck',lang)}</span>
+                  </div>
+                  <div style={{padding:8,borderRadius:10,background:'#f4f5f6',textAlign:'center' as const}}>
+                    <img src={networkPreview || networkImage} alt="" style={{width:'100%',height:60,borderRadius:6,objectFit:'cover',marginBottom:4}}/>
+                    <span style={{fontSize:12,color:'#4b5565'}}>{ct('networkBalanceCheck',lang)}</span>
+                  </div>
                 </div>
-
-        <div style={{display:'grid',gap:8,marginTop:8}}>
-          <button type="button" onClick={saveClosing} disabled={submitting||!deficitReasonOk}
-            style={{height:52,background:deficitReasonOk?'#0f766e':'#eceef1',color:deficitReasonOk?'white':'#6b7487',border:'none',borderRadius:10,fontSize:16,fontWeight:600,cursor:deficitReasonOk?'pointer':'not-allowed',fontFamily:'inherit',opacity:submitting?.7:1}}>
-            {submitting ? ct('saving',lang) : ct('closeDrawer',lang)}
-          </button>
-          <button type="button" onClick={()=>setReviewOpen(false)} disabled={submitting}
-            style={{height:48,background:'white',color:C.t1,border:'1px solid #e5e7eb',borderRadius:10,fontSize:16,fontWeight:500,cursor:'pointer',fontFamily:'inherit'}}>
-            {ct('backToEdit',lang)}
-          </button>
-        </div>
-      </div>
-    </div>
+              </div>
+            )}
+    </>
   )
 }
