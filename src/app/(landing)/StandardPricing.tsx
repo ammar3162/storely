@@ -4,7 +4,7 @@
 // الأسعار من مصدر واحد (lib/planPricing) — نفس أرقام التسجيل والفاتورة.
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, Minus, Plus, Wallet, UserCheck, Sparkles, Users, Store, ArrowLeft, Sun, MessageCircle, TrendingUp, GitCompare, Calculator, UserCog, Languages, Truck, Bell, FileDown, Percent, type LucideIcon } from 'lucide-react'
+import { Check, Minus, Plus, ChevronDown, Wallet, UserCheck, Sparkles, Users, Store, ArrowLeft, Sun, MessageCircle, TrendingUp, GitCompare, Calculator, UserCog, Languages, Truck, Bell, FileDown, Percent, type LucideIcon } from 'lucide-react'
 import type { Billing } from './landing-data'
 import { CUSTOM_MIN_STAFF_PER_BRANCH, CUSTOM_MODULES, CUSTOM_MODULE_ORDER, CUSTOM_STAFF_STEP, NEW_ADDON_PRICES, NEW_PLANS, PLAN_CAPS, PLAN_PRICING, YEARLY_FACTOR, customModuleAmount, customMonthly, planPriceFor, signupAddonsMonthly, type NewPlanKey } from '@/lib/planPricing'
 
@@ -48,7 +48,6 @@ const ALL: [string, string[], [Cell, Cell, Cell]][] = [
     'تقارير الربحية الشهرية', 'مقارنة الفروع', 'بوابة المحاسب', 'مدير لكل فرع', 'تطبيق الموظفين بسبع لغات', 'إشعارات فورية بكل حركة',
     'تصدير التقارير PDF وExcel', 'تنبيه حد التسجيل في الضريبة'], [true, true, true]],
 ]
-const COMPARE: { group: string; rows: [string, Cell, Cell, Cell][] }[] = ALL.map(([group, items, st]) => ({ group, rows: items.map(i => [i, ...st] as [string, Cell, Cell, Cell]) }))
 const INCLUDED: [LucideIcon, string][] = [
   [Sun, 'التقرير الصباحي على الواتساب'], [MessageCircle, 'المساعد الذكي'], [TrendingUp, 'تقارير الربحية'], [GitCompare, 'مقارنة الفروع'],
   [Calculator, 'بوابة المحاسب'], [UserCog, 'مدير لكل فرع وصلاحيات'], [Languages, 'تطبيق الموظفين بسبع لغات'], [Truck, 'حتى 15 مورد لكل فرع'],
@@ -64,6 +63,7 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
   const [mods, setMods] = useState<string[]>(['cashier_closing'])
   const [staffSel, setStaffSel] = useState<number | null>(null)
   const [focus, setFocus] = useState<PlanKey | null>(null)
+  const [openGroup, setOpenGroup] = useState<string | null>(null)   // مجموعة المقارنة المفتوحة
   const minStaff = CUSTOM_MIN_STAFF_PER_BRANCH * branches
   const staff = Math.max(minStaff, staffSel ?? PLAN_CAPS.custom.staff * branches)
   const picked = CUSTOM_MODULE_ORDER.filter(s => mods.includes(s))
@@ -82,7 +82,7 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
   const branchWord = branches === 2 ? 'فرعين' : `${branches} فروع`
   const yearly = billing === 'yearly'
   const shown = (m: number) => (yearly ? Math.round(m * YEARLY_FACTOR) : m)
-  const cell = (c: Cell) => (c === true ? <Check size={18} className="st-yes" /> : c === false ? <Minus size={16} className="st-no" /> : c === 'addon' ? <span className="st-addon">إضافة</span> : <b>{c}</b>)
+  const cell = (c: Cell) => (c === true ? <Check size={17} strokeWidth={2.25} className="st-yes" /> : c === false ? <Minus size={16} className="st-no" /> : c === 'addon' ? <span className="st-addon">إضافة</span> : <b>{c}</b>)
 
   return (
     <div className="st">
@@ -179,16 +179,24 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
 
       <section className="st-sec">
         <h3 className="st-h">قارن الباقات</h3>
-        <div className="st-table-wrap">
-          <table className="st-table">
-            <thead><tr><th></th>{PLANS.map(p => <th key={p.key} className={p.popular ? 'pop' : ''}>{p.name}<small>{shown(p.price)} ⃁ / فرع</small></th>)}</tr></thead>
-            {COMPARE.map(g => (
-              <tbody key={g.group}>
-                <tr className="grp"><td colSpan={4}>{g.group}</td></tr>
-                {g.rows.map(([label, ...cells]) => <tr key={label}><td>{label}</td>{cells.map((c, i) => <td key={i} className={PLANS[i].popular ? 'pop' : ''}>{cell(c)}</td>)}</tr>)}
-              </tbody>
-            ))}
-          </table>
+        {/* مقارنة مختصرة: سطر لكل مجموعة، والتفاصيل تنفتح عند الضغط */}
+        <div className="st-cmp">
+          <div className="st-cmp-row st-cmp-head">
+            <span/>
+            {PLANS.map(p => <span key={p.key} className={p.popular ? 'pop' : ''}>{p.name}<small>{shown(p.price)} ⃁</small></span>)}
+          </div>
+          {ALL.map(([group, items, st]) => {
+            const open = openGroup === group
+            return (
+              <div key={group} className={`st-cmp-grp${open ? ' open' : ''}`}>
+                <button type="button" className="st-cmp-row" aria-expanded={open} onClick={() => setOpenGroup(open ? null : group)}>
+                  <span className="st-cmp-name"><ChevronDown size={16} className="st-cmp-chev" />{group}<em>{items.length} مزايا</em></span>
+                  {st.map((c, i) => <span key={i} className={PLANS[i].popular ? 'pop' : ''}>{cell(c)}</span>)}
+                </button>
+                {open && <ul className="st-cmp-list">{items.map(f => <li key={f}>{f}</li>)}</ul>}
+              </div>
+            )
+          })}
         </div>
       </section>
 
@@ -251,17 +259,26 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
 .st-addon-price{font-size:13px;color:var(--ink2)}
 .st-addon-price strong{font-size:22px;color:var(--ink);font-variant-numeric:tabular-nums}
 .st-addon-card small{font-size:12.5px;color:var(--ink2)}
-.st-table-wrap{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:20px;margin-top:8px}
-.st-table{width:100%;border-collapse:collapse;min-width:620px;font-size:14px}
-.st-table th{padding:16px 10px;font-size:16px;font-weight:800;text-align:center;border-bottom:1px solid var(--line)}
-.st-table th small{display:block;font-size:12.5px;font-weight:600;color:var(--ink2);margin-top:2px}
-.st-table th:first-child,.st-table td:first-child{text-align:right;padding-inline-start:18px;width:44%}
-.st-table td{padding:12px 10px;text-align:center;border-bottom:1px solid var(--line)}
-.st-table .pop{background:#f0faf8}
-.st-table tr.grp td{background:#f6f7f6;font-weight:800;font-size:13px;color:var(--ink2);text-align:right;padding:9px 18px}
+.st-cmp{max-width:820px;width:100%;margin:8px auto 0;background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.st-cmp-row{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr));align-items:center;width:100%;min-height:54px;padding:0 18px;border:0;background:none;font:inherit;color:inherit;text-align:center}
+button.st-cmp-row{cursor:pointer;transition:background-color .15s}
+@media(hover:hover){button.st-cmp-row:hover{background:#fafafa}}
+.st-cmp-row>span:not(.st-cmp-name){display:flex;flex-direction:column;align-items:center;justify-content:center;align-self:stretch}
+.st-cmp-row>span.pop{background:#f3faf8}
+.st-cmp-head{min-height:60px;border-bottom:1px solid var(--line);font-size:15px;font-weight:600}
+.st-cmp-head small{display:block;font-size:12px;font-weight:400;color:var(--ink2);margin-top:1px}
+.st-cmp-grp+.st-cmp-grp{border-top:1px solid var(--line)}
+.st-cmp-name{display:flex;align-items:center;gap:8px;text-align:right;font-size:15px;font-weight:500}
+.st-cmp-name em{font-style:normal;font-size:12px;font-weight:400;color:var(--ink2)}
+.st-cmp-chev{color:var(--ink2);flex-shrink:0;transition:transform .2s cubic-bezier(.22,1,.36,1)}
+.st-cmp-grp.open .st-cmp-chev{transform:rotate(180deg)}
+.st-cmp-list{list-style:none;margin:0;padding:4px 18px 16px 18px;padding-inline-start:42px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 20px;font-size:13.5px;color:var(--ink2)}
+.st-cmp-list li{position:relative;padding-inline-start:12px;line-height:1.6}
+.st-cmp-list li::before{content:"";position:absolute;inset-inline-start:0;top:.7em;width:4px;height:4px;border-radius:2px;background:#c4ccca}
+@media(max-width:640px){.st-cmp-row{grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr));padding:0 10px}.st-cmp-name{font-size:14px;gap:6px}.st-cmp-name em{display:none}.st-cmp-head{font-size:13px}.st-cmp-list{grid-template-columns:1fr;padding-inline-start:30px}}
 .st-yes{color:var(--teal2)}
 .st-no{color:#c4ccca}
-.st-addon{font-size:12px;font-weight:700;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:999px;padding:2px 10px}
+.st-addon{font-size:12px;font-weight:500;color:var(--ink2);background:#f4f5f6;border-radius:6px;padding:2px 8px}
 .st-card.focus{box-shadow:0 0 0 5px rgba(20,184,166,.35),0 24px 50px -28px rgba(15,118,110,.55);transition:box-shadow .3s}
 .st-build-link{align-self:center;text-align:center;color:var(--teal2);font-weight:700;font-size:15px;text-decoration:underline;text-underline-offset:4px}
 .st-build{background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px;scroll-margin-top:90px}
