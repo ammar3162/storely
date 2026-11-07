@@ -117,7 +117,7 @@ export default function PayslipPage() {
               {PAYSLIP_LANGS.map(l => (
                 <button key={l.code} onClick={() => chooseLang(l.code)}
                   style={{ width: '100%', padding: '11px 14px', border: 'none', borderBottom: '1px solid #f1f5f9', background: lang === l.code ? '#f0fdfa' : 'white', color: lang === l.code ? '#0f766e' : '#1e293b', fontSize: 13, fontWeight: lang === l.code ? 700 : 500, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'start', display: 'block' }}>
-                  {lang === l.code ? '✓ ' : ''}{l.label}
+                  {l.label}
                 </button>
               ))}
             </div>

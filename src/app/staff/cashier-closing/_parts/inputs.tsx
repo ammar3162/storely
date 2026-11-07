@@ -2,6 +2,7 @@
 import NumberInput from '@/components/NumberInput'
 import { CASHIER_EXTRA } from '@/lib/staffI18n/cashier'
 import { STEPS_AR, STEPS_EN } from './strings'
+import { AlertTriangle, Check } from 'lucide-react'
 
 export function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -21,7 +22,7 @@ export function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconCol
         />
         <span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:11,fontWeight:700,color:'#a8a7a1'}}>{currency || '⃁'}</span>
       </div>
-      {error && <div style={{fontSize:11,color:'#dc2626',fontWeight:700,marginTop:6,display:'flex',alignItems:'center',gap:4}}>⚠️ {error}</div>}
+      {error && <div style={{fontSize:11,color:'#dc2626',fontWeight:700,marginTop:6,display:'flex',alignItems:'center',gap:4}}><AlertTriangle size={13}/> {error}</div>}
     </div>
   )
 }
@@ -66,16 +67,16 @@ export function ProgressBar({ step, lang }: { step: number; lang: string }) {
             <div style={{
               width:32,height:32,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',
               fontSize:13,fontWeight:800,transition:'all .2s',
-              background: step>s.key ? '#029FA2' : step===s.key ? '#029FA2' : '#e5e5e2',
+              background: step>s.key ? '#0f766e' : step===s.key ? '#0f766e' : '#e5e5e2',
               color: step>=s.key ? 'white' : '#a8a7a1',
               boxShadow: step===s.key ? '0 0 0 4px #ccfbf1' : 'none',
             }}>
-              {step>s.key ? '✓' : s.key}
+              {step>s.key ? <Check size={14} strokeWidth={3}/> : s.key}
             </div>
             <span style={{fontSize:10,fontWeight:700,color: step>=s.key ? '#1c1c1a' : '#a8a7a1',whiteSpace:'nowrap'}}>{s.label}</span>
           </div>
           {i<STEPS.length-1 && (
-            <div style={{flex:1,height:2,background: step>s.key ? '#029FA2' : '#e5e5e2',margin:'0 6px 18px',transition:'background .3s'}}/>
+            <div style={{flex:1,height:2,background: step>s.key ? '#0f766e' : '#e5e5e2',margin:'0 6px 18px',transition:'background .3s'}}/>
           )}
         </div>
       ))}

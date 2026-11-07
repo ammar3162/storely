@@ -1,4 +1,5 @@
 'use client'
+import { Package, ShoppingCart, FileText } from 'lucide-react'
 import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
 import NumberInput from '@/components/NumberInput'
 import TaxInvoiceFields, { type ZatcaState } from '@/components/TaxInvoiceFields'
@@ -28,7 +29,7 @@ interface StaffSession {
 }
 
 const C = {
-  primary:'#029FA2', primaryD:'#0f766e', primaryL:'#f0fdfa', primaryB:'#99f6e4',
+  primary:'#0f766e', primaryD:'#0f766e', primaryL:'#f0fdfa', primaryB:'#99f6e4',
   danger:'#e24b4a', dangerL:'#fef2f2',
   warning:'#ba7517', warningL:'#fffbeb',
   text:'#000000', text2:'#0f172a', text3:'#1e293b', text4:'#334155',   // كتابة سوداء واضحة
@@ -59,34 +60,34 @@ const PUI: Record<string,Record<'ar'|'en',string>> = {
   vat15:            {ar:'ضريبة 15%',en:'15% VAT'},
   invoiceImage:     {ar:'صورة الفاتورة *',en:'Invoice Photo *'},
   uploading:        {ar:'⏳ جاري الرفع...',en:'⏳ Uploading...'},
-  clickToUpload:    {ar:'📸 اضغط لرفع الفاتورة',en:'📸 Tap to upload invoice'},
+  clickToUpload:    {ar:'اضغط لرفع الفاتورة',en:'Tap to upload invoice'},
   note:             {ar:'ملاحظة (اختياري)',en:'Note (optional)'},
   notePh:           {ar:'أي تفاصيل إضافية...',en:'Any additional details...'},
   submitting:       {ar:'⏳ جاري التسجيل...',en:'⏳ Submitting...'},
-  submitBtn:        {ar:'✅ تسجيل الشراء',en:'✅ Record Purchase'},
+  submitBtn:        {ar:'تسجيل الشراء',en:'Record Purchase'},
   imgFailed:        {ar:'فشل رفع الصورة',en:'Failed to upload image'},
-  imgUploaded:      {ar:'تم رفع الفاتورة ✓',en:'Invoice uploaded ✓'},
+  imgUploaded:      {ar:'تم رفع الفاتورة',en:'Invoice uploaded'},
   selectVat:        {ar:'حدد هل الفاتورة تشمل الضريبة',en:'Please specify if the invoice includes VAT'},
   invoiceRequired:  {ar:'يرجى رفع صورة الفاتورة',en:'Please upload the invoice photo'},
   supplierRequired: {ar:'يرجى إدخال اسم المورد',en:'Please enter the supplier name'},
   vatInvalid:       {ar:'الرقم الضريبي للمورد غير صحيح — ١٥ رقم يبدأ وينتهي بـ 3',en:'Supplier VAT number is invalid — 15 digits, starts and ends with 3'},
-  inventoryUpdated: {ar:'✅ تم تحديث المخزون',en:'✅ Inventory updated'},
-  purchaseRecorded: {ar:'✅ تم تسجيل الشراء',en:'✅ Purchase recorded'},
+  inventoryUpdated: {ar:'تم تحديث المخزون',en:'Inventory updated'},
+  purchaseRecorded: {ar:'تم تسجيل الشراء',en:'Purchase recorded'},
   errorPrefix:      {ar:'خطأ: ',en:'Error: '},
   snapTitle:        {ar:'صوّر الفاتورة — ونعبّي البيانات عنك',en:'Snap the invoice — we fill it in for you'},
-  camera:           {ar:'📷 الكاميرا',en:'📷 Camera'},
-  fileBtn:          {ar:'📄 ملف PDF',en:'📄 PDF file'},
-  pdfAttached:      {ar:'📄 تم إرفاق الملف',en:'📄 File attached'},
-  gallery:          {ar:'🖼️ من الصور',en:'🖼️ From photos'},
+  camera:           {ar:'الكاميرا',en:'Camera'},
+  fileBtn:          {ar:'ملف PDF',en:'PDF file'},
+  pdfAttached:      {ar:'تم إرفاق الملف',en:'File attached'},
+  gallery:          {ar:'من الصور',en:'From photos'},
   reading:          {ar:'⏳ جاري قراءة الفاتورة...',en:'⏳ Reading the invoice...'},
-  readOk:           {ar:'✅ قرأنا الفاتورة — راجع البيانات قبل الحفظ',en:'✅ Invoice read — please review before saving'},
-  readQr:           {ar:'✅ قرأنا الفاتورة وباركود الهيئة — البيانات موثقة',en:'✅ Invoice and ZATCA QR read — data verified'},
+  readOk:           {ar:'قرأنا الفاتورة — راجع البيانات قبل الحفظ',en:'Invoice read — please review before saving'},
+  readQr:           {ar:'قرأنا الفاتورة وباركود الهيئة — البيانات موثقة',en:'Invoice and ZATCA QR read — data verified'},
   readFail:         {ar:'ما قدرنا نقرأ الفاتورة — عبّي البيانات يدوي',en:"Couldn't read the invoice — please fill it in manually"},
   changePhoto:      {ar:'تغيير الصورة',en:'Change photo'},
   itemsFound:       {ar:'بالفاتورة — حدد اللي تبي تسجله واكتب سعره',en:'on the invoice — pick and price them'},
   itemPrice:        {ar:'السعر',en:'Price'},
   saveItems:        {ar:'حفظ الأصناف المحددة',en:'Save selected items'},
-  itemsSaved:       {ar:'✅ تم تسجيل الأصناف',en:'✅ Items recorded'},
+  itemsSaved:       {ar:'تم تسجيل الأصناف',en:'Items recorded'},
   needSupplier:     {ar:'اكتب اسم المورد أول',en:'Enter the supplier first'},
   pickPrice:        {ar:'حدد صنف واكتب سعره',en:'Pick an item and enter its price'},
   needName:         {ar:'اكتب اسم الصنف',en:'Enter the item name'},
@@ -110,6 +111,7 @@ export default function StaffPurchasesPage() {
   const [pdfName, setPdfName] = useState('')
   const [bizType, setBizType] = useState<string|null>(null)
   const [toast, setToast] = useState('')
+  const [toastOk, setToastOk] = useState(false)
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [vatFromSupplier, setVatFromSupplier] = useState(false)
   const [zatca, setZatcaState] = useState<ZatcaState>(null)
@@ -157,9 +159,10 @@ export default function StaffPurchasesPage() {
       .then(r=>r.json()).then(j=>setProducts(j.products||[])).catch(()=>{})
   })
 
-  function showToast(msg: string) {
-    setToast(msg)
-    setTimeout(()=>setToast(''),msg.startsWith('✅')?3000:6000)
+  // الرسائل الناجحة (خضراء وتختفي أسرع) — الباقي أخطاء
+  function showToast(msg: string, ok = false) {
+    setToast(msg); setToastOk(ok)
+    setTimeout(()=>setToast(''),ok?3000:6000)
   }
 
   async function loadSuppliers(orgId: string) {
@@ -234,7 +237,7 @@ export default function StaffPurchasesPage() {
     if (j.duplicate && window.confirm(`${j.error}\n\n${lang === 'ar' ? 'تسجلها مرة ثانية؟' : pt('saveAgain', lang)}`)) { res = await send({ allow_duplicate: true }); j = await res.json().catch(() => ({})) }
     setBulkSaving(false)
     if (!res.ok || !j.success) return stop(j.error || (lang === 'ar' ? 'ما انحفظت الفاتورة — حاول مرة ثانية' : lang === 'en' ? 'Could not save — try again' : pt('saveFailed', lang)))
-    showToast(`${pt('itemsSaved', lang)} — ${j.summary || j.saved}`)
+    showToast(`${pt('itemsSaved', lang)} — ${j.summary || j.saved}`, true)
     setTimeout(() => router.push('/staff/dispense'), 2200)
   }
 
@@ -278,7 +281,7 @@ export default function StaffPurchasesPage() {
     let resData = await res.json()
     if(resData.duplicate&&window.confirm(`${resData.error}\n\n${lang==='ar'?'تسجلها مرة ثانية؟':pt('saveAgain',lang)}`)){res=await sendOne({allow_duplicate:true});resData=await res.json()}
     if(!res.ok){showToast(pt('errorPrefix',lang)+resData.error);setLoading(false);submitting.current=false;return}
-    showToast(form.category==='مخزون'?`${pt('inventoryUpdated',lang)} (+${form.qty||0})`:pt('purchaseRecorded',lang))
+    showToast(form.category==='مخزون'?`${pt('inventoryUpdated',lang)} (+${form.qty||0})`:pt('purchaseRecorded',lang), true)
 
     setForm({category:invOn?'مخزون':'مشتريات',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_number:'',supplier_vat_number:''})
     setVatFromSupplier(false); setZatca(null)
@@ -302,7 +305,7 @@ export default function StaffPurchasesPage() {
       <StaffHeader title={pt('title',lang)} subtitle={`${session.name} · ${session.org_name}`} rtl={rtl} end={<StaffLangButton/>} />
 
       {/* الرسالة ثابتة بأسفل الشاشة — كانت فوق الصفحة وما تبين لو الموظف نازل عند زر الحفظ */}
-      {toast&&<div role="status" style={{position:'fixed',left:16,right:16,bottom:20,zIndex:1000,maxWidth:520,margin:'0 auto',background:toast.startsWith('✅')?C.primaryL:C.dangerL,color:toast.startsWith('✅')?C.primary:C.danger,border:`1.5px solid ${toast.startsWith('✅')?C.primary:C.danger}`,borderRadius:12,padding:'12px 16px',fontSize:13.5,fontWeight:800,textAlign:'center',boxShadow:'0 10px 30px rgba(0,0,0,.18)'}}>{toast}</div>}
+      {toast&&<div role="status" style={{position:'fixed',left:16,right:16,bottom:20,zIndex:1000,maxWidth:520,margin:'0 auto',background:toastOk?C.primaryL:C.dangerL,color:toastOk?C.primary:C.danger,border:`1.5px solid ${toastOk?C.primary:C.danger}`,borderRadius:12,padding:'12px 16px',fontSize:13.5,fontWeight:800,textAlign:'center',boxShadow:'0 10px 30px rgba(0,0,0,.18)'}}>{toast}</div>}
 
       <div style={{padding:'16px 20px',maxWidth:520,margin:'0 auto'}}>
         {/* صوّر الفاتورة — كاميرا أو من الصور */}
@@ -325,10 +328,10 @@ export default function StaffPurchasesPage() {
           <div style={{marginBottom:14}}>
             <label style={lbl}>{pt('purchaseType',lang)}</label>
             <div style={{display:'flex',gap:8}}>
-              {[['مخزون',pt('catInventory',lang),'📦'],['مشتريات',pt('catPurchases',lang),'🛒'],['أخرى',pt('catOther',lang),'📋']].filter(([cat])=>invOn||cat!=='مخزون').map(([cat,label,icon])=>(
+              {([['مخزون',pt('catInventory',lang),Package],['مشتريات',pt('catPurchases',lang),ShoppingCart],['أخرى',pt('catOther',lang),FileText]] as [string,string,typeof Package][]).filter(([cat])=>invOn||cat!=='مخزون').map(([cat,label,Icon])=>(
                 <button key={cat} type="button" onClick={()=>setForm(f=>({...f,category:cat}))}
                   style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${form.category===cat?C.primary:C.border2}`,background:form.category===cat?C.primaryL:'white',color:form.category===cat?C.primary:C.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-                  {icon} {label}
+                  <span style={{display:'inline-flex',alignItems:'center',gap:6,justifyContent:'center'}}><Icon size={15} strokeWidth={2.25}/>{label}</span>
                 </button>
               ))}
             </div>
@@ -401,8 +404,8 @@ export default function StaffPurchasesPage() {
           {form.hasVat==='yes'&&(
             <div style={{marginBottom:12,borderRadius:12,padding:12,border:`1.5px ${form.invoice_image?'solid':'dashed'} ${form.invoice_image?C.primary:C.danger}`,background:form.invoice_image?C.primaryL:C.dangerL}}>
               {form.invoice_image
-                ? <div style={{fontSize:13,fontWeight:700,color:C.primary}}>{lang==='ar'?'✅ الفاتورة مرفقة':lang==='en'?'✅ Invoice attached':pt('invoiceAttached',lang)}</div>
-                : <><div style={{fontSize:13,fontWeight:700,color:C.danger,marginBottom:8}}>{lang==='ar'?'📎 الفاتورة ضريبية — أرفق صورتها أو ملفها (مطلوب)':lang==='en'?'📎 Tax invoice — attach a photo or file (required)':pt('taxInvoiceReq',lang)}</div>
+                ? <div style={{fontSize:13,fontWeight:700,color:C.primary}}>{lang==='ar'?'الفاتورة مرفقة':lang==='en'?'Invoice attached':pt('invoiceAttached',lang)}</div>
+                : <><div style={{fontSize:13,fontWeight:700,color:C.danger,marginBottom:8}}>{lang==='ar'?'الفاتورة ضريبية — أرفق صورتها أو ملفها (مطلوب)':lang==='en'?'Tax invoice — attach a photo or file (required)':pt('taxInvoiceReq',lang)}</div>
                   <InvoicePickButtons onFile={handleImage} disabled={uploading} primary={C.primary} primaryL={'white'}
                     labels={{camera:pt('camera',lang),gallery:pt('gallery',lang),file:pt('fileBtn',lang)}}/>
                   {uploading&&<div style={{fontSize:12,color:C.text3,marginTop:6}}>{lang==='ar'?'جاري الرفع…':lang==='en'?'Uploading…':pt('uploadingShort',lang)}</div>}</>}

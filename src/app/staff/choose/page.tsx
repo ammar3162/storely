@@ -4,7 +4,7 @@ import { canCloseCashier } from '@/lib/staffRoles'
 import { useEffect, useState } from 'react'
 import NumberInput from '@/components/NumberInput'
 import { useRouter } from 'next/navigation'
-import { Bell, MapPin, Package, Store, ClipboardList, Send, Wallet, Plane, UserCheck, Boxes, ShoppingCart, Clock, LogOut } from 'lucide-react'
+import { Bell, MapPin, Package, Store, ClipboardList, Send, Wallet, Plane, UserCheck, Boxes, ShoppingCart, Clock, LogOut, User as UserIcon, Check } from 'lucide-react'
 import { getStaffOrg } from '@/lib/session'
 import { canCheckOutAt } from '@/lib/attendanceState'
 import { useStaffLang } from '@/lib/staffLang'
@@ -285,7 +285,7 @@ export default function ChoosePage() {
   ].filter(Boolean) as { key:string; icon:any; title:string; sub:string; c:string; bg:string; go:()=>void }[]
 
   const sectionTitle = (txt: string) => (
-    <div style={{fontSize:12,fontWeight:700,color:'#64748b',margin:'22px 4px 10px',textAlign:isAr?'right':'left'}}>{txt}</div>
+    <div style={{fontSize:12,fontWeight:700,color:'#475569',margin:'22px 4px 10px',textAlign:isAr?'right':'left'}}>{txt}</div>
   )
   const cardBase: React.CSSProperties = { background:'white', border:'1px solid #e8ecf1', borderRadius:16, boxShadow:'0 1px 2px rgba(16,24,40,.04)' }
   const Chevron = () => <span style={{color:'#cbd5e1',fontSize:18,lineHeight:1,transform:isAr?'none':'scaleX(-1)'}}>‹</span>
@@ -295,31 +295,32 @@ export default function ChoosePage() {
       <div style={{maxWidth:480,width:'100%',minHeight:'100vh',boxSizing:'border-box' as const,padding:'0 0 32px'}}>
 
         {/* الهيدر */}
-        <div style={{background:'linear-gradient(160deg,#0b3b3a 0%,#0f766e 100%)',padding:'18px 20px 64px',borderRadius:'0 0 28px 28px',color:'white'}}>
+        {/* فاتح مثل لوحة المالك */}
+        <div style={{background:'#ffffff',padding:'16px 20px',borderBottom:'1px solid #E6E8EC',color:'#101828'}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <div style={{display:'flex',alignItems:'center',gap:12}}>
-              <div style={{width:46,height:46,borderRadius:14,background:orgLogo?'white':'rgba(255,255,255,.14)',border:'1px solid rgba(255,255,255,.18)',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden' as const,flexShrink:0}}>
-                {orgLogo ? <img src={orgLogo} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span style={{fontSize:19,fontWeight:800}}>{name?.trim()?.[0] || '👤'}</span>}
+              <div style={{width:46,height:46,borderRadius:14,background:orgLogo?'white':'#E6F4F2',color:'#0f766e',border:'1px solid #E6E8EC',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden' as const,flexShrink:0}}>
+                {orgLogo ? <img src={orgLogo} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span style={{fontSize:19,fontWeight:800}}>{name?.trim()?.[0] || <UserIcon size={20}/>}</span>}
               </div>
               <div style={{textAlign:isAr?'right':'left'}}>
-                <div style={{fontSize:12,opacity:.75,fontWeight:500}}>{t('welcome')} 👋</div>
+                <div style={{fontSize:13,color:'#475569',fontWeight:600}}>{t('welcome')}</div>
                 <div style={{fontSize:18,fontWeight:800,letterSpacing:'-.2px'}}>{name}</div>
               </div>
             </div>
             <div style={{display:'flex',gap:8}}>
               <StaffLangButton/>
               <button onClick={()=>{ setShowNotifications(true); markNotificationsRead() }} aria-label={t('notifications')}
-                style={{position:'relative' as const,width:38,height:38,background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.18)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'white'}}>
+                style={{position:'relative' as const,width:38,height:38,background:'#F6F7F9',border:'1px solid #E6E8EC',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'#101828'}}>
                 <Bell size={17} strokeWidth={2.25}/>
                 {notifications.some((n:any)=>!n.is_read) && (
-                  <span style={{position:'absolute' as const,top:7,insetInlineEnd:8,width:8,height:8,borderRadius:'50%',background:'#f87171',border:'2px solid #0f766e'}}/>
+                  <span style={{position:'absolute' as const,top:7,insetInlineEnd:8,width:8,height:8,borderRadius:'50%',background:'#dc2626',border:'2px solid #ffffff'}}/>
                 )}
               </button>
             </div>
           </div>
         </div>
 
-        <div style={{padding:'0 16px',marginTop:-44}}>
+        <div style={{padding:'16px 16px 0'}}>
 
           {/* دوام اليوم */}
           {!loadingToday && !attendanceLocked && (
@@ -327,7 +328,7 @@ export default function ChoosePage() {
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10,marginBottom:14}}>
                 <div>
                   <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>{t('todayShift')}</div>
-                  <div style={{fontSize:11.5,color:'#94a3b8',marginTop:2}}>{todayLabel}</div>
+                  <div style={{fontSize:11.5,color:'#475569',marginTop:2}}>{todayLabel}</div>
                 </div>
                 <span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:11.5,fontWeight:700,color:statusClr.c,background:statusClr.bg,padding:'5px 10px',borderRadius:99,whiteSpace:'nowrap' as const}}>
                   <span style={{width:7,height:7,borderRadius:'50%',background:statusClr.dot,boxShadow:isCheckedIn?'0 0 0 3px rgba(16,185,129,.2)':'none'}}/>{statusTxt}
@@ -337,16 +338,16 @@ export default function ChoosePage() {
               <div style={{display:'grid',gridTemplateColumns:shift && !shift.is_24h && shift.start_time ? '1fr 1fr 1fr' : '1fr 1fr',gap:8,marginBottom:16}}>
                 {shift && !shift.is_24h && shift.start_time && (
                   <div style={{background:'#f8fafc',borderRadius:12,padding:'10px 12px'}}>
-                    <div style={{fontSize:10.5,color:'#94a3b8',fontWeight:600,marginBottom:3}}>{t('shift')}</div>
+                    <div style={{fontSize:10.5,color:'#475569',fontWeight:600,marginBottom:3}}>{t('shift')}</div>
                     <div style={{fontSize:13,fontWeight:800,color:'#334155',direction:'ltr',textAlign:isAr?'right':'left'}}>{String(shift.start_time).slice(0,5)}–{String(shift.end_time||'').slice(0,5)}</div>
                   </div>
                 )}
                 <div style={{background:'#f8fafc',borderRadius:12,padding:'10px 12px'}}>
-                  <div style={{fontSize:10.5,color:'#94a3b8',fontWeight:600,marginBottom:3}}>{t('checkInTime')}</div>
+                  <div style={{fontSize:10.5,color:'#475569',fontWeight:600,marginBottom:3}}>{t('checkInTime')}</div>
                   <div style={{fontSize:15,fontWeight:800,color:lastCheckIn?'#0f172a':'#cbd5e1'}}>{lastCheckIn ? fmtClock(lastCheckIn.recorded_at) : '--:--'}</div>
                 </div>
                 <div style={{background:'#f8fafc',borderRadius:12,padding:'10px 12px'}}>
-                  <div style={{fontSize:10.5,color:'#94a3b8',fontWeight:600,marginBottom:3}}>{t('checkOutTime')}</div>
+                  <div style={{fontSize:10.5,color:'#475569',fontWeight:600,marginBottom:3}}>{t('checkOutTime')}</div>
                   <div style={{fontSize:15,fontWeight:800,color:lastCheckOut?'#0f172a':'#cbd5e1'}}>{lastCheckOut ? fmtClock(lastCheckOut.recorded_at) : '--:--'}</div>
                 </div>
               </div>
@@ -387,7 +388,7 @@ export default function ChoosePage() {
                               style={{flex:1,height:42,background:'#0f766e',color:'white',border:'none',borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                               {submittingPerm ? t('sending') : t('sendRequest')}
                             </button>
-                            <button onClick={()=>setShowPermForm(false)} style={{height:42,padding:'0 16px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{t('cancel')}</button>
+                            <button onClick={()=>setShowPermForm(false)} style={{height:42,padding:'0 16px',background:'#f1f5f9',color:'#475569',border:'none',borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{t('cancel')}</button>
                           </div>
                         </div>
                       ) : (
@@ -400,9 +401,9 @@ export default function ChoosePage() {
                 )
               )}
               {lastCheckOut && (
-                <div style={{textAlign:'center' as const,fontSize:12.5,color:'#0f766e',fontWeight:700,background:'#f0fdfa',borderRadius:12,padding:'11px 0'}}>✓ {t('dayDone')}</div>
+                <div style={{textAlign:'center' as const,fontSize:12.5,color:'#0f766e',fontWeight:700,background:'#f0fdfa',borderRadius:12,padding:'11px 0',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Check size={15}/>{t('dayDone')}</div>
               )}
-              {locatingHint && <div style={{fontSize:11.5,color:'#64748b',marginTop:10,textAlign:'center' as const}}>📍 {locatingHint}</div>}
+              {locatingHint && <div style={{fontSize:11.5,color:'#475569',marginTop:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:4}}><MapPin size={13}/>{locatingHint}</div>}
               {attError && <div style={{fontSize:12,color:'#dc2626',marginTop:10,lineHeight:1.6,textAlign:'center' as const,background:'#fef2f2',borderRadius:10,padding:'8px 10px'}}>{attError}</div>}
             </div>
           )}
@@ -416,7 +417,7 @@ export default function ChoosePage() {
                 <span style={{width:42,height:42,borderRadius:12,background:a.bg,color:a.c,display:'flex',alignItems:'center',justifyContent:'center'}}>{a.icon}</span>
                 <span>
                   <span style={{display:'block',fontSize:14.5,fontWeight:800,color:'#0f172a'}}>{a.title}</span>
-                  <span style={{display:'block',fontSize:11.5,color:'#94a3b8',marginTop:3,lineHeight:1.5}}>{a.sub}</span>
+                  <span style={{display:'block',fontSize:11.5,color:'#475569',marginTop:3,lineHeight:1.5}}>{a.sub}</span>
                 </span>
               </button>
             ))}
@@ -437,7 +438,7 @@ export default function ChoosePage() {
                     <span style={{width:38,height:38,borderRadius:11,background:row.bg,color:row.c,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{row.icon}</span>
                     <span style={{flex:1,minWidth:0}}>
                       <span style={{display:'block',fontSize:14,fontWeight:700,color:'#0f172a'}}>{row.title}</span>
-                      <span style={{display:'block',fontSize:11.5,color:'#94a3b8',marginTop:2}}>{row.sub}</span>
+                      <span style={{display:'block',fontSize:11.5,color:'#475569',marginTop:2}}>{row.sub}</span>
                     </span>
                     {row.badge > 0 && <span style={{background:'#dc2626',color:'white',fontSize:11,fontWeight:800,minWidth:20,height:20,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 6px'}}>{row.badge}</span>}
                     <Chevron/>
@@ -448,7 +449,7 @@ export default function ChoosePage() {
           )}
 
           <button onClick={()=>{localStorage.removeItem('staff_session');router.replace('/staff')}}
-            style={{width:'100%',marginTop:22,height:46,background:'white',border:'1px solid #e8ecf1',borderRadius:14,color:'#64748b',fontSize:13.5,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+            style={{width:'100%',marginTop:22,height:46,background:'white',border:'1px solid #e8ecf1',borderRadius:14,color:'#475569',fontSize:13.5,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
             <LogOut size={16} strokeWidth={2}/> {t('logout')}
           </button>
         </div>
@@ -476,11 +477,11 @@ export default function ChoosePage() {
 
             {/* سجل الطلبات السابقة -- كل الأنواع الثلاثة مع حالتها */}
             <div style={{marginTop:18,paddingTop:16,borderTop:'1px solid #f1f5f9'}}>
-              <div style={{fontSize:12,fontWeight:700,color:'#64748b',marginBottom:10}}>{t('history')}</div>
+              <div style={{fontSize:12,fontWeight:700,color:'#475569',marginBottom:10}}>{t('history')}</div>
               {loadingHistory ? (
-                <div style={{fontSize:12,color:'#94a3b8',textAlign:'center' as const,padding:'12px 0'}}>{t('loading')}</div>
+                <div style={{fontSize:12,color:'#475569',textAlign:'center' as const,padding:'12px 0'}}>{t('loading')}</div>
               ) : requestHistory.length===0 ? (
-                <div style={{fontSize:12,color:'#94a3b8',textAlign:'center' as const,padding:'12px 0'}}>{t('noHistory')}</div>
+                <div style={{fontSize:12,color:'#475569',textAlign:'center' as const,padding:'12px 0'}}>{t('noHistory')}</div>
               ) : (
                 <div style={{display:'flex',flexDirection:'column' as const,gap:6,maxHeight:220,overflowY:'auto' as const}}>
                   {requestHistory.map((r:any)=>{
@@ -491,7 +492,7 @@ export default function ChoosePage() {
                       <div key={r.kind+r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 10px',background:'#f8fafc',borderRadius:10}}>
                         <div>
                           <div style={{fontSize:12,fontWeight:600,color:'#1c1c1a'}}>{r.label}</div>
-                          <div style={{fontSize:10,color:'#94a3b8',marginTop:1}}>{new Date(r.date).toLocaleDateString(locale,{numberingSystem:'latn',day:'numeric',month:'short'})}</div>
+                          <div style={{fontSize:10,color:'#475569',marginTop:1}}>{new Date(r.date).toLocaleDateString(locale,{numberingSystem:'latn',day:'numeric',month:'short'})}</div>
                         </div>
                         <span style={{fontSize:10,fontWeight:700,color:statusStyle.color,background:statusStyle.bg,padding:'3px 9px',borderRadius:99}}>{statusStyle.label}</span>
                       </div>
@@ -501,7 +502,7 @@ export default function ChoosePage() {
               )}
             </div>
 
-            <button onClick={()=>setShowRequests(false)} style={{width:'100%',padding:'12px',marginTop:14,background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('cancel')}</button>
+            <button onClick={()=>setShowRequests(false)} style={{width:'100%',padding:'12px',marginTop:14,background:'none',border:'none',color:'#475569',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('cancel')}</button>
           </div>
         </div>
       )}
@@ -511,18 +512,18 @@ export default function ChoosePage() {
         <div onClick={()=>{setShowAdvanceForm(false);setShowRequests(false)}} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:210,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
           <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:360,textAlign:'start' as const}}>
             <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>{t('advanceTitle')}</div>
-            <label style={{fontSize:12,color:'#64748b',display:'block',marginBottom:6}}>{t('amount')}</label>
+            <label style={{fontSize:12,color:'#475569',display:'block',marginBottom:6}}>{t('amount')}</label>
             <NumberInput value={advanceAmount} onChange={e=>setAdvanceAmount(e.target.value)} placeholder="0"
               style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:16,fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:12}}/>
-            <label style={{fontSize:12,color:'#64748b',display:'block',marginBottom:6}}>{t('reasonOptional')}</label>
+            <label style={{fontSize:12,color:'#475569',display:'block',marginBottom:6}}>{t('reasonOptional')}</label>
             <textarea value={advanceReason} onChange={e=>setAdvanceReason(e.target.value)} placeholder={t('advanceReasonPh')}
               style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const,minHeight:60,resize:'none' as const,marginBottom:12}}/>
             {advanceMsg && <div style={{fontSize:12,color:'#dc2626',marginBottom:10}}>{advanceMsg}</div>}
             <button onClick={submitAdvanceRequest} disabled={submittingAdvance||!advanceAmount}
-              style={{width:'100%',padding:'12px',background:(submittingAdvance||!advanceAmount)?'#94a3b8':'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:(submittingAdvance||!advanceAmount)?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
+              style={{width:'100%',padding:'12px',background:(submittingAdvance||!advanceAmount)?'#94a3b8':'#0f766e',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:(submittingAdvance||!advanceAmount)?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
               {submittingAdvance?t('sending'):t('sendRequest')}
             </button>
-            <button onClick={()=>setShowAdvanceForm(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
+            <button onClick={()=>setShowAdvanceForm(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#475569',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
           </div>
         </div>
       )}
@@ -532,7 +533,7 @@ export default function ChoosePage() {
         <div onClick={()=>setShowPermRequestModal(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:210,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
           <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:360,textAlign:'start' as const}}>
             <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:4}}>{t('excuseTitle')}</div>
-            <p style={{fontSize:12,color:'#64748b',marginBottom:16}}>{t('excuseDesc')}</p>
+            <p style={{fontSize:12,color:'#475569',marginBottom:16}}>{t('excuseDesc')}</p>
             {permReq?.status === 'pending' ? (
               <div style={{textAlign:'center' as const,fontSize:13,color:'#d97706',fontWeight:700,background:'#fffbeb',border:'1px solid #fde68a',borderRadius:10,padding:'12px'}}>{t('excusePending')}</div>
             ) : (
@@ -541,12 +542,12 @@ export default function ChoosePage() {
                   style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',resize:'none' as const,marginBottom:12,boxSizing:'border-box' as const}}/>
                 {attError && <div style={{fontSize:12,color:'#dc2626',marginBottom:10}}>{attError}</div>}
                 <button onClick={async ()=>{ await submitPermissionRequest(); setShowPermRequestModal(false) }} disabled={submittingPerm}
-                  style={{width:'100%',padding:'12px',background:submittingPerm?'#94a3b8':'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:submittingPerm?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
+                  style={{width:'100%',padding:'12px',background:submittingPerm?'#94a3b8':'#0f766e',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:submittingPerm?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
                   {submittingPerm?t('sending'):t('sendRequest')}
                 </button>
               </>
             )}
-            <button onClick={()=>setShowPermRequestModal(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
+            <button onClick={()=>setShowPermRequestModal(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#475569',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
           </div>
         </div>
       )}
@@ -557,7 +558,7 @@ export default function ChoosePage() {
           <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:'24px 24px 0 0',padding:'24px 20px 32px',width:'100%',maxWidth:420,maxHeight:'75vh',overflowY:'auto' as const,textAlign:'start' as const}}>
             <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>{t('notifications')}</div>
             {notifications.length===0 ? (
-              <div style={{textAlign:'center' as const,padding:'30px 0',fontSize:13,color:'#94a3b8'}}>{t('noNotifications')}</div>
+              <div style={{textAlign:'center' as const,padding:'30px 0',fontSize:13,color:'#475569'}}>{t('noNotifications')}</div>
             ) : (
               <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
                 {notifications.map((n:any)=>{

@@ -13,7 +13,7 @@ interface StaffSession {
 
 const STATUS_STYLE: Record<string, {key:string; color:string; bg:string}> = {
   pending:  { key: 'pending',  color: '#d97706', bg: '#fffbeb' },
-  approved: { key: 'approved', color: '#029FA2', bg: '#f0fdfa' },
+  approved: { key: 'approved', color: '#0f766e', bg: '#f0fdfa' },
   rejected: { key: 'rejected', color: '#dc2626', bg: '#fef2f2' },
 }
 
@@ -33,7 +33,7 @@ const L: Dict = {
   loading:    { ar: 'جاري التحميل...', en: 'Loading...', ur: 'لوڈ ہو رہا ہے...', hi: 'लोड हो रहा है...', tl: 'Naglo-load...', bn: 'লোড হচ্ছে...', fr: 'Chargement...' },
   none:       { ar: 'ما فيه طلبات إجازة بعد', en: 'No leave requests yet', ur: 'ابھی کوئی چھٹی کی درخواست نہیں', hi: 'अभी कोई छुट्टी अनुरोध नहीं', tl: 'Wala pang request ng leave', bn: 'এখনো কোনো ছুটির অনুরোধ নেই', fr: 'Aucune demande de congé' },
   pending:    { ar: 'بانتظار الموافقة', en: 'Awaiting approval', ur: 'منظوری کا انتظار', hi: 'मंज़ूरी का इंतज़ार', tl: 'Naghihintay ng apruba', bn: 'অনুমোদনের অপেক্ষায়', fr: "En attente d'accord" },
-  approved:   { ar: 'موافَق عليها ✓', en: 'Approved ✓', ur: 'منظور ✓', hi: 'स्वीकृत ✓', tl: 'Aprubado ✓', bn: 'অনুমোদিত ✓', fr: 'Accepté ✓' },
+  approved:   { ar: 'موافَق عليها', en: 'Approved', ur: 'منظور', hi: 'स्वीकृत', tl: 'Aprubado', bn: 'অনুমোদিত', fr: 'Accepté' },
   rejected:   { ar: 'مرفوضة', en: 'Rejected', ur: 'مسترد', hi: 'अस्वीकृत', tl: 'Tinanggihan', bn: 'প্রত্যাখ্যাত', fr: 'Refusé' },
 }
 
@@ -90,7 +90,7 @@ export default function StaffLeavePage() {
 
   if (!session) return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
-      <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:'#029FA2',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
+      <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:'#0f766e',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -101,7 +101,7 @@ export default function StaffLeavePage() {
 
       <div style={{maxWidth:520,margin:'0 auto',padding:'20px 16px'}}>
         {balance !== null && (
-          <div style={{background:'linear-gradient(135deg,#042f2e,#029FA2)',borderRadius:16,padding:'18px 20px',marginBottom:20,textAlign:'center' as const}}>
+          <div style={{background:'linear-gradient(135deg,#0b3b3a,#0f766e)',borderRadius:16,padding:'18px 20px',marginBottom:20,textAlign:'center' as const}}>
             <div style={{fontSize:12,color:'rgba(255,255,255,.8)',marginBottom:4}}>{t('balance')}</div>
             <div style={{fontSize:32,fontWeight:900,color:'white'}}>{balance} <span style={{fontSize:15,fontWeight:600}}>{t('days')}</span></div>
           </div>
@@ -125,16 +125,16 @@ export default function StaffLeavePage() {
             style={{width:'100%',padding:'10px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const,minHeight:60,resize:'none' as const,marginBottom:12}}/>
           {error && <div style={{fontSize:12,color:'#dc2626',marginBottom:10}}>{error}</div>}
           <button onClick={submitRequest} disabled={submitting||!startDate||!endDate}
-            style={{width:'100%',padding:'12px',background:(submitting||!startDate||!endDate)?'#94a3b8':'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:(submitting||!startDate||!endDate)?'not-allowed':'pointer',fontFamily:'inherit'}}>
+            style={{width:'100%',padding:'12px',background:(submitting||!startDate||!endDate)?'#94a3b8':'#0f766e',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:(submitting||!startDate||!endDate)?'not-allowed':'pointer',fontFamily:'inherit'}}>
             {submitting?t('sending'):t('send')}
           </button>
         </div>
 
-        <div style={{fontSize:12,fontWeight:700,color:'#888780',marginBottom:10}}>{t('mine')}</div>
+        <div style={{fontSize:12,fontWeight:700,color:'#475569',marginBottom:10}}>{t('mine')}</div>
         {loading ? (
-          <div style={{textAlign:'center' as const,padding:20,fontSize:13,color:'#888780'}}>{t('loading')}</div>
+          <div style={{textAlign:'center' as const,padding:20,fontSize:13,color:'#475569'}}>{t('loading')}</div>
         ) : requests.length===0 ? (
-          <div style={{textAlign:'center' as const,padding:'40px 20px',fontSize:13,color:'#888780'}}>{t('none')}</div>
+          <div style={{textAlign:'center' as const,padding:'40px 20px',fontSize:13,color:'#475569'}}>{t('none')}</div>
         ) : (
           <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
             {requests.map((r:any)=>{

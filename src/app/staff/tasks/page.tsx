@@ -1,7 +1,7 @@
 'use client'
 import { useLiveRefresh, liveStaffOrg } from '@/lib/useLiveRefresh'
 import { useStaffLang, isRtlLang } from '@/lib/staffLang'
-import { Globe } from 'lucide-react'
+import { Globe, ClipboardList, Camera, Check } from 'lucide-react'
 import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -31,14 +31,14 @@ const UI_STRINGS: Record<string, Record<string,string>> = {
   confirming:     { ar:'جاري التأكيد...', en:'Confirming...', ur:'تصدیق ہو رہی ہے...', hi:'पुष्टि हो रही है...', tl:'Kinukumpirma...', bn:'নিশ্চিত করা হচ্ছে...', fr:'Confirmation...' },
   statusPending:   { ar:'بانتظارك', en:'Waiting for you', ur:'آپ کا منتظر', hi:'आपका इंतज़ार', tl:'Naghihintay sa iyo', bn:'আপনার অপেক্ষায়', fr:'En attente' },
   statusCompleted: { ar:'بانتظار تأكيد المدير', en:"Waiting for manager's confirmation", ur:'مینیجر کی تصدیق کا منتظر', hi:'प्रबंधक की पुष्टि का इंतज़ार', tl:'Naghihintay ng kumpirmasyon ng manager', bn:'ম্যানেজারের নিশ্চিতকরণের অপেক্ষায়', fr:'En attente de confirmation' },
-  statusConfirmed: { ar:'مؤكدة ✓', en:'Confirmed ✓', ur:'تصدیق شدہ ✓', hi:'पुष्टि की गई ✓', tl:'Nakumpirma na ✓', bn:'নিশ্চিত হয়েছে ✓', fr:'Confirmé ✓' },
+  statusConfirmed: { ar:'مؤكدة', en:'Confirmed', ur:'تصدیق شدہ', hi:'पुष्टि की गई', tl:'Nakumpirma na', bn:'নিশ্চিত হয়েছে', fr:'Confirmé' },
   statusRejected:  { ar:'مرفوضة', en:'Rejected', ur:'مسترد', hi:'अस्वीकृत', tl:'Tinanggihan', bn:'প্রত্যাখ্যাত', fr:'Rejeté' },
 }
 
 const STATUS_KEYS: Record<string, {key:string; color:string; bg:string}> = {
   pending:   { key: 'statusPending',   color: '#d97706', bg: '#fffbeb' },
   completed: { key: 'statusCompleted', color: '#2563eb', bg: '#eff6ff' },
-  confirmed: { key: 'statusConfirmed', color: '#029FA2', bg: '#f0fdfa' },
+  confirmed: { key: 'statusConfirmed', color: '#0f766e', bg: '#f0fdfa' },
   rejected:  { key: 'statusRejected',  color: '#dc2626', bg: '#fef2f2' },
 }
 
@@ -141,7 +141,7 @@ export default function StaffTasksPage() {
 
   if (!session) return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
-      <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:'#029FA2',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
+      <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:'#0f766e',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -161,8 +161,8 @@ export default function StaffTasksPage() {
               {LANGUAGES.map(l=>(
                 <button key={l.code}
                   onClick={()=>{setLang(l.code as any);setShowLangMenu(false)}}
-                  style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#f0fdfa':'white',color:lang===l.code?'#029FA2':'#1c1c1a',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
-                  {lang===l.code?'✓ ':''}{l.label}
+                  style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#f0fdfa':'white',color:lang===l.code?'#0f766e':'#1c1c1a',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
+                  {l.label}
                 </button>
               ))}
             </div>
@@ -172,13 +172,13 @@ export default function StaffTasksPage() {
 
       <div style={{maxWidth:520,margin:'0 auto',padding:'20px 16px'}}>
         {loading ? (
-          <div style={{textAlign:'center' as const,padding:40,fontSize:13,color:'#888780'}}>{t('loading')}</div>
+          <div style={{textAlign:'center' as const,padding:40,fontSize:13,color:'#475569'}}>{t('loading')}</div>
         ) : (
           <>
             {pendingTasks.length===0 ? (
               <div style={{textAlign:'center' as const,padding:'60px 20px'}}>
-                <div style={{fontSize:44,marginBottom:12,opacity:0.5}}>📋</div>
-                <div style={{fontSize:14,color:'#888780'}}>{t('noTasks')}</div>
+                <div style={{display:'flex',justifyContent:'center',marginBottom:12,color:'#98A2B3'}}><ClipboardList size={44}/></div>
+                <div style={{fontSize:14,color:'#475569'}}>{t('noTasks')}</div>
               </div>
             ) : (
               <div style={{marginBottom:24}}>
@@ -191,8 +191,8 @@ export default function StaffTasksPage() {
                       <input id={`photo-input-${tk.id}`} type="file" accept="image/*" capture="environment" style={{display:'none'}}
                         onChange={e=>{ const f=e.target.files?.[0]; if(f) handlePhotoSelected(tk.id, f) }}/>
                       <button onClick={()=>completeTask(tk.id, tk.requires_photo)} disabled={completingId===tk.id||uploadingId===tk.id}
-                        style={{width:'100%',padding:'12px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:(completingId===tk.id||uploadingId===tk.id)?0.6:1}}>
-                        {uploadingId===tk.id ? t('uploadingPhoto') : completingId===tk.id ? t('confirming') : tk.requires_photo ? `📷 ${t('completeWithPhoto')}` : `✓ ${t('completeTask')}`}
+                        style={{width:'100%',padding:'12px',background:'#0f766e',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:(completingId===tk.id||uploadingId===tk.id)?0.6:1}}>
+                        {uploadingId===tk.id ? t('uploadingPhoto') : completingId===tk.id ? t('confirming') : tk.requires_photo ? <span style={{display:'inline-flex',alignItems:'center',gap:6}}><Camera size={16}/>{t('completeWithPhoto')}</span> : <span style={{display:'inline-flex',alignItems:'center',gap:6}}><Check size={16}/>{t('completeTask')}</span>}
                       </button>
                     </div>
                   ))}
@@ -202,7 +202,7 @@ export default function StaffTasksPage() {
 
             {otherTasks.length>0 && (
               <div>
-                <div style={{fontSize:12,fontWeight:700,color:'#888780',marginBottom:10}}>{t('pastTasks')}</div>
+                <div style={{fontSize:12,fontWeight:700,color:'#475569',marginBottom:10}}>{t('pastTasks')}</div>
                 <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
                   {otherTasks.map((tk:any)=>{
                     const st = STATUS_KEYS[tk.status] || STATUS_KEYS.pending

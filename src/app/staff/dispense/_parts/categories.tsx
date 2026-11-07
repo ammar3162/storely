@@ -1,7 +1,7 @@
 'use client'
 import { Wheat, Milk, SprayCan, CupSoda, Drumstick, Carrot, FileText, Package, Tag } from 'lucide-react'
 
-export const CATEGORY_COLORS = ['#029FA2','#2563eb','#dc2626','#d97706','#7c3aed','#0891b2','#db2777','#65a30d','#ea580c','#4f46e5']
+export const CATEGORY_COLORS = ['#0f766e','#2563eb','#dc2626','#d97706','#7c3aed','#0891b2','#db2777','#65a30d','#ea580c','#4f46e5']
 export const OTHER_CATEGORY = 'أخرى'
 
 export function colorFor(cat: string) {

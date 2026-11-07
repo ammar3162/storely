@@ -13,13 +13,13 @@ export default function DispenseModal({ m }: { m: StaffDispense }) {
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20}}>
               <div>
                 <div style={{fontSize:20,fontWeight:800,color:'#0f172a'}}>{tx(selected.name)}</div>
-                {lang!=='ar'&&<div style={{fontSize:12,color:'#94a3b8',marginTop:2}}>{selected.name}</div>}
-                <div style={{fontSize:13,color:'#64748b',marginTop:4}}>{T('available',lang)}: <b style={{color:selected.qty<=selected.reorder_point?'#ef4444':'#029FA2'}}>{selected.qty} {selected.unit}</b></div>
+                {lang!=='ar'&&<div style={{fontSize:12,color:'#475569',marginTop:2}}>{selected.name}</div>}
+                <div style={{fontSize:13,color:'#475569',marginTop:4}}>{T('available',lang)}: <b style={{color:selected.qty<=selected.reorder_point?'#ef4444':'#0f766e'}}>{selected.qty} {selected.unit}</b></div>
               </div>
-              <button onClick={()=>{setSelected(null);setDispenseQty('');setWasteMode(false);setWasteReason('');setWasteNote('')}} style={{background:'#f1f5f9',border:'none',borderRadius:'50%',width:36,height:36,color:'#64748b',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+              <button onClick={()=>{setSelected(null);setDispenseQty('');setWasteMode(false);setWasteReason('');setWasteNote('')}} style={{background:'#f1f5f9',border:'none',borderRadius:'50%',width:36,height:36,color:'#475569',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
             </div>
             <div style={{display:'flex',gap:8,marginBottom:20,background:'#f1f5f9',borderRadius:12,padding:4}}>
-              <button onClick={()=>setWasteMode(false)} style={{flex:1,padding:'10px',borderRadius:9,border:'none',background:!wasteMode?'white':'transparent',color:!wasteMode?'#029FA2':'#64748b',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:!wasteMode?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
+              <button onClick={()=>setWasteMode(false)} style={{flex:1,padding:'10px',borderRadius:9,border:'none',background:!wasteMode?'white':'transparent',color:!wasteMode?'#0f766e':'#64748b',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:!wasteMode?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
                 {T('normalOut',lang)}
               </button>
               <button onClick={()=>setWasteMode(true)} style={{flex:1,padding:'10px',borderRadius:9,border:'none',background:wasteMode?'white':'transparent',color:wasteMode?'#d97706':'#64748b',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',boxShadow:wasteMode?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
@@ -28,7 +28,7 @@ export default function DispenseModal({ m }: { m: StaffDispense }) {
             </div>
             {wasteMode && (
               <>
-                <div style={{fontSize:13,fontWeight:700,color:'#64748b',marginBottom:8}}>{T('wasteReason',lang)}</div>
+                <div style={{fontSize:13,fontWeight:700,color:'#475569',marginBottom:8}}>{T('wasteReason',lang)}</div>
                 <div style={{display:'flex',flexWrap:'wrap' as const,gap:8,marginBottom:16}}>
                   {WASTE_REASONS.map(r=>(
                     <button key={r} onClick={()=>setWasteReason(r)}
@@ -37,13 +37,13 @@ export default function DispenseModal({ m }: { m: StaffDispense }) {
                     </button>
                   ))}
                 </div>
-                <div style={{fontSize:13,fontWeight:700,color:'#64748b',marginBottom:8}}>{T('noteOptional',lang)}</div>
+                <div style={{fontSize:13,fontWeight:700,color:'#475569',marginBottom:8}}>{T('noteOptional',lang)}</div>
                 <textarea value={wasteNote} onChange={e=>setWasteNote(e.target.value)}
                   placeholder={T('wasteNotePh',lang)}
                   style={{width:'100%',padding:'12px',border:'2px solid #e2e8f0',borderRadius:12,fontSize:14,fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:16,minHeight:60,resize:'none' as const}}/>
               </>
             )}
-            <div style={{fontSize:13,fontWeight:700,color:'#64748b',marginBottom:10}}>{T('qty',lang)}</div>
+            <div style={{fontSize:13,fontWeight:700,color:'#475569',marginBottom:10}}>{T('qty',lang)}</div>
             <input value={dispenseQty} readOnly
               style={{width:'100%',padding:'16px',border:'2px solid #e2e8f0',borderRadius:14,fontSize:28,fontWeight:800,textAlign:'center',fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:12,background:'#f8fafc',caretColor:'transparent'}}
               placeholder="0"/>
@@ -69,7 +69,7 @@ export default function DispenseModal({ m }: { m: StaffDispense }) {
               </button>
             ) : (
               <button onClick={handleDispense} disabled={!dispenseQty||submitting}
-                style={{width:'100%',padding:18,background:(!dispenseQty||submitting)?'#94a3b8':'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:800,cursor:(!dispenseQty||submitting)?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:(!dispenseQty||submitting)?'none':'0 8px 24px rgba(22,163,74,.35)'}}>
+                style={{width:'100%',padding:18,background:(!dispenseQty||submitting)?'#94a3b8':'linear-gradient(135deg,#0f766e,#0f766e)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:800,cursor:(!dispenseQty||submitting)?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:(!dispenseQty||submitting)?'none':'0 8px 24px rgba(22,163,74,.35)'}}>
                 {submitting?T('saving',lang):T('confirm',lang)}
               </button>
             )}

@@ -30,7 +30,7 @@ export default function AddProductModal({ m }: { m: StaffDispense }) {
             {existing ? (
             <div style={{display:'flex',flexDirection:'column' as const,gap:12,marginBottom:22}}>
               {picked ? (
-                <div style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',borderRadius:12,border:'1.5px solid #029FA2',background:'#f0fdfa'}}>
+                <div style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',borderRadius:12,border:'1.5px solid #0f766e',background:'#f0fdfa'}}>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:16,fontWeight:800,color:'#0f172a'}}>{picked.name}</div>
                     <div style={{fontSize:13,color:'#374151'}}>{T('currentQty',lang)}: {Number(picked.qty) || 0} {picked.unit || ''}</div>
@@ -86,7 +86,7 @@ export default function AddProductModal({ m }: { m: StaffDispense }) {
             )}
             <div style={{display:'flex',gap:8}}>
               <button onClick={addProduct} disabled={!canSave}
-                style={{flex:2,padding:16,background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',opacity:canSave?1:0.6}}>
+                style={{flex:2,padding:16,background:'linear-gradient(135deg,#0f766e,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',opacity:canSave?1:0.6}}>
                 {savingProduct?T('adding',lang):T('add',lang)}
               </button>
               <button onClick={()=>setShowAddProduct(false)}

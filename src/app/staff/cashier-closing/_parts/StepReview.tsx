@@ -20,7 +20,7 @@ export default function StepReview({ m }: { m: CashierClosing }) {
                   ...deliveryList.map(d=>({label:`— ${d.name}`,value:d.amount,sign:'−'})),
                 ].map((r,i)=>(
                   <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',fontSize:13,borderBottom:'1px dashed #eeeeeb'}}>
-                    <span style={{color:'#8b8a84',fontWeight:600}}>{r.label}</span>
+                    <span style={{color:'#475569',fontWeight:600}}>{r.label}</span>
                     <span style={{color:'#1c1c1a',fontWeight:700,direction:'ltr' as const}}>{r.sign}{fmt(r.value)} {curr}</span>
                   </div>
                 ))}
@@ -36,8 +36,8 @@ export default function StepReview({ m }: { m: CashierClosing }) {
                 {totalPurchasesNow>0 && (
                   <div style={{background:'#faf9f7',borderRadius:10,padding:'10px 12px',marginBottom:16}}>
                     <div style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
-                      <span style={{color:'#8b8a84',fontWeight:600}}>{ct('recordedWithdrawals',lang)}</span>
-                      <span style={{color:'#8b8a84',fontWeight:700,direction:'ltr' as const}}>{fmt(totalPurchasesNow)} {curr}</span>
+                      <span style={{color:'#475569',fontWeight:600}}>{ct('recordedWithdrawals',lang)}</span>
+                      <span style={{color:'#475569',fontWeight:700,direction:'ltr' as const}}>{fmt(totalPurchasesNow)} {curr}</span>
                     </div>
                     <div style={{fontSize:10,color:'#a8a7a1',marginTop:4}}>{ct('withdrawalsNote',lang)}</div>
                   </div>
@@ -53,7 +53,7 @@ export default function StepReview({ m }: { m: CashierClosing }) {
                   background: status==='balanced' ? '#f0fdfa' : status==='deficit' ? '#fef2f2' : '#eff6ff',
                   border: `1.5px solid ${status==='balanced' ? '#99f6e4' : status==='deficit' ? '#fecaca' : '#bfdbfe'}`
                 }}>
-                  <div style={{fontSize:13,fontWeight:800,color: status==='balanced' ? '#029FA2' : status==='deficit' ? '#dc2626' : '#2563eb',marginBottom:status!=='balanced'?6:0}}>
+                  <div style={{fontSize:13,fontWeight:800,color: status==='balanced' ? '#0f766e' : status==='deficit' ? '#dc2626' : '#2563eb',marginBottom:status!=='balanced'?6:0}}>
                     {status==='balanced' ? ct('balanced',lang) : status==='deficit' ? ct('deficit',lang) : ct('surplus',lang)}
                   </div>
                   {status!=='balanced' && (
@@ -81,7 +81,7 @@ export default function StepReview({ m }: { m: CashierClosing }) {
                     </div>
                     {deficitChoice && (
                       <>
-                        <label style={{display:'block',fontSize:12,fontWeight:700,color:'#5f5e5a',marginBottom:6}}>{ct(deficitChoice==='other'?'deficitOtherLbl':'deficitNoteLbl',lang)}</label>
+                        <label style={{display:'block',fontSize:12,fontWeight:700,color:'#344054',marginBottom:6}}>{ct(deficitChoice==='other'?'deficitOtherLbl':'deficitNoteLbl',lang)}</label>
                         <textarea value={deficitNote} onChange={e=>setDeficitNote(e.target.value.slice(0,400))} rows={2}
                           placeholder={ct('deficitReasonPh',lang)}
                           style={{width:'100%',padding:'11px 12px',border:`1.5px solid ${deficitChoice==='other'&&!deficitReasonOk?'#fca5a5':'#e5e5e2'}`,borderRadius:12,fontSize:16,fontFamily:'inherit',boxSizing:'border-box' as const,resize:'vertical' as const,background:'white',outline:'none'}}/>
@@ -93,11 +93,11 @@ export default function StepReview({ m }: { m: CashierClosing }) {
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                   <div style={{padding:8,borderRadius:9,background:'#f7f7f5',textAlign:'center' as const}}>
                     <img src={salesPreview || salesImage} alt="" style={{width:'100%',height:60,borderRadius:6,objectFit:'cover',marginBottom:4}}/>
-                    <span style={{fontSize:10,color:'#8b8a84',fontWeight:700}}>{ct('salesReportCheck',lang)}</span>
+                    <span style={{fontSize:10,color:'#475569',fontWeight:700}}>{ct('salesReportCheck',lang)}</span>
                   </div>
                   <div style={{padding:8,borderRadius:9,background:'#f7f7f5',textAlign:'center' as const}}>
                     <img src={networkPreview || networkImage} alt="" style={{width:'100%',height:60,borderRadius:6,objectFit:'cover',marginBottom:4}}/>
-                    <span style={{fontSize:10,color:'#8b8a84',fontWeight:700}}>{ct('networkBalanceCheck',lang)}</span>
+                    <span style={{fontSize:10,color:'#475569',fontWeight:700}}>{ct('networkBalanceCheck',lang)}</span>
                   </div>
                 </div>
               </div>

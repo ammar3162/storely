@@ -22,11 +22,11 @@ function StaffPageInner() {
   if (!hasAnyPermission) {
     return (
       <div style={{minHeight:'100vh',display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',background:'#f5f5f4',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:20,textAlign:'center' as const}}>
-        <div style={{display:'flex',justifyContent:'center',marginBottom:16,color:'#5f5e5a'}}><Lock size={44} strokeWidth={1.5}/></div>
+        <div style={{display:'flex',justifyContent:'center',marginBottom:16,color:'#344054'}}><Lock size={44} strokeWidth={1.5}/></div>
         <div style={{fontSize:16,fontWeight:800,color:'#1c1c1a',marginBottom:8}}>{T('noPerm',lang)}</div>
-        <div style={{fontSize:13,color:'#5f5e5a',marginBottom:20}}>{T('noPermSub',lang)}</div>
+        <div style={{fontSize:13,color:'#344054',marginBottom:20}}>{T('noPermSub',lang)}</div>
         <button onClick={()=>{localStorage.removeItem('staff_session');localStorage.removeItem('staff_token');router.push('/staff')}}
-          style={{padding:'10px 24px',borderRadius:10,border:'1px solid #e5e5e3',background:'white',fontSize:13,fontWeight:700,cursor:'pointer',color:'#5f5e5a'}}>
+          style={{padding:'10px 24px',borderRadius:10,border:'1px solid #e5e5e3',background:'white',fontSize:13,fontWeight:700,cursor:'pointer',color:'#344054'}}>
           خروج
         </button>
       </div>
@@ -65,7 +65,7 @@ function StaffPageInner() {
 
       {/* Toast */}
       {toast && (
-        <div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:9999,background:toast.type==='success'?'#029FA2':'#ef4444',color:'white',padding:'12px 24px',borderRadius:40,fontSize:14,fontWeight:700,boxShadow:'0 8px 24px rgba(0,0,0,.2)',animation:'slideUp .3s ease',whiteSpace:'nowrap'}}>
+        <div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:9999,background:toast.type==='success'?'#0f766e':'#ef4444',color:'white',padding:'12px 24px',borderRadius:40,fontSize:14,fontWeight:700,boxShadow:'0 8px 24px rgba(0,0,0,.2)',animation:'slideUp .3s ease',whiteSpace:'nowrap'}}>
           {toast.msg}
         </div>
       )}
@@ -88,11 +88,11 @@ function StaffPageInner() {
       {/* ═══ PURCHASES TAB ═══ */}
       {tab==='purchases' && (
         <div style={{padding:'60px 20px',textAlign:'center',animation:'fadeIn .3s'}}>
-          <div style={{display:'flex',justifyContent:'center',marginBottom:16,color:'#029FA2'}}><ShoppingCart size={60} strokeWidth={1.5}/></div>
+          <div style={{display:'flex',justifyContent:'center',marginBottom:16,color:'#0f766e'}}><ShoppingCart size={60} strokeWidth={1.5}/></div>
           <div style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:8}}>{T('purchasesTitle',lang)}</div>
-          <div style={{fontSize:14,color:'#64748b',marginBottom:28,maxWidth:300,margin:'0 auto 28px'}}>{T('purchasesSub',lang)}</div>
+          <div style={{fontSize:14,color:'#475569',marginBottom:28,maxWidth:300,margin:'0 auto 28px'}}>{T('purchasesSub',lang)}</div>
           <button onClick={()=>router.push('/staff/purchases')}
-            style={{padding:'16px 36px',background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 8px 24px rgba(22,163,74,.35)',display:'inline-flex',alignItems:'center',gap:8}}>
+            style={{padding:'16px 36px',background:'linear-gradient(135deg,#0f766e,#0f766e)',color:'white',border:'none',borderRadius:16,fontSize:16,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 8px 24px rgba(22,163,74,.35)',display:'inline-flex',alignItems:'center',gap:8}}>
             {T('newPurchase',lang)}
           </button>
         </div>
@@ -101,9 +101,9 @@ function StaffPageInner() {
       {/* ═══ REPORTS TAB ═══ */}
       {tab==='reports' && (
         <div style={{padding:'60px 20px',textAlign:'center',animation:'fadeIn .3s'}}>
-          <div style={{display:'flex',justifyContent:'center',marginBottom:16,color:'#029FA2'}}><BarChart3 size={60} strokeWidth={1.5}/></div>
+          <div style={{display:'flex',justifyContent:'center',marginBottom:16,color:'#0f766e'}}><BarChart3 size={60} strokeWidth={1.5}/></div>
           <div style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:8}}>{T('reports',lang)}</div>
-          <div style={{fontSize:14,color:'#64748b'}}>{T('soon',lang)}</div>
+          <div style={{fontSize:14,color:'#475569'}}>{T('soon',lang)}</div>
         </div>
       )}
 

@@ -3,6 +3,7 @@ import NumberInput from '@/components/NumberInput'
 import { ct } from './strings'
 import { fmt } from './inputs'
 import type { CashierClosing } from './useCashierClosing'
+import { Receipt } from 'lucide-react'
 
 export default function StepExpenses({ m }: { m: CashierClosing }) {
   const { lang, step, hasPurchases, setHasPurchases, purchases, curr, totalPurchasesNow, addPurchaseRow, removePurchaseRow, updatePurchase } = m
@@ -12,14 +13,14 @@ export default function StepExpenses({ m }: { m: CashierClosing }) {
             {step===2 && (
               <div className="fu" style={{background:'white',borderRadius:18,padding:22,marginBottom:16,boxShadow:'0 2px 16px rgba(0,0,0,.05)',border:'1px solid #eeeeeb'}}>
                 <div style={{fontSize:13,fontWeight:800,color:'#1c1c1a',marginBottom:14,display:'flex',alignItems:'center',gap:8}}>
-                  <span style={{width:24,height:24,borderRadius:7,background:'#fef2f2',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12}}>🧾</span>
+                  <span style={{width:24,height:24,borderRadius:7,background:'#fef2f2',display:'flex',alignItems:'center',justifyContent:'center',color:'#dc2626'}}><Receipt size={14}/></span>
                   {ct('step2Title',lang)}
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:hasPurchases==='yes'?16:0}}>
-                  <button onClick={()=>setHasPurchases('no')} style={{padding:'11px',borderRadius:10,border:`1.5px solid ${hasPurchases==='no'?'#029FA2':'#e5e5e2'}`,background:hasPurchases==='no'?'#f0fdfa':'white',color:hasPurchases==='no'?'#029FA2':'#5f5e5a',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
+                  <button onClick={()=>setHasPurchases('no')} style={{padding:'11px',borderRadius:10,border:`1.5px solid ${hasPurchases==='no'?'#0f766e':'#e5e5e2'}`,background:hasPurchases==='no'?'#f0fdfa':'white',color:hasPurchases==='no'?'#0f766e':'#5f5e5a',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
                     {ct('no',lang)}
                   </button>
-                  <button onClick={()=>setHasPurchases('yes')} style={{padding:'11px',borderRadius:10,border:`1.5px solid ${hasPurchases==='yes'?'#029FA2':'#e5e5e2'}`,background:hasPurchases==='yes'?'#f0fdfa':'white',color:hasPurchases==='yes'?'#029FA2':'#5f5e5a',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
+                  <button onClick={()=>setHasPurchases('yes')} style={{padding:'11px',borderRadius:10,border:`1.5px solid ${hasPurchases==='yes'?'#0f766e':'#e5e5e2'}`,background:hasPurchases==='yes'?'#f0fdfa':'white',color:hasPurchases==='yes'?'#0f766e':'#5f5e5a',fontWeight:700,fontSize:13,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
                     {ct('yes',lang)}
                   </button>
                 </div>
@@ -41,7 +42,7 @@ export default function StepExpenses({ m }: { m: CashierClosing }) {
                         )}
                       </div>
                     ))}
-                    <button onClick={addPurchaseRow} style={{width:'100%',padding:'11px',borderRadius:10,border:'1.5px dashed #d4d3ce',background:'transparent',color:'#5f5e5a',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginTop:2}}>
+                    <button onClick={addPurchaseRow} style={{width:'100%',padding:'11px',borderRadius:10,border:'1.5px dashed #d4d3ce',background:'transparent',color:'#344054',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',marginTop:2}}>
                       {ct('addExpenseRow',lang)}
                     </button>
                     {totalPurchasesNow>0 && (
