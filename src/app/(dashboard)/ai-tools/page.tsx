@@ -1,7 +1,6 @@
 'use client'
 import PageIcon from '@/components/PageIcon'
 import SmartOrder from '@/components/SmartOrder'
-import TodayDecisions from '@/components/TodayDecisions'
 import { C } from './_parts/config'
 import { useAiTools } from './_parts/useAiTools'
 import SmartInsights from './_parts/SmartInsights'
@@ -20,7 +19,7 @@ import { Sparkles } from 'lucide-react'
 
 export default function AIToolsPage() {
   const m = useAiTools()
-  const { curr, visible, hasAiAddon, aiKnown } = m
+  const { visible, hasAiAddon } = m
 
   return (
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',opacity:visible?1:0,transition:'opacity .3s'}}>
@@ -38,7 +37,6 @@ export default function AIToolsPage() {
       </div>
 
       {/* قرارات اليوم — أعلى الصفحة (بعد ما نعرف صلاحية الذكاء عشان أدوات الهدر) */}
-      {aiKnown && <TodayDecisions full={!!hasAiAddon} curr={curr} />}
 
       <SmartInsights m={m}/>
 

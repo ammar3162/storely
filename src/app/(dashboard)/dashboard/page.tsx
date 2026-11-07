@@ -13,6 +13,7 @@ import { colors as dsColors } from '@/lib/ds'
 import { TONES } from '@/lib/pageTones'
 import { VatThresholdBanner } from '@/components/VatRegistration'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
+import TodayDecisions from '@/components/TodayDecisions'
 
 class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|null}> {
   state = { error: null }
@@ -59,7 +60,8 @@ export default function DashboardPage() {
   const [visible, setVisible]   = useState(false)
   const [notifs, setNotifs]     = useState<any[]>([])
   // «ابنِ باقتك»: نخفي أقسام المخزون/المشتريات لو ما هي باشتراكه (الافتراضي ظاهر)
-  const [feat, setFeat]         = useState<{ inventory?: boolean; purchases?: boolean }>({})
+  const [feat, setFeat]         = useState<{ inventory?: boolean; purchases?: boolean; ai?: boolean }>({})
+  const [featKnown, setFeatKnown] = useState(false)
   const inv = feat.inventory !== false, pur = feat.purchases !== false
   const [curr, setCurr]         = useState('⃁')
   const [subExpired, setSubExpired] = useState(false)
@@ -116,6 +118,7 @@ export default function DashboardPage() {
     }
     const me=await getMe(); if(!me)return
     if(me.org?.features) setFeat(me.org.features)
+    setFeatKnown(true)
     {
       setUserName(me.full_name||'')
       setOrgName(me.org?.name||'')
@@ -239,6 +242,9 @@ export default function DashboardPage() {
           </button>
         ))}
       </div>
+
+      {/* قرارات اليوم (من المخزون) — كاملة مع الذكاء، ومختصرة بدونه */}
+      {featKnown && inv && <div style={{marginBottom:16}}><TodayDecisions full={feat.ai === true} curr={curr} /></div>}
 
       <div className="dh-grid">
         {/* تحتاج انتباهك */}

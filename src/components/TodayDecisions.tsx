@@ -8,7 +8,7 @@ import { buildDecisions, type Decision } from '@/lib/todayDecisions'
 
 const DAY_NAMES = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
 
-// «قرارات اليوم» أعلى صفحة أدوات الذكاء: يشغّل الأدوات تلقائياً ويعرض 3–5 أشياء يسويها المالك اليوم (lib/todayDecisions).
+// «قرارات اليوم» في الصفحة الرئيسية (كانت بأدوات الذكاء): يشغّل الأدوات تلقائياً ويعرض 3–5 أشياء يسويها المالك اليوم (lib/todayDecisions).
 // full = الباقة/الإضافة تسمح بأدوات الهدر والراكد — بدونها نعرض الطلب والزحمة بس.
 export default function TodayDecisions({ full, curr }: { full: boolean; curr: string }) {
   const router = useRouter()
@@ -31,7 +31,12 @@ export default function TodayDecisions({ full, curr }: { full: boolean; curr: st
   useEffect(() => { load() }, [full])   // eslint-disable-line react-hooks/exhaustive-deps
 
   const style = { urgent: { fg: C.danger, bg: C.dangerLight, Icon: AlertCircle }, warn: { fg: C.warning, bg: C.warningLight, Icon: AlertTriangle }, info: { fg: C.text3, bg: C.bg, Icon: Info } }
-  const go = (href: string) => { if (href.startsWith('#')) document.getElementById(href.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' }); else router.push(href) }
+  // رابط داخل أدوات الذكاء (#waste): لو القسم مو بالصفحة الحالية نفتح أدوات الذكاء عليه
+  const go = (href: string) => {
+    if (!href.startsWith('#')) return router.push(href)
+    const el = document.getElementById(href.slice(1))
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); else router.push('/ai-tools' + href)
+  }
   const today = new Date(Date.now() + 3 * 3600e3)
 
   return (
