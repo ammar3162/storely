@@ -19,8 +19,8 @@ export const isNewPlan = (plan: string | null | undefined): plan is NewPlanKey |
  * mod_inventory / mod_purchases مفتوحة لكل الباقات الثانية — تنباع لـ custom بس.
  */
 export const CUSTOM_MODULES: Record<string, { first: number; extra: number; perBranch: boolean }> = {
-  mod_inventory:   { first: 69, extra: 35, perBranch: true },
-  mod_purchases:   { first: 50, extra: 20, perBranch: true },
+  mod_inventory:   { first: 75, extra: 35, perBranch: true },   // المخزون + المشتريات = سعر «الأساسية» (129)
+  mod_purchases:   { first: 54, extra: 20, perBranch: true },
   cashier_closing: { first: 40, extra: 25, perBranch: true },
   hr_full:         { first: 89, extra: 35, perBranch: true },   // أغلى من إضافتها للباقات (69) عشان «الكاملة» تبقى الأوفر
   ai_tools:        { first: 15, extra: 0,  perBranch: false },
@@ -73,9 +73,10 @@ export const PLAN_PRICING: Record<PlanKey, { label: string; monthly: number; yea
   basic:     { label: 'الأساسية', monthly: 99,  yearly: 950 },
   pro:       { label: 'الشاملة', monthly: 249, yearly: 2390 },
   advanced:  { label: 'المتقدمة', monthly: 499, yearly: 4790 },
-  essential: { label: 'الأساسية', monthly: 119, yearly: yearlyOf(119) },
-  ops:       { label: 'التشغيل', monthly: 159, yearly: yearlyOf(159) },
-  full:      { label: 'الكاملة', monthly: 219, yearly: yearlyOf(219) },
+  // 2026-11-08: رفع بسيط (119/159/219 ← 129/169/239) — المشتركين الحاليين أسعارهم مثبتة
+  essential: { label: 'الأساسية', monthly: 129, yearly: yearlyOf(129) },
+  ops:       { label: 'التشغيل', monthly: 169, yearly: yearlyOf(169) },
+  full:      { label: 'الكاملة', monthly: 239, yearly: yearlyOf(239) },
   custom:    { label: 'باقتك المخصصة', monthly: 0, yearly: 0 },
 }
 
