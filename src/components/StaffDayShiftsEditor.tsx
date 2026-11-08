@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { CalendarClock, ChevronDown, X, Plus } from 'lucide-react'
+import { CalendarClock, ChevronDown, X, Plus, CalendarDays } from 'lucide-react'
 import { colors, font, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { WEEKDAYS_AR, weekdayOf } from '@/lib/daysOff'
@@ -105,8 +105,13 @@ export default function StaffDayShiftsEditor({ staff, shifts, onPatch }: { staff
               </div>
             )}
             <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, alignItems: 'center' }}>
-              <input type="date" value={newDate} min={today} onChange={e => setNewDate(e.target.value)} aria-label="التاريخ" style={small} />
-              <select value={newDateShift} onChange={e => setNewDateShift(e.target.value)} aria-label="وردية التاريخ" style={{ ...small, maxWidth: '100%' }}>
+              {/* حقل التاريخ: عرض ثابت + نص «اختر التاريخ» لما يكون فاضي (الآيفون يعرضه مربعاً فارغاً صغيراً) */}
+              <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', flex: '1 1 150px', minWidth: 150, maxWidth: 220 }}>
+                <input type="date" value={newDate} min={today} onChange={e => setNewDate(e.target.value)} aria-label="التاريخ"
+                  style={{ ...small, width: '100%', minHeight: 36, color: newDate ? colors.text : 'transparent' }} />
+                {!newDate && <span style={{ position: 'absolute', insetInlineStart: 10, fontSize: 12, color: colors.text3, pointerEvents: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}><CalendarDays size={14} /> اختر التاريخ</span>}
+              </label>
+              <select value={newDateShift} onChange={e => setNewDateShift(e.target.value)} aria-label="وردية التاريخ" style={{ ...small, minHeight: 36, flex: '1 1 150px', maxWidth: '100%' }}>
                 <option value="">اختر الوردية</option>
                 {shifts.map(sh => <option key={sh.id} value={sh.id}>{shiftLabel(sh)}</option>)}
               </select>
