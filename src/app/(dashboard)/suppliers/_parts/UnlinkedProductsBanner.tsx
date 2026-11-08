@@ -1,4 +1,5 @@
 'use client'
+import { AlertTriangle } from 'lucide-react'
 
 export default function UnlinkedProductsBanner({ unlinkedProducts }: { unlinkedProducts: any[] }) {
   return (
@@ -6,7 +7,7 @@ export default function UnlinkedProductsBanner({ unlinkedProducts }: { unlinkedP
       {/* بنر المنتجات غير المرتبطة */}
       {unlinkedProducts.length>0 && (
         <div style={{background:'#fffbeb',border:'1.5px solid #fcd34d',borderRadius:12,padding:'14px 18px',marginBottom:16,display:'flex',alignItems:'center',gap:12}}>
-          <span style={{fontSize:20}}>⚠️</span>
+          <AlertTriangle size={20} color="#B45309"/>
           <div style={{flex:1}}>
             <div style={{fontSize:13,fontWeight:700,color:'#92400e'}}>{unlinkedProducts.length} منتج بدون مورد مرتبط</div>
             <div style={{fontSize:11,color:'#b45309',marginTop:2}}>اربط هذه المنتجات بموردين لتفعيل الطلبات التلقائية</div>

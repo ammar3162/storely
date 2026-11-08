@@ -82,7 +82,7 @@ export function useSuppliersPage() {
     const resData = await api.post('/api/add-supplier', { org_id: orgId, branch_id: sessionStorage.getItem('s_branch_id') || null, name: newName.trim(), phone: supCountry + newPhone.trim().replace(/^0+/,''), notes: newNotes.trim(), whatsapp_consent: true })
     const error = !resData.success ? {message: resData.error} : null
     if (error) { toast('خطأ: ' + error.message, 'error'); return }
-    toast('✅ تم إضافة المورد')
+    toast('تم إضافة المورد')
     setNewName(''); setNewPhone(''); setNewNotes(''); setNewConsent(false); setShowAdd(false)
     loadSuppliers(orgId)
   }
