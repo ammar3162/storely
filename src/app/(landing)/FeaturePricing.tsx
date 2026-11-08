@@ -118,20 +118,20 @@ export default function FeaturePricing({ billing, onBilling }: { billing: Billin
       <style>{`
 .fp{display:flex;flex-direction:column;gap:14px;max-width:1080px;margin:0 auto;color:var(--ink)}
 .fp-top{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
-.fp-toggle{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px}
-.fp-toggle button{border:0;background:none;border-radius:999px;padding:10px 22px;font:600 15px 'IBM Plex Sans Arabic',sans-serif;color:var(--ink2);cursor:pointer}
+.fp-toggle{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:10px;padding:4px}
+.fp-toggle button{border:0;background:none;border-radius:8px;padding:10px 22px;font:600 15px 'IBM Plex Sans Arabic',sans-serif;color:var(--ink2);cursor:pointer}
 .fp-toggle button.on{background:var(--ink);color:#fff}
 .fp-toggle em{font-style:normal;font-size:12px;color:var(--teal2);margin-inline-start:6px}
 .fp-toggle button.on em{color:var(--mint)}
-.fp-br{display:inline-flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px 6px 4px 16px;font-size:15px;font-weight:600}
-.fp-br button{width:36px;height:36px;border-radius:999px;border:0;background:#f1f2f3;cursor:pointer;display:grid;place-items:center;color:var(--ink)}
+.fp-br{display:inline-flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:4px 6px 4px 16px;font-size:15px;font-weight:600}
+.fp-br button{width:36px;height:36px;border-radius:8px;border:0;background:#F3F5F6;cursor:pointer;display:grid;place-items:center;color:var(--ink)}
 .fp-br button:disabled{opacity:.4;cursor:default}
 .fp-br b{min-width:20px;text-align:center;font-size:17px}
 .fp-disc{text-align:center;font-size:14px;font-weight:600;color:var(--teal2);margin-top:-4px}
 .fp-save{font-style:normal;font-size:13px;font-weight:600;color:var(--mint)}
 .fp-label{font-size:14px;font-weight:600;color:var(--ink2);margin:10px 4px 0}
 .fp-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.fp-preset{position:relative;text-align:right;background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:18px;cursor:pointer;font-family:inherit;color:var(--ink);display:flex;flex-direction:column;gap:4px;transition:border-color .15s,background-color .15s}
+.fp-preset{position:relative;text-align:right;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:18px;cursor:pointer;font-family:inherit;color:var(--ink);display:flex;flex-direction:column;gap:4px;transition:border-color .15s,background-color .15s}
 .fp-preset.on{border-color:var(--teal2);background:#F3F5F6}
 .fp-preset b{font-size:17px}
 .fp-preset small{font-size:13px;color:var(--ink2)}
@@ -139,11 +139,11 @@ export default function FeaturePricing({ billing, onBilling }: { billing: Billin
 .fp-preset-price i{font-style:normal;font-size:13px;font-weight:400;color:var(--ink2)}
 .fp-pop{position:absolute;top:-11px;inset-inline-start:16px;background:var(--teal2);color:#fff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}
 .fp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
-.fp-feat{position:relative;text-align:right;background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:18px 16px;cursor:pointer;font-family:inherit;color:var(--ink);display:flex;flex-direction:column;gap:6px;transition:border-color .15s,background-color .15s}
+.fp-feat{position:relative;text-align:right;background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:18px 16px;cursor:pointer;font-family:inherit;color:var(--ink);display:flex;flex-direction:column;gap:6px;transition:border-color .15s,background-color .15s}
 .fp-feat.on{border-color:var(--teal2);background:#F3F5F6}
 .fp-check{position:absolute;top:14px;left:14px;width:22px;height:22px;border-radius:6px;border:1.5px solid #c9cdd3;display:grid;place-items:center;color:#fff;background:#fff}
 .fp-feat.on .fp-check{background:var(--teal2);border-color:var(--teal2)}
-.fp-ic{width:36px;height:36px;border-radius:10px;background:#f1f2f3;color:var(--ink2);display:grid;place-items:center}
+.fp-ic{width:36px;height:36px;border-radius:10px;background:#F3F5F6;color:var(--ink2);display:grid;place-items:center}
 .fp-feat.on .fp-ic{background:#fff;color:var(--teal2)}
 .fp-feat b{font-size:16px;margin-top:4px}
 .fp-price{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -151,14 +151,14 @@ export default function FeaturePricing({ billing, onBilling }: { billing: Billin
 .fp-feat small{font-size:13px;color:var(--ink2);line-height:1.5}
 .fp-feat ul{list-style:none;margin:6px 0 0;padding:8px 0 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
 .fp-feat li{font-size:12.5px;color:var(--ink2);position:relative;padding-inline-start:12px}
-.fp-feat li::before{content:"";position:absolute;inset-inline-start:0;top:.65em;width:4px;height:4px;border-radius:2px;background:#c4ccca}
-.fp-total{position:sticky;bottom:12px;z-index:5;display:flex;align-items:center;gap:16px;justify-content:space-between;background:var(--ink);color:#fff;border-radius:18px;padding:16px 18px 16px 16px;margin-top:6px;box-shadow:0 12px 32px -12px rgba(0,0,0,.35)}
+.fp-feat li::before{content:"";position:absolute;inset-inline-start:0;top:.65em;width:4px;height:4px;border-radius:2px;background:#CBD4DC}
+.fp-total{position:sticky;bottom:12px;z-index:5;display:flex;align-items:center;gap:16px;justify-content:space-between;background:var(--ink);color:#fff;border-radius:14px;padding:16px 18px 16px 16px;margin-top:6px;box-shadow:0 12px 32px -12px rgba(0,0,0,.35)}
 .fp-total-in{display:flex;flex-direction:column;gap:2px;min-width:0}
 .fp-total-in span{font-size:13px;opacity:.8}
 .fp-total-in strong{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
 .fp-total-in strong i{font-style:normal;font-size:14px;font-weight:400;opacity:.8}
 .fp-total-in small{font-size:12.5px;opacity:.8}
-.fp-cta{flex-shrink:0;height:52px;padding:0 22px;border:0;border-radius:12px;background:#fff;color:var(--ink);font:700 16px 'IBM Plex Sans Arabic',sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.fp-cta{flex-shrink:0;height:52px;padding:0 22px;border:0;border-radius:10px;background:#fff;color:var(--ink);font:700 16px 'IBM Plex Sans Arabic',sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
 .fp-cta:disabled{opacity:.5;cursor:default}
 .fp-note{text-align:center;font-size:13.5px;color:var(--ink2);margin:4px 0 0}
 .fp-sec{margin-top:18px}
@@ -166,8 +166,8 @@ export default function FeaturePricing({ billing, onBilling }: { billing: Billin
 .fp-inc{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
 .fp-inc span{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:14px;color:var(--ink)}
 .fp-inc svg{color:var(--teal2)}
-.fp-ent{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px 20px;margin-top:10px}
-.fp-ent-ic{width:44px;height:44px;border-radius:12px;background:#f1f2f3;display:grid;place-items:center;color:var(--ink2);flex-shrink:0}
+.fp-ent{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-top:10px}
+.fp-ent-ic{width:44px;height:44px;border-radius:12px;background:#F3F5F6;display:grid;place-items:center;color:var(--ink2);flex-shrink:0}
 .fp-ent div{flex:1;display:flex;flex-direction:column}
 .fp-ent b{font-size:16px}
 .fp-ent div span{font-size:14px;color:var(--ink2)}

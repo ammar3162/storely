@@ -19,7 +19,7 @@ export default function PrivacyPage() {
       </div>
 
       <div style={{maxWidth:800,margin:'0 auto',padding:'48px 24px'}}>
-        <h1 style={{fontSize:32,fontWeight:900,color:'#0f172a',marginBottom:8}}>سياسة الخصوصية</h1>
+        <h1 style={{fontSize:32,fontWeight:900,color:'#203640',marginBottom:8}}>سياسة الخصوصية</h1>
         <p style={{fontSize:14,color:'#64748b',marginBottom:8}}>آخر تحديث: يوليو 2026</p>
         <p style={{fontSize:13,color:'#94a3b8',marginBottom:40}}>مؤسسة باسم علي خلوي لتقنية المعلومات — رقم السجل التجاري 7055023522</p>
 
@@ -78,7 +78,7 @@ export default function PrivacyPage() {
           },
         ].map((s,i)=>(
           <div key={i} style={{marginBottom:32}}>
-            <h2 style={{fontSize:18,fontWeight:800,color:'#0f172a',marginBottom:12,paddingBottom:8,borderBottom:'2px solid #f1f5f9'}}>{s.title}</h2>
+            <h2 style={{fontSize:18,fontWeight:800,color:'#203640',marginBottom:12,paddingBottom:8,borderBottom:'2px solid #f1f5f9'}}>{s.title}</h2>
             <p style={{fontSize:15,color:'#475569',lineHeight:2,whiteSpace:'pre-line'}}>{s.content}</p>
           </div>
         ))}
