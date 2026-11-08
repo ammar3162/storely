@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { Mail, MessageCircle, Send, Trash2, CheckCircle2, XCircle, Clock } from 'lucide-react'
+import { Mail, MessageCircle, Send, Trash2, CheckCircle2, XCircle, Clock, ChevronDown } from 'lucide-react'
+import DateField from '@/components/DateField'
 import { api } from '@/lib/api-client'
 import { colors, radius, font, inp, btnPrimary, btnSecondary } from '@/lib/ds'
 import { toast } from '@/components/toast'
@@ -31,6 +32,24 @@ const chip = (on: boolean): React.CSSProperties => ({ display: 'inline-flex', al
   fontFamily: font.family, border: `1px solid ${on ? colors.primary : colors.border}`, background: on ? colors.primary : colors.surface, color: on ? '#fff' : colors.text3 })
 const box: React.CSSProperties = { background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: radius.lg, padding: 16, marginBottom: 12 }
 
+// قسم مطوي: رقم الخطوة + العنوان + ملخص الإعداد الحالي، والضغط يفتح التفاصيل
+function Step({ n, title, summary, open, onToggle, children }: { n: string; title: string; summary: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
+  return (
+    <div style={{ ...box, padding: 0 }}>
+      <button type="button" onClick={onToggle} aria-expanded={open}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, textAlign: 'right' }}>
+        <span style={{ width: 26, height: 26, borderRadius: 8, background: colors.bg, border: `1px solid ${colors.border}`, color: colors.text, fontSize: 13, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n}</span>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: 'block', fontSize: 14, fontWeight: 800, color: colors.text }}>{title}</span>
+          <span style={{ display: 'block', fontSize: 12, color: colors.text3, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{summary}</span>
+        </span>
+        <ChevronDown size={18} color={colors.text3} style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
+      </button>
+      {open && <div style={{ padding: '14px 16px 16px', borderTop: `1px solid ${colors.border}` }}>{children}</div>}
+    </div>
+  )
+}
+
 export default function AccountantLinkSettings({ orgId, onChange }: { orgId: string; onChange?: () => void }) {
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState<Form>(EMPTY)
@@ -43,6 +62,8 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
   const [nowPeriod, setNowPeriod] = useState<ManualPeriodKey>('scheduled')
   const [from, setFrom] = useState(() => todaySA().slice(0, 8) + '01')
   const [to, setTo] = useState(() => todaySA())
+  const [openStep, setOpenStep] = useState<string | null>(null)   // الخطوة المفتوحة (الكل مطوي إذا الربط محفوظ)
+  const [showReports, setShowReports] = useState(false)
 
   async function load() {
     const [j, b] = await Promise.all([api.get('/api/accountant-link', { org_id: orgId }), api.get('/api/branches', { org_id: orgId })])
@@ -116,8 +137,8 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
 
   return (
     <div style={{ fontFamily: font.family }}>
-      <div style={{ ...box, background: colors.primaryLight, borderColor: colors.primaryBorder }}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: colors.text }}>الربط مع المحاسب</div>
+      <div style={box}>
+        <div style={{ fontSize: 15, fontWeight: 800, color: colors.text }}>التقارير التلقائية للمحاسب</div>
         <div style={{ fontSize: 12.5, color: colors.text3, marginTop: 4, lineHeight: 1.7 }}>
           يصل إلى محاسبك تقرير تلقائي يتضمن ملف إكسل بالبيانات التي تختارها فقط — عبر البريد الإلكتروني أو واتساب — في الموعد الذي تحدده.
         </div>
@@ -139,8 +160,8 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
       </div>
 
       {/* 1) المحاسب */}
-      <div style={box}>
-        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>١. بيانات المحاسب</div>
+      <Step n="1" title="بيانات المحاسب" open={openStep === '1' || (!saved && openStep === null)} onToggle={() => setOpenStep(openStep === '1' || (!saved && openStep === null) ? '' : '1')}
+        summary={[form.name || form.email || 'لم تُحدَّد بعد', form.channels.map(c => c === 'email' ? 'إيميل' : 'واتساب').join(' + ')].filter(Boolean).join(' · ')}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12 }}>
           <div><label style={label}>الاسم</label><input value={form.name} onChange={e => set('name', e.target.value)} placeholder="مثلاً: أ. محمد" maxLength={80} style={inp()} /></div>
           <div><label style={label}>الإيميل</label><input value={form.email} onChange={e => set('email', e.target.value)} placeholder="accountant@example.com" dir="ltr" type="email" style={inp()} /></div>
@@ -156,16 +177,16 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
             <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /> المحاسب موافق على استلام التقرير عبر واتساب
           </label>
         )}
-      </div>
+      </Step>
 
       {/* 2) وش يوصله */}
-      <div style={box}>
-        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>٢. محتوى التقرير</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 8 }}>
-          {ACC_SECTIONS.map(s => {
+      <Step n="2" title="محتوى التقرير" open={openStep === '2'} onToggle={() => setOpenStep(openStep === '2' ? '' : '2')}
+        summary={`${form.sections.length} من ${ACC_SECTIONS.length} أقسام${branches.length > 1 ? ` · ${form.branch_id ? (branches.find((b: any) => b.id === form.branch_id)?.name || 'فرع') : 'كل الفروع'}` : ''}`}>
+        <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: 'hidden' }}>
+          {ACC_SECTIONS.map((s, i) => {
             const on = form.sections.includes(s.key)
             return (
-              <label key={s.key} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 12px', borderRadius: 12, cursor: 'pointer', border: `1.5px solid ${on ? colors.primary : colors.border}`, background: on ? colors.primaryLight : colors.surface }}>
+              <label key={s.key} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '11px 12px', cursor: 'pointer', borderTop: i ? `1px solid ${colors.border}` : 'none', background: on ? colors.surface : colors.bg }}>
                 <input type="checkbox" checked={on} onChange={() => set('sections', toggle(form.sections, s.key))} style={{ marginTop: 3 }} />
                 <span><span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: colors.text }}>{s.label}</span><span style={{ fontSize: 11.5, color: colors.text4 }}>{s.hint}</span></span>
               </label>
@@ -181,11 +202,11 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
             </select>
           </div>
         )}
-      </div>
+      </Step>
 
       {/* 3) متى */}
-      <div style={box}>
-        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>٣. موعد الإرسال</div>
+      <Step n="3" title="موعد الإرسال" open={openStep === '3'} onToggle={() => setOpenStep(openStep === '3' ? '' : '3')}
+        summary={`${FREQ.find(f => f.key === form.frequency)?.label || ''} · ${form.frequency === 'weekly' ? WEEKDAYS[form.weekday] + ' · ' : form.frequency === 'monthly' ? 'يوم ' + form.month_day + ' · ' : ''}${hourLabel(form.send_hour)}${saved && !form.is_active ? ' · موقوف' : ''}`}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
           {FREQ.map(f => <button key={f.key} onClick={() => set('frequency', f.key)} style={chip(form.frequency === f.key)}>{f.label}</button>)}
         </div>
@@ -221,38 +242,49 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
             <input type="checkbox" checked={form.is_active} onChange={e => set('is_active', e.target.checked)} /> الربط فعّال
           </label>
         )}
-      </div>
+      </Step>
 
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' as const, marginBottom: 16 }}>
-        <button onClick={save} disabled={!!busy || !dirty} style={{ ...btnPrimary, padding: '11px 22px', opacity: !dirty ? .6 : 1 }}>{busy === 'save' ? 'جاري الحفظ...' : saved ? 'حفظ التعديلات' : 'حفظ وتفعيل الربط'}</button>
-        {saved && <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' as const }}>
-          <select value={nowPeriod} onChange={e => setNowPeriod(e.target.value as ManualPeriodKey)} disabled={!!busy || dirty} style={{ ...inp(), width: 'auto', padding: '10px 12px', fontSize: 13 }}>
-            {NOW_PERIODS.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
-          </select>
-          {nowPeriod === 'custom' && <>
-            <span style={{ fontSize: 12.5, color: colors.text3 }}>من</span>
-            <input type="date" value={from} max={to || todaySA()} onChange={e => setFrom(e.target.value)} disabled={!!busy || dirty} style={{ ...inp(), width: 'auto', minWidth: 150, padding: '9px 10px', fontSize: 13 }} />
-            <span style={{ fontSize: 12.5, color: colors.text3 }}>إلى</span>
-            <input type="date" value={to} min={from} max={todaySA()} onChange={e => setTo(e.target.value)} disabled={!!busy || dirty} style={{ ...inp(), width: 'auto', minWidth: 150, padding: '9px 10px', fontSize: 13 }} />
-          </>}
-          <button onClick={test} disabled={!!busy || dirty} title={dirty ? 'احفظ التعديلات أول' : ''} style={{ ...btnSecondary, padding: '11px 18px', display: 'inline-flex', alignItems: 'center', gap: 6, opacity: dirty ? .6 : 1 }}>
-            <Send size={15} /> {busy === 'test' ? 'جاري الإرسال...' : 'أرسل الآن'}</button>
-        </span>}
-        {saved && <button onClick={remove} disabled={!!busy} style={{ ...btnSecondary, padding: '11px 18px', color: colors.danger, display: 'inline-flex', alignItems: 'center', gap: 6, marginInlineStart: 'auto' }}>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' as const, alignItems: 'center', marginBottom: 12 }}>
+        <button onClick={save} disabled={!!busy || !dirty} style={{ ...btnPrimary, padding: '11px 22px', opacity: !dirty ? .6 : 1 }}>{busy === 'save' ? 'جارٍ الحفظ...' : saved ? 'حفظ التعديلات' : 'حفظ وتفعيل الربط'}</button>
+        {saved && <button onClick={remove} disabled={!!busy} style={{ ...btnSecondary, padding: '11px 18px', color: colors.danger, display: 'inline-flex', alignItems: 'center', gap: 6, marginInlineStart: 'auto', background: 'none', border: 'none' }}>
           <Trash2 size={15} /> إيقاف الربط</button>}
       </div>
 
-      {reports.length > 0 && (
+      {saved && (
         <div style={box}>
-          <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 10 }}>آخر التقارير المرسلة</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>إرسال تقرير الآن</div>
+          <div style={{ fontSize: 12, color: colors.text3, marginTop: 2, marginBottom: 12 }}>{dirty ? 'احفظ التعديلات أولاً' : 'يصل إلى المحاسب فوراً بالطريقة المحددة'}</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, alignItems: 'center' }}>
+            <select value={nowPeriod} onChange={e => setNowPeriod(e.target.value as ManualPeriodKey)} disabled={!!busy || dirty} style={{ ...inp(), width: 'auto', flex: '1 1 180px', padding: '10px 12px', fontSize: 13 }}>
+              {NOW_PERIODS.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
+            </select>
+            {nowPeriod === 'custom' && <>
+              <DateField value={from} max={to || todaySA()} onChange={setFrom} disabled={!!busy || dirty} placeholder="من" ariaLabel="من تاريخ" />
+              <DateField value={to} min={from} max={todaySA()} onChange={setTo} disabled={!!busy || dirty} placeholder="إلى" ariaLabel="إلى تاريخ" />
+            </>}
+            <button onClick={test} disabled={!!busy || dirty} title={dirty ? 'احفظ التعديلات أول' : ''} style={{ ...btnSecondary, padding: '11px 18px', display: 'inline-flex', alignItems: 'center', gap: 6, opacity: dirty ? .6 : 1 }}>
+            <Send size={15} /> {busy === 'test' ? 'جارٍ الإرسال...' : 'أرسل الآن'}</button>
+          </div>
+        </div>
+      )}
+
+      {reports.length > 0 && (
+        <div style={{ ...box, padding: 0 }}>
+          <button type="button" onClick={() => setShowReports(v => !v)} aria-expanded={showReports}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, textAlign: 'right' }}>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: colors.text }}>آخر التقارير المرسلة <span style={{ fontSize: 12, color: colors.text3, fontWeight: 600 }}>({reports.length})</span></span>
+            <ChevronDown size={18} color={colors.text3} style={{ transform: showReports ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
+          </button>
+          {showReports && <div style={{ padding: '0 16px 8px', borderTop: `1px solid ${colors.border}` }}>
           {reports.map(r => (
             <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: `1px solid ${colors.border}`, fontSize: 12.5, flexWrap: 'wrap' as const }}>
               <span style={{ fontWeight: 700, color: colors.text, minWidth: 150 }}>{periodLabel({ start: r.period_start, end: r.period_end })}{r.is_test && <span style={{ color: colors.text4, fontWeight: 500 }}> (إرسال يدوي)</span>}</span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: colors.text3 }}><Mail size={13} /> {status(r.email_status)}</span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: colors.text3 }}><MessageCircle size={13} /> {status(r.whatsapp_status)}</span>
-              <span style={{ marginInlineStart: 'auto', color: colors.text4 }} dir="ltr">{new Date(r.created_at).toLocaleDateString('en-GB')}</span>
+              <span style={{ marginInlineStart: 'auto', color: colors.text4 }}>{new Date(r.created_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
             </div>
           ))}
+          </div>}
         </div>
       )}
     </div>
