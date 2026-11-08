@@ -159,7 +159,7 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
                 </tr></thead>
                 <tbody>
                   {[...person.days].reverse().map((d: any) => (
-                    <tr key={d.date} style={{ borderBottom:`1px solid ${colors.border}`, background: d.check_in ? undefined : colors.bg }}>
+                    <tr key={d.date} className={(!d.check_in && !(d.penalty_original ?? d.penalty_amount) ? 'm-off' : undefined)} style={{ borderBottom:`1px solid ${colors.border}`, background: d.check_in ? undefined : colors.bg }}>
                       <td style={{ ...td, fontWeight:700, color:colors.text }}>{attDay(d.date)}</td>
                       <td data-label="الحالة" style={td}>{!d.check_in ? pill('غياب', colors.danger, colors.dangerLight) : d.check_out ? pill('انصرف', colors.primary, colors.primaryLight) : pill('حاضر', colors.info, colors.infoLight)}</td>
                       <td data-label="الحضور" style={td}>{attTime(d.check_in)}</td>

@@ -695,4 +695,9 @@ input.df-empty::-webkit-datetime-edit { opacity: 0; }
   table.m-cards td:first-child { font-size: 14px; font-weight: 700; padding-bottom: 4px !important; }
   table.m-cards td:first-child::before { content: none; }
   table.m-cards td:empty { display: none !important; }
+  /* من لم يحضر (بلا حضور ولا خصم): سطر واحد — الاسم والحالة فقط بدل أسطر «—» */
+  table.m-cards tr.m-off { display: flex !important; align-items: center; justify-content: space-between; gap: 12px; }
+  table.m-cards tr.m-off td { display: none !important; }
+  table.m-cards tr.m-off td:nth-child(-n+2) { display: flex !important; padding: 0 !important; min-height: 0; }
+  table.m-cards tr.m-off td:nth-child(2)::before { content: none; }
 }
