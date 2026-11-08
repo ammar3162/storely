@@ -213,7 +213,8 @@ html{scroll-behavior:smooth}
 /* الظهور عند التمرير */
 .lp-anim .rv{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
 .lp-anim .rv.in{opacity:1;transform:none}
-@media(prefers-reduced-motion:reduce){
+@media(prefers-reduced-motion:reduce){.lp-marquee-track{animation-duration:80s}}
+
 /* الشاشات */
 .lp-mob{display:none}
 @media(max-width:980px){
@@ -244,7 +245,7 @@ html{scroll-behavior:smooth}
   .lp-stats>div:nth-child(-n+2){border-bottom:1px solid var(--line)}
   .lp-halo{width:300px;height:300px}
   .lp-phone{width:240px}
-      .lp-fields{grid-template-columns:1fr}
+  .lp-fields{grid-template-columns:1fr}
   .lp-demo-form,.lp-demo-side{padding:30px 22px}
   .lp-cta{border-radius:28px;padding:60px 20px}
   .lp-cta h2{font-size:32px}
