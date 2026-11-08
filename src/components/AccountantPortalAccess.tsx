@@ -1,7 +1,7 @@
 'use client'
 import DateField from '@/components/DateField'
 import { useEffect, useState } from 'react'
-import { UserPlus, Trash2, ShieldCheck, Clock, Send } from 'lucide-react'
+import { UserPlus, Trash2, ShieldCheck, Clock, Send, ChevronDown } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import { colors, radius, font, inp, btnPrimary, btnSecondary } from '@/lib/ds'
 import { toast } from '@/components/toast'
@@ -29,6 +29,7 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
   const [adding, setAdding] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', sections: DEFAULT, branch_id: '', vat_registered: true, expires_on: '' })
   const [busy, setBusy] = useState(false)
+  const [openId, setOpenId] = useState<string | null>(null)
 
   async function load() {
     const [j, b] = await Promise.all([api.get('/api/accountant-access', { org_id: orgId }), api.get('/api/branches', { org_id: orgId })])
@@ -87,20 +88,30 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
         </div>
       </div>
 
-      {list.map(a => (
-        <div key={a.id} style={{ border: `1px solid ${colors.border}`, borderRadius: 12, padding: 12, marginBottom: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
-            <div style={{ flex: 1, minWidth: 160 }}>
-              <div style={{ fontSize: 14, fontWeight: 800 }}>{a.name || a.email}</div>
-              {a.name && <div style={{ fontSize: 12, color: colors.text4 }} dir="ltr">{a.email}</div>}
+      {list.map(a => {
+        const isOpen = openId === a.id
+        return (
+        <div key={a.id} style={{ border: `1px solid ${colors.border}`, borderRadius: 12, marginBottom: 8, overflow: 'hidden' }}>
+          {/* زر مطوي: الاسم والحالة، والضغط يفتح الإجراءات والصلاحيات */}
+          <button type="button" onClick={() => setOpenId(isOpen ? null : a.id)} aria-expanded={isOpen}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: 12, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, textAlign: 'right' as const }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: colors.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{a.name || a.email}</div>
+              <div style={{ fontSize: 12, color: colors.text4, marginTop: 2 }}>{a.sections.length} {a.sections.length === 1 ? 'قسم' : 'أقسام'} · اضغط للعرض</div>
             </div>
             {(() => { const expired = !!a.expires_on && todaySA() > a.expires_on
               return <span style={{ fontSize: 11.5, fontWeight: 700, padding: '3px 10px', borderRadius: 99, background: expired ? '#fef2f2' : a.status === 'active' ? '#ecfdf5' : '#fffbeb', color: expired ? '#b91c1c' : a.status === 'active' ? '#047857' : '#b45309' }}>
                 {expired ? 'انتهى الإذن' : a.status === 'active' ? 'مفعّل' : 'بانتظار قبول المحاسب'}
               </span> })()}
+            <ChevronDown size={18} color={colors.text3} style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
+          </button>
+          {isOpen && (
+          <div style={{ padding: '0 12px 12px', borderTop: `1px solid ${colors.border}` }}>
+            {a.name && <div style={{ fontSize: 12, color: colors.text4, marginTop: 10, textAlign: 'right' as const }}><span dir="ltr">{a.email}</span></div>}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, marginTop: 10 }}>
             {a.status !== 'active' && <button onClick={() => resend(a)} disabled={busy} style={{ ...btnSecondary, padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12 }}><Send size={13} /> إعادة إرسال الدعوة</button>}
             <button onClick={() => revoke(a)} title="سحب الإذن" style={{ ...btnSecondary, padding: '6px 10px', color: colors.danger, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12 }}><Trash2 size={13} /> سحب الإذن</button>
-          </div>
+            </div>
           <div style={{ fontSize: 11.5, color: colors.text4, margin: '6px 0 8px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={12} /> {a.status !== 'active' ? `أُرسلت الدعوة ${ago(a.invited_at)}` : a.last_view_at ? `آخر دخول ${ago(a.last_view_at)}` : 'قبل الدعوة — لم يفتح التقارير بعد'}</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -112,8 +123,11 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' as const }}>
             {ACC_SECTIONS.map(s => <button key={s.key} onClick={() => toggleSection(a, s.key)} style={chip(a.sections.includes(s.key))}>{s.label}</button>)}
           </div>
+          </div>
+          )}
         </div>
-      ))}
+        )
+      })}
 
       {adding ? (
         <div style={{ border: `1.5px dashed ${colors.primaryBorder}`, borderRadius: 12, padding: 12 }}>
