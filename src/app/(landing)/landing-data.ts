@@ -1,5 +1,5 @@
 import { Package, MessageCircle, Users, Wallet, Globe, BarChart3, Store, Bot, TrendingUp } from 'lucide-react'
-import { CUSTOM_MODULES, NEW_ADDON_PRICES, PLAN_CAPS, PLAN_PRICING } from '@/lib/planPricing'
+import { CUSTOM_MODULES, PLAN_CAPS, PLAN_PRICING } from '@/lib/planPricing'
 
 export type Billing = 'monthly'|'yearly'
 
@@ -155,23 +155,28 @@ export const LS: Record<string, {ar:string, en:string}> = {
   ctaTitle:      { ar:'منشأتك تستحق إدارة أهدأ', en:'Your business deserves calmer management' },
 }
 
+// الأسئلة الشائعة (2026-11-08): الأسئلة المعتادة في مواقع أنظمة التشغيل والكاشير — الأسعار تُقرأ من lib/planPricing
 export const FAQ_ITEMS = [
-  {q:'هل Storely منصة معتمدة ولها سجل تجاري؟',a:'نعم — Storely تابعة لـ «مؤسسة باسم علي خلوي لتقنية المعلومات»، مسجّلة رسمياً في وزارة التجارة السعودية بالرقم الوطني الموحد 7055023522، ونوع الكيان مؤسسة، وحالة السجل نشط. ويمكنك التحقق من السجل بنفسك عبر موقع وزارة التجارة mc.gov.sa.',
-   qEn:'Is Storely a registered business?',aEn:'Yes — Storely is operated by Basim Ali Khulwi Information Technology Est., officially registered with the Saudi Ministry of Commerce under unified national number 7055023522 (entity type: establishment, status: active). You can verify it yourself at mc.gov.sa.'},
-  {q:'هل توجد تجربة مجانية؟',a:'نعم — 14 يوماً مجانية كاملة بدون بطاقة ائتمانية. استكشف جميع المميزات من أول يوم.',
-   qEn:'Is there a free trial?',aEn:"Yes — a full 14 days free, no credit card required. Explore all the features from day one."},
-  {q:'كيف يتم الدفع؟',a:'الدفع عبر تحويل بنكي. بعد التحويل يتم تفعيل حسابك خلال 24 ساعة.',
-   qEn:'How does payment work?',aEn:'Payment is via bank transfer. Your account is activated within 24 hours after transfer.'},
-  {q:'كيف تُحتسب الأسعار؟',a:`لا توجد باقات ثابتة — تختار المزايا التي تحتاجها، ولكل ميزة سعر شهري لكل فرع: المخزون والموردين ${CUSTOM_MODULES.mod_inventory.first} ⃁، المشتريات والفواتير ${CUSTOM_MODULES.mod_purchases.first} ⃁، إقفال الكاشير ${CUSTOM_MODULES.cashier_closing.first} ⃁، الحضور والرواتب ${CUSTOM_MODULES.hr_full.first} ⃁، وأدوات الذكاء الاصطناعي ${CUSTOM_MODULES.ai_tools.first} ⃁ مرة واحدة للمنشأة كلها. والاشتراك السنوي يوفّر 20%.`,
-   qEn:'How is pricing calculated?',aEn:`No fixed plans — pick the features you need, each with one monthly price per branch: inventory ${CUSTOM_MODULES.mod_inventory.first} SAR, purchases ${CUSTOM_MODULES.mod_purchases.first} SAR, cashier closing ${CUSTOM_MODULES.cashier_closing.first} SAR, attendance & payroll ${CUSTOM_MODULES.hr_full.first} SAR, and AI tools ${CUSTOM_MODULES.ai_tools.first} SAR once for the whole business. Yearly saves 20%.`},
-  {q:'كم عدد الموردين والموظفين؟',a:`يشمل كل فرع ${PLAN_CAPS.custom.branchSuppliers} مورد و${PLAN_CAPS.custom.branchStaff} موظفين، ويضيف كل فرع جديد العدد نفسه. والموظف الإضافي ${NEW_ADDON_PRICES.extra_staff.monthly} ⃁ شهرياً من داخل النظام.`,
-   qEn:'How many suppliers and staff?',aEn:`Each branch includes ${PLAN_CAPS.custom.branchSuppliers} suppliers and ${PLAN_CAPS.custom.branchStaff} staff, and every branch you add brings the same again. Extra staff are ${NEW_ADDON_PRICES.extra_staff.monthly} SAR a month each, from inside the app.`},
-  {q:'هل يدعم متعدد الفروع؟',a:`نعم — تبدأ بفرع واحد وتضيف الفروع بنفسك من داخل النظام حتى ${PLAN_CAPS.custom.maxBranches} فروع. الفرع الثاني بالسعر نفسه، ومن الفرع الثالث يحصل كل فرع على خصم 20% (والذكاء الاصطناعي مرة واحدة للمنشأة). ولأكثر من ${PLAN_CAPS.custom.maxBranches} فروع، تواصل معنا لباقة المؤسسات.`,
-   qEn:'Does it support multiple branches?',aEn:`Yes — start with one branch and add more yourself, up to ${PLAN_CAPS.custom.maxBranches}. The second branch is the same price, and from the third branch on each branch is 20% off (AI tools are once per business). More than ${PLAN_CAPS.custom.maxBranches} branches? Contact us for Enterprise.`},
-  {q:'هل الموظفون يحتاجون تدريب؟',a:'لا — واجهة الموظفين بسيطة جداً بضغطة واحدة، وتدعم 7 لغات لأي جنسية.',
-   qEn:'Do staff need training?',aEn:'No — the staff interface is extremely simple (one-tap), and supports 7 languages for any nationality.'},
-  {q:'هل يمكن الإلغاء في أي وقت؟',a:'نعم — لا يوجد عقود. يمكنك إلغاء اشتراكك في أي وقت.',
-   qEn:'Can I cancel anytime?',aEn:'Yes — no contracts. You can cancel your subscription at any time.'},
+  {q:'ما هو Storely ولمن يناسب؟',a:'نظام سحابي لإدارة تشغيل المطاعم والمقاهي والمحلات: المخزون والمشتريات والموردون، وإقفال الكاشير اليومي، والحضور والرواتب، والتقارير — في مكان واحد ومن جوالك. ويعمل موظفوك من واجهة مبسطة تدعم 7 لغات.',
+   qEn:'What is Storely and who is it for?',aEn:'A cloud system for running restaurants, cafés and shops: inventory, purchases and suppliers, daily cashier closing, attendance and payroll, and reports — in one place, from your phone. Your staff use a simple interface in 7 languages.'},
+  {q:'هل توجد تجربة مجانية؟',a:'نعم — 14 يوماً مجانية بجميع المزايا، دون بطاقة ائتمانية ودون أي التزام.',
+   qEn:'Is there a free trial?',aEn:'Yes — 14 days free with every feature, no credit card and no commitment.'},
+  {q:'كيف تُحتسب الأسعار؟',a:`لا توجد باقات ثابتة — تختار المزايا التي تحتاجها، ولكل ميزة سعر شهري لكل فرع: المخزون والموردين ${CUSTOM_MODULES.mod_inventory.first} ⃁، والمشتريات والفواتير ${CUSTOM_MODULES.mod_purchases.first} ⃁، وإقفال الكاشير ${CUSTOM_MODULES.cashier_closing.first} ⃁، والحضور والرواتب ${CUSTOM_MODULES.hr_full.first} ⃁، وأدوات الذكاء الاصطناعي ${CUSTOM_MODULES.ai_tools.first} ⃁ مرة واحدة للمنشأة. يشمل كل فرع ${PLAN_CAPS.custom.branchStaff} موظفين و${PLAN_CAPS.custom.branchSuppliers} مورداً، ومن الفرع الثالث يحصل كل فرع على خصم 20%، والاشتراك السنوي يوفّر 20%.`,
+   qEn:'How is pricing calculated?',aEn:`No fixed plans — pick the features you need, each with a monthly price per branch: inventory ${CUSTOM_MODULES.mod_inventory.first} SAR, purchases ${CUSTOM_MODULES.mod_purchases.first} SAR, cashier closing ${CUSTOM_MODULES.cashier_closing.first} SAR, attendance & payroll ${CUSTOM_MODULES.hr_full.first} SAR, and AI tools ${CUSTOM_MODULES.ai_tools.first} SAR once per business. Each branch includes ${PLAN_CAPS.custom.branchStaff} staff and ${PLAN_CAPS.custom.branchSuppliers} suppliers, every branch from the third on is 20% off, and yearly billing saves 20%.`},
+  {q:'هل يمكنني تغيير المزايا أو إلغاء الاشتراك؟',a:'نعم — لا توجد عقود. يمكنك إضافة أي ميزة أو إزالتها من داخل النظام في أي وقت، وإلغاء اشتراكك متى شئت، ويبقى حسابك فعّالاً حتى نهاية المدة المدفوعة.',
+   qEn:'Can I change features or cancel?',aEn:'Yes — no contracts. Add or remove any feature from inside the app at any time, and cancel whenever you like; your account stays active until the end of the paid period.'},
+  {q:'ما طرق الدفع؟',a:'الدفع عبر التحويل البنكي، شهرياً أو سنوياً، ويُفعَّل اشتراكك خلال 24 ساعة من التحويل.',
+   qEn:'How can I pay?',aEn:'By bank transfer, monthly or yearly. Your subscription is activated within 24 hours of the transfer.'},
+  {q:'هل أحتاج إلى أجهزة خاصة أو تثبيت برامج؟',a:'لا — يعمل Storely من المتصفح على الجوال أو الجهاز اللوحي أو الكمبيوتر، ويمكنك تثبيته على الشاشة الرئيسية كتطبيق. ولا يحتاج موظفوك إلا إلى جوالاتهم.',
+   qEn:'Do I need special hardware or installation?',aEn:'No — Storely runs in the browser on a phone, tablet or computer, and you can add it to your home screen like an app. Your staff only need their phones.'},
+  {q:'هل يعمل مع نظام الكاشير (نقاط البيع) لديّ؟',a:'نعم — يعمل بجانب أي نظام نقاط بيع: يُدخل الكاشير أرقام تقرير نهاية اليوم في إقفال الكاشير مع صور الإثبات، ويقارنها Storely بالكاش الفعلي ويكشف أي عجز أو زيادة باسم الكاشير.',
+   qEn:'Does it work with my POS system?',aEn:'Yes — it works alongside any POS: the cashier enters the end-of-day report figures in cashier closing with proof photos, and Storely compares them with the actual cash and flags any shortage or surplus by cashier.'},
+  {q:'هل يدعم الفواتير الضريبية وإقرار ضريبة القيمة المضافة؟',a:'نعم — تسجّل فواتير الشراء الضريبية وتتحقق منها برمز QR، ويُجهّز Storely تقرير إقرار ضريبة القيمة المضافة، ويمكنك منح محاسبك وصولاً للاطلاع على تقاريرك وتحميلها.',
+   qEn:'Does it handle tax invoices and the VAT return?',aEn:'Yes — record purchase tax invoices and verify them by QR code, Storely prepares your VAT return report, and you can give your accountant access to view and download your reports.'},
+  {q:'هل بياناتي آمنة؟',a:'نعم — تُحفظ بياناتك على بنية سحابية موثوقة مع نسخ احتياطي يومي، وبيانات كل منشأة معزولة عن غيرها، ولا يرى موظفوك إلا ما تسمح لهم به.',
+   qEn:'Is my data secure?',aEn:'Yes — your data is stored on trusted cloud infrastructure with daily backups, each business is isolated from others, and your staff only see what you allow.'},
+  {q:'كيف أحصل على الدعم الفني؟',a:'فريق الدعم متاح باللغة العربية عبر واتساب من السبت إلى الخميس، من 9 صباحاً حتى 10 مساءً، كما تجد داخل النظام فيديوهات تشرح طريقة الاستخدام.',
+   qEn:'How do I get support?',aEn:'Our team is available in Arabic on WhatsApp, Saturday to Thursday, 9 am to 10 pm, and the app includes how-to videos.'},
 ]
 
 export const TRUST_POINTS = [
