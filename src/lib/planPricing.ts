@@ -21,12 +21,12 @@ export const isNewPlan = (plan: string | null | undefined): plan is NewPlanKey |
 /**
  * سعر واحد لكل ميزة (2026-11-08، قرار المالك): نفس المزايا = نفس السعر، بـ «ابنِ باقتك» أو كباقة جاهزة أو كإضافة عليها.
  * وكل فرع بسعر كامل مثل فودكس (الفرع الإضافي = الأول)، إلا الذكاء للمنشأة كلها مرة وحدة.
- * الباقة = مجموع مزاياها: الأساسية 49+54=103 لكل فرع، التشغيل +30=133 لكل فرع، الكاملة +69 +الذكاء 15 = 217 للأول و202 لكل فرع بعده.
- * 2026-11-08: المالك نقّص المخزون 59←49 وإقفال الكاشير 40←30.
+ * الباقة = مجموع مزاياها: الأساسية 49+44=93 لكل فرع، التشغيل +30=123 لكل فرع، الكاملة +69 +الذكاء 15 = 207 للأول و192 لكل فرع بعده.
+ * 2026-11-08: المالك نقّص المخزون 59←49 وإقفال الكاشير 40←30 والمشتريات 54←44.
  */
 export const CUSTOM_MODULES: Record<string, { first: number; extra: number; perBranch: boolean }> = {
   mod_inventory:   { first: 49, extra: 49, perBranch: true },
-  mod_purchases:   { first: 54, extra: 54, perBranch: true },
+  mod_purchases:   { first: 44, extra: 44, perBranch: true },
   cashier_closing: { first: 30, extra: 30, perBranch: true },
   hr_full:         { first: 69, extra: 69, perBranch: true },
   ai_tools:        { first: 15, extra: 0,  perBranch: false },
@@ -86,9 +86,9 @@ export const PLAN_PRICING: Record<PlanKey, { label: string; monthly: number; yea
   advanced:  { label: 'المتقدمة', monthly: 499, yearly: 4790 },
   // 2026-11-08 (قرار المالك): الأساسية والتشغيل = نفس مزاياها في «ابنِ باقتك» بالضبط، والكاملة الأوفر
   // (أرخص من التشغيل + الحضور + الذكاء بـ8). المشتركين الحاليين أسعارهم مثبتة
-  essential: { label: 'الأساسية', monthly: 103, yearly: yearlyOf(103) },
-  ops:       { label: 'التشغيل', monthly: 133, yearly: yearlyOf(133) },
-  full:      { label: 'الكاملة', monthly: 217, yearly: yearlyOf(217) },
+  essential: { label: 'الأساسية', monthly: 93, yearly: yearlyOf(93) },
+  ops:       { label: 'التشغيل', monthly: 123, yearly: yearlyOf(123) },
+  full:      { label: 'الكاملة', monthly: 207, yearly: yearlyOf(207) },
   custom:    { label: 'باقتك المخصصة', monthly: 0, yearly: 0 },
 }
 
@@ -181,9 +181,9 @@ export const PLAN_CAPS: Record<PlanKey, { branches: number; maxBranches: number;
   pro:      { branches: 3, maxBranches: 5,  staff: 15, suppliers: 20, branchStaff: 5, branchSuppliers: 5, branchPrice: 79 },
   advanced: { branches: 6, maxBranches: 10, staff: 50, suppliers: 50, branchStaff: 5, branchSuppliers: 5, branchPrice: 59 },
   // الجديدة: لكل فرع 6 موظفين و15 مورد (staff/suppliers هنا = للفرع الواحد)
-  essential: { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 103 },
-  ops:       { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 133 },
-  full:      { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 202 },
+  essential: { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 93 },
+  ops:       { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 123 },
+  full:      { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 192 },
   custom:    { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 0 },
 }
 
