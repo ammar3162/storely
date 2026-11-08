@@ -33,7 +33,7 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
 
         const step = (n: number, title: string, desc: string, status?: React.ReactNode) => (
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16, flexWrap: 'wrap' as const }}>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', minWidth: 0, flex: 1 }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', minWidth: 0, flex: '1 1 260px' }}>
               <span style={{ width: 30, height: 30, borderRadius: 10, background: colors.primaryLight, color: colors.primary, fontWeight: 900, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n}</span>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 800, color: colors.text }}>{title}</div>
