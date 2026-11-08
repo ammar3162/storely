@@ -61,9 +61,9 @@ export function FilterBar({ period, setPeriod, from, setFrom, to, setTo }: any) 
           return (
             <button key={p.key} onClick={()=>setPeriod(p.key as FilterPeriod)} aria-pressed={active}
               style={{
-                flex:'1 0 auto',padding:'8px 12px',borderRadius:8,fontFamily:font.family,border:'none',
+                flex:'1 1 auto',padding:'8px 6px',borderRadius:8,fontFamily:font.family,border:'none',
                 background:active?colors.surface:'transparent',boxShadow:active?'0 1px 2px rgba(15,23,42,.08)':'none',
-                color:active?colors.text:colors.text3,fontSize:13,fontWeight:active?800:600,cursor:'pointer',
+                color:active?colors.text:colors.text3,fontSize:12.5,fontWeight:active?800:600,cursor:'pointer',
                 display:'inline-flex',alignItems:'center',justifyContent:'center',gap:5,whiteSpace:'nowrap' as const,
               }}>
               {p.icon}{p.label}
@@ -117,7 +117,7 @@ export function ReportCard({ title, subtitle, icon, color, stats, onClick, loadi
             <div key={i} style={{background:colors.surface,padding:'10px 8px',textAlign:'center' as const,minWidth:0}}>
               {s===null
                 ? <><div style={{height:20,margin:'0 auto 6px',width:'50%',background:colors.border,borderRadius:6,animation:'sk 1.4s infinite'}}/><div style={{height:9,margin:'0 auto',width:'70%',background:colors.border,borderRadius:4,animation:'sk 1.4s infinite'}}/></>
-                : <><div style={{fontSize:18,fontWeight:800,color:(s.value===0||s.value==='0')?colors.text:(s.color||colors.text),fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{s.value}</div>
+                : <><div style={{fontSize:18,fontWeight:800,color:(parseFloat(String(s.value).replace(/[^0-9.-]/g,''))||0)===0?colors.text:(s.color||colors.text),fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{s.value}</div>
                    <div style={{fontSize:11.5,color:colors.text3,marginTop:2,fontWeight:600,whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{s.label}</div></>}
             </div>
           ))}
