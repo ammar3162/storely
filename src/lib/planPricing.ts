@@ -20,13 +20,14 @@ export const isNewPlan = (plan: string | null | undefined): plan is NewPlanKey |
  */
 /**
  * سعر واحد لكل ميزة (2026-11-08، قرار المالك): نفس المزايا = نفس السعر، بـ «ابنِ باقتك» أو كباقة جاهزة أو كإضافة عليها.
- * الباقة = مجموع مزاياها: الأساسية 59+54=113 (فرع 20+10=30)، التشغيل +40=153 (فرع +10=40)، الكاملة +69+15=237 (فرع +15=55).
+ * وكل فرع بسعر كامل مثل فودكس (الفرع الإضافي = الأول)، إلا الذكاء للمنشأة كلها مرة وحدة.
+ * الباقة = مجموع مزاياها: الأساسية 59+54=113 لكل فرع، التشغيل +40=153 لكل فرع، الكاملة +69 +الذكاء 15 = 237 للأول و222 لكل فرع بعده.
  */
 export const CUSTOM_MODULES: Record<string, { first: number; extra: number; perBranch: boolean }> = {
-  mod_inventory:   { first: 59, extra: 20, perBranch: true },
-  mod_purchases:   { first: 54, extra: 10, perBranch: true },
-  cashier_closing: { first: 40, extra: 10, perBranch: true },
-  hr_full:         { first: 69, extra: 15, perBranch: true },
+  mod_inventory:   { first: 59, extra: 59, perBranch: true },
+  mod_purchases:   { first: 54, extra: 54, perBranch: true },
+  cashier_closing: { first: 40, extra: 40, perBranch: true },
+  hr_full:         { first: 69, extra: 69, perBranch: true },
   ai_tools:        { first: 15, extra: 0,  perBranch: false },
 }
 export const FEATURE_PRICES = CUSTOM_MODULES
@@ -175,9 +176,9 @@ export const PLAN_CAPS: Record<PlanKey, { branches: number; maxBranches: number;
   pro:      { branches: 3, maxBranches: 5,  staff: 15, suppliers: 20, branchStaff: 5, branchSuppliers: 5, branchPrice: 79 },
   advanced: { branches: 6, maxBranches: 10, staff: 50, suppliers: 50, branchStaff: 5, branchSuppliers: 5, branchPrice: 59 },
   // الجديدة: لكل فرع 6 موظفين و15 مورد (staff/suppliers هنا = للفرع الواحد)
-  essential: { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 30 },
-  ops:       { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 40 },
-  full:      { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 55 },
+  essential: { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 113 },
+  ops:       { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 153 },
+  full:      { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 222 },
   custom:    { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 0 },
 }
 

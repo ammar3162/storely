@@ -277,7 +277,7 @@ export default function AddonsMarketPage() {
                   <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
                   <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14, minHeight: 40 }}>{a.description}</div>
                   <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 12 }}>
-                    {a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text3 }}>{isMod ? `⃁ للفرع الأول، و${a.extra_price} ⃁ لكل فرع إضافي` : '⃁ / فرع / شهر'}</span>
+                    {a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text3 }}>{isMod && a.extra_price !== a.monthly_price ? `⃁ للفرع الأول، و${a.extra_price} ⃁ لكل فرع إضافي` : '⃁ / فرع / شهر'}</span>
                   </div>
                   {active && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 10 }}>

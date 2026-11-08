@@ -119,7 +119,7 @@ ${isNewPlan(o.plan) ? `الباقات المتاحة (السعر لكل فرع �
 • كل فرع فيه ${PLAN_CAPS.essential.staff} موظفين وحتى ${PLAN_CAPS.essential.suppliers} مورد
 • المؤسسات: أكثر من 10 فروع بسعر خاص (تواصل معنا)
 • الدفع السنوي بخصم 20%
-الإضافات (تقدر تحدد الفروع لكل إضافة): ${addonsForPlan(o.plan, rows.filter(a => a.is_active)).map(a => `${a.name} ${n(Number(a.monthly_price))} ريال${a.per_branch ? (a.extra_price != null ? ` للفرع الأول و${a.extra_price} لكل فرع بعده` : ' لكل فرع') : ''}`).join('، ')}` : `الباقات المتاحة:
+الإضافات (تقدر تحدد الفروع لكل إضافة): ${addonsForPlan(o.plan, rows.filter(a => a.is_active)).map(a => `${a.name} ${n(Number(a.monthly_price))} ريال${a.per_branch ? (a.extra_price != null && a.extra_price !== Number(a.monthly_price) ? ` للفرع الأول و${a.extra_price} لكل فرع بعده` : ' لكل فرع') : ''}`).join('، ')}` : `الباقات المتاحة:
 • الأساسية ${PLAN_PRICING.basic.monthly} ريال: فرع واحد (يوصل ${PLAN_CAPS.basic.maxBranches})، ${PLAN_CAPS.basic.staff} موظفين، ${PLAN_CAPS.basic.suppliers} موردين، والمميزات بالإضافات
 • الشاملة ${PLAN_PRICING.pro.monthly} ريال: كل المميزات، ${PLAN_CAPS.pro.branches} فروع (يوصل ${PLAN_CAPS.pro.maxBranches})، ${PLAN_CAPS.pro.staff} موظف، ${PLAN_CAPS.pro.suppliers} مورد
 • المتقدمة ${PLAN_PRICING.advanced.monthly} ريال: كل المميزات، ${PLAN_CAPS.advanced.branches} فروع (يوصل ${PLAN_CAPS.advanced.maxBranches})، ${PLAN_CAPS.advanced.staff} موظف، ${PLAN_CAPS.advanced.suppliers} مورد

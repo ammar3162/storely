@@ -20,8 +20,8 @@ const PLANS: { key: PlanKey; name: string; desc: string; price: number; extra: n
     features: ['الحضور والانصراف', 'الورديات والإجازات', 'مسير الرواتب', 'السلف والخصومات', 'أدوات الذكاء الاصطناعي'] },
 ]
 const ADDONS: { icon: typeof Wallet; name: string; price: number; unit: string; note: string }[] = [
-  { icon: Wallet, name: 'إقفال الكاشير', price: CUSTOM_MODULES.cashier_closing.first, unit: `⃁ للفرع الأول، و${CUSTOM_MODULES.cashier_closing.extra} لكل فرع بعده`, note: 'للأساسية' },
-  { icon: UserCheck, name: 'الحضور والرواتب', price: CUSTOM_MODULES.hr_full.first, unit: `⃁ للفرع الأول، و${CUSTOM_MODULES.hr_full.extra} لكل فرع بعده`, note: 'للأساسية والتشغيل' },
+  { icon: Wallet, name: 'إقفال الكاشير', price: CUSTOM_MODULES.cashier_closing.first, unit: '⃁ لكل فرع', note: 'للأساسية' },
+  { icon: UserCheck, name: 'الحضور والرواتب', price: CUSTOM_MODULES.hr_full.first, unit: '⃁ لكل فرع', note: 'للأساسية والتشغيل' },
   { icon: Sparkles, name: 'أدوات الذكاء الاصطناعي', price: NEW_ADDON_PRICES.ai_tools.monthly, unit: '⃁ / شهرياً', note: 'للأساسية والتشغيل' },
   { icon: Users, name: 'موظف إضافي', price: NEW_ADDON_PRICES.extra_staff.monthly, unit: '⃁ / شهرياً', note: `فوق ${PLAN_CAPS.essential.staff} موظفين لكل فرع` },
 ]
@@ -137,7 +137,7 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
               <button key={slug} type="button" className={`st-mod${on ? ' on' : ''}`} onClick={() => setMods(v => on ? v.filter(x => x !== slug) : [...v, slug])} aria-pressed={on}>
                 <span className="st-mod-check">{on && <Check size={15} strokeWidth={3} />}</span>
                 <b>{MOD_NAME[slug]}</b>
-                <small>{m.perBranch ? `${shown(m.first)} ⃁ للفرع الأول، و${shown(m.extra)} ⃁ لكل فرع إضافي` : `${shown(m.first)} ⃁ شهرياً للمنشأة كلها`}</small>
+                <small>{m.perBranch ? (m.extra === m.first ? `${shown(m.first)} ⃁ لكل فرع` : `${shown(m.first)} ⃁ للفرع الأول، و${shown(m.extra)} ⃁ لكل فرع إضافي`) : `${shown(m.first)} ⃁ شهرياً للمنشأة كلها`}</small>
               </button>
             )
           })}

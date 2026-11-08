@@ -64,7 +64,7 @@ export default function PricingSection({ m }: { m: LandingState }) {
               </div>
             ))}
           </div>
-          <p className="lp-plans-foot">{(lang as string)==='ar'?'السعر لكل فرع. تقدر تضيف فروع وموظفين وإضافات من داخل النظام في أي وقت.':'Priced per branch. Add branches, staff and add-ons anytime from inside the app. Add-ons: cashier closing 40 SAR for the first branch + 10 per extra branch, attendance & payroll 69 + 15 per extra branch, AI tools 15 SAR/month.'}</p>
+          <p className="lp-plans-foot">{(lang as string)==='ar'?'السعر لكل فرع. تقدر تضيف فروع وموظفين وإضافات من داخل النظام في أي وقت.':'Priced per branch. Add branches, staff and add-ons anytime from inside the app. Add-ons: cashier closing 40 SAR per branch, attendance & payroll 69 SAR per branch, AI tools 15 SAR/month.'}</p>
           <div className="lp-compare rv">
             <h3>{(lang as string)==='ar'?'قارن الباقات':'Compare plans'}</h3>
             <div className="lp-compare-scroll">
