@@ -9,7 +9,6 @@ import HowItWorks from './_parts/HowItWorks'
 import SuppliersSection from './_parts/SuppliersSection'
 import FeaturesSection from './_parts/FeaturesSection'
 import PricingTeaser from './_parts/PricingTeaser'
-import LossCalculator from './_parts/LossCalculator'
 import DemoRequestSection from './_parts/DemoRequestSection'
 import FaqSection from './_parts/FaqSection'
 import FinalCta from './_parts/FinalCta'
@@ -40,7 +39,6 @@ export default function LandingPage({ initialMarquee }: { initialMarquee?: strin
 
       <OwnerStory m={m}/>
 
-      <LossCalculator m={m}/>
 
       <PricingTeaser m={m}/>
 
