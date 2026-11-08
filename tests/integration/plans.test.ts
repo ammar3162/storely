@@ -354,8 +354,8 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential', branchA)).toBe(true)
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential', branchB)).toBe(false)
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential')).toBe(true)
-        // الفاتورة: 84 + فرع 84 (كل فرع بسعر كامل) + كاشير فرع واحد 39
-        expect(await monthlyBill(db as any, orgId)).toBe(207)
+        // الفاتورة: 94 + فرع 94 (كل فرع بسعر كامل) + كاشير فرع واحد 39
+        expect(await monthlyBill(db as any, orgId)).toBe(227)
 
         // الترقية من نفس العائلة بس
         expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'pro' })).status).toBe(400)
@@ -367,7 +367,7 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         const st = (await db.from('org_addon_subscriptions').select('status').eq('org_id', orgId).eq('addon_id', cashierId).single()).data as any
         expect(st.status).toBe('cancelled')
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'ops', branchB)).toBe(true)
-        expect(await monthlyBill(db as any, orgId)).toBe(246)
+        expect(await monthlyBill(db as any, orgId)).toBe(266)
       } finally {
         await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).eq('addon_id', cashierId)
         await db.from('plan_requests').delete().eq('org_id', orgId)
@@ -399,8 +399,8 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         const { data: subs } = await db.from('org_addon_subscriptions').select('quantity,status,branch_ids,locked_price,marketplace_addons(slug)').eq('org_id', oid)
         expect((subs as any[]).map(r => [r.marketplace_addons.slug, r.quantity, r.status, r.branch_ids, Number(r.locked_price)])).toEqual([['hr_full', 3, 'active', null, 69]])
         const { monthlyBill } = await import('@/lib/orgBill')
-        // الفرع الثالث بخصم 20%: التشغيل 123+123+98 + الحضور 69+69+55 — والمجموع + الذكاء 15 = الكاملة لـ3 فروع
-        expect(await monthlyBill(db as any, oid)).toBe(344 + 193)
+        // الفرع الثالث بخصم 20%: التشغيل 133+133+106 + الحضور 69+69+55 — والمجموع + الذكاء 15 = الكاملة لـ3 فروع
+        expect(await monthlyBill(db as any, oid)).toBe(372 + 193)
       } finally {
         vi.doUnmock('@/lib/supabase/server')
         if (oid) {
