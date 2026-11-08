@@ -9,7 +9,7 @@ import { navItemFor } from './nav'
 export const A = {
   bg: '#F7F9FA',
   surface: '#ffffff',
-  sidebar: '#ffffff',
+  sidebar: '#203640',
   muted: '#F3F5F6',
   border:'var(--storely-border)',
   borderStrong:'var(--storely-border)',
@@ -74,15 +74,10 @@ export const daysLeft = (d?: string | null) => (d ? Math.ceil((new Date(d).getTi
 /** عنوان الصفحة — أيقونته تُؤخذ تلقائياً من عنصر القائمة الجانبية للمسار الحالي */
 export function PageHeader({ title, subtitle, actions, icon }: { title: string; subtitle?: ReactNode; actions?: ReactNode; icon?: LucideIcon }) {
   const pathname = usePathname() || ''
-  const Icon = icon || (navItemFor(pathname)?.icon as LucideIcon | undefined)
+  void (icon || navItemFor(pathname))  // أيقونة الصفحة تظهر في القائمة فقط
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 28 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, minWidth: 0, maxWidth: 820, flex: '1 1 420px' }}>
-        {Icon && (
-          <div style={{ width: 44, height: 44, borderRadius: 8, background: A.surface, border: `1px solid ${A.border}`, boxShadow: A.shadow, color: A.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Icon size={20} />
-          </div>
-        )}
         <div style={{ minWidth: 0 }}>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: A.text, lineHeight: 1.3 }}>{title}</h1>
           {subtitle && <p style={{ fontSize: 14, color: A.text2, marginTop: 4, lineHeight: 1.7 }}>{subtitle}</p>}
@@ -95,7 +90,7 @@ export function PageHeader({ title, subtitle, actions, icon }: { title: string; 
 
 export function Card({ title, subtitle, actions, children, pad = 20, style }: { title?: string; subtitle?: string; actions?: ReactNode; children: ReactNode; pad?: number; style?: CSSProperties }) {
   return (
-    <section style={{ background: A.surface, border: `1px solid ${A.border}`, borderRadius: A.radiusCard, boxShadow: A.shadow, overflow: 'hidden', ...style }}>
+    <section style={{ background: A.surface, border: `1px solid ${A.border}`, borderRadius: A.radiusCard, boxShadow: A.shadow, overflow: 'hidden', flexShrink: 0, ...style }}>
       {(title || actions) && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: `16px ${Math.max(pad, 20)}px`, borderBottom: `1px solid ${A.border}` }}>
           <div style={{ minWidth: 0 }}>
@@ -127,18 +122,19 @@ export function Stat({ label, value, hint, tone = 'default', onClick, icon: Icon
   )
 }
 
+// ألوان دلالية من نظام Storely: نجاح، تنبيه، خطر، معلومة — مع حد بلون الحالة
 const TONES = {
-  neutral: { bg: A.muted, fg: '#344054' },
-  primary: { bg: A.primarySoft, fg: A.primary },
-  warning: { bg: A.warningSoft, fg: A.warning },
-  danger: { bg: A.dangerSoft, fg: A.danger },
-  info: { bg: A.infoSoft, fg: A.info },
-  violet: { bg: A.violetSoft, fg: A.violet },
+  neutral: { bg: '#F7F9FA', fg: '#4F6678', border: '#E2E7EA' },
+  primary: { bg: '#ECFDF5', fg: '#047857', border: '#A7F3D0' },
+  warning: { bg: '#FFFBEB', fg: '#B45309', border: '#FDE68A' },
+  danger: { bg: '#FEF2F2', fg: '#B91C1C', border: '#FECACA' },
+  info: { bg: '#F3F5F6', fg: '#4F6678', border: '#CBD4DC' },
+  violet: { bg: '#F3F5F6', fg: '#4F6678', border: '#CBD4DC' },
 }
 export type Tone = keyof typeof TONES
 export function Badge({ tone = 'neutral', children }: { tone?: Tone; children: ReactNode }) {
   const t = TONES[tone]
-  return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: t.bg, color: t.fg, border: `1px solid ${t.fg}2e`, fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 6, whiteSpace: 'nowrap', lineHeight: 1.6 }}>{children}</span>
+  return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: t.bg, color: t.fg, border: `1px solid ${t.border}`, fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 6, whiteSpace: 'nowrap', lineHeight: 1.6 }}>{children}</span>
 }
 
 type BtnKind = 'primary' | 'secondary' | 'danger' | 'ghost'
@@ -199,7 +195,7 @@ export function Empty({ title, hint, icon: Icon = Inbox, action }: { title: stri
 export function Notice({ tone = 'info', children, action }: { tone?: Tone; children: ReactNode; action?: ReactNode }) {
   const t = TONES[tone]
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: t.bg, color: t.fg, border: `1px solid ${t.fg}24`, borderRadius: 6, padding: '12px 16px', fontSize: 13.5, fontWeight: 500, lineHeight: 1.7 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: A.surface, color: t.fg, border: `1px solid ${t.border}`, borderRadius: 6, padding: '12px 16px', fontSize: 13.5, fontWeight: 500, lineHeight: 1.7 }}>
       <div style={{ flex: 1 }}>{children}</div>
       {action}
     </div>
@@ -287,9 +283,9 @@ export function Tabs<K extends string>({ items, value, onChange }: { items: { k:
         return (
           <button key={it.k} role="tab" aria-selected={on} type="button" onClick={() => onChange(it.k)} className="adm-tab"
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px', borderRadius: 4, border: 'none', fontFamily: 'inherit', fontSize: 13, fontWeight: on ? 600 : 500, cursor: 'pointer', whiteSpace: 'nowrap',
-              background: on ? A.surface : 'transparent', color: on ? A.text : A.text2, boxShadow: on ? '0 1px 2px rgba(16,24,40,.08), 0 0 0 1px rgba(16,24,40,.04)' : 'none' }}>
+              background: on ? A.primary : 'transparent', color: on ? '#fff' : A.text2, boxShadow: 'none' }}>
             {it.l}
-            {it.n !== undefined && <span style={{ fontSize: 11.5, fontWeight: 600, minWidth: 20, padding: '0 6px', height: 18, borderRadius: 99, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: on ? A.primarySoft : A.surface, color: on ? A.primary : A.text3 }}>{it.n}</span>}
+            {it.n !== undefined && <span style={{ fontSize: 11.5, fontWeight: 600, minWidth: 20, padding: '0 6px', height: 18, borderRadius: 99, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: on ? 'rgba(255,255,255,.18)' : A.surface, color: on ? '#fff' : A.text3 }}>{it.n}</span>}
           </button>
         )
       })}
@@ -302,7 +298,7 @@ export function Toolbar({ children }: { children: ReactNode }) {
   return <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', padding: '14px 16px', borderBottom: `1px solid ${A.border}` }}>{children}</div>
 }
 
-const AVATAR_TINTS = [['#e7f6f5', '#0b7573'], ['#eff8ff', '#175cd3'], ['#f4f3ff', '#5925dc'], ['#fef6ee', '#b93815'], ['#fdf2fa', '#c11574'], ['#f0f9ff', '#026aa2'], ['#ecfdf3', '#067647']]
+const AVATAR_TINTS = [['#F3F5F6', '#203640']]
 /** دائرة بالحرف الأول من الاسم — لونها ثابت لنفس الاسم */
 export function Avatar({ name, size = 36 }: { name?: string | null; size?: number }) {
   const n = (name || '').trim()

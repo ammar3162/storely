@@ -102,17 +102,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const sidebar = (
     <nav style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ height: 64, padding: '0 20px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: `1px solid ${A.border}` }}>
+      <div style={{ height: 64, padding: '0 20px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid rgba(255,255,255,.1)' }}>
         <img src="/icon-192.png" alt="" width={32} height={32} style={{ borderRadius: 6, boxShadow: A.shadowSm }} />
         <div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: A.text, lineHeight: 1.2 }}>Storely</div>
-          <div style={{ fontSize: 12, color: A.text3 }}>لوحة الإدارة</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>Storely</div>
+          <div style={{ fontSize: 12, color: '#CBD4DC' }}>لوحة الإدارة</div>
         </div>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px 16px' }}>
         {groups.map(g => (
           <div key={g.title} style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 500, color: A.text3, padding: '0 10px 8px' }}>{g.title}</div>
+            <div style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,.6)', padding: '0 10px 8px' }}>{g.title}</div>
             {g.items.map(item => {
               const active = isActive(item.href)
               const Icon = item.icon
@@ -133,16 +133,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         ))}
       </div>
-      <div style={{ margin: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, border: `1px solid ${A.border}`, borderRadius: 12, background: A.surface, boxShadow: A.shadowSm }}>
-        <div style={{ width: 34, height: 34, borderRadius: 99, background: A.primarySoft, color: A.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: 14, flexShrink: 0 }}>
+      <div style={{ margin: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, border: '1px solid rgba(255,255,255,.14)', borderRadius: 12, background: 'rgba(255,255,255,.06)' }}>
+        <div style={{ width: 34, height: 34, borderRadius: 99, background: 'rgba(255,255,255,.14)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: 14, flexShrink: 0 }}>
           {admin.full_name?.[0] || '؟'}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: A.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{admin.full_name}</div>
-          <div style={{ fontSize: 12, color: A.text3 }}>{admin.role === 'super_admin' ? 'مشرف كامل' : 'مشرف'}</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{admin.full_name}</div>
+          <div style={{ fontSize: 12, color: '#CBD4DC' }}>{admin.role === 'super_admin' ? 'مشرف كامل' : 'مشرف'}</div>
         </div>
-        <button onClick={logout} title="تسجيل الخروج" aria-label="تسجيل الخروج" className="adm-btn adm-btn-ghost"
-          style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', color: A.text3, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <button onClick={logout} title="تسجيل الخروج" aria-label="تسجيل الخروج" className="adm-btn adm-side-btn"
+          style={{ width: 32, height: 32, borderRadius: 6, border: 'none', background: 'transparent', color: '#CBD4DC', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <LogOut size={16} />
         </button>
       </div>
@@ -178,15 +178,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 }
 
 const SHELL_CSS = `
-  .adm-side{position:fixed;top:0;right:0;bottom:0;width:264px;background:${A.sidebar};border-left:1px solid ${A.border};z-index:50}
+  .adm-side{position:fixed;top:0;right:0;bottom:0;width:264px;background:${A.sidebar};color-scheme:dark;z-index:50}
   .adm-topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:40;height:64px;padding:0 32px;margin-right:264px;background:rgba(247,248,250,.85);backdrop-filter:saturate(180%) blur(10px);-webkit-backdrop-filter:saturate(180%) blur(10px);border-bottom:1px solid ${A.border}}
   .adm-menu-btn{display:none!important}
   .adm-main{margin-right:264px;padding:32px 32px 56px;max-width:1440px}
-  .adm-nav{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:6px;color:${A.text2};font-size:14px;font-weight:500;text-decoration:none;margin-bottom:2px;transition:background .15s,color .15s}
-  .adm-nav svg{color:${A.text3};flex-shrink:0;transition:color .15s}
-  .adm-nav:hover{background:${A.muted};color:${A.text}}
-  .adm-nav.on{background:${A.primarySoft};color:${A.primaryHover};font-weight:600}
+  .adm-nav{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:6px;color:rgba(255,255,255,.88);font-size:14px;font-weight:500;text-decoration:none;margin-bottom:2px;transition:background .15s,color .15s}
+  .adm-nav svg{color:rgba(255,255,255,.65);flex-shrink:0;transition:color .15s}
+  .adm-nav:hover{background:rgba(255,255,255,.07);color:#fff}
+  .adm-nav:hover svg{color:#fff}
+  .adm-nav.on{background:#fff;color:${A.primary};font-weight:600}
   .adm-nav.on svg{color:${A.primary}}
+  .adm-side-btn:hover{background:rgba(255,255,255,.08)!important;color:#fff!important}
   .adm-mob-menu{position:fixed;inset:0;z-index:900}
   @media(max-width:900px){
     .adm-side{display:none}
