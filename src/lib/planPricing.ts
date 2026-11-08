@@ -63,9 +63,13 @@ export function alaCarteMonthly(plan: NewPlanKey, branches: number): number {
 /** الباقات اللي تعتبر ترقية فعلاً: لـ «ابنِ باقتك» = الباقات الجاهزة اللي فيها كل مزاياه وزيادة
  *  (ما نعرض باقة بنفس مزاياه أو أقل)، وللباقات الثانية = الأعلى منها */
 export function upgradeTargets(plan: string | null | undefined, activeSlugs: string[] = []): PlanKey[] {
-  if (!isCustomPlan(plan)) return higherPlans(plan)
-  const mine = activeSlugs.filter(s => CUSTOM_MODULES[s])
-  return NEW_PLANS.filter(k => mine.every(s => PLAN_MODULES[k].includes(s)) && PLAN_MODULES[k].length > mine.length)
+  // 2026-11-08: «اختيار المزايا» ما يترقّى لباقة ثابتة — يضيف الميزة الناقصة من سوق الإضافات (missingFeatures)
+  if (isCustomPlan(plan)) return []
+  return higherPlans(plan)
+}
+/** مزايا «اختيار المزايا» اللي ما عند المشترك — تطلع له في الإعدادات «أضف ميزة» */
+export function missingFeatures(activeSlugs: string[] = []): string[] {
+  return CUSTOM_MODULE_ORDER.filter(s => !activeSlugs.includes(s))
 }
 /** الإضافة تنباع لكل فرع (branch_ids والكمية = عدد الفروع)؟ */
 export const isPerBranchAddon = (plan: string | null | undefined, slug: string) =>

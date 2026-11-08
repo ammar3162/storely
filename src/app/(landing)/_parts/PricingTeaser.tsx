@@ -1,6 +1,6 @@
 'use client'
 import { ArrowLeft } from 'lucide-react'
-import { CUSTOM_MIN_MONTHLY, PLAN_PRICING } from '@/lib/planPricing'
+import { CUSTOM_MIN_MONTHLY, CUSTOM_MODULES } from '@/lib/planPricing'
 import type { LandingState } from './useLanding'
 
 // شريط الأسعار في الرئيسية — التفاصيل في صفحة /pricing
@@ -13,10 +13,10 @@ export default function PricingTeaser({ m }: { m: LandingState }) {
         <div className="lp-pt rv">
           <div>
             <div className="lp-pt-k">{ar ? 'الأسعار' : 'Pricing'}</div>
-            <div className="lp-pt-h">{ar ? <>باقات تبدأ من <b>{CUSTOM_MIN_MONTHLY} ⃁</b> شهرياً</> : <>Plans from <b>{CUSTOM_MIN_MONTHLY} SAR</b> a month</>}</div>
+            <div className="lp-pt-h">{ar ? <>ادفع على المزايا اللي تحتاجها، من <b>{CUSTOM_MIN_MONTHLY} ⃁</b> شهرياً</> : <>Pay only for the features you need, from <b>{CUSTOM_MIN_MONTHLY} SAR</b> a month</>}</div>
             <div className="lp-pt-s">{ar
-              ? `ثلاث باقات جاهزة (${PLAN_PRICING.essential.monthly} و${PLAN_PRICING.ops.monthly} و${PLAN_PRICING.full.monthly} ⃁) أو ابنِ باقتك بالمزايا اللي تحتاجها. جرّب كل شي مجاناً 14 يوماً.`
-              : `Three ready plans (${PLAN_PRICING.essential.monthly}, ${PLAN_PRICING.ops.monthly} and ${PLAN_PRICING.full.monthly} SAR) or build your own. Try everything free for 14 days.`}</div>
+              ? `كل ميزة بسعرها لكل فرع: إقفال الكاشير ${CUSTOM_MODULES.cashier_closing.first} ⃁، والمخزون ${CUSTOM_MODULES.mod_inventory.first} ⃁، والحضور والرواتب ${CUSTOM_MODULES.hr_full.first} ⃁. جرّب كل شي مجاناً 14 يوماً.`
+              : `Each feature has one price per branch: cashier closing ${CUSTOM_MODULES.cashier_closing.first} SAR, inventory ${CUSTOM_MODULES.mod_inventory.first} SAR, attendance & payroll ${CUSTOM_MODULES.hr_full.first} SAR. Try everything free for 14 days.`}</div>
           </div>
           <a className="lp-btn lp-btn-dark lp-btn-lg" href="/pricing">{ar ? 'شوف الأسعار' : 'See pricing'} <ArrowLeft size={18}/></a>
         </div>

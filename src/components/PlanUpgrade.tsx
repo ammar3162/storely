@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { api } from '@/lib/api-client'
 import { colors, font, radius } from '@/lib/ds'
 import { toast } from '@/components/toast'
-import { PLAN_CAPS, PLAN_PRICING, planKeyOf, planPriceFor, upgradeTargets, isNewPlan, type PlanKey } from '@/lib/planPricing'
+import { PLAN_CAPS, PLAN_PRICING, CUSTOM_MODULES, planKeyOf, planPriceFor, upgradeTargets, missingFeatures, isNewPlan, isCustomPlan, type PlanKey } from '@/lib/planPricing'
+import { FEATURE_NAMES } from '@/lib/featurePresets'
 
 const NEW_DESC: Record<string, string> = { essential: 'المخزون والموردين والمشتريات والفواتير', ops: 'كل الأساسية + إقفال الكاشير لكل الفروع', full: 'كل المميزات: الكاشير والحضور والرواتب والذكاء' }
 const desc = (k: PlanKey) => {
@@ -34,7 +35,26 @@ export default function PlanUpgrade({ orgId, plan, maxBranches, activeSlugs = []
     if (j.success) setPending(null)
   }
 
-  // «ابنِ باقتك»: الباقات اللي فيها مزاياه وزيادة بس — ما نعرض باقة بنفس اللي عنده
+  // «اختيار المزايا»: ما فيه ترقية لباقة — يضيف الميزة الناقصة من سوق الإضافات
+  if (isCustomPlan(plan)) {
+    const missing = missingFeatures(activeSlugs)
+    if (!missing.length) return null
+    return (
+      <div className="hide-in-app" style={{ marginTop: 16, display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+        <div style={{ fontSize: font.sm, fontWeight: 700, color: colors.text }}>أضف ميزة</div>
+        {missing.map(slug => {
+          const m = CUSTOM_MODULES[slug]
+          return (
+            <div key={slug} style={{ padding: '12px 14px', borderRadius: radius.md, border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ flex: 1, fontSize: font.sm, fontWeight: 700, color: colors.text }}>{FEATURE_NAMES[slug]?.ar || slug}</div>
+              <div style={{ fontSize: font.sm, color: colors.text2, whiteSpace: 'nowrap' as const }}>{m.first} ريال {m.perBranch ? 'لكل فرع' : 'للمنشأة'}</div>
+              <a href="/addons-market" style={{ padding: '8px 14px', borderRadius: 8, background: colors.primary, color: 'white', fontSize: 12, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' as const }}>أضف</a>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
   const higher = upgradeTargets(current, activeSlugs)
   if (!higher.length) return null
   return (

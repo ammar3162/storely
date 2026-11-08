@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { upgradeTargets, alaCarteMonthly, customMonthly, customModuleAmount, billLines, activeDiscount, planKeyOf, addonPeriodEnd, proratedCharge, staffBase, supplierBase, maxSelfServeBranches, branchPriceFor, planLabel, PLAN_CAPS, planPriceFor, addonPriceFor, addonIncludedIn, addonsForPlan, nextPlanOf, signupAddonsFor, signupAddonsMonthly, higherPlans } from './planPricing'
+import { upgradeTargets, missingFeatures, alaCarteMonthly, customMonthly, customModuleAmount, billLines, activeDiscount, planKeyOf, addonPeriodEnd, proratedCharge, staffBase, supplierBase, maxSelfServeBranches, branchPriceFor, planLabel, PLAN_CAPS, planPriceFor, addonPriceFor, addonIncludedIn, addonsForPlan, nextPlanOf, signupAddonsFor, signupAddonsMonthly, higherPlans } from './planPricing'
 
 const branch = (qty: number, isValid = true) => ({ name: 'فرع إضافي', slug: 'extra_branch', monthly_price: 49, subscription: { isValid, quantity: qty } })
 
@@ -237,11 +237,10 @@ describe('ready plan vs the same features picked one by one', () => {
 })
 
 describe('upgrade targets', () => {
-  it('custom: only ready plans that add features, never one with the same set', () => {
-    expect(upgradeTargets('custom', ['mod_inventory', 'mod_purchases', 'cashier_closing'])).toEqual(['full'])
-    expect(upgradeTargets('custom', ['cashier_closing'])).toEqual(['ops', 'full'])
-    expect(upgradeTargets('custom', ['hr_full', 'cashier_closing', 'mod_inventory'])).toEqual(['full'])
-    expect(upgradeTargets('custom', ['mod_inventory', 'mod_purchases'])).toEqual(['ops', 'full'])
+  it('custom: no ready-plan upgrades — the missing features instead', () => {
+    expect(upgradeTargets('custom', ['cashier_closing'])).toEqual([])
+    expect(missingFeatures(['mod_inventory', 'cashier_closing', 'hr_full'])).toEqual(['mod_purchases', 'ai_tools'])
+    expect(missingFeatures([...['mod_inventory', 'mod_purchases', 'cashier_closing', 'hr_full', 'ai_tools']])).toEqual([])
   })
   it('ready plans: the higher ones', () => {
     expect(upgradeTargets('essential')).toEqual(['ops', 'full'])

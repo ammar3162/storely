@@ -8,6 +8,8 @@ import { captureUtm, type Utm } from '@/lib/signupSource'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
 import { DEVICE_UNVERIFIED_REASON, VERIFY_DEVICE_PATH } from '@/lib/deviceMessages'
 import { PHONE_RULES } from './constants'
+import { CUSTOM_MODULES, PLAN_MODULES } from '@/lib/planPricing'
+import { DEFAULT_PRESET } from '@/lib/featurePresets'
 
 /** حالة صفحة الدخول والتسجيل ودوالها — منقولة كما هي من page.tsx */
 export function useLogin() {
@@ -35,30 +37,29 @@ export function useLogin() {
   const [phone, setPhone]             = useState('')
   const [countryCode, setCountryCode] = useState('+966')
   const [businessType, setBusinessType] = useState('')
-  // الباقة وعدد الفروع من رابط صفحة الأسعار (?plan=ops&branches=3)
-  const [planChoice, setPlanChoice] = useState<'essential'|'ops'|'full'|'custom'|null>(() => {
-    if (typeof window !== 'undefined') {
-      const p = new URLSearchParams(window.location.search).get('plan')
-      if (p === 'essential' || p === 'ops' || p === 'full' || p === 'custom') return p
-      if (p === 'basic') return 'essential'
-    }
-    return null
-  })
-  // اختار باقته من صفحة الأسعار قبل التسجيل؟ نعرض ملخص اختياره بدل ما نسأله مرة ثانية (يقدر يغيّر)
+  // 2026-11-08: ما فيه باقات ثابتة للمشتركين الجدد — التسجيل دايم «اختيار المزايا» (custom).
+  // روابط قديمة (?plan=essential|ops|full) تتحول لمزايا نفس الباقة.
+  const [planChoice, setPlanChoice] = useState<'essential'|'ops'|'full'|'custom'|null>('custom')
+  // جا من صفحة الأسعار ومعه اختياره؟ نعرض ملخص بدل ما نسأله مرة ثانية (يقدر يغيّر)
   const [planFromLink] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false
-    const p = new URLSearchParams(window.location.search).get('plan')
-    return p === 'essential' || p === 'ops' || p === 'full' || p === 'custom' || p === 'basic'
+    const q = new URLSearchParams(window.location.search)
+    const p = q.get('plan')
+    return (p === 'essential' || p === 'ops' || p === 'full' || p === 'basic') || (p === 'custom' && !!q.get('modules'))
   })
   const [editPlan, setEditPlan] = useState(false)
-  // إضافات يختارها مع الباقة (الكاشير / الحضور والرواتب / الذكاء)
+  // المزايا المختارة (أسماء CUSTOM_MODULES)
   const [signupAddons, setSignupAddons] = useState<string[]>(() => {
-    // «ابنِ باقتك» من صفحة الأسعار: ?modules=cashier_closing,mod_purchases
     if (typeof window !== 'undefined') {
-      const m = new URLSearchParams(window.location.search).get('modules')
-      if (m) return m.split(',').filter(x => /^[a-z_]{3,30}$/.test(x)).slice(0, 6)
+      const q = new URLSearchParams(window.location.search)
+      const p = q.get('plan')
+      const legacy = p === 'basic' ? 'essential' : p
+      const fromPlan = legacy === 'essential' || legacy === 'ops' || legacy === 'full' ? PLAN_MODULES[legacy] : []
+      const fromList = (q.get('modules') || '').split(',').filter(x => x in CUSTOM_MODULES)
+      const all = [...new Set([...fromPlan, ...fromList])]
+      if (all.length) return all
     }
-    return []
+    return [...DEFAULT_PRESET.mods]
   })
   const [branchCount, setBranchCount] = useState<number>(() => {
     if (typeof window !== 'undefined') {

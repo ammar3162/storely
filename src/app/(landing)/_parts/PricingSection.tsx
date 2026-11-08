@@ -1,21 +1,21 @@
 'use client'
 import { Check, Minus } from 'lucide-react'
 import { PLANS, COMPARE } from '../landing-data'
-import StandardPricing from '../StandardPricing'
+import FeaturePricing from '../FeaturePricing'
 import type { LandingState } from './useLanding'
 
 export default function PricingSection({ m }: { m: LandingState }) {
   const { billing, setBilling, lang, router, t } = m
-  // العربي: صفحة الأسعار المعتمدة (عدد الفروع + الباقات + الإضافات + المقارنة)
+  // العربي: اختيار المزايا (2026-11-08) — بدون باقات ثابتة
   if (lang === 'ar') return (
     <section id="pricing" className="lp-section">
       <div className="lp-wrap">
         <div className="lp-head rv">
           <span className="lp-tag">{t('pricingTag')}</span>
           <h2 className="lp-h2">{t('pricingTitle')}</h2>
-          <p className="lp-plans-trial">جرّب جميع المزايا مجاناً لمدة 14 يوماً، ثم اختر الباقة التي تناسب منشأتك</p>
+          <p className="lp-plans-trial">اختر المزايا اللي تحتاجها بس، وكل ميزة بسعرها لكل فرع</p>
         </div>
-        <StandardPricing billing={billing} onBilling={setBilling} />
+        <FeaturePricing billing={billing} onBilling={setBilling} />
       </div>
     </section>
   )

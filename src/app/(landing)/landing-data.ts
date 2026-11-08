@@ -1,9 +1,9 @@
 import { Package, MessageCircle, Users, Wallet, Globe, BarChart3, Store, Bot, TrendingUp } from 'lucide-react'
-import { PLAN_CAPS, PLAN_PRICING } from '@/lib/planPricing'
+import { CUSTOM_MODULES, NEW_ADDON_PRICES, PLAN_CAPS, PLAN_PRICING } from '@/lib/planPricing'
 
 export type Billing = 'monthly'|'yearly'
 
-// الباقات الجديدة (2026-11) — صفحة الأسعار العربية في StandardPricing، وهذي للنسخة الإنجليزية.
+// صفحة الأسعار العربية في FeaturePricing (اختيار المزايا)، وهذي للنسخة الإنجليزية.
 // الأسعار من lib/planPricing (مصدر واحد مع التسجيل والفاتورة)
 const pr = (k: 'essential'|'ops'|'full') => String(PLAN_PRICING[k].monthly)
 const yr = (k: 'essential'|'ops'|'full') => String(PLAN_PRICING[k].yearly)
@@ -91,7 +91,7 @@ export const LS: Record<string, {ar:string, en:string}> = {
   demoSideSub:   { ar:'بنساعدك تختار الباقة الأنسب لمنشأتك، ونجاوب على كل أسئلتك مباشرة', en:"We'll help you pick the right plan for your business and answer all your questions directly" },
 
   pricingTag:    { ar:'الأسعار', en:'PRICING' },
-  pricingTitle:  { ar:'باقة تناسب كل حجم منشأة', en:'A plan for every business size' },
+  pricingTitle:  { ar:'ادفع على اللي تستخدمه بس', en:'A plan for every business size' },
   billMonthly:   { ar:'شهري', en:'Monthly' },
   billYearly:    { ar:'سنوي', en:'Yearly' },
   billSave:      { ar:'وفّر 20%', en:'Save 20%' },
@@ -162,10 +162,12 @@ export const FAQ_ITEMS = [
    qEn:'Is there a free trial?',aEn:"Yes — a full 14 days free, no credit card required. Explore all the features from day one."},
   {q:'كيف يتم الدفع؟',a:'الدفع عبر تحويل بنكي. بعد التحويل يتم تفعيل حسابك خلال 24 ساعة.',
    qEn:'How does payment work?',aEn:'Payment is via bank transfer. Your account is activated within 24 hours after transfer.'},
-  {q:'كم عدد الموردين والموظفين؟',a:`في الباقات الجاهزة: ${PLAN_CAPS.essential.branchSuppliers} مورد و${PLAN_CAPS.essential.branchStaff} موظفين لكل فرع، وكل فرع تضيفه يضيف معه نفس العدد، وتقدر تزيد الموظفين من داخل النظام. وفي «ابنِ باقتك» تختار عدد الموظفين بنفسك.`,
-   qEn:'How many suppliers and staff?',aEn:`On the ready plans: ${PLAN_CAPS.essential.branchSuppliers} suppliers and ${PLAN_CAPS.essential.branchStaff} staff per branch, each branch you add brings the same again, and you can add more staff from inside the app. With «Build your plan» you choose the staff count yourself.`},
-  {q:'هل يدعم متعدد الفروع؟',a:`نعم — كل الباقات تبدأ بفرع واحد، وتضيف فروع بنفسك من داخل النظام لين ${PLAN_CAPS.essential.maxBranches} فروع. كل فرع إضافي بنفس سعر الباقة: الأساسية ${PLAN_CAPS.essential.branchPrice} ⃁، التشغيل ${PLAN_CAPS.ops.branchPrice} ⃁، الكاملة ${PLAN_CAPS.full.branchPrice} ⃁ (الذكاء الاصطناعي للمنشأة مرة وحدة)، وكل فرع بسعر كامل مثل الأول. وأكثر من ${PLAN_CAPS.essential.maxBranches} فروع؟ تواصل معنا لباقة المؤسسات.`,
-   qEn:'Does it support multiple branches?',aEn:`Yes — every plan starts with one branch and you add branches yourself, up to ${PLAN_CAPS.essential.maxBranches}. Each extra branch per month: Essential ${PLAN_CAPS.essential.branchPrice} SAR, Operations ${PLAN_CAPS.ops.branchPrice} SAR, Complete ${PLAN_CAPS.full.branchPrice} SAR; every branch is priced in full. More than ${PLAN_CAPS.essential.maxBranches} branches? Contact us for Enterprise.`},
+  {q:'كيف تنحسب الأسعار؟',a:`ما فيه باقات ثابتة — تختار المزايا اللي تحتاجها، وكل ميزة بسعرها الشهري لكل فرع: المخزون والموردين ${CUSTOM_MODULES.mod_inventory.first} ⃁، المشتريات والفواتير ${CUSTOM_MODULES.mod_purchases.first} ⃁، إقفال الكاشير ${CUSTOM_MODULES.cashier_closing.first} ⃁، الحضور والرواتب ${CUSTOM_MODULES.hr_full.first} ⃁، وأدوات الذكاء الاصطناعي ${CUSTOM_MODULES.ai_tools.first} ⃁ للمنشأة كلها مرة وحدة. والسنوي يوفّر 20%.`,
+   qEn:'How is pricing calculated?',aEn:`No fixed plans — pick the features you need, each with one monthly price per branch: inventory ${CUSTOM_MODULES.mod_inventory.first} SAR, purchases ${CUSTOM_MODULES.mod_purchases.first} SAR, cashier closing ${CUSTOM_MODULES.cashier_closing.first} SAR, attendance & payroll ${CUSTOM_MODULES.hr_full.first} SAR, and AI tools ${CUSTOM_MODULES.ai_tools.first} SAR once for the whole business. Yearly saves 20%.`},
+  {q:'كم عدد الموردين والموظفين؟',a:`كل فرع يشمل ${PLAN_CAPS.custom.branchSuppliers} مورد و${PLAN_CAPS.custom.branchStaff} موظفين، وكل فرع تضيفه يضيف معه نفس العدد. والموظف الإضافي ${NEW_ADDON_PRICES.extra_staff.monthly} ⃁ شهرياً من داخل النظام.`,
+   qEn:'How many suppliers and staff?',aEn:`Each branch includes ${PLAN_CAPS.custom.branchSuppliers} suppliers and ${PLAN_CAPS.custom.branchStaff} staff, and every branch you add brings the same again. Extra staff are ${NEW_ADDON_PRICES.extra_staff.monthly} SAR a month each, from inside the app.`},
+  {q:'هل يدعم متعدد الفروع؟',a:`نعم — تبدأ بفرع واحد وتضيف فروع بنفسك من داخل النظام لين ${PLAN_CAPS.custom.maxBranches} فروع. كل فرع بسعر كامل مثل الأول للمزايا اللي تختارها له (الذكاء الاصطناعي للمنشأة مرة وحدة). وأكثر من ${PLAN_CAPS.custom.maxBranches} فروع؟ تواصل معنا لباقة المؤسسات.`,
+   qEn:'Does it support multiple branches?',aEn:`Yes — start with one branch and add more yourself, up to ${PLAN_CAPS.custom.maxBranches}. Each branch is priced in full for the features you pick for it (AI tools are once per business). More than ${PLAN_CAPS.custom.maxBranches} branches? Contact us for Enterprise.`},
   {q:'هل الموظفون يحتاجون تدريب؟',a:'لا — واجهة الموظفين بسيطة جداً بضغطة واحدة، وتدعم 7 لغات لأي جنسية.',
    qEn:'Do staff need training?',aEn:'No — the staff interface is extremely simple (one-tap), and supports 7 languages for any nationality.'},
   {q:'هل يمكن الإلغاء في أي وقت؟',a:'نعم — لا يوجد عقود. يمكنك إلغاء اشتراكك في أي وقت.',

@@ -3,7 +3,7 @@
 // تحليل البيانات مع ميزة الذكاء الاصطناعي؛ أسئلة الاشتراك وطريقة الاستخدام مجانية للكل.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { orgFeatures, FEATURE_LABEL, type Features } from '@/lib/planFeatures'
-import { billLines, planLabel, planKeyOf, activeDiscount, staffBase, supplierBase, PLAN_CAPS, PLAN_PRICING, isNewPlan, addonsForPlan } from '@/lib/planPricing'
+import { billLines, planLabel, planKeyOf, activeDiscount, staffBase, supplierBase, PLAN_CAPS, PLAN_PRICING, isNewPlan, addonsForPlan, CUSTOM_MODULES, CUSTOM_MIN_MONTHLY } from '@/lib/planPricing'
 import { getBranchLimit } from '@/lib/branchLimit'
 import { assistantGuide } from '@/lib/assistantGuide'
 import { allowedTools, ASSISTANT_TOOLS, type ToolCtx } from '@/lib/assistantTools'
@@ -112,10 +112,11 @@ ${disc ? `خصم خاص: ${disc.type === 'percent' ? `${disc.value}%` : `${disc.
 ${bill.lines.map(l => `• ${l.label}: ${l.amount} ريال`).join('\n')}
 • الإجمالي: ${bill.total} ريال
 
-${isNewPlan(o.plan) ? `الباقات المتاحة (السعر لكل فرع شهرياً):
-• الأساسية ${PLAN_PRICING.essential.monthly} ريال (+${PLAN_CAPS.essential.branchPrice} لكل فرع إضافي): المخزون والموردين والمشتريات والفواتير
-• التشغيل ${PLAN_PRICING.ops.monthly} ريال (+${PLAN_CAPS.ops.branchPrice}): كل الأساسية + إقفال الكاشير
-• الكاملة ${PLAN_PRICING.full.monthly} ريال (+${PLAN_CAPS.full.branchPrice}): كل المميزات مع الحضور والرواتب والذكاء
+${isNewPlan(o.plan) ? `الأسعار للمشتركين الجدد: ما فيه باقات ثابتة — يختار المزايا اللي يحتاجها، وكل ميزة بسعرها الشهري لكل فرع:
+• المخزون والموردين ${CUSTOM_MODULES.mod_inventory.first} ريال، المشتريات والفواتير ${CUSTOM_MODULES.mod_purchases.first} ريال، إقفال الكاشير ${CUSTOM_MODULES.cashier_closing.first} ريال، الحضور والرواتب ${CUSTOM_MODULES.hr_full.first} ريال
+• أدوات الذكاء الاصطناعي ${CUSTOM_MODULES.ai_tools.first} ريال للمنشأة كلها مرة وحدة
+• كل فرع بسعر كامل مثل الأول، والحد الأدنى ${CUSTOM_MIN_MONTHLY} ريال شهرياً
+• المشترك يضيف أو يشيل ميزة من «سوق الإضافات» بأي وقت${o.plan !== 'custom' ? `\n• باقته الحالية «${planLabel(o.plan, o.max_branches)}» تستمر بسعرها` : ''}
 • كل فرع فيه ${PLAN_CAPS.essential.staff} موظفين وحتى ${PLAN_CAPS.essential.suppliers} مورد
 • المؤسسات: أكثر من 10 فروع بسعر خاص (تواصل معنا)
 • الدفع السنوي بخصم 20%

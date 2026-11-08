@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
-import { PLAN_PRICING } from '@/lib/planPricing'
+import { CUSTOM_MODULES } from '@/lib/planPricing'
 import type { LandingState } from './useLanding'
 
 // «كم ممكن يطلع عندك عجز كاشير؟» — تقدير تقريبي: العجز ما يكبر مع المبيعات بنسبة ثابتة،
@@ -20,7 +20,7 @@ export default function LossCalculator({ m }: { m: LandingState }) {
   const [daily, setDaily] = useState(3000)
   const ar = m.lang === 'ar'
   const monthly = Math.round(estimate(daily) / 50) * 50
-  const ops = PLAN_PRICING.ops.monthly
+  const ops = CUSTOM_MODULES.cashier_closing.first
   return (
     <section className="lp-section" id="calc" style={{paddingTop:32,paddingBottom:32}}>
       <div className="lp-wrap">
@@ -37,9 +37,9 @@ export default function LossCalculator({ m }: { m: LandingState }) {
             <div className="lp-calc-ol">{ar ? 'العجز الشهري، تقدير تقريبي' : 'Monthly shortage, rough estimate'}</div>
             <div className="lp-calc-big"><b>{monthly.toLocaleString('en-US')}</b> ⃁</div>
             <p className="lp-calc-note">{ar
-              ? `العجز ما يطلع كل يوم، بس يتكرر ويتجمّع. Storely يطلّعه لك يوم بيوم وباسم الكاشير عشان توقفه، وباقة التشغيل بـ${ops} ⃁ بالشهر.`
-              : `Shortages don't happen every day, but they add up. Storely shows each one per cashier so you can stop it; Operations is ${ops} SAR a month.`}</p>
-            <button type="button" className="lp-btn lp-btn-dark lp-btn-lg" style={{width:'100%'}} onClick={() => m.router.push('/login?mode=register&plan=ops')}>{ar ? 'جرّب الإقفال مجاناً 14 يوم' : 'Try closing free for 14 days'} <ArrowLeft size={18} /></button>
+              ? `العجز ما يطلع كل يوم، بس يتكرر ويتجمّع. Storely يطلّعه لك يوم بيوم وباسم الكاشير عشان توقفه، وميزة إقفال الكاشير بـ${ops} ⃁ بالشهر لكل فرع.`
+              : `Shortages don't happen every day, but they add up. Storely shows each one per cashier so you can stop it; cashier closing is ${ops} SAR a month per branch.`}</p>
+            <button type="button" className="lp-btn lp-btn-dark lp-btn-lg" style={{width:'100%'}} onClick={() => m.router.push('/login?mode=register&plan=custom&modules=cashier_closing')}>{ar ? 'جرّب الإقفال مجاناً 14 يوم' : 'Try closing free for 14 days'} <ArrowLeft size={18} /></button>
           </div>
         </div>
       </div>
