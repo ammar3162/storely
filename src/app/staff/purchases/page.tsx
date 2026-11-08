@@ -70,29 +70,29 @@ const PUI: Record<string,Record<'ar'|'en',string>> = {
   selectVat:        {ar:'حدد هل الفاتورة تشمل الضريبة',en:'Please specify if the invoice includes VAT'},
   invoiceRequired:  {ar:'يرجى رفع صورة الفاتورة',en:'Please upload the invoice photo'},
   supplierRequired: {ar:'يرجى إدخال اسم المورد',en:'Please enter the supplier name'},
-  vatInvalid:       {ar:'الرقم الضريبي للمورد غير صحيح — ١٥ رقم يبدأ وينتهي بـ 3',en:'Supplier VAT number is invalid — 15 digits, starts and ends with 3'},
+  vatInvalid:       {ar:'الرقم الضريبي للمورد غير صحيح — يتكون من 15 رقماً ويبدأ وينتهي بالرقم 3',en:'Supplier VAT number is invalid — 15 digits, starts and ends with 3'},
   inventoryUpdated: {ar:'تم تحديث المخزون',en:'Inventory updated'},
   purchaseRecorded: {ar:'تم تسجيل الشراء',en:'Purchase recorded'},
   errorPrefix:      {ar:'خطأ: ',en:'Error: '},
-  snapTitle:        {ar:'صوّر الفاتورة — ونعبّي البيانات عنك',en:'Snap the invoice — we fill it in for you'},
+  snapTitle:        {ar:'صوّر الفاتورة — وسنعبّئ البيانات عنك',en:'Snap the invoice — we fill it in for you'},
   camera:           {ar:'الكاميرا',en:'Camera'},
   fileBtn:          {ar:'ملف PDF',en:'PDF file'},
   pdfAttached:      {ar:'تم إرفاق الملف',en:'File attached'},
   gallery:          {ar:'من الصور',en:'From photos'},
   reading:          {ar:'⏳ جاري قراءة الفاتورة...',en:'⏳ Reading the invoice...'},
-  readOk:           {ar:'قرأنا الفاتورة — راجع البيانات قبل الحفظ',en:'Invoice read — please review before saving'},
-  readQr:           {ar:'قرأنا الفاتورة وباركود الهيئة — البيانات موثقة',en:'Invoice and ZATCA QR read — data verified'},
-  readFail:         {ar:'ما قدرنا نقرأ الفاتورة — عبّي البيانات يدوي',en:"Couldn't read the invoice — please fill it in manually"},
+  readOk:           {ar:'تمت قراءة الفاتورة — راجع البيانات قبل الحفظ',en:'Invoice read — please review before saving'},
+  readQr:           {ar:'تمت قراءة الفاتورة وباركود الهيئة — البيانات موثّقة',en:'Invoice and ZATCA QR read — data verified'},
+  readFail:         {ar:'تعذّرت قراءة الفاتورة — عبّئ البيانات يدوياً',en:"Couldn't read the invoice — please fill it in manually"},
   changePhoto:      {ar:'تغيير الصورة',en:'Change photo'},
-  itemsFound:       {ar:'بالفاتورة — حدد اللي تبي تسجله واكتب سعره',en:'on the invoice — pick and price them'},
+  itemsFound:       {ar:'في الفاتورة — حدد ما تريد تسجيله واكتب سعره',en:'on the invoice — pick and price them'},
   itemPrice:        {ar:'السعر',en:'Price'},
   saveItems:        {ar:'حفظ الأصناف المحددة',en:'Save selected items'},
   itemsSaved:       {ar:'تم تسجيل الأصناف',en:'Items recorded'},
-  needSupplier:     {ar:'اكتب اسم المورد أول',en:'Enter the supplier first'},
-  pickPrice:        {ar:'حدد صنف واكتب سعره',en:'Pick an item and enter its price'},
+  needSupplier:     {ar:'اكتب اسم المورد أولاً',en:'Enter the supplier first'},
+  pickPrice:        {ar:'حدد صنفاً واكتب سعره',en:'Pick an item and enter its price'},
   needName:         {ar:'اكتب اسم الصنف',en:'Enter the item name'},
   needAmount:       {ar:'اكتب المبلغ الإجمالي',en:'Enter the total amount'},
-  needQty:          {ar:'الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)',en:'Quantity must be a whole number — use a smaller unit (grams instead of kg)'},
+  needQty:          {ar:'يجب أن تكون الكمية رقماً صحيحاً — إذا كانت فيها كسور فاستخدم وحدة أصغر (مثل الغرام بدل الكيلو)',en:'Quantity must be a whole number — use a smaller unit (grams instead of kg)'},
 }
 // العربي والإنجليزي هنا، وباقي اللغات من staffI18n/purchases
 const pt = (key: string, lang: string) =>
@@ -226,7 +226,7 @@ export default function StaffPurchasesPage() {
     }
     if (rows.some(r => !(r.total > 0))) return stop(pt('pickPrice', lang))
     if (rows.some(r => !Number.isInteger(r.qty))) return stop(pt('needQty', lang))
-    if (form.hasVat !== 'no' && !form.invoice_image) return stop(uploading ? (lang === 'ar' ? 'انتظر — الصورة لسا ترتفع' : lang === 'en' ? 'Wait — the photo is still uploading' : pt('waitUpload', lang)) : pt('invoiceRequired', lang))
+    if (form.hasVat !== 'no' && !form.invoice_image) return stop(uploading ? (lang === 'ar' ? 'انتظر — لا تزال الصورة قيد الرفع' : lang === 'en' ? 'Wait — the photo is still uploading' : pt('waitUpload', lang)) : pt('invoiceRequired', lang))
     setBulkSaving(true)
     const send = (extra = {}) => fetch('/api/staff-purchase/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('staff_token')}` },
       body: JSON.stringify({ supplier: form.supplier, has_vat: form.hasVat !== 'no', invoice_image: form.invoice_image || null,
@@ -234,9 +234,9 @@ export default function StaffPurchasesPage() {
     let res = await send()
     let j = await res.json().catch(() => ({}))
     // نفس الفاتورة مسجلة قبل → نسأل الموظف بدل ما تتكرر
-    if (j.duplicate && window.confirm(`${j.error}\n\n${lang === 'ar' ? 'تسجلها مرة ثانية؟' : pt('saveAgain', lang)}`)) { res = await send({ allow_duplicate: true }); j = await res.json().catch(() => ({})) }
+    if (j.duplicate && window.confirm(`${j.error}\n\n${lang === 'ar' ? 'هل تريد تسجيلها مرة أخرى؟' : pt('saveAgain', lang)}`)) { res = await send({ allow_duplicate: true }); j = await res.json().catch(() => ({})) }
     setBulkSaving(false)
-    if (!res.ok || !j.success) return stop(j.error || (lang === 'ar' ? 'ما انحفظت الفاتورة — حاول مرة ثانية' : lang === 'en' ? 'Could not save — try again' : pt('saveFailed', lang)))
+    if (!res.ok || !j.success) return stop(j.error || (lang === 'ar' ? 'لم تُحفظ الفاتورة — حاول مرة أخرى' : lang === 'en' ? 'Could not save — try again' : pt('saveFailed', lang)))
     showToast(`${pt('itemsSaved', lang)} — ${j.summary || j.saved}`, true)
     setTimeout(() => router.push('/staff/dispense'), 2200)
   }
@@ -279,7 +279,7 @@ export default function StaffPurchasesPage() {
     })
     let res = await sendOne()
     let resData = await res.json()
-    if(resData.duplicate&&window.confirm(`${resData.error}\n\n${lang==='ar'?'تسجلها مرة ثانية؟':pt('saveAgain',lang)}`)){res=await sendOne({allow_duplicate:true});resData=await res.json()}
+    if(resData.duplicate&&window.confirm(`${resData.error}\n\n${lang==='ar'?'هل تريد تسجيلها مرة أخرى؟':pt('saveAgain',lang)}`)){res=await sendOne({allow_duplicate:true});resData=await res.json()}
     if(!res.ok){showToast(pt('errorPrefix',lang)+resData.error);setLoading(false);submitting.current=false;return}
     showToast(form.category==='مخزون'?`${pt('inventoryUpdated',lang)} (+${form.qty||0})`:pt('purchaseRecorded',lang), true)
 

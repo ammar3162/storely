@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       let q = db.from('products').select('id').eq('org_id', org_id).in('id', wanted)
       if ((target as any).branch_id) q = q.or(`branch_id.eq.${(target as any).branch_id},branch_id.is.null`)
       const { data: ok } = await q
-      if ((ok || []).length !== wanted.length) return NextResponse.json({ error: 'فيه منتج مو من فرع الموظف' }, { status: 400 })
+      if ((ok || []).length !== wanted.length) return NextResponse.json({ error: 'يوجد منتج لا ينتمي إلى فرع الموظف' }, { status: 400 })
     }
 
     const { error } = await db.from('staff_members').update({ assigned_products: wanted } as any).eq('id', staff_id).eq('org_id', org_id)

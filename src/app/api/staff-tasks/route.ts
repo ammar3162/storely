@@ -29,7 +29,7 @@ export async function GET(req: Request) {
       // طرف المالك — يشوف كل المهام (القوالب اليومية + العادية)، بدون توليد تلقائي
       const access = await verifyOrgAccess(orgIdParam)
       if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-      if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على الرواتب والإجازات — كلّم مالك المنشأة' }, { status: 403 })
+      if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ليست لديك صلاحية على الرواتب والإجازات — تواصل مع مالك المنشأة' }, { status: 403 })
 
       // مدير الفرع يشوف مهام موظفين فرعه بس
       const forced = enforcedBranchId(access)
@@ -92,7 +92,7 @@ export async function POST(req: Request) {
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على الرواتب والإجازات — كلّم مالك المنشأة' }, { status: 403 })
+    if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ليست لديك صلاحية على الرواتب والإجازات — تواصل مع مالك المنشأة' }, { status: 403 })
 
     const supabase = sb()
     const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
@@ -132,7 +132,7 @@ export async function PATCH(req: Request) {
       const { org_id, task_id } = body
       const access = await verifyOrgAccess(org_id)
       if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-      if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على الرواتب والإجازات — كلّم مالك المنشأة' }, { status: 403 })
+      if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ليست لديك صلاحية على الرواتب والإجازات — تواصل مع مالك المنشأة' }, { status: 403 })
       // مدير الفرع يتحكم بمهام موظفين فرعه بس
       const forced = enforcedBranchId(access)
       const inScope = (t: any) => !!t && (!forced || t.staff_members?.branch_id === forced)
@@ -153,7 +153,7 @@ export async function PATCH(req: Request) {
       }
       const { data: task } = await supabase.from('staff_tasks').select('id,status,staff_members(branch_id)').eq('id', task_id).eq('org_id', org_id).maybeSingle()
       if (!inScope(task)) return NextResponse.json({ error: 'المهمة غير موجودة' }, { status: 404 })
-      if ((task as any).status !== 'completed') return NextResponse.json({ error: 'المهمة لسه ما اكتملت من الموظف' }, { status: 400 })
+      if ((task as any).status !== 'completed') return NextResponse.json({ error: 'لم يُكمل الموظف المهمة بعد' }, { status: 400 })
 
       const { error } = await supabase.from('staff_tasks').update({
         status: decision, confirmed_by: 'owner', confirmed_at: new Date().toISOString(),
@@ -170,8 +170,8 @@ export async function PATCH(req: Request) {
 
       const { data: task } = await supabase.from('staff_tasks').select('id,requires_photo,status').eq('id', task_id).eq('org_id', org_id).eq('staff_id', staff_id).maybeSingle()
       if (!task) return NextResponse.json({ error: 'المهمة غير موجودة' }, { status: 404 })
-      if ((task as any).status !== 'pending') return NextResponse.json({ error: 'تم إتمام هذي المهمة مسبقاً' }, { status: 400 })
-      if ((task as any).requires_photo && !photo_url) return NextResponse.json({ error: 'هذي المهمة تحتاج صورة إثبات' }, { status: 400 })
+      if ((task as any).status !== 'pending') return NextResponse.json({ error: 'تم إتمام هذه المهمة مسبقاً' }, { status: 400 })
+      if ((task as any).requires_photo && !photo_url) return NextResponse.json({ error: 'تحتاج هذه المهمة إلى صورة إثبات' }, { status: 400 })
 
       const { error } = await supabase.from('staff_tasks').update({
         status: 'completed', photo_url: photo_url || null, completed_at: new Date().toISOString(),

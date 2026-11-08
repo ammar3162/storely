@@ -20,11 +20,11 @@ export async function POST(req: Request) {
 
     const formData = await req.formData()
     const file = formData.get('file') as File | null
-    if (!file) return NextResponse.json({ error: 'ما فيه ملف' }, { status: 400 })
+    if (!file) return NextResponse.json({ error: 'لا يوجد ملف' }, { status: 400 })
 
     // صور أو PDF فقط — ما نخلي أحد يرفع صفحات HTML على رابط عام
     const type = invoiceType(file)
-    if (!(INVOICE_TYPES as readonly string[]).includes(type)) return NextResponse.json({ error: 'الملف لازم يكون صورة أو PDF' }, { status: 400 })
+    if (!(INVOICE_TYPES as readonly string[]).includes(type)) return NextResponse.json({ error: 'يجب أن يكون الملف صورة أو PDF' }, { status: 400 })
     if (file.size > INVOICE_MAX_BYTES) return NextResponse.json({ error: 'الملف أكبر من ٤ ميجا' }, { status: 400 })
     const path = `invoices/${orgId}-${Date.now()}.${invoiceExt(type)}`
     const arrayBuffer = await file.arrayBuffer()

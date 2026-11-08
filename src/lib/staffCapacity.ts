@@ -33,7 +33,7 @@ export async function checkStaffCapacity(db: SupabaseClient, org_id: string, _br
     .maybeSingle()
 
   if (!extraStaffSub) {
-    return { ok: false, error: `وصلت حد موظفين باقتك (${baseLimit} موظف) — أضف "موظف إضافي" من صفحة الإضافات أو رقّ باقتك` }
+    return { ok: false, error: `وصلت إلى حد الموظفين في باقتك (${baseLimit} موظف) — أضف "موظف إضافي" من صفحة الإضافات أو رقِّ باقتك` }
   }
 
   const addonQty = (extraStaffSub as any).quantity || 0
@@ -45,7 +45,7 @@ export async function checkStaffCapacity(db: SupabaseClient, org_id: string, _br
     .eq('addon_subscription_id', (extraStaffSub as any).id)
 
   if ((usedAddonSlots || 0) >= addonQty) {
-    return { ok: false, error: `وصلت حد موظفين باقتك (${baseLimit} موظف)، ورصيد "موظف إضافي" (${addonQty}) مستهلك بالكامل — زوّد الكمية من صفحة الإضافات` }
+    return { ok: false, error: `وصلت إلى حد الموظفين في باقتك (${baseLimit} موظف)، ورصيد "موظف إضافي" (${addonQty}) مستهلك بالكامل — زِد الكمية من صفحة الإضافات` }
   }
 
   return { ok: true, addonSubscriptionId: (extraStaffSub as any).id }

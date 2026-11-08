@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     // العجز لازم له سبب — ما ينقبل التقفيل بدونه
     const deficitReason = status === 'deficit' ? String(deficit_reason || '').trim().slice(0, 500) : ''
     if (status === 'deficit' && deficitReason.length < 3) {
-      return NextResponse.json({ error: 'فيه عجز — اكتب سبب العجز قبل التقفيل' }, { status: 400 })
+      return NextResponse.json({ error: 'يوجد عجز — اكتب سبب العجز قبل الإقفال' }, { status: 400 })
     }
 
     const supabase = sb()

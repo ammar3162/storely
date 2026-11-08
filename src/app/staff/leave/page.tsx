@@ -31,7 +31,7 @@ const L: Dict = {
   sending:    { ar: 'جاري الإرسال...', en: 'Sending...', ur: 'بھیجا جا رہا ہے...', hi: 'भेजा जा रहा है...', tl: 'Ipinapadala...', bn: 'পাঠানো হচ্ছে...', fr: 'Envoi...' },
   mine:       { ar: 'طلباتي', en: 'My requests', ur: 'میری درخواستیں', hi: 'मेरे अनुरोध', tl: 'Aking mga request', bn: 'আমার অনুরোধ', fr: 'Mes demandes' },
   loading:    { ar: 'جاري التحميل...', en: 'Loading...', ur: 'لوڈ ہو رہا ہے...', hi: 'लोड हो रहा है...', tl: 'Naglo-load...', bn: 'লোড হচ্ছে...', fr: 'Chargement...' },
-  none:       { ar: 'ما فيه طلبات إجازة بعد', en: 'No leave requests yet', ur: 'ابھی کوئی چھٹی کی درخواست نہیں', hi: 'अभी कोई छुट्टी अनुरोध नहीं', tl: 'Wala pang request ng leave', bn: 'এখনো কোনো ছুটির অনুরোধ নেই', fr: 'Aucune demande de congé' },
+  none:       { ar: 'لا توجد طلبات إجازة بعد', en: 'No leave requests yet', ur: 'ابھی کوئی چھٹی کی درخواست نہیں', hi: 'अभी कोई छुट्टी अनुरोध नहीं', tl: 'Wala pang request ng leave', bn: 'এখনো কোনো ছুটির অনুরোধ নেই', fr: 'Aucune demande de congé' },
   pending:    { ar: 'بانتظار الموافقة', en: 'Awaiting approval', ur: 'منظوری کا انتظار', hi: 'मंज़ूरी का इंतज़ार', tl: 'Naghihintay ng apruba', bn: 'অনুমোদনের অপেক্ষায়', fr: "En attente d'accord" },
   approved:   { ar: 'موافَق عليها', en: 'Approved', ur: 'منظور', hi: 'स्वीकृत', tl: 'Aprubado', bn: 'অনুমোদিত', fr: 'Accepté' },
   rejected:   { ar: 'مرفوضة', en: 'Rejected', ur: 'مسترد', hi: 'अस्वीकृत', tl: 'Tinanggihan', bn: 'প্রত্যাখ্যাত', fr: 'Refusé' },

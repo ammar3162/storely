@@ -93,7 +93,7 @@ export async function PATCH(req: Request) {
     if ('vat_registered' in body) update.vat_registered = body.vat_registered === null ? null : !!body.vat_registered
     // إعدادات الأوفر تايم (صفحة الحضور والانصراف)
     if ('overtime_mode' in body) {
-      if (!['auto', 'fixed', 'off'].includes(body.overtime_mode)) return NextResponse.json({ error: 'طريقة الأوفر تايم غير صالحة' }, { status: 400 })
+      if (!['auto', 'fixed', 'off'].includes(body.overtime_mode)) return NextResponse.json({ error: 'طريقة احتساب العمل الإضافي غير صالحة' }, { status: 400 })
       update.overtime_mode = body.overtime_mode
     }
     if ('overtime_multiplier' in body) {

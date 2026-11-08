@@ -22,7 +22,7 @@ const UI_STRINGS: Record<string, Record<string,string>> = {
   myTasks:        { ar:'مهامي', en:'My Tasks', ur:'میرے کام', hi:'मेरे कार्य', tl:'Aking mga Gawain', bn:'আমার কাজ', fr:'Mes tâches' },
   back:           { ar:'رجوع', en:'Back', ur:'واپس', hi:'वापस', tl:'Bumalik', bn:'ফিরে যান', fr:'Retour' },
   loading:        { ar:'جاري التحميل...', en:'Loading...', ur:'لوڈ ہو رہا ہے...', hi:'लोड हो रहा है...', tl:'Naglo-load...', bn:'লোড হচ্ছে...', fr:'Chargement...' },
-  noTasks:        { ar:'ما فيه مهام لك حالياً', en:'No tasks for you right now', ur:'فی الحال آپ کے لیے کوئی کام نہیں', hi:'फिलहाल आपके लिए कोई कार्य नहीं', tl:'Walang gawain sa ngayon', bn:'এই মুহূর্তে আপনার জন্য কোন কাজ নেই', fr:"Aucune tâche pour l'instant" },
+  noTasks:        { ar:'لا توجد مهام لك حالياً', en:'No tasks for you right now', ur:'فی الحال آپ کے لیے کوئی کام نہیں', hi:'फिलहाल आपके लिए कोई कार्य नहीं', tl:'Walang gawain sa ngayon', bn:'এই মুহূর্তে আপনার জন্য কোন কাজ নেই', fr:"Aucune tâche pour l'instant" },
   pendingTasks:   { ar:'مهام بانتظارك', en:'Tasks waiting for you', ur:'آپ کے منتظر کام', hi:'आपका इंतज़ार कर रहे कार्य', tl:'Mga gawaing naghihintay sa iyo', bn:'আপনার জন্য অপেক্ষমান কাজ', fr:'Tâches en attente' },
   pastTasks:      { ar:'مهام سابقة', en:'Past tasks', ur:'گزشتہ کام', hi:'पिछले कार्य', tl:'Nakaraang mga gawain', bn:'পূর্ববর্তী কাজ', fr:'Tâches précédentes' },
   completeWithPhoto: { ar:'التقط صورة وأكمل المهمة', en:'Take a photo and complete task', ur:'تصویر لیں اور کام مکمل کریں', hi:'फोटो लें और कार्य पूरा करें', tl:'Kumuha ng larawan at kumpletuhin', bn:'ছবি তুলুন এবং কাজ সম্পন্ন করুন', fr:'Prenez une photo et terminez' },

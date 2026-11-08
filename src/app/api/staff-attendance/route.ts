@@ -100,10 +100,10 @@ export async function POST(req: Request) {
     const currentShift = sched.shift
     const state = attendanceState({ events: await recentEvents(supabase, staff_id, org_id), shift: currentShift, shiftStartMs: sched.dutyStartMs })
     if (type === 'check_in' && !state.canCheckIn) {
-      return NextResponse.json({ error: state.checkedIn ? 'أنت مسجّل حضور بالفعل' : 'سجّلت انصرافك لهذا الدوام — الحضور يفتح مع بداية دوامك الجاي' }, { status: 409 })
+      return NextResponse.json({ error: state.checkedIn ? 'حضورك مسجّل بالفعل' : 'سجّلت انصرافك لهذا الدوام — يُتاح الحضور مع بداية دوامك التالي' }, { status: 409 })
     }
     if (type === 'check_out' && !state.canCheckOut) {
-      return NextResponse.json({ error: 'سجّل حضورك أول' }, { status: 409 })
+      return NextResponse.json({ error: 'سجّل حضورك أولاً' }, { status: 409 })
     }
     // الانصراف والأوفر تايم على الشفت اللي حضر عليه — تغيير الشفت وهو داخل دوامه يتطبّق من دوامه الجاي
     const sessionShift = activeShift(state.sessionIn, currentShift)
@@ -143,7 +143,7 @@ export async function POST(req: Request) {
           if (approvedReq) {
             isExcused = true
           } else {
-            return NextResponse.json({ error: `ما يصير تسجّل انصراف قبل الساعة ${String((shiftRow as any).end_time).slice(0,5)} (نهاية شفتك)` }, { status: 403 })
+            return NextResponse.json({ error: `لا يمكن تسجيل الانصراف قبل الساعة ${String((shiftRow as any).end_time).slice(0,5)} (نهاية ورديتك)` }, { status: 403 })
           }
         }
       }
@@ -202,8 +202,8 @@ export async function POST(req: Request) {
           org_id, branch_id, type: 'info', read: false,
           title: `يوم إضافي: ${(staff as any).name}`,
           message: offKind === 'monthly'
-            ? `${(staff as any).name} داوم ${workDate} بعد ما خلّص أيام دوامه المطلوبة هالشهر — حدد التعويض: مبلغ أو يوم بديل.`
-            : `${(staff as any).name} حضّر بيوم إجازته (${workDate}) — حدد التعويض: مبلغ أو يوم بديل.`,
+            ? `${(staff as any).name} حضر يوم ${workDate} بعد إكمال أيام دوامه المطلوبة هذا الشهر — حدد التعويض: مبلغ أو يوم بديل.`
+            : `${(staff as any).name} حضر في يوم إجازته (${workDate}) — حدد التعويض: مبلغ أو يوم بديل.`,
           ref_type: 'extra_day', ref_id: (extra as any).id,
         } as any)
       }
@@ -219,7 +219,7 @@ export async function POST(req: Request) {
         const hrs = Math.floor(lateMinutes / 60)
         const mins = lateMinutes % 60
         const durationText = hrs > 0 ? `${hrs} ساعة${mins > 0 ? ` و${mins} دقيقة` : ''}` : `${mins} دقيقة`
-        const penaltyText = penaltyAmount ? ` — غرامة ${penaltyAmount} ⃁ تنخصم تلقائياً (تقدر تلغيها من تقرير الحضور)` : ''
+        const penaltyText = penaltyAmount ? ` — غرامة ${penaltyAmount} ⃁ تُخصم تلقائياً (يمكنك إلغاؤها من تقرير الحضور)` : ''
         await supabase.from('notifications').insert({
           org_id, branch_id, type: 'warning',
           title: 'تأخير موظف',

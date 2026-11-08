@@ -65,7 +65,7 @@ export default function StaffSessionGuard({ children }: { children: React.ReactN
       if (j.staff && (j.staff.branch_id ?? null) !== (session.branch_id ?? null)) { window.location.reload(); return }
       setOpen(false); setPin(''); setBusy(false)
       waiters.current.splice(0).forEach(w => w.resolve(true))
-    } catch { setErr('خطأ بالاتصال — حاول مرة ثانية'); setBusy(false) }
+    } catch { setErr('خطأ في الاتصال — حاول مرة أخرى'); setBusy(false) }
   }
 
   function logout() {
@@ -105,7 +105,7 @@ export default function StaffSessionGuard({ children }: { children: React.ReactN
           <div style={{ background: 'white', borderRadius: 20, width: '100%', maxWidth: 340, padding: 26, textAlign: 'center', boxShadow: '0 20px 50px rgba(15,23,42,.25)' }}>
             <div style={{ width: 52, height: 52, borderRadius: 16, background: '#f0fdfa', color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}><Lock size={24} /></div>
             <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>أدخل رمزك للمتابعة</div>
-            <div style={{ fontSize: 12.5, color: '#64748b', marginTop: 4, marginBottom: 16 }}>{name ? `${name}، ` : ''}انتهت جلستك للأمان — بعد الرمز نكمل طلبك تلقائياً</div>
+            <div style={{ fontSize: 12.5, color: '#64748b', marginTop: 4, marginBottom: 16 }}>{name ? `${name}، ` : ''}انتهت جلستك لدواعٍ أمنية — بعد إدخال الرمز نكمل طلبك تلقائياً</div>
             <input type="password" inputMode="numeric" autoFocus maxLength={6} value={pin}
               onChange={e => { setPin(e.target.value.replace(/\D/g, '')); setErr('') }}
               onKeyDown={e => { if (e.key === 'Enter') submit() }}

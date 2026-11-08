@@ -28,8 +28,8 @@ export async function POST(req: Request) {
     const { data: product } = await supabase.from('products').select('id,qty,branch_id').eq('id', productId).eq('org_id', orgId).maybeSingle()
     if (!product) return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 })
     const assigned: string[] = (me as any).assigned_products || []
-    if ((me as any).branch_id && (product as any).branch_id && (product as any).branch_id !== (me as any).branch_id) return NextResponse.json({ error: 'المنتج من فرع ثاني' }, { status: 403 })
-    if (assigned.length && !assigned.includes(productId)) return NextResponse.json({ error: 'المنتج مو مخصص لك' }, { status: 403 })
+    if ((me as any).branch_id && (product as any).branch_id && (product as any).branch_id !== (me as any).branch_id) return NextResponse.json({ error: 'المنتج من فرع آخر' }, { status: 403 })
+    if (assigned.length && !assigned.includes(productId)) return NextResponse.json({ error: 'المنتج غير مخصص لك' }, { status: 403 })
     if (Number((product as any).qty) < n) return NextResponse.json({ error: 'الكمية تتجاوز المتاح' }, { status: 400 })
 
     // الكمية تنخصم من الحركة نفسها (trigger يجمع الحركات) — ما نكتب qty مباشرة،

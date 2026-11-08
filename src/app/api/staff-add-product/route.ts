@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     const db = sb()
     const { data: staff } = await db.from('staff_members').select('name,branch_id,permissions').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
     if (!staff) return NextResponse.json({ error: 'الحساب غير موجود' }, { status: 404 })
-    if (!(staff as any).permissions?.inventory) return NextResponse.json({ error: 'ما عندك صلاحية المخزون' }, { status: 403 })
+    if (!(staff as any).permissions?.inventory) return NextResponse.json({ error: 'ليست لديك صلاحية على المخزون' }, { status: 403 })
     const branch_id: string | null = (staff as any).branch_id ?? null
     const staffName: string = (staff as any).name
 
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
         ...(category ? { category } : {}),
         requires_staff_assignment: false,   // أضافه موظف الفرع — يظهر لموظفين الفرع على طول
       } as any).select('id').single()
-      if (error || !np) return NextResponse.json({ error: 'تعذر إضافة المنتج — حاول مرة ثانية' }, { status: 500 })
+      if (error || !np) return NextResponse.json({ error: 'تعذر إضافة المنتج — حاول مرة أخرى' }, { status: 500 })
       productId = (np as any).id
       created = true
     }
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
       product_id: productId, org_id, type: 'in', qty_change: qty,
       note: `${created ? 'منتج جديد' : 'إضافة كمية'} بواسطة الموظف: ${staffName}`,
     } as any)
-    if (mvErr) return NextResponse.json({ error: 'تعذر تسجيل الكمية — حاول مرة ثانية' }, { status: 500 })
+    if (mvErr) return NextResponse.json({ error: 'تعذر تسجيل الكمية — حاول مرة أخرى' }, { status: 500 })
 
     // لو الموظف عنده منتجات مخصصة، نضيف هذا لقائمته عشان يشوفه
     const { data: me } = await db.from('staff_members').select('assigned_products').eq('id', staff_id).maybeSingle()
@@ -82,6 +82,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, product_id: productId, created })
   } catch {
-    return NextResponse.json({ error: 'حدث خطأ — حاول مرة ثانية' }, { status: 500 })
+    return NextResponse.json({ error: 'حدث خطأ — حاول مرة أخرى' }, { status: 500 })
   }
 }

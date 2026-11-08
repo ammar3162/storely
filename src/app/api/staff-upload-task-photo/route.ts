@@ -15,7 +15,7 @@ export async function POST(req: Request) {
 
     const formData = await req.formData()
     const file = formData.get('file') as File | null
-    if (!file) return NextResponse.json({ error: 'ما فيه ملف' }, { status: 400 })
+    if (!file) return NextResponse.json({ error: 'لا يوجد ملف' }, { status: 400 })
 
     const ext = file.name.split('.').pop() || 'jpg'
     const path = `task-photos/${orgId}-${Date.now()}.${ext}`

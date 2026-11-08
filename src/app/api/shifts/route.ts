@@ -65,7 +65,7 @@ export async function PATCH(req: Request) {
     const { id, name, start_time, end_time, is_24h } = await req.json()
     if (!id) return NextResponse.json({ error: 'id مطلوب' }, { status: 400 })
     const cleanName = typeof name === 'string' ? name.trim() : ''
-    if (!cleanName) return NextResponse.json({ error: 'اكتب اسم الشفت' }, { status: 400 })
+    if (!cleanName) return NextResponse.json({ error: 'اكتب اسم الوردية' }, { status: 400 })
     const isTime = (t: unknown) => typeof t === 'string' && /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(t)
     if (!is_24h && (!isTime(start_time) || !isTime(end_time))) return NextResponse.json({ error: 'حدد وقت البداية والنهاية' }, { status: 400 })
     if (!is_24h && String(start_time).slice(0, 5) === String(end_time).slice(0, 5)) return NextResponse.json({ error: 'يجب أن يختلف وقت النهاية عن وقت البداية' }, { status: 400 })

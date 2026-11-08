@@ -32,14 +32,14 @@ export async function POST(req: Request) {
     // (توافق مع النسخة القديمة من الصفحة اللي كانت ترسل amount جاهز وتعتبر الكل شامل ضريبة)
     const hasVat = body.has_vat !== false
     if (invoice_image && !isStoredInvoiceUrl(invoice_image)) return NextResponse.json({ error: 'رابط الفاتورة غير صالح — ارفع الصورة من جديد' }, { status: 400 })
-    if (hasVat && !invoice_image) return NextResponse.json({ error: 'الفاتورة الضريبية لازم ترفق صورتها أو ملفها' }, { status: 400 })
+    if (hasVat && !invoice_image) return NextResponse.json({ error: 'يجب إرفاق صورة الفاتورة الضريبية أو ملفها' }, { status: 400 })
     const total = Number(body.total_amount)
     const amount = Number.isFinite(total) && total > 0
       ? netFromTotal(total, hasVat)
       : Number(body.amount)
     if (!(amount > 0)) return NextResponse.json({ error: 'أدخل المبلغ' }, { status: 400 })
 
-    if (qty != null && qty !== '' && !(Number.isInteger(Number(qty)) && Number(qty) >= 0)) return NextResponse.json({ error: 'الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)' }, { status: 400 })
+    if (qty != null && qty !== '' && !(Number.isInteger(Number(qty)) && Number(qty) >= 0)) return NextResponse.json({ error: 'يجب أن تكون الكمية رقماً صحيحاً — إذا كانت فيها كسور فاستخدم وحدة أصغر (مثل الغرام بدل الكيلو)' }, { status: 400 })
     if (!org_id || !name) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }

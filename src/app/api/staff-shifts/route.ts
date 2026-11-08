@@ -57,20 +57,20 @@ export async function PATCH(req: Request) {
       const upd: Record<string, unknown> = {}
       if ('weekday_shifts' in body) {
         const w = normalizeWeekdayShifts(body.weekday_shifts)
-        if (!w) return NextResponse.json({ error: 'شفتات أيام الأسبوع غير صالحة' }, { status: 400 })
+        if (!w) return NextResponse.json({ error: 'ورديات أيام الأسبوع غير صالحة' }, { status: 400 })
         upd.weekday_shifts = w
       }
       if ('date_shifts' in body) {
         const d = normalizeDateShifts(body.date_shifts)
-        if (!d) return NextResponse.json({ error: 'شفتات التواريخ غير صالحة (حد أقصى 400 تاريخ)' }, { status: 400 })
+        if (!d) return NextResponse.json({ error: 'ورديات التواريخ غير صالحة (حد أقصى 400 تاريخ)' }, { status: 400 })
         upd.date_shifts = d
       }
       const ids = [...new Set([...Object.values((upd.weekday_shifts || {}) as Record<string, string>), ...Object.values((upd.date_shifts || {}) as Record<string, string>)])]
       if (ids.length) {
         const { data: found } = await supabase.from('shifts').select('id,branch_id').eq('org_id', org_id).in('id', ids)
-        if ((found || []).length !== ids.length) return NextResponse.json({ error: 'الشفت غير موجود' }, { status: 404 })
+        if ((found || []).length !== ids.length) return NextResponse.json({ error: 'الوردية غير موجودة' }, { status: 404 })
         const staffBranch = (staff as any).branch_id
-        if (staffBranch && ((found || []) as any[]).some(f => f.branch_id && f.branch_id !== staffBranch)) return NextResponse.json({ error: 'الشفت من فرع ثاني — اختر شفت من فرع الموظف' }, { status: 400 })
+        if (staffBranch && ((found || []) as any[]).some(f => f.branch_id && f.branch_id !== staffBranch)) return NextResponse.json({ error: 'الوردية من فرع آخر — اختر وردية من فرع الموظف' }, { status: 400 })
       }
       const { error } = await supabase.from('staff_members').update(upd as any).eq('id', staff_id).eq('org_id', org_id)
       if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
@@ -107,7 +107,7 @@ export async function PATCH(req: Request) {
     // أيام الإجازة الأسبوعية (لو انرسلت) — بدون ما نلمس الشفت
     if ('weekly_off_days' in body) {
       const days = normalizeOffDays(body.weekly_off_days)
-      if (!days) return NextResponse.json({ error: 'أيام الإجازة غير صالحة — لازم يبقى يوم دوام واحد على الأقل' }, { status: 400 })
+      if (!days) return NextResponse.json({ error: 'أيام الإجازة غير صالحة — يجب أن يبقى يوم دوام واحد على الأقل' }, { status: 400 })
       const { error } = await supabase.from('staff_members').update({ weekly_off_days: days } as any).eq('id', staff_id).eq('org_id', org_id)
       if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
       return NextResponse.json({ success: true, weekly_off_days: days })
@@ -115,7 +115,7 @@ export async function PATCH(req: Request) {
 
     if (shift_id) {
       const { data: shift } = await supabase.from('shifts').select('id').eq('id', shift_id).eq('org_id', org_id).single()
-      if (!shift) return NextResponse.json({ error: 'الشفت غير موجود' }, { status: 404 })
+      if (!shift) return NextResponse.json({ error: 'الوردية غير موجودة' }, { status: 404 })
     }
 
     const { error } = await supabase.from('staff_members').update({ shift_id: shift_id || null } as any).eq('id', staff_id).eq('org_id', org_id)

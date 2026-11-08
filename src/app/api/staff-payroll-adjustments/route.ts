@@ -93,7 +93,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true })
     } else {
       // الموظف يطلب سلفة (بانتظار الموافقة) — نوع advance فقط
-      if (type !== 'advance') return NextResponse.json({ error: 'الموظف يقدر يطلب سلفة فقط' }, { status: 400 })
+      if (type !== 'advance') return NextResponse.json({ error: 'يمكن للموظف طلب سلفة فقط' }, { status: 400 })
       const auth = await verifyStaffToken(extractStaffToken(req))
       if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
       const { org_id, staff_id } = auth.data!

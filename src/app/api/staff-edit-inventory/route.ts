@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     // تحقق إن الموظف عنده صلاحية "المخزون" فعلاً — مو بس صلاحية الصرف
     const { data: staffRow } = await supabase.from('staff_members').select('permissions').eq('id', staffId).single()
     if (!(staffRow as any)?.permissions?.inventory) {
-      return NextResponse.json({ error: 'ما عندك صلاحية تعديل المخزون' }, { status: 403 })
+      return NextResponse.json({ error: 'ليست لديك صلاحية تعديل المخزون' }, { status: 403 })
     }
 
     const { data: product } = await supabase.from('products').select('id,qty,name,unit,org_id').eq('id', productId).single()

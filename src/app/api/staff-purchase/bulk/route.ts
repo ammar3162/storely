@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     const { org_id, staff_id, branch_id } = auth.data!
     const body = await req.json()
     const items = cleanItems(body.items)
-    if (items.some(it => !Number.isInteger(it.qty))) return NextResponse.json({ error: 'الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)' }, { status: 400 })
+    if (items.some(it => !Number.isInteger(it.qty))) return NextResponse.json({ error: 'يجب أن تكون الكمية رقماً صحيحاً — إذا كانت فيها كسور فاستخدم وحدة أصغر (مثل الغرام بدل الكيلو)' }, { status: 400 })
     if (!items.length) return NextResponse.json({ error: 'حدد صنف واحد على الأقل واكتب سعره' }, { status: 400 })
     const supplier = String(body.supplier || '').trim().slice(0, 120)
     if (!supplier) return NextResponse.json({ error: 'اكتب اسم المورد' }, { status: 400 })
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
 
     const saved = results.filter(r => r.action !== 'failed').length
     if (saved && tax.alert) await notifyQrMismatch(db, org_id, branch_id || null, tax.alert, staffName)
-    if (!saved) return NextResponse.json({ error: 'ما انحفظ شي — حاول مرة ثانية', results }, { status: 500 })
+    if (!saved) return NextResponse.json({ error: 'لم يُحفظ أي شيء — حاول مرة أخرى', results }, { status: 500 })
     return NextResponse.json({ success: true, saved, results, summary: itemsSummary(results) })
   } catch (e: any) {
     console.error('STAFF_BULK_FAILED', e?.message)

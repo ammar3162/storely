@@ -27,7 +27,7 @@ export async function GET(req: Request) {
     if (orgIdParam) {
       const access = await verifyOrgAccess(orgIdParam)
       if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-      if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على الرواتب والإجازات — كلّم مالك المنشأة' }, { status: 403 })
+      if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ليست لديك صلاحية على الرواتب والإجازات — تواصل مع مالك المنشأة' }, { status: 403 })
       orgId = orgIdParam
       staffFilter = staffIdParam
       forcedBranch = enforcedBranchId(access)
@@ -114,7 +114,7 @@ export async function PATCH(req: Request) {
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على الرواتب والإجازات — كلّم مالك المنشأة' }, { status: 403 })
+    if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ليست لديك صلاحية على الرواتب والإجازات — تواصل مع مالك المنشأة' }, { status: 403 })
 
     const supabase = sb()
     const { data: reqRow } = await supabase.from('staff_leave_requests').select('id,status,staff_id,days_count,staff_members(branch_id)').eq('id', request_id).eq('org_id', org_id).maybeSingle()
@@ -125,7 +125,7 @@ export async function PATCH(req: Request) {
     if (decision === 'approved') {
       const { data: bal } = await supabase.from('staff_members').select('leave_balance_days').eq('id', (reqRow as any).staff_id).maybeSingle()
       const have = Number((bal as any)?.leave_balance_days || 0)
-      if (days > have) return NextResponse.json({ error: `رصيد الموظف ${have} يوم والطلب ${days} يوم — زِد رصيده أول أو ارفض الطلب` }, { status: 400 })
+      if (days > have) return NextResponse.json({ error: `رصيد الموظف ${have} يوم، والطلب ${days} يوم — زِد رصيده أولاً أو ارفض الطلب` }, { status: 400 })
     }
 
     // القرار مرة وحدة (شرط pending) — قبل خصم الرصيد عشان ما ينخصم مرتين

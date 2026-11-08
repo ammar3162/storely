@@ -5,4 +5,4 @@ export async function staffHasPermission(db: SupabaseClient, staffId: string, or
   const { data } = await db.from('staff_members').select('permissions,is_active').eq('id', staffId).eq('org_id', orgId).maybeSingle()
   return !!(data as any)?.is_active && (data as any)?.permissions?.[key] === true
 }
-export const NO_PURCHASES = 'ما عندك صلاحية تسجيل المشتريات — اطلبها من المدير'
+export const NO_PURCHASES = 'ليست لديك صلاحية تسجيل المشتريات — اطلبها من المدير'
