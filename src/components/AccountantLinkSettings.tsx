@@ -231,9 +231,9 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
           </select>
           {nowPeriod === 'custom' && <>
             <span style={{ fontSize: 12.5, color: colors.text3 }}>من</span>
-            <input type="date" value={from} max={to || todaySA()} onChange={e => setFrom(e.target.value)} disabled={!!busy || dirty} style={{ ...inp(), width: 'auto', padding: '9px 10px', fontSize: 13 }} />
+            <input type="date" value={from} max={to || todaySA()} onChange={e => setFrom(e.target.value)} disabled={!!busy || dirty} style={{ ...inp(), width: 'auto', minWidth: 150, padding: '9px 10px', fontSize: 13 }} />
             <span style={{ fontSize: 12.5, color: colors.text3 }}>إلى</span>
-            <input type="date" value={to} min={from} max={todaySA()} onChange={e => setTo(e.target.value)} disabled={!!busy || dirty} style={{ ...inp(), width: 'auto', padding: '9px 10px', fontSize: 13 }} />
+            <input type="date" value={to} min={from} max={todaySA()} onChange={e => setTo(e.target.value)} disabled={!!busy || dirty} style={{ ...inp(), width: 'auto', minWidth: 150, padding: '9px 10px', fontSize: 13 }} />
           </>}
           <button onClick={test} disabled={!!busy || dirty} title={dirty ? 'احفظ التعديلات أول' : ''} style={{ ...btnSecondary, padding: '11px 18px', display: 'inline-flex', alignItems: 'center', gap: 6, opacity: dirty ? .6 : 1 }}>
             <Send size={15} /> {busy === 'test' ? 'جاري الإرسال...' : 'أرسل الآن'}</button>

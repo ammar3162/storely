@@ -134,7 +134,7 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
             )}
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: colors.text2 }}>
               الإذن حتى
-              <input type="date" value={form.expires_on} min={todaySA()} onChange={e => setForm(f => ({ ...f, expires_on: e.target.value }))} style={{ ...inp(), width: 'auto', padding: '6px 8px' }} />
+              <input type="date" value={form.expires_on} min={todaySA()} onChange={e => setForm(f => ({ ...f, expires_on: e.target.value }))} style={{ ...inp(), width: 'auto', minWidth: 150, padding: '6px 8px' }} />
               <span style={{ color: colors.text4 }}>{form.expires_on ? '' : '(اختياري — فارغ = دون نهاية)'}</span>
             </label>
           </div>
