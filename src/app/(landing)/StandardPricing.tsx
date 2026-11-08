@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check, Minus, Plus, ChevronDown, Wallet, UserCheck, Sparkles, Users, Store, ArrowLeft, Sun, MessageCircle, TrendingUp, GitCompare, Calculator, UserCog, Languages, Truck, Bell, FileDown, Percent, type LucideIcon } from 'lucide-react'
 import type { Billing } from './landing-data'
-import { CUSTOM_MIN_STAFF_PER_BRANCH, CUSTOM_MODULES, CUSTOM_MODULE_ORDER, CUSTOM_STAFF_STEP, NEW_ADDON_PRICES, NEW_PLANS, PLAN_CAPS, PLAN_PRICING, YEARLY_FACTOR, customModuleAmount, customMonthly, planPriceFor, signupAddonsMonthly, type NewPlanKey, alaCarteMonthly, yearlyOf } from '@/lib/planPricing'
+import { CUSTOM_MODULES, CUSTOM_MODULE_ORDER, NEW_ADDON_PRICES, NEW_PLANS, PLAN_CAPS, PLAN_PRICING, YEARLY_FACTOR, customModuleAmount, customMonthly, planPriceFor, signupAddonsMonthly, type NewPlanKey, alaCarteMonthly, yearlyOf } from '@/lib/planPricing'
 
 type PlanKey = NewPlanKey
 const price = (k: PlanKey) => PLAN_PRICING[k].monthly
@@ -58,19 +58,16 @@ const cumulative = (i: number) => PLANS.slice(0, i + 1).flatMap((p, j) => p.feat
 export default function StandardPricing({ billing, onBilling }: { billing: Billing; onBilling: (b: Billing) => void }) {
   const router = useRouter()
   const [branches, setBranches] = useState(1)
-  // «ابنِ باقتك»: المزايا المختارة وعدد الموظفين (null = 6 لكل فرع)
+  // «ابنِ باقتك»: المزايا المختارة (الموظفين 6 لكل فرع مشمولين)
   const [mods, setMods] = useState<string[]>(['cashier_closing'])
-  const [staffSel, setStaffSel] = useState<number | null>(null)
   const [focus, setFocus] = useState<PlanKey | null>(null)
   const [openGroup, setOpenGroup] = useState<string | null>(null)   // مجموعة المقارنة المفتوحة
-  const minStaff = CUSTOM_MIN_STAFF_PER_BRANCH * branches
-  const staff = Math.max(minStaff, staffSel ?? PLAN_CAPS.custom.staff * branches)
+  const staff = PLAN_CAPS.custom.staff * branches   // 6 لكل فرع — بدون عداد
   const picked = CUSTOM_MODULE_ORDER.filter(s => mods.includes(s))
   const buildTotal = customMonthly(Object.fromEntries(picked.map(s => [s, CUSTOM_MODULES[s].perBranch ? branches : 1])), branches, staff)
-  const extraStaffCost = Math.max(0, staff - PLAN_CAPS.custom.staff * branches) * CUSTOM_STAFF_STEP
   // باقة جاهزة أرخص فعلاً لنفس الاختيار؟ (بنفس السعر ما نقترحها — نفس المزايا)
   const better = picked.length ? NEW_PLANS
-    .map(k => ({ k, total: planPriceFor(k, null, branches).monthly + signupAddonsMonthly(k, picked as unknown as string[], branches) + extraStaffCost }))
+    .map(k => ({ k, total: planPriceFor(k, null, branches).monthly + signupAddonsMonthly(k, picked as unknown as string[], branches) }))
     // التعادل: الباقة الأعلى (فيها مزايا أكثر)
     .filter(x => x.total < buildTotal).sort((a, b) => a.total - b.total || NEW_PLANS.indexOf(b.k) - NEW_PLANS.indexOf(a.k))[0] : undefined
   const goPlan = (k: PlanKey) => {
@@ -145,14 +142,7 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
             )
           })}
         </div>
-        <div className="st-build-row">
-          <span>عدد الموظفين <small>({PLAN_CAPS.custom.staff * branches} مشمولين، وكل موظف أقل أو أكثر {shown(CUSTOM_STAFF_STEP)} ⃁)</small></span>
-          <div className="st-br st-br-in">
-            <button type="button" onClick={() => setStaffSel(v => Math.max(minStaff, (v ?? PLAN_CAPS.custom.staff * branches) - 1))} disabled={staff <= minStaff} aria-label="نقص"><Minus size={15} /></button>
-            <b>{staff}</b>
-            <button type="button" onClick={() => setStaffSel(v => Math.min(200, Math.max(minStaff, v ?? PLAN_CAPS.custom.staff * branches) + 1))} disabled={staff >= 200} aria-label="زيادة"><Plus size={15} /></button>
-          </div>
-        </div>
+        <p className="st-build-staff">يشمل {PLAN_CAPS.custom.staff * branches} موظفين ({PLAN_CAPS.custom.staff} لكل فرع)، وتقدر تزيد من داخل النظام</p>
         {better && (
           <button type="button" className="st-better" onClick={() => goPlan(better.k)}>
             باقة «{PLAN_PRICING[better.k].label}» تعطيك نفس اختيارك بـ {shown(better.total)} ⃁ (توفّر {shown(buildTotal - better.total)} ⃁) — اعرضها
@@ -161,7 +151,7 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
         <div className="st-build-total">
           <div><span>المجموع الشهري{branches > 1 ? ` لـ ${branchWord}` : ''}</span><strong>{picked.length ? `${shown(buildTotal)} ⃁` : '—'}</strong>{yearly && picked.length > 0 && <small>تُدفع سنوياً</small>}</div>
           <button type="button" className="st-cta dark" disabled={!picked.length}
-            onClick={() => router.push(`/login?mode=register&plan=custom&modules=${picked.join(',')}&branches=${branches}&staff=${staff}&billing=${billing}`)}>
+            onClick={() => router.push(`/login?mode=register&plan=custom&modules=${picked.join(',')}&branches=${branches}&billing=${billing}`)}>
             ابدأ تجربتك المجانية
           </button>
         </div>
@@ -287,6 +277,7 @@ button.st-cmp-row{cursor:pointer;transition:background-color .15s}
 .st-cmp-list li::before{content:"";position:absolute;inset-inline-start:0;top:.7em;width:4px;height:4px;border-radius:2px;background:#c4ccca}
 @media(max-width:640px){.st-cmp-row{grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr));padding:0 10px}.st-cmp-name{font-size:14px;gap:6px}.st-cmp-name em{display:none}.st-cmp-head{font-size:13px}.st-cmp-list{grid-template-columns:1fr;padding-inline-start:30px}}
 .st-was{color:#98a2b3;font-size:20px;font-weight:600;margin-inline-end:8px;text-decoration-thickness:1.5px;align-self:center}
+.st-build-staff{margin:10px 2px 0;font-size:13.5px;color:var(--ink2)}
 .st-yearly{margin:6px 0 0;font-size:13.5px;color:var(--ink2)}
 .st-yearly b{color:var(--ink)}
 .st-was.sm{font-size:14px;font-weight:500;margin-inline-end:6px}

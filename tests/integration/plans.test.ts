@@ -354,8 +354,8 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential', branchA)).toBe(true)
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential', branchB)).toBe(false)
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential')).toBe(true)
-        // الفاتورة: 129 + فرع 30 + كاشير فرع واحد 40
-        expect(await monthlyBill(db as any, orgId)).toBe(199)
+        // الفاتورة: 113 + فرع 30 + كاشير فرع واحد 40
+        expect(await monthlyBill(db as any, orgId)).toBe(183)
 
         // الترقية من نفس العائلة بس
         expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'pro' })).status).toBe(400)
@@ -367,7 +367,7 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         const st = (await db.from('org_addon_subscriptions').select('status').eq('org_id', orgId).eq('addon_id', cashierId).single()).data as any
         expect(st.status).toBe('cancelled')
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'ops', branchB)).toBe(true)
-        expect(await monthlyBill(db as any, orgId)).toBe(209)
+        expect(await monthlyBill(db as any, orgId)).toBe(193)
       } finally {
         await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).eq('addon_id', cashierId)
         await db.from('plan_requests').delete().eq('org_id', orgId)
@@ -399,7 +399,7 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         const { data: subs } = await db.from('org_addon_subscriptions').select('quantity,status,branch_ids,locked_price,marketplace_addons(slug)').eq('org_id', oid)
         expect((subs as any[]).map(r => [r.marketplace_addons.slug, r.quantity, r.status, r.branch_ids, Number(r.locked_price)])).toEqual([['hr_full', 3, 'active', null, 69]])
         const { monthlyBill } = await import('@/lib/orgBill')
-        expect(await monthlyBill(db as any, oid)).toBe(249 + 3 * 69)
+        expect(await monthlyBill(db as any, oid)).toBe(233 + 3 * 69)
       } finally {
         vi.doUnmock('@/lib/supabase/server')
         if (oid) {

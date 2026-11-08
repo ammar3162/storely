@@ -60,14 +60,6 @@ export function useLogin() {
     }
     return []
   })
-  // عدد الموظفين («ابنِ باقتك») — null = 6 لكل فرع
-  const [staffCount, setStaffCount] = useState<number | null>(() => {
-    if (typeof window !== 'undefined') {
-      const n = Math.round(Number(new URLSearchParams(window.location.search).get('staff')))
-      if (n >= 1 && n <= 500) return n
-    }
-    return null
-  })
   const [branchCount, setBranchCount] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       const b = Math.round(Number(new URLSearchParams(window.location.search).get('branches')))
@@ -262,7 +254,7 @@ export function useLogin() {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
-          orgName: orgName.trim(), fullPhone, businessType: businessType||'مطعم', plan: planChoice, addons: signupAddons, staff: staffCount ?? 6 * branchCount, branchCount, billing,
+          orgName: orgName.trim(), fullPhone, businessType: businessType||'مطعم', plan: planChoice, addons: signupAddons, staff: 6 * branchCount, branchCount, billing,
           phone: phone.trim(), countryCode,
           trialEnds: new Date(Date.now() + 14*24*60*60*1000).toISOString(),
           termsAcceptedAt: new Date().toISOString(),
@@ -300,7 +292,7 @@ export function useLogin() {
           businessType: businessType||'مطعم',
           plan: planChoice,
           addons: signupAddons,
-          staff: staffCount ?? 6 * branchCount,
+          staff: 6 * branchCount,
           branchCount,
           billing,
           phone: phone.trim(),
@@ -340,7 +332,7 @@ export function useLogin() {
   const phoneRule = PHONE_RULES[countryCode] || { length:10, prefix:'', placeholder:'xxxxxxxxxx' }
   const phonePlaceholder = phoneRule.placeholder
 
-  return { planFromLink, editPlan, setEditPlan, t, lang, forgotMethod, setForgotMethod, forgotPhone, setForgotPhone, oauth, setOauth, mode, setMode, step, setStep, otpSent, setOtpSent, otp, setOtp, otpVerified, setOtpVerified, sendingOtp, setSendingOtp, email, setEmail, password, setPassword, orgName, setOrgName, phone, setPhone, countryCode, setCountryCode, businessType, setBusinessType, planChoice, setPlanChoice, signupAddons, setSignupAddons, staffCount, setStaffCount, branchCount, setBranchCount, billing, setBilling, loading, setLoading, error, setError, accountStatus, setAccountStatus, agreedTerms, setAgreedTerms, agentCode, setAgentCode, showPassword, setShowPassword, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, utm, setUtm, supabase, phoneRule, phonePlaceholder, handleGoogle, leaveOauth, handleLogin, handleForgot, handleForgotWhatsapp, nextStep, validatePassword, sendOtp, verifyOtp, handleRegister }
+  return { planFromLink, editPlan, setEditPlan, t, lang, forgotMethod, setForgotMethod, forgotPhone, setForgotPhone, oauth, setOauth, mode, setMode, step, setStep, otpSent, setOtpSent, otp, setOtp, otpVerified, setOtpVerified, sendingOtp, setSendingOtp, email, setEmail, password, setPassword, orgName, setOrgName, phone, setPhone, countryCode, setCountryCode, businessType, setBusinessType, planChoice, setPlanChoice, signupAddons, setSignupAddons, branchCount, setBranchCount, billing, setBilling, loading, setLoading, error, setError, accountStatus, setAccountStatus, agreedTerms, setAgreedTerms, agentCode, setAgentCode, showPassword, setShowPassword, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, utm, setUtm, supabase, phoneRule, phonePlaceholder, handleGoogle, leaveOauth, handleLogin, handleForgot, handleForgotWhatsapp, nextStep, validatePassword, sendOtp, verifyOtp, handleRegister }
 }
 
 export type LoginState = ReturnType<typeof useLogin>

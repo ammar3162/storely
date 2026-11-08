@@ -1,7 +1,7 @@
 'use client'
 import { SIGNUP_SOURCES } from '@/lib/signupSource'
 import { Check, Minus, Plus } from 'lucide-react'
-import { CUSTOM_MIN_STAFF_PER_BRANCH, CUSTOM_MODULES, CUSTOM_MODULE_ORDER, CUSTOM_STAFF_STEP, NEW_ADDON_PRICES, NEW_PLANS, PLAN_PRICING, customModuleAmount, customMonthly, higherPlans, planPriceFor, signupAddonsFor, signupAddonsMonthly, yearlyOf, type NewPlanKey, alaCarteMonthly } from '@/lib/planPricing'
+import { CUSTOM_MODULES, CUSTOM_MODULE_ORDER, NEW_ADDON_PRICES, NEW_PLANS, PLAN_PRICING, customModuleAmount, customMonthly, higherPlans, planPriceFor, signupAddonsFor, signupAddonsMonthly, yearlyOf, type NewPlanKey, alaCarteMonthly } from '@/lib/planPricing'
 import { PLANS, PLAN_EN } from './constants'
 import type { LoginState } from './useLogin'
 
@@ -15,7 +15,7 @@ const FEAT: Record<string, { ar: string; en: string }> = {
 }
 
 export default function RegisterStep2({ m }: { m: LoginState }) {
-  const { planFromLink, editPlan, setEditPlan, t, lang, mode, step, setStep, planChoice, setPlanChoice, signupAddons, setSignupAddons, staffCount, setStaffCount, branchCount, setBranchCount, billing, setBilling, loading, error, setError, agreedTerms, setAgreedTerms, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, handleRegister } = m
+  const { planFromLink, editPlan, setEditPlan, t, lang, mode, step, setStep, planChoice, setPlanChoice, signupAddons, setSignupAddons, branchCount, setBranchCount, billing, setBilling, loading, error, setError, agreedTerms, setAgreedTerms, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, handleRegister } = m
   // جا من صفحة الأسعار ومعه باقة؟ ملخص بدل الاختيار من جديد (إلا لو ضغط «تغيير الباقة»)
   const showSummary = planFromLink && !editPlan && !!planChoice && !(planChoice === 'custom' && !signupAddons.length)
   return (
@@ -42,8 +42,7 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                     // ملخص الباقة اللي اختارها من صفحة الأسعار
                     const isCustom = planChoice === 'custom'
                     const pc = planChoice as NewPlanKey
-                    const minStaff = CUSTOM_MIN_STAFF_PER_BRANCH * branchCount
-                    const staff = Math.max(minStaff, staffCount ?? 6 * branchCount)
+                    const staff = 6 * branchCount
                     const picked = CUSTOM_MODULE_ORDER.filter(s => signupAddons.includes(s))
                     const monthly = isCustom
                       ? customMonthly(Object.fromEntries(picked.map(s => [s, CUSTOM_MODULES[s].perBranch ? branchCount : 1])), branchCount, staff)
@@ -60,7 +59,6 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                             <div style={{fontSize:18,fontWeight:800,color:'#111827'}}>{lang==='ar'?PLAN_PRICING[planChoice!].label:(isCustom?'Custom plan':PLAN_EN[pc])}</div>
                             <div style={{fontSize:13,color:'#374151',marginTop:2}}>
                               {lang==='ar' ? (branchCount===1?'فرع واحد':branchCount===2?'فرعين':`${branchCount} فروع`) : `${branchCount} branch${branchCount>1?'es':''}`}
-                              {isCustom ? ` · ${staff} ${lang==='ar'?'موظف':'staff'}` : ''}
                               {` · ${billing==='yearly'?(lang==='ar'?'سنوي':'yearly'):(lang==='ar'?'شهري':'monthly')}`}
                             </div>
                           </div>
@@ -136,15 +134,13 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                       hr_full: { ar: 'الحضور والرواتب', en: 'Attendance & payroll' },
                       ai_tools: { ar: 'أدوات الذكاء الاصطناعي', en: 'AI tools' },
                     }
-                    const minStaff = CUSTOM_MIN_STAFF_PER_BRANCH * branchCount
-                    const staff = Math.max(minStaff, staffCount ?? 6 * branchCount)
+                    const staff = 6 * branchCount
                     const picked = CUSTOM_MODULE_ORDER.filter(s => signupAddons.includes(s))
                     const monthly = customMonthly(Object.fromEntries(picked.map(s => [s, CUSTOM_MODULES[s].perBranch ? branchCount : 1])), branchCount, staff)
                     const cur = (m: number) => billing==='yearly' ? yearlyOf(m) : m
                     // باقة جاهزة تعطيه نفس اختياره بسعر أقل أو مساوي؟
-                    const extraStaff = Math.max(0, staff - 6 * branchCount) * CUSTOM_STAFF_STEP
                     const better = picked.length ? NEW_PLANS
-                      .map(k => ({ k, total: planPriceFor(k, null, branchCount).monthly + signupAddonsMonthly(k, picked as unknown as string[], branchCount) + extraStaff }))
+                      .map(k => ({ k, total: planPriceFor(k, null, branchCount).monthly + signupAddonsMonthly(k, picked as unknown as string[], branchCount) }))
                       .filter(x => x.total < monthly).sort((a, b) => a.total - b.total || NEW_PLANS.indexOf(b.k) - NEW_PLANS.indexOf(a.k))[0] : undefined
                     return (
                       <div style={{border:'1.5px solid #e5e7eb',borderRadius:12,padding:'12px 14px',display:'flex',flexDirection:'column',gap:8}}>
@@ -161,16 +157,7 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                             </button>
                           )
                         })}
-                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'6px 2px'}}>
-                          <span style={{fontSize:14,fontWeight:700,color:'#111827'}}>{lang==='ar'?'عدد الموظفين':'Staff'} <span style={{fontSize:12,fontWeight:600,color:'#374151'}}>{lang==='ar'?`(${6*branchCount} مشمولين، كل موظف ±${CUSTOM_STAFF_STEP} ⃁)`:`(${6*branchCount} included, ±${CUSTOM_STAFF_STEP} SAR each)`}</span></span>
-                          <div style={{display:'flex',alignItems:'center',gap:10}}>
-                            <button type="button" aria-label={lang==='ar'?'نقص':'Less'} disabled={staff<=minStaff} onClick={()=>setStaffCount(v => Math.max(minStaff, (v ?? 6*branchCount) - 1))}
-                              style={{width:34,height:34,borderRadius:99,border:'none',background:'#f3f4f6',cursor:staff<=minStaff?'default':'pointer',opacity:staff<=minStaff?.4:1,display:'grid',placeItems:'center',color:'#111827'}}><Minus size={15}/></button>
-                            <b style={{minWidth:22,textAlign:'center',fontSize:16,color:'#111827'}}>{staff}</b>
-                            <button type="button" aria-label={lang==='ar'?'زيادة':'More'} disabled={staff>=200} onClick={()=>setStaffCount(v => Math.min(200, Math.max(minStaff, v ?? 6*branchCount) + 1))}
-                              style={{width:34,height:34,borderRadius:99,border:'none',background:'#f3f4f6',cursor:'pointer',display:'grid',placeItems:'center',color:'#111827'}}><Plus size={15}/></button>
-                          </div>
-                        </div>
+                        <div style={{fontSize:13,color:'#374151',padding:'2px'}}>{lang==='ar'?`يشمل ${6*branchCount} موظفين (6 لكل فرع)، وتقدر تزيد من داخل النظام`:`Includes ${6*branchCount} staff (6 per branch); add more inside the app`}</div>
                         {better && (
                           <button type="button" onClick={()=>{ setPlanChoice(better.k); setSignupAddons(picked.filter(s => signupAddonsFor(better.k).includes(s as any))) }}
                             style={{padding:'10px 12px',borderRadius:10,border:'1.5px solid #029FA2',background:'#f0fdfa',color:'#0f766e',fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',textAlign:'right',lineHeight:1.7}}>

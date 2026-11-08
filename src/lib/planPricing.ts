@@ -19,7 +19,7 @@ export const isNewPlan = (plan: string | null | undefined): plan is NewPlanKey |
  * mod_inventory / mod_purchases مفتوحة لكل الباقات الثانية — تنباع لـ custom بس.
  */
 export const CUSTOM_MODULES: Record<string, { first: number; extra: number; perBranch: boolean }> = {
-  mod_inventory:   { first: 69, extra: 35, perBranch: true },   // قرار المالك 2026-11-08: 69 (المخزون + المشتريات = 123، أقل من «الأساسية» 129)
+  mod_inventory:   { first: 59, extra: 35, perBranch: true },   // 59 + المشتريات 54 = «الأساسية» 113
   mod_purchases:   { first: 54, extra: 20, perBranch: true },
   cashier_closing: { first: 40, extra: 25, perBranch: true },
   hr_full:         { first: 89, extra: 35, perBranch: true },   // أغلى من إضافتها للباقات (69) عشان «الكاملة» تبقى الأوفر
@@ -73,10 +73,11 @@ export const PLAN_PRICING: Record<PlanKey, { label: string; monthly: number; yea
   basic:     { label: 'الأساسية', monthly: 99,  yearly: 950 },
   pro:       { label: 'الشاملة', monthly: 249, yearly: 2390 },
   advanced:  { label: 'المتقدمة', monthly: 499, yearly: 4790 },
-  // 2026-11-08: رفع بسيط (119/159/219 ← 129/169/239) — المشتركين الحاليين أسعارهم مثبتة
-  essential: { label: 'الأساسية', monthly: 129, yearly: yearlyOf(129) },
-  ops:       { label: 'التشغيل', monthly: 169, yearly: yearlyOf(169) },
-  full:      { label: 'الكاملة', monthly: 239, yearly: yearlyOf(239) },
+  // 2026-11-08 (قرار المالك): الأساسية والتشغيل = نفس مزاياها في «ابنِ باقتك» بالضبط، والكاملة الأوفر
+  // (أرخص من التشغيل + الحضور + الذكاء بـ8). المشتركين الحاليين أسعارهم مثبتة
+  essential: { label: 'الأساسية', monthly: 113, yearly: yearlyOf(113) },
+  ops:       { label: 'التشغيل', monthly: 153, yearly: yearlyOf(153) },
+  full:      { label: 'الكاملة', monthly: 229, yearly: yearlyOf(229) },
   custom:    { label: 'باقتك المخصصة', monthly: 0, yearly: 0 },
 }
 
