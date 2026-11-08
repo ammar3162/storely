@@ -62,14 +62,6 @@ html{scroll-behavior:smooth}
 .lp-halo::before{content:'';position:absolute;inset:-34px;border-radius:50%;border:1px dashed rgba(15,118,110,.35)}
 .lp-phone{position:relative;width:290px;aspect-ratio:9/19.2;border-radius:44px;background:#0b1413;padding:10px;box-shadow:0 50px 80px -40px rgba(11,59,58,.7),0 0 0 1px rgba(255,255,255,.06) inset;transform:rotate(-3deg)}
 .lp-phone video{width:100%;height:100%;object-fit:cover;border-radius:35px;display:block;background:#0b3b3a}
-.lp-float{position:absolute;background:#fff;border-radius:18px;padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 24px 40px -20px rgba(20,32,31,.35);border:1px solid var(--line);animation:lpBob 6s ease-in-out infinite}
-.lp-float b{display:block;font-size:14px}
-.lp-float small{display:block;font-size:12px;color:var(--ink3);margin-top:2px}
-.lp-float-a{top:12%;left:-6%}
-.lp-float-b{bottom:10%;right:-4%;flex-direction:column;align-items:flex-start;gap:6px;animation-delay:-3s}
-.lp-wa{width:38px;height:38px;border-radius:12px;background:#25d366;display:grid;place-items:center;flex-shrink:0}
-.lp-stamp{font-weight:700;color:#047857;border:2px solid #047857;border-radius:10px;padding:3px 12px;transform:rotate(-4deg);font-size:15px}
-@keyframes lpBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 .lp-partners{text-align:center;margin-top:56px}
 .lp-partners p{font-size:12.5px;color:var(--ink3);margin-bottom:18px}
 /* شعارات العملاء: بطاقات بنفس المقاس — الشعار المربع والعريض يطلعون بنفس الوضوح */
@@ -221,8 +213,7 @@ html{scroll-behavior:smooth}
 /* الظهور عند التمرير */
 .lp-anim .rv{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
 .lp-anim .rv.in{opacity:1;transform:none}
-@media(prefers-reduced-motion:reduce){.lp-float{animation:none}.lp-marquee-track{animation-duration:80s}}
-
+@media(prefers-reduced-motion:reduce){
 /* الشاشات */
 .lp-mob{display:none}
 @media(max-width:980px){
@@ -253,9 +244,7 @@ html{scroll-behavior:smooth}
   .lp-stats>div:nth-child(-n+2){border-bottom:1px solid var(--line)}
   .lp-halo{width:300px;height:300px}
   .lp-phone{width:240px}
-  .lp-float-a{left:0;top:4%}
-  .lp-float-b{right:0}
-  .lp-fields{grid-template-columns:1fr}
+      .lp-fields{grid-template-columns:1fr}
   .lp-demo-form,.lp-demo-side{padding:30px 22px}
   .lp-cta{border-radius:28px;padding:60px 20px}
   .lp-cta h2{font-size:32px}
