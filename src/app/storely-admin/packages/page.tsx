@@ -33,7 +33,7 @@ export default function PackagesPage() {
                 <Badge tone={PLAN_TONE[k]}>{planLabel(k)}</Badge>
                 {isCustomPlan(k) ? (<>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 12 }}>
-                    <span style={{ fontSize: 30, fontWeight: 800 }}>{STARTING_PRICE}</span>
+                    <span style={{ fontSize: 30, fontWeight: 700 }}>{STARTING_PRICE}</span>
                     <span style={{ fontSize: 13, color: A.text2 }}>⃁ / فرع — يبدأ من (بدون حد أدنى)</span>
                   </div>
                   <div style={{ fontSize: 12.5, color: A.text3, marginTop: 2 }}>كل ميزة بسعرها (الفرع الأول / كل فرع بعده)</div>
@@ -43,7 +43,7 @@ export default function PackagesPage() {
                   </ul>
                 </>) : (<>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 12 }}>
-                  <span style={{ fontSize: 30, fontWeight: 800 }}>{p.monthly}</span>
+                  <span style={{ fontSize: 30, fontWeight: 700 }}>{p.monthly}</span>
                   <span style={{ fontSize: 13, color: A.text2 }}>⃁ / شهر{isNewPlan(k) ? ' للفرع الأول' : ''}</span>
                 </div>
                 <div style={{ fontSize: 12.5, color: A.text3, marginTop: 2 }}>{p.yearly} ⃁ / سنة</div>

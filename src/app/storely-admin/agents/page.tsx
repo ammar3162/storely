@@ -54,7 +54,7 @@ export default function AgentsPage() {
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
                 <div style={{ flex: '1 1 300px', minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <div style={{ fontSize: 15, fontWeight: 800 }}>{a.name}</div>
+                    <div style={{ fontSize: 15, fontWeight: 700 }}>{a.name}</div>
                     <Badge tone="primary">{a.code}</Badge>
                     {a.status !== 'active' && <Badge tone="danger">موقوف</Badge>}
                   </div>
@@ -90,11 +90,11 @@ export default function AgentsPage() {
               {open === a.id && (
                 <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${A.border}`, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 16, fontSize: 13 }}>
                   <div>
-                    <div style={{ fontWeight: 800, marginBottom: 6 }}>المكافآت</div>
+                    <div style={{ fontWeight: 700, marginBottom: 6 }}>المكافآت</div>
                     {a.commissions.length ? a.commissions.map((c: any, i: number) => <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px dashed ${A.border}`, color: c.status === 'cancelled' ? A.text3 : A.text }}><span>{c.org} · {fmtDate(c.created_at)}</span><b>{sar(c.amount)}</b></div>) : <div style={{ color: A.text3 }}>ما فيه</div>}
                   </div>
                   <div>
-                    <div style={{ fontWeight: 800, marginBottom: 6 }}>الصرف</div>
+                    <div style={{ fontWeight: 700, marginBottom: 6 }}>الصرف</div>
                     {a.payouts.length ? a.payouts.map((p: any, i: number) => <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px dashed ${A.border}` }}><span>{fmtDate(p.created_at)} · {p.method === 'transfer' ? 'تحويل' : 'كاش'}{p.note ? ` · ${p.note}` : ''}</span><b>{sar(p.amount)}</b></div>) : <div style={{ color: A.text3 }}>ما فيه</div>}
                   </div>
                 </div>

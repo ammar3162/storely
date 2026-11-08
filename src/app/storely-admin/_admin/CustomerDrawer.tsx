@@ -292,10 +292,10 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
                 style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, textAlign: 'right', fontFamily: 'inherit', cursor: on ? 'default' : 'pointer',
                   border: `1.5px solid ${on ? A.primary : A.border}`, background: on ? A.primarySoft : A.surface }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 800, color: on ? A.primary : A.text }}>{planLabel(k)} {on && '· الحالية'}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: on ? A.primary : A.text }}>{planLabel(k)} {on && '· الحالية'}</div>
                   <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>{PLAN_LIMITS[k].desc}</div>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: on ? A.primary : A.text2, whiteSpace: 'nowrap' }}>{price}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: on ? A.primary : A.text2, whiteSpace: 'nowrap' }}>{price}</div>
               </button>
             )
           })}
@@ -316,14 +316,14 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
             </div>
           )}
           <div style={{ border: `1.5px dashed ${A.border}`, borderRadius: 10, padding: '11px 14px' }}>
-            <div style={{ fontSize: 13.5, fontWeight: 800, color: A.text }}>{ENTERPRISE_LABEL} <span style={{ fontSize: 11.5, fontWeight: 600, color: A.text3 }}>— أكثر من {PLAN_CAPS.advanced.maxBranches} فروع، بسعر متفق عليه</span></div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: A.text }}>{ENTERPRISE_LABEL} <span style={{ fontSize: 11.5, fontWeight: 600, color: A.text3 }}>— أكثر من {PLAN_CAPS.advanced.maxBranches} فروع، بسعر متفق عليه</span></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginTop: 8 }}>
               {([['branches', 'فروع'], ['staff', 'موظفين'], ['suppliers', 'موردين'], ['price', '⃁ شهرياً']] as const).map(([k, l]) => (
                 <input key={k} inputMode="numeric" placeholder={l} value={ent[k]} onChange={e => setEnt(v => ({ ...v, [k]: e.target.value.replace(/[^0-9]/g, '') }))}
                   style={{ padding: '7px 8px', borderRadius: 8, border: `1px solid ${A.border}`, fontSize: 12.5, fontFamily: 'inherit', textAlign: 'center' }} />
               ))}
             </div>
-            <button onClick={setEnterprise} disabled={!!busy} style={{ marginTop: 8, width: '100%', padding: '8px', borderRadius: 8, border: 'none', background: A.primary, color: 'white', fontSize: 12.5, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer' }}>تفعيل باقة {ENTERPRISE_LABEL}</button>
+            <button onClick={setEnterprise} disabled={!!busy} style={{ marginTop: 8, width: '100%', padding: '8px', borderRadius: 8, border: 'none', background: A.primary, color: 'white', fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>تفعيل باقة {ENTERPRISE_LABEL}</button>
           </div>
         </div>
       </Card>
@@ -430,7 +430,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
               <span>{l.label}</span><span style={{ fontWeight: 700, color: A.text, whiteSpace: 'nowrap' }}>{l.amount} ⃁</span>
             </div>
           ))}
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${A.border}`, paddingTop: 8, marginTop: 4, fontSize: 14, fontWeight: 800 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${A.border}`, paddingTop: 8, marginTop: 4, fontSize: 14, fontWeight: 700 }}>
             <span>الإجمالي</span><span>{bill.total} ⃁</span>
           </div>
         </div>

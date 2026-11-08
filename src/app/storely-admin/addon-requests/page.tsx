@@ -89,7 +89,7 @@ export default function AddonRequestsPage() {
 
       {planReqs.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, fontWeight: 800, color: A.text, marginBottom: 10 }}><ArrowUpCircle size={17} /> طلبات الترقية</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, fontWeight: 700, color: A.text, marginBottom: 10 }}><ArrowUpCircle size={17} /> طلبات الترقية</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {planReqs.map(r => {
               const [label, tone] = ST[r.status] || [r.status, 'neutral' as Tone]
@@ -97,7 +97,7 @@ export default function AddonRequestsPage() {
                 <Card key={r.id} style={pendingStyle(r)}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: A.text }}>{r.organizations?.name} <span style={{ color: A.text2, fontWeight: 600, fontSize: 13 }}>· من {PLAN_AR[r.current_plan] || '—'} إلى {PLAN_AR[r.target_plan]}</span></div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: A.text }}>{r.organizations?.name} <span style={{ color: A.text2, fontWeight: 600, fontSize: 13 }}>· من {PLAN_AR[r.current_plan] || '—'} إلى {PLAN_AR[r.target_plan]}</span></div>
                       <div style={{ fontSize: 12, color: A.text3, marginTop: 3 }}>{fmtDate(r.created_at, true)}{r.bill_at_request != null ? ` · فاتورته وقت الطلب ${r.bill_at_request} ⃁/شهر` : ''}</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 'fit-content' }}>
@@ -119,7 +119,7 @@ export default function AddonRequestsPage() {
         </div>
       )}
 
-      <div style={{ fontSize: 15, fontWeight: 800, color: A.text, marginBottom: 10 }}>طلبات الإضافات</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: A.text, marginBottom: 10 }}>طلبات الإضافات</div>
       {loading ? <Loading /> : rows.length === 0 ? <Card><Empty title="لا توجد طلبات إضافات بعد" /></Card> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {rows.map(r => {
@@ -128,7 +128,7 @@ export default function AddonRequestsPage() {
               <Card key={r.id} style={pendingStyle(r)}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: A.text }}>{r.marketplace_addons?.name} <span style={{ color: A.text2, fontWeight: 600, fontSize: 13 }}>· {r.organizations?.name}</span></div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: A.text }}>{r.marketplace_addons?.name} <span style={{ color: A.text2, fontWeight: 600, fontSize: 13 }}>· {r.organizations?.name}</span></div>
                     <div style={{ fontSize: 12, color: A.text3, marginTop: 3 }}>{fmtDate(r.created_at, true)}</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 'fit-content' }}>

@@ -68,7 +68,7 @@ export default function DemoRequestsPage() {
               <Card key={r.id} style={r.matched_org_id ? { borderColor: A.primary } : undefined}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: A.text }}>{r.first_name} {r.last_name}</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: A.text }}>{r.first_name} {r.last_name}</div>
                     <div style={{ fontSize: 12, color: A.text3, marginTop: 2 }}>{fmtDate(r.created_at, true)}</div>
                   </div>
                   {r.matched_org_id ? (

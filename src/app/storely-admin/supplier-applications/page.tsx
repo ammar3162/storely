@@ -66,7 +66,7 @@ export default function SupplierApplicationsPage() {
                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
                   <div style={{ flex: '1 1 320px', minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <div style={{ fontSize: 15, fontWeight: 800 }}>{a.company_name}</div>
+                      <div style={{ fontSize: 15, fontWeight: 700 }}>{a.company_name}</div>
                       <Badge tone={st.t}>{st.l}</Badge>
                     </div>
                     <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 13, color: A.text2, marginTop: 8 }}>
