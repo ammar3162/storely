@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
 import { syncStaffToLimit } from '@/lib/staffCapacity'
 import { clearFeatureCache } from '@/lib/featureRoutes'
-import { addonPeriodEnd, addonPriceFor, branchPriceFor, isPerBranchAddon, planKeyOf, proratedCharge, unitPrice, YEARLY_FACTOR } from '@/lib/planPricing'
+import { addonPeriodEnd, addonPriceFor, branchPriceFor, isPerBranchAddon, planKeyOf, proratedCharge, unitPrice, YEARLY_FACTOR, isNewPlan, CUSTOM_MODULES, customModuleAmount } from '@/lib/planPricing'
 
 export type ActivateResult =
   | { ok: true; expiresAt: string; quantity: number; proratedAmount: number; proratedDays: number; branchIds: string[] | null; slug: string; name: string }
@@ -81,6 +81,11 @@ export async function activateAddon(db: SupabaseClient, input: { orgId: string; 
   // المستحق الحين: الوحدات الجديدة فقط × الأيام الباقية لين التجديد
   const chargedQty = wasActive ? Math.max(0, qtyDelta) : qty
   const unit = wasActive ? unitPrice(addonPriceFor(plan, slug) ?? (addonRow as any).monthly_price, existingRow as any) : (Number(input.unitPrice) > 0 ? Number(input.unitPrice) : Number((addonRow as any).monthly_price) || 0)
-  const prorated = proratedCharge(input.yearly && slug === 'extra_branch' ? unit * YEARLY_FACTOR : unit, chargedQty, periodEnd)
+  // ميزة بسعر «فرع أول + فرع إضافي» (الباقات الجديدة): المستحق = فرق المبلغ الشهري بين الكمية القديمة والجديدة
+  const feat = isNewPlan(plan) ? CUSTOM_MODULES[slug] : undefined
+  const locked = Number((wasActive ? (existingRow as any)?.locked_price : input.unitPrice)) || null
+  const prorated = feat
+    ? proratedCharge(Math.max(0, customModuleAmount(slug, feat.perBranch ? qty : 1, locked) - (wasActive ? customModuleAmount(slug, feat.perBranch ? oldQty : 1, locked) : 0)), 1, periodEnd)
+    : proratedCharge(input.yearly && slug === 'extra_branch' ? unit * YEARLY_FACTOR : unit, chargedQty, periodEnd)
   return { ok: true, expiresAt, quantity: qty, proratedAmount: prorated.amount, proratedDays: prorated.days, branchIds, slug, name: (addonRow as any).name }
 }

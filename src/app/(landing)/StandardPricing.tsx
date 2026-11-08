@@ -20,8 +20,8 @@ const PLANS: { key: PlanKey; name: string; desc: string; price: number; extra: n
     features: ['الحضور والانصراف', 'الورديات والإجازات', 'مسير الرواتب', 'السلف والخصومات', 'أدوات الذكاء الاصطناعي'] },
 ]
 const ADDONS: { icon: typeof Wallet; name: string; price: number; unit: string; note: string }[] = [
-  { icon: Wallet, name: 'إقفال الكاشير', price: NEW_ADDON_PRICES.cashier_closing.monthly, unit: '⃁ / فرع', note: 'للأساسية' },
-  { icon: UserCheck, name: 'الحضور والرواتب', price: NEW_ADDON_PRICES.hr_full.monthly, unit: '⃁ / فرع', note: 'للأساسية والتشغيل' },
+  { icon: Wallet, name: 'إقفال الكاشير', price: CUSTOM_MODULES.cashier_closing.first, unit: `⃁ للفرع الأول، و${CUSTOM_MODULES.cashier_closing.extra} لكل فرع بعده`, note: 'للأساسية' },
+  { icon: UserCheck, name: 'الحضور والرواتب', price: CUSTOM_MODULES.hr_full.first, unit: `⃁ للفرع الأول، و${CUSTOM_MODULES.hr_full.extra} لكل فرع بعده`, note: 'للأساسية والتشغيل' },
   { icon: Sparkles, name: 'أدوات الذكاء الاصطناعي', price: NEW_ADDON_PRICES.ai_tools.monthly, unit: '⃁ / شهرياً', note: 'للأساسية والتشغيل' },
   { icon: Users, name: 'موظف إضافي', price: NEW_ADDON_PRICES.extra_staff.monthly, unit: '⃁ / شهرياً', note: `فوق ${PLAN_CAPS.essential.staff} موظفين لكل فرع` },
 ]
@@ -129,7 +129,7 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
 
       <section className="st-sec st-build" id="build">
         <h3 className="st-h">ابنِ باقتك بنفسك</h3>
-        <p className="st-hsub">اختر المزايا اللي تحتاجها بس، وكل ميزة بسعرها. لو تحتاج أغلب المزايا، الباقة الجاهزة أوفر لأن فيها خصم. السعر حسب عدد الفروع اللي فوق، وتحدد من داخل النظام أي فرع ياخذ كل ميزة.</p>
+        <p className="st-hsub">اختر المزايا اللي تحتاجها بس. كل ميزة بنفس سعرها في الباقات الجاهزة، فنفس المزايا بنفس السعر دايماً. السعر حسب عدد الفروع اللي فوق، وتحدد من داخل النظام أي فرع ياخذ كل ميزة.</p>
         <div className="st-mods">
           {CUSTOM_MODULE_ORDER.map(slug => {
             const m = CUSTOM_MODULES[slug], on = mods.includes(slug)

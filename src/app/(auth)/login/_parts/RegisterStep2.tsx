@@ -193,7 +193,7 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                         <div style={{fontSize:14,fontWeight:800,color:'#111827'}}>{lang==='ar'?'تبي تضيف لباقتك؟':'Add to your plan?'}</div>
                         {signupAddonsFor(planChoice).map(slug => {
                           const on = signupAddons.includes(slug), a = NEW_ADDON_PRICES[slug]
-                          const amount = a.monthly * (a.perBranch ? branchCount : 1)
+                          const amount = signupAddonsMonthly(pc, [slug], branchCount)
                           return (
                             <button key={slug} type="button" onClick={()=>setSignupAddons(prev => on ? prev.filter(x=>x!==slug) : [...prev, slug])}
                               style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${on?'#029FA2':'#e5e7eb'}`,background:on?'#f0fdfa':'white',cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>

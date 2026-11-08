@@ -51,7 +51,7 @@ export default function PackagesPage() {
                   {isNewPlan(k) ? (<>
                     <li>كل فرع إضافي {PLAN_CAPS[k].branchPrice} ⃁ — يوصل {PLAN_CAPS[k].maxBranches} فروع</li>
                     <li>{PLAN_CAPS[k].staff} موظفين و{PLAN_CAPS[k].suppliers} مورد لكل فرع</li>
-                    <li>{k === 'essential' ? 'المخزون والمشتريات — الكاشير 40 والحضور 69 لكل فرع، والذكاء 15' : k === 'ops' ? '+ إقفال الكاشير — الحضور 69 لكل فرع، والذكاء 15' : 'كل المميزات مشمولة'}</li>
+                    <li>{k === 'essential' ? 'المخزون والمشتريات — الكاشير 40 (+10 لكل فرع)، الحضور 61 (+15 لكل فرع)، والذكاء 15' : k === 'ops' ? '+ إقفال الكاشير — الحضور 69 لكل فرع، والذكاء 15' : 'كل المميزات مشمولة'}</li>
                   </>) : (<>
                   <li>{lim(l.branches, 'فروع')} — ويوصل {PLAN_CAPS[k].maxBranches} بفرع إضافي {PLAN_CAPS[k].branchPrice} ⃁</li>
                   <li>{lim(l.staff, 'موظفين')} للمنشأة كلها (+{PLAN_CAPS[k].branchStaff} مع كل فرع إضافي)</li>

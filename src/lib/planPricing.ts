@@ -18,13 +18,18 @@ export const isNewPlan = (plan: string | null | undefined): plan is NewPlanKey |
  * «ابنِ باقتك»: سعر كل ميزة للفرع الأول، وكل فرع إضافي فيه الميزة. الذكاء للمنشأة كلها.
  * mod_inventory / mod_purchases مفتوحة لكل الباقات الثانية — تنباع لـ custom بس.
  */
+/**
+ * سعر واحد لكل ميزة (2026-11-08، قرار المالك): نفس المزايا = نفس السعر، بـ «ابنِ باقتك» أو كباقة جاهزة أو كإضافة عليها.
+ * الباقة = مجموع مزاياها: الأساسية 59+54=113 (فرع 20+10=30)، التشغيل +40=153 (فرع +10=40)، الكاملة +61+15=229 (فرع +15=55).
+ */
 export const CUSTOM_MODULES: Record<string, { first: number; extra: number; perBranch: boolean }> = {
-  mod_inventory:   { first: 59, extra: 35, perBranch: true },   // 59 + المشتريات 54 = «الأساسية» 113
-  mod_purchases:   { first: 54, extra: 20, perBranch: true },
-  cashier_closing: { first: 40, extra: 25, perBranch: true },
-  hr_full:         { first: 89, extra: 35, perBranch: true },   // أغلى من إضافتها للباقات (69) عشان «الكاملة» تبقى الأوفر
+  mod_inventory:   { first: 59, extra: 20, perBranch: true },
+  mod_purchases:   { first: 54, extra: 10, perBranch: true },
+  cashier_closing: { first: 40, extra: 10, perBranch: true },
+  hr_full:         { first: 61, extra: 15, perBranch: true },
   ai_tools:        { first: 15, extra: 0,  perBranch: false },
 }
+export const FEATURE_PRICES = CUSTOM_MODULES
 export const CUSTOM_MODULE_ORDER = ['mod_inventory', 'mod_purchases', 'cashier_closing', 'hr_full', 'ai_tools'] as const
 export const CUSTOM_STAFF_STEP = 10          // كل موظف أقل/أكثر من 6 لكل فرع
 export const CUSTOM_MIN_STAFF_PER_BRANCH = 3
@@ -90,8 +95,9 @@ export const adminPlanLabel = (plan: string | null | undefined, maxBranches?: nu
  * perBranch = السعر × عدد الفروع اللي اختارها (branch_ids). included = الباقات اللي فيها الإضافة أصلاً.
  */
 export const NEW_ADDON_PRICES: Record<string, { monthly: number; perBranch: boolean; includedIn: NewPlanKey[] }> = {
+  // نفس سعر الميزة («الفرع الأول»)، وكل فرع بعده بسعر الميزة للفرع الإضافي — FEATURE_PRICES
   cashier_closing: { monthly: 40, perBranch: true,  includedIn: ['ops', 'full'] },
-  hr_full:         { monthly: 69, perBranch: true,  includedIn: ['full'] },
+  hr_full:         { monthly: 61, perBranch: true,  includedIn: ['full'] },
   ai_tools:        { monthly: 15, perBranch: false, includedIn: ['full'] },
   profitability:   { monthly: 0,  perBranch: false, includedIn: ['essential', 'ops', 'full'] },
   extra_staff:     { monthly: 10, perBranch: false, includedIn: [] },
@@ -127,7 +133,7 @@ export function addonsForPlan<T extends { slug: string; monthly_price: number | 
     .filter(a => !(isCustomPlan(plan) && a.slug === 'extra_branch'))
     .map(a => {
       const p = addonPriceFor(plan, a.slug)
-      const extra = isCustomPlan(plan) && CUSTOM_MODULES[a.slug]?.perBranch ? CUSTOM_MODULES[a.slug].extra : undefined
+      const extra = isNewPlan(plan) && CUSTOM_MODULES[a.slug]?.perBranch ? CUSTOM_MODULES[a.slug].extra : undefined
       return p != null ? { ...a, monthly_price: p, per_branch: isPerBranchAddon(plan, a.slug), ...(extra != null ? { extra_price: extra } : {}) } : a
     })
 }
@@ -138,7 +144,7 @@ export const signupAddonsFor = (plan: string | null | undefined) => SIGNUP_ADDON
 /** سعر إضافات التسجيل الشهري لعدد الفروع (لكل فرع × الفروع، أو مرة وحدة للمنشأة) */
 export const signupAddonsMonthly = (plan: string | null | undefined, slugs: string[], branches: number) =>
   signupAddonsFor(plan).filter(s => slugs.includes(s))
-    .reduce((t, s) => t + NEW_ADDON_PRICES[s].monthly * (NEW_ADDON_PRICES[s].perBranch ? Math.max(1, branches) : 1), 0)
+    .reduce((t, s) => t + (CUSTOM_MODULES[s] ? customModuleAmount(s, CUSTOM_MODULES[s].perBranch ? Math.max(1, branches) : 1) : NEW_ADDON_PRICES[s].monthly), 0)
 
 /** الباقات الأعلى من نفس العائلة (طلب الترقية) — القديم يرقّى للقديمة، والانتقال للجديدة من الأدمن */
 export function higherPlans(plan: string | null | undefined): PlanKey[] {
@@ -286,6 +292,13 @@ export function billLines(plan: PlanKey, cycle: BillingCycle, addons: AddonRow[]
       continue
     }
     if (a.slug === 'extra_branch' && isCustomPlan(plan)) continue
+    // ميزة على باقة جاهزة جديدة (الإقفال/الحضور/الذكاء): نفس سعرها بـ «ابنِ باقتك» — الفرع الأول + الإضافي × الباقي، والسنوي بنفس خصم الباقة
+    if (isNewPlan(plan) && CUSTOM_MODULES[a.slug]) {
+      const qty = Math.max(1, Number(active[0].quantity) || 1)
+      const monthly = customModuleAmount(a.slug, CUSTOM_MODULES[a.slug].perBranch ? qty : 1, Number(active[0].locked_price) || null)
+      lines.push({ label: `إضافة "${a.name}"${CUSTOM_MODULES[a.slug].perBranch && qty > 1 ? ` (${qty} فروع)` : ''} (${cycle === 'yearly' ? 'سنوياً' : 'شهرياً'})`, amount: cycle === 'yearly' ? yearlyOf(monthly) : monthly })
+      continue
+    }
     // الإضافات تتجدد مع الباقة: بالباقة السنوية = سعرها الشهري × 12 (الفرع الإضافي بنفس خصم السنوي 20%)
     const months = cycle === 'yearly' ? (a.slug === 'extra_branch' ? 12 * YEARLY_FACTOR : 12) : 1
     const per = cycle === 'yearly' ? 'سنوياً' : 'شهرياً'
