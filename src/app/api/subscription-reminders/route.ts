@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { PLAN_PRICING } from '@/lib/planPricing'
+import { trialEndingMessage } from '@/lib/trialReminder'
 import { createClient } from '@supabase/supabase-js'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
 import { pickOwnerWhatsapp } from '@/lib/ownerContact'
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
       const daysLeft = Math.ceil((endsAt.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
       const isTrial = p.subscription_type === 'trial'
       const text = isTrial
-        ? `مرحباً ${p.full_name || ''}\n\nتنتهي تجربتك المجانية في Storely خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'}، وقد جرّبت خلالها جميع المزايا.\n\nاختر باقتك:\n• ${PLAN_PRICING.basic.label} ${PLAN_PRICING.basic.monthly} ريال — المخزون والمشتريات، مع إضافة ما تحتاجه (الكاشير، والموظفون، والربحية، والذكاء الاصطناعي)\n• ${PLAN_PRICING.pro.label} ${PLAN_PRICING.pro.monthly} ريال — جميع المزايا و3 فروع\n• ${PLAN_PRICING.advanced.label} ${PLAN_PRICING.advanced.monthly} ريال — جميع المزايا و6 فروع\n\nأرسل لنا اسم الباقة وسنفعّلها لك، أو اشترك من:\nstorely.dev`
+        ? trialEndingMessage(p.full_name, daysLeft)
         : `مرحباً ${p.full_name || ''}\n\nينتهي اشتراكك في Storely خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'}.\n\nجدّد اشتراكك الآن لمتابعة إدارة مخزونك وفريقك دون انقطاع:\nstorely.dev`
       const res = await sendWhatsAppMessage(to, text)
       if (res.ok) {
