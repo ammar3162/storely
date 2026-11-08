@@ -350,12 +350,12 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         const r = await activateAddon(db as any, { orgId, addonId: cashierId, branchIds: [branchA, '00000000-0000-0000-0000-000000000000'] })
         expect(r).toMatchObject({ ok: true, quantity: 1, branchIds: [branchA] })
         const sub = (await db.from('org_addon_subscriptions').select('locked_price,branch_ids').eq('org_id', orgId).eq('addon_id', cashierId).single()).data as any
-        expect(Number(sub.locked_price)).toBe(30)
+        expect(Number(sub.locked_price)).toBe(39)
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential', branchA)).toBe(true)
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential', branchB)).toBe(false)
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential')).toBe(true)
-        // الفاتورة: 93 + فرع 93 (كل فرع بسعر كامل) + كاشير فرع واحد 30
-        expect(await monthlyBill(db as any, orgId)).toBe(216)
+        // الفاتورة: 84 + فرع 84 (كل فرع بسعر كامل) + كاشير فرع واحد 39
+        expect(await monthlyBill(db as any, orgId)).toBe(207)
 
         // الترقية من نفس العائلة بس
         expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'pro' })).status).toBe(400)
@@ -441,7 +441,7 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         expect(await routeFeatureError(oid, '/api/products', 'GET', db as any)).toBeNull()
         expect(await routeFeatureError(oid, '/api/cashier-closing', 'POST', db as any)).toBeNull()
         const { monthlyBill } = await import('@/lib/orgBill')
-        expect(await monthlyBill(db as any, oid)).toBe(30)
+        expect(await monthlyBill(db as any, oid)).toBe(39)
         const { staffLimitFor } = await import('@/lib/staffCapacity')
         expect(await staffLimitFor(db as any, oid)).toBe(6)
       } finally {

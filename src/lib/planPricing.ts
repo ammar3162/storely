@@ -22,13 +22,14 @@ export const isNewPlan = (plan: string | null | undefined): plan is NewPlanKey |
  * سعر واحد لكل ميزة (2026-11-08، قرار المالك): نفس المزايا = نفس السعر، بـ «ابنِ باقتك» أو كباقة جاهزة أو كإضافة عليها.
  * الفرع الثاني بسعر كامل، ومن الفرع الثالث خصم 20% (BRANCH_DISCOUNT)، والذكاء للمنشأة كلها مرة وحدة.
  * الباقات الجاهزة (مخفية للجدد) تتبع نفس القاعدة (planPriceFor) عشان نفس المزايا = نفس السعر.
- * الباقة = مجموع مزاياها: الأساسية 49+44=93 لكل فرع، التشغيل +30=123 لكل فرع، الكاملة +69 +الذكاء 15 = 207 للأول و192 لكل فرع بعده.
+ * الباقة = مجموع مزاياها: الأساسية 49+35=84 لكل فرع، التشغيل +39=123 لكل فرع، الكاملة +69 +الذكاء 15 = 207 للأول و192 لكل فرع بعده.
  * 2026-11-08: المالك نقّص المخزون 59←49 وإقفال الكاشير 40←30 والمشتريات 54←44.
+ * 2026-11-08 (بعد مقارنة القيمة): الكاشير 30←39 والمشتريات 44←35 — مجموع الكل ثابت 207.
  */
 export const CUSTOM_MODULES: Record<string, { first: number; extra: number; perBranch: boolean }> = {
   mod_inventory:   { first: 49, extra: 49, perBranch: true },
-  mod_purchases:   { first: 44, extra: 44, perBranch: true },
-  cashier_closing: { first: 30, extra: 30, perBranch: true },
+  mod_purchases:   { first: 35, extra: 35, perBranch: true },
+  cashier_closing: { first: 39, extra: 39, perBranch: true },
   hr_full:         { first: 69, extra: 69, perBranch: true },
   ai_tools:        { first: 15, extra: 0,  perBranch: false },
 }
@@ -106,7 +107,7 @@ export const PLAN_PRICING: Record<PlanKey, { label: string; monthly: number; yea
   advanced:  { label: 'المتقدمة', monthly: 499, yearly: 4790 },
   // 2026-11-08 (قرار المالك): الأساسية والتشغيل = نفس مزاياها في «ابنِ باقتك» بالضبط، والكاملة الأوفر
   // (أرخص من التشغيل + الحضور + الذكاء بـ8). المشتركين الحاليين أسعارهم مثبتة
-  essential: { label: 'الأساسية', monthly: 93, yearly: yearlyOf(93) },
+  essential: { label: 'الأساسية', monthly: 84, yearly: yearlyOf(84) },
   ops:       { label: 'التشغيل', monthly: 123, yearly: yearlyOf(123) },
   full:      { label: 'الكاملة', monthly: 207, yearly: yearlyOf(207) },
   custom:    { label: 'باقتك المخصصة', monthly: 0, yearly: 0 },
@@ -122,7 +123,7 @@ export const adminPlanLabel = (plan: string | null | undefined, maxBranches?: nu
  */
 export const NEW_ADDON_PRICES: Record<string, { monthly: number; perBranch: boolean; includedIn: NewPlanKey[] }> = {
   // نفس سعر الميزة («الفرع الأول»)، وكل فرع بعده بسعر الميزة للفرع الإضافي — FEATURE_PRICES
-  cashier_closing: { monthly: 30, perBranch: true,  includedIn: ['ops', 'full'] },
+  cashier_closing: { monthly: 39, perBranch: true,  includedIn: ['ops', 'full'] },
   hr_full:         { monthly: 69, perBranch: true,  includedIn: ['full'] },
   ai_tools:        { monthly: 15, perBranch: false, includedIn: ['full'] },
   profitability:   { monthly: 0,  perBranch: false, includedIn: ['essential', 'ops', 'full'] },
@@ -201,7 +202,7 @@ export const PLAN_CAPS: Record<PlanKey, { branches: number; maxBranches: number;
   pro:      { branches: 3, maxBranches: 5,  staff: 15, suppliers: 20, branchStaff: 5, branchSuppliers: 5, branchPrice: 79 },
   advanced: { branches: 6, maxBranches: 10, staff: 50, suppliers: 50, branchStaff: 5, branchSuppliers: 5, branchPrice: 59 },
   // الجديدة: لكل فرع 6 موظفين و15 مورد (staff/suppliers هنا = للفرع الواحد)
-  essential: { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 93 },
+  essential: { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 84 },
   ops:       { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 123 },
   full:      { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 192 },
   custom:    { branches: 1, maxBranches: 10, staff: 6, suppliers: 15, branchStaff: 6, branchSuppliers: 15, branchPrice: 0 },
