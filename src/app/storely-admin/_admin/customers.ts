@@ -21,10 +21,10 @@ export const STATUS: Record<string, { label: string; tone: Tone }> = {
 
 // حدود كل باقة (فروع الباقة الأساسية — الفروع الإضافية تنحسب من الإضافات)
 // من مصدر واحد (lib/planPricing PLAN_CAPS) — الموظفين والموردين للمنشأة كلها
-const NEW_DESC: Record<string, string> = { essential: 'المخزون والمشتريات', ops: '+ إقفال الكاشير', full: 'كل المميزات', custom: 'يختار المزايا بنفسه (من الإضافات)' }
+const NEW_DESC: Record<string, string> = { essential: 'المخزون والمشتريات', ops: '+ إقفال الكاشير', full: 'كل المزايا', custom: 'يختار المزايا بنفسه (من الإضافات)' }
 const capsDesc = (k: PlanKey) => {
   const c = PLAN_CAPS[k]
-  if (k === 'custom') return `يختار المزايا بنفسه (من الإضافات تحت) · ${c.staff} موظفين لكل فرع (±10) · أقل فاتورة 49`
+  if (k === 'custom') return `يختار المزايا بنفسه (من الإضافات تحت) · ${c.staff} موظفين لكل فرع · بدون حد أدنى للفاتورة`
   if (isNewPlan(k)) return `لكل فرع: ${c.staff} موظفين · ${c.suppliers} مورد · ${NEW_DESC[k]} · الفرع الإضافي ${c.branchPrice} ⃁ · يوصل ${c.maxBranches} فروع`
   return `${c.branches === 1 ? 'فرع' : c.branches + ' فروع'} · ${c.staff} موظف · ${c.suppliers} مورد · ${k === 'basic' ? 'المميزات بالإضافات' : 'كل المميزات'} · يوصل ${c.maxBranches} فروع`
 }

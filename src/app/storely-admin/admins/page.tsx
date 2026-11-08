@@ -1,9 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { UserPlus } from 'lucide-react'
+import { UserPlus, Pencil, Power, Trash2, UserCog, ShieldCheck } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { toast } from '@/components/toast'
-import { A, Badge, Btn, Card, Drawer, Empty, Field, Loading, PageHeader, adminFetch, inputStyle, useAdmin } from '../_admin/kit'
+import { A, Avatar, Badge, Btn, Card, Drawer, Empty, Field, Loading, NoAccess, PageHeader, Row, adminFetch, inputStyle, useAdmin } from '../_admin/kit'
 
 const PERMS: Record<string, string> = {
   manage_users: 'إدارة العملاء (تفعيل، إيقاف، حذف، الباقات)',
@@ -34,7 +34,7 @@ export default function AdminsPage() {
   }
   useEffect(() => { load() }, [])
 
-  if (admin.role !== 'super_admin') return <><PageHeader title="المشرفون" /><Card><Empty title="هذي الصفحة للمشرف الكامل فقط" /></Card></>
+  if (admin.role !== 'super_admin') return <><PageHeader title="المشرفون" /><NoAccess title="هذه الصفحة للمشرف الكامل فقط" /></>
 
   async function save() {
     if (!form) return
@@ -64,34 +64,36 @@ export default function AdminsPage() {
 
   return (
     <>
-      <PageHeader title="المشرفون" subtitle="من يقدر يدخل لوحة الإدارة، وبأي صلاحيات"
+      <PageHeader title="المشرفون" subtitle="من يستطيع الدخول إلى لوحة الإدارة، وبأي صلاحيات"
         actions={<Btn kind="primary" onClick={() => { setError(''); setForm({ ...EMPTY }) }}><UserPlus size={15} /> إضافة مشرف</Btn>} />
 
-      <Card pad={0}>
-        {loading ? <Loading /> : list.length === 0 ? <Empty title="ما فيه مشرفين" /> : list.map((a, i) => (
-          <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', borderTop: i ? `1px solid ${A.border}` : 'none', flexWrap: 'wrap' }}>
+      <Card pad={0} title="قائمة المشرفين" subtitle={loading ? undefined : `${list.length} مشرف`}>
+        {loading ? <Loading /> : list.length === 0 ? <Empty icon={UserCog} title="لا يوجد مشرفون" /> : list.map(a => (
+          <Row key={a.id} style={{ flexWrap: 'wrap', alignItems: 'flex-start', opacity: a.is_active ? 1 : 0.7 }}>
+            <Avatar name={a.full_name} size={40} />
             <div style={{ flex: '1 1 260px', minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 14, fontWeight: 700 }}>{a.full_name}</span>
-                {a.role === 'super_admin' ? <Badge tone="primary">مشرف كامل</Badge> : <Badge>مشرف</Badge>}
+                <span style={{ fontSize: 14.5, fontWeight: 600 }}>{a.full_name}</span>
+                {a.role === 'super_admin' ? <Badge tone="primary"><ShieldCheck size={12} /> مشرف كامل</Badge> : <Badge>مشرف</Badge>}
                 {!a.is_active && <Badge tone="danger">معطّل</Badge>}
                 {a.id === admin.id && <Badge tone="info">أنت</Badge>}
               </div>
-              <div style={{ fontSize: 12.5, color: A.text3, marginTop: 3 }} dir="ltr">{a.email}</div>
+              <div style={{ fontSize: 13, color: A.text3, marginTop: 3, textAlign: 'right' }}><span dir="ltr">{a.email}</span></div>
               {a.role !== 'super_admin' && (
-                <div style={{ fontSize: 12, color: A.text2, marginTop: 6 }}>
-                  {Object.entries(a.permissions || {}).filter(([, v]) => v).map(([k]) => PERMS[k] || k).join(' · ') || 'بدون صلاحيات'}
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                  {Object.entries(a.permissions || {}).filter(([, v]) => v).map(([k]) => <Badge key={k} tone="neutral">{PERMS[k] || k}</Badge>)}
+                  {!Object.values(a.permissions || {}).some(Boolean) && <span style={{ fontSize: 12.5, color: A.text3 }}>بدون صلاحيات</span>}
                 </div>
               )}
             </div>
             {a.role !== 'super_admin' && (
-              <div style={{ display: 'flex', gap: 6 }}>
-                <Btn small onClick={() => { setError(''); setForm({ id: a.id, full_name: a.full_name, email: a.email, password: '', permissions: a.permissions || {} }) }}>تعديل</Btn>
-                <Btn small onClick={() => toggle(a)}>{a.is_active ? 'تعطيل' : 'تفعيل'}</Btn>
-                <Btn small kind="danger" onClick={() => remove(a)}>حذف</Btn>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <Btn small kind="ghost" title="تعديل" onClick={() => { setError(''); setForm({ id: a.id, full_name: a.full_name, email: a.email, password: '', permissions: a.permissions || {} }) }}><Pencil size={14} /></Btn>
+                <Btn small kind="ghost" title={a.is_active ? 'تعطيل' : 'تفعيل'} onClick={() => toggle(a)}><Power size={14} /></Btn>
+                <Btn small kind="ghost" title="حذف" onClick={() => remove(a)}><Trash2 size={14} /></Btn>
               </div>
             )}
-          </div>
+          </Row>
         ))}
       </Card>
 
@@ -101,14 +103,14 @@ export default function AdminsPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <Field label="الاسم الكامل"><input value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} style={inputStyle} /></Field>
               <Field label="البريد الإلكتروني"><input type="email" dir="ltr" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} style={inputStyle} /></Field>
-              <Field label={form.id ? 'كلمة مرور جديدة' : 'كلمة المرور'} hint={form.id ? 'اتركها فاضية لو ما تبي تغيّرها' : '8 أحرف على الأقل'}>
+              <Field label={form.id ? 'كلمة مرور جديدة' : 'كلمة المرور'} hint={form.id ? 'اتركها فارغة إن لم ترغب في تغييرها' : '8 أحرف على الأقل'}>
                 <input type="password" dir="ltr" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} style={inputStyle} />
               </Field>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: A.text2, marginBottom: 8 }}>الصلاحيات</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: A.text, marginBottom: 8 }}>الصلاحيات</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {Object.entries(PERMS).map(([k, l]) => (
-                    <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 13,
+                    <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, cursor: 'pointer', fontSize: 13.5,
                       border: `1px solid ${form.permissions[k] ? A.primary + '66' : A.border}`, background: form.permissions[k] ? A.primarySoft : A.surface }}>
                       <input type="checkbox" checked={!!form.permissions[k]} onChange={e => setForm({ ...form, permissions: { ...form.permissions, [k]: e.target.checked } })} />
                       {l}

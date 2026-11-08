@@ -8,7 +8,7 @@ import { A, Badge, Btn, Card, Loading, adminFetch, type Tone } from './kit'
 type Status = 'active' | 'attention' | 'dormant' | 'expired'
 const STATUS: Record<Status, { label: string; tone: Tone }> = {
   dormant: { label: 'خامل', tone: 'danger' },
-  attention: { label: 'يحتاج متابعة', tone: 'warning' },
+  attention: { label: 'يحتاج إلى متابعة', tone: 'warning' },
   active: { label: 'نشط', tone: 'primary' },
   expired: { label: 'منتهي', tone: 'neutral' },
 }
@@ -40,11 +40,11 @@ export default function ActivityCard({ orgId }: { orgId: string }) {
     ['آخر عملية', ago(a.last_op)],
     ['عمليات آخر 7 أيام', String(a.ops7)],
     ['الأصناف', String(a.products)],
-    ['الموظفين', String(a.staff)],
+    ['الموظفون', String(a.staff)],
     ['الفروع', `${a.branches}${a.managers ? ` · ${a.managers} مدير` : ''}`],
     ...(a.closing_days7 !== null ? [['أيام إقفال الكاشير (7 أيام)', `${a.closing_days7} من 7`] as [string, string]] : []),
     ...(a.attendance7 !== null ? [['تسجيلات الحضور (7 أيام)', String(a.attendance7)] as [string, string]] : []),
-    ['رسائل واتساب (7 أيام)', a.wa_sent7 + a.wa_failed7 ? `وصلت ${a.wa_sent7} من ${a.wa_sent7 + a.wa_failed7}` : 'ما فيه'],
+    ['رسائل واتساب (7 أيام)', a.wa_sent7 + a.wa_failed7 ? `وصلت ${a.wa_sent7} من ${a.wa_sent7 + a.wa_failed7}` : 'لا توجد'],
   ] : []
 
   return (
@@ -53,7 +53,7 @@ export default function ActivityCard({ orgId }: { orgId: string }) {
         {st && <Badge tone={st.tone}>{st.label}</Badge>}
         <Btn small kind="ghost" onClick={load} disabled={loading} title="تحديث"><RefreshCw size={13} /></Btn>
       </div>}>
-      {loading && !a ? <Loading label="جاري جلب النشاط..." /> : error ? (
+      {loading && !a ? <Loading label="جارٍ جلب النشاط..." /> : error ? (
         <div style={{ fontSize: 13, color: A.danger }}>{error}</div>
       ) : a && (
         <>
@@ -61,7 +61,7 @@ export default function ActivityCard({ orgId }: { orgId: string }) {
             {items.map(([k, v]) => (
               <div key={k} style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 11.5, color: A.text3, fontWeight: 600 }}>{k}</div>
-                <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 3 }}>{v}</div>
+                <div style={{ fontSize: 13.5, fontWeight: 600, marginTop: 3 }}>{v}</div>
               </div>
             ))}
           </div>
@@ -75,9 +75,9 @@ export default function ActivityCard({ orgId }: { orgId: string }) {
             </div>
           )}
           {a.unused_included?.length > 0 && (
-            <div style={{ fontSize: 12, color: A.text2, marginTop: 10 }}>ميزات عنده وما يستخدمها: {a.unused_included.join('، ')}</div>
+            <div style={{ fontSize: 12, color: A.text2, marginTop: 10 }}>مزايا لديه لا يستخدمها: {a.unused_included.join('، ')}</div>
           )}
-          <button onClick={() => router.push('/storely-admin/account-health')} style={{ marginTop: 12, background: 'none', border: 'none', padding: 0, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, color: A.primary, cursor: 'pointer' }}>
+          <button onClick={() => router.push('/storely-admin/account-health')} style={{ marginTop: 12, background: 'none', border: 'none', padding: 0, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, color: A.primary, cursor: 'pointer' }}>
             كل الحسابات في «صحة الحسابات»
           </button>
         </>

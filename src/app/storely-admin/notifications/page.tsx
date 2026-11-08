@@ -1,239 +1,164 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { toast } from '@/components/toast'
-import { A } from '../_admin/kit'
-import { Bell, Megaphone, Check } from 'lucide-react'
+import { Bell, Megaphone, Check, Send, History, Building2, SearchX } from 'lucide-react'
+import { A, Badge, Btn, Card, Empty, Field, Loading, NoAccess, PageHeader, Row, SearchBox, Stack, Tabs, adminFetch, fmtDate, inputStyle, useAdmin, type Tone } from '../_admin/kit'
 
-const C = {
-  primary:A.primary, primaryL:A.primarySoft, primaryB:A.primary+'55',
-  danger:A.danger, dangerL:A.dangerSoft, dangerB:'#fecdca',
-  warning:A.warning, warningL:A.warningSoft, warningB:'#fedf89',
-  info:A.info, infoL:A.infoSoft, infoB:'#b2ddff',
-  text:A.text, text2:A.text2, text3:A.text2, text4:A.text3,
-  bg:A.bg, border:A.border, border2:A.borderStrong,
+// إشعارات المنشآت: إشعار داخلي (جرس الإشعارات) أو بانر عام أعلى لوحة التحكم — لكل المنشآت أو لمنشآت محددة
+type NType = 'info' | 'warning' | 'success' | 'danger'
+const TC: Record<NType, { label: string; tone: Tone; color: string; bg: string }> = {
+  info: { label: 'معلومة', tone: 'info', color: A.info, bg: A.infoSoft },
+  warning: { label: 'تنبيه', tone: 'warning', color: A.warning, bg: A.warningSoft },
+  success: { label: 'نجاح', tone: 'primary', color: A.primary, bg: A.primarySoft },
+  danger: { label: 'هام', tone: 'danger', color: A.danger, bg: A.dangerSoft },
 }
+const BANNER_COLOR: Record<NType, string> = { danger: '#ef4444', warning: '#f59e0b', success: '#029FA2', info: '#7c3aed' }
 
 export default function AdminNotificationsPage() {
-  const [orgs, setOrgs]         = useState<any[]>([])
+  const { admin } = useAdmin()
+  const allowed = admin.role === 'super_admin'
+  const [orgs, setOrgs] = useState<any[]>([])
   const [selected, setSelected] = useState<string[]>([])
-  const [title, setTitle]       = useState('')
-  const [message, setMessage]   = useState('')
-  const [type, setType]         = useState<'info'|'warning'|'success'|'danger'>('info')
-  const [deliveryType, setDeliveryType] = useState<'internal'|'banner'>('internal')
-  const [sending, setSending]   = useState(false)
-  const [sent, setSent]         = useState<any[]>([])
-  const [loading, setLoading]   = useState(true)
-  const [tab, setTab]           = useState<'send'|'history'>('send')
+  const [title, setTitle] = useState('')
+  const [message, setMessage] = useState('')
+  const [type, setType] = useState<NType>('info')
+  const [deliveryType, setDeliveryType] = useState<'internal' | 'banner'>('internal')
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState<'send' | 'history'>('send')
   const [orgSearch, setOrgSearch] = useState('')
-  const [authChecked, setAuthChecked] = useState(false)
-
-  useEffect(() => {
-    const key = sessionStorage.getItem('storely_admin_pass') || ''
-    fetch('/api/admin/whoami', { headers: { 'x-admin-key': key } })
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(data => {
-        if (!data.authenticated || data.admin?.role !== 'super_admin') { window.location.href = '/storely-admin'; return }
-        setAuthChecked(true)
-      })
-      .catch(() => { window.location.href = '/storely-admin' })
-  }, [])
-
-  useEffect(()=>{ if(authChecked) load() },[authChecked])
 
   async function load() {
     setLoading(true)
-    const adminKey = sessionStorage.getItem('storely_admin_pass') || ''
-    try {
-      const res = await fetch('/api/admin/list-orgs', { headers: { 'x-admin-key': adminKey } })
-      const j = await res.json()
-      setOrgs(j.orgs || [])
-    } catch { setOrgs([]) }
-    try {
-      const res = await fetch('/api/admin/notifications', { headers: { 'x-admin-key': adminKey } })
-      const j = await res.json()
-      setSent(j.notifications || [])
-    } catch { setSent([]) }
+    const [o, n] = await Promise.all([adminFetch('/api/admin/list-orgs'), adminFetch('/api/admin/notifications')])
+    setOrgs(o.orgs || []); setSent(n.notifications || [])
     setLoading(false)
   }
+  useEffect(() => { if (allowed) load() }, [allowed])
 
-  function toggleOrg(id:string) {
-    setSelected(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id])
-  }
+  const shownOrgs = useMemo(() => orgs.filter((o: any) => !orgSearch.trim() || o.name?.includes(orgSearch.trim())), [orgs, orgSearch])
+  const toggleOrg = (id: string) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
 
   async function sendNotification() {
-    if(!title.trim()||!message.trim()){toast('أدخل العنوان والرسالة','warning');return}
+    if (!title.trim() || !message.trim()) { toast('أدخل العنوان ونص الرسالة', 'warning'); return }
     setSending(true)
-    const targets = selected.length===0 ? orgs.map(o=>o.id) : selected
-    const isBanner = deliveryType==='banner'
-    let j:any = {}
-    try {
-      const res = await fetch('/api/admin/notifications',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-admin-key':sessionStorage.getItem('storely_admin_pass')||''},
-        body:JSON.stringify({ title:title.trim(), message:message.trim(), type, target_orgs:selected.length===0?null:selected, org_ids:targets, with_org_notifications:!isBanner }),
-      })
-      j = await res.json()
-    } catch { j = { error: 'خطأ بالاتصال' } }
-    if(!j.success){toast((j.stage==='notifications'?'خطأ في الإشعارات: ':'خطأ: ')+(j.error||''),'error');setSending(false);return}
-    if(isBanner) {
-      const version = 'admin-'+Date.now()
-      await fetch('/api/admin/feature-announcement',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-admin-key':sessionStorage.getItem('storely_admin_pass')||''},
-        body:JSON.stringify({version,title:title.trim(),description:message.trim(),type:'banner',color:type==='danger'?'#ef4444':type==='warning'?'#f59e0b':type==='success'?'#029FA2':'#7c3aed',target_orgs:targets})
-      })
-      toast('تم إرسال البانر'); setTitle(''); setMessage(''); setSending(false); return
+    const targets = selected.length === 0 ? orgs.map(o => o.id) : selected
+    const isBanner = deliveryType === 'banner'
+    const j = await adminFetch('/api/admin/notifications', { method: 'POST', body: { title: title.trim(), message: message.trim(), type, target_orgs: selected.length === 0 ? null : selected, org_ids: targets, with_org_notifications: !isBanner } })
+    if (!j.success) { toast((j.stage === 'notifications' ? 'خطأ في الإشعارات: ' : 'خطأ: ') + (j.error || ''), 'error'); setSending(false); return }
+    if (isBanner) {
+      await adminFetch('/api/admin/feature-announcement', { method: 'POST', body: { version: 'admin-' + Date.now(), title: title.trim(), description: message.trim(), type: 'banner', color: BANNER_COLOR[type], target_orgs: targets } })
+      toast('تم إرسال البانر', 'success'); setTitle(''); setMessage(''); setSending(false); return
     }
-    toast(`تم الإرسال لـ ${targets.length} منشأة`)
-    setTitle('');setMessage('');setSelected([]);setSending(false);load()
+    toast(`تم الإرسال إلى ${targets.length} منشأة`, 'success')
+    setTitle(''); setMessage(''); setSelected([]); setSending(false); load()
   }
 
-  const TC = {
-    info:    {label:'معلومة', color:C.info,    bg:C.infoL,    border:C.infoB},
-    warning: {label:'تحذير',  color:C.warning, bg:C.warningL, border:C.warningB},
-    success: {label:'نجاح',   color:C.primary, bg:C.primaryL, border:C.primaryB},
-    danger:  {label:'خطر',    color:C.danger,  bg:C.dangerL,  border:C.dangerB},
-  }
+  if (!allowed) return <><PageHeader title="إشعارات العملاء" /><NoAccess title="هذه الصفحة للمشرف الكامل فقط" /></>
 
+  const tc = TC[type]
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',maxWidth:900,margin:'0 auto',padding:'24px 0'}}>
-      <style>{`input:focus,textarea:focus{border-color:#029FA2!important;outline:none!important;box-shadow:0 0 0 3px #f0fdfa!important}.rh:hover{background:#f9f9f8}`}</style>
+    <>
+      <PageHeader title="إشعارات العملاء" subtitle="أرسل إشعاراً يظهر للعملاء داخل Storely مباشرة، لكل المنشآت أو لمنشآت محددة"
+        actions={<Tabs items={[{ k: 'send' as const, l: 'إرسال إشعار' }, { k: 'history' as const, l: 'السجل', n: sent.length }]} value={tab} onChange={setTab} />} />
 
-      <div style={{marginBottom:20}}>
-        <h1 style={{fontSize:20,fontWeight:700,color:C.text,margin:0}}>إشعارات المنشآت</h1>
-        <p style={{fontSize:11,color:C.text4,margin:'4px 0 0'}}>أرسل إشعارات تظهر في Storely مباشرة</p>
-      </div>
-
-      <div style={{display:'flex',gap:4,background:C.bg,borderRadius:9,padding:3,border:`1px solid ${C.border}`,marginBottom:20,width:'fit-content'}}>
-        {[{v:'send',l:'إرسال'},{v:'history',l:'السجل'}].map(t=>(
-          <button key={t.v} onClick={()=>setTab(t.v as any)}
-            style={{padding:'6px 16px',borderRadius:7,border:'none',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',background:tab===t.v?C.primary:'transparent',color:tab===t.v?'white':C.text3,transition:'all .15s'}}>
-            {t.l}
-          </button>
-        ))}
-      </div>
-
-      {tab==='send'&&(
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,alignItems:'start'}}>
-          <div style={{background:'white',borderRadius:12,padding:18,border:`1px solid ${C.border}`}}>
-            <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:14}}>تفاصيل الإشعار</div>
-
-            <div style={{marginBottom:12}}>
-              <div style={{marginBottom:14}}>
-                <label style={{fontSize:10,fontWeight:700,color:C.text3,display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>طريقة الإرسال</label>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                  <button onClick={()=>setDeliveryType('internal')} style={{padding:'10px',borderRadius:8,border:`1.5px solid ${deliveryType==='internal'?'#029FA2':'#e2e8f0'}`,background:deliveryType==='internal'?'#f0fdfa':'white',color:deliveryType==='internal'?'#029FA2':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
-                    <span style={{display:'inline-flex',alignItems:'center',gap:5}}><Bell size={14}/> إشعار داخلي</span><br/><span style={{fontSize:10,fontWeight:400}}>في جرس الإشعارات</span>
-                  </button>
-                  <button onClick={()=>setDeliveryType('banner')} style={{padding:'10px',borderRadius:8,border:`1.5px solid ${deliveryType==='banner'?'#7c3aed':'#e2e8f0'}`,background:deliveryType==='banner'?'#f5f3ff':'white',color:deliveryType==='banner'?'#7c3aed':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',textAlign:'center'}}>
-                    <span style={{display:'inline-flex',alignItems:'center',gap:5}}><Megaphone size={14}/> بانر عام</span><br/><span style={{fontSize:10,fontWeight:400}}>شريط في الداشبورد</span>
-                  </button>
+      {tab === 'send' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,380px),1fr))', gap: 20, alignItems: 'start' }}>
+          <Card title="تفاصيل الإشعار">
+            <Stack gap={16}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: A.text, marginBottom: 8 }}>طريقة الإرسال</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <Choice on={deliveryType === 'internal'} onClick={() => setDeliveryType('internal')} icon={<Bell size={16} />} title="إشعار داخلي" sub="يظهر في جرس الإشعارات" />
+                  <Choice on={deliveryType === 'banner'} onClick={() => setDeliveryType('banner')} icon={<Megaphone size={16} />} title="بانر عام" sub="شريط أعلى لوحة التحكم" />
                 </div>
               </div>
-              <label style={{fontSize:10,fontWeight:700,color:C.text3,display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>النوع</label>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:5}}>
-                {Object.entries(TC).map(([k,v])=>(
-                  <button key={k} onClick={()=>setType(k as any)}
-                    style={{padding:'7px 4px',borderRadius:7,fontSize:11,fontWeight:600,cursor:'pointer',border:`1.5px solid ${type===k?v.color:C.border2}`,background:type===k?v.bg:'white',color:type===k?v.color:C.text3,fontFamily:'inherit',transition:'all .15s'}}>
-                    {v.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div style={{marginBottom:10}}>
-              <label style={{fontSize:10,fontWeight:700,color:C.text3,display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>العنوان *</label>
-              <input value={title} onChange={e=>setTitle(e.target.value)}
-                style={{width:'100%',padding:'10px 12px',border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,fontFamily:'inherit',color:C.text,boxSizing:'border-box'}}
-                placeholder="مثال: تحديث جديد في Storely"/>
-            </div>
-
-            <div style={{marginBottom:14}}>
-              <label style={{fontSize:10,fontWeight:700,color:C.text3,display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'.05em'}}>الرسالة *</label>
-              <textarea value={message} onChange={e=>setMessage(e.target.value)} rows={4}
-                style={{width:'100%',padding:'10px 12px',border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,fontFamily:'inherit',color:C.text,resize:'vertical',boxSizing:'border-box'}}
-                placeholder="اكتب تفاصيل الإشعار هنا..."/>
-            </div>
-
-            {(title||message)&&(
-              <div style={{background:TC[type].bg,border:`1px solid ${TC[type].border}`,borderRadius:9,padding:'11px 14px',marginBottom:14}}>
-                <div style={{fontSize:10,fontWeight:700,color:TC[type].color,marginBottom:3}}>معاينة</div>
-                <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:3}}>{title||'العنوان'}</div>
-                <div style={{fontSize:11,color:C.text3}}>{message||'الرسالة...'}</div>
-              </div>
-            )}
-
-            <button onClick={sendNotification} disabled={sending}
-              style={{width:'100%',padding:'11px',background:sending?C.text4:C.primary,color:'white',border:'none',borderRadius:8,fontSize:13,fontWeight:700,cursor:sending?'not-allowed':'pointer',fontFamily:'inherit'}}>
-              {sending?'جاري الإرسال...':`إرسال ${selected.length===0?`للكل (${orgs.length})`:` لـ ${selected.length} منشأة`}`}
-            </button>
-          </div>
-
-          <div style={{background:'white',borderRadius:12,border:`1px solid ${C.border}`,overflow:'hidden'}}>
-            <div style={{padding:'11px 14px',borderBottom:`1px solid ${C.border}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
               <div>
-                <div style={{fontSize:13,fontWeight:700,color:C.text}}>المنشآت</div>
-                <div style={{fontSize:10,color:C.text4,marginTop:1}}>{selected.length===0?'سيُرسل للجميع':`${selected.length} محددة`}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: A.text, marginBottom: 8 }}>النوع</div>
+                <Tabs items={(Object.keys(TC) as NType[]).map(k => ({ k, l: TC[k].label }))} value={type} onChange={setType} />
               </div>
-              <div style={{display:'flex',gap:5}}>
-                <button onClick={()=>setSelected(orgs.map(o=>o.id))} style={{padding:'3px 9px',borderRadius:6,border:`1px solid ${C.border2}`,background:C.bg,fontSize:10,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:C.text2}}>الكل</button>
-                <button onClick={()=>setSelected([])} style={{padding:'3px 9px',borderRadius:6,border:`1px solid ${C.border2}`,background:C.bg,fontSize:10,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:C.text2}}>إلغاء</button>
-              </div>
-            </div>
-            <div style={{padding:'8px 14px',borderBottom:`1px solid ${C.border}`}}>
-              <input value={orgSearch} onChange={e=>setOrgSearch(e.target.value)} placeholder="بحث بالاسم..."
-                style={{width:'100%',padding:'6px 10px',border:`1px solid ${C.border2}`,borderRadius:7,fontSize:11,fontFamily:'inherit',color:C.text,boxSizing:'border-box' as const}}/>
-            </div>
-            <div style={{maxHeight:340,overflowY:'auto'}}>
-              {loading?(
-                <div style={{padding:'24px',textAlign:'center',color:C.text4,fontSize:12}}>جاري التحميل...</div>
-              ):orgs.length===0?(
-                <div style={{padding:'24px',textAlign:'center',color:C.text4,fontSize:12}}>ما فيه منشآت — تأكد من صلاحياتك أو حاول تحديث الصفحة</div>
-              ):orgs.filter((o:any)=>o.name?.includes(orgSearch)).map((org,i,arr)=>{
-                const isSel=selected.includes(org.id)
-                return(
-                  <div key={org.id} className="rh" onClick={()=>toggleOrg(org.id)}
-                    style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',borderBottom:i<arr.length-1?`1px solid ${C.border}`:'none',cursor:'pointer',background:isSel?C.primaryL:'white',transition:'background .1s'}}>
-                    <div style={{width:18,height:18,borderRadius:5,border:`2px solid ${isSel?C.primary:C.border2}`,background:isSel?C.primary:'white',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                      {isSel&&<Check size={12} color="white" strokeWidth={3}/>}
-                    </div>
-                    <span style={{fontSize:12,fontWeight:600,color:C.text,flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{org.name}</span>
+              <Field label="العنوان"><input value={title} onChange={e => setTitle(e.target.value)} style={inputStyle} placeholder="مثال: تحديث جديد في Storely" maxLength={120} /></Field>
+              <Field label="الرسالة">
+                <textarea value={message} onChange={e => setMessage(e.target.value)} rows={4} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.8 }} placeholder="اكتب تفاصيل الإشعار هنا" />
+              </Field>
+
+              <div>
+                <div style={{ fontSize: 12, color: A.text3, marginBottom: 6 }}>المعاينة</div>
+                <div style={{ background: tc.bg, border: `1px solid ${tc.color}2e`, borderRadius: 12, padding: '12px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <span style={{ color: tc.color, display: 'flex', marginTop: 2 }}>{deliveryType === 'banner' ? <Megaphone size={16} /> : <Bell size={16} />}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: A.text }}>{title || 'العنوان'}</div>
+                    <div style={{ fontSize: 13, color: A.text2, marginTop: 2, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{message || 'نص الرسالة'}</div>
                   </div>
-                )
-              })}
+                </div>
+              </div>
+
+              <Btn kind="primary" full loading={sending} onClick={sendNotification}>
+                <Send size={15} /> {selected.length === 0 ? `إرسال إلى كل المنشآت (${orgs.length})` : `إرسال إلى ${selected.length} منشأة`}
+              </Btn>
+            </Stack>
+          </Card>
+
+          <Card title="المنشآت" subtitle={selected.length === 0 ? 'سيُرسل إلى جميع المنشآت، أو اختر منشآت محددة' : `${selected.length} منشأة محددة`} pad={0}
+            actions={<div style={{ display: 'flex', gap: 6 }}>
+              <Btn small onClick={() => setSelected(shownOrgs.map(o => o.id))}>تحديد الكل</Btn>
+              <Btn small kind="ghost" disabled={!selected.length} onClick={() => setSelected([])}>إلغاء التحديد</Btn>
+            </div>}>
+            <div style={{ padding: '12px 16px', borderBottom: `1px solid ${A.border}` }}>
+              <SearchBox value={orgSearch} onChange={setOrgSearch} placeholder="ابحث باسم المنشأة" />
             </div>
-          </div>
+            <div style={{ maxHeight: 420, overflowY: 'auto' }}>
+              {loading ? <Loading /> : orgs.length === 0 ? <Empty icon={Building2} title="لا توجد منشآت" hint="تحقق من صلاحياتك أو حدّث الصفحة" />
+                : shownOrgs.length === 0 ? <Empty icon={SearchX} title="لا توجد نتائج" />
+                : shownOrgs.map(org => {
+                  const on = selected.includes(org.id)
+                  return (
+                    <Row key={org.id} onClick={() => toggleOrg(org.id)} style={{ padding: '11px 16px', background: on ? A.primarySoft : 'transparent' }}>
+                      <span style={{ width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${on ? A.primary : A.borderStrong}`, background: on ? A.primary : A.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        {on && <Check size={12} color="white" strokeWidth={3} />}
+                      </span>
+                      <span style={{ fontSize: 13.5, fontWeight: 500, color: A.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{org.name}</span>
+                    </Row>
+                  )
+                })}
+            </div>
+          </Card>
         </div>
       )}
 
-      {tab==='history'&&(
-        <div style={{background:'white',borderRadius:12,border:`1px solid ${C.border}`,overflow:'hidden'}}>
-          <div style={{padding:'11px 14px',borderBottom:`1px solid ${C.border}`}}>
-            <span style={{fontSize:13,fontWeight:700,color:C.text}}>سجل الإشعارات</span>
-          </div>
-          {sent.length===0?(
-            <div style={{padding:'48px',textAlign:'center',color:C.text4,fontSize:13}}>لا توجد إشعارات بعد</div>
-          ):sent.map((n,i)=>{
-            const tc=TC[n.type as keyof typeof TC]||TC.info
-            return(
-              <div key={n.id} style={{padding:'12px 14px',borderBottom:i<sent.length-1?`1px solid ${C.border}`:'none'}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
-                      <span style={{background:tc.bg,color:tc.color,border:`1px solid ${tc.border}`,padding:'2px 8px',borderRadius:99,fontSize:10,fontWeight:600}}>{tc.label}</span>
-                      <span style={{fontSize:10,color:C.text4}}>{new Date(n.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</span>
-                    </div>
-                    <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:2}}>{n.title}</div>
-                    <div style={{fontSize:11,color:C.text3}}>{n.message}</div>
+      {tab === 'history' && (
+        <Card title="سجل الإشعارات" pad={0}>
+          {loading ? <Loading /> : sent.length === 0 ? <Empty icon={History} title="لم تُرسل أي إشعارات بعد" /> : sent.map(n => {
+            const t = TC[n.type as NType] || TC.info
+            return (
+              <Row key={n.id} style={{ alignItems: 'flex-start' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: t.bg, color: t.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Bell size={16} /></div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: A.text }}>{n.title}</span>
+                    <Badge tone={t.tone}>{t.label}</Badge>
                   </div>
-                  <span style={{fontSize:11,fontWeight:600,color:C.primary,background:C.primaryL,padding:'3px 8px',borderRadius:99,border:`1px solid ${C.primaryB}`,flexShrink:0}}>{n.sent_to_count} منشأة</span>
+                  <div style={{ fontSize: 13, color: A.text2, marginTop: 3, lineHeight: 1.7 }}>{n.message}</div>
+                  <div style={{ fontSize: 12, color: A.text3, marginTop: 4 }}>{fmtDate(n.created_at, true)}</div>
                 </div>
-              </div>
+                <Badge tone="neutral">{n.sent_to_count} منشأة</Badge>
+              </Row>
             )
           })}
-        </div>
+        </Card>
       )}
-    </div>
+    </>
+  )
+}
+
+function Choice({ on, onClick, icon, title, sub }: { on: boolean; onClick: () => void; icon: React.ReactNode; title: string; sub: string }) {
+  return (
+    <button type="button" onClick={onClick} className="adm-hover"
+      style={{ textAlign: 'right', padding: '12px 14px', borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit', border: `1px solid ${on ? A.primary : A.border}`, background: on ? A.primarySoft : A.surface, boxShadow: on ? `0 0 0 3px ${A.primary}1a` : A.shadowSm }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 600, color: on ? A.primaryHover : A.text }}>{icon}{title}</div>
+      <div style={{ fontSize: 12, color: A.text3, marginTop: 3 }}>{sub}</div>
+    </button>
   )
 }

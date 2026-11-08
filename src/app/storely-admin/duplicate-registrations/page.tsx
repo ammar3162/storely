@@ -1,7 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { RefreshCw } from 'lucide-react'
-import { A, Badge, Btn, Card, Empty, Loading, Notice, PageHeader, adminFetch, fmtDate } from '../_admin/kit'
+import { RefreshCw, ShieldCheck, Wifi } from 'lucide-react'
+import { A, Avatar, Badge, Btn, Card, Empty, Loading, Notice, PageHeader, Row, Stack, adminFetch, fmtDate } from '../_admin/kit'
+import { planLabel } from '../_admin/customers'
+import { planKeyOf } from '@/lib/planPricing'
 
 interface OrgGroup {
   ip_address: string
@@ -26,36 +28,37 @@ export default function DuplicateRegistrationsPage() {
 
   return (
     <>
-      <PageHeader title="تسجيلات مشبوهة" subtitle="منشآت متعددة انسجّلت من نفس عنوان الشبكة (IP)"
+      <PageHeader title="تسجيلات مشبوهة" subtitle="منشآت متعددة سُجّلت من عنوان الشبكة (IP) نفسه"
         actions={<Btn onClick={load} loading={loading}><RefreshCw size={14} /> تحديث</Btn>} />
 
-      <div style={{ marginBottom: 16 }}>
+      <Stack>
         <Notice tone="warning">
-          مؤشر محتمل (مو مؤكد) إن شخص واحد يتحايل على حدود الباقة بمنشآت منفصلة بدل «إضافة فرع». راجع كل حالة قبل أي إجراء —
-          ممكن يكون السبب طبيعي مثل شبكة WiFi مشتركة في مكتب أو كافيه.
+          مؤشر محتمل (غير مؤكد) على أن شخصاً واحداً يتجاوز حدود الباقة بإنشاء منشآت منفصلة بدلاً من «إضافة فرع». راجع كل حالة قبل اتخاذ أي إجراء،
+          فقد يكون السبب طبيعياً مثل شبكة WiFi مشتركة في مكتب أو مقهى.
         </Notice>
-      </div>
 
-      {error && <div style={{ marginBottom: 16 }}><Notice tone="danger">{error}</Notice></div>}
+      {error && <Notice tone="danger">{error}</Notice>}
 
-      {loading ? <Loading /> : groups.length === 0 ? <Card><Empty title="ما فيه أي حالة مشبوهة حالياً" /></Card> : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {loading ? <Loading /> : groups.length === 0 ? <Card><Empty icon={ShieldCheck} title="لا توجد حالات مشبوهة حالياً" /></Card> : (
+        <Stack gap={16}>
           {groups.map(g => (
             <Card key={g.ip_address} pad={0}
               title={`${g.organizations.length} منشآت من نفس الشبكة`}
               subtitle={`من ${fmtDate(g.first_seen)} إلى ${fmtDate(g.last_seen)}`}
-              actions={<span style={{ fontSize: 12.5, color: A.text2, fontFamily: 'monospace', direction: 'ltr' }}>{g.ip_address}</span>}>
+              actions={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: A.text2, padding: '4px 10px', borderRadius: 8, background: A.muted }}><Wifi size={13} /><span style={{ fontFamily: 'ui-monospace, Menlo, monospace', direction: 'ltr' }}>{g.ip_address}</span></span>}>
               {g.organizations.map(o => (
-                <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px', borderBottom: `1px solid ${A.border}` }}>
-                  <span style={{ flex: 1, fontSize: 13.5, fontWeight: 600, color: A.text }}>{o.name}</span>
-                  <span style={{ fontSize: 12, color: A.text3 }}>{fmtDate(o.created_at)}</span>
-                  <Badge tone="info">{o.plan}</Badge>
-                </div>
+                <Row key={o.id}>
+                  <Avatar name={o.name} size={32} />
+                  <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: A.text }}>{o.name}</span>
+                  <span style={{ fontSize: 12.5, color: A.text3 }}>{fmtDate(o.created_at)}</span>
+                  <Badge tone="info">{planLabel(planKeyOf(o.plan))}</Badge>
+                </Row>
               ))}
             </Card>
           ))}
-        </div>
+        </Stack>
       )}
+      </Stack>
     </>
   )
 }

@@ -47,7 +47,7 @@ export default function AdminLogin({ onLogin }: { onLogin: (admin: AdminInfo) =>
         </div>
         <h1 style={{ fontSize: 20, fontWeight: 700, color: A.text }}>لوحة إدارة Storely</h1>
         <p style={{ fontSize: 13, color: A.text2, marginTop: 4, marginBottom: 24 }}>
-          {pendingToken ? 'أدخل الرمز من تطبيق المصادقة (6 أرقام)' : 'سجّل دخولك بحساب المشرف'}
+          {pendingToken ? 'أدخل الرمز من تطبيق المصادقة (6 أرقام)' : 'سجّل الدخول بحساب المشرف'}
         </p>
 
         {pendingToken ? (

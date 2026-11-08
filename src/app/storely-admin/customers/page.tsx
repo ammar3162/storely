@@ -1,8 +1,8 @@
 'use client'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Search, RefreshCw } from 'lucide-react'
-import { A, Badge, Btn, Card, Empty, Loading, PageHeader, Table, adminFetch, daysLeft, fmtDate, inputStyle, td } from '../_admin/kit'
+import { RefreshCw, SearchX } from 'lucide-react'
+import { A, Avatar, Badge, Btn, Card, Empty, Loading, PageHeader, SearchBox, Table, Tabs, Toolbar, adminFetch, daysLeft, fmtDate, td } from '../_admin/kit'
 import { type Customer, STATUS, PLAN_TONE, mapCustomer, planLabel } from '../_admin/customers'
 import { upgradeCandidate, PLAN_PRICING } from '@/lib/planPricing'
 import CustomerDrawer from '../_admin/CustomerDrawer'
@@ -50,7 +50,7 @@ function CustomersPage() {
       // جاي من «صحة الحسابات»: يفتح ملف العميل على طول
       const open = params.get('open'); if (open) setSelectedId(open)
     }
-    else setError(j.error === 'unauthorized' ? 'ما عندك صلاحية إدارة العملاء' : 'تعذّر تحميل العملاء')
+    else setError(j.error === 'unauthorized' ? 'لا تملك صلاحية إدارة العملاء' : 'تعذّر تحميل العملاء')
     setLoading(false)
   }
   useEffect(() => { load() }, [])
@@ -64,41 +64,30 @@ function CustomersPage() {
 
   return (
     <>
-      <PageHeader title="العملاء" subtitle={`${list.length} منشأة مسجّلة`}
+      <PageHeader title="العملاء" subtitle={`${list.length} منشأة مسجّلة. اضغط على أي منشأة لعرض ملفها وإدارة اشتراكها`}
         actions={<Btn onClick={load} loading={loading}><RefreshCw size={14} /> تحديث</Btn>} />
 
       <Card pad={0}>
-        <div style={{ padding: 14, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', borderBottom: `1px solid ${A.border}` }}>
-          <div style={{ position: 'relative', flex: '1 1 240px' }}>
-            <Search size={15} style={{ position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)', color: A.text3 }} />
-            <input value={q} onChange={e => setQ(e.target.value)} placeholder="ابحث بالاسم أو المنشأة أو الجوال" style={{ ...inputStyle, paddingRight: 34 }} />
-          </div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {FILTERS.map(f => (
-              <button key={f.k} onClick={() => setFilter(f.k)} className="adm-btn"
-                style={{ padding: '6px 11px', borderRadius: 99, fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
-                  border: `1px solid ${filter === f.k ? A.primary : A.border}`, background: filter === f.k ? A.primary : A.surface, color: filter === f.k ? 'white' : A.text2 }}>
-                {f.l} <span style={{ opacity: .75 }}>{counts[f.k] ?? 0}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+        <Toolbar>
+          <SearchBox value={q} onChange={setQ} placeholder="ابحث بالاسم أو المنشأة أو الجوال" />
+          <Tabs items={FILTERS.map(f => ({ k: f.k, l: f.l, n: counts[f.k] ?? 0 }))} value={filter} onChange={setFilter} />
+        </Toolbar>
 
-        {loading ? <Loading /> : error ? <Empty title={error} /> : shown.length === 0 ? <Empty title="ما فيه نتائج" hint="غيّر البحث أو الفلتر" /> : (
+        {loading ? <Loading /> : error ? <Empty title={error} /> : shown.length === 0 ? <Empty icon={SearchX} title="لا توجد نتائج" hint="جرّب تغيير كلمة البحث أو التصفية" /> : (
           <Table head={['المنشأة', 'المالك', 'الجوال', 'الباقة', 'الاشتراك', 'الحالة', 'التسجيل']}>
             {shown.map(u => {
               const st = STATUS[u.status] || STATUS.pending
               const d = daysLeft(u.subscription_ends_at)
               return (
                 <tr key={u.id} className="adm-row" onClick={() => setSelectedId(u.id)}>
-                  <td style={{ ...td, fontWeight: 700 }}>{u.org_name}</td>
+                  <td style={td}><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Avatar name={u.org_name} size={32} /><span style={{ fontWeight: 600 }}>{u.org_name}</span></div></td>
                   <td style={td}>{u.full_name}</td>
                   <td style={{ ...td, color: A.text2 }}><span dir="ltr">{u.phone || '—'}</span></td>
-                  <td style={td}><div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}><Badge tone={PLAN_TONE[u.plan]}>{planLabel(u.plan, u.max_branches)}</Badge>{u.monthly_bill != null && upgradeCandidate(u.plan, u.monthly_bill) && <span title={`فاتورته ${u.monthly_bill} ⃁/شهر — الشاملة ${PLAN_PRICING.pro.monthly} ⃁ وفيها كل الميزات و3 فروع`}><Badge tone="warning">مرشّح للترقية</Badge></span>}</div></td>
+                  <td style={td}><div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}><Badge tone={PLAN_TONE[u.plan]}>{planLabel(u.plan, u.max_branches)}</Badge>{u.monthly_bill != null && upgradeCandidate(u.plan, u.monthly_bill) && <span title={`فاتورته ${u.monthly_bill} ⃁ شهرياً، والباقة الشاملة ${PLAN_PRICING.pro.monthly} ⃁ وتشمل كل المزايا و3 فروع`}><Badge tone="warning">مرشّح للترقية</Badge></span>}</div></td>
                   <td style={td}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
-                      <span style={{ fontSize: 12.5, fontWeight: 600 }}>{u.subscription_type === 'paid' ? 'مدفوع' : 'تجربة'} · {u.billing_cycle === 'yearly' ? 'سنوي' : 'شهري'}</span>
-                      {d !== null && <span style={{ fontSize: 11.5, fontWeight: 600, color: d <= 0 ? A.danger : d <= 7 ? A.warning : A.text3 }}>{d <= 0 ? 'منتهي' : `باقي ${d} يوم`}</span>}
+                      <span style={{ fontSize: 13, fontWeight: 500 }}>{u.subscription_type === 'paid' ? 'مدفوع' : 'تجربة'} · {u.billing_cycle === 'yearly' ? 'سنوي' : 'شهري'}</span>
+                      {d !== null && <span style={{ fontSize: 12, fontWeight: 500, color: d <= 0 ? A.danger : d <= 7 ? A.warning : A.text3 }}>{d <= 0 ? 'منتهٍ' : `متبقٍ ${d} يوم`}</span>}
                     </div>
                   </td>
                   <td style={td}><Badge tone={st.tone}>{st.label}</Badge></td>

@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { MessageCircle, RefreshCw, Globe } from 'lucide-react'
+import { MessageCircle, RefreshCw, Globe, Truck, Check, X, Trash2, Phone, Mail, User } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
-import { A, Badge, Btn, Card, Empty, Loading, PageHeader, adminFetch, fmtDate } from '../_admin/kit'
+import { A, Avatar, Badge, Btn, Card, Empty, LinkBtn, Loading, PageHeader, Stack, Tabs, adminFetch, fmtDate } from '../_admin/kit'
 
 const isSafeUrl = (u?: string | null) => !!u && /^https?:\/\//i.test(u.trim())
 const STATUS = { pending: { l: 'بانتظار المراجعة', t: 'warning' }, approved: { l: 'مقبول', t: 'primary' }, rejected: { l: 'مرفوض', t: 'danger' } } as const
@@ -33,7 +33,7 @@ export default function SupplierApplicationsPage() {
   }
 
   async function remove(a: any, rejected: boolean) {
-    if (!(await confirmDialog({ title: rejected ? 'رفض الطلب' : 'حذف الطلب', message: `${rejected ? 'رفض' : 'حذف'} طلب "${a.company_name}"؟ الطلب ينحذف من القائمة.` }))) return
+    if (!(await confirmDialog({ title: rejected ? 'رفض الطلب' : 'حذف الطلب', message: `${rejected ? 'رفض' : 'حذف'} طلب «${a.company_name}»؟ سيُحذف الطلب من القائمة.` }))) return
     setBusy(a.id)
     await adminFetch(`/api/admin/supplier-applications?id=${encodeURIComponent(a.id)}`, { method: 'DELETE' })
     await log(rejected ? 'supplier_application_rejected' : 'delete_supplier_application', a.company_name)
@@ -45,34 +45,30 @@ export default function SupplierApplicationsPage() {
 
   return (
     <>
-      <PageHeader title="طلبات الموردين" subtitle="موردون طلبوا الانضمام لسوق Storely"
+      <PageHeader title="طلبات الموردين" subtitle="موردون طلبوا الانضمام إلى سوق Storely"
         actions={<Btn onClick={load} loading={loading}><RefreshCw size={14} /> تحديث</Btn>} />
 
-      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-        {([['pending', `بانتظار المراجعة (${pending.length})`], ['all', `الكل (${apps.length})`]] as const).map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)} className="adm-btn"
-            style={{ padding: '7px 14px', borderRadius: 99, fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
-              border: `1px solid ${tab === k ? A.primary : A.border}`, background: tab === k ? A.primary : A.surface, color: tab === k ? 'white' : A.text2 }}>{l}</button>
-        ))}
-      </div>
+      <Stack>
+      <div><Tabs items={[{ k: 'pending' as const, l: 'بانتظار المراجعة', n: pending.length }, { k: 'all' as const, l: 'الكل', n: apps.length }]} value={tab} onChange={setTab} /></div>
 
-      {loading ? <Loading /> : shown.length === 0 ? <Card><Empty title={tab === 'pending' ? 'ما فيه طلبات تنتظر المراجعة' : 'ما فيه طلبات'} /></Card> : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {loading ? <Loading /> : shown.length === 0 ? <Card><Empty icon={Truck} title={tab === 'pending' ? 'لا توجد طلبات بانتظار المراجعة' : 'لا توجد طلبات'} /></Card> : (
+        <Stack gap={12}>
           {shown.map(a => {
             const st = STATUS[a.status as keyof typeof STATUS] || STATUS.pending
             const phone = String(a.phone || '').replace(/\D/g, '')
             return (
-              <Card key={a.id} pad={18}>
-                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+              <Card key={a.id}>
+                <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                  <Avatar name={a.company_name} size={44} />
                   <div style={{ flex: '1 1 320px', minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <div style={{ fontSize: 15, fontWeight: 700 }}>{a.company_name}</div>
+                      <div style={{ fontSize: 15, fontWeight: 600 }}>{a.company_name}</div>
                       <Badge tone={st.t}>{st.l}</Badge>
                     </div>
-                    <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 13, color: A.text2, marginTop: 8 }}>
-                      <span>{a.contact_name}</span>
-                      <span dir="ltr">{a.phone}</span>
-                      {a.email && <span dir="ltr">{a.email}</span>}
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: A.text2, marginTop: 8 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><User size={13} color={A.text3} />{a.contact_name}</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Phone size={13} color={A.text3} /><span dir="ltr">{a.phone}</span></span>
+                      {a.email && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Mail size={13} color={A.text3} /><span dir="ltr">{a.email}</span></span>}
                       {isSafeUrl(a.website) && <a href={a.website} target="_blank" rel="noopener noreferrer" style={{ color: A.info, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Globe size={13} /> الموقع</a>}
                     </div>
                     {a.business_type?.length > 0 && (
@@ -80,23 +76,24 @@ export default function SupplierApplicationsPage() {
                         {a.business_type.map((t: string) => <Badge key={t}>{t}</Badge>)}
                       </div>
                     )}
-                    {a.description && <div style={{ fontSize: 13, color: A.text2, marginTop: 10, lineHeight: 1.7 }}>{a.description}</div>}
-                    <div style={{ fontSize: 12, color: A.text3, marginTop: 10 }}>{fmtDate(a.created_at, true)}</div>
+                    {a.description && <div style={{ fontSize: 13.5, color: A.text2, marginTop: 12, lineHeight: 1.8, padding: '10px 12px', background: A.muted, borderRadius: 10 }}>{a.description}</div>}
+                    <div style={{ fontSize: 12.5, color: A.text3, marginTop: 10 }}>{fmtDate(a.created_at, true)}</div>
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {phone && <a href={`https://wa.me/${phone}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}><Btn><MessageCircle size={14} /> واتساب</Btn></a>}
+                    {phone && <LinkBtn href={`https://wa.me/${phone}`}><MessageCircle size={14} /> واتساب</LinkBtn>}
                     {a.status === 'pending' && <>
-                      <Btn kind="primary" loading={busy === a.id} onClick={() => approve(a)}>قبول</Btn>
-                      <Btn kind="danger" disabled={busy === a.id} onClick={() => remove(a, true)}>رفض</Btn>
+                      <Btn kind="primary" loading={busy === a.id} onClick={() => approve(a)}><Check size={15} /> قبول</Btn>
+                      <Btn kind="danger" disabled={busy === a.id} onClick={() => remove(a, true)}><X size={15} /> رفض</Btn>
                     </>}
-                    {a.status !== 'pending' && <Btn kind="ghost" disabled={busy === a.id} onClick={() => remove(a, false)}>حذف</Btn>}
+                    {a.status !== 'pending' && <Btn kind="ghost" disabled={busy === a.id} onClick={() => remove(a, false)} title="حذف الطلب"><Trash2 size={14} /></Btn>}
                   </div>
                 </div>
               </Card>
             )
           })}
-        </div>
+        </Stack>
       )}
+      </Stack>
     </>
   )
 }
