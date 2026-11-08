@@ -1,4 +1,5 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
@@ -74,11 +75,11 @@ export default function SupplierPortalAuthPage() {
         *{box-sizing:border-box}
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
         @keyframes spin{to{transform:rotate(360deg)}}
-        .sp-inp{width:100%;padding:13px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;outline:none;background:white;color:#111827;font-family:inherit;transition:border-color .2s}
-        .sp-inp:focus{border-color:#029FA2;box-shadow:0 0 0 3px rgba(22,163,74,.08)}
-        .sp-inp::placeholder{color:#9ca3af}
-        .sp-btn-main{width:100%;padding:14px;background:#029FA2;color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
-        .sp-btn-main:hover{background:#0f766e}
+        .sp-inp{width:100%;padding:13px 16px;border:1.5px solid var(--storely-border);border-radius:10px;font-size:15px;outline:none;background:white;color:var(--storely-text);font-family:inherit;transition:border-color .2s}
+        .sp-inp:focus{border-color:#203640;box-shadow:0 0 0 3px rgba(22,163,74,.08)}
+        .sp-inp::placeholder{color:var(--storely-subtle)}
+        .sp-btn-main{width:100%;padding:14px;background:#203640;color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
+        .sp-btn-main:hover{background:#203640}
         .sp-btn-main:disabled{opacity:.6;cursor:not-allowed}
         @media(max-width:768px){.sp-right-panel{display:none!important}}
       `}</style>
@@ -87,14 +88,14 @@ export default function SupplierPortalAuthPage() {
       <nav style={{padding:'0 40px',height:64,display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #f3f4f6'}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           <img src="/storely-logo.png" alt="Storely" style={{width:38,height:38,borderRadius:10,objectFit:'cover'}}/>
-          <span style={{fontSize:18,fontWeight:800,color:'#111827',letterSpacing:'-0.3px'}}>Storely</span>
-          <span style={{fontSize:12,fontWeight:700,color:'#029FA2',background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'3px 10px',marginRight:4}}>بوابة الموردين</span>
+          <span style={{fontSize:18,fontWeight:800,color:'var(--storely-text)',letterSpacing:'-0.3px'}}>Storely</span>
+          <span style={{fontSize:12,fontWeight:700,color:'#203640',background:'var(--storely-background)',border:'1px solid var(--storely-border)',borderRadius:99,padding:'3px 10px',marginRight:4}}>بوابة الموردين</span>
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           <span style={{fontSize:13,color:'#6b7280'}}>{mode==='login'?'ليس لديك حساب؟':'لديك حساب؟'}</span>
           <button onClick={()=>{setMode(mode==='login'?'register':'login');setError('')}}
-            style={{padding:'8px 18px',background:'none',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:'#374151',transition:'border-color .2s'}}
-            onMouseEnter={e=>e.currentTarget.style.borderColor='#029FA2'}
+            style={{padding:'8px 18px',background:'none',border:'1.5px solid var(--storely-border)',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:'var(--storely-text)',transition:'border-color .2s'}}
+            onMouseEnter={e=>e.currentTarget.style.borderColor='#203640'}
             onMouseLeave={e=>e.currentTarget.style.borderColor='#e5e7eb'}>
             {mode==='login'?'تسجيل جديد':'تسجيل الدخول'}
           </button>
@@ -109,18 +110,18 @@ export default function SupplierPortalAuthPage() {
             {mode==='login' ? (
               <>
                 <div style={{marginBottom:32,textAlign:'center' as const}}>
-                  <h1 style={{fontSize:28,fontWeight:800,color:'#111827',marginBottom:8,letterSpacing:'-0.5px'}}>أهلاً بعودتك</h1>
+                  <h1 style={{fontSize:28,fontWeight:800,color:'var(--storely-text)',marginBottom:8,letterSpacing:'-0.5px'}}>أهلاً بعودتك</h1>
                   <p style={{fontSize:15,color:'#6b7280'}}>سجّل دخولك لإدارة أصنافك وأسعارك</p>
                 </div>
-                {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
+                {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>{error}</div>}
                 <GoogleButton onClick={google} disabled={loading}/>
                 <form onSubmit={handleLogin} style={{display:'flex',flexDirection:'column',gap:14}}>
                   <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني</label>
+                    <label style={{fontSize:13,fontWeight:600,color:'var(--storely-text)',display:'block',marginBottom:6}}>البريد الإلكتروني</label>
                     <input className="sp-inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
                   </div>
                   <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>كلمة المرور</label>
+                    <label style={{fontSize:13,fontWeight:600,color:'var(--storely-text)',display:'block',marginBottom:6}}>كلمة المرور</label>
                     <input className="sp-inp" type="password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••"/>
                   </div>
                   <button type="submit" disabled={loading} className="sp-btn-main" style={{marginTop:8}}>
@@ -129,7 +130,7 @@ export default function SupplierPortalAuthPage() {
                 </form>
                 <div style={{textAlign:'center',marginTop:24,fontSize:13,color:'#6b7280'}}>
                   ليس لديك حساب مورد؟{' '}
-                  <button onClick={()=>{setMode('register');setError('')}} style={{background:'none',border:'none',color:'#029FA2',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
+                  <button onClick={()=>{setMode('register');setError('')}} style={{background:'none',border:'none',color:'#203640',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
                     سجّل الآن
                   </button>
                 </div>
@@ -137,36 +138,36 @@ export default function SupplierPortalAuthPage() {
             ) : (
               <>
                 <div style={{marginBottom:28}}>
-                  <h1 style={{fontSize:26,fontWeight:800,color:'#111827',marginBottom:6,letterSpacing:'-0.5px'}}>سجّل كمورد</h1>
+                  <h1 style={{fontSize:26,fontWeight:800,color:'var(--storely-text)',marginBottom:6,letterSpacing:'-0.5px'}}>سجّل كمورد</h1>
                   <p style={{fontSize:14,color:'#6b7280'}}>أضف بيانات منشأتك وابدأ باستلام الطلبات</p>
                 </div>
-                {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>⚠️ {error}</div>}
+                {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>{error}</div>}
                 <GoogleButton onClick={google} disabled={loading}/>
                 <form onSubmit={handleRegister} style={{display:'flex',flexDirection:'column',gap:14}}>
                   <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>اسم المنشأة *</label>
+                    <label style={{fontSize:13,fontWeight:600,color:'var(--storely-text)',display:'block',marginBottom:6}}>اسم المنشأة *</label>
                     <input className="sp-inp" type="text" required value={businessName} onChange={e=>setBusinessName(e.target.value)} placeholder="مثال: مؤسسة الوفاء للتوريد"/>
                   </div>
                   <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>رقم الجوال</label>
+                    <label style={{fontSize:13,fontWeight:600,color:'var(--storely-text)',display:'block',marginBottom:6}}>رقم الجوال</label>
                     <input className="sp-inp" type="tel" dir="ltr" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="05xxxxxxxx"/>
                   </div>
                   <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>الموقع / المدينة</label>
+                    <label style={{fontSize:13,fontWeight:600,color:'var(--storely-text)',display:'block',marginBottom:6}}>الموقع / المدينة</label>
                     <input className="sp-inp" type="text" value={location} onChange={e=>setLocation(e.target.value)} placeholder="مثال: جدة"/>
                   </div>
                   <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>البريد الإلكتروني *</label>
+                    <label style={{fontSize:13,fontWeight:600,color:'var(--storely-text)',display:'block',marginBottom:6}}>البريد الإلكتروني *</label>
                     <input className="sp-inp" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="example@email.com"/>
                   </div>
                   <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>كلمة المرور *</label>
+                    <label style={{fontSize:13,fontWeight:600,color:'var(--storely-text)',display:'block',marginBottom:6}}>كلمة المرور *</label>
                     <div style={{position:'relative'}}>
                       <input className="sp-inp" type={showPassword?'text':'password'} required value={password} onChange={e=>setPassword(e.target.value)} placeholder="6 أحرف على الأقل" style={{paddingLeft:44}}/>
                       <button type="button" onClick={()=>setShowPassword(s=>!s)}
-                        style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',fontSize:16,color:'#9ca3af',padding:4}}
+                        style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',fontSize:16,color:'var(--storely-subtle)',padding:4}}
                         aria-label={showPassword?'إخفاء كلمة المرور':'إظهار كلمة المرور'}>
-                        {showPassword?'🙈':'👁️'}
+                        {showPassword?'':''}
                       </button>
                     </div>
                   </div>
@@ -176,7 +177,7 @@ export default function SupplierPortalAuthPage() {
                 </form>
                 <div style={{textAlign:'center',marginTop:20,fontSize:13,color:'#6b7280'}}>
                   لديك حساب؟{' '}
-                  <button onClick={()=>{setMode('login');setError('')}} style={{background:'none',border:'none',color:'#029FA2',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
+                  <button onClick={()=>{setMode('login');setError('')}} style={{background:'none',border:'none',color:'#203640',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
                     سجّل الدخول
                   </button>
                 </div>
@@ -186,14 +187,14 @@ export default function SupplierPortalAuthPage() {
         </div>
 
         {/* Right — Branding */}
-        <div className="sp-right-panel" style={{width:'45%',background:'#f9fafb',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'48px 44px',borderRight:'1px solid #f3f4f6'}}>
+        <div className="sp-right-panel" style={{width:'45%',background:'var(--storely-background)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'48px 44px',borderRight:'1px solid #f3f4f6'}}>
           <div style={{maxWidth:400,width:'100%'}}>
-            <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'6px 14px',fontSize:12,fontWeight:700,color:'#029FA2',marginBottom:20}}>
-              🚚 بوابة الموردين
+            <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'var(--storely-background)',border:'1px solid var(--storely-border)',borderRadius:99,padding:'6px 14px',fontSize:12,fontWeight:700,color:'#203640',marginBottom:20}}>
+              <span style={{display:"inline-flex",alignItems:"center",gap:6}}><FeatureIcon name="🚚" size={15} /></span> بوابة الموردين
             </div>
-            <h2 style={{fontSize:30,fontWeight:900,color:'#111827',lineHeight:1.2,marginBottom:12,letterSpacing:'-1px'}}>
+            <h2 style={{fontSize:30,fontWeight:900,color:'var(--storely-text)',lineHeight:1.2,marginBottom:12,letterSpacing:'-1px'}}>
               نظّم توريدك<br/>
-              <span style={{color:'#029FA2'}}>بذكاء وسهولة</span>
+              <span style={{color:'#203640'}}>بذكاء وسهولة</span>
             </h2>
             <p style={{fontSize:14,color:'#6b7280',lineHeight:1.75,marginBottom:24}}>
               استلم طلبات التوريد فورياً، حدّث أسعارك وأصنافك بضغطة، وتابع حالة كل طلب مع كل فرع من مكان واحد
@@ -211,8 +212,8 @@ export default function SupplierPortalAuthPage() {
                 {icon:'📊',text:'تتبّع كل طلباتك ومدفوعاتك'},
               ].map((f,i)=>(
                 <div key={i} style={{display:'flex',alignItems:'center',gap:11}}>
-                  <div style={{width:32,height:32,borderRadius:9,background:'white',border:'1px solid #e5e7eb',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>{f.icon}</div>
-                  <span style={{fontSize:13,color:'#374151',fontWeight:500}}>{f.text}</span>
+                  <div style={{width:32,height:32,borderRadius:9,background:'white',border:'1px solid var(--storely-border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,flexShrink:0}}>{f.icon}</div>
+                  <span style={{fontSize:13,color:'var(--storely-text)',fontWeight:500}}>{f.text}</span>
                 </div>
               ))}
             </div>
@@ -226,11 +227,11 @@ export default function SupplierPortalAuthPage() {
 function GoogleButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
   return (<>
     <button type="button" onClick={onClick} disabled={disabled}
-      style={{width:'100%',padding:'13px',background:'white',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:15,fontWeight:700,color:'#111827',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+      style={{width:'100%',padding:'13px',background:'white',border:'1.5px solid var(--storely-border)',borderRadius:10,fontSize:15,fontWeight:700,color:'var(--storely-text)',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
       <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
       المتابعة بحساب Google
     </button>
-    <div style={{display:'flex',alignItems:'center',gap:12,margin:'18px 0',color:'#9ca3af',fontSize:12}}>
+    <div style={{display:'flex',alignItems:'center',gap:12,margin:'18px 0',color:'var(--storely-subtle)',fontSize:12}}>
       <div style={{flex:1,height:1,background:'#e5e7eb'}}/>أو بالبريد الإلكتروني<div style={{flex:1,height:1,background:'#e5e7eb'}}/>
     </div>
   </>)

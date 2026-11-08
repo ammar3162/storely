@@ -1,4 +1,5 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 import NumberInput from '@/components/NumberInput'
 import { ClipboardList } from 'lucide-react'
 import type { SupplierDashboard } from './useSupplierDashboard'
@@ -45,7 +46,7 @@ export default function OrdersTab({ m, v }: { m: SupplierDashboard; v: Dashboard
                         <span>سعرك: <b>{money(r.quoted_price)} ⃁</b>{r.rep_name && ` · المندوب ${r.rep_name}`}</span>
                         {!myGivenReviewIds.includes(r.id) && (ratingCustomerId===r.id ? (
                           <span className="sd-rate">
-                            {[1,2,3,4,5].map(n=>(<button key={n} onClick={()=>setCustomerRating(n)} aria-label={`${n} نجوم`} style={{opacity:n<=customerRating?1:.3}}>⭐</button>))}
+                            {[1,2,3,4,5].map(n=>(<button key={n} onClick={()=>setCustomerRating(n)} aria-label={`${n} نجوم`} style={{opacity:n<=customerRating?1:.3}}><FeatureIcon name="⭐" size={20} /></button>))}
                             <button className="sd-btn" onClick={()=>submitCustomerRating(r.id)} disabled={ratingSaving}>{ratingSaving?'…':'أرسل التقييم'}</button>
                             <button className="sd-btn ghost" onClick={()=>setRatingCustomerId(null)}>إلغاء</button>
                           </span>

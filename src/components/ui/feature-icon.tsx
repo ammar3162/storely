@@ -5,7 +5,7 @@ import {
   ShoppingCart, SlidersHorizontal, Target, Trash2, TrendingUp, Truck, Users,
   Utensils, Warehouse, Wheat, Building2, AlertTriangle, Save, User, Snail, CalendarDays, CalendarRange,
   Hand, Lock, Gem, MapPin, Store, ClipboardList, Settings, FileText, Siren, Flame, Camera, Image as ImageIcon,
-  Medal, Search, StickyNote, Repeat, Download, Send,
+  Medal, Search, StickyNote, Repeat, Download, Send, Star,
 } from 'lucide-react'
 
 // One outline family for existing decorative feature glyphs. Labels/data stay intact.
@@ -23,7 +23,7 @@ const featureIcons = {
   '⚠️': AlertTriangle, '💾': Save, '🔐': LockKeyhole, '👤': User, '🐌': Snail, '📅': CalendarDays,
   '📆': CalendarRange, '👆': Hand, '🔒': Lock, '💎': Gem, '📍': MapPin, '🏪': Store, '📋': ClipboardList,
   '⚙️': Settings, '📄': FileText, '🚨': Siren, '🔥': Flame, '📷': Camera, '🖼️': ImageIcon, '🥇': Medal,
-  '🥈': Medal, '🥉': Medal, '🔍': Search, '📝': StickyNote, '🔁': Repeat, '📥': Download, '📤': Send,
+  '🥈': Medal, '🥉': Medal, '🔍': Search, '📝': StickyNote, '🔁': Repeat, '📥': Download, '📤': Send, '⭐': Star, '📩': Send, '🙌': Hand,
 } as const
 
 export function FeatureIcon({ name, size = 20 }: { name: string; size?: number }) {

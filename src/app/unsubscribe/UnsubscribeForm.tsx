@@ -13,21 +13,21 @@ export default function UnsubscribeForm({ email, token }: { email: string; token
     else { setState('error'); setMsg(j.error || 'حدث خطأ') }
   }
 
-  if (!email || !token) return <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>الرابط غير مكتمل.</p>
+  if (!email || !token) return <p style={{ fontSize: 14, color:'var(--storely-muted)', margin: 0 }}>الرابط غير مكتمل.</p>
   if (state === 'done') return (
     <>
-      <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>تم إلغاء اشتراكك</div>
-      <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.8, margin: 0 }}>ما راح توصلك إعلانات Storely على <span dir="ltr" style={{ display: 'inline-block', fontWeight: 700, color: '#0f172a' }}>{email}</span>. الإيميلات المهمة مثل الفواتير واستعادة كلمة المرور توصلك عادي.</p>
+      <div style={{ fontSize: 18, fontWeight: 800, color:'var(--storely-text)', marginBottom: 8 }}>تم إلغاء اشتراكك</div>
+      <p style={{ fontSize: 13, color:'var(--storely-muted)', lineHeight: 1.8, margin: 0 }}>ما راح توصلك إعلانات Storely على <span dir="ltr" style={{ display: 'inline-block', fontWeight: 700, color:'var(--storely-text)' }}>{email}</span>. الإيميلات المهمة مثل الفواتير واستعادة كلمة المرور توصلك عادي.</p>
     </>
   )
   return (
     <>
-      <div style={{ fontSize: 18, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>إلغاء الاشتراك بالإعلانات</div>
-      <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.8, margin: '0 0 20px' }}>توقف إعلانات Storely عن <span dir="ltr" style={{ display: 'inline-block', fontWeight: 700, color: '#0f172a' }}>{email}</span>؟ الفواتير وإيميلات الحساب المهمة توصلك عادي.</p>
-      <button onClick={confirm} disabled={state === 'busy'} style={{ width: '100%', padding: '12px', borderRadius: 12, border: 'none', background: '#029FA2', color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+      <div style={{ fontSize: 18, fontWeight: 800, color:'var(--storely-text)', marginBottom: 8 }}>إلغاء الاشتراك بالإعلانات</div>
+      <p style={{ fontSize: 13, color:'var(--storely-muted)', lineHeight: 1.8, margin: '0 0 20px' }}>توقف إعلانات Storely عن <span dir="ltr" style={{ display: 'inline-block', fontWeight: 700, color:'var(--storely-text)' }}>{email}</span>؟ الفواتير وإيميلات الحساب المهمة توصلك عادي.</p>
+      <button onClick={confirm} disabled={state === 'busy'} style={{ width: '100%', padding: '12px', borderRadius: 12, border: 'none', background:'#203640', color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
         {state === 'busy' ? 'جاري الإلغاء...' : 'أوقف الإعلانات'}
       </button>
-      {state === 'error' && <p style={{ fontSize: 12, color: '#b91c1c', marginTop: 12 }}>{msg}</p>}
+      {state === 'error' && <p style={{ fontSize: 12, color:'#b91c1c', marginTop: 12 }}>{msg}</p>}
     </>
   )
 }

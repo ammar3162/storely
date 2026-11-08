@@ -57,17 +57,17 @@ export default function PortalClientPage() {
       .then(r => r.json()).catch(() => ({ error: 'تأكد من الإنترنت' }))
     if (j.error) { window.alert(j.error); return }
     if (!j.created) { window.alert('جميع الفواتير الناقصة عليها طلبات مفتوحة مسبقاً — تابعها من «الطلبات»'); setTab('requests'); return }
-    window.alert(`أُرسل إلى المنشأة ${j.created === 1 ? 'طلب واحد' : `${j.created} طلبات`}${j.skipped ? ` (${j.skipped} عليها طلب مسبقاً)` : ''} ✓`)
+    window.alert(`أُرسل إلى المنشأة ${j.created === 1 ? 'طلب واحد' : `${j.created} طلبات`}${j.skipped ? ` (${j.skipped} عليها طلب مسبقاً)` : ''} `)
     setReqKey(k => k + 1); setTab('requests')
   }
 
   return (
     <PortalShell title={name || 'المنشأة'} subtitle={data ? `${data.report.branchName || 'كل الفروع'} · ${data.report.label}` : undefined}
       orgLogo={name ? { name, url: data?.logo_url || null } : undefined}
-      actions={data ? <a href={xlsx} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 11, background: colors.primary, color: '#fff', fontSize: 13, fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap' as const }}>
+      actions={data ? <a href={xlsx} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 11, background: colors.primary, color:'#fff', fontSize: 13, fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap' as const }}>
         <FileSpreadsheet size={16} /> تحميل إكسل</a> : undefined}>
 
-      <div style={{ display: 'flex', gap: 4, background: '#fff', border: `1px solid ${colors.border}`, borderRadius: 14, padding: 4, marginBottom: 16, width: 'fit-content', maxWidth: '100%', overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: 4, background:'#fff', border: `1px solid ${colors.border}`, borderRadius: 14, padding: 4, marginBottom: 16, width: 'fit-content', maxWidth: '100%', overflowX: 'auto' }}>
         {TABS.map(t => {
           const on = tab === t.k, Icon = t.icon
           return <button key={t.k} onClick={() => setTab(t.k)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: font.family,

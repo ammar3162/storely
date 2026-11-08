@@ -18,7 +18,7 @@ export default function AccountantReportPage() {
   }, [token])
 
   const shell = (children: React.ReactNode) => (
-    <div dir="rtl" style={{ minHeight: '100vh', background: '#f4f7f7', fontFamily: font.family, color: colors.text }}>
+    <div dir="rtl" style={{ minHeight: '100vh', background:'#f4f7f7', fontFamily: font.family, color: colors.text }}>
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '20px 16px 40px' }}>{children}</div>
     </div>
   )

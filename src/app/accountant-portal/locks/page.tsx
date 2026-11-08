@@ -23,16 +23,16 @@ export default function PortalLocksPage() {
     <PortalShell title="إقفال الأشهر" subtitle="بعد مراجعة الشهر أقفله — ولن يمكن تعديل أي شيء فيه إلا إذا فتحته أنت. ويبقى تسجيل الدفع للموردين لاحقاً مسموحاً.">
       {err && <div style={{ color: colors.danger, fontSize: 13, marginBottom: 10 }}>{err}</div>}
       {!data ? <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={24} color={colors.primary} className="spin" /></div>
-        : !data.orgs?.length ? <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: 18, padding: 40, textAlign: 'center', color: colors.text3 }}>لا يوجد لديك عملاء مفعّلون</div>
-        : <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: 18, overflowX: 'auto' }}>
+        : !data.orgs?.length ? <div style={{ background:'#fff', border: `1px solid ${colors.border}`, borderRadius: 18, padding: 40, textAlign: 'center', color: colors.text3 }}>لا يوجد لديك عملاء مفعّلون</div>
+        : <div style={{ background:'#fff', border: `1px solid ${colors.border}`, borderRadius: 18, overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720, fontFamily: font.family }}>
-            <thead><tr style={{ background: '#f8fafc' }}>
-              <th style={{ textAlign: 'right', padding: '12px 16px', fontSize: 12.5, color: colors.text3, position: 'sticky', right: 0, background: '#f8fafc' }}>المنشأة</th>
+            <thead><tr style={{ background:'var(--storely-background)' }}>
+              <th style={{ textAlign: 'right', padding: '12px 16px', fontSize: 12.5, color: colors.text3, position: 'sticky', right: 0, background:'var(--storely-background)' }}>المنشأة</th>
               {data.months.map((m: any) => <th key={m.month} style={{ padding: '12px 8px', fontSize: 12.5, color: colors.text3, whiteSpace: 'nowrap' }}>{m.label}</th>)}
             </tr></thead>
             <tbody>{data.orgs.map((o: any) => (
               <tr key={o.org_id} style={{ borderTop: `1px solid ${colors.border}` }}>
-                <td style={{ padding: '10px 16px', position: 'sticky', right: 0, background: '#fff' }}>
+                <td style={{ padding: '10px 16px', position: 'sticky', right: 0, background:'#fff' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><OrgLogo name={o.name} url={o.logo_url} size={30} /><div><b style={{ fontSize: 13.5, whiteSpace: 'nowrap' }}>{o.name}</b>{o.can_lock === false && <div style={{ fontSize: 11, color: colors.text4 }}>عرض فقط · إذنك على فرع</div>}</div></div>
                 </td>
                 {data.months.map((m: any) => {
@@ -41,7 +41,7 @@ export default function PortalLocksPage() {
                   return <td key={m.month} style={{ textAlign: 'center', padding: 6 }}>
                     <button onClick={() => o.can_lock !== false && toggle(o, m)} disabled={!!busy || o.can_lock === false} title={o.can_lock === false ? 'إذنك على فرع واحد — الإقفال من صلاحية محاسب المنشأة كاملة' : l ? `مقفل · ${l.by || ''} · ${String(l.at).slice(0, 10)}` : 'مفتوح — اضغط للإقفال'}
                       style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 11px', borderRadius: 10, cursor: o.can_lock === false ? 'default' : 'pointer', fontFamily: font.family, fontSize: 12, fontWeight: 800,
-                        border: `1px solid ${l ? '#a7f3d0' : colors.border}`, background: l ? '#ecfdf5' : '#fff', color: l ? '#047857' : colors.text4, opacity: busy === k ? .5 : 1 }}>
+                        border:`1px solid ${l ? '#a7f3d0' : colors.border}`, background: l ? '#ecfdf5' : '#fff', color: l ? '#047857' : colors.text4, opacity: busy === k ? .5 : 1 }}>
                       {l ? <Lock size={13} /> : <Unlock size={13} />}{l ? 'مقفل' : 'مفتوح'}</button>
                   </td>
                 })}
