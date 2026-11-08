@@ -395,12 +395,12 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         oid = j.org_id
         const { data: org } = await db.from('organizations').select('plan,max_branches,max_staff,max_suppliers').eq('id', oid).single()
         expect(org).toMatchObject({ plan: 'ops', max_branches: 3, max_staff: 18, max_suppliers: 45 })
-        // التشغيل فيها الكاشير أصلاً → يتفعّل الحضور بس، لكل الفروع (حتى اللي تنضاف بعدين) بكمية 3 وسعر الفرع الأول 61
+        // التشغيل فيها الكاشير أصلاً → يتفعّل الحضور بس، لكل الفروع (حتى اللي تنضاف بعدين) بكمية 3 وسعر الفرع الأول 69
         const { data: subs } = await db.from('org_addon_subscriptions').select('quantity,status,branch_ids,locked_price,marketplace_addons(slug)').eq('org_id', oid)
-        expect((subs as any[]).map(r => [r.marketplace_addons.slug, r.quantity, r.status, r.branch_ids, Number(r.locked_price)])).toEqual([['hr_full', 3, 'active', null, 61]])
+        expect((subs as any[]).map(r => [r.marketplace_addons.slug, r.quantity, r.status, r.branch_ids, Number(r.locked_price)])).toEqual([['hr_full', 3, 'active', null, 69]])
         const { monthlyBill } = await import('@/lib/orgBill')
-        // الحضور لـ3 فروع بنفس سعر الميزة: 61 + 15 × 2 — والمجموع + الذكاء 15 = الكاملة لـ3 فروع
-        expect(await monthlyBill(db as any, oid)).toBe(233 + 61 + 2 * 15)
+        // الحضور لـ3 فروع بنفس سعر الميزة: 69 + 15 × 2 — والمجموع + الذكاء 15 = الكاملة لـ3 فروع
+        expect(await monthlyBill(db as any, oid)).toBe(233 + 69 + 2 * 15)
       } finally {
         vi.doUnmock('@/lib/supabase/server')
         if (oid) {

@@ -20,13 +20,13 @@ export const isNewPlan = (plan: string | null | undefined): plan is NewPlanKey |
  */
 /**
  * سعر واحد لكل ميزة (2026-11-08، قرار المالك): نفس المزايا = نفس السعر، بـ «ابنِ باقتك» أو كباقة جاهزة أو كإضافة عليها.
- * الباقة = مجموع مزاياها: الأساسية 59+54=113 (فرع 20+10=30)، التشغيل +40=153 (فرع +10=40)، الكاملة +61+15=229 (فرع +15=55).
+ * الباقة = مجموع مزاياها: الأساسية 59+54=113 (فرع 20+10=30)، التشغيل +40=153 (فرع +10=40)، الكاملة +69+15=237 (فرع +15=55).
  */
 export const CUSTOM_MODULES: Record<string, { first: number; extra: number; perBranch: boolean }> = {
   mod_inventory:   { first: 59, extra: 20, perBranch: true },
   mod_purchases:   { first: 54, extra: 10, perBranch: true },
   cashier_closing: { first: 40, extra: 10, perBranch: true },
-  hr_full:         { first: 61, extra: 15, perBranch: true },
+  hr_full:         { first: 69, extra: 15, perBranch: true },
   ai_tools:        { first: 15, extra: 0,  perBranch: false },
 }
 export const FEATURE_PRICES = CUSTOM_MODULES
@@ -82,7 +82,7 @@ export const PLAN_PRICING: Record<PlanKey, { label: string; monthly: number; yea
   // (أرخص من التشغيل + الحضور + الذكاء بـ8). المشتركين الحاليين أسعارهم مثبتة
   essential: { label: 'الأساسية', monthly: 113, yearly: yearlyOf(113) },
   ops:       { label: 'التشغيل', monthly: 153, yearly: yearlyOf(153) },
-  full:      { label: 'الكاملة', monthly: 229, yearly: yearlyOf(229) },
+  full:      { label: 'الكاملة', monthly: 237, yearly: yearlyOf(237) },
   custom:    { label: 'باقتك المخصصة', monthly: 0, yearly: 0 },
 }
 
@@ -97,7 +97,7 @@ export const adminPlanLabel = (plan: string | null | undefined, maxBranches?: nu
 export const NEW_ADDON_PRICES: Record<string, { monthly: number; perBranch: boolean; includedIn: NewPlanKey[] }> = {
   // نفس سعر الميزة («الفرع الأول»)، وكل فرع بعده بسعر الميزة للفرع الإضافي — FEATURE_PRICES
   cashier_closing: { monthly: 40, perBranch: true,  includedIn: ['ops', 'full'] },
-  hr_full:         { monthly: 61, perBranch: true,  includedIn: ['full'] },
+  hr_full:         { monthly: 69, perBranch: true,  includedIn: ['full'] },
   ai_tools:        { monthly: 15, perBranch: false, includedIn: ['full'] },
   profitability:   { monthly: 0,  perBranch: false, includedIn: ['essential', 'ops', 'full'] },
   extra_staff:     { monthly: 10, perBranch: false, includedIn: [] },
