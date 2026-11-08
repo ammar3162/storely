@@ -1,10 +1,72 @@
 'use client'
+import { Store } from 'lucide-react'
 export const dynamic = 'force-dynamic'
-import PageIcon from '@/components/PageIcon'
+import { StorelyPageHeader } from '@/components/ui/page-header'
+import { StorelyButton } from '@/components/ui/button'
+import { StorelyCard } from '@/components/ui/card'
+import { storelyTokens as T } from '@/components/ui/design-tokens'
 import { useState, useEffect } from 'react'
 import { getMe } from '@/lib/session'
-import { colors, radius, font, card, btnSecondary, pageTitle, pageSub } from '@/lib/ds'
+import { colors } from '@/lib/ds'
 import { currencySymbol } from '@/lib/currencySymbol'
+
+const BC_STYLES = `
+  .bc-page{max-width:1200px;min-width:0;margin:0 auto;padding:${T.spacing[6]}px;direction:rtl;font-family:${T.typography.family};font-size:${T.typography.body}px;line-height:${T.typography.lineHeight};color:${T.color.text};background:${T.color.background};border-radius:${T.radius.panel}}
+  .bc-page *{box-sizing:border-box}
+  .bc-page>header{margin-bottom:${T.spacing[6]}px}
+  .bc-page>header h1{font-size:${T.typography.title}px;line-height:1.6}
+  .bc-page>header p{font-size:${T.typography.body}px;line-height:${T.typography.lineHeight}}
+  .bc-page .ui-workspace{padding:${T.spacing[6]}px;margin-bottom:${T.spacing[6]}px;min-width:0;border:1px solid ${T.color.border};border-radius:${T.radius.card};background:${T.color.surface};overflow:visible}
+  .bc-page .ui-section-title{font-size:${T.typography.section}px;font-weight:600;color:${T.color.text};margin-bottom:${T.spacing[3]}px;line-height:${T.typography.lineHeight};overflow-wrap:anywhere}
+  .bc-page .ui-supporting{font-size:${T.typography.supporting}px;color:${T.color.textMuted};line-height:1.8}
+  .bc-page .ui-strong{font-size:${T.typography.body}px;font-weight:600;line-height:${T.typography.lineHeight}}
+  .bc-page .ui-value{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.6;overflow-wrap:anywhere}
+  .bc-page .ui-between{display:flex;align-items:center;justify-content:space-between;gap:${T.spacing[3]}px;flex-wrap:wrap;min-width:0}
+  .bc-page .ui-inline{display:flex;align-items:center;gap:${T.spacing[2]}px;flex-wrap:wrap;min-width:0}
+  .bc-page .ui-stack{display:flex;flex-direction:column;gap:${T.spacing[3]}px;min-width:0}
+  .bc-page .ui-total{display:flex;justify-content:space-between;align-items:baseline;gap:${T.spacing[3]}px;padding-top:${T.spacing[4]}px;margin-top:${T.spacing[4]}px;border-top:1px solid ${T.color.border};font-size:${T.typography.section}px;font-weight:600}
+  .bc-page .ui-button{display:inline-flex;align-items:center;justify-content:center;gap:${T.spacing[2]}px;min-height:40px;height:auto;max-width:100%;padding:${T.spacing[2]}px ${T.spacing[4]}px;background:${T.color.surface};border:1px solid ${T.color.infoBorder};border-radius:${T.radius.control};color:${T.color.navy};font-size:${T.typography.body}px;font-weight:600;line-height:1.6;font-family:inherit;text-decoration:none;white-space:normal;cursor:pointer;box-shadow:none}
+  .bc-page .ui-button:hover:not(:disabled){background:${T.color.infoBg};border-color:${T.color.infoBorder}}
+  .bc-page .ui-button:disabled{opacity:.5;cursor:not-allowed}
+  .bc-page .ui-primary{background:${T.color.navy};border-color:${T.color.navy};color:${T.color.surface}}
+  .bc-page .ui-primary:hover:not(:disabled){background:${T.color.navy};border-color:${T.color.navy};color:${T.color.surface}}
+  .bc-page .ui-danger{background:${T.color.surface};border-color:${T.color.dangerBorder};color:${T.color.danger}}
+  .bc-page .ui-danger:hover:not(:disabled){background:${T.color.dangerBg};border-color:${T.color.dangerBorder}}
+  .bc-page .ui-control{width:100%;height:44px;min-width:0;padding:${T.spacing[2]}px ${T.spacing[3]}px;border:1px solid ${T.color.infoBorder};border-radius:${T.radius.control};background:${T.color.surface};color:${T.color.text};font-family:inherit;font-size:${T.typography.body}px;line-height:${T.typography.lineHeight}}
+  .bc-page .ui-control::placeholder{color:${T.color.textSubtle};opacity:1}
+  .bc-page .ui-control:focus-visible,.bc-page button:focus-visible{outline:2px solid ${T.color.navy};outline-offset:2px;box-shadow:${T.shadow.focus}}
+  .bc-page input[type=number],.bc-page input[type=month]{direction:ltr;font-variant-numeric:tabular-nums}
+  .bc-page input[type=number]{text-align:right}
+  .bc-page .ui-label{display:flex;align-items:center;gap:${T.spacing[2]}px;font-size:${T.typography.body}px;line-height:${T.typography.lineHeight};margin-bottom:${T.spacing[3]}px;cursor:pointer}
+  .bc-page .ui-checkbox{width:16px;height:16px;flex-shrink:0;accent-color:${T.color.navy}}
+  .bc-page .ui-empty{padding:${T.spacing[8]}px ${T.spacing[6]}px;text-align:center;background:${T.color.surface};border:1px solid ${T.color.border};border-radius:${T.radius.card}}
+  .bc-page .ui-loading{padding:${T.spacing[8]}px;text-align:center}
+  .bc-page.ui-access{text-align:center;padding:${T.spacing[8]}px ${T.spacing[6]}px;background:${T.color.surface};border:1px solid ${T.color.border};max-width:680px}
+  .bc-page .ui-large-icon{font-size:24px;margin-bottom:${T.spacing[4]}px}
+  @media(max-width:640px){.bc-page{padding:${T.spacing[4]}px}.bc-page .ui-workspace{padding:${T.spacing[5]}px}.bc-page .ui-between{align-items:flex-start}}
+  @media(prefers-reduced-motion:reduce){.bc-page *{animation:none!important;transition:none!important}}
+
+  .bc-page>.ui-stack{gap:${T.spacing[5]}px}
+  .bc-page .bc-branch{margin-bottom:0}
+  .bc-branch>.ui-between{margin-bottom:${T.spacing[4]}px}
+  .bc-branch>.ui-between .ui-section-title{margin:0;font-size:16px}
+  .bc-branch>.ui-between>span{font-size:${T.typography.supporting}px;border:1px solid currentColor;border-radius:${T.radius.control};padding:${T.spacing[1]}px ${T.spacing[2]}px;font-weight:600}
+  .bc-rank{display:flex;align-items:center;justify-content:center;min-width:24px;color:${T.color.textMuted};font-variant-numeric:tabular-nums}
+  .bc-bar-track{height:4px;background:${T.color.infoBg};border-radius:${T.radius.control};overflow:hidden;margin-bottom:${T.spacing[5]}px}
+  .bc-bar-fill{height:100%;background:${T.color.navy};border-radius:inherit}
+  .bc-operations,.bc-inventory{display:grid;gap:0;margin-bottom:${T.spacing[4]}px;border-bottom:1px solid ${T.color.border};padding-bottom:${T.spacing[4]}px}
+  .bc-operations{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .bc-inventory{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .bc-stat{padding:${T.spacing[2]}px ${T.spacing[3]}px;border-inline-start:1px solid ${T.color.border};min-width:0;text-align:start}
+  .bc-stat:first-child{border-inline-start:0;padding-inline-start:0}
+  .bc-stat>.ui-value{font-size:20px}
+  .bc-stat>.ui-supporting{margin-top:${T.spacing[1]}px}
+  .bc-page .bc-expand{width:100%;justify-content:space-between;border:0;padding:${T.spacing[2]}px 0}
+  .bc-branch .ui-stack>.ui-between{padding:${T.spacing[3]}px 0;border-bottom:1px solid ${T.color.border}}
+  .bc-branch .ui-stack>.ui-between:last-child{border-bottom:0}
+  .bc-page .sk{height:64px;margin-bottom:${T.spacing[3]}px;background:${T.color.border};border-radius:${T.radius.control}}
+  @media(max-width:640px){.bc-operations{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:${T.spacing[3]}px}.bc-stat{padding-inline:${T.spacing[2]}px}.bc-inventory .bc-stat>.ui-value{font-size:${T.typography.section}px}.bc-inventory .bc-stat>.ui-supporting{font-size:${T.typography.supporting}px}}
+`
 
 export default function BranchComparePage() {
   const [comparison, setComparison] = useState<any[]>([])
@@ -62,7 +124,7 @@ export default function BranchComparePage() {
           topProduct: b.topProducts?.[0] ? `${b.topProducts[0].name} (${b.topProducts[0].qty} ${b.topProducts[0].unit})` : '—',
         })),
         summaryStats: [
-          { label: 'عدد الفروع', value: String(comparison.length), color: '#7c3aed' },
+          { label: 'عدد الفروع', value: String(comparison.length), color: '#717553' },
           { label: 'إجمالي الصرف', value: String(comparison.reduce((s, b) => s + b.dispensed, 0)), color: colors.danger },
           { label: 'إجمالي المشتريات', value: comparison.reduce((s, b) => s + Number(b.purchases || 0), 0).toFixed(0) + ' ' + curr, color: colors.primary },
         ],
@@ -72,118 +134,112 @@ export default function BranchComparePage() {
     setExportingPdf(false)
   }
 
-  const barColors = ['#029FA2', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#0891b2']
+  const barColors = [T.color.navy]
 
   if (loading) return (
-    <div style={{ fontFamily: font.family, direction: 'rtl' }}>
-      <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.4}}.sk{animation:sk 1.4s infinite}`}</style>
-      <div style={{ ...card, padding: 40 }}>
-        <div className="sk" style={{ height: 16, width: '40%', background: colors.border, borderRadius: 6, marginBottom: 20 }} />
-        {[1, 2, 3].map(i => (<div key={i} className="sk" style={{ height: 60, background: colors.border, borderRadius: 10, marginBottom: 10 }} />))}
+    <div className="bc-page">
+      <style>{BC_STYLES}</style>
+
+      <div className="ui-loading">
+        <div className="sk bc-stat"  />
+        {[1, 2, 3].map(i => (<div key={i} className="sk bc-stat"  />))}
       </div>
     </div>
   )
 
   return (
-    <div style={{ fontFamily: font.family, direction: 'rtl' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap' as const, gap: 12 }}>
-        <div>
-          <h1 style={{ ...pageTitle }}><PageIcon/>مقارنة الفروع</h1>
-          <p style={{ ...pageSub }}>الصرف، المخزون، الكفاءة، وأكثر المنتجات استهلاكاً لكل فرع (آخر 30 يوم)</p>
-        </div>
-        <button onClick={handleExportPdf} disabled={exportingPdf || comparison.length === 0}
-          style={{ ...btnSecondary, padding: '8px 16px', fontSize: font.xs, opacity: exportingPdf || comparison.length === 0 ? 0.6 : 1, cursor: exportingPdf || comparison.length === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {exportingPdf ? '⏳ جاري التصدير...' : '📄 تصدير PDF'}
-        </button>
-      </div>
+    <div className="bc-page">
+      <style>{BC_STYLES}</style>
+      <StorelyPageHeader title="مقارنة الفروع" description={<>الصرف، المخزون، الكفاءة، وأكثر المنتجات استهلاكاً لكل فرع (آخر 30 يوم)</>} actions={<StorelyButton className="ui-button" onClick={handleExportPdf} disabled={exportingPdf || comparison.length === 0}>
+          {exportingPdf ? 'جاري التصدير...' : 'تصدير PDF'}
+        </StorelyButton>}/>
 
       {comparison.length === 0 ? (
-        <div style={{ ...card, padding: '64px 20px', textAlign: 'center' as const }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🏪</div>
-          <div style={{ fontSize: font.md, fontWeight: 600, color: colors.text2, marginBottom: 4 }}>لا توجد فروع نشطة</div>
-          <div style={{ fontSize: font.sm, color: colors.text4 }}>أضف فروع من صفحة الإعدادات لعرض المقارنة</div>
+        <div className="ui-empty">
+          <div className="ui-large-icon"><Store size={32}/></div>
+          <div className="ui-section-title" style={{color:T.color.text}}>لا توجد فروع نشطة</div>
+          <div className="ui-supporting" style={{color:T.color.textMuted}}>أضف فروع من صفحة الإعدادات لعرض المقارنة</div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+        <div className="ui-stack">
           {comparison.map((b: any, i: number) => {
             const pct = Math.round((b.dispensed / maxDispensed) * 100)
             const c = barColors[i % barColors.length]
             const inv = b.inventory || { total: 0, low: 0, out: 0 }
             const isOpen = !!expanded[b.id]
             return (
-              <div key={b.id} style={{ ...card, padding: '18px 20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 9, background: c + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${c}44` }}>
-                      <span style={{ fontSize: 13, fontWeight: 900, color: c }}>{i + 1}</span>
+              <StorelyCard className="ui-workspace bc-branch" key={b.id}>
+                <div className="ui-between">
+                  <div className="ui-inline">
+                    <div className="bc-rank">
+                      <span className="ui-strong" style={{color:c}}>{i + 1}</span>
                     </div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: colors.text }}>{b.name}</div>
+                    <div className="ui-section-title" style={{color:T.color.text}}>{b.name}</div>
                   </div>
-                  <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 12px', borderRadius: 99, background: b.efficiency >= 80 ? colors.primaryLight : b.efficiency >= 50 ? colors.warningLight : colors.dangerLight, color: b.efficiency >= 80 ? colors.primary : b.efficiency >= 50 ? colors.warning : colors.danger }}>
+                  <span className="ui-strong" style={{color:b.efficiency >= 80 ? T.color.navy : b.efficiency >= 50 ? T.color.warning : T.color.danger}}>
                     كفاءة {b.efficiency}%
                   </span>
                 </div>
 
-                <div style={{ height: 8, background: colors.bg, borderRadius: 99, overflow: 'hidden', marginBottom: 14 }}>
-                  <div style={{ height: '100%', width: pct + '%', background: c, borderRadius: 99, transition: 'width .4s ease' }} />
+                <div className="bc-bar-track">
+                  <div className="bc-bar-fill" style={{width:pct + '%'}} />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, textAlign: 'center' as const, marginBottom: 10 }}>
-                  <div style={{ background: colors.bg, borderRadius: 8, padding: '8px 6px' }}>
-                    <div style={{ fontSize: 15, fontWeight: 900, color: colors.danger }}>{b.dispensed}</div>
-                    <div style={{ fontSize: 9, color: colors.text4, marginTop: 2 }}>مصروف</div>
+                <div className="bc-operations">
+                  <div className="bc-stat">
+                    <div className="ui-value" style={{color:T.color.danger}}>{b.dispensed}</div>
+                    <div className="ui-supporting" style={{color:T.color.textMuted}}>مصروف</div>
                   </div>
-                  <div style={{ background: colors.bg, borderRadius: 8, padding: '8px 6px' }}>
-                    <div style={{ fontSize: 15, fontWeight: 900, color: colors.primary }}>{b.added}</div>
-                    <div style={{ fontSize: 9, color: colors.text4, marginTop: 2 }}>مضاف</div>
+                  <div className="bc-stat">
+                    <div className="ui-value" style={{color:T.color.navy}}>{b.added}</div>
+                    <div className="ui-supporting" style={{color:T.color.textMuted}}>مضاف</div>
                   </div>
-                  <div style={{ background: colors.bg, borderRadius: 8, padding: '8px 6px' }}>
-                    <div style={{ fontSize: 15, fontWeight: 900, color: colors.info }}>{Number(b.purchases || 0).toFixed(0)}</div>
-                    <div style={{ fontSize: 9, color: colors.text4, marginTop: 2 }}>مشتريات ({curr})</div>
+                  <div className="bc-stat">
+                    <div className="ui-value" style={{color:T.color.info}}>{Number(b.purchases || 0).toFixed(0)}</div>
+                    <div className="ui-supporting" style={{color:T.color.textMuted}}>مشتريات ({curr})</div>
                   </div>
-                  <div style={{ background: colors.bg, borderRadius: 8, padding: '8px 6px' }}>
-                    <div style={{ fontSize: 15, fontWeight: 900, color: '#7c3aed' }}>{b.ops}</div>
-                    <div style={{ fontSize: 9, color: colors.text4, marginTop: 2 }}>عملية صرف</div>
+                  <div className="bc-stat">
+                    <div className="ui-value" style={{color:T.color.navy}}>{b.ops}</div>
+                    <div className="ui-supporting" style={{color:T.color.textMuted}}>عملية صرف</div>
                   </div>
                 </div>
 
                 {/* حالة المخزون الحالية */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, textAlign: 'center' as const, marginBottom: 10 }}>
-                  <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 8, padding: '8px 6px' }}>
-                    <div style={{ fontSize: 14, fontWeight: 900, color: colors.text }}>{inv.total}</div>
-                    <div style={{ fontSize: 9, color: colors.text4, marginTop: 2 }}>إجمالي الأصناف</div>
+                <div className="bc-inventory">
+                  <div className="bc-stat">
+                    <div className="ui-value" style={{color:T.color.text}}>{inv.total}</div>
+                    <div className="ui-supporting" style={{color:T.color.textMuted}}>إجمالي الأصناف</div>
                   </div>
-                  <div style={{ background: inv.low > 0 ? colors.warningLight : colors.surface, border: `1px solid ${inv.low > 0 ? colors.warningBorder : colors.border}`, borderRadius: 8, padding: '8px 6px' }}>
-                    <div style={{ fontSize: 14, fontWeight: 900, color: inv.low > 0 ? colors.warning : colors.text4 }}>{inv.low}</div>
-                    <div style={{ fontSize: 9, color: colors.text4, marginTop: 2 }}>ناقصة</div>
+                  <div className="bc-stat">
+                    <div className="ui-value" style={{color:inv.low > 0 ? T.color.warning : T.color.textMuted}}>{inv.low}</div>
+                    <div className="ui-supporting" style={{color:T.color.textMuted}}>ناقصة</div>
                   </div>
-                  <div style={{ background: inv.out > 0 ? colors.dangerLight : colors.surface, border: `1px solid ${inv.out > 0 ? colors.dangerBorder : colors.border}`, borderRadius: 8, padding: '8px 6px' }}>
-                    <div style={{ fontSize: 14, fontWeight: 900, color: inv.out > 0 ? colors.danger : colors.text4 }}>{inv.out}</div>
-                    <div style={{ fontSize: 9, color: colors.text4, marginTop: 2 }}>نفدت</div>
+                  <div className="bc-stat">
+                    <div className="ui-value" style={{color:inv.out > 0 ? T.color.danger : T.color.textMuted}}>{inv.out}</div>
+                    <div className="ui-supporting" style={{color:T.color.textMuted}}>نفدت</div>
                   </div>
                 </div>
 
                 {/* أكثر المنتجات استهلاكاً */}
                 {b.topProducts && b.topProducts.length > 0 && (
                   <div>
-                    <button onClick={() => setExpanded(prev => ({ ...prev, [b.id]: !prev[b.id] }))}
-                      style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 4px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: colors.text2 }}>🔥 الأكثر استهلاكاً</span>
-                      <span style={{ fontSize: 11, color: colors.text4 }}>{isOpen ? '▲ إخفاء' : '▼ عرض'}</span>
-                    </button>
+                    <StorelyButton className="ui-button bc-expand" onClick={() => setExpanded(prev => ({ ...prev, [b.id]: !prev[b.id] }))}>
+                      <span className="ui-strong" style={{color:T.color.text}}>الأكثر استهلاكاً</span>
+                      <span className="ui-supporting" style={{color:T.color.textMuted}}>{isOpen ? '▲ إخفاء' : '▼ عرض'}</span>
+                    </StorelyButton>
                     {isOpen && (
-                      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, marginTop: 4 }}>
+                      <div className="ui-stack">
                         {b.topProducts.map((p: any, pi: number) => (
-                          <div key={pi} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: colors.bg, borderRadius: 8, padding: '7px 12px' }}>
-                            <span style={{ fontSize: 12, color: colors.text2, fontWeight: 600 }}>{pi + 1}. {p.name}</span>
-                            <span style={{ fontSize: 12, fontWeight: 800, color: c }}>{p.qty} {p.unit}</span>
+                          <div className="ui-between" key={pi}>
+                            <span className="ui-strong" style={{color:T.color.text}}>{pi + 1}. {p.name}</span>
+                            <span className="ui-strong" style={{color:c}}>{p.qty} {p.unit}</span>
                           </div>
                         ))}
                       </div>
                     )}
                   </div>
                 )}
-              </div>
+              </StorelyCard>
             )
           })}
         </div>
