@@ -126,9 +126,9 @@ export const LS: Record<string, {ar:string, en:string}> = {
   // التصميم الجديد
   navHow:        { ar:'كيف يعمل', en:'How it works' },
   navStart:      { ar:'ابدأ مجاناً', en:'Start free' },
-  heroTitleA:    { ar:'ودّع الدفاتر وملفات الإكسل،', en:'Say goodbye to notebooks and spreadsheets,' },
-  heroTitleB:    { ar:'وأدر منشأتك', en:'and run your business' },
-  heroTitleC:    { ar:'بهدوء', en:'calmly' },
+  heroTitleA:    { ar:'نحوّل تعقيد التشغيل', en:'We turn operational complexity' },
+  heroTitleB:    { ar:'إلى', en:'into' },
+  heroTitleC:    { ar:'تحكّم كامل', en:'full control' },
   heroWatch:     { ar:'شاهد كيف يعمل', en:'See how it works' },
   heroPoint1:    { ar:'إعداد خلال دقائق', en:'Set up in minutes' },
   heroPoint2:    { ar:'دعم عربي عبر واتساب', en:'Arabic support on WhatsApp' },

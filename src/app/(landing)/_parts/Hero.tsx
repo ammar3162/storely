@@ -28,7 +28,7 @@ export default function Hero({ m }: { m: LandingState }) {
 
           <div className="lp-hero-media">
             <div className="lp-halo"/>
-            <PhoneVideo src="/videos/storely-ad.mp4" poster="/videos/storely-ad.jpg" label="إعلان Storely"/>
+            <PhoneVideo src="/videos/storely-brand.mp4" poster="/videos/storely-brand.jpg" label="إعلان Storely"/>
             <div className="lp-float lp-float-a">
               <span className="lp-wa"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d={WA_ICON}/></svg></span>
               <div><b>نقص مخزون: دقيق</b><small>أُرسل الطلب إلى المورد تلقائياً</small></div>
