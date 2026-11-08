@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { upgradeTargets, missingFeatures, alaCarteMonthly, customMonthly, customModuleAmount, billLines, activeDiscount, planKeyOf, addonPeriodEnd, proratedCharge, staffBase, supplierBase, maxSelfServeBranches, branchPriceFor, planLabel, PLAN_CAPS, planPriceFor, addonPriceFor, addonIncludedIn, addonsForPlan, nextPlanOf, signupAddonsFor, signupAddonsMonthly, higherPlans } from './planPricing'
+import { upgradeTargets, missingFeatures, branchDiscountSaving, alaCarteMonthly, customMonthly, customModuleAmount, billLines, activeDiscount, planKeyOf, addonPeriodEnd, proratedCharge, staffBase, supplierBase, maxSelfServeBranches, branchPriceFor, planLabel, PLAN_CAPS, planPriceFor, addonPriceFor, addonIncludedIn, addonsForPlan, nextPlanOf, signupAddonsFor, signupAddonsMonthly, higherPlans } from './planPricing'
 
 const branch = (qty: number, isValid = true) => ({ name: 'فرع إضافي', slug: 'extra_branch', monthly_price: 49, subscription: { isValid, quantity: qty } })
 
@@ -116,8 +116,8 @@ describe('org discount (from the admin panel)', () => {
 describe('new plans (2026-11): price per branch', () => {
   it('first branch + extra branch × the rest, yearly −20%', () => {
     expect(planPriceFor('essential', null, 1).monthly).toBe(93)
-    expect(planPriceFor('ops', null, 3).monthly).toBe(369)
-    expect(planPriceFor('full', null, 3).monthly).toBe(591)
+    expect(planPriceFor('ops', null, 3).monthly).toBe(123 + 123 + 98)   // الثالث بخصم 20%: 39+35+24
+    expect(planPriceFor('full', null, 3).monthly).toBe(207 + 192 + 153)
     expect(planPriceFor('full', null, 1).yearly).toBe(Math.round(207 * 12 * 0.8))
     expect(planPriceFor('ops', 500, 3).monthly).toBe(500)
   })
@@ -129,10 +129,10 @@ describe('new plans (2026-11): price per branch', () => {
     const cashier = { name: 'إقفال الكاشير', slug: 'cashier_closing', monthly_price: 29, subscription: { isValid: true, quantity: 2, locked_price: 30 } }
     const ai = { name: 'الذكاء', slug: 'ai_tools', monthly_price: 29, subscription: { isValid: true, quantity: 1, locked_price: 15 } }
     const { lines, total } = billLines('essential', 'monthly', [cashier, ai], null, null, 3)
-    expect(lines[0]).toEqual({ label: 'اشتراك باقة "الأساسية" (3 فروع) (شهرياً)', amount: 279, kind: 'plan' })
+    expect(lines[0]).toEqual({ label: 'اشتراك باقة "الأساسية" (3 فروع) (شهرياً)', amount: 260, kind: 'plan' })
     // الكاشير لفرعين: كل فرع بسعر كامل 30
     expect(lines[1]).toEqual({ label: 'إضافة "إقفال الكاشير" (2 فروع) (شهرياً)', amount: 60 })
-    expect(total).toBe(279 + 60 + 15)
+    expect(total).toBe(260 + 60 + 15)
   })
   it('full equals essential + every add-on (same features = same price)', () => {
     const add = (slug: string, p: number) => ({ name: slug, slug, monthly_price: p, subscription: { isValid: true, quantity: 1, locked_price: p } })
@@ -184,7 +184,9 @@ describe('«ابنِ باقتك» (custom)', () => {
   const mod = (slug: string, qty: number) => ({ name: slug, slug, monthly_price: 0, subscription: { isValid: true, quantity: qty } })
   it('each module: first branch + extra branch × the rest; AI once', () => {
     expect(customModuleAmount('cashier_closing', 1)).toBe(30)
-    expect(customModuleAmount('cashier_closing', 3)).toBe(90)
+    expect(customModuleAmount('cashier_closing', 3)).toBe(30 + 30 + 24)
+    expect(customModuleAmount('hr_full', 5)).toBe(69 * 2 + 55 * 3)
+    expect(branchDiscountSaving(['mod_inventory', 'ai_tools'], 4)).toBe(20)
     expect(customModuleAmount('mod_inventory', 2)).toBe(98)
     expect(customModuleAmount('ai_tools', 5)).toBe(15)
   })
@@ -198,8 +200,8 @@ describe('«ابنِ باقتك» (custom)', () => {
   })
   it('bill: modules per branch, no staff discount, no minimum, no plan line', () => {
     const b = billLines('custom', 'monthly', [mod('mod_inventory', 3), mod('cashier_closing', 2), mod('ai_tools', 1)], null, null, 3, 12)
-    expect(b.lines.map(l => l.amount)).toEqual([49 * 3, 30 * 2, 15])
-    expect(b.total).toBe(147 + 60 + 15)
+    expect(b.lines.map(l => l.amount)).toEqual([49 * 2 + 39, 30 * 2, 15])
+    expect(b.total).toBe(137 + 60 + 15)
     expect(billLines('custom', 'monthly', [mod('cashier_closing', 1)], null, null, 1, 6).total).toBe(30)
     expect(billLines('custom', 'yearly', [mod('mod_purchases', 1)], null, null, 1, 6).total).toBe(Math.round(44 * 12 * 0.8))
     expect(billLines('custom', 'yearly', [mod('cashier_closing', 1)], null, null, 1, 6).total).toBe(Math.round(30 * 12 * 0.8))

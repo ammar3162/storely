@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Check, Minus, Plus, Store, ArrowLeft, Sun, MessageCircle, TrendingUp, GitCompare, Calculator, UserCog, Languages, Truck, Bell, FileDown, Percent, Package, Receipt, Wallet, UserCheck, Sparkles, type LucideIcon } from 'lucide-react'
 import type { Billing } from './landing-data'
-import { CUSTOM_MODULES, CUSTOM_MODULE_ORDER, NEW_ADDON_PRICES, PLAN_CAPS, YEARLY_FACTOR, customMonthly, yearlyOf } from '@/lib/planPricing'
+import { CUSTOM_MODULES, CUSTOM_MODULE_ORDER, BRANCH_DISCOUNT, BRANCH_DISCOUNT_FROM, branchDiscountSaving, NEW_ADDON_PRICES, PLAN_CAPS, YEARLY_FACTOR, customMonthly, yearlyOf } from '@/lib/planPricing'
 import { FEATURE_PRESETS } from '@/lib/featurePresets'
 
 const FEATURES: Record<string, { name: string; icon: LucideIcon; desc: string; items: string[] }> = {
@@ -56,6 +56,7 @@ export default function FeaturePricing({ billing, onBilling }: { billing: Billin
           <button type="button" onClick={() => setBranches(b => Math.min(10, b + 1))} disabled={branches >= 10} aria-label="زيادة"><Plus size={15} /></button>
         </div>
       </div>
+      <div className="fp-disc">من الفرع {BRANCH_DISCOUNT_FROM === 3 ? 'الثالث' : BRANCH_DISCOUNT_FROM}، كل فرع بخصم {Math.round(BRANCH_DISCOUNT * 100)}%</div>
 
       {/* اختيارات جاهزة */}
       <div className="fp-label">ابدأ من اختيار جاهز، والسعر يطلع تحت حسب اختيارك</div>
@@ -92,6 +93,7 @@ export default function FeaturePricing({ billing, onBilling }: { billing: Billin
         <div className="fp-total-in">
           <span>المجموع{branches > 1 ? ` لـ ${branchWord}` : ''}</span>
           <strong>{picked.length ? `${shown(monthly).toLocaleString('en-US')} ⃁` : '—'}<i>{picked.length ? ' / شهرياً' : ''}</i></strong>
+          {picked.length > 0 && branchDiscountSaving(picked, branches) > 0 && <em className="fp-save">وفّرت {shown(branchDiscountSaving(picked, branches)).toLocaleString('en-US')} ⃁ بخصم الفروع</em>}
           <small>{!picked.length ? 'اختر ميزة وحدة على الأقل'
             : yearly ? `تدفع ${yearlyOf(monthly).toLocaleString('en-US')} ⃁ مرة وحدة بالسنة` : `يشمل ${PLAN_CAPS.custom.staff * branches} موظفين (${PLAN_CAPS.custom.staff} لكل فرع)، والموظف الإضافي ${NEW_ADDON_PRICES.extra_staff.monthly} ⃁ شهرياً`}</small>
         </div>
@@ -100,7 +102,7 @@ export default function FeaturePricing({ billing, onBilling }: { billing: Billin
           ابدأ تجربتك المجانية <ArrowLeft size={18} />
         </button>
       </div>
-      <p className="fp-note">جرّب كل المزايا مجاناً 14 يوم. تدفع مجموع المزايا اللي تختارها بس، وكل فرع بنفس السعر، وتقدر تضيف أو تشيل أي ميزة من داخل النظام بأي وقت.</p>
+      <p className="fp-note">جرّب كل المزايا مجاناً 14 يوم. تدفع مجموع المزايا اللي تختارها بس، ومن الفرع الثالث كل فرع بخصم 20%، وتقدر تضيف أو تشيل أي ميزة من داخل النظام بأي وقت.</p>
 
       <section className="fp-sec">
         <h3>مشمول مع أي اختيار</h3>
@@ -125,6 +127,8 @@ export default function FeaturePricing({ billing, onBilling }: { billing: Billin
 .fp-br button{width:36px;height:36px;border-radius:999px;border:0;background:#f1f2f3;cursor:pointer;display:grid;place-items:center;color:var(--ink)}
 .fp-br button:disabled{opacity:.4;cursor:default}
 .fp-br b{min-width:20px;text-align:center;font-size:17px}
+.fp-disc{text-align:center;font-size:14px;font-weight:600;color:var(--teal2);margin-top:-4px}
+.fp-save{font-style:normal;font-size:13px;font-weight:600;color:var(--mint)}
 .fp-label{font-size:14px;font-weight:600;color:var(--ink2);margin:10px 4px 0}
 .fp-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .fp-preset{position:relative;text-align:right;background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:18px;cursor:pointer;font-family:inherit;color:var(--ink);display:flex;flex-direction:column;gap:4px;transition:border-color .15s,background-color .15s}

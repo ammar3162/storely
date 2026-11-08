@@ -399,8 +399,8 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         const { data: subs } = await db.from('org_addon_subscriptions').select('quantity,status,branch_ids,locked_price,marketplace_addons(slug)').eq('org_id', oid)
         expect((subs as any[]).map(r => [r.marketplace_addons.slug, r.quantity, r.status, r.branch_ids, Number(r.locked_price)])).toEqual([['hr_full', 3, 'active', null, 69]])
         const { monthlyBill } = await import('@/lib/orgBill')
-        // كل فرع بسعر كامل: التشغيل 123 × 3 + الحضور 69 × 3 — والمجموع + الذكاء 15 = الكاملة لـ3 فروع
-        expect(await monthlyBill(db as any, oid)).toBe(369 + 3 * 69)
+        // الفرع الثالث بخصم 20%: التشغيل 123+123+98 + الحضور 69+69+55 — والمجموع + الذكاء 15 = الكاملة لـ3 فروع
+        expect(await monthlyBill(db as any, oid)).toBe(344 + 193)
       } finally {
         vi.doUnmock('@/lib/supabase/server')
         if (oid) {

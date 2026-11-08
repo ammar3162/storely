@@ -20,7 +20,8 @@ export const isNewPlan = (plan: string | null | undefined): plan is NewPlanKey |
  */
 /**
  * سعر واحد لكل ميزة (2026-11-08، قرار المالك): نفس المزايا = نفس السعر، بـ «ابنِ باقتك» أو كباقة جاهزة أو كإضافة عليها.
- * وكل فرع بسعر كامل مثل فودكس (الفرع الإضافي = الأول)، إلا الذكاء للمنشأة كلها مرة وحدة.
+ * الفرع الثاني بسعر كامل، ومن الفرع الثالث خصم 20% (BRANCH_DISCOUNT)، والذكاء للمنشأة كلها مرة وحدة.
+ * الباقات الجاهزة (مخفية للجدد) تتبع نفس القاعدة (planPriceFor) عشان نفس المزايا = نفس السعر.
  * الباقة = مجموع مزاياها: الأساسية 49+44=93 لكل فرع، التشغيل +30=123 لكل فرع، الكاملة +69 +الذكاء 15 = 207 للأول و192 لكل فرع بعده.
  * 2026-11-08: المالك نقّص المخزون 59←49 وإقفال الكاشير 40←30 والمشتريات 54←44.
  */
@@ -39,12 +40,26 @@ export const CUSTOM_MIN_STAFF_PER_BRANCH = 6
 // 2026-11-08 (المالك: «طبّق اللي تطبقه الشركات»): ما فيه حد أدنى للفاتورة — تدفع مجموع المزايا اللي اخترتها بالضبط
 // (مثل فودكس وMarketMan: سعر لكل فرع بدون حد أدنى ولا خصم تلقائي للفرع الإضافي؛ الخصم للمؤسسات بالتفاوض).
 export const CUSTOM_MIN_MONTHLY = 0
-/** سعر ميزة «ابنِ باقتك» لعدد الفروع اللي فيها (first = المثبّت للمشترك لو موجود) */
+// 2026-11-08 (قرار المالك): خصم الفروع — من الفرع الثالث، كل فرع بخصم 20% على المزايا اللي لكل فرع (الذكاء للمنشأة ما يدخل)
+export const BRANCH_DISCOUNT_FROM = 3
+export const BRANCH_DISCOUNT = 0.2
+/** سعر الميزة للفرع الواحد من الفرع الثالث وطالع */
+export const discountedBranchPrice = (price: number) => Math.round(price * (1 - BRANCH_DISCOUNT))
+/** سعر ميزة «اختيار المزايا» لعدد الفروع اللي فيها (first = المثبّت للمشترك لو موجود) */
 export function customModuleAmount(slug: string, branches: number, first?: number | null): number {
   const m = CUSTOM_MODULES[slug]
   if (!m) return 0
   const f = Number(first) > 0 ? Number(first) : m.first
-  return m.perBranch ? f + m.extra * (Math.max(1, branches) - 1) : f
+  if (!m.perBranch) return f
+  const n = Math.max(1, branches)
+  const full = Math.min(n, BRANCH_DISCOUNT_FROM - 1) - 1          // الفرع الثاني بسعر كامل
+  const disc = Math.max(0, n - (BRANCH_DISCOUNT_FROM - 1))        // الثالث وطالع بخصم
+  return f + m.extra * full + discountedBranchPrice(m.extra) * disc
+}
+/** كم وفّر بخصم الفروع (شهرياً) لمزايا مختارة وعدد فروع */
+export function branchDiscountSaving(slugs: string[], branches: number): number {
+  const n = Math.max(0, branches - (BRANCH_DISCOUNT_FROM - 1))
+  return slugs.reduce((t, s) => { const m = CUSTOM_MODULES[s]; return t + (m?.perBranch ? (m.extra - discountedBranchPrice(m.extra)) * n : 0) }, 0)
 }
 /** فاتورة «ابنِ باقتك» الشهرية قبل الخصم: modules = الميزة ← عدد فروعها، staff = عدد الموظفين */
 export function customMonthly(modules: Record<string, number>, branches: number, staff: number): number {
@@ -238,7 +253,10 @@ export function planPriceFor(plan: PlanKey, lockedMonthly?: number | string | nu
   const locked = Number(lockedMonthly) || 0
   if (locked > 0) return { label: p.label, monthly: locked, yearly: yearlyOf(locked) }
   if (!isNewPlan(plan)) return p
-  const monthly = p.monthly + PLAN_CAPS[plan].branchPrice * (Math.max(1, Number(branches) || 1) - 1)
+  // نفس مزايا الباقة = نفس السعر: الفرع الثاني كامل، ومن الثالث خصم الفروع على كل ميزة لكل فرع
+  const n = Math.max(1, Number(branches) || 1)
+  const discBranch = (PLAN_MODULES[plan as NewPlanKey] || []).reduce((t, sl) => t + (CUSTOM_MODULES[sl].perBranch ? discountedBranchPrice(CUSTOM_MODULES[sl].extra) : 0), 0)
+  const monthly = p.monthly + PLAN_CAPS[plan].branchPrice * (Math.min(n, BRANCH_DISCOUNT_FROM - 1) - 1) + discBranch * Math.max(0, n - (BRANCH_DISCOUNT_FROM - 1))
   return { label: p.label, monthly, yearly: yearlyOf(monthly) }
 }
 

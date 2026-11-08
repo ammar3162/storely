@@ -1,7 +1,7 @@
 'use client'
 import { SIGNUP_SOURCES } from '@/lib/signupSource'
 import { Check, Minus, Plus } from 'lucide-react'
-import { CUSTOM_MODULES, CUSTOM_MODULE_ORDER, PLAN_CAPS, customModuleAmount, customMonthly, yearlyOf } from '@/lib/planPricing'
+import { CUSTOM_MODULES, CUSTOM_MODULE_ORDER, PLAN_CAPS, customModuleAmount, customMonthly, yearlyOf, branchDiscountSaving } from '@/lib/planPricing'
 import { FEATURE_NAMES as FEAT, FEATURE_PRESETS } from '@/lib/featurePresets'
 import type { LoginState } from './useLogin'
 
@@ -106,6 +106,7 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                       )
                     })}
                     <div style={{fontSize:13,color:'#374151',padding:'2px'}}>{lang==='ar'?`يشمل ${staff} موظفين (${PLAN_CAPS.custom.staff} لكل فرع)، وتقدر تضيف أو تشيل أي ميزة من داخل النظام بأي وقت`:`Includes ${staff} staff (${PLAN_CAPS.custom.staff} per branch); add or remove features anytime inside the app`}</div>
+                    {branchDiscountSaving(picked, branchCount) > 0 && <div className="hide-in-app" style={{fontSize:13,fontWeight:700,color:'#0f766e'}}>{lang==='ar'?`من الفرع الثالث خصم 20% — وفّرت ${cur(branchDiscountSaving(picked, branchCount))} ⃁`:`20% off from the 3rd branch — you save ${cur(branchDiscountSaving(picked, branchCount))} SAR`}</div>}
                     <div className="hide-in-app" style={{display:'flex',justifyContent:'space-between',borderTop:'1px solid #e5e7eb',paddingTop:8,fontSize:14,fontWeight:800,color:'#111827'}}>
                       <span>{lang==='ar'?'المجموع':'Total'}</span>
                       <span>{picked.length ? `${cur(monthly)} ${sar}/${per}` : (lang==='ar'?'اختر ميزة':'Pick a feature')}</span>
