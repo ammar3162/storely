@@ -11,6 +11,7 @@ import WaInviteModal from './_shell/WaInviteModal'
 import BranchPickerSheet from './_shell/BranchPickerSheet'
 import StopBranchConfirm from './_shell/StopBranchConfirm'
 import OnboardingModal from './_shell/OnboardingModal'
+import PricingSwitchModal from './_shell/PricingSwitchModal'
 import MoreMenuSheet from './_shell/MoreMenuSheet'
 import MobileShell from './_shell/MobileShell'
 import DesktopShell from './_shell/DesktopShell'
@@ -27,6 +28,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <>
       <TermsConsentModal m={m}/>
+      <PricingSwitchModal m={m}/>
       <WhatsAppConsentModal m={m}/>
       <WaInviteModal m={m}/>
       <BranchPickerSheet m={m}/>

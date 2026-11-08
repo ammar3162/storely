@@ -491,4 +491,51 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
       }
     }, 180_000)
   })
+
+  describe('existing subscribers choose features at the new prices (applied at renewal)', () => {
+    it('pro owner sees the offer, picks two features, nothing changes until the admin renews, then the org moves to «ابنِ باقتك» at the cheaper bill', async () => {
+      const sw = await import('@/app/api/pricing-switch/route')
+      const activate = await import('@/app/api/admin/activate-user/route')
+      const { monthlyBill } = await import('@/lib/orgBill')
+      const { clearFeatureCache } = await import('@/lib/featureRoutes')
+      const ends = new Date(Date.now() + 5 * 864e5).toISOString()
+      await db.from('organizations').update({ plan: 'pro', max_branches: 3, locked_plan_monthly: null, billing_cycle: 'monthly' } as any).eq('id', orgId)
+      await db.from('profiles').update({ subscription_type: 'paid', subscription_ends_at: ends } as any).eq('id', userId)
+      const { count: n } = await db.from('branches').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('is_active', true)
+      const br = Math.max(1, n || 1)
+      try {
+        const g = await call(sw.GET, 'GET', `/api/pricing-switch?org_id=${orgId}`)
+        expect(g.json).toMatchObject({ success: true, show: true, current: 249, branches: br })
+        expect(g.json.selected).toEqual(['mod_inventory', 'mod_purchases', 'cashier_closing', 'hr_full', 'ai_tools'])
+
+        const pick = ['mod_inventory', 'cashier_closing']
+        const pv = await call(sw.POST, 'POST', '/api/pricing-switch', { org_id: orgId, modules: pick, preview: true })
+        expect(pv.json).toMatchObject({ success: true, current: 249, projected: (59 + 39) * br, outcome: 'switch' })
+        expect((await db.from('pricing_switches').select('org_id').eq('org_id', orgId)).data).toEqual([])   // المعاينة ما تحفظ
+
+        const save = await call(sw.POST, 'POST', '/api/pricing-switch', { org_id: orgId, modules: pick })
+        expect(save.json).toMatchObject({ success: true, outcome: 'switch' })
+        expect((await call(sw.GET, 'GET', `/api/pricing-switch?org_id=${orgId}`)).json.show).toBe(false)
+        expect((await call(sw.POST, 'POST', '/api/pricing-switch', { org_id: orgId, modules: pick })).status).toBe(409)
+        // قبل التجديد: باقته وفاتورته كما هي
+        expect((await db.from('organizations').select('plan').eq('id', orgId).single()).data).toMatchObject({ plan: 'pro' })
+
+        const newEnds = new Date(Date.now() + 35 * 864e5).toISOString()
+        const res = await activate.POST(new Request('http://test/api/admin/activate-user', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify({ userId, type: 'paid', ends: newEnds }) }))
+        expect(res.status).toBe(200)
+        expect((await res.json() as any).pricingSwitch).toMatchObject({ applied: true, monthly: (59 + 39) * br })
+        clearFeatureCache(orgId)
+        expect((await db.from('organizations').select('plan,max_branches').eq('id', orgId).single()).data).toMatchObject({ plan: 'custom', max_branches: br })
+        const { data: subs } = await db.from('org_addon_subscriptions').select('status,quantity,marketplace_addons(slug)').eq('org_id', orgId).eq('status', 'active')
+        expect(((subs || []) as any[]).map(r => r.marketplace_addons.slug).sort()).toEqual(['cashier_closing', 'mod_inventory'])
+        expect(await monthlyBill(db as any, orgId)).toBe((59 + 39) * br)
+        expect((await db.from('pricing_switches').select('applied_at').eq('org_id', orgId).single()).data?.applied_at).toBeTruthy()
+      } finally {
+        await db.from('pricing_switches').delete().eq('org_id', orgId)
+        await db.from('org_addon_subscriptions').delete().eq('org_id', orgId)
+        await db.from('organizations').update({ plan: 'pro', max_branches: 1, max_staff: 1, max_suppliers: 20 } as any).eq('id', orgId)
+        clearFeatureCache(orgId)
+      }
+    }, 180_000)
+  })
 })

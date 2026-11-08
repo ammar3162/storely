@@ -1,0 +1,113 @@
+// انتقال المشتركين الحاليين للأسعار الجديدة (2026-11-08، قرار المالك):
+// أول ما يدخل المالك (اشتراك مدفوع على باقة قديمة أو جاهزة) تطلع له رسالة شكر ويختار المزايا اللي يحتاجها.
+// الاختيار يُطبَّق مع تجديد اشتراكه القادم (activate-user) — والقاعدة: ما يدفع أكثر من فاتورته الحالية أبداً.
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { CUSTOM_MODULES, CUSTOM_MODULE_ORDER, PLAN_CAPS, addonIncludedIn, isCustomPlan } from '@/lib/planPricing'
+import { computeOrgRevenue } from '@/lib/orgBill'
+import { changeOrgPlan } from '@/lib/changePlan'
+
+type Org = { id: string; name?: string | null; plan?: string | null; max_branches?: number | null; locked_plan_monthly?: number | null; billing_cycle?: string | null; staff_included?: number | null; discount_type?: string | null; discount_value?: number | string | null; discount_note?: string | null; discount_until?: string | null }
+type Addon = { id: string; name: string; slug: string; monthly_price: number }
+type Sub = { org_id: string; addon_id: string; status: string; expires_at: string; quantity?: number | null; locked_price?: number | null }
+
+const EXTRA_SLUGS = ['extra_staff', 'extra_suppliers']
+const FAR = '2999-01-01T00:00:00Z'   // للحساب فقط: الاشتراك المتوقع ساري
+
+/** يظهر له الاختيار؟ مالك باشتراك مدفوع على باقة غير «ابنِ باقتك» وما اختار قبل */
+export function eligibleForSwitch(plan: string | null | undefined, subscriptionType: string | null | undefined, alreadyChosen: boolean): boolean {
+  return subscriptionType === 'paid' && !isCustomPlan(plan) && !alreadyChosen
+}
+
+/** المزايا اللي عنده الحين — تكون محددة مسبقاً في الاختيار */
+export function currentModules(plan: string | null | undefined, addons: Addon[], subs: Sub[], now = Date.now()): string[] {
+  const live = new Set(subs.filter(s => s.status === 'active' && new Date(s.expires_at).getTime() > now).map(s => addons.find(a => a.id === s.addon_id)?.slug).filter(Boolean) as string[])
+  return CUSTOM_MODULE_ORDER.filter(slug => addonIncludedIn(plan, slug) || live.has(slug))
+}
+
+/** الفاتورة الشهرية الحالية والمتوقعة بعد الاختيار (السنوي يتحوّل لمقابله الشهري) */
+export function projectSwitch(input: { org: Org; addons: Addon[]; subs: Sub[]; modules: string[]; branches: number; activeStaff: number; now?: number }) {
+  const { org, addons, subs } = input
+  const now = input.now ?? Date.now()
+  const branches = Math.max(1, Math.min(10, Math.round(Number(input.branches) || 1)))
+  const modules = CUSTOM_MODULE_ORDER.filter(s => input.modules.includes(s))
+  const current = computeOrgRevenue([org], addons, subs, now)[org.id].total
+
+  // بعد الانتقال: المزايا المختارة لكل الفروع + الموظفين/الموردين الإضافيين اللي اشتراهم
+  const mine = subs.filter(s => s.org_id === org.id && s.status === 'active' && new Date(s.expires_at).getTime() > now)
+  const keep = mine.filter(s => EXTRA_SLUGS.includes(addons.find(a => a.id === s.addon_id)?.slug || ''))
+  const extraStaffOwned = keep.filter(s => addons.find(a => a.id === s.addon_id)?.slug === 'extra_staff').reduce((t, s) => t + (Number(s.quantity) || 0), 0)
+  // موظفيه النشطين فوق حد «ابنِ باقتك» (6 لكل فرع) — ينحسبون موظفين إضافيين عشان ما ينقفل أحد
+  const extraStaffNeeded = Math.max(0, Math.round(Number(input.activeStaff) || 0) - PLAN_CAPS.custom.staff * branches - extraStaffOwned)
+  const projectedSubs: Sub[] = [
+    ...keep,
+    ...modules.map(slug => ({ org_id: org.id, addon_id: addons.find(a => a.slug === slug)?.id || slug, status: 'active', expires_at: FAR, quantity: CUSTOM_MODULES[slug].perBranch ? branches : 1, locked_price: null })),
+    ...(extraStaffNeeded > 0 ? [{ org_id: org.id, addon_id: addons.find(a => a.slug === 'extra_staff')?.id || 'extra_staff', status: 'active', expires_at: FAR, quantity: extraStaffNeeded, locked_price: null }] : []),
+  ]
+  const projectedAddons = [...addons, ...CUSTOM_MODULE_ORDER.filter(s => !addons.some(a => a.slug === s)).map(s => ({ id: s, name: s, slug: s, monthly_price: 0 }))]
+  const projectedOrg: Org = { ...org, plan: 'custom', max_branches: branches, locked_plan_monthly: null, staff_included: null }
+  const projected = modules.length ? computeOrgRevenue([projectedOrg], projectedAddons, projectedSubs, now)[org.id].total : current
+  // القاعدة: ما يدفع أكثر — لو الجديد مو أرخص يبقى على باقته وسعره
+  const outcome: 'switch' | 'keep' = modules.length && projected < current ? 'switch' : 'keep'
+  return { current, projected, outcome, branches, modules, extraStaffNeeded }
+}
+
+/** كل اللي تحتاجه صفحة الاختيار من القاعدة */
+export async function loadSwitchContext(db: SupabaseClient, orgId: string) {
+  const [{ data: org }, { data: owner }, { data: addons }, { data: subs }, { count: branchCount }, { count: staffCount }, { data: chosen }] = await Promise.all([
+    db.from('organizations').select('id,name,plan,max_branches,locked_plan_monthly,billing_cycle,staff_included,discount_type,discount_value,discount_note,discount_until').eq('id', orgId).maybeSingle(),
+    db.from('profiles').select('subscription_type,subscription_ends_at').eq('org_id', orgId).eq('role', 'owner').maybeSingle(),
+    db.from('marketplace_addons').select('id,name,slug,monthly_price'),
+    db.from('org_addon_subscriptions').select('org_id,addon_id,status,expires_at,quantity,locked_price').eq('org_id', orgId),
+    db.from('branches').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('is_active', true),
+    db.from('staff_members').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('is_active', true),
+    db.from('pricing_switches').select('modules,outcome,chosen_at,applied_at').eq('org_id', orgId).maybeSingle(),
+  ])
+  if (!org) return null
+  return {
+    org: org as Org, owner: (owner || {}) as { subscription_type?: string | null; subscription_ends_at?: string | null },
+    addons: (addons || []) as Addon[], subs: (subs || []) as Sub[],
+    branches: Math.max(1, branchCount || 1), activeStaff: staffCount || 0,
+    chosen: chosen as { modules: string[]; outcome: string; chosen_at: string; applied_at: string | null } | null,
+  }
+}
+
+/**
+ * يطبّق الاختيار مع التجديد (يناديه activate-user بعد تمديد الاشتراك): ينقل المنشأة لـ «ابنِ باقتك»
+ * بالمزايا المختارة لفروعها النشطة، ويلغي المزايا اللي ما اختارها. «keep» أو المطبّق قبل: ما يسوي شي.
+ */
+export async function applyPricingSwitch(db: SupabaseClient, orgId: string, endsAt: string) {
+  const ctx = await loadSwitchContext(db, orgId)
+  if (!ctx?.chosen || ctx.chosen.applied_at || ctx.chosen.outcome !== 'switch' || isCustomPlan(ctx.org.plan)) return { applied: false as const }
+  // نعيد الحساب وقت التجديد — لو تغيّر شي وصار الجديد مو أرخص يبقى على باقته
+  const p = projectSwitch({ org: ctx.org, addons: ctx.addons, subs: ctx.subs, modules: ctx.chosen.modules, branches: ctx.branches, activeStaff: ctx.activeStaff })
+  const nowIso = new Date().toISOString()
+  if (p.outcome !== 'switch') {
+    await db.from('pricing_switches').update({ outcome: 'keep', applied_at: nowIso } as any).eq('org_id', orgId)
+    return { applied: false as const, kept: true }
+  }
+  const br = p.branches
+  const res = await changeOrgPlan(db, orgId, { planName: 'custom', maxBranches: br, maxStaff: PLAN_CAPS.custom.staff * br + p.extraStaffNeeded, maxSuppliers: PLAN_CAPS.custom.suppliers * br })
+  if (!res.ok) return { applied: false as const, error: res.error }
+  const bySlug = new Map(ctx.addons.map(a => [a.slug, a.id]))
+  for (const slug of CUSTOM_MODULE_ORDER) {
+    const addonId = bySlug.get(slug)
+    if (!addonId) continue
+    const existing = ctx.subs.find(s => s.addon_id === addonId)
+    if (p.modules.includes(slug)) {
+      const row = { status: 'active', quantity: CUSTOM_MODULES[slug].perBranch ? br : 1, expires_at: endsAt, locked_price: null, branch_ids: null, cancelled_at: null }
+      if (existing) await db.from('org_addon_subscriptions').update(row as any).eq('org_id', orgId).eq('addon_id', addonId)
+      else await db.from('org_addon_subscriptions').insert({ org_id: orgId, addon_id: addonId, ...row } as any)
+    } else if (existing?.status === 'active') {
+      await db.from('org_addon_subscriptions').update({ status: 'cancelled', cancelled_at: nowIso } as any).eq('org_id', orgId).eq('addon_id', addonId)
+    }
+  }
+  if (p.extraStaffNeeded > 0 && bySlug.get('extra_staff')) {
+    const id = bySlug.get('extra_staff')!
+    const ex = ctx.subs.find(s => s.addon_id === id && s.status === 'active' && new Date(s.expires_at).getTime() > Date.now())
+    if (ex) await db.from('org_addon_subscriptions').update({ quantity: (Number(ex.quantity) || 0) + p.extraStaffNeeded, expires_at: endsAt } as any).eq('org_id', orgId).eq('addon_id', id)
+    else await db.from('org_addon_subscriptions').upsert({ org_id: orgId, addon_id: id, status: 'active', quantity: p.extraStaffNeeded, expires_at: endsAt, locked_price: null, cancelled_at: null } as any, { onConflict: 'org_id,addon_id' })
+  }
+  await db.from('pricing_switches').update({ applied_at: nowIso, new_monthly: p.projected } as any).eq('org_id', orgId)
+  await db.from('notifications').insert({ org_id: orgId, type: 'success', read: false, title: 'تم تطبيق اختيارك للمزايا', message: `بدأت فاتورتك الجديدة: ${p.projected} ⃁ شهرياً للمزايا التي اخترتها.` } as any)
+  return { applied: true as const, monthly: p.projected }
+}

@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
 import { awardAgentCommission } from '@/lib/agentReferral'
+import { applyPricingSwitch } from '@/lib/pricingSwitch'
 
 export async function POST(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
@@ -30,6 +31,11 @@ export async function POST(req: Request) {
     : await updateQuery.eq('id', userId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  // اختيار المزايا بالأسعار الجديدة (المشتركين الحاليين): يُطبَّق مع هذا التجديد — قبل تجديد الإضافات عشان تتمدّد معها
+  let pricingSwitch: Awaited<ReturnType<typeof applyPricingSwitch>> | null = null
+  if (orgIdForUpdate && ends && type === 'paid') {
+    try { pricingSwitch = await applyPricingSwitch(supabase, orgIdForUpdate, ends) } catch (e) { console.error('PRICING_SWITCH_APPLY_FAILED', e) }
+  }
 
   // تجديد الباقة يجدد كل الإضافات المفعّلة لنفس التاريخ — تاريخ تجديد وفاتورة وحدة
   let addonsRenewed = 0
@@ -73,5 +79,5 @@ export async function POST(req: Request) {
     try { agentReward = await awardAgentCommission(supabase, orgIdForUpdate) } catch (e) { console.error('AGENT_COMMISSION_FAILED', e) }
   }
 
-  return NextResponse.json({ success: true, addonsRenewed, agentReward })
+  return NextResponse.json({ success: true, addonsRenewed, agentReward, pricingSwitch })
 }
