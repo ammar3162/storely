@@ -59,7 +59,7 @@ export function useInventory() {
     for(const id of (r.ids||[])){
       api.post('/api/sync-product-to-staff',{org_id:oid,product_id:id})
     }
-    toast(`✅ تم إضافة ${items.length} صنف`)
+    toast(`تم إضافة ${items.length} صنف`)
     setTemplateDismissed(true)
     setAddingTemplate(false)
     load()
@@ -121,14 +121,14 @@ export function useInventory() {
       if(addQty>0){
         if(r.movement_failed){toast('تم حفظ التعديلات لكن فشلت إضافة الكمية — حاول تضيفها مرة أخرى','warning');setSaving(false);setShowAdd(false);setEditItem(null);setAddQty(0);cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:');load();return}
       }
-      toast('تم حفظ التعديلات ✓')
+      toast('تم حفظ التعديلات ')
     } else {
       if(!form.qty){toast('أدخل كمية أكبر من صفر','warning');setSaving(false);return}
       // لو ما فيه فرع محدد، الخادم يستخدم أول فرع نشط
       const r=await api.post('/api/products',{org_id:oid,branch_id:sessionStorage.getItem('s_branch_id'),...fields,qty:Number(form.qty)})
       if(!r.success){toast('فشل إضافة المنتج — حاول مرة أخرى','error');setSaving(false);return}
       if(r.movement_failed){toast('تمت إضافة المنتج لكن فشل تسجيل الكمية الابتدائية — عدّلها يدوياً','warning')}
-      else toast('تم إضافة المنتج ✓ — يظهر بصفحة الموظفين لتخصيصه لمن تحب')
+      else toast('تم إضافة المنتج — يظهر بصفحة الموظفين لتخصيصه لمن تحب')
       // ملاحظة: ما نزامنه تلقائياً لأي موظف — يفضل مخفي عن الكل لحد ما تخصصه يدوياً من صفحة "الموظفون"
     }
     setShowAdd(false);setEditItem(null);setAddQty(0)
@@ -186,7 +186,7 @@ export function useInventory() {
     if (!r.success) { toast(r.error || 'فشل الاستيراد', 'error'); setImporting(false); return }
     const added = r.added||0, updated = r.updated||0, failed = r.failed||0
     if(failed>0) toast(`تم استيراد ${added+updated} صنف (${added} جديد، ${updated} محدّث) — لكن فشل ${failed} صنف، حاول تستوردهم يدوياً`,'warning')
-    else toast(`✅ تم استيراد ${importPreview.length} صنف (${added} جديد، ${updated} محدّث)`)
+    else toast(`تم استيراد ${importPreview.length} صنف (${added} جديد، ${updated} محدّث)`)
     setImportPreview([])
     setShowImport(false)
     setImporting(false)

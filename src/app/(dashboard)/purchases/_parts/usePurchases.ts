@@ -60,7 +60,7 @@ export function usePurchases() {
     if(!z) return
     setForm(f=>({...f, hasVat:'yes', supplier: f.supplier || z.inv.sellerName, supplier_vat_number: z.inv.vatNumber,
       invoice_date: zatcaDate(z.inv), total_amount: f.total_amount || String(z.inv.total)}))
-    if(!silent) toast('✅ قرأنا باركود الفاتورة — البيانات موثقة')
+    if(!silent) toast('قرأنا باركود الفاتورة — البيانات موثقة')
   }
   // اختيار مورد محفوظ رقمه الضريبي → يتعبى تلقائياً
   function setSupplierName(name:string){
@@ -130,7 +130,7 @@ export function usePurchases() {
     const r=await api.patch('/api/purchases',{org_id:orgId,id,mark_paid:true})
     setPayingId(null)
     if(!r.success){toast('فشل تحديث الحالة — حاول مرة أخرى','error');return}
-    toast('✅ تم تسجيل الدفع')
+    toast('تم تسجيل الدفع')
     setPayables(prev=>prev.filter((p:any)=>p.id!==id))
   }
 
@@ -145,7 +145,7 @@ export function usePurchases() {
     const r=await api.del('/api/purchases',{org_id:orgId,id:purchase.id})
     setDeletingId(null)
     if(!r.success){toast('فشل حذف الفاتورة — حاول مرة أخرى','error');return}
-    toast('🗑️ تم حذف الفاتورة')
+    toast('تم حذف الفاتورة')
     setHistory(prev=>prev.filter((p:any)=>p.id!==purchase.id))
     cache.invalidate('purchases:');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
   }
@@ -155,14 +155,14 @@ export function usePurchases() {
     if('error' in prep){toast(prep.error,'warning');return}
     setUploading(true)
     // باركود الهيئة من الصورة نفسها (على الجهاز) — بالتوازي مع الرفع
-    if(!prep.isPdf) zatcaFromImage(file).then(z=>{ if(z&&!zatcaRef.current){ setZatca(z,true); toast('✅ لقينا باركود الهيئة بالفاتورة — البيانات موثقة') } })
+    if(!prep.isPdf) zatcaFromImage(file).then(z=>{ if(z&&!zatcaRef.current){ setZatca(z,true); toast('لقينا باركود الهيئة بالفاتورة — البيانات موثقة') } })
     try {
       const path = orgId+'/invoice-'+Date.now()+'.'+prep.ext   // مجلد المنشأة (سياسة التخزين تسمح بمجلدها بس)
       const{error}=await sb.storage.from('invoices').upload(path, prep.blob, { contentType: prep.type })
       if(error){toast('فشل رفع الفاتورة','error');setUploading(false);return}
       const{data:{publicUrl}}=sb.storage.from('invoices').getPublicUrl(path)
       setForm(f=>({...f,invoice_image:publicUrl}));setPreviewUrl(publicUrl)
-      toast(prep.isPdf?'تم إرفاق ملف الفاتورة ✓':'تم رفع الفاتورة ✓')
+      toast(prep.isPdf?'تم إرفاق ملف الفاتورة ':'تم رفع الفاتورة ')
 
     } catch { toast('فشل رفع الصورة','error') }
     setUploading(false)
@@ -175,7 +175,7 @@ export function usePurchases() {
     try {
       const res = await fetch('/api/supplier-delivery-thanks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,product_id:productId,product_name:productName,supplier_name:supplierName})})
       const data = await res.json()
-      if (data.sent) toast(`✅ تم إرسال رسالة شكر لـ${data.supplier}`)
+      if (data.sent) toast(`تم إرسال رسالة شكر لـ${data.supplier}`)
       else toast('تعذر إرسال رسالة الشكر (تحقق من ربط المورد أو موافقة واتساب)', 'warning')
     } catch { toast('حدث خطأ أثناء الإرسال', 'error') }
   }
@@ -213,13 +213,13 @@ export function usePurchases() {
       res=await api.post('/api/purchases',{...body,allow_duplicate:true})
     if(!res.success){if(!res.duplicate)toast(res.error||'حدث خطأ','error');setLoading(false);submitting.current=false;return}
 
-    if(res.product_action==='updated') toast(`✅ تم تحديث المخزون (+${res.qty})`,'success')
+    if(res.product_action==='updated') toast(`تم تحديث المخزون (+${res.qty})`,'success')
     else if(res.product_action==='created'){
-      toast(`✅ تم إضافة "${form.name}" للمخزون`)
+      toast(`تم إضافة "${form.name}" للمخزون`)
       api.post('/api/sync-product-to-staff',{org_id:orgId,product_id:res.product_id})
     }
-    else toast('✅ تم تسجيل الشراء')
-    if(form.invoice_date&&form.invoice_date!==todayRiyadh()) toast(`📅 حُفظت بتاريخ الفاتورة ${form.invoice_date} — ستجدها في التقارير بهذا التاريخ`)
+    else toast('تم تسجيل الشراء')
+    if(form.invoice_date&&form.invoice_date!==todayRiyadh()) toast(`حُفظت بتاريخ الفاتورة ${form.invoice_date} — ستجدها في التقارير بهذا التاريخ`)
 
     // تأكيد يدوي قبل إرسال رسالة الشكر — يظهر فقط لو المورد مسجّل فعلياً بالنظام والمنتج مرتبط فيه تحديداً
     if (res.thanks_candidate && res.product_id) {
