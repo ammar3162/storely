@@ -49,7 +49,7 @@ export default function ExtraDayDecision({ item, orgId, canDecide = true, onDone
       {mode === 'paid' && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' as const }}>
           <div style={{ position: 'relative' as const }}>
-            <NumberInput min="1" step="0.5" value={amount} onChange={e => setAmount(e.target.value)} style={{ ...inp(), width: 150, paddingInlineEnd: 44 }} />
+            <NumberInput min="1" step="0.5" value={amount} onChange={e => setAmount(e.target.value)} style={{ ...inp(), width: 150, paddingInline: 44, textAlign: 'center' }} />
             <span style={{ position: 'absolute' as const, insetInlineEnd: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>⃁</span>
           </div>
           <button onClick={() => decide('paid')} disabled={busy || !(Number(amount) > 0)} style={{ padding: '9px 14px', borderRadius: 8, border: 'none', background: colors.primary, color: 'white', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, opacity: busy || !(Number(amount) > 0) ? .6 : 1 }}>اعتماد المبلغ</button>

@@ -1,14 +1,23 @@
 'use client'
-import { StorelyMetricStrip, type StorelyMetric } from '@/components/ui'
 import type { SuppliersPageState } from './useSuppliersPage'
 
+// شريط أرقام مختصر: رقم + عنوان صغير (بدون نص شرح) — نفس حجم الإحصائية السابقة
 export default function SupplierStats({ m, unlinkedProducts }: { m: SuppliersPageState; unlinkedProducts: any[] }) {
   const { suppliers, failedRecentMap } = m
   const failed = Object.values(failedRecentMap).reduce((a: number, b: number) => a + b, 0)
-  const metrics: StorelyMetric[] = [
-    { label: 'إجمالي الموردين', value: suppliers.length.toLocaleString('en-US') },
-    { label: 'منتجات بدون مورد', value: unlinkedProducts.length.toLocaleString('en-US'), tone: unlinkedProducts.length ? 'warning' : 'neutral', helper: unlinkedProducts.length ? 'اربطها بمورد لتصل طلبات التوريد تلقائياً' : 'كل المنتجات مرتبطة' },
-    ...(failed > 0 ? [{ label: 'رسائل تعذّر إرسالها (24 ساعة)', value: failed.toLocaleString('en-US'), tone: 'danger' as const }] : []),
+  const items = [
+    { label: 'إجمالي الموردين', value: suppliers.length, color: 'var(--storely-text)' },
+    { label: 'منتجات بدون مورد', value: unlinkedProducts.length, color: unlinkedProducts.length ? '#B45309' : 'var(--storely-text)' },
+    ...(failed > 0 ? [{ label: 'رسائل تعذّر إرسالها (24 ساعة)', value: failed, color: '#B91C1C' }] : []),
   ]
-  return <StorelyMetricStrip className="mb-5" metrics={metrics} />
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${items.length},minmax(0,1fr))`, gap: 1, marginBottom: 16, background: 'var(--storely-border)', border: '1px solid var(--storely-border)', borderRadius: 12, overflow: 'hidden' }}>
+      {items.map(it => (
+        <div key={it.label} style={{ background: 'var(--storely-surface)', padding: '10px 12px', textAlign: 'center' }}>
+          <div style={{ fontSize: 20, fontWeight: 700, color: it.color, fontVariantNumeric: 'tabular-nums', lineHeight: 1.3 }}>{it.value}</div>
+          <div style={{ fontSize: 11, color: 'var(--storely-muted)', fontWeight: 600, marginTop: 2 }}>{it.label}</div>
+        </div>
+      ))}
+    </div>
+  )
 }

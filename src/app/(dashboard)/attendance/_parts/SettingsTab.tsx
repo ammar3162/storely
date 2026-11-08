@@ -75,11 +75,11 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
                             <div>
                               <label style={fieldLabel}>يبدأ الساعة</label>
-                              <input type="time" value={es.start} onChange={e => setEditShift({ ...es, start: e.target.value })} style={inp()} />
+                              <input type="time" value={es.start} onChange={e => setEditShift({ ...es, start: e.target.value })} style={{ ...inp(), textAlign: 'center' }} />
                             </div>
                             <div>
                               <label style={fieldLabel}>ينتهي الساعة</label>
-                              <input type="time" value={es.end} onChange={e => setEditShift({ ...es, end: e.target.value })} style={inp()} />
+                              <input type="time" value={es.end} onChange={e => setEditShift({ ...es, end: e.target.value })} style={{ ...inp(), textAlign: 'center' }} />
                             </div>
                           </div>
                         )}
@@ -141,11 +141,11 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
                   <>
                     <div>
                       <label style={fieldLabel}>يبدأ الساعة</label>
-                      <input type="time" value={newShiftStart} onChange={e => setNewShiftStart(e.target.value)} style={inp()} />
+                      <input type="time" value={newShiftStart} onChange={e => setNewShiftStart(e.target.value)} style={{ ...inp(), textAlign: 'center' }} />
                     </div>
                     <div>
                       <label style={fieldLabel}>ينتهي الساعة</label>
-                      <input type="time" value={newShiftEnd} onChange={e => setNewShiftEnd(e.target.value)} style={inp()} />
+                      <input type="time" value={newShiftEnd} onChange={e => setNewShiftEnd(e.target.value)} style={{ ...inp(), textAlign: 'center' }} />
                     </div>
                   </>
                 )}
@@ -206,14 +206,14 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
                   <div>
                     <label style={fieldLabel}>وقت السماح</label>
                     <div style={{ position: 'relative' as const }}>
-                      <NumberInput min={0} max={120} inputMode="numeric" value={late.grace} onChange={e => setLate({ ...late, grace: e.target.value })} placeholder="0" style={{ ...inp(), paddingInlineEnd: 60 }} />
+                      <NumberInput min={0} max={120} inputMode="numeric" value={late.grace} onChange={e => setLate({ ...late, grace: e.target.value })} placeholder="0" style={{ ...inp(), paddingInline: 60, textAlign: 'center' }} />
                       <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>دقيقة</span>
                     </div>
                   </div>
                   <div>
                     <label style={fieldLabel}>الخصم لكل ساعة تأخير</label>
                     <div style={{ position: 'relative' as const }}>
-                      <NumberInput min={0} step="0.5" inputMode="decimal" value={late.perHour} onChange={e => setLate({ ...late, perHour: e.target.value })} placeholder="فارغ = دون خصم" style={{ ...inp(), paddingInlineEnd: 50 }} />
+                      <NumberInput min={0} step="0.5" inputMode="decimal" value={late.perHour} onChange={e => setLate({ ...late, perHour: e.target.value })} placeholder="فارغ = دون خصم" style={{ ...inp(), paddingInline: 50, textAlign: 'center' }} />
                       <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>⃁</span>
                     </div>
                   </div>
@@ -266,7 +266,7 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
                   <div>
                     <label style={fieldLabel}>مبلغ الساعة</label>
                     <div style={{ position: 'relative' as const }}>
-                      <NumberInput min="0" step="0.5" value={ot.fixedRate} onChange={e => setOt({ ...ot, fixedRate: e.target.value })} placeholder="مثلاً 25" style={{ ...inp(), paddingInlineEnd: 50 }} />
+                      <NumberInput min="0" step="0.5" value={ot.fixedRate} onChange={e => setOt({ ...ot, fixedRate: e.target.value })} placeholder="مثلاً 25" style={{ ...inp(), paddingInline: 50, textAlign: 'center' }} />
                       <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>⃁</span>
                     </div>
                   </div>
@@ -274,7 +274,7 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
                 <div>
                   <label style={fieldLabel}>أقل مدة تُحتسب في اليوم</label>
                   <div style={{ position: 'relative' as const }}>
-                    <NumberInput min="0" max="240" value={ot.minMinutes} onChange={e => setOt({ ...ot, minMinutes: e.target.value })} style={{ ...inp(), paddingInlineEnd: 60 }} />
+                    <NumberInput min="0" max="240" value={ot.minMinutes} onChange={e => setOt({ ...ot, minMinutes: e.target.value })} style={{ ...inp(), paddingInline: 60, textAlign: 'center' }} />
                     <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>دقيقة</span>
                   </div>
                 </div>
