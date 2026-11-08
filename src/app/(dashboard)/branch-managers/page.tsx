@@ -146,7 +146,7 @@ export default function BranchManagersPage() {
     const j = await api.post('/api/branch-managers', { org_id: orgId, full_name: name.trim(), email: email.trim(), password, branch_id: branchId, permissions: perms, report_whatsapp: waPhone.trim() || null, whatsapp_consent: waConsent })
     setSaving(false)
     if (!j.success) { toast(j.error || 'تعذر إضافة المدير', 'error'); return }
-    toast('✅ تم إضافة مدير الفرع — يدخل بإيميله وكلمة المرور')
+    toast('تم إضافة مدير الفرع — يدخل بإيميله وكلمة المرور')
     setName(''); setEmail(''); setPassword(''); setBranchId(''); setWaPhone(''); setWaConsent(false)
     loadManagers(orgId)
   }
@@ -162,7 +162,7 @@ export default function BranchManagersPage() {
     const j = await api.patch('/api/branch-managers', { id: m.id, org_id: orgId, permissions: editPerms, report_whatsapp: editWa.trim() || null, whatsapp_consent: editWaConsent, ...(editBranch && editBranch !== m.branch_id ? { branch_id: editBranch } : {}) })
     setEditSaving(false)
     if (!j.success) { toast(j.error || 'تعذر الحفظ', 'error'); return }
-    toast('✅ تم حفظ صلاحيات ' + m.full_name)
+    toast('تم حفظ صلاحيات ' + m.full_name)
     setEditId(null)
     loadManagers(orgId)
   }
@@ -171,7 +171,7 @@ export default function BranchManagersPage() {
     if (!(await confirmDialog({ title: 'حذف مدير الفرع', message: `حذف حساب ${m.full_name} نهائياً؟ لن يتمكن من الدخول إلى النظام بعد ذلك.` }))) return
     const j = await api.del('/api/branch-managers', { id: m.id, org_id: orgId })
     if (!j.success) { toast(j.error || 'تعذر الحذف', 'error'); return }
-    toast('🗑️ تم حذف ' + m.full_name)
+    toast('تم حذف ' + m.full_name)
     loadManagers(orgId)
   }
 
@@ -225,7 +225,7 @@ export default function BranchManagersPage() {
                     </div>
                     {!editing && <div style={{ display: 'flex', gap: 6 }}>
                       <button onClick={() => startEdit(m)} style={{ ...btnSecondary, padding: '7px 12px', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Pencil size={14} /> تعديل</button>
-                      <button onClick={() => deleteManager(m)} aria-label="حذف" style={{ background: '#fff', border: `1px solid ${colors.dangerBorder}`, color: colors.danger, borderRadius: 8, padding: '7px 10px', cursor: 'pointer', display: 'inline-flex' }}><Trash2 size={15} /></button>
+                      <button onClick={() => deleteManager(m)} aria-label="حذف" style={{ background:'#fff', border: `1px solid ${colors.dangerBorder}`, color: colors.danger, borderRadius: 8, padding: '7px 10px', cursor: 'pointer', display: 'inline-flex' }}><Trash2 size={15} /></button>
                     </div>}
                   </div>
                   {!editing ? (

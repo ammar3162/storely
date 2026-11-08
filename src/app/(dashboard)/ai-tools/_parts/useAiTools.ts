@@ -58,7 +58,7 @@ export function useAiTools() {
     const r=await api.del('/api/recipes',{org_id:sessionStorage.getItem('s_org_id'),id})
     setDeletingRecipeId(null)
     if(!r.success){toast('فشل حذف الوصفة — حاول مرة أخرى','error');return}
-    toast('✅ تم حذف الوصفة')
+    toast('تم حذف الوصفة')
     setRecipesList(prev=>prev.filter(r=>r.id!==id))
   }
 

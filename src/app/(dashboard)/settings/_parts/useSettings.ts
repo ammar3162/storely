@@ -119,7 +119,7 @@ export function useSettings() {
     const { error } = await sb2.auth.updateUser({ password: pwForm.newPw })
     setPwSaving(false)
     if (error) { setPwMsg({ok:false,text:'حدث خطأ في تغيير كلمة المرور'}); return }
-    setPwMsg({ok:true,text:'تم تغيير كلمة المرور بنجاح ✅'})
+    setPwMsg({ok:true,text:'تم تغيير كلمة المرور بنجاح '})
     setPwForm({current:'',newPw:'',confirm:''})
   }
 

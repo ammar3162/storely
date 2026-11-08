@@ -1,4 +1,5 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 import { colors, font, card, btnPrimary, inp } from '@/lib/ds'
 import { ListSkeleton } from '@/components/PageSkeleton'
 import { fmtTime, fmtDay, fmtMinutes } from './format'
@@ -19,7 +20,7 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
                 </button>
               ))}
               <select value={staffFilter} onChange={e => setStaffFilter(e.target.value)} style={{ ...inp(), width: 170, padding: '7px 10px', fontSize: 12 }}>
-                <option value="">👥 كل الموظفين</option>
+                <option value="">كل الموظفين</option>
                 {staffList.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
@@ -31,7 +32,7 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
                 <span style={{ color: colors.text4, fontSize: 12 }}>إلى</span>
                 <input type="date" value={rangeTo} onChange={e => setRangeTo(e.target.value)} style={{ ...inp(), width: 150 }} />
                 <button onClick={exportRangePdf} disabled={exporting || rangeRows.length===0} style={{ ...btnPrimary, padding: '9px 16px', fontSize: 13 }}>
-                  {exporting ? '...' : '📄 تصدير PDF'}
+                  {exporting ? '...' : 'تصدير PDF'}
                 </button>
               </div>
             )}
@@ -49,9 +50,9 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
                   <div style={{ fontSize: 11, color: colors.danger, fontWeight: 600, marginTop: 2 }}>لم يحضروا</div>
                 </div>
                 {offCount > 0 && (
-                  <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: '#1d4ed8' }}>{offCount}</div>
-                    <div style={{ fontSize: 11, color: '#1d4ed8', fontWeight: 600, marginTop: 2 }}>بإجازة</div>
+                  <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background:'#eff6ff', border:'1px solid #bfdbfe' }}>
+                    <div style={{ fontSize: 22, fontWeight: 900, color:'#1d4ed8' }}>{offCount}</div>
+                    <div style={{ fontSize: 11, color:'#1d4ed8', fontWeight: 600, marginTop: 2 }}>بإجازة</div>
                   </div>
                 )}
               </div>
@@ -79,7 +80,7 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
                       <tbody>
                         {rows.map((r, i) => (
                           <tr key={r.staff_id} style={{ borderBottom: i < rows.length - 1 ? `1px solid ${colors.border}` : 'none' }}>
-                            <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف غير مرتبط بوردية — لا يُحتسب له تأخير أو عمل إضافي' : 'وردية 24 ساعة — لا يُحتسب تأخير أو عمل إضافي'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? '⚠️ بدون وردية' : '⚠️ وردية 24 ساعة'}</span>}</td>
+                            <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف غير مرتبط بوردية — لا يُحتسب له تأخير أو عمل إضافي' : 'وردية 24 ساعة — لا يُحتسب تأخير أو عمل إضافي'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color:'#b45309', background:'#fffbeb', border:'1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? 'بدون وردية' : 'وردية 24 ساعة'}</span>}</td>
                             <td style={{ padding: '11px 14px' }}>
                               <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(r.status), background: statusBg(r.status), padding: '3px 10px', borderRadius: 99 }}>{r.status}</span>
                             </td>
@@ -132,7 +133,7 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
                     <tbody>
                       {rangeRows.map((r, i) => (
                         <tr key={r.staff_id} style={{ borderBottom: i < rangeRows.length - 1 ? `1px solid ${colors.border}` : 'none' }}>
-                          <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف غير مرتبط بوردية — لا يُحتسب له تأخير أو عمل إضافي' : 'وردية 24 ساعة — لا يُحتسب تأخير أو عمل إضافي'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? '⚠️ بدون وردية' : '⚠️ وردية 24 ساعة'}</span>}</td>
+                          <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف غير مرتبط بوردية — لا يُحتسب له تأخير أو عمل إضافي' : 'وردية 24 ساعة — لا يُحتسب تأخير أو عمل إضافي'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color:'#b45309', background:'#fffbeb', border:'1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? 'بدون وردية' : 'وردية 24 ساعة'}</span>}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: colors.primary, fontWeight: 700 }}>{r.days_present}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.days_absent ? colors.danger : colors.text4, fontWeight: 700 }}>{r.days_absent || '—'}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.days_off ? '#1d4ed8' : colors.text4, fontWeight: 700 }}>
@@ -151,7 +152,7 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
               )}
               {!loading && rangeRows[0]?.days && (
                 <div style={{ borderTop: `1px solid ${colors.border2}` }}>
-                  <div style={{ padding: '12px 14px', fontWeight: 800, fontSize: 13, color: colors.text }}>📅 السجل اليومي — {rangeRows[0].name}{rangeRows[0].shift_warning && <span style={{ marginRight: 8, fontSize: 11, fontWeight: 600, color: '#b45309' }}>⚠️ {rangeRows[0].shift_warning === 'none' ? 'غير مرتبط بوردية' : 'وردية 24 ساعة'} — لا يُحتسب له تأخير أو عمل إضافي. اربطه بوردية من تبويب الإعدادات.</span>}</div>
+                  <div style={{ padding: '12px 14px', fontWeight: 800, fontSize: 13, color: colors.text }}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><FeatureIcon name="📅" size={15} /></span> السجل اليومي — {rangeRows[0].name}{rangeRows[0].shift_warning && <span style={{ marginRight: 8, fontSize: 11, fontWeight: 600, color:'#b45309' }}>⚠️ {rangeRows[0].shift_warning === 'none' ? 'غير مرتبط بوردية' : 'وردية 24 ساعة'} — لا يُحتسب له تأخير أو عمل إضافي. اربطه بوردية من تبويب الإعدادات.</span>}</div>
                   <div style={{ overflowX: 'auto' as const }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 }}>
                       <thead>
@@ -186,7 +187,7 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
                 </div>
               )}
               {!loading && !staffFilter && rangeRows.length > 0 && (
-                <div style={{ padding: '10px 14px', fontSize: 11, color: colors.text4, borderTop: `1px solid ${colors.border}` }}>💡 اختر موظفاً من القائمة أعلاه لعرض سجله يوماً بيوم</div>
+                <div style={{ padding: '10px 14px', fontSize: 11, color: colors.text4, borderTop: `1px solid ${colors.border}` }}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><FeatureIcon name="💡" size={15} /></span> اختر موظفاً من القائمة أعلاه لعرض سجله يوماً بيوم</div>
               )}
             </div>
           )}

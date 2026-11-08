@@ -1,4 +1,5 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 import { colors, radius, font, card, btnPrimary, inp } from '@/lib/ds'
 import TrustedDevices from '@/components/TrustedDevices'
 import { lbl } from './constants'
@@ -18,7 +19,7 @@ export default function SecurityTab({ m }: { m: SettingsState }) {
 
               {pwMsg&&(
                 <div style={{background:pwMsg.ok?colors.primaryLight:colors.dangerLight,border:`1.5px solid ${pwMsg.ok?colors.primaryBorder:colors.dangerBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16,fontSize:font.sm,fontWeight:700,color:pwMsg.ok?colors.primary:colors.danger,display:'flex',alignItems:'center',gap:8}}>
-                  {pwMsg.ok?'✅':'❌'} {pwMsg.text}
+                  {pwMsg.ok?'':''} {pwMsg.text}
                 </div>
               )}
 
@@ -36,7 +37,7 @@ export default function SecurityTab({ m }: { m: SettingsState }) {
                   ))}
                 </div>
                 <button type="submit" disabled={pwSaving} style={{...btnPrimary,width:'100%',padding:'14px',opacity:pwSaving?0.7:1,cursor:pwSaving?'not-allowed':'pointer',fontSize:font.base}}>
-                  {pwSaving?'⏳ جاري التحقق والحفظ...':'🔐 تغيير كلمة المرور'}
+                  {pwSaving?'⏳ جاري التحقق والحفظ...':'تغيير كلمة المرور'}
                 </button>
               </form>
 
@@ -46,7 +47,7 @@ export default function SecurityTab({ m }: { m: SettingsState }) {
               <div style={{marginTop:28,paddingTop:24,borderTop:`1px solid ${colors.dangerBorder}`}}>
                 <div style={{background:colors.dangerLight,border:`1.5px solid ${colors.dangerBorder}`,borderRadius:radius.md,padding:'16px'}}>
                   <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
-                    <span style={{fontSize:20}}>🗑️</span>
+                    <FeatureIcon name="🗑️" size={20} />
                     <div>
                       <div style={{fontSize:font.sm,fontWeight:800,color:colors.danger}}>حذف الحساب نهائياً</div>
                       <div style={{fontSize:font.xs,color:colors.danger,opacity:.8}}>لا يمكن التراجع عن هذا الإجراء</div>

@@ -88,7 +88,7 @@ export default function CashierClosingDetail({ period, from, to, onBack }: { per
           reason: c.status === 'deficit' ? (c.deficit_reason || '—') : '',
         })),
         summaryStats: [
-          { label: 'إجمالي التقارير', value: String(closings.length), color: '#0891b2' },
+          { label: 'إجمالي التقارير', value: String(closings.length), color:'#0891b2' },
           { label: 'إجمالي العجز', value: totalDeficit.toFixed(0) + ' ' + curr, color: colors.danger },
           { label: 'إجمالي الزيادة', value: totalSurplus.toFixed(0) + ' ' + curr, color: colors.info },
         ],

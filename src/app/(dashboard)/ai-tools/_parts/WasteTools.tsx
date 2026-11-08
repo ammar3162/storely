@@ -1,4 +1,5 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 import { C } from './config'
 import type { AiToolsPage } from './useAiTools'
 
@@ -12,7 +13,7 @@ export default function WasteTools({ m }: { m: AiToolsPage }) {
         <div id="waste" style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:10,scrollMarginTop:80}}>أين تخسر أموالك؟</div>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <span style={{fontSize:18}}>🐌</span>
+            <FeatureIcon name="🐌" size={18} />
             <div style={{flex:1}}>
               <div style={{fontSize:13,fontWeight:700,color:C.text}}>مخزون لا يُصرف (راكد)</div>
               <div style={{fontSize:11,color:C.text3}}>يكتشف ما تشتريه ولا تصرفه (بطيء الحركة)</div>
@@ -30,7 +31,7 @@ export default function WasteTools({ m }: { m: AiToolsPage }) {
             </button>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <span style={{fontSize:18}}>🗑️</span>
+            <FeatureIcon name="🗑️" size={18} />
             <div style={{flex:1}}>
               <div style={{fontSize:13,fontWeight:700,color:C.text}}>الهدر: تالف ومنتهي</div>
               <div style={{fontSize:11,color:C.text3}}>من عمليات الهدر المسجّلة فعلياً (تالف، منتهي، كسر...)</div>

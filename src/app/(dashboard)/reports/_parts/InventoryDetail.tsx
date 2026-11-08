@@ -66,7 +66,7 @@ export default function InventoryDetail({ period, from, to, onBack }: { period:F
           status: p.qty===0 ? 'نفد' : p.qty<=p.reorder_point ? 'ناقص' : 'كافٍ',
         })),
         summaryStats: [
-          { label: 'إجمالي الأصناف', value: String(products.length), color: '#7c3aed' },
+          { label: 'إجمالي الأصناف', value: String(products.length), color:'#7c3aed' },
           { label: 'مخزون ناقص', value: String(lowCount), color: colors.warning },
           { label: 'نفد المخزون', value: String(outCount), color: colors.danger },
         ],

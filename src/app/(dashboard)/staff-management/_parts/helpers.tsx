@@ -15,7 +15,7 @@ export function Avatar({ name, active }: { name:string; active:boolean }) {
   return (
     <div style={{
       width:44,height:44,borderRadius:14,
-      background:active?`linear-gradient(135deg,${colors.primary},#0f766e)`:'linear-gradient(135deg,#94a3b8,#64748b)',
+      background:active?`#203640`:'linear-gradient(135deg,#94a3b8,#64748b)',
       display:'flex',alignItems:'center',justifyContent:'center',
       fontSize:14,fontWeight:900,color:'white',flexShrink:0,
       boxShadow:active?`0 4px 12px ${colors.primary}33`:'none',

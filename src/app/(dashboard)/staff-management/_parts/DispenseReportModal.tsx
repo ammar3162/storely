@@ -1,4 +1,5 @@
 'use client'
+import { X } from 'lucide-react'
 import { ListSkeleton } from '@/components/PageSkeleton'
 import type { StaffPage } from './useStaffManagement'
 
@@ -13,16 +14,16 @@ export default function DispenseReportModal({ m }: { m: StaffPage }) {
               <div>
                 <div style={{fontSize:15,fontWeight:700,color:'#1c1c1a'}}>تقرير {reportStaff.name}</div>
                 <div style={{fontSize:11,color:'#888780',marginTop:2}}>آخر 50 عملية صرف</div>
-                {reportStaff.permissions?.cashier && <button onClick={()=>openReport(reportStaff,'closings')} style={{marginTop:6,padding:'4px 10px',borderRadius:99,border:'1px solid #99f6e4',background:'#f0fdfa',color:'#0f766e',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>عرض إقفالات الكاشير</button>}
+                {reportStaff.permissions?.cashier && <button onClick={()=>openReport(reportStaff,'closings')} style={{marginTop:6,padding:'4px 10px',borderRadius:99,border:'1px solid var(--storely-border)',background:'var(--storely-background)',color:'#203640',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>عرض إقفالات الكاشير</button>}
               </div>
-              <button onClick={()=>setReportStaff(null)} style={{width:30,height:30,borderRadius:'50%',border:'1px solid #e0e0dd',background:'#f5f5f4',cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',color:'#5f5e5a'}}>✕</button>
+              <button onClick={()=>setReportStaff(null)} style={{width:30,height:30,borderRadius:'50%',border:'1px solid var(--storely-border)',background:'var(--storely-background)',cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',color:'#5f5e5a'}}><X size={16}/></button>
             </div>
 
             {/* Stats */}
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,padding:'14px 20px',borderBottom:'1px solid #f0f0f0',flexShrink:0}}>
               {[
                 {label:'عمليات الصرف', value:staffReport.length, color:'#378add'},
-                {label:'أصناف مختلفة', value:new Set(staffReport.map((m:any)=>(m.products as any)?.name)).size, color:'#029FA2'},
+                {label:'أصناف مختلفة', value:new Set(staffReport.map((m:any)=>(m.products as any)?.name)).size, color:'#203640'},
                 {label:'إجمالي الكميات', value:staffReport.reduce((s:number,m:any)=>s+Math.abs(m.qty_change),0), color:'#ba7517'},
               ].map((s,i)=>(
                 <div key={i} style={{background:'#f9f9f8',borderRadius:10,padding:'10px 12px',textAlign:'center'}}>

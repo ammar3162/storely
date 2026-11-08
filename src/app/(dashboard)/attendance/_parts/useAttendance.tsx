@@ -292,7 +292,7 @@ export function useAttendance() {
     })
     setSavingOt(false)
     if (!j.success) { toast(j.error || 'فشل الحفظ', 'error'); return }
-    toast('✅ تم حفظ إعدادات العمل الإضافي')
+    toast('تم حفظ إعدادات العمل الإضافي')
   }
 
   // إعداد إجازة الموظف — ينحفظ على طول مع كل تغيير، ويرجع لو فشل
@@ -313,7 +313,7 @@ export function useAttendance() {
     setSavingShift(false)
     if (!j.success) { toast(j.error || 'فشل الإضافة', 'error'); return }
     setNewShiftName(''); setNewShift24h(false)
-    toast('✅ تمت إضافة الوردية')
+    toast('تمت إضافة الوردية')
     loadShifts(orgId, branchId)
   }
 
@@ -341,7 +341,7 @@ export function useAttendance() {
     if (!(await confirmDialog({ title: 'حذف الوردية', message: 'هل تريد حذف هذه الوردية؟ سيُفك ارتباط الموظفين المرتبطين بها تلقائياً' }))) return
     const j = await api.del('/api/shifts', { id })
     if (!j.success) { toast(j.error || 'فشل الحذف', 'error'); return }
-    toast('🗑️ تم الحذف')
+    toast('تم الحذف')
     loadShifts(orgId, branchId)
     loadStaff(orgId, branchId)
   }
@@ -349,7 +349,7 @@ export function useAttendance() {
   async function assignShift(staffId: string, shiftId: string) {
     const j = await api.patch('/api/staff-shifts', { org_id: orgId, staff_id: staffId, shift_id: shiftId || null })
     if (!j.success) { toast(j.error || 'فشل الربط', 'error'); return }
-    toast('✅ تم تحديد الوردية — إذا كان الموظف في دوامه الآن فسيكمله على ورديته السابقة، وتبدأ الجديدة من دوامه التالي')
+    toast('تم تحديد الوردية — إذا كان الموظف في دوامه الآن فسيكمله على ورديته السابقة، وتبدأ الجديدة من دوامه التالي')
     setStaffList(prev => prev.map(s => s.id === staffId ? { ...s, shift_id: shiftId || null } : s))
   }
 
@@ -362,7 +362,7 @@ export function useAttendance() {
     const j = await api.patch('/api/org-settings', { org_id: orgId, late_grace_minutes: grace, late_penalty_per_hour: late.perHour === '' ? null : Number(late.perHour) })
     setSavingLate(false)
     if (!j.success) { toast(j.error || 'فشل الحفظ', 'error'); return }
-    toast('✅ تم حفظ إعدادات التأخير — تُطبَّق من الحضور القادم')
+    toast('تم حفظ إعدادات التأخير — تُطبَّق من الحضور القادم')
   }
 
   const presentCount = rows.filter(r => r.check_in).length

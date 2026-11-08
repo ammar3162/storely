@@ -15,9 +15,9 @@ export function UpgradeBlock() {
   return (
     <div style={{minHeight:'60vh',display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
       <div style={{textAlign:'center',maxWidth:400}}>
-        <div style={{display:'flex',justifyContent:'center',marginBottom:16,color:'#66737C'}}><Lock size={44} strokeWidth={1.5}/></div>
-        <h2 style={{fontSize:22,fontWeight:900,color:'#203640',marginBottom:8}}>هذه الميزة غير متاحة في باقتك</h2>
-        <p style={{fontSize:14,color:'#66737C',lineHeight:1.8,marginBottom:24}}>
+        <div style={{display:'flex',justifyContent:'center',marginBottom:16,color:'var(--storely-muted)'}}><Lock size={44} strokeWidth={1.5}/></div>
+        <h2 style={{fontSize:22,fontWeight:900,color:'var(--storely-text)',marginBottom:8}}>هذه الميزة غير متاحة في باقتك</h2>
+        <p style={{fontSize:14,color:'var(--storely-muted)',lineHeight:1.8,marginBottom:24}}>
           إدارة الموردين متاحة في الباقة الشاملة وما فوق.
         </p>
         <button className="hide-in-app" onClick={()=>router.push('/settings')}

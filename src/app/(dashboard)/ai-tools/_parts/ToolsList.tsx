@@ -1,4 +1,5 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 import { C, TOOLS, planAllows } from './config'
 import { Lock } from 'lucide-react'
 import type { AiToolsPage } from './useAiTools'
@@ -22,7 +23,7 @@ export default function ToolsList({ m }: { m: AiToolsPage }) {
               )}
               <div style={{display:'flex',alignItems:'flex-start',gap:14}}>
                 <div style={{width:52,height:52,borderRadius:14,background:tool.bg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,flexShrink:0,border:`1px solid ${tool.border}`}}>
-                  {tool.icon}
+                  <FeatureIcon name={tool.icon} size={22} />
                 </div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:16,fontWeight:800,color:C.text,marginBottom:6}}>{tool.title}</div>
@@ -30,7 +31,7 @@ export default function ToolsList({ m }: { m: AiToolsPage }) {
                   <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
                     {tool.features.map((f,j)=>(
                       <span key={j} style={{background:tool.bg,color:tool.color,fontSize:10,fontWeight:700,padding:'3px 10px',borderRadius:99,border:`1px solid ${tool.border}`}}>
-                        ✓ {f}
+                        {f}
                       </span>
                     ))}
                   </div>

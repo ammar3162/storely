@@ -1,4 +1,5 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
 import { colors, radius, font, card, pageTitle, pageSub } from '@/lib/ds'
@@ -66,7 +67,7 @@ export default function SettingsPage() {
 
       {/* Plan badge */}
       <div className="su" style={{...card,padding:'14px 18px',marginBottom:16,display:'flex',alignItems:'center',gap:12,animationDelay:'.05s',background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`}}>
-        <div style={{width:40,height:40,borderRadius:12,background:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0,boxShadow:`0 2px 8px ${colors.primary}22`}}>⭐</div>
+        <div style={{width:40,height:40,borderRadius:12,background:'white',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0,boxShadow:`0 2px 8px ${colors.primary}22`}}></div>
         <div>
           <div style={{fontSize:font.sm,fontWeight:800,color:colors.primary}}>{planLabel}</div>
           <div style={{fontSize:font.xs,color:colors.primary,opacity:.7,marginTop:1}}>الفروع: {branches.length} / {maxBranches} مسموح</div>
@@ -76,7 +77,7 @@ export default function SettingsPage() {
       {/* Save success */}
       {saveOk&&(
         <div className="su" style={{background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16,fontSize:font.sm,fontWeight:700,color:colors.primary,display:'flex',alignItems:'center',gap:8}}>
-          ✅ تم حفظ الإعدادات بنجاح
+          <span style={{display:"inline-flex",alignItems:"center",gap:6}}><FeatureIcon name="✅" size={15} /></span> تم حفظ الإعدادات بنجاح
         </div>
       )}
 
@@ -87,7 +88,7 @@ export default function SettingsPage() {
             <button key={t.key} className={`tab-btn${activeTab===t.key?' active':''}`}
               onClick={()=>setActiveTab(t.key)}
               style={{background:'none',color:activeTab===t.key?colors.primary:colors.text3}}>
-              <span style={{fontSize:18}}>{t.icon}</span>
+              <FeatureIcon name={t.icon} size={17} />
               <span style={{fontSize:10,fontWeight:700}}>{t.label}</span>
             </button>
           ))}

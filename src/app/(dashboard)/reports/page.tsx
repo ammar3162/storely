@@ -237,7 +237,7 @@ export default function ReportsPage() {
             title="الحضور والانصراف"
             subtitle="الحضور والتأخير والعمل الإضافي لكل موظف"
             icon={<CalendarDays size={20} strokeWidth={1.75}/>}
-            color={'#0f766e'}
+            color={'#203640'}
             bg={'#f0fdfa'}
             border={'#99f6e4'}
             loading={false}

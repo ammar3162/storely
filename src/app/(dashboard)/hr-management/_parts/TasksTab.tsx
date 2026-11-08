@@ -1,4 +1,5 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 import { colors, radius, btnPrimary, inp } from '@/lib/ds'
 import { Plus, Camera } from 'lucide-react'
 import { ListSkeleton } from '@/components/PageSkeleton'
@@ -35,7 +36,7 @@ export default function TasksTab({ m, s }: { m: HrPage; s: any }) {
                                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}>
                                   <span style={{fontSize:13,fontWeight:700,color:colors.text,display:'flex',alignItems:'center',gap:6}}>
                                     {t.title}
-                                    {t.is_daily && <span style={{fontSize:9,fontWeight:800,color:colors.primary,background:'white',padding:'2px 6px',borderRadius:99}}>🔁 يومية</span>}
+                                    {t.is_daily && <span style={{fontSize:9,fontWeight:800,color:colors.primary,background:'white',padding:'2px 6px',borderRadius:99}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><FeatureIcon name="🔁" size={15} /></span> يومية</span>}
                                   </span>
                                   {!t.template_id && !t.is_daily && <span style={{fontSize:10,fontWeight:700,color:st.color}}>{st.label}</span>}
                                 </div>
@@ -51,7 +52,7 @@ export default function TasksTab({ m, s }: { m: HrPage; s: any }) {
                                 )}
                                 {!t.template_id && (
                                   <button onClick={()=>toggleDaily(s.id,t.id)} style={{width:'100%',padding:'6px',marginTop:4,background:'transparent',border:`1px dashed ${t.is_daily?colors.primary:colors.border2}`,borderRadius:8,fontSize:11,fontWeight:700,color:t.is_daily?colors.primary:colors.text4,cursor:'pointer',fontFamily:'inherit'}}>
-                                    {t.is_daily ? 'إيقاف التكرار اليومي' : 'اجعلها مهمة يومية 🔁'}
+                                    {t.is_daily ? 'إيقاف التكرار اليومي' : 'اجعلها مهمة يومية '}
                                   </button>
                                 )}
                               </div>

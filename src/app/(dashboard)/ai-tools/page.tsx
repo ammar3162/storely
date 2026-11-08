@@ -68,13 +68,13 @@ export default function AIToolsPage() {
       )}
 
       {hasAiAddon===false && (
-        <div className="fu" style={{marginTop:16,background:'linear-gradient(135deg,#042f2e,#0C213B)',borderRadius:16,padding:'28px 24px',textAlign:'center' as const}}>
+        <div className="fu" style={{marginTop:16,background:'linear-gradient(135deg,#203640,#0C213B)',borderRadius:16,padding:'28px 24px',textAlign:'center' as const}}>
           <div style={{display:'flex',justifyContent:'center',marginBottom:10,color:'white'}}><Sparkles size={32}/></div>
           <div style={{fontSize:16,fontWeight:800,color:'white',marginBottom:6}}>أدوات ذكاء اصطناعي بانتظارك</div>
           <div style={{fontSize:12,color:'rgba(255,255,255,.65)',marginBottom:18,lineHeight:1.7,maxWidth:420,marginLeft:'auto',marginRight:'auto'}}>
             توقع نفاد المخزون، اقتراح كميات الشراء، تحليل الموسمية، تحسين نقطة إعادة الطلب، والتقرير الأسبوعي التلقائي — مع الباقة الكاملة أو إضافة «أدوات الذكاء الاصطناعي».
           </div>
-          <a className="hide-in-app" href="/addons-market" style={{display:'inline-block',padding:'12px 28px',background:'#029FA2',color:'white',borderRadius:10,fontSize:13,fontWeight:800,textDecoration:'none'}}>أضف أدوات الذكاء</a>
+          <a className="hide-in-app" href="/addons-market" style={{display:'inline-block',padding:'12px 28px',background:'#203640',color:'white',borderRadius:10,fontSize:13,fontWeight:800,textDecoration:'none'}}>أضف أدوات الذكاء</a>
         </div>
       )}
 

@@ -1,4 +1,5 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 import { colors, radius, font, card, btnPrimary, inp } from '@/lib/ds'
 import { lbl } from './constants'
 import type { SettingsState } from './useSettings'
@@ -26,7 +27,7 @@ export default function AccountTab({ m }: { m: SettingsState }) {
                     <input value={userPhone} onChange={e=>setUserPhone(e.target.value)} style={{...inp(),direction:'ltr' as const,textAlign:'right' as const}} placeholder="05xxxxxxxx"/>
                   </div>
                   <button onClick={savePersonalInfo} disabled={savingPersonal} style={{...btnPrimary,opacity:savingPersonal?.6:1}}>
-                    {savingPersonal?'جاري الحفظ...':personalSaveOk?'✅ تم الحفظ':'حفظ البيانات الشخصية'}
+                    {savingPersonal?'جاري الحفظ...':personalSaveOk?'تم الحفظ':'حفظ البيانات الشخصية'}
                   </button>
                 </div>
               </div>
@@ -35,7 +36,7 @@ export default function AccountTab({ m }: { m: SettingsState }) {
                 <div style={{fontSize:font.sm,fontWeight:800,color:colors.text,marginBottom:16}}>باقتك الحالية</div>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'14px 16px',background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`,borderRadius:radius.md,marginBottom:subEndsAt?12:0}}>
                   <span style={{fontSize:font.sm,fontWeight:800,color:colors.primary}}>{planLabel}</span>
-                  <span style={{fontSize:16}}>💎</span>
+                  <FeatureIcon name="💎" size={16} />
                 </div>
                 {bill.lines.length>1&&(
                   <div className="hide-in-app" style={{border:`1px solid ${colors.border}`,borderRadius:radius.md,padding:'12px 14px',marginBottom:12}}>

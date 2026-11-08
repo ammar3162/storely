@@ -3,7 +3,7 @@ import NumberInput from '@/components/NumberInput'
 import { colors, card, btnPrimary, inp } from '@/lib/ds'
 import StaffDaysOffEditor from '@/components/StaffDaysOffEditor'
 import StaffDayShiftsEditor from '@/components/StaffDayShiftsEditor'
-import { Pencil } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 import type { AttendancePage } from './useAttendance'
 
 export default function SettingsTab({ m }: { m: AttendancePage }) {
@@ -109,7 +109,7 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
                           <button onClick={() => startEditShift(sh)} aria-label={`تعديل ${sh.name}`} title="تعديل الوردية"
                             style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text3, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Pencil size={13} strokeWidth={2.25}/></button>
                           <button onClick={() => deleteShift(sh.id)} aria-label={`حذف ${sh.name}`} title="حذف الوردية"
-                            style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text4, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                            style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text4, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Trash2 size={13} strokeWidth={2.25}/></button>
                         </div>
                       </div>
                       {sh.is_24h ? (
@@ -173,13 +173,13 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
               <div style={{ fontSize: 13, color: colors.text4, textAlign: 'center' as const, padding: 16 }}>لا يوجد موظفون نشطون في هذا الفرع</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
-                {shifts.length === 0 && <div style={{ fontSize: 12.5, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '9px 12px' }}>أضف وردية في الخطوة 1 أولاً، ثم يمكنك ربط الموظفين بها.</div>}
+                {shifts.length === 0 && <div style={{ fontSize: 12.5, color:'#b45309', background:'#fffbeb', border:'1px solid #fde68a', borderRadius: 10, padding: '9px 12px' }}>أضف وردية في الخطوة 1 أولاً، ثم يمكنك ربط الموظفين بها.</div>}
                 {staffList.map((x: any) => (
-                  <div key={x.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', border: `1px solid ${x.shift_id ? colors.border : '#fde68a'}`, background: x.shift_id ? colors.surface : '#fffdf5', borderRadius: 12, flexWrap: 'wrap' as const }}>
+                  <div key={x.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', border:`1px solid ${x.shift_id ? colors.border : '#fde68a'}`, background: x.shift_id ? colors.surface : '#fffdf5', borderRadius: 12, flexWrap: 'wrap' as const }}>
                     <span style={{ width: 34, height: 34, borderRadius: 10, background: colors.primaryLight, color: colors.primary, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{(x.name || '?').trim()[0]}</span>
                     <div style={{ flex: 1, minWidth: 120 }}>
                       <div style={{ fontSize: 13.5, fontWeight: 700, color: colors.text }}>{x.name}</div>
-                      {!x.shift_id && <div style={{ fontSize: 11.5, color: '#b45309', marginTop: 2 }}>بدون وردية — لا يُحتسب له تأخير أو عمل إضافي، ويمكنه الانصراف في أي وقت</div>}
+                      {!x.shift_id && <div style={{ fontSize: 11.5, color:'#b45309', marginTop: 2 }}>بدون وردية — لا يُحتسب له تأخير أو عمل إضافي، ويمكنه الانصراف في أي وقت</div>}
                     </div>
                     <select value={x.shift_id || ''} onChange={e => assignShift(x.id, e.target.value)} disabled={shifts.length === 0} style={{ ...inp(), width: 250, maxWidth: '100%' }}>
                       <option value="">بدون وردية</option>

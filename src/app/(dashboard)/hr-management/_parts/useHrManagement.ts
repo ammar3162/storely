@@ -169,7 +169,7 @@ export function useHrManagement() {
     setSavingLocationId(null)
     if(!r.success){ toast('فشل حفظ الموقع — حاول مرة أخرى','error'); return }
     setBranches(prev=>prev.map((br:any)=>br.id===id?{...br,latitude:bestPos!.coords.latitude,longitude:bestPos!.coords.longitude}:br))
-    toast('✅ تم حفظ موقع الفرع — يمكن للموظفين الآن تسجيل حضورهم')
+    toast('تم حفظ موقع الفرع — يمكن للموظفين الآن تسجيل حضورهم')
   }
 
   function toggleExpand(s:any) {
@@ -205,7 +205,7 @@ export function useHrManagement() {
     })
     const j = await res.json()
     if (!j.success) { toast(j.error||'خطأ','error'); return }
-    toast(decision==='approved' ? '✅ تم قبول طلب الإجازة' : 'تم رفض الطلب')
+    toast(decision==='approved' ? 'تم قبول طلب الإجازة' : 'تم رفض الطلب')
     loadLeave(staffId)
     setPendingLeaveCounts(prev => {
       const next = { ...prev }
@@ -238,7 +238,7 @@ export function useHrManagement() {
     })
     const j = await res.json()
     if (!j.success) { toast(j.error||'خطأ','error'); return }
-    toast(action==='approve' ? '✅ تمت الموافقة على الاستئذان' : 'تم رفض الطلب')
+    toast(action==='approve' ? 'تمت الموافقة على الاستئذان' : 'تم رفض الطلب')
     loadExcuse(staffId)
   }
 
@@ -248,7 +248,7 @@ export function useHrManagement() {
     setSalaryVisible(next)
     const r = await api.patch('/api/org-settings', { org_id: orgId, staff_salary_visible: next })
     if (!r.success) { setSalaryVisible(!next); toast(r.error || 'حدث خطأ', 'error'); return }
-    toast(next ? '✅ يمكن للموظفين الآن الاطلاع على كشوف رواتبهم' : 'تم إخفاء كشف الراتب عن الموظفين')
+    toast(next ? 'يمكن للموظفين الآن الاطلاع على كشوف رواتبهم' : 'تم إخفاء كشف الراتب عن الموظفين')
   }
 
   async function loadReport() {
@@ -279,7 +279,7 @@ export function useHrManagement() {
     const j = await res.json()
     setSavingSalary(false)
     if (!j.success) { toast(j.error || 'خطأ', 'error'); return }
-    toast('✅ تم حفظ الراتب والبدلات')
+    toast('تم حفظ الراتب والبدلات')
     setStaff(prev => prev.map((s:any)=> s.id===staffId ? {...s, monthly_salary:Number(salaryForm.base)||0, housing_allowance:Number(salaryForm.housing)||0, transport_allowance:Number(salaryForm.transport)||0, food_allowance:Number(salaryForm.food)||0} : s))
   }
 
@@ -304,7 +304,7 @@ export function useHrManagement() {
     const j = await res.json()
     setSavingAdj(false)
     if (!j.success) { toast(j.error||'خطأ','error'); return }
-    toast('✅ تم إضافة الخصم')
+    toast('تم إضافة الخصم')
     setNewAdjAmount(''); setNewAdjReason('')
     loadAdjustments(staffId)
   }
@@ -316,7 +316,7 @@ export function useHrManagement() {
     })
     const j = await res.json()
     if (!j.success) { toast(j.error||'خطأ','error'); return }
-    toast(decision==='approved' ? '✅ تم قبول طلب السلفة' : 'تم رفض الطلب')
+    toast(decision==='approved' ? 'تم قبول طلب السلفة' : 'تم رفض الطلب')
     loadAdjustments(staffId)
     setPendingAdvanceCounts(prev => {
       const next = { ...prev }
@@ -346,7 +346,7 @@ export function useHrManagement() {
     const j = await res.json()
     setSavingTask(false)
     if (!j.success) { toast(j.error||'خطأ','error'); return }
-    toast('✅ تم إنشاء المهمة')
+    toast('تم إنشاء المهمة')
     setNewTaskTitle(''); setNewTaskDesc(''); setNewTaskPhoto(false)
     loadTasks(staffId)
   }
@@ -358,7 +358,7 @@ export function useHrManagement() {
     })
     const j = await res.json()
     if (!j.success) { toast(j.error||'خطأ','error'); return }
-    toast(decision==='confirmed' ? '✅ تم تأكيد اكتمال المهمة' : 'تم رفض المهمة')
+    toast(decision==='confirmed' ? 'تم تأكيد اكتمال المهمة' : 'تم رفض المهمة')
     loadTasks(staffId)
   }
 
@@ -369,14 +369,14 @@ export function useHrManagement() {
     })
     const j = await res.json()
     if (!j.success) { toast(j.error||'خطأ','error'); return }
-    toast(j.is_daily ? '🔁 أصبحت مهمة يومية' : 'تم إيقاف التكرار اليومي')
+    toast(j.is_daily ? 'أصبحت مهمة يومية' : 'تم إيقاف التكرار اليومي')
     loadTasks(staffId)
   }
 
   const TASK_STATUS_LABEL:Record<string,{label:string,color:string,bg:string}> = {
     pending:   {label:'قيد الانتظار', color: colors.text3,   bg: colors.bg},
     completed: {label:'بانتظار تأكيدك', color: colors.warning, bg: colors.warningLight},
-    confirmed: {label:'مؤكدة ✓',       color: colors.primary, bg: colors.primaryLight},
+    confirmed: {label:'مؤكدة ',       color: colors.primary, bg: colors.primaryLight},
     rejected:  {label:'مرفوضة',        color: colors.danger,  bg: colors.dangerLight},
   }
 

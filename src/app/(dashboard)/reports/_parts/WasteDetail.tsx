@@ -58,7 +58,7 @@ export default function WasteDetail({ period, from, to, onBack }: { period:Filte
         summaryStats: [
           { label: 'كميات مهدورة', value: String(totalQty), color: colors.danger },
           { label: 'عمليات الهدر', value: String(filtered.length), color: colors.info },
-          { label: 'أصناف مختلفة', value: String(Object.keys(productMap).length), color: '#7c3aed' },
+          { label: 'أصناف مختلفة', value: String(Object.keys(productMap).length), color:'#7c3aed' },
         ],
         fileName: `تقرير-الهدر-${new Date().toISOString().slice(0,10)}.pdf`,
       })
@@ -150,7 +150,7 @@ export default function WasteDetail({ period, from, to, onBack }: { period:Filte
                     <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#fffbeb',color:'#b45309',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #fde68a'}}>
 {(m as any).waste_reason||'—'}
 </span></td>
-                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f0fdfa',color:'#029FA2',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #99f6e4'}}>
+                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'var(--storely-background)',color:'#203640',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid var(--storely-border)'}}>
 {(m.profiles as any)?.full_name||(m.staff_members as any)?.name||(m.note?.match(/بواسطة[^:]*:\s*(.+)/)?.[1])||'—'}
 </span></td>
                     <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text4}}>

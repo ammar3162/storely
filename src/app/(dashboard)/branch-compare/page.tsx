@@ -124,7 +124,7 @@ export default function BranchComparePage() {
           topProduct: b.topProducts?.[0] ? `${b.topProducts[0].name} (${b.topProducts[0].qty} ${b.topProducts[0].unit})` : '—',
         })),
         summaryStats: [
-          { label: 'عدد الفروع', value: String(comparison.length), color: '#717553' },
+          { label: 'عدد الفروع', value: String(comparison.length), color:'#717553' },
           { label: 'إجمالي الصرف', value: String(comparison.reduce((s, b) => s + b.dispensed, 0)), color: colors.danger },
           { label: 'إجمالي المشتريات', value: comparison.reduce((s, b) => s + Number(b.purchases || 0), 0).toFixed(0) + ' ' + curr, color: colors.primary },
         ],

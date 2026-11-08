@@ -58,7 +58,7 @@ export function useStaffManagement() {
     setSavingStaffPhone(false)
     if (!r.success) { toast(r.error || 'فشل التحديث', 'error'); return }
     setEditingStaffPhoneId(null)
-    toast('✅ تم تحديث رقم الموظف')
+    toast('تم تحديث رقم الموظف')
     loadStaff(orgId)
   }
   const [visible, setVisible]       = useState(false)
@@ -184,7 +184,7 @@ export function useStaffManagement() {
     const r = await api.post('/api/staff-members/assign', { org_id: orgId, staff_id: staffId, add_product_id: productId })
     setAssigning(false)
     if(!r.success){ toast(r.error || 'فشل التخصيص — حاول مرة أخرى','error'); return }
-    toast(`✅ تم تخصيص المنتج لـ${target.name}`)
+    toast(`تم تخصيص المنتج لـ${target.name}`)
     setPickerFor(null)
     loadStaff(orgId)
   }
@@ -239,7 +239,7 @@ export function useStaffManagement() {
   async function savePermissions(id:string) {
     const r = await api.patch('/api/staff-members', { org_id: orgId, id, permissions: editPerms })
     if (!r.success) { toast(r.error || 'فشل الحفظ', 'error'); return }
-    toast('✅ تم حفظ الصلاحيات')
+    toast('تم حفظ الصلاحيات')
     setEditingPerms(null)
     loadStaff(orgId)
   }
@@ -249,7 +249,7 @@ export function useStaffManagement() {
     setSavingName(true)
     const r = await api.patch('/api/staff-members', { org_id: orgId, id: editingNameId, name: editNameValue.trim() })
     if (!r.success) { toast(r.error || 'فشل التحديث', 'error'); setSavingName(false); return }
-    toast('✅ تم تحديث اسم الموظف')
+    toast('تم تحديث اسم الموظف')
     setEditingNameId(null)
     setSavingName(false)
     loadStaff(orgId)
@@ -260,7 +260,7 @@ export function useStaffManagement() {
     const r = await api.patch('/api/org-settings', {org_id:orgId, business_day_start_hour:dayStartHour})
     if (!r.success) { toast(r.error || 'فشل الحفظ', 'error'); setSavingHours(false); return }
     setDayStartLoaded(dayStartHour)
-    toast('✅ تم حفظ بداية يوم العمل')
+    toast('تم حفظ بداية يوم العمل')
     setSavingHours(false)
     setShowHoursModal(false)
   }
@@ -289,7 +289,7 @@ export function useStaffManagement() {
     const r = await api.patch('/api/staff-members', { org_id: orgId, id, send_closing_whatsapp: !current })
     if (!r.success) { toast(r.error || 'حدث خطأ', 'error'); return }
     setStaff(prev=>prev.map((s:any)=>s.id===id?{...s,send_closing_whatsapp:!current}:s))
-    toast(!current?'✅ ستصل تفاصيل الإقفال كاملة عبر واتساب':'✅ سيصل إشعار مختصر فقط دون تفاصيل')
+    toast(!current?'ستصل تفاصيل الإقفال كاملة عبر واتساب':'سيصل إشعار مختصر فقط دون تفاصيل')
   }
 
   // أيقونة العين: الرمز المشفّر ينطلب من الخادم وقت الضغط، ويختفي تلقائياً بعد 20 ثانية

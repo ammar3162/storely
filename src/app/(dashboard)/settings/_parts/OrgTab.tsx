@@ -1,4 +1,5 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 import VatRegistration from '@/components/VatRegistration'
 import PlanUpgrade from '@/components/PlanUpgrade'
 
@@ -33,7 +34,7 @@ export default function OrgTab({ m }: { m: SettingsState }) {
                         {logoUrl ? (
                           <img src={logoUrl} alt="شعار" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
                         ) : (
-                          <span style={{fontSize:24}}>🏢</span>
+                          <FeatureIcon name="🏢" size={24} />
                         )}
                         {logoUploading && (
                           <div style={{position:'absolute',inset:0,background:'rgba(255,255,255,.85)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>⏳</div>
@@ -52,18 +53,18 @@ export default function OrgTab({ m }: { m: SettingsState }) {
                 </div>
                 <div>
                   <label style={lbl}>رقم واتساب التنبيهات</label>
-                  <div style={{display:'flex',borderRadius:12,overflow:'hidden',border:'1.5px solid #e2e8f0',background:'#f8fafc'}}>
+                  <div style={{display:'flex',borderRadius:12,overflow:'hidden',border:'1.5px solid var(--storely-border)',background:'var(--storely-background)'}}>
                     <select value={countryCode} onChange={e=>setCountryCode(e.target.value)}
-                      style={{background:'transparent',color:'#1e293b',border:'none',borderLeft:'1.5px solid #e2e8f0',padding:'12px 8px',fontSize:13,fontFamily:'inherit',outline:'none',flexShrink:0,cursor:'pointer',direction:'ltr',minWidth:130}}>
+                      style={{background:'transparent',color:'var(--storely-text)',border:'none',borderLeft:'1.5px solid var(--storely-border)',padding:'12px 8px',fontSize:13,fontFamily:'inherit',outline:'none',flexShrink:0,cursor:'pointer',direction:'ltr',minWidth:130}}>
                       {COUNTRY_CODES.map(c=>(
                         <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
                       ))}
                     </select>
                     <input value={form.whatsapp_number} onChange={e=>setForm({...form,whatsapp_number:e.target.value})}
                       placeholder={countryCode==='+966'?'5xxxxxxxx':countryCode==='+20'?'1xxxxxxxxx':'xxxxxxxxxx'} dir="ltr"
-                      style={{background:'transparent',border:'none',padding:'12px',fontSize:14,color:'#1e293b',flex:1,outline:'none',fontFamily:'inherit'}}/>
+                      style={{background:'transparent',border:'none',padding:'12px',fontSize:14,color:'var(--storely-text)',flex:1,outline:'none',fontFamily:'inherit'}}/>
                   </div>
-                  <div style={{fontSize:11,color:colors.text4,marginTop:6,display:'flex',alignItems:'center',gap:4}}><span>💡</span> يصل إليه التقرير الصباحي وتنبيهات النظام</div>
+                  <div style={{fontSize:11,color:colors.text4,marginTop:6,display:'flex',alignItems:'center',gap:4}}><span></span> يصل إليه التقرير الصباحي وتنبيهات النظام</div>
                 </div>
 
                 {orgId&&<VatRegistration orgId={orgId}/>}

@@ -132,7 +132,7 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
 
       {!loading && !person && summary.some((r: any) => r.shift_warning === 'none') && (
         <div style={{ ...card, padding:'10px 14px', marginBottom:14, background:colors.warningLight, border:`1px solid ${colors.warningBorder}`, color:colors.warning, fontSize:12, fontWeight:600 }}>
-          ⚠️ {summary.filter((r: any) => r.shift_warning === 'none').length} موظف غير مرتبطين بوردية — لا يُحتسب لهم تأخير أو عمل إضافي. اربطهم من صفحة الحضور والانصراف ← الإعدادات.
+          {summary.filter((r: any) => r.shift_warning === 'none').length} موظف غير مرتبطين بوردية — لا يُحتسب لهم تأخير أو عمل إضافي. اربطهم من صفحة الحضور والانصراف ← الإعدادات.
         </div>
       )}
       <div style={{ ...card, padding:0, overflow:'hidden' }}>
@@ -142,7 +142,7 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
           <>
             {person.shift_warning && (
               <div style={{ padding:'10px 16px', background:colors.warningLight, borderBottom:`1px solid ${colors.warningBorder}`, color:colors.warning, fontSize:12, fontWeight:600 }}>
-                ⚠️ {person.shift_warning === 'none' ? 'هذا الموظف غير مرتبط بوردية' : 'هذا الموظف على وردية 24 ساعة'} — لا يُحتسب له تأخير أو عمل إضافي. اربطه بوردية من صفحة الحضور والانصراف ← الإعدادات.
+                {person.shift_warning === 'none' ? 'هذا الموظف غير مرتبط بوردية' : 'هذا الموظف على وردية 24 ساعة'} — لا يُحتسب له تأخير أو عمل إضافي. اربطه بوردية من صفحة الحضور والانصراف ← الإعدادات.
               </div>
             )}
             <div style={{ padding:'14px 16px', borderBottom:`1px solid ${colors.border}`, display:'flex', justifyContent:'space-between', alignItems:'center', gap:8, flexWrap:'wrap' as const }}>
@@ -189,7 +189,7 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
                 {summary.map((r: any) => (
                   <tr key={r.staff_id} onClick={() => setStaffId(r.staff_id)} style={{ borderBottom:`1px solid ${colors.border}`, cursor:'pointer' }}
                     onMouseEnter={e => (e.currentTarget.style.background = colors.bg)} onMouseLeave={e => (e.currentTarget.style.background = '')}>
-                    <td style={{ ...td, fontWeight:700, color:colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف غير مرتبط بوردية — لا يُحتسب له تأخير أو عمل إضافي' : 'وردية 24 ساعة — لا يُحتسب تأخير أو عمل إضافي'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? '⚠️ بدون وردية' : '⚠️ وردية 24 ساعة'}</span>}</td>
+                    <td style={{ ...td, fontWeight:700, color:colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف غير مرتبط بوردية — لا يُحتسب له تأخير أو عمل إضافي' : 'وردية 24 ساعة — لا يُحتسب تأخير أو عمل إضافي'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color:'#b45309', background:'#fffbeb', border:'1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? 'بدون وردية' : 'وردية 24 ساعة'}</span>}</td>
                     <td style={td}>{pill(`${r.days_present} يوم`, colors.primary, colors.primaryLight)}</td>
                     <td style={td}>{r.days_absent ? pill(`${r.days_absent} يوم`, colors.danger, colors.dangerLight) : '—'}</td>
                     <td style={{ ...td, color: r.total_late_minutes ? colors.warning : colors.text4, fontWeight:600 }}>{r.total_late_minutes ? attMin(r.total_late_minutes) : '—'}</td>

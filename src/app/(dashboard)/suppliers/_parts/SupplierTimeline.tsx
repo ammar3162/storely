@@ -13,13 +13,13 @@ export default function SupplierTimeline({ m }: { m: SupplierCardState }) {
           <div style={{background:'white',borderRadius:16,width:'100%',maxWidth:480,maxHeight:'75vh',overflowY:'auto' as const,padding:20}}
             onClick={e=>e.stopPropagation()}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-              <div style={{fontSize:15,fontWeight:800,color:'#203640'}}>سجل التواصل — {s.name}</div>
-              <button onClick={()=>setShowTimeline(false)} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:'#687985'}}><X size={18}/></button>
+              <div style={{fontSize:15,fontWeight:800,color:'var(--storely-text)'}}>سجل التواصل — {s.name}</div>
+              <button onClick={()=>setShowTimeline(false)} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:'var(--storely-subtle)'}}><X size={18}/></button>
             </div>
             {timelineLoading ? (
               <ListSkeleton/>
             ) : timelineEvents.length === 0 ? (
-              <div style={{textAlign:'center' as const,padding:40,color:'#687985',fontSize:12}}>لا يوجد سجل تواصل بعد مع هذا المورد</div>
+              <div style={{textAlign:'center' as const,padding:40,color:'var(--storely-subtle)',fontSize:12}}>لا يوجد سجل تواصل بعد مع هذا المورد</div>
             ) : (
               <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
                 {timelineEvents.map((e:any,i:number)=>{
@@ -30,8 +30,8 @@ export default function SupplierTimeline({ m }: { m: SupplierCardState }) {
                       <div style={{flexShrink:0,color:colors[e.type]||'#66737C',marginTop:2}}>{icons[e.type]||'•'}</div>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:12,fontWeight:700,color:colors[e.type]||'#203640'}}>{e.title}</div>
-                        {e.detail && <div style={{fontSize:11,color:'#66737C',marginTop:2}}>{e.detail}</div>}
-                        <div style={{fontSize:10,color:'#687985',marginTop:3}}>{new Date(e.at).toLocaleDateString('ar-SA', {numberingSystem:'latn',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                        {e.detail && <div style={{fontSize:11,color:'var(--storely-muted)',marginTop:2}}>{e.detail}</div>}
+                        <div style={{fontSize:10,color:'var(--storely-subtle)',marginTop:3}}>{new Date(e.at).toLocaleDateString('ar-SA', {numberingSystem:'latn',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
                       </div>
                     </div>
                   )

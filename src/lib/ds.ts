@@ -127,11 +127,10 @@ export const pageHeader: React.CSSProperties = {
 // العنوان صف مرن عشان أيقونة الصفحة (<PageIcon/>) تجي بجانبه
 export const pageTitle: React.CSSProperties = {
   display:'flex', alignItems:'center', gap:12,
-  fontSize:font.xl, fontWeight:700,
-  color:colors.text, letterSpacing:'-0.2px',
-  marginBottom:3,
+  fontSize:storelyTokens.typography.title, fontWeight:600, lineHeight:1.5,
+  color:colors.text, margin:0,
 }
 
 export const pageSub: React.CSSProperties = {
-  fontSize:'13px', color:colors.text3,
+  fontSize:storelyTokens.typography.body, color:colors.text3, lineHeight:1.8, marginTop:storelyTokens.spacing[2], maxWidth:760,
 }

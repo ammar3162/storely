@@ -270,7 +270,7 @@ export default function PurchaseDetail({ period, from, to, onBack }: { period:Fi
                       </div>
                     </div>
                     <button onClick={()=>restorePurchase(d)} disabled={restoringId===d.id}
-                      style={{padding:'6px 14px',background:'white',color:'#029FA2',border:'1.5px solid #99f6e4',borderRadius:8,fontSize:11,fontWeight:700,cursor:restoringId===d.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:restoringId===d.id?.6:1,whiteSpace:'nowrap' as const}}>
+                      style={{padding:'6px 14px',background:'white',color:'#203640',border:'1.5px solid var(--storely-border)',borderRadius:8,fontSize:11,fontWeight:700,cursor:restoringId===d.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:restoringId===d.id?.6:1,whiteSpace:'nowrap' as const}}>
                       {restoringId===d.id?'...':'↩️ استعادة'}
                     </button>
                   </div>

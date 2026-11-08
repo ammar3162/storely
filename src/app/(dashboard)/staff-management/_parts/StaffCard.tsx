@@ -122,7 +122,7 @@ export default function StaffCard({ m, s, i }: { m: StaffPage; s: any; i: number
                     <div style={{fontSize:10,fontWeight:700,color:colors.text4,marginBottom:6,textTransform:'uppercase' as const}}>رابط دخول الموظف</div>
                     <div style={{display:'flex',gap:8,alignItems:'center'}}>
                       <div style={{fontSize:font.xs,color:colors.text,background:colors.bg,padding:'9px 12px',borderRadius:8,border:`1px solid ${colors.border}`,flex:1,direction:'ltr',textAlign:'left' as const,overflowX:'auto',whiteSpace:'nowrap' as const}}>https://storely.dev/staff</div>
-                      <button onClick={()=>{navigator.clipboard.writeText('https://storely.dev/staff');toast('تم نسخ الرابط ✓')}} style={{background:colors.primary,color:'white',border:'none',borderRadius:8,padding:'9px 14px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family,whiteSpace:'nowrap' as const,display:'flex',alignItems:'center',gap:5}}>
+                      <button onClick={()=>{navigator.clipboard.writeText('https://storely.dev/staff');toast('تم نسخ الرابط ')}} style={{background:colors.primary,color:'white',border:'none',borderRadius:8,padding:'9px 14px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family,whiteSpace:'nowrap' as const,display:'flex',alignItems:'center',gap:5}}>
                         <Copy size={13} strokeWidth={2.25}/> نسخ الكل
                       </button>
                     </div>
