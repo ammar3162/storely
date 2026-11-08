@@ -8,7 +8,7 @@ import { ListSkeleton } from '@/components/PageSkeleton'
 // طلبات المحاسب على منشأة: إنشاء طلب (على فاتورة أو عام) + متابعة الردود
 export type RequestTarget = { invoice_group?: string | null; purchase_id?: string | null; label?: string }
 const STATUS: Record<string, { t: string; bg: string; c: string }> = {
-  open: { t: '🟡 بانتظار الرد', bg: '#fffbeb', c: '#b45309' }, answered: { t: '💬 ردّت المنشأة', bg: '#eff6ff', c: '#1d4ed8' }, resolved: { t: '✅ تم الحل', bg: '#ecfdf5', c: '#047857' },
+  open: { t: 'بانتظار الرد', bg: '#fffbeb', c: '#b45309' }, answered: { t: 'ردّت المنشأة', bg: '#eff6ff', c: '#1d4ed8' }, resolved: { t: 'تم الحل', bg: '#ecfdf5', c: '#047857' },
 }
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 

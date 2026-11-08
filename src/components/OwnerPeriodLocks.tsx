@@ -20,7 +20,7 @@ export default function OwnerPeriodLocks({ orgId, showEmpty = false }: { orgId: 
       if (reason === null) return
       const j = await api.post('/api/period-locks', { org_id: orgId, month: l.month, action: 'request_unlock', reason })
       if (!j.success) { toast(j.error || 'تعذر الإرسال', 'error'); return }
-      toast('✅ أرسلنا طلب الفتح للمحاسب')
+      toast('أرسلنا طلب الفتح للمحاسب')
     } else {
       if (!(await confirmDialog({ title: `فتح شهر ${l.label}؟`, message: 'لا يوجد لديك محاسب مفعّل، لذا يمكنك فتحه بنفسك، ويصبح بعدها قابلاً للتعديل.', confirmText: 'افتح الشهر', type: 'warning' }))) return
       const j = await api.post('/api/period-locks', { org_id: orgId, month: l.month, action: 'unlock' })
@@ -35,7 +35,7 @@ export default function OwnerPeriodLocks({ orgId, showEmpty = false }: { orgId: 
       {data.locks.map(l => (
         <div key={l.month} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderTop: `1px solid ${colors.border}` }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 800 }}>🔒 {l.label}</div>
+            <div style={{ fontSize: 13.5, fontWeight: 800 }}>{l.label}</div>
             <div style={{ fontSize: 11.5, color: colors.text4 }}>{l.locked_by_name || 'المحاسب'} · {String(l.locked_at).slice(0, 10)}</div>
           </div>
           <button onClick={() => act(l)} style={{ ...btnSecondary, padding: '7px 12px', fontSize: 12.5 }}>{data.hasAccountant ? 'اطلب فتح الشهر' : 'افتح الشهر'}</button>

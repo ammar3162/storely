@@ -64,9 +64,10 @@ export default function PlanUpgrade({ orgId, plan, maxBranches, activeSlugs = []
   if (switchInfo) {
     if (switchInfo.chosen) return (
       <div className="hide-in-app" style={{ marginTop: 16, padding: '12px 14px', borderRadius: radius.md, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, fontSize: font.sm, color: colors.text, lineHeight: 1.7 }}>
-        {switchInfo.chosen.applied ? 'انتقلت إلى الأسعار الجديدة بالمزايا التي اخترتها.' : switchInfo.chosen.outcome === 'switch'
-          ? <>اخترت مزاياك بالأسعار الجديدة: <b>{switchInfo.chosen.modules.map(sl => FEATURE_NAMES[sl]?.ar || sl).join('، ')}</b>، ويُطبَّق اختيارك مع التجديد القادم.</>
-          : 'اخترت مزاياك، وتبقى على باقتك الحالية لأنها أوفر لك.'}
+        {switchInfo.chosen.outcome !== 'switch'
+          ? 'راجعنا اختيارك للمزايا بالأسعار الجديدة، وباقتك الحالية أوفر لك، فتبقى عليها بسعرها الحالي.'
+          : switchInfo.chosen.applied ? 'انتقلت إلى الأسعار الجديدة بالمزايا التي اخترتها.'
+          : <>اخترت مزاياك بالأسعار الجديدة: <b>{switchInfo.chosen.modules.map(sl => FEATURE_NAMES[sl]?.ar || sl).join('، ')}</b>، ويُطبَّق اختيارك مع التجديد القادم.</>}
       </div>
     )
     if (switchInfo.show) return (

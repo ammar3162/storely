@@ -1,4 +1,5 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 import { useEffect, useRef, useState } from 'react'
 import { StorelyButton } from '@/components/ui/button'
 import { storelyTokens as t } from '@/components/ui/design-tokens'
@@ -71,14 +72,14 @@ export default function BarcodeScanner({ onScan, onClose }: Props) {
     <div className="storely-overlay">
       <div className="storely-dialog" style={{maxWidth:420}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-          <div style={{fontSize:t.typography.section,fontWeight:600,color:t.color.text}}>📷 مسح الباركود</div>
-          <StorelyButton type="button" onClick={handleClose} size="sm">✕</StorelyButton>
+          <div style={{fontSize:t.typography.section,fontWeight:600,color:t.color.text}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><FeatureIcon name="📷" size={15} /></span> مسح الباركود</div>
+          <StorelyButton type="button" onClick={handleClose} size="sm"></StorelyButton>
         </div>
         {error ? (
-          <div style={{background:t.color.dangerBg,border:`1px solid ${t.color.dangerBorder}`,borderRadius:t.radius.control,padding:12,fontSize:t.typography.body,color:t.color.danger,fontWeight:600,textAlign:'center',marginBottom:12}}>⚠️ {error}</div>
+          <div style={{background:t.color.dangerBg,border:`1px solid ${t.color.dangerBorder}`,borderRadius:t.radius.control,padding:12,fontSize:t.typography.body,color:t.color.danger,fontWeight:600,textAlign:'center',marginBottom:12}}>{error}</div>
         ) : (
           <div style={{background:t.color.background,border:`1px solid ${t.color.border}`,borderRadius:t.radius.control,padding:'8px 12px',marginBottom:12,fontSize:t.typography.body,color:t.color.text,fontWeight:600,textAlign:'center'}}>
-            {ready ? '🎯 وجّه الكاميرا نحو الباركود' : '⏳ جاري تشغيل الكاميرا...'}
+            {ready ? 'وجّه الكاميرا نحو الباركود' : '⏳ جاري تشغيل الكاميرا...'}
           </div>
         )}
         <div style={{borderRadius:12,overflow:'hidden',background:'#000',position:'relative'}}>

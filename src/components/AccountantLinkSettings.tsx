@@ -79,7 +79,7 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
     const j = await api.put('/api/accountant-link', { org_id: orgId, ...form, branch_id: form.branch_id || null })
     setBusy('')
     if (!j.success) { toast(j.error || 'تعذر الحفظ', 'error'); return }
-    toast(j.invite_sent ? '✅ تم الحفظ — أرسلنا إلى المحاسب بريد «قبول الدعوة»، وستبدأ التقارير بالوصول إليه فور قبوله' : '✅ تم حفظ الربط مع المحاسب')
+    toast(j.invite_sent ? 'تم الحفظ — أرسلنا إلى المحاسب بريد «قبول الدعوة»، وستبدأ التقارير بالوصول إليه فور قبوله' : 'تم حفظ الربط مع المحاسب')
     load()
   }
   async function resendInvite() {
@@ -88,7 +88,7 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
     const j = await api.post('/api/accountant-access', { org_id: orgId, action: 'resend', id: invite.id })
     setBusy('')
     if (!j.success) { toast(j.error || 'تعذر الإرسال', 'error'); return }
-    toast(j.email_sent ? '✅ أرسلنا الدعوة مرة ثانية' : 'الإيميل ما وصل — تأكد من العنوان', j.email_sent ? 'success' : 'warning')
+    toast(j.email_sent ? 'أرسلنا الدعوة مرة ثانية' : 'الإيميل ما وصل — تأكد من العنوان', j.email_sent ? 'success' : 'warning')
   }
   async function test() {
     setBusy('test')
@@ -96,7 +96,7 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
     const j = await api.post('/api/accountant-link', { org_id: orgId, period: nowPeriod, ...(nowPeriod === 'custom' ? { from, to } : {}) })
     setBusy('')
     if (!j.success) { toast(j.error || 'تعذر الإرسال', 'error'); load(); return }
-    toast(`✅ أرسلنا تقرير ${j.label} للمحاسب`)
+    toast(`أرسلنا تقرير ${j.label} للمحاسب`)
     load()
   }
   async function remove() {

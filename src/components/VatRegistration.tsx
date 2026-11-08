@@ -33,7 +33,7 @@ export default function VatRegistration({ orgId }: { orgId: string }) {
     const r = await api.patch('/api/org-settings', { org_id: orgId, vat_registered: v })
     setBusy(false)
     if (!r.success) return toast(r.error || 'لم يتم الحفظ', 'error')
-    setS({ ...s, vat_registered: v }); toast('✅ تم الحفظ — تعتمد عليه تقارير المحاسب')
+    setS({ ...s, vat_registered: v }); toast('تم الحفظ — تعتمد عليه تقارير المحاسب')
   }
   // نفس شكل باقي حقول الإعدادات: عنوان صغير + اختيار من خيارين — يتحفظ مباشرة
   const btn = (on: boolean): React.CSSProperties => ({ flex: 1, padding: '10px 12px', borderRadius: 9, fontSize: 13, fontWeight: 700, fontFamily: font.family, cursor: s.is_owner ? 'pointer' : 'default',
@@ -49,7 +49,7 @@ export default function VatRegistration({ orgId }: { orgId: string }) {
         <button type="button" disabled={!s.is_owner || busy} onClick={() => set(false)} style={btn(s.vat_registered === false)}>غير مسجلة</button>
       </div>
       <div style={{ fontSize: 11, color: s.vat_registered === null ? colors.warning : colors.text4, fontWeight: s.vat_registered === null ? 700 : 400, marginTop: 6 }}>
-        {s.vat_registered === null ? 'حدد هذا الخيار ليظهر تقرير الضريبة لدى محاسبك بشكل صحيح' : '💡 تعتمد تقارير المحاسب والإقرار الضريبي على هذا الخيار — يُحفظ مباشرة'}
+        {s.vat_registered === null ? 'حدد هذا الخيار ليظهر تقرير الضريبة لدى محاسبك بشكل صحيح' : 'تعتمد تقارير المحاسب والإقرار الضريبي على هذا الخيار — يُحفظ مباشرة'}
       </div>
       {s.vat_registered !== true && s.level !== 'ok' && (
         <div style={{ marginTop: 10, background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: 12, padding: '12px 14px' }}>

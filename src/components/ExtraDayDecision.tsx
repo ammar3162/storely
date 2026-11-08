@@ -33,7 +33,7 @@ export default function ExtraDayDecision({ item, orgId, canDecide = true, onDone
   }
 
   if (status !== 'pending') {
-    const txt = status === 'paid' ? `✓ تعويض مالي${item.amount ? ` ${item.amount} ⃁` : ''}` : status === 'comp' ? `✓ يوم بديل${item.comp_date ? `: ${dayLabel(item.comp_date)}` : ''}` : 'تم رفض التعويض'
+    const txt = status === 'paid' ? `تعويض مالي${item.amount ? ` ${item.amount} ⃁` : ''}` : status === 'comp' ? `يوم بديل${item.comp_date ? `: ${dayLabel(item.comp_date)}` : ''}` : 'تم رفض التعويض'
     return <div style={{ fontSize: 12, fontWeight: 700, color: status === 'rejected' ? colors.text3 : colors.primary, margin: '4px 0' }}>{txt}</div>
   }
   if (!canDecide) return <div style={{ fontSize: 11.5, color: colors.text4, margin: '4px 0' }}>بانتظار قرار المالك</div>

@@ -27,7 +27,7 @@ function RequestCard({ r, orgId, onDone }: { r: any; orgId: string; onDone: () =
       ...(canFix && vat.trim() !== (r.invoice?.supplier_vat_number || '') ? { supplier_vat_number: vat } : {}) })
     setBusy(false)
     if (!j.success) { toast(j.error || 'تعذر الإرسال', 'error'); return }
-    toast('✅ وصل ردك للمحاسب'); setReply(''); onDone()
+    toast('وصل ردك للمحاسب'); setReply(''); onDone()
   }
   const [label, bg, c] = BADGE[r.status]
   return (

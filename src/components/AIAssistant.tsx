@@ -364,7 +364,7 @@ export default function AIAssistant() {
               <button onClick={()=>setMinimized(m=>!m)} style={{width:uiTokens.control.icon,height:uiTokens.control.icon,borderRadius:uiTokens.radius.control,background:C.surface,border:`1px solid ${C.border}`,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:C.text,fontSize:uiTokens.typography.body}}>
                 {minimized?'▲':'▼'}
               </button>
-              <button onClick={()=>setShowCloseConfirm(true)} style={{width:uiTokens.control.icon,height:uiTokens.control.icon,borderRadius:uiTokens.radius.control,background:C.surface,border:`1px solid ${C.border}`,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:C.text,fontSize:14}}>✕</button>
+              <button onClick={()=>setShowCloseConfirm(true)} style={{width:uiTokens.control.icon,height:uiTokens.control.icon,borderRadius:uiTokens.radius.control,background:C.surface,border:`1px solid ${C.border}`,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:C.text,fontSize:14}}><FeatureIcon name="✕" size={14} /></button>
             </div>
           </div>
 

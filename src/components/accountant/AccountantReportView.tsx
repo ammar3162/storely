@@ -89,17 +89,17 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
 
     {(has('purchases') || has('vat')) && r.vatRegistered && <div id="rv-tax" className="rv-wide" style={{ scrollMarginTop: 16 }}><Card wide title={`الفواتير الضريبية (${invoicesLabel(t.taxInvoices)})`}>
       {t.taxInvoices > 0 && <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: t.taxInvoices === t.taxComplete ? '#059669' : '#b45309' }}>
-        {t.taxInvoices === t.taxComplete ? '✓ كل الفواتير مكتملة البيانات' : `${t.taxInvoices - t.taxComplete} ناقصة — تحتاج الرقم الضريبي أو رقم الفاتورة قبل الإقفال`}
+        {t.taxInvoices === t.taxComplete ? 'كل الفواتير مكتملة البيانات' : `${t.taxInvoices - t.taxComplete} ناقصة — تحتاج الرقم الضريبي أو رقم الفاتورة قبل الإقفال`}
         {t.taxVerified > 0 && <span style={{ color: '#059669' }}> · {t.taxVerified} موثقة من باركود الهيئة</span>}
       </div>}
-      {t.taxMismatch > 0 && <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: '#dc2626' }}>⚠️ {t.taxMismatch} فاتورة مبلغها المسجّل أكبر من الأصلية — راجعها</div>}
+      {t.taxMismatch > 0 && <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: '#dc2626' }}>{t.taxMismatch} فاتورة مبلغها المسجّل أكبر من الأصلية — راجعها</div>}
       {onlyMissing && <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontSize: 12.5, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '8px 12px', marginTop: 6 }}>
         يتم عرض الفواتير الناقصة فقط ({missing.length})
         {onRequestMissing && missing.length > 0 && <button onClick={() => onRequestMissing(missing)} style={btn(true)}>اطلب من المنشأة إكمالها</button>}
         <button onClick={() => setOnlyMissing(false)} style={btn(false)}>اعرض الكل</button>
       </div>}
       <Table head={['التاريخ', 'رقم الفاتورة', 'المورد', 'الرقم الضريبي', 'الضريبة', 'الإجمالي', 'الحالة', 'الفاتورة', ...(onRequest ? [''] : []), ...(onEditPurchase ? [''] : [])]} moneyCols={[4, 5]}
-        rows={(onlyMissing ? missing : allTax).map(i => [<Edited key="d" date={i.date} src={i.editedSource} />, i.invoiceNumber || '—', i.supplier || '—', i.supplierVat || '—', i.vat, i.total, (i.mismatch ? '⚠️ أكبر من الأصلية · ' : '') + (!i.complete ? `ناقص: ${i.missing.filter(m => m !== 'صورة الفاتورة').join('، ')}` : i.verified ? '✓ موثقة' : '✓ مكتملة'),
+        rows={(onlyMissing ? missing : allTax).map(i => [<Edited key="d" date={i.date} src={i.editedSource} />, i.invoiceNumber || '—', i.supplier || '—', i.supplierVat || '—', i.vat, i.total, (i.mismatch ? 'أكبر من الأصلية · ' : '') + (!i.complete ? `ناقص: ${i.missing.filter(m => m !== 'صورة الفاتورة').join('، ')}` : i.verified ? 'موثقة' : 'مكتملة'),
           i.invoiceUrl && /^https:\/\//.test(i.invoiceUrl) ? <a href={fileLink(i.invoiceUrl)} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>عرض</a> : '—',
           ...(onRequest ? [<button key="rq" onClick={() => onRequest(i)} style={{ fontSize: 12, fontWeight: 800, color: colors.primary, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, borderRadius: 8, padding: '4px 9px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>اطلب</button>] : []), ...(onEditPurchase ? [i.firstId ? editBtn(() => onEditPurchase({ id: i.firstId!, mode: 'invoice', label: `${i.supplier || '—'} · ${i.date}`, invoiceNumber: i.invoiceNumber, supplierVat: i.supplierVat })) : ''] : [])])} />
     </Card></div>}
@@ -176,7 +176,7 @@ function VatReturnView({ r, onShowMissing, onRequestMissing }: { r: any; onShowM
       <div>«—» تعني أن النظام لا يسجّل هذا البند — عبّئه من سجلاتك إن وُجد.</div>
       {v.hidden.length > 0 && <div>الخانات {v.hidden.join(' و')} لا تخص المطاعم والمقاهي — مخفية، وتبقى فارغة في نموذج الهيئة.</div>}
       {v.review.count > 0 && <div style={{ color: colors.danger, fontWeight: 700, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '9px 12px' }}>
-        ⚠️ {invoicesLabel(v.review.count)} فيها ضريبة <span dir="ltr">{fmt(v.review.vat)}</span> لم تدخل الخانة 7 لنقص الرقم الضريبي أو رقم الفاتورة.
+        {invoicesLabel(v.review.count)} فيها ضريبة <span dir="ltr">{fmt(v.review.vat)}</span> لم تدخل الخانة 7 لنقص الرقم الضريبي أو رقم الفاتورة.
         {(onShowMissing || onRequestMissing) && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
           {onShowMissing && <button onClick={onShowMissing} style={btn(false)}>اعرض الفواتير الناقصة</button>}
           {onRequestMissing && <button onClick={onRequestMissing} style={btn(true)}>اطلب من المنشأة إكمالها</button>}

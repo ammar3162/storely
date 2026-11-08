@@ -10,9 +10,9 @@ type Row = { on: boolean; qty: string; price: string; target: string }
 
 const T = {
   ar: { found: (n: number) => `${n === 2 ? 'صنفين' : n <= 10 ? `${n} أصناف` : `${n} صنف`} بالفاتورة — راجعها واحفظ`, qty: 'الكمية', price: 'السعر شامل الضريبة',
-    to: 'يُضاف إلى', newItem: '➕ صنف جديد', matched: 'موجود بالمخزون', sum: 'مجموع المحدد', inv: 'إجمالي الفاتورة', save: 'حفظ الفاتورة', saving: 'جاري الحفظ...' },
+    to: 'يُضاف إلى', newItem: 'صنف جديد', matched: 'موجود بالمخزون', sum: 'مجموع المحدد', inv: 'إجمالي الفاتورة', save: 'حفظ الفاتورة', saving: 'جاري الحفظ...' },
   en: { found: (n: number) => `${n} items on the invoice — review and save`, qty: 'Qty', price: 'Price incl. VAT',
-    to: 'Add to', newItem: '➕ New item', matched: 'In stock', sum: 'Selected total', inv: 'Invoice total', save: 'Save invoice', saving: 'Saving...' },
+    to: 'Add to', newItem: 'New item', matched: 'In stock', sum: 'Selected total', inv: 'Invoice total', save: 'Save invoice', saving: 'Saving...' },
 }
 
 export default function InvoiceItemsPicker({ items, products, invoiceTotal, lang = 'ar', saving, onSave, color = '#0f766e', error }: {
@@ -34,7 +34,7 @@ export default function InvoiceItemsPicker({ items, products, invoiceTotal, lang
 
   return (
     <div style={{ background: 'white', border: `1.5px solid ${color}`, borderRadius: 14, padding: 14, marginBottom: 14 }}>
-      <div style={{ fontSize: 13, fontWeight: 800, color, marginBottom: 10 }}>📋 {t.found(items.length)}</div>
+      <div style={{ fontSize: 13, fontWeight: 800, color, marginBottom: 10 }}>{t.found(items.length)}</div>
       {items.map((it, i) => {
         const r = rows[i]; if (!r) return null
         const isNew = r.target === 'new'
@@ -61,7 +61,7 @@ export default function InvoiceItemsPicker({ items, products, invoiceTotal, lang
         <span>{t.sum}: <b dir="ltr">{fmt(sum)}</b></span>
         {invoiceTotal ? <span style={{ color: Math.abs(sum - invoiceTotal) > 0.5 ? '#b45309' : '#059669' }}>{t.inv}: <b dir="ltr">{fmt(invoiceTotal)}</b></span> : null}
       </div>
-      {error && <div role="alert" style={{ marginTop: 10, padding: '9px 12px', borderRadius: 10, background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontSize: 13, fontWeight: 700 }}>⚠️ {error}</div>}
+      {error && <div role="alert" style={{ marginTop: 10, padding: '9px 12px', borderRadius: 10, background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontSize: 13, fontWeight: 700 }}>{error}</div>}
       <button type="button" disabled={saving || !picked}
         onClick={() => onSave(rows.map((r, i) => ({ r, it: items[i] })).filter(x => x.r.on).map(({ r, it }) => ({
           name: it.name, qty: Number(r.qty) || 0, unit: it.unit || 'قطعة', total: Number(r.price) || 0, product_id: r.target })))}

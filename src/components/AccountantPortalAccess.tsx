@@ -43,7 +43,7 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
     const j = await api.post('/api/accountant-access', { org_id: orgId, ...form, branch_id: form.branch_id || null, expires_on: form.expires_on || null })
     setBusy(false)
     if (!j.success) { toast(j.error || 'تعذر إرسال الدعوة', 'error'); return }
-    toast(j.email_sent ? '✅ تم إرسال الدعوة — يتفعّل الربط فور ضغط المحاسب على «قبول الدعوة» في بريده الإلكتروني' : 'تم حفظ الدعوة، لكن البريد الإلكتروني لم يصل — تأكد من العنوان', j.email_sent ? 'success' : 'warning')
+    toast(j.email_sent ? 'تم إرسال الدعوة — يتفعّل الربط فور ضغط المحاسب على «قبول الدعوة» في بريده الإلكتروني' : 'تم حفظ الدعوة، لكن البريد الإلكتروني لم يصل — تأكد من العنوان', j.email_sent ? 'success' : 'warning')
     setAdding(false); setForm({ name: '', email: '', sections: DEFAULT, branch_id: '', vat_registered: true, expires_on: '' })
     load()
   }
@@ -52,7 +52,7 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
     const j = await api.post('/api/accountant-access', { org_id: orgId, action: 'resend', id: a.id })
     setBusy(false)
     if (!j.success) { toast(j.error || 'تعذر الإرسال', 'error'); return }
-    toast(j.email_sent ? '✅ أرسلنا الدعوة مرة ثانية' : 'الإيميل ما وصل — تأكد من العنوان', j.email_sent ? 'success' : 'warning')
+    toast(j.email_sent ? 'أرسلنا الدعوة مرة ثانية' : 'الإيميل ما وصل — تأكد من العنوان', j.email_sent ? 'success' : 'warning')
     load()
   }
   async function toggleSection(a: any, s: AccSection) {

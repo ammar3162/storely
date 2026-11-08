@@ -60,7 +60,7 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
     const j = byAccountant ? await submit!(payload) : await api.patch('/api/cashier-closing', { org_id: orgId, id: closing.id, password, ...payload })
     setBusy(false)
     if (!j.success) return setErr(j.error || 'تعذر حفظ التعديل')
-    toast(byAccountant ? 'تم التعديل — يظهر للمنشأة «معدّل من المحاسب»' : '✅ تم تعديل الإقفال — وتم تحديث التقارير والأرباح وتقرير المحاسب')
+    toast(byAccountant ? 'تم التعديل — يظهر للمنشأة «معدّل من المحاسب»' : 'تم تعديل الإقفال — وتم تحديث التقارير والأرباح وتقرير المحاسب')
     onSaved(j.closing)
   }
 
