@@ -8,7 +8,7 @@ import { confirmDialog } from '@/components/ConfirmDialog'
 import { ACC_SECTIONS, type AccSection } from '@/lib/accountantSections'
 import { groupLogs, timesAr } from '@/lib/accountantActivity'
 
-// بوابة المحاسب (جهة المالك): يدعو محاسبه، يحدد وش يشوف، ويسحب الإذن متى ما بغى
+// بوابة المحاسب (جهة المالك): يدعو محاسبه، يحدد الأقسام المتاحة، ويسحب الإذن متى ما بغى
 const DEFAULT: AccSection[] = ['sales', 'purchases', 'vat', 'payables', 'expenses', 'cash_diff']
 const box: React.CSSProperties = { background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: radius.lg, padding: 16, marginBottom: 12 }
 const chip = (on: boolean): React.CSSProperties => ({ padding: '5px 11px', borderRadius: 99, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family,
@@ -42,7 +42,7 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
     const j = await api.post('/api/accountant-access', { org_id: orgId, ...form, branch_id: form.branch_id || null, expires_on: form.expires_on || null })
     setBusy(false)
     if (!j.success) { toast(j.error || 'تعذر إرسال الدعوة', 'error'); return }
-    toast(j.email_sent ? '✅ أرسلنا الدعوة — يتفعل الربط أول ما المحاسب يضغط «قبول الدعوة» في إيميله' : 'انحفظت الدعوة، لكن الإيميل ما وصل — تأكد من العنوان', j.email_sent ? 'success' : 'warning')
+    toast(j.email_sent ? '✅ تم إرسال الدعوة — يتفعّل الربط فور ضغط المحاسب على «قبول الدعوة» في بريده الإلكتروني' : 'تم حفظ الدعوة، لكن البريد الإلكتروني لم يصل — تأكد من العنوان', j.email_sent ? 'success' : 'warning')
     setAdding(false); setForm({ name: '', email: '', sections: DEFAULT, branch_id: '', vat_registered: true, expires_on: '' })
     load()
   }
@@ -56,7 +56,7 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
   }
   async function toggleSection(a: any, s: AccSection) {
     const next = a.sections.includes(s) ? a.sections.filter((x: string) => x !== s) : [...a.sections, s]
-    if (!next.length) { toast('لازم يبقى قسم واحد على الأقل', 'warning'); return }
+    if (!next.length) { toast('يجب أن يبقى قسم واحد على الأقل', 'warning'); return }
     setList(prev => prev.map(x => x.id === a.id ? { ...x, sections: next } : x))
     const j = await api.patch('/api/accountant-access', { org_id: orgId, id: a.id, sections: next })
     if (!j.success) { toast(j.error || 'تعذر الحفظ', 'error'); load() }
@@ -65,10 +65,10 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
     const j = await api.patch('/api/accountant-access', { org_id: orgId, id: a.id, expires_on: value || null })
     if (!j.success) { toast(j.error || 'تعذر الحفظ', 'error'); return }
     setList(prev => prev.map(x => x.id === a.id ? { ...x, expires_on: value || null } : x))
-    toast(value ? `✅ الإذن لين ${value}` : '✅ الإذن بدون نهاية')
+    toast(value ? `✅ الإذن حتى ${value}` : '✅ الإذن بدون نهاية')
   }
   async function revoke(a: any) {
-    if (!(await confirmDialog({ title: 'سحب إذن المحاسب؟', message: `${a.name || a.email} ما عاد يقدر يشوف بيانات منشأتك.`, confirmText: 'سحب الإذن', type: 'danger' }))) return
+    if (!(await confirmDialog({ title: 'سحب إذن المحاسب؟', message: `${a.name || a.email} لن يتمكن بعد ذلك من الاطلاع على بيانات منشأتك.`, confirmText: 'سحب الإذن', type: 'danger' }))) return
     const j = await api.del('/api/accountant-access', { org_id: orgId, id: a.id })
     if (!j.success) { toast(j.error || 'تعذر الحذف', 'error'); return }
     toast('تم سحب الإذن'); load()
@@ -81,7 +81,7 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 800 }}>المحاسبين وصلاحياتهم</div>
           <div style={{ fontSize: 12.5, color: colors.text3, lineHeight: 1.7, marginTop: 2 }}>
-            ادعُ محاسبك بإيميله — يوصله رابط «قبول الدعوة»، وأول ما يقبل يشوف بيانات منشأتك لأي فترة ويحمّلها إكسل. قراءة بس، وتسحب الإذن متى ما بغيت. مجانية.
+            ادعُ محاسبك عبر بريده الإلكتروني — يصله رابط «قبول الدعوة»، وفور قبوله يطّلع على بيانات منشأتك لأي فترة ويحمّلها بصيغة إكسل. للقراءة فقط، ويمكنك سحب الإذن في أي وقت. مجاناً.
           </div>
         </div>
       </div>
@@ -101,9 +101,9 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
             <button onClick={() => revoke(a)} title="سحب الإذن" style={{ ...btnSecondary, padding: '6px 10px', color: colors.danger, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12 }}><Trash2 size={13} /> سحب الإذن</button>
           </div>
           <div style={{ fontSize: 11.5, color: colors.text4, margin: '6px 0 8px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={12} /> {a.status !== 'active' ? `أُرسلت الدعوة ${ago(a.invited_at)}` : a.last_view_at ? `آخر دخول ${ago(a.last_view_at)}` : 'قبل الدعوة — ما فتح التقارير للحين'}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={12} /> {a.status !== 'active' ? `أُرسلت الدعوة ${ago(a.invited_at)}` : a.last_view_at ? `آخر دخول ${ago(a.last_view_at)}` : 'قبل الدعوة — لم يفتح التقارير بعد'}</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              الإذن لين
+              الإذن حتى
               <input type="date" value={a.expires_on || ''} min={todaySA()} onChange={e => setExpiry(a, e.target.value)}
                 style={{ fontSize: 11.5, padding: '2px 6px', border: `1px solid ${colors.border}`, borderRadius: 6, fontFamily: font.family }} />
               {a.expires_on ? <button onClick={() => setExpiry(a, '')} style={{ fontSize: 11, color: colors.primary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family }}>بدون نهاية</button> : <span>(بدون نهاية)</span>}
@@ -121,7 +121,7 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
             <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="اسم المحاسب (اختياري)" maxLength={80} style={inp()} />
             <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="إيميل المحاسب" type="email" dir="ltr" style={inp()} />
           </div>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.text2, margin: '10px 0 6px' }}>وش يشوف</div>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.text2, margin: '10px 0 6px' }}>الأقسام المتاحة</div>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' as const }}>
             {ACC_SECTIONS.map(s => <button key={s.key} onClick={() => setForm(f => ({ ...f, sections: f.sections.includes(s.key) ? f.sections.filter(x => x !== s.key) : [...f.sections, s.key] }))} style={chip(form.sections.includes(s.key))}>{s.label}</button>)}
           </div>
@@ -133,9 +133,9 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
               </select>
             )}
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: colors.text2 }}>
-              الإذن لين
+              الإذن حتى
               <input type="date" value={form.expires_on} min={todaySA()} onChange={e => setForm(f => ({ ...f, expires_on: e.target.value }))} style={{ ...inp(), width: 'auto', padding: '6px 8px' }} />
-              <span style={{ color: colors.text4 }}>{form.expires_on ? '' : '(اختياري — فاضي = بدون نهاية)'}</span>
+              <span style={{ color: colors.text4 }}>{form.expires_on ? '' : '(اختياري — فارغ = دون نهاية)'}</span>
             </label>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>

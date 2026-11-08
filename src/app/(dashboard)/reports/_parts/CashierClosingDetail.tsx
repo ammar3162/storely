@@ -228,7 +228,7 @@ export default function CashierClosingDetail({ period, from, to, onBack }: { per
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>
                       <div style={{fontWeight:600,color:colors.text}}>{new Date(c.closing_date+'T12:00:00Z').toLocaleDateString('ar-SA', {numberingSystem:'latn',calendar:'gregory',timeZone:'UTC'})}</div>
                       {c.edited_at && (()=>{ const acc = c.edited_source==='accountant'
-                        return <button onClick={()=>isOwner&&setHistory(c)} title={`عدّله ${c.edited_by||'المالك'} — ${new Date(c.edited_at).toLocaleString('ar-SA',{numberingSystem:'latn',timeZone:'Asia/Riyadh'})}${isOwner?' — اضغط تشوف السجل':''}`}
+                        return <button onClick={()=>isOwner&&setHistory(c)} title={`عدّله ${c.edited_by||'المالك'} — ${new Date(c.edited_at).toLocaleString('ar-SA',{numberingSystem:'latn',timeZone:'Asia/Riyadh'})}${isOwner?' — اضغط لعرض السجل':''}`}
                           style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:10,fontWeight:800,color:acc?'#7c3aed':colors.warning,background:acc?'#f5f3ff':colors.warningLight,border:'none',borderRadius:5,padding:'2px 7px',marginTop:3,cursor:isOwner?'pointer':'default',fontFamily:'inherit'}}>
                           <Pencil size={10} strokeWidth={2.5}/> {acc?'معدّل من المحاسب':'معدّل'}{c.edit_count>1?` (${c.edit_count})`:''}</button> })()}
                       {c.created_at && (
@@ -286,7 +286,7 @@ export default function CashierClosingDetail({ period, from, to, onBack }: { per
                           </div>
                         ) : <div style={{fontSize:11,fontWeight:600,color:colors.warning,marginTop:4}}>بانتظار قرار المالك</div>
                       )}
-                      {c.status==='deficit' && c.deficit_decision==='approved' && <div style={{fontSize:11,fontWeight:700,color:colors.danger,marginTop:4}}>انخصم من الراتب</div>}
+                      {c.status==='deficit' && c.deficit_decision==='approved' && <div style={{fontSize:11,fontWeight:700,color:colors.danger,marginTop:4}}>خُصم من الراتب</div>}
                       {c.status==='deficit' && c.deficit_decision==='rejected' && <div style={{fontSize:11,fontWeight:600,color:colors.text4,marginTop:4}}>رُفض الخصم</div>}
                     </td>
                     <td style={{padding:'12px 16px'}}>

@@ -42,7 +42,7 @@ export async function PATCH(req: Request) {
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
+    if (access.role !== 'owner') return NextResponse.json({ error: 'هذه الصلاحية للمالك فقط' }, { status: 403 })
 
     const update: Record<string, unknown> = {}
     for (const k of ['shop_open_time', 'shop_close_time', 'notify_time'] as const) {

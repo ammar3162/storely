@@ -28,12 +28,12 @@ export default function EditHistoryDialog({ orgId, kind, id, title, onClose, onR
   const latest = (edits || []).find(e => !e.reverted_at)
 
   async function revert(e: any) {
-    if (!(await confirmDialog({ title: 'ترجيع التعديل', message: 'نرجّع القيم زي ما كانت قبل هالتعديل؟ الحسابات (العجز، الضريبة، خصم الراتب) تنعاد معها.', confirmText: 'رجّع', type: 'warning' }))) return
+    if (!(await confirmDialog({ title: 'التراجع عن التعديل', message: 'هل تريد إعادة القيم إلى ما كانت عليه قبل هذا التعديل؟ ستُعاد معها الحسابات (العجز، والضريبة، وخصم الراتب).', confirmText: 'تراجع', type: 'warning' }))) return
     setBusy(true)
     const j = await api.post('/api/data-edits', { org_id: orgId, kind, id: kind === 'purchase' ? e.batch_id : e.id })
     setBusy(false)
     if (!j.success) { toast(j.error || 'تعذر الترجيع', 'error'); return }
-    toast('تم ترجيع التعديل')
+    toast('تم التراجع عن التعديل')
     load(); onReverted?.()
   }
 
@@ -51,7 +51,7 @@ export default function EditHistoryDialog({ orgId, kind, id, title, onClose, onR
         </div>
         <div style={{ padding: 16, display: 'grid', gap: 10 }}>
           {edits === null ? <ListSkeleton/>
-            : !edits.length ? <div style={{ fontSize: 13, color: colors.text4, textAlign: 'center', padding: 20 }}>ما فيه تعديلات مسجّلة</div>
+            : !edits.length ? <div style={{ fontSize: 13, color: colors.text4, textAlign: 'center', padding: 20 }}>لا توجد تعديلات مسجّلة</div>
             : edits.map(e => {
               const acc = e.source === 'accountant'
               const list = changes(e.before, e.after)
@@ -71,7 +71,7 @@ export default function EditHistoryDialog({ orgId, kind, id, title, onClose, onR
                   {latest?.id === e.id && (
                     <button onClick={() => revert(e)} disabled={busy}
                       style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 8, padding: '6px 12px', borderRadius: 9, border: `1px solid ${colors.border2}`, background: '#fff', color: colors.danger, fontSize: 12.5, fontWeight: 800, cursor: busy ? 'default' : 'pointer', fontFamily: font.family }}>
-                      <Undo2 size={14} /> رجّع هالتعديل
+                      <Undo2 size={14} /> التراجع عن هذا التعديل
                     </button>
                   )}
                 </div>

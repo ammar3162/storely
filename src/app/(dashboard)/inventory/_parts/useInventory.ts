@@ -108,7 +108,7 @@ export function useInventory() {
   async function handleSave(e:React.FormEvent) {
     e.preventDefault()
     if(form.recipe_unit_factor && Number(form.recipe_unit_factor)<=0){
-      toast('معامل التحويل لازم يكون رقم أكبر من صفر','warning')
+      toast('يجب أن يكون معامل التحويل رقماً أكبر من صفر','warning')
       return
     }
     setSaving(true)
@@ -170,7 +170,7 @@ export function useInventory() {
         })).filter(r => r.name)
         setImportPreview(rows)
       },
-      error: () => { toast('تعذر قراءة الملف — تأكد إنه بصيغة CSV صحيحة', 'error') }
+      error: () => { toast('تعذر قراءة الملف — تأكد من أنه بصيغة CSV صحيحة', 'error') }
     })
   }
 

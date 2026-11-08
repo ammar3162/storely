@@ -62,7 +62,7 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
           title: `سجل حضور ${person.name}`, subtitle: `من ${dFrom} إلى ${dTo}`, orgName: org?.name || '',
           columns: [
             { header: 'التاريخ', key: 'date' }, { header: 'الحضور', key: 'in', align: 'center' }, { header: 'الانصراف', key: 'out', align: 'center' },
-            { header: 'الساعات', key: 'hours', align: 'center' }, { header: 'التأخير', key: 'late', align: 'center' }, { header: 'الأوفر تايم', key: 'ot', align: 'center' },
+            { header: 'الساعات', key: 'hours', align: 'center' }, { header: 'التأخير', key: 'late', align: 'center' }, { header: 'العمل الإضافي', key: 'ot', align: 'center' },
           ],
           rows: person.days.map((d: any) => ({ date: attDay(d.date), in: attTime(d.check_in), out: attTime(d.check_out), hours: d.hours_worked ?? '—', late: d.late_minutes ? attMin(d.late_minutes) : '—', ot: d.overtime_minutes ? `${attMin(d.overtime_minutes)} (${d.overtime_pay} ⃁)` : '—' })),
           totalsRow: { date: 'الإجمالي', in: `${person.days_present} يوم`, out: '', hours: '', late: lateMin ? attMin(lateMin) : '—', ot: otMin ? `${attMin(otMin)} (${otPay} ⃁)` : '—' },
@@ -74,7 +74,7 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
           columns: [
             { header: 'الموظف', key: 'name' }, { header: 'أيام الحضور', key: 'days_present', align: 'center' }, { header: 'أيام الغياب', key: 'days_absent', align: 'center' },
             { header: 'التأخير (دقيقة)', key: 'total_late_minutes', align: 'center' }, { header: 'الخصومات (⃁)', key: 'total_penalty', align: 'center' },
-            { header: 'أوفر تايم (دقيقة)', key: 'total_overtime_minutes', align: 'center' }, { header: 'مبلغ الأوفر (⃁)', key: 'total_overtime_pay', align: 'center' },
+            { header: 'العمل الإضافي (دقيقة)', key: 'total_overtime_minutes', align: 'center' }, { header: 'مبلغ العمل الإضافي (⃁)', key: 'total_overtime_pay', align: 'center' },
           ],
           rows: summary,
           totalsRow: { name: 'الإجمالي', days_present: present, days_absent: sum('days_absent'), total_late_minutes: lateMin, total_penalty: penalty, total_overtime_minutes: otMin, total_overtime_pay: otPay },
@@ -101,7 +101,7 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
     <div style={{ fontFamily:font.family, direction:'rtl' }}>
       <button onClick={onBack} style={{ background:'none', border:'none', color:colors.primary, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', marginBottom:12, display:'flex', alignItems:'center', gap:4 }}>→ رجوع</button>
       <h1 style={pageTitle}><PageIcon/>تقرير الحضور والانصراف</h1>
-      <p style={pageSub}>حضور الموظفين وتأخيرهم والأوفر تايم خلال الفترة — اختر موظف عشان تشوف سجله يوم بيوم</p>
+      <p style={pageSub}>حضور الموظفين وتأخيرهم والعمل الإضافي خلال الفترة — اختر موظفاً لعرض سجله يوماً بيوم</p>
 
       <div style={{ ...card, padding:14, marginTop:16, marginBottom:14, display:'flex', gap:12, flexWrap:'wrap' as const, alignItems:'flex-end' }}>
         <div style={{ flex:'1 1 180px' }}>
@@ -127,12 +127,12 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))', gap:10, marginBottom:14 }}>
         {stat('نسبة الحضور', rate === null ? '—' : `${rate}%`, `${present} يوم حضور من ${possible}`, colors.primary, colors.primaryLight)}
         {stat('التأخير', lateMin ? attMin(lateMin) : '—', penalty ? `خصومات ${penalty} ⃁` : 'بدون خصومات', colors.warning, colors.warningLight)}
-        {stat('الأوفر تايم', otMin ? attMin(otMin) : '—', otPay ? `المستحق ${otPay} ⃁` : 'ما فيه ساعات إضافية', colors.info, colors.infoLight)}
+        {stat('العمل الإضافي', otMin ? attMin(otMin) : '—', otPay ? `المستحق ${otPay} ⃁` : 'لا توجد ساعات إضافية', colors.info, colors.infoLight)}
       </div>
 
       {!loading && !person && summary.some((r: any) => r.shift_warning === 'none') && (
         <div style={{ ...card, padding:'10px 14px', marginBottom:14, background:colors.warningLight, border:`1px solid ${colors.warningBorder}`, color:colors.warning, fontSize:12, fontWeight:600 }}>
-          ⚠️ {summary.filter((r: any) => r.shift_warning === 'none').length} موظف مو مربوطين بشفت — ما ينحسب لهم تأخير ولا أوفر تايم. اربطهم من صفحة الحضور والانصراف ← الإعدادات.
+          ⚠️ {summary.filter((r: any) => r.shift_warning === 'none').length} موظف غير مرتبطين بوردية — لا يُحتسب لهم تأخير أو عمل إضافي. اربطهم من صفحة الحضور والانصراف ← الإعدادات.
         </div>
       )}
       <div style={{ ...card, padding:0, overflow:'hidden' }}>
@@ -142,7 +142,7 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
           <>
             {person.shift_warning && (
               <div style={{ padding:'10px 16px', background:colors.warningLight, borderBottom:`1px solid ${colors.warningBorder}`, color:colors.warning, fontSize:12, fontWeight:600 }}>
-                ⚠️ {person.shift_warning === 'none' ? 'هذا الموظف مو مربوط بشفت' : 'هذا الموظف على شفت 24 ساعة'} — ما ينحسب له تأخير ولا أوفر تايم. اربطه بشفت من صفحة الحضور والانصراف ← الإعدادات.
+                ⚠️ {person.shift_warning === 'none' ? 'هذا الموظف غير مرتبط بوردية' : 'هذا الموظف على وردية 24 ساعة'} — لا يُحتسب له تأخير أو عمل إضافي. اربطه بوردية من صفحة الحضور والانصراف ← الإعدادات.
               </div>
             )}
             <div style={{ padding:'14px 16px', borderBottom:`1px solid ${colors.border}`, display:'flex', justifyContent:'space-between', alignItems:'center', gap:8, flexWrap:'wrap' as const }}>
@@ -155,7 +155,7 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
             <div style={{ overflowX:'auto' as const }}>
               <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
                 <thead><tr style={{ background:colors.bg, borderBottom:`1px solid ${colors.border}` }}>
-                  {['التاريخ','الحالة','الحضور','الانصراف','الساعات','التأخير','الأوفر تايم'].map(h => <th key={h} style={th}>{h}</th>)}
+                  {['التاريخ','الحالة','الحضور','الانصراف','الساعات','التأخير','العمل الإضافي'].map(h => <th key={h} style={th}>{h}</th>)}
                 </tr></thead>
                 <tbody>
                   {[...person.days].reverse().map((d: any) => (
@@ -178,18 +178,18 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
             </div>
           </>
         ) : summary.length === 0 ? (
-          <div style={{ textAlign:'center' as const, padding:48, color:colors.text4, fontSize:13 }}>ما فيه موظفين نشطين بهذا الفرع</div>
+          <div style={{ textAlign:'center' as const, padding:48, color:colors.text4, fontSize:13 }}>لا يوجد موظفون نشطون في هذا الفرع</div>
         ) : (
           <div style={{ overflowX:'auto' as const }}>
             <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
               <thead><tr style={{ background:colors.bg, borderBottom:`1px solid ${colors.border}` }}>
-                {['الموظف','الحضور','الغياب','التأخير','الخصومات','الأوفر تايم',''].map((h, i) => <th key={i} style={th}>{h}</th>)}
+                {['الموظف','الحضور','الغياب','التأخير','الخصومات','العمل الإضافي',''].map((h, i) => <th key={i} style={th}>{h}</th>)}
               </tr></thead>
               <tbody>
                 {summary.map((r: any) => (
                   <tr key={r.staff_id} onClick={() => setStaffId(r.staff_id)} style={{ borderBottom:`1px solid ${colors.border}`, cursor:'pointer' }}
                     onMouseEnter={e => (e.currentTarget.style.background = colors.bg)} onMouseLeave={e => (e.currentTarget.style.background = '')}>
-                    <td style={{ ...td, fontWeight:700, color:colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف مو مربوط بشفت — ما ينحسب له تأخير ولا أوفر تايم' : 'شفت 24 ساعة — ما ينحسب تأخير ولا أوفر تايم'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? '⚠️ بدون شفت' : '⚠️ شفت 24 ساعة'}</span>}</td>
+                    <td style={{ ...td, fontWeight:700, color:colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف غير مرتبط بوردية — لا يُحتسب له تأخير أو عمل إضافي' : 'وردية 24 ساعة — لا يُحتسب تأخير أو عمل إضافي'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? '⚠️ بدون وردية' : '⚠️ وردية 24 ساعة'}</span>}</td>
                     <td style={td}>{pill(`${r.days_present} يوم`, colors.primary, colors.primaryLight)}</td>
                     <td style={td}>{r.days_absent ? pill(`${r.days_absent} يوم`, colors.danger, colors.dangerLight) : '—'}</td>
                     <td style={{ ...td, color: r.total_late_minutes ? colors.warning : colors.text4, fontWeight:600 }}>{r.total_late_minutes ? attMin(r.total_late_minutes) : '—'}</td>

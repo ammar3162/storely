@@ -69,7 +69,7 @@ export default function StaffManagementPage() {
         <div style={{background:colors.warningLight,border:`1.5px solid ${colors.warningBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16,fontSize:font.sm,color:colors.warning,display:'flex',alignItems:'center',gap:10}}>
           <AlertTriangle size={18} strokeWidth={2} style={{flexShrink:0}}/>
           <div>
-            <b>تقارير إقفال الكاشير عبر واتساب موقّفة من الإعدادات العامة.</b> الخيارات تحت لكل موظف (مفعّل/موقّف) ما راح تشتغل حتى تفعّلها من <a href="/settings" style={{color:colors.warning,textDecoration:'underline',fontWeight:700}}>الإعدادات ← الإشعارات</a>.
+            <b>تقارير إقفال الكاشير عبر واتساب موقوفة من الإعدادات العامة.</b> لن تعمل الخيارات أدناه لكل موظف (مفعّل/موقوف) حتى تفعّلها من <a href="/settings" style={{color:colors.warning,textDecoration:'underline',fontWeight:700}}>الإعدادات ← الإشعارات</a>.
           </div>
         </div>
       )}

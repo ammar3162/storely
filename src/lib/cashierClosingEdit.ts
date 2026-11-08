@@ -37,7 +37,7 @@ export async function editClosing(db: SupabaseClient, orgId: string, id: string,
 
   const date = String(input?.closing_date || c.closing_date)
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(Date.parse(date + 'T00:00:00Z'))) return { ok: false, error: 'التاريخ غير صحيح', status: 400 }
-  if (date > saudiToday()) return { ok: false, error: 'ما ينفع تاريخ بالمستقبل', status: 400 }
+  if (date > saudiToday()) return { ok: false, error: 'لا يمكن اختيار تاريخ في المستقبل', status: 400 }
   // التوصيل: لو ما انرسل نخلي المبالغ المحفوظة
   const delivery = input?.delivery !== undefined ? deliveryFromInput(input.delivery) : c.delivery
   const calc = computeClosing({
@@ -46,7 +46,7 @@ export async function editClosing(db: SupabaseClient, orgId: string, id: string,
   })
   if (!calc) return { ok: false, error: 'مبالغ غير صالحة', status: 400 }
   const reason = calc.status === 'deficit' ? String(input?.deficit_reason ?? c.deficit_reason ?? '').trim().slice(0, 500) : ''
-  if (calc.status === 'deficit' && reason.length < 3) return { ok: false, error: 'فيه عجز — اكتب سببه', status: 400 }
+  if (calc.status === 'deficit' && reason.length < 3) return { ok: false, error: 'يوجد عجز — اكتب سببه', status: 400 }
 
   const g = await periodGuard(db, orgId, c.branch_id, [c.closing_date, date]); if (g) return g
 
@@ -72,7 +72,7 @@ export async function editClosing(db: SupabaseClient, orgId: string, id: string,
     source, accountant_id: by.accountantId || null } as any).select('id').single()
   if (!isDeficit) await db.from('notifications').update({ read: true } as any).eq('org_id', orgId).eq('ref_type', 'cashier_deficit').eq('ref_id', id)
   if (isDeficit && !wasDeficit) await db.from('notifications').insert({ org_id: orgId, branch_id: c.branch_id, type: 'warning', read: false,
-    title: `عجز بانتظار قرارك: ${c.staff_name}`, message: `بعد تعديل إقفال ${date} صار فيه عجز ${amount.toFixed(2)} ⃁ — السبب: ${reason}. تخصمه من راتب الكاشير؟`,
+    title: `عجز بانتظار قرارك: ${c.staff_name}`, message: `بعد تعديل إقفال ${date} أصبح هناك عجز بقيمة ${amount.toFixed(2)} ⃁ — السبب: ${reason}. هل تريد خصمه من راتب الكاشير؟`,
     ref_type: 'cashier_deficit', ref_id: id } as any)
   return { ok: true, closing: after, editId: (log as any)?.id || null }
 }
@@ -96,9 +96,9 @@ export async function revertClosingEdit(db: SupabaseClient, orgId: string, editI
   const { data } = await db.from('cashier_closing_edits').select('id,closing_id,action,before,created_at,reverted_at').eq('id', editId).eq('org_id', orgId).maybeSingle()
   const e = data as any
   if (!e || e.action !== 'edit') return { ok: false, error: 'التعديل غير موجود', status: 404 }
-  if (e.reverted_at) return { ok: false, error: 'هالتعديل انرجع من قبل', status: 409 }
+  if (e.reverted_at) return { ok: false, error: 'تم التراجع عن هذا التعديل مسبقاً', status: 409 }
   const { data: later } = await db.from('cashier_closing_edits').select('id').eq('org_id', orgId).eq('closing_id', e.closing_id).is('reverted_at', null).gt('created_at', e.created_at).limit(1)
-  if (later?.length) return { ok: false, error: 'فيه تعديل أحدث على نفس الإقفال — رجّعه أول', status: 409 }
+  if (later?.length) return { ok: false, error: 'يوجد تعديل أحدث على الإقفال نفسه — تراجع عنه أولاً', status: 409 }
   const b = e.before || {}
   const r = await editClosing(db, orgId, e.closing_id, {
     closing_date: b.closing_date, total_sales: b.total_sales, mada_amount: b.mada_amount, visa_amount: b.visa_amount, mastercard_amount: b.mastercard_amount,

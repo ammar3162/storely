@@ -27,7 +27,7 @@ export async function DELETE(req: Request) {
     const existingSubId = (existingSub as any)?.id
     const existingQty = Math.max(1, (existingSub as any)?.quantity || 1)
 
-    if (!existingSubId) return NextResponse.json({ error: 'ما فيه اشتراك فعّال لإلغائه' }, { status: 404 })
+    if (!existingSubId) return NextResponse.json({ error: 'لا يوجد اشتراك فعّال لإلغائه' }, { status: 404 })
 
     const { error } = await supabase.from('org_addon_subscriptions')
       .update({ status: 'cancelled', cancelled_at: new Date().toISOString() } as any)

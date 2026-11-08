@@ -26,7 +26,7 @@ export function purchaseChanges(input: any): { line: Record<string, unknown>; in
   }
   if (input?.supplier_vat_number !== undefined) {
     const v = String(input.supplier_vat_number ?? '').replace(/\s/g, '')
-    if (v && !/^3\d{13}3$/.test(v)) return 'الرقم الضريبي ١٥ رقم يبدأ وينتهي بـ 3'
+    if (v && !/^3\d{13}3$/.test(v)) return 'يتكون الرقم الضريبي من 15 رقماً ويبدأ وينتهي بالرقم 3'
     invoice.supplier_vat_number = v || null
   }
   return Object.keys(line).length || Object.keys(invoice).length ? { line, invoice } : 'بيانات ناقصة'
@@ -40,7 +40,7 @@ export async function editPurchase(db: SupabaseClient, orgId: string, id: string
   const { data: cur } = await db.from('purchases').select(FIELDS).eq('id', id).eq('org_id', orgId).maybeSingle()
   const p = cur as any
   if (!p || p.deleted_at) return { ok: false, error: 'الفاتورة غير موجودة', status: 404 }
-  if (branchId && p.branch_id !== branchId) return { ok: false, error: 'هالفاتورة من فرع ثاني', status: 403 }
+  if (branchId && p.branch_id !== branchId) return { ok: false, error: 'هذه الفاتورة من فرع آخر', status: 403 }
 
   // سطور نفس الفاتورة (الرقم الضريبي ورقم الفاتورة واحد للفاتورة كلها)
   let rows: any[] = [p]
@@ -66,7 +66,7 @@ export async function editPurchase(db: SupabaseClient, orgId: string, id: string
     changed++
     for (const k of Object.keys(diff)) summary.push(`${LABEL[k] || k}: من ${show(r[k])} إلى ${show((after as any)[k])}`)
   }
-  if (!changed) return { ok: false, error: 'ما فيه تغيير', status: 400 }
+  if (!changed) return { ok: false, error: 'لا يوجد تغيير', status: 400 }
   return { ok: true, batchId, changed, summary: [...new Set(summary)] }
 }
 
@@ -78,10 +78,10 @@ export async function revertPurchaseBatch(db: SupabaseClient, orgId: string, bat
   const { data: edits } = await db.from('purchase_edits').select('id,purchase_id,before,created_at,reverted_at').eq('org_id', orgId).eq('batch_id', batchId)
   const list = (edits || []) as any[]
   if (!list.length) return { ok: false, error: 'التعديل غير موجود', status: 404 }
-  if (list.some(e => e.reverted_at)) return { ok: false, error: 'هالتعديل انرجع من قبل', status: 409 }
+  if (list.some(e => e.reverted_at)) return { ok: false, error: 'تم التراجع عن هذا التعديل مسبقاً', status: 409 }
   for (const e of list) {
     const { data: later } = await db.from('purchase_edits').select('id').eq('org_id', orgId).eq('purchase_id', e.purchase_id).is('reverted_at', null).gt('created_at', e.created_at).limit(1)
-    if (later?.length) return { ok: false, error: 'فيه تعديل أحدث على نفس الفاتورة — رجّعه أول', status: 409 }
+    if (later?.length) return { ok: false, error: 'يوجد تعديل أحدث على الفاتورة نفسها — تراجع عنه أولاً', status: 409 }
   }
   const { data: rows } = await db.from('purchases').select('id,branch_id,created_at').eq('org_id', orgId).in('id', list.map(e => e.purchase_id))
   const g = await periodGuard(db, orgId, (rows as any[])?.[0]?.branch_id ?? null, ((rows || []) as any[]).map(r => saudiDate(r.created_at))); if (g) return g

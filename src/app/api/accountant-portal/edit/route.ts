@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       }, editor, { source: 'accountant', accountantId: me.id })
       if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status })
       await db.from('notifications').insert({ org_id: orgId, branch_id: (c as any).branch_id, type: 'warning', read: false, title: 'محاسبك عدّل إقفال كاشير',
-        message: `${editor} عدّل إقفال ${(c as any).staff_name || ''} بتاريخ ${(c as any).closing_date}. تقدر تشوف التعديل وترجّعه من التقارير ← إقفال الكاشير.`.slice(0, 600),
+        message: `${editor} عدّل إقفال ${(c as any).staff_name || ''} بتاريخ ${(c as any).closing_date}. يمكنك الاطلاع على التعديل والتراجع عنه من التقارير ← إقفال الكاشير.`.slice(0, 600),
         ref_type: 'accountant_edit', ref_id: r.editId } as any)
       return NextResponse.json({ success: true, closing: r.closing })
     }
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status })
       const { data: p } = await db.from('purchases').select('supplier,branch_id').eq('id', b.id).maybeSingle()
       await db.from('notifications').insert({ org_id: orgId, branch_id: (p as any)?.branch_id ?? null, type: 'warning', read: false, title: 'محاسبك عدّل فاتورة مشتريات',
-        message: `${editor} عدّل فاتورة ${(p as any)?.supplier || ''}: ${r.summary.join('، ')}. تقدر ترجّعه من صفحة المشتريات.`.slice(0, 600),
+        message: `${editor} عدّل فاتورة ${(p as any)?.supplier || ''}: ${r.summary.join('، ')}. يمكنك التراجع عنه من صفحة المشتريات.`.slice(0, 600),
         ref_type: 'accountant_edit', ref_id: r.batchId } as any)
       return NextResponse.json({ success: true })
     }

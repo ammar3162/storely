@@ -256,7 +256,7 @@ export default function PurchaseDetail({ period, from, to, onBack }: { period:Fi
             {loadingDeleted ? (
               <ListSkeleton/>
             ) : deletedList.length===0 ? (
-              <div style={{textAlign:'center' as const,padding:20,fontSize:12,color:colors.text4,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><PartyPopper size={14} strokeWidth={2.25}/> ما فيه فواتير محذوفة</div>
+              <div style={{textAlign:'center' as const,padding:20,fontSize:12,color:colors.text4,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><PartyPopper size={14} strokeWidth={2.25}/> لا توجد فواتير محذوفة</div>
             ) : (
               <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
                 {deletedList.map((d:any)=>(
@@ -288,7 +288,7 @@ export default function PurchaseDetail({ period, from, to, onBack }: { period:Fi
             <div style={{width:48,height:48,borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',color:'#dc2626'}}><Lock size={22} strokeWidth={2}/></div>
             <div style={{fontSize:15,fontWeight:800,color:colors.text,textAlign:'center',marginBottom:6}}>تأكيد حذف العملية</div>
             <div style={{fontSize:12,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
-              سيتم حذف <b style={{color:colors.text}}>{confirmDelete.name}</b> ({Number(confirmDelete.total_amount||0).toFixed(0)} {curr}) من السجل الحالي (تقدر تسترجعها لاحقاً من "سجل المحذوفات").<br/>أدخل كلمة مرور حسابك للتأكيد
+              سيتم حذف <b style={{color:colors.text}}>{confirmDelete.name}</b> ({Number(confirmDelete.total_amount||0).toFixed(0)} {curr}) من السجل الحالي (يمكنك استرجاعها لاحقاً من "سجل المحذوفات").<br/>أدخل كلمة مرور حسابك للتأكيد
             </div>
             <input type="password" value={deletePassword} onChange={e=>setDeletePassword(e.target.value)}
               onKeyDown={e=>{if(e.key==='Enter'&&deletePassword&&!deleting) confirmDeletePurchase()}}

@@ -28,7 +28,7 @@ export default function ExtraDayDecision({ item, orgId, canDecide = true, onDone
     setBusy(false)
     if (!r.success) { toast(r.error || 'تعذر حفظ القرار', 'error'); return }
     setStatus(decision)
-    toast(decision === 'paid' ? `تم — ينضاف ${amount} ⃁ لراتب الموظف` : decision === 'comp' ? `تم — إجازته البديلة ${dayLabel(compDate)}` : 'تم رفض التعويض')
+    toast(decision === 'paid' ? `تم — يُضاف ${amount} ⃁ إلى راتب الموظف` : decision === 'comp' ? `تم — إجازته البديلة ${dayLabel(compDate)}` : 'تم رفض التعويض')
     onDone?.(decision)
   }
 
@@ -60,7 +60,7 @@ export default function ExtraDayDecision({ item, orgId, canDecide = true, onDone
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' as const }}>
           <input type="date" value={compDate} onChange={e => setCompDate(e.target.value)} style={{ ...inp(), width: 170 }} />
           <button onClick={() => decide('comp')} disabled={busy || !compDate} style={{ padding: '9px 14px', borderRadius: 8, border: 'none', background: colors.primary, color: 'white', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, opacity: busy ? .6 : 1 }}>اعتماد اليوم البديل</button>
-          <span style={{ fontSize: 11, color: colors.text4 }}>بذاك اليوم ما ينحسب عليه غياب</span>
+          <span style={{ fontSize: 11, color: colors.text4 }}>ولا يُحتسب عليه غياب في ذلك اليوم</span>
         </div>
       )}
     </div>

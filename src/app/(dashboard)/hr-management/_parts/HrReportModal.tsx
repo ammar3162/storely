@@ -15,13 +15,13 @@ export default function HrReportModal({ m }: { m: HrPage }) {
           {loadingReport ? (
             <div style={{fontSize:12,color:colors.text4}}>جاري تحميل التقرير...</div>
           ) : reportData.length===0 ? (
-            <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:16}}>ما فيه بيانات لهذا الشهر</div>
+            <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:16}}>لا توجد بيانات لهذا الشهر</div>
           ) : (
             <div style={{overflowX:'auto' as const}}>
               <table style={{width:'100%',borderCollapse:'collapse' as const,fontSize:12,minWidth:820}}>
                 <thead>
                   <tr style={{borderBottom:`2px solid ${colors.border}`}}>
-                    {['الموظف','الراتب الإجمالي','الأوفر تايم','الخصومات','السلف','صافي الراتب','الحضور','التأخير','الإجازات','المهام','التقييم'].map(h=>(
+                    {['الموظف','الراتب الإجمالي','العمل الإضافي','الخصومات','السلف','صافي الراتب','الحضور','التأخير','الإجازات','المهام','التقييم'].map(h=>(
                       <th key={h} style={{padding:'8px 10px',textAlign:'right' as const,color:colors.text4,fontWeight:700,whiteSpace:'nowrap' as const}}>{h}</th>
                     ))}
                   </tr>

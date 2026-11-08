@@ -97,7 +97,7 @@ export default function FeatureAnnouncement() {
                   أهلاً{orgName?` بـ ${orgName}`:''}!
                 </h2>
                 <p style={{fontSize:14,color:'#64748b',lineHeight:1.8,maxWidth:400,margin:'0 auto'}}>
-                  إليك نظرة سريعة على أهم ما يقدمه Storely — كل شي تحتاجه لإدارة مخزونك باحترافية
+                  إليك نظرة سريعة على أهم ما يقدمه Storely — كل ما تحتاجه لإدارة مخزونك باحترافية
                 </p>
               </div>
 

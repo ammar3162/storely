@@ -57,7 +57,7 @@ export default function NotificationsPage() {
 
   // أزرار القرار حسب نوع الطلب — نفس الـAPI اللي تستخدمه صفحة إدارة الموظفين
   const DECISIONS: Record<string, { approve: string; reject: string; approved: string; rejected: string; call: (orgId: string, id: string, ok: boolean) => Promise<any> }> = {
-    cashier_deficit: { approve: 'اعتماد الخصم من الراتب', reject: 'رفض', approved: 'تم اعتماد الخصم من راتب الكاشير', rejected: 'تم رفض الخصم — ما انخصم من الراتب',
+    cashier_deficit: { approve: 'اعتماد الخصم من الراتب', reject: 'رفض', approved: 'تم اعتماد الخصم من راتب الكاشير', rejected: 'تم رفض الخصم — لم يُخصم من الراتب',
       call: (orgId, id, ok) => api.post('/api/cashier-deficit-decision', { org_id: orgId, closing_id: id, decision: ok ? 'approved' : 'rejected' }) },
     excuse_request: { approve: 'موافقة', reject: 'رفض', approved: 'تمت الموافقة على الاستئذان', rejected: 'تم رفض الاستئذان',
       call: (orgId, id, ok) => api.put('/api/attendance-permission-request', { org_id: orgId, id, action: ok ? 'approve' : 'reject' }) },

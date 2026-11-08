@@ -23,7 +23,7 @@ export default function AttendancePage() {
           <span style={{fontSize:20}}>🔒</span>
           <div>
             <div style={{fontSize:13,fontWeight:800,color:colors.text}}>وضع قراءة فقط — ميزة «الحضور والرواتب» غير مفعّلة</div>
-            <div style={{fontSize:12,color:colors.text3}}>سجلاتك القديمة محفوظة وتقدر تشوفها، بس ما تقدر تسجّل حضور جديد أو تعدّل الشفتات إلا بعد تجديد الاشتراك</div>
+            <div style={{fontSize:12,color:colors.text3}}>سجلاتك السابقة محفوظة ويمكنك الاطلاع عليها، لكن لا يمكنك تسجيل حضور جديد أو تعديل الورديات إلا بعد تجديد الاشتراك</div>
           </div>
         </div>
       )}
@@ -46,7 +46,7 @@ export default function AttendancePage() {
       )}
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        {[{ id: 'report', label: '📋 التقرير' }, { id: 'settings', label: '⚙️ الشفتات والغرامات' }].map(t => (
+        {[{ id: 'report', label: '📋 التقرير' }, { id: 'settings', label: '⚙️ الورديات والغرامات' }].map(t => (
           <button key={t.id} onClick={() => setTab(t.id as any)}
             style={{ padding: '9px 16px', borderRadius: 99, border: `1.5px solid ${tab === t.id ? colors.primary : colors.border2}`, background: tab === t.id ? colors.primaryLight : colors.surface, color: tab === t.id ? colors.primary : colors.text3, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
             {t.label}

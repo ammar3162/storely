@@ -14,7 +14,7 @@ export default function AssignProductsModal({ m }: { m: StaffPage }) {
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
               <div>
                 <div style={{fontSize:font.md,fontWeight:800,color:colors.text}}>تخصيص المنتجات</div>
-                <div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>اختر المنتجات اللي يشوفها هالموظف — المنتج ممكن يكون عند أكثر من موظف. لو ما اخترت شي يشوف كل منتجات الفرع</div>
+                <div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>اختر المنتجات التي يطّلع عليها هذا الموظف — يمكن أن يُسند المنتج لأكثر من موظف. وإذا لم تختر شيئاً فسيطّلع على جميع منتجات الفرع</div>
               </div>
               <button onClick={()=>setAssigningId(null)} style={{width:32,height:32,borderRadius:radius.sm,border:`1.5px solid ${colors.border2}`,background:colors.bg,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',color:colors.text3}}>×</button>
             </div>
@@ -44,7 +44,7 @@ export default function AssignProductsModal({ m }: { m: StaffPage }) {
             {/* قائمة المنتجات */}
             <div style={{overflowY:'auto',flex:1,display:'flex',flexDirection:'column' as const,gap:6,marginBottom:16}}>
               {products.filter((p:any)=>!assignSearch.trim()||p.name.includes(assignSearch.trim())).length===0 ? (
-                <div style={{padding:'20px',textAlign:'center' as const,fontSize:12,color:colors.text4}}>ما فيه منتجات مطابقة</div>
+                <div style={{padding:'20px',textAlign:'center' as const,fontSize:12,color:colors.text4}}>لا توجد منتجات مطابقة</div>
               ) : products.filter((p:any)=>!assignSearch.trim()||p.name.includes(assignSearch.trim())).map((p:any)=>{
                 const selected = selectedProds.includes(p.id)
                 return (

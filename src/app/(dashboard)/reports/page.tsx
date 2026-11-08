@@ -235,7 +235,7 @@ export default function ReportsPage() {
         {hasHr && <div className="su" style={{animationDelay:'.28s'}}>
           <ReportCard
             title="الحضور والانصراف"
-            subtitle="الحضور والتأخير والأوفر تايم لكل موظف"
+            subtitle="الحضور والتأخير والعمل الإضافي لكل موظف"
             icon={<CalendarDays size={20} strokeWidth={1.75}/>}
             color={'#0f766e'}
             bg={'#f0fdfa'}
@@ -249,7 +249,7 @@ export default function ReportsPage() {
         {hasHr && <div className="su" style={{animationDelay:'.29s'}}>
           <ReportCard
             title="تقرير الموظف الشهري"
-            subtitle="الرواتب والأوفر تايم والتأخير والخصومات والسلف"
+            subtitle="الرواتب والعمل الإضافي والتأخير والخصومات والسلف"
             icon={<Wallet size={20} strokeWidth={1.75}/>}
             color={'#b45309'}
             bg={'#fffbeb'}

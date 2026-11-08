@@ -98,7 +98,7 @@ export async function POST(req: Request) {
     if (!fields.name) return NextResponse.json({ error: 'أدخل اسم المنتج' }, { status: 400 })
     if (!(qty > 0)) return NextResponse.json({ error: 'أدخل كمية أكبر من صفر' }, { status: 400 })
     if (fields.recipe_unit_factor != null && !((fields.recipe_unit_factor as number) > 0)) {
-      return NextResponse.json({ error: 'معامل التحويل لازم يكون رقم أكبر من صفر' }, { status: 400 })
+      return NextResponse.json({ error: 'يجب أن يكون معامل التحويل رقماً أكبر من صفر' }, { status: 400 })
     }
 
     const { data: np, error } = await db.from('products').insert({
@@ -140,7 +140,7 @@ export async function PATCH(req: Request) {
     const fields = editableFields(body)
     if ('name' in fields && !fields.name) return NextResponse.json({ error: 'أدخل اسم المنتج' }, { status: 400 })
     if (fields.recipe_unit_factor != null && !((fields.recipe_unit_factor as number) > 0)) {
-      return NextResponse.json({ error: 'معامل التحويل لازم يكون رقم أكبر من صفر' }, { status: 400 })
+      return NextResponse.json({ error: 'يجب أن يكون معامل التحويل رقماً أكبر من صفر' }, { status: 400 })
     }
     if (Object.keys(fields).length) {
       const { error } = await db.from('products').update(fields as any).eq('id', id).eq('org_id', org_id)

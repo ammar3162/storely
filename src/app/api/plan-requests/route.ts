@@ -54,6 +54,6 @@ export async function DELETE(req: Request) {
   if (access.role === 'manager') return NextResponse.json({ error: 'طلب الترقية لمالك المنشأة' }, { status: 403 })
   const { data } = await sb().from('plan_requests').update({ status: 'cancelled', decided_at: new Date().toISOString() } as any)
     .eq('id', id).eq('org_id', org_id).eq('status', 'pending').select('id')
-  if (!data?.length) return NextResponse.json({ error: 'ما فيه طلب معلّق' }, { status: 404 })
+  if (!data?.length) return NextResponse.json({ error: 'لا يوجد طلب معلّق' }, { status: 404 })
   return NextResponse.json({ success: true })
 }

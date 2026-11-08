@@ -40,7 +40,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
     if (from_branch_id === to_branch_id) {
-      return NextResponse.json({ error: 'لازم يكون الفرعين مختلفين' }, { status: 400 })
+      return NextResponse.json({ error: 'يجب أن يكون الفرعان مختلفين' }, { status: 400 })
     }
     const transferQty = Number(qty)
     if (!(transferQty > 0)) return NextResponse.json({ error: 'الكمية غير صحيحة' }, { status: 400 })

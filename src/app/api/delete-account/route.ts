@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
     // حذف المنشأة للمالك فقط (كان مدير الفرع يقدر يجدول حذف المنشأة كاملة)
-    if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
+    if (access.role !== 'owner') return NextResponse.json({ error: 'هذه الصلاحية للمالك فقط' }, { status: 403 })
 
     // بدل الحذف الفوري — نحدد موعد حذف بعد 15 يوم (فترة سماح)
     const deletionDate = new Date()

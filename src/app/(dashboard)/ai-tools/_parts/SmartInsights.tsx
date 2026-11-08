@@ -10,7 +10,7 @@ export default function SmartInsights({ m }: { m: AiToolsPage }) {
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:insights||insightsError?16:0,flexWrap:'wrap' as const,gap:10}}>
           <div>
             <div style={{fontSize:16,fontWeight:800,color:'white',marginBottom:4}}>🧠 التحليل الذكي الشامل</div>
-            <div style={{fontSize:11,color:'rgba(255,255,255,.65)'}}>تقرير تنفيذي كامل يحلل كل بياناتك بضغطة وحدة</div>
+            <div style={{fontSize:11,color:'rgba(255,255,255,.65)'}}>تقرير تنفيذي شامل يحلل جميع بياناتك بضغطة واحدة</div>
           </div>
           <button onClick={runSmartInsights} disabled={insightsLoading}
             style={{padding:'11px 22px',background:'white',color:'#042f2e',border:'none',borderRadius:11,fontSize:13,fontWeight:800,cursor:'pointer',fontFamily:'inherit',flexShrink:0}}>

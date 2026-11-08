@@ -11,7 +11,7 @@ export default function NotifyTab({ m }: { m: SettingsState }) {
           {activeTab==='notify'&&(
             <form onSubmit={handleSave}>
               <div style={{marginBottom:24,paddingBottom:24,borderBottom:`1px solid ${colors.border}`}}>
-                <label style={lbl}>رسائل واتساب — اختر وش يوصلك</label>
+                <label style={lbl}>رسائل واتساب — اختر ما يصلك</label>
                 <div style={{display:'flex',flexDirection:'column',gap:8}}>
                   <label style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',background:colors.bg,borderRadius:radius.md,border:`1.5px solid ${form.notify_cashier_closing_wa?colors.primaryBorder:colors.border}`,cursor:'pointer'}}>
                     <input type="checkbox" checked={form.notify_cashier_closing_wa} onChange={e=>setForm({...form,notify_cashier_closing_wa:e.target.checked})}
@@ -26,8 +26,8 @@ export default function NotifyTab({ m }: { m: SettingsState }) {
               </div>
 
               <div style={{marginBottom:20}}>
-                <label style={lbl}>التقرير الصباحي — متى يوصلك</label>
-                <div style={{fontSize:11,color:colors.text4,marginBottom:8,lineHeight:1.7}}>يوصلك على واتساب: قرارات اليوم، ومبيعات أمس، والموظفين، والمخزون الناقص، ومشتريات أمس (حسب المميزات المفعّلة). ومدير كل فرع يوصله تقرير فرعه لو حطيت رقمه بصفحة مديري الفروع.</div>
+                <label style={lbl}>التقرير الصباحي — موعد الإرسال</label>
+                <div style={{fontSize:11,color:colors.text4,marginBottom:8,lineHeight:1.7}}>يصلك عبر واتساب: قرارات اليوم، ومبيعات أمس، والموظفون، والمخزون الناقص، ومشتريات أمس (حسب المزايا المفعّلة). ويصل إلى مدير كل فرع تقرير فرعه إذا أضفت رقمه في صفحة مديري الفروع.</div>
                 <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
                   {[{key:'daily',label:'يومي',icon:'📅'},{key:'weekly',label:'أسبوعي',icon:'📆'},{key:'manual',label:'يدوي',icon:'👆'}].map(s=>(
                     <button key={s.key} type="button" className={`sched-btn${form.notify_schedule===s.key?' active':''}`}

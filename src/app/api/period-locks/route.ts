@@ -15,7 +15,7 @@ async function ownerOnly(orgId: unknown) {
   if (typeof orgId !== 'string' || !UUID.test(orgId)) return { error: NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 }) }
   const access = await verifyOrgAccess(orgId)
   if (!access.authorized) return { error: NextResponse.json({ error: access.error }, { status: access.status }) }
-  if (access.role !== 'owner') return { error: NextResponse.json({ error: 'لمالك الحساب بس' }, { status: 403 }) }
+  if (access.role !== 'owner') return { error: NextResponse.json({ error: 'لمالك الحساب فقط' }, { status: 403 }) }
   return { ok: true as const }
 }
 async function activeAccountants(db: any, orgId: string) {
@@ -47,12 +47,12 @@ export async function POST(req: Request) {
     if (!/^\d{4}-\d{2}-01$/.test(month)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const db = sb()
     const { data: lock } = await db.from('period_locks').select('month').eq('org_id', b.org_id).eq('month', month).maybeSingle()
-    if (!lock) return NextResponse.json({ error: 'الشهر مو مقفل' }, { status: 404 })
+    if (!lock) return NextResponse.json({ error: 'الشهر غير مقفل' }, { status: 404 })
     const accs = await activeAccountants(db, b.org_id)
     const label = monthName(month)
 
     if (b.action === 'request_unlock') {
-      if (!accs.length) return NextResponse.json({ error: 'ما عندك محاسب مفعّل — تقدر تفتح الشهر بنفسك' }, { status: 400 })
+      if (!accs.length) return NextResponse.json({ error: 'لا يوجد لديك محاسب مفعّل — يمكنك فتح الشهر بنفسك' }, { status: 400 })
       const { data: org } = await db.from('organizations').select('name').eq('id', b.org_id).single()
       const orgName = (org as any)?.name || 'المنشأة'
       const reason = String(b.reason || '').trim().slice(0, 300)

@@ -13,16 +13,16 @@ export default function OwnerPeriodLocks({ orgId, showEmpty = false }: { orgId: 
   const load = () => api.get('/api/period-locks', { org_id: orgId }).then(j => { if (j.success) setData(j as any) })
   useEffect(() => { if (orgId) load() }, [orgId])
   if (!data) return null
-  if (!data.locks.length) return showEmpty ? <Empty icon={<Lock size={22} color={colors.text4} />} title="ما فيه شهور مقفلة" text="لما يراجع محاسبك شهر ويقفله من بوابته، يطلع هنا — وما ينقدر يتعدّل فيه مشتريات ولا إقفالات كاشير." /> : null
+  if (!data.locks.length) return showEmpty ? <Empty icon={<Lock size={22} color={colors.text4} />} title="لا توجد أشهر مقفلة" text="عندما يراجع محاسبك شهراً ويقفله من بوابته، يظهر هنا — ولا يمكن تعديل المشتريات أو إقفالات الكاشير فيه." /> : null
   async function act(l: any) {
     if (data!.hasAccountant) {
-      const reason = window.prompt(`ليش تحتاج تفتح شهر ${l.label}؟ (يوصل للمحاسب)`, '')
+      const reason = window.prompt(`لماذا تحتاج إلى فتح شهر ${l.label}؟ (يصل إلى المحاسب)`, '')
       if (reason === null) return
       const j = await api.post('/api/period-locks', { org_id: orgId, month: l.month, action: 'request_unlock', reason })
       if (!j.success) { toast(j.error || 'تعذر الإرسال', 'error'); return }
       toast('✅ أرسلنا طلب الفتح للمحاسب')
     } else {
-      if (!(await confirmDialog({ title: `فتح شهر ${l.label}؟`, message: 'ما عندك محاسب مفعّل، فتقدر تفتحه بنفسك. بعدها يصير ينقدر يتعدّل.', confirmText: 'افتح الشهر', type: 'warning' }))) return
+      if (!(await confirmDialog({ title: `فتح شهر ${l.label}؟`, message: 'لا يوجد لديك محاسب مفعّل، لذا يمكنك فتحه بنفسك، ويصبح بعدها قابلاً للتعديل.', confirmText: 'افتح الشهر', type: 'warning' }))) return
       const j = await api.post('/api/period-locks', { org_id: orgId, month: l.month, action: 'unlock' })
       if (!j.success) { toast(j.error || 'تعذر الفتح', 'error'); return }
       toast('تم فتح الشهر'); load()
@@ -31,7 +31,7 @@ export default function OwnerPeriodLocks({ orgId, showEmpty = false }: { orgId: 
   return (
     <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: radius.lg, padding: 16, marginBottom: 12, fontFamily: font.family }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}><Lock size={18} color="#047857" /><div style={{ fontSize: 15, fontWeight: 800 }}>الشهور المقفلة</div></div>
-      <div style={{ fontSize: 12.5, color: colors.text3, marginBottom: 8, lineHeight: 1.7 }}>المحاسب راجعها وأقفلها — ما ينقدر يتعدّل فيها مشتريات ولا إقفالات كاشير. تسجيل الدفع للموردين لاحقاً مسموح.</div>
+      <div style={{ fontSize: 12.5, color: colors.text3, marginBottom: 8, lineHeight: 1.7 }}>راجعها المحاسب وأقفلها — لا يمكن تعديل المشتريات أو إقفالات الكاشير فيها، ويُسمح بتسجيل الدفع للموردين لاحقاً.</div>
       {data.locks.map(l => (
         <div key={l.month} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderTop: `1px solid ${colors.border}` }}>
           <div style={{ flex: 1 }}>

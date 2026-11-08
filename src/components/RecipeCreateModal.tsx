@@ -46,7 +46,7 @@ export default function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,br
     const comp = rawMaterials.find((r:any)=>r.id===newCompId)
     const customFactor=Number(customSubCount)
     if(!hasKnownConversion(comp) && !(customFactor>0)){
-      toast(`لازم تحدد "كم قطعة/وحدة بكل ${comp?.unit||'وحدة'} واحد؟" بالمربع الأصفر قبل الإضافة — وإلا الحساب بيكون غلط`,'error')
+      toast(`يجب أن تحدد "كم قطعة/وحدة بكل ${comp?.unit||'وحدة'} واحد؟" في المربع الأصفر قبل الإضافة، وإلا فسيكون الحساب غير صحيح`,'error')
       return
     }
     const factor = customFactor>0 ? customFactor : newCompSubUnit
@@ -135,7 +135,7 @@ export default function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,br
       </div>
       {newCompId && !hasKnownConversion(rawMaterials.find(x=>x.id===newCompId)) && (
         <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:8,padding:8,marginBottom:8}}>
-          <div style={{fontSize:10,color:'#92400e',marginBottom:6}}>كم قطعة/وحدة بكل {rawMaterials.find(x=>x.id===newCompId)?.unit} واحد؟ — مطلوب عشان الحساب يطلع صح</div>
+          <div style={{fontSize:10,color:'#92400e',marginBottom:6}}>كم قطعة/وحدة بكل {rawMaterials.find(x=>x.id===newCompId)?.unit} واحد؟ — مطلوب لضمان صحة الحساب</div>
           <div style={{display:'flex',gap:6}}>
             <input value={customSubLabel} onChange={(e:any)=>setCustomSubLabel(e.target.value)} placeholder="اسم الوحدة (مثال: رغيف)" style={{flex:2,padding:'7px',border:'1.5px solid #fde68a',borderRadius:7,fontSize:10}}/>
             <NumberInput min="1" value={customSubCount} onChange={(e:any)=>setCustomSubCount(e.target.value)} placeholder="العدد" style={{flex:1,padding:'7px',border:'1.5px solid #fde68a',borderRadius:7,fontSize:10}}/>
@@ -182,7 +182,7 @@ export default function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,br
                 )}
               </div>
             )}
-            {!hasCostData && <div style={{fontSize:10,color:'#6b7280'}}>سجّل مشتريات لهذي المكوّنات عشان تظهر التكلفة تلقائياً</div>}
+            {!hasCostData && <div style={{fontSize:10,color:'#6b7280'}}>سجّل مشتريات لهذه المكوّنات لتظهر التكلفة تلقائياً</div>}
           </div>
         )
       })()}

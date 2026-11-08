@@ -132,7 +132,7 @@ export function useStaffManagement() {
     const bid = sessionStorage.getItem('s_branch_id')
     const bname = sessionStorage.getItem('s_branch_name') || 'الفرع الحالي'
     if (!bid) { toast('اختر الفرع من القائمة فوق أول','warning'); return }
-    if(!(await confirmDialog({ title:`نقل ${s.name}`, message:`ينتقل ${s.name} إلى «${bname}» ويبقى موقوف — تقدر تفعّله بعدها من زر «تفعيل».`, confirmText:'نقل', type:'warning' }))) return
+    if(!(await confirmDialog({ title:`نقل ${s.name}`, message:`ينتقل ${s.name} إلى «${bname}» ويبقى موقوفاً — يمكنك تفعيله بعد ذلك من زر «تفعيل».`, confirmText:'نقل', type:'warning' }))) return
     const r = await api.patch('/api/staff-members', { org_id: orgId, id: s.id, branch_id: bid })
     if (!r.success) { toast(r.error || 'تعذر النقل','error'); return }
     toast(`تم نقل ${s.name} إلى ${bname}`); loadStaff(orgId)
@@ -289,7 +289,7 @@ export function useStaffManagement() {
     const r = await api.patch('/api/staff-members', { org_id: orgId, id, send_closing_whatsapp: !current })
     if (!r.success) { toast(r.error || 'حدث خطأ', 'error'); return }
     setStaff(prev=>prev.map((s:any)=>s.id===id?{...s,send_closing_whatsapp:!current}:s))
-    toast(!current?'✅ راح توصل تفاصيل الإقفال كاملة عبر واتساب':'✅ راح يوصل بس إشعار بسيط بدون تفاصيل')
+    toast(!current?'✅ ستصل تفاصيل الإقفال كاملة عبر واتساب':'✅ سيصل إشعار مختصر فقط دون تفاصيل')
   }
 
   // أيقونة العين: الرمز المشفّر ينطلب من الخادم وقت الضغط، ويختفي تلقائياً بعد 20 ثانية
@@ -297,7 +297,7 @@ export function useStaffManagement() {
     if (visiblePins[s.id]) { setVisiblePins(v=>({...v,[s.id]:false})); return }
     if (String(s.pin||'').startsWith('$2') && !revealedPins[s.id]) {
       const r = await api.post('/api/staff-members/reveal-pin', { org_id: orgId, id: s.id })
-      if (!r.success) { toast(r.error || 'ما نقدر نعرض هذا الرمز — ولّد رمز جديد', 'error'); return }
+      if (!r.success) { toast(r.error || 'لا يمكن عرض هذا الرمز — أنشئ رمزاً جديداً', 'error'); return }
       setRevealedPins(v=>({...v,[s.id]:r.pin}))
     }
     setVisiblePins(v=>({...v,[s.id]:true}))

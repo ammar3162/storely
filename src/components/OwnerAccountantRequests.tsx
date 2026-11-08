@@ -20,7 +20,7 @@ function RequestCard({ r, orgId, onDone }: { r: any; orgId: string; onDone: () =
   const canFix = !!r.invoice && (r.kind === 'missing_vat' || !r.invoice.invoice_number || !r.invoice.supplier_vat_number)
   const vatBad = !!vat.trim() && !isValidVat(normalizeVat(vat))
   async function send() {
-    if (vatBad) { toast('الرقم الضريبي غير صحيح — ١٥ رقم يبدأ وينتهي بـ 3', 'warning'); return }
+    if (vatBad) { toast('الرقم الضريبي غير صحيح — يتكون من 15 رقماً ويبدأ وينتهي بالرقم 3', 'warning'); return }
     setBusy(true)
     const j = await api.patch('/api/accountant-requests', { org_id: orgId, id: r.id, reply,
       ...(canFix && invNo.trim() !== (r.invoice?.invoice_number || '') ? { invoice_number: invNo } : {}),
@@ -62,7 +62,7 @@ export default function OwnerAccountantRequests({ orgId, showEmpty = false, onCh
   const [showDone, setShowDone] = useState(false)
   const load = () => api.get('/api/accountant-requests', { org_id: orgId }).then(j => { if (j.success) { setList(j.requests || []); onChange?.() } })
   useEffect(() => { if (orgId) load() }, [orgId])
-  if (!list.length) return showEmpty ? <Empty icon={<MessageSquareText size={22} color={colors.text4} />} title="ما فيه طلبات من المحاسب" text="لما يحتاج محاسبك شي — رقم ضريبي ناقص أو مستند — يوصلك هنا وترد عليه بضغطة." /> : null
+  if (!list.length) return showEmpty ? <Empty icon={<MessageSquareText size={22} color={colors.text4} />} title="لا توجد طلبات من المحاسب" text="عندما يحتاج محاسبك شيئاً — رقماً ضريبياً ناقصاً أو مستنداً — يصلك هنا وترد عليه بضغطة واحدة." /> : null
   const active = list.filter(r => r.status !== 'resolved'), done = list.filter(r => r.status === 'resolved')
   return (
     <div style={{ background: colors.surface, border: `1.5px solid ${active.some(r => r.status === 'open') ? '#fcd34d' : colors.border}`, borderRadius: radius.lg, padding: 16, marginBottom: 12, fontFamily: font.family }}>
@@ -71,7 +71,7 @@ export default function OwnerAccountantRequests({ orgId, showEmpty = false, onCh
         <div style={{ fontSize: 15, fontWeight: 800 }}>طلبات المحاسب {active.length ? <span style={{ color: '#b45309' }}>({active.length})</span> : null}</div>
       </div>
       {active.map(r => <RequestCard key={r.id} r={r} orgId={orgId} onDone={load} />)}
-      {!active.length && <div style={{ fontSize: 12.5, color: colors.text4, marginBottom: 6 }}>ما فيه طلبات مفتوحة 👌</div>}
+      {!active.length && <div style={{ fontSize: 12.5, color: colors.text4, marginBottom: 6 }}>لا توجد طلبات مفتوحة</div>}
       {done.length > 0 && <button onClick={() => setShowDone(s => !s)} style={{ fontSize: 12.5, color: colors.text3, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, padding: 0 }}>
         {showDone ? 'إخفاء' : 'عرض'} الطلبات المنحلة ({done.length})</button>}
       {showDone && done.map(r => <RequestCard key={r.id} r={r} orgId={orgId} onDone={load} />)}

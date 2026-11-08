@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     if (!org_id || !attendance_id || typeof waived !== 'boolean') return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (!managerMay(access as any, 'attendance', 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على هالقسم — كلّم مالك المنشأة' }, { status: 403 })
+    if (!managerMay(access as any, 'attendance', 'hr')) return NextResponse.json({ error: 'ليست لديك صلاحية على هذا القسم — تواصل مع مالك المنشأة' }, { status: 403 })
     if (access.role !== 'owner') return NextResponse.json({ error: 'إلغاء الغرامة للمالك فقط' }, { status: 403 })
 
     // الغرامات اللي انخصمت سابقاً كخصم مجمّع (penalty_applied) ما تتعدّل من هنا
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       .gt('penalty_amount', 0).eq('penalty_applied', false)
       .select('id,staff_id,penalty_amount,recorded_at').maybeSingle()
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
-    if (!data) return NextResponse.json({ error: 'الغرامة غير موجودة أو انخصمت سابقاً' }, { status: 404 })
+    if (!data) return NextResponse.json({ error: 'الغرامة غير موجودة أو خُصمت سابقاً' }, { status: 404 })
     const row = data as any
     const day = new Date(Date.parse(row.recorded_at) + 3 * 3600e3).toISOString().slice(0, 10)
     await notifyStaffDeduction(sb(), org_id, row.staff_id, { kind: waived ? 'late_waived' : 'late_restored', amount: Number(row.penalty_amount), date: day })

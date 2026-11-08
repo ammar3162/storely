@@ -80,7 +80,7 @@ export default function AddonsMarketPage() {
       : dueNow(addon, qty)
     return (
       <div style={{ fontSize: 11, color: colors.text3, lineHeight: 1.7, marginBottom: 12 }}>
-        تدفع الحين <b style={{ color: colors.text }}>{d.amount} ⃁</b> عن {d.days} يوم لين تجديد باقتك ({d.endStr})، وبعدها تتجدد مع الباقة.
+        تدفع الآن <b style={{ color: colors.text }}>{d.amount} ⃁</b> عن {d.days} يوماً حتى تجديد باقتك ({d.endStr})، ثم تتجدد مع الباقة.
       </div>
     )
   }
@@ -101,7 +101,7 @@ export default function AddonsMarketPage() {
     const j = await api.post('/api/addons-market/requests', { org_id: orgId, addon_id: addon.id, quantity, branch_ids: branchIds })
     setSending(null)
     if (!j.success) { toast(j.error || 'فشل إرسال الطلب', 'error'); return }
-    toast('وصلنا طلبك — نراجعه ونفعّل الإضافة ويوصلك إشعار')
+    toast('تم استلام طلبك — سنراجعه ونفعّل الإضافة، وسيصلك إشعار بذلك')
     loadRequests(orgId)
   }
   async function cancelRequest(r: any) {
@@ -134,7 +134,7 @@ export default function AddonsMarketPage() {
   async function cancelAddon(addon: any, branchId?: string) {
     if (!(await confirmDialog({
       title: 'إلغاء الاشتراك',
-      message: `متأكد إنك تبي تلغي اشتراكك بميزة "${addon.name}"${branchId ? ` لفرع "${branches.find(b=>b.id===branchId)?.name||''}"` : ''}؟ راح تفقد الوصول لها فوراً — بما في ذلك صفحة المنتجات العامة وكل بياناتها المعروضة، بدون استرجاع.`,
+      message: `هل أنت متأكد من إلغاء اشتراكك في ميزة "${addon.name}"${branchId ? ` لفرع "${branches.find(b=>b.id===branchId)?.name||''}"` : ''}؟ ستفقد الوصول إليها فوراً — بما في ذلك صفحة المنتجات العامة وكل بياناتها المعروضة، بدون استرجاع.`,
     }))) return
 
     setCancelling(addon.id + (branchId||''))
@@ -203,7 +203,7 @@ export default function AddonsMarketPage() {
       })()}
 
       {addons.length === 0 ? (
-        <div style={{ ...card, padding: 40, textAlign: 'center' as const, color: colors.text4 }}>ما فيه إضافات متاحة حالياً</div>
+        <div style={{ ...card, padding: 40, textAlign: 'center' as const, color: colors.text4 }}>لا توجد إضافات متاحة حالياً</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 16 }}>
           {addons.map((a: any) => {
@@ -255,7 +255,7 @@ export default function AddonsMarketPage() {
                       <RequestBtn addon={a} quantity={qty} branchIds={selectedBranch ? [selectedBranch] : undefined} label={`اطلب الإضافة (${qty * a.monthly_price} ⃁)`} />
                     </>
                   ) : (
-                    <div style={{ fontSize: 11, color: colors.text4, textAlign: 'center' as const }}>ما فيه فروع نشطة حالياً</div>
+                    <div style={{ fontSize: 11, color: colors.text4, textAlign: 'center' as const }}>لا توجد فروع نشطة حالياً</div>
                   )}
                 </div>
               )
@@ -286,7 +286,7 @@ export default function AddonsMarketPage() {
                   )}
                   {branches.length > 1 && (
                     <>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: colors.text, marginBottom: 6 }}>الفروع اللي تبيها فيها:</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: colors.text, marginBottom: 6 }}>الفروع المطلوبة:</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
                         {branches.map((b: any) => {
                           const sel = chosen.includes(b.id)
@@ -305,7 +305,7 @@ export default function AddonsMarketPage() {
                     <>
                       <div style={{ fontSize: 12, color: colors.text, marginBottom: 8 }}>
                         الشهري: <b>{monthlyFor(chosen.length)} ⃁</b> ({chosen.length} {chosen.length === 1 ? 'فرع' : 'فروع'})
-                        {active && chosen.length < subBranches.length && <span style={{ display: 'block', color: colors.text3, fontSize: 11 }}>الفروع اللي تشيلها تتوقف من تجديد باقتك الجاي.</span>}
+                        {active && chosen.length < subBranches.length && <span style={{ display: 'block', color: colors.text3, fontSize: 11 }}>الفروع التي تُزيلها تتوقف عند تجديد باقتك القادم.</span>}
                       </div>
                       {added > 0 && (isMod ? delta > 0 && <DueNote addon={a} qty={added} monthlyDelta={delta} /> : <DueNote addon={a} qty={added} />)}
                       <RequestBtn addon={a} quantity={chosen.length} branchIds={chosen} label={active ? 'اطلب تعديل الفروع' : 'اطلب الإضافة'} />

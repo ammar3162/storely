@@ -45,7 +45,7 @@ async function pendingBranchRequest(db: SupabaseClient, orgId: string): Promise<
 export async function requestExtraBranch(db: SupabaseClient, orgId: string, userId: string | null):
   Promise<{ ok: true; pending: number } | { ok: false; status: number; error: string; code?: string }> {
   const offer = await branchOffer(db, orgId)
-  if (!offer.canAdd) return { ok: false, status: 403, code: 'plan_max', error: `وصلت أقصى عدد فروع لباقتك (${offer.maxTotal})${offer.pending ? ' مع الطلبات المعلّقة' : ''} — ${isNewPlan(offer.plan) ? 'تواصل معنا لباقة المؤسسات' : 'رقّ باقتك عشان تضيف فروع أكثر'}` }
+  if (!offer.canAdd) return { ok: false, status: 403, code: 'plan_max', error: `وصلت إلى الحد الأقصى لعدد فروع باقتك (${offer.maxTotal})${offer.pending ? ' مع الطلبات المعلّقة' : ''} — ${isNewPlan(offer.plan) ? 'تواصل معنا لباقة المؤسسات' : 'رقِّ باقتك لإضافة المزيد من الفروع'}` }
 
   const { data: addon } = await db.from('marketplace_addons').select('id').eq('slug', EXTRA_BRANCH_SLUG).maybeSingle()
   if (!addon) return { ok: false, status: 500, error: 'إضافة الفرع غير متاحة' }

@@ -68,7 +68,7 @@ export default function AccountantHub({ orgId }: { orgId: string }) {
               <div>
                 <div style={{ fontSize: 17, fontWeight: 800, color: colors.text }}>محاسبك</div>
                 <div style={{ fontSize: 12.5, color: colors.text3 }}>
-                  {people.length ? `${active} مفعّل${pending ? ` · ${pending} بانتظار القبول` : ''}` : 'ادعُ محاسبك — يشوف بياناتك قراءة بس ويوصله التقرير تلقائياً'}
+                  {people.length ? `${active} مفعّل${pending ? ` · ${pending} بانتظار القبول` : ''}` : 'ادعُ محاسبك — يطّلع على بياناتك للقراءة فقط ويصله التقرير تلقائياً'}
                 </div>
               </div>
             </div>

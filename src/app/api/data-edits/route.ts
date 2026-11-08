@@ -11,7 +11,7 @@ async function owner(orgId: unknown) {
   if (typeof orgId !== 'string' || !UUID.test(orgId)) return { error: NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 }) }
   const access = await verifyOrgAccess(orgId)
   if (!access.authorized) return { error: NextResponse.json({ error: access.error }, { status: access.status }) }
-  if (access.role !== 'owner') return { error: NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 }) }
+  if (access.role !== 'owner') return { error: NextResponse.json({ error: 'هذه الصلاحية للمالك فقط' }, { status: 403 }) }
   return { userId: access.userId! }
 }
 

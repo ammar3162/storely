@@ -120,7 +120,7 @@ export async function orgHasFeature(db: SupabaseClient, orgId: string, f: Featur
 /** رسالة موحّدة لما الميزة مقفلة — forBranch = مفعّلة بفروع ثانية بس */
 export function lockedMessage(f: Feature, forBranch = false) {
   return forBranch
-    ? `ميزة ${FEATURE_LABEL[f]} غير مفعّلة لهذا الفرع — المالك يقدر يضيفها للفرع من صفحة الإضافات`
+    ? `ميزة ${FEATURE_LABEL[f]} غير مفعّلة لهذا الفرع — يمكن للمالك إضافتها للفرع من صفحة الإضافات`
     : `ميزة ${FEATURE_LABEL[f]} غير مشمولة بباقتك — أضفها من صفحة الإضافات أو رقّ باقتك`
 }
 

@@ -12,8 +12,8 @@ export default function SupplierThanksModal({ m }: { m: PurchasesState }) {
             <div style={{fontSize:32,marginBottom:10}}>🚚</div>
             <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:6}}>تأكيد استلام الطلبية</div>
             <div style={{fontSize:12,color:C.text3,marginBottom:20,lineHeight:1.6}}>
-              هل المورد <b>{pendingThanks.supplierName}</b> فعلاً هو اللي وصّل "{pendingThanks.productName}"؟<br/>
-              لو أكدت، بنرسل له رسالة شكر تلقائية عبر واتساب.
+              هل المورد <b>{pendingThanks.supplierName}</b> هو فعلاً من ورّد "{pendingThanks.productName}"؟<br/>
+              عند التأكيد، سنرسل له رسالة شكر تلقائية عبر واتساب.
             </div>
             <div style={{display:'flex',gap:8}}>
               <button onClick={()=>setPendingThanks(null)} style={{flex:1,padding:11,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,fontSize:12,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>

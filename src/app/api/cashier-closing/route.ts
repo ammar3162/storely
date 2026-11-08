@@ -271,7 +271,7 @@ async function ownerWithPassword(org_id: unknown, password: unknown) {
   if (typeof org_id !== 'string' || !/^[0-9a-f-]{36}$/i.test(org_id)) return { error: NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 }) }
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return { error: NextResponse.json({ error: access.error }, { status: access.status }) }
-  if (access.role !== 'owner') return { error: NextResponse.json({ error: 'تعديل وحذف الإقفال لمالك الحساب بس' }, { status: 403 }) }
+  if (access.role !== 'owner') return { error: NextResponse.json({ error: 'تعديل الإقفال وحذفه متاحان لمالك الحساب فقط' }, { status: 403 }) }
   const v = await verifyOwnerPassword(sb(), org_id, access.userId!, password)
   if (!v.ok) return { error: NextResponse.json({ error: v.error }, { status: v.status }) }
   return { editor: (await sb().from('profiles').select('full_name').eq('id', access.userId!).maybeSingle()).data?.full_name || 'المالك' }

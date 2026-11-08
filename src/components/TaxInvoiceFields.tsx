@@ -8,9 +8,9 @@ const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 export type ZatcaState = { raw: string; inv: ZatcaInvoice } | null
 
 const T = {
-  ar: { inv: 'رقم الفاتورة', invPh: 'مثلاً INV-1024', vat: 'الرقم الضريبي للمورد', bad: '١٥ رقم يبدأ وينتهي بـ 3', saved: 'محفوظ من المورد', hint: 'تلقاه في أعلى الفاتورة — يحتاجه المحاسب للضريبة',
-    scan: 'امسح باركود الفاتورة', scanHint: 'الباركود المربع اللي تحت الفاتورة — يعبّي البيانات ويوثّقها', verified: 'فاتورة موثقة من باركود الهيئة', total: 'الإجمالي', tax: 'الضريبة',
-    remove: 'إلغاء', notZatca: 'هذا مو باركود فاتورة ضريبية — امسح الباركود المربع اللي تحت الفاتورة', over: 'المبلغ المكتوب أكبر من مبلغ الفاتورة الأصلي', fromQr: 'من باركود الفاتورة' },
+  ar: { inv: 'رقم الفاتورة', invPh: 'مثال: INV-1024', vat: 'الرقم الضريبي للمورد', bad: '15 رقماً يبدأ وينتهي بالرقم 3', saved: 'محفوظ من المورد', hint: 'تجده أعلى الفاتورة — يحتاجه المحاسب للضريبة',
+    scan: 'امسح باركود الفاتورة', scanHint: 'الباركود المربع أسفل الفاتورة — يعبّئ البيانات ويوثّقها', verified: 'فاتورة موثقة من باركود الهيئة', total: 'الإجمالي', tax: 'الضريبة',
+    remove: 'إلغاء', notZatca: 'هذا ليس باركود فاتورة ضريبية — امسح الباركود المربع أسفل الفاتورة', over: 'المبلغ المكتوب أكبر من مبلغ الفاتورة الأصلي', fromQr: 'من باركود الفاتورة' },
   en: { inv: 'Invoice number', invPh: 'e.g. INV-1024', vat: 'Supplier VAT number', bad: '15 digits, starts and ends with 3', saved: 'Saved from supplier', hint: 'Printed at the top of the invoice — needed for VAT',
     scan: 'Scan invoice QR', scanHint: 'The square QR at the bottom of the invoice — fills and verifies the data', verified: 'Verified by the ZATCA QR', total: 'Total', tax: 'VAT',
     remove: 'Remove', notZatca: 'This is not a tax-invoice QR — scan the square code at the bottom of the invoice', over: 'Entered amount is higher than the original invoice', fromQr: 'From the invoice QR' },

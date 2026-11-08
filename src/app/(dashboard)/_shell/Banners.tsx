@@ -11,13 +11,13 @@ export default function Banners({ m }: { m: DashboardShell }) {
   const [trialOpen, setTrialOpen] = useState(false)
   const endsTxt = trialEnds ? new Date(trialEnds).toLocaleDateString('ar-SA', { numberingSystem: 'latn', month: 'long', day: 'numeric' }) : null
   const n = trialLocked.length
-  const countTxt = n === 1 ? 'ميزة وحدة' : n === 2 ? 'ميزتين' : `${n} مزايا`
+  const countTxt = n === 1 ? 'ميزة واحدة' : n === 2 ? 'ميزتين' : `${n} مزايا`
   return (
     <>
       {n > 0 && !hideTrial && userRole !== 'manager' && (
         <div className="sh-banner sh-banner-quiet">
           <span style={{flex:1,lineHeight:1.8}}>
-            أنت في التجربة: كل المزايا مفتوحة{endsTxt ? ` لين ${endsTxt}` : ''}. بعدها تنقفل {countTxt} {orgPlan === 'custom' ? 'ما اخترتها' : 'ما تشملها باقتك'}.{' '}
+            أنت في التجربة: كل المزايا مفتوحة{endsTxt ? ` حتى ${endsTxt}` : ''}. بعدها تُقفل {countTxt} {orgPlan === 'custom' ? 'لم تخترها' : 'لا تشملها باقتك'}.{' '}
             <button type="button" className="sh-link-btn" onClick={()=>setTrialOpen(o=>!o)}>{trialOpen ? 'إخفاء التفاصيل' : 'التفاصيل'}</button>
             {trialOpen && (
               <span style={{display:'block',marginTop:6}}>
@@ -32,14 +32,14 @@ export default function Banners({ m }: { m: DashboardShell }) {
       {subDaysLeft!==null && (
         <div className="sh-banner sh-banner-warn">
           <span style={{flex:1}}>
-            {subDaysLeft===0?'ينتهي اشتراكك اليوم.':`ينتهي اشتراكك خلال ${subDaysLeft} ${subDaysLeft===1?'يوم':'أيام'}.`} <span className="hide-in-app">جدّد عشان ما يتوقف حسابك.</span>
+            {subDaysLeft===0?'ينتهي اشتراكك اليوم.':`ينتهي اشتراكك خلال ${subDaysLeft} ${subDaysLeft===1?'يوم':'أيام'}.`} <span className="hide-in-app">جدّد اشتراكك لتجنّب توقف حسابك.</span>
           </span>
           <button className="sh-btn sh-btn-sm hide-in-app" onClick={()=>router.push('/settings')}>تجديد</button>
         </div>
       )}
       {showEnableNotif && (
         <div className="sh-banner">
-          <span style={{flex:1}}>فعّل الإشعارات عشان توصلك تنبيهات نقص المخزون وإقفال الكاشير حتى لو التطبيق مقفول.</span>
+          <span style={{flex:1}}>فعّل الإشعارات لتصلك تنبيهات نقص المخزون وإقفال الكاشير حتى لو كان التطبيق مغلقاً.</span>
           <button className="sh-btn sh-btn-sm sh-btn-primary" onClick={enablePush} disabled={enablingPush}>{enablingPush?'جاري التفعيل...':'تفعيل'}</button>
           <button className="sh-btn sh-btn-sm sh-btn-ghost" onClick={()=>setShowEnableNotif(false)}>لاحقاً</button>
         </div>

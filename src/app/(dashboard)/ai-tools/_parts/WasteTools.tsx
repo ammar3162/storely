@@ -9,12 +9,12 @@ export default function WasteTools({ m }: { m: AiToolsPage }) {
       {/* أدوات الهدر — الباقة الشاملة أو المتقدمة */}
       {hasAiAddon && (
       <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
-        <div id="waste" style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:10,scrollMarginTop:80}}>وين تخسر فلوس؟</div>
+        <div id="waste" style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:10,scrollMarginTop:80}}>أين تخسر أموالك؟</div>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <span style={{fontSize:18}}>🐌</span>
             <div style={{flex:1}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.text}}>مخزون ما ينصرف (راكد)</div>
+              <div style={{fontSize:13,fontWeight:700,color:C.text}}>مخزون لا يُصرف (راكد)</div>
               <div style={{fontSize:11,color:C.text3}}>يكتشف ما تشتريه ولا تصرفه (بطيء الحركة)</div>
             </div>
             <button onClick={async()=>{

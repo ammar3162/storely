@@ -67,15 +67,15 @@ export default function AddStaffModal({ m }: { m: StaffPage }) {
               {newRole==='cashier' && (
                 <div style={{background:colors.bg,borderRadius:radius.md,padding:'12px 14px'}}>
                   <div style={{fontSize:font.xs,fontWeight:700,color:colors.text3,marginBottom:4}}>اليوم الجديد يبدأ الساعة</div>
-                  <div style={{fontSize:10,color:colors.text4,marginBottom:10,lineHeight:1.5}}>أي إقفال قبل هالساعة ينحسب على اليوم اللي قبل — مفيد لو المحل يقفل بعد 12 الليل</div>
+                  <div style={{fontSize:10,color:colors.text4,marginBottom:10,lineHeight:1.5}}>يُحتسب أي إقفال قبل هذه الساعة على اليوم السابق — مفيد إذا كان المحل يُغلق بعد 12 منتصف الليل</div>
                   <div>
                     <select value={dayStartHour} onChange={e=>setDayStartHour(Number(e.target.value))} style={inp()}>
                       {Array.from({length:11},(_,h)=>(
-                        <option key={h} value={h}>{h===0 ? '12:00 منتصف الليل (بدون ترحيل)' : `${h}:00 ${h<6?'الفجر':'الصبح'}`}</option>
+                        <option key={h} value={h}>{h===0 ? '12:00 منتصف الليل (بدون ترحيل)' : `${h}:00 ${h<6?'الفجر':'الصباح'}`}</option>
                       ))}
                     </select>
                     <div style={{fontSize:10.5,color:colors.text3,marginTop:8,lineHeight:1.6,background:'white',borderRadius:8,padding:'8px 10px',border:`1px solid ${colors.border}`}}>
-                      {dayStartHour===0 ? 'كل تقفيل يتسجّل بتاريخ يومه بالضبط.' : <>مثال: لو الكاشير قفّل الأحد الساعة {dayStartHour===1?'12':dayStartHour-1}:30 {dayStartHour<=6?'الفجر':'الصبح'}، يتسجّل الإقفال على <b>السبت</b>.</>}
+                      {dayStartHour===0 ? 'يُسجَّل كل إقفال بتاريخ يومه نفسه.' : <>مثال: إذا أقفل الكاشير يوم الأحد الساعة {dayStartHour===1?'12':dayStartHour-1}:30 {dayStartHour<=6?'الفجر':'الصباح'}، يُسجَّل الإقفال على <b>السبت</b>.</>}
                     </div>
                   </div>
                   <label style={{display:'flex',alignItems:'center',gap:8,marginTop:12,padding:'10px 12px',background:'white',borderRadius:8,border:`1.5px solid ${newSendClosingWA?colors.primary:colors.border}`,cursor:'pointer'}}>
@@ -83,7 +83,7 @@ export default function AddStaffModal({ m }: { m: StaffPage }) {
                       style={{accentColor:colors.primary,width:14,height:14}}/>
                     <div>
                       <div style={{fontSize:12,fontWeight:700,color:newSendClosingWA?colors.primary:colors.text2,display:'flex',alignItems:'center',gap:5}}><Smartphone size={13} strokeWidth={2.25}/> إرسال تفاصيل الإقفال للمالك عبر واتساب</div>
-                      <div style={{fontSize:10,color:colors.text4,marginTop:2,lineHeight:1.4}}>{newSendClosingWA?'تفعّل: يوصل المالك تقرير الإقفال الكامل':'موقّف: يوصل المالك بس إشعار "الكاشير أقفل"، بدون تفاصيل'}</div>
+                      <div style={{fontSize:10,color:colors.text4,marginTop:2,lineHeight:1.4}}>{newSendClosingWA?'مفعّل: يصل إلى المالك تقرير الإقفال الكامل':'موقوف: يصل إلى المالك إشعار فقط "الكاشير أقفل"، بدون تفاصيل'}</div>
                     </div>
                   </label>
                 </div>

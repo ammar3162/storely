@@ -17,15 +17,15 @@ describe('buildDecisions', () => {
     const d = buildDecisions({ ...base, todayDow: 5 })   // الجمعة → بكرة السبت الذروة
     expect(d.map(x => x.level)).toEqual(['urgent', 'urgent', 'warn', 'warn', 'info'])
     expect(d[0].title).toBe('باستا: طلبه متأخر 5 أيام')
-    expect(d[1]).toMatchObject({ title: 'اطلب دجاج اليوم', detail: 'يخلص بكرة · باقي 4 كيس · تحتاج 54 كيس', action: { label: 'أرسل للمورد', href: '/suppliers?sid=sup-1' } })
+    expect(d[1]).toMatchObject({ title: 'اطلب دجاج اليوم', detail: 'ينفد غداً · المتبقي 4 كيس · تحتاج 54 كيس', action: { label: 'أرسل للمورد', href: '/suppliers?sid=sup-1' } })
     expect(d[0].action).toEqual({ label: 'اربط بمورد', href: '/suppliers' })   // باستا بدون مورد
-    expect(d[2]).toMatchObject({ title: 'خسرت 420 ريال هدر آخر 30 يوم', detail: 'أغلبه دجاج (منتهي الصلاحية) — قلّل كمية طلبه أو راجع التخزين' })
-    expect(d[3]).toMatchObject({ title: 'بكرة (السبت) أكثر يوم زحمة عندك', detail: 'جهّز مخزونك من اليوم قبل 11 الصباح' })
-    expect(d[4].title).toBe('فلاتر كافاك 02 ما انصرف منه شي من شهر')
+    expect(d[2]).toMatchObject({ title: 'خسرت 420 ريال بسبب الهدر خلال آخر 30 يوماً', detail: 'معظمه من دجاج (منتهي الصلاحية) — قلّل كمية طلبه أو راجع طريقة التخزين' })
+    expect(d[3]).toMatchObject({ title: 'غداً (السبت) هو الأكثر ازدحاماً لديك', detail: 'جهّز مخزونك من اليوم قبل 11 الصباح' })
+    expect(d[4].title).toBe('فلاتر كافاك 02 لم يُصرف منه شيء منذ شهر')
   })
   it('peak today, and no peak note on ordinary days', () => {
-    expect(buildDecisions({ ...base, todayDow: 6 }).some(x => x.title === 'اليوم أكثر يوم زحمة عندك')).toBe(true)
-    expect(buildDecisions({ ...base, todayDow: 2 }).some(x => x.title.includes('زحمة'))).toBe(false)
+    expect(buildDecisions({ ...base, todayDow: 6 }).some(x => x.title === 'اليوم هو الأكثر ازدحاماً لديك')).toBe(true)
+    expect(buildDecisions({ ...base, todayDow: 2 }).some(x => x.title.includes('ازدحاماً'))).toBe(false)
   })
   it('caps at 5 and handles a fresh account', () => {
     expect(buildDecisions({ ...base, todayDow: 5 }, 3)).toHaveLength(3)
@@ -33,6 +33,6 @@ describe('buildDecisions', () => {
   })
   it('waste without known cost shows the count', () => {
     const d = buildDecisions({ waste: { report: [{ name: 'خبز', totalQty: 3, estimatedCost: null }], totalEstimatedCost: 0, totalWasteEntries: 3 }, todayDow: 0 })
-    expect(d[0].title).toBe('3 عمليات هدر آخر 30 يوم')
+    expect(d[0].title).toBe('3 عمليات هدر خلال آخر 30 يوماً')
   })
 })

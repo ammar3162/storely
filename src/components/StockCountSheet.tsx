@@ -26,7 +26,7 @@ export default function StockCountSheet({ orgId, products, lastCounts, onClose, 
     const j = await api.post('/api/stock-counts', { org_id: orgId, counts: entered.map(([product_id, v]) => ({ product_id, counted_qty: Number(v) })) })
     setSaving(false)
     if (!j.success) { toast(j.error || 'فشل حفظ الجرد', 'error'); return }
-    toast(j.adjusted ? `انحفظ جرد ${j.counted} صنف وتعدّل رصيد ${j.adjusted}` : `انحفظ جرد ${j.counted} صنف — كله مطابق`)
+    toast(j.adjusted ? `تم حفظ جرد ${j.counted} صنف وتعديل رصيد ${j.adjusted}` : `تم حفظ جرد ${j.counted} صنف — جميعها مطابقة`)
     onSaved()
   }
 
@@ -38,7 +38,7 @@ export default function StockCountSheet({ orgId, products, lastCounts, onClose, 
           <ClipboardCheck size={20} color={colors.primary} />
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 15, fontWeight: 800 }}>جرد المخزون</div>
-            <div style={{ fontSize: 11, color: colors.text3 }}>اكتب الكمية اللي عددتها فعلاً — اللي تتركه فاضي ما ينجرد</div>
+            <div style={{ fontSize: 11, color: colors.text3 }}>اكتب الكمية التي عددتها فعلاً — والحقل الفارغ لا يدخل في الجرد</div>
           </div>
           <button onClick={onClose} aria-label="إغلاق" style={{ background: 'none', border: 'none', cursor: 'pointer', color: colors.text3 }}><X size={18} /></button>
         </div>
@@ -68,7 +68,7 @@ export default function StockCountSheet({ orgId, products, lastCounts, onClose, 
           })}
         </div>
         <div style={{ padding: '12px 18px', borderTop: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ flex: 1, fontSize: 12, color: colors.text3 }}>{entered.length} صنف · {diffs} فيه فرق</div>
+          <div style={{ flex: 1, fontSize: 12, color: colors.text3 }}>{entered.length} صنف · {diffs} يوجد فرق</div>
           <button onClick={save} disabled={!entered.length || saving}
             style={{ padding: '10px 20px', background: colors.primary, color: 'white', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', opacity: !entered.length || saving ? .6 : 1 }}>
             {saving ? 'جاري الحفظ...' : 'حفظ الجرد'}

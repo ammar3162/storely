@@ -11,7 +11,7 @@ export async function verifyOwnerPassword(db: SupabaseClient, orgId: string, use
   const { data: o } = await db.from('organizations').select('owner_pin_failed,owner_pin_locked_until').eq('id', orgId).maybeSingle()
   const lockedUntil = (o as any)?.owner_pin_locked_until
   if (lockedUntil && Date.parse(lockedUntil) > Date.now()) {
-    return { ok: false, error: `محاولات كثيرة — جرّب بعد ${Math.ceil((Date.parse(lockedUntil) - Date.now()) / 60000)} دقيقة`, status: 429 }
+    return { ok: false, error: `محاولات كثيرة — حاول بعد ${Math.ceil((Date.parse(lockedUntil) - Date.now()) / 60000)} دقيقة`, status: 429 }
   }
   const { data: u } = await db.auth.admin.getUserById(userId)
   const email = u?.user?.email
@@ -23,7 +23,7 @@ export async function verifyOwnerPassword(db: SupabaseClient, orgId: string, use
     const fails = Number((o as any)?.owner_pin_failed || 0) + 1
     const lock = fails >= PW_MAX_FAILS
     await db.from('organizations').update({ owner_pin_failed: lock ? 0 : fails, owner_pin_locked_until: lock ? new Date(Date.now() + PW_LOCK_MINUTES * 60e3).toISOString() : null } as any).eq('id', orgId)
-    return { ok: false, error: lock ? `كلمة المرور غلط — انقفل ${PW_LOCK_MINUTES} دقيقة` : `كلمة المرور غير صحيحة (باقي ${PW_MAX_FAILS - fails} محاولات)`, status: 403 }
+    return { ok: false, error: lock ? `كلمة المرور غير صحيحة — تم القفل لمدة ${PW_LOCK_MINUTES} دقيقة` : `كلمة المرور غير صحيحة (المتبقي ${PW_MAX_FAILS - fails} محاولات)`, status: 403 }
   }
   // scope:'local' = نلغي الجلسة المؤقتة هذي بس — الافتراضي (global) يطلّع المالك من كل أجهزته
   await auth.auth.signOut({ scope: 'local' }).catch(() => {})

@@ -33,7 +33,7 @@ describe('saving invoice items', () => {
     expect(log.filter(l => l.table === 'products' && l.op === 'insert').map(l => l.row.name)).toEqual(['مناديل'])
     // متوسط التكلفة: (10×10 + 5×20) ÷ 15
     expect(log.find(l => l.table === 'products' && l.op === 'update')!.row.avg_cost).toBeCloseTo(13.33, 2)
-    expect(itemsSummary(r)).toBe('زادت كمية 1 صنف موجود · انضاف 1 صنف جديد')
+    expect(itemsSummary(r)).toBe('زادت كمية 1 صنف موجود · أُضيف 1 صنف جديد')
   })
   it('the user choice wins: explicit product or explicit «new»', async () => {
     const { db } = fakeDb([{ id: 'p2', name: 'أغطية أكواب', qty: 0, avg_cost: 0 }, { id: 'p3', name: 'دجاج', qty: 0, avg_cost: 0 }])

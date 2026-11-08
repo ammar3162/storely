@@ -11,7 +11,7 @@ export default function Seasonality({ m }: { m: AiToolsPage }) {
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
           <div>
             <div style={{fontSize:14,fontWeight:800,color:C.text}}>متى زحمتك؟</div>
-            <div style={{fontSize:11,color:C.text3,marginTop:2}}>أكثر الأيام والأوقات صرفاً خلال آخر 90 يوم — عشان تجهّز مخزونك وموظفينك قبلها</div>
+            <div style={{fontSize:11,color:C.text3,marginTop:2}}>أكثر الأيام والأوقات صرفاً خلال آخر 90 يوماً — لتجهيز مخزونك وموظفيك مسبقاً</div>
           </div>
           <button onClick={async()=>{
             const orgId=sessionStorage.getItem('s_org_id')

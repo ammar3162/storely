@@ -11,9 +11,9 @@ export default function OnboardingModal({ m }: { m: DashboardShell }) {
         const steps = [
           { title:'أهلاً بك في Storely', body:'أربع خطوات وتكون جاهز: المنتجات، الموظفين، الموردين، والإشعارات.', go:null },
           { title:'أضف منتجاتك', body:'من صفحة المخزون اضغط "إضافة منتج" وأدخل الاسم والكمية وحد إعادة الطلب.', go:{ href:'/inventory', label:'فتح المخزون' } },
-          { title:'أضف موظفيك', body:'من صفحة الموظفين أضف كل موظف برقم جواله، ويدخل برمز PIN خاص فيه.', go:{ href:'/staff-management', label:'فتح الموظفين' } },
-          { title:'أضف موردينك', body:'اربط كل منتج بمورده، ويوصل المورد طلب توريد على واتساب لما ينقص الصنف.', go:{ href:'/suppliers', label:'فتح الموردين' } },
-          { title:'كل شي جاهز', body:'تقدر تبدأ الحين. الدعم الفني متاح من القائمة لو احتجت أي شي.', go:null },
+          { title:'أضف موظفيك', body:'من صفحة الموظفين أضف كل موظف برقم جواله، ويدخل برمز PIN خاص به.', go:{ href:'/staff-management', label:'فتح الموظفين' } },
+          { title:'أضف موردينك', body:'اربط كل منتج بمورده، ويصل إلى المورد طلب توريد عبر واتساب عند نقص الصنف.', go:{ href:'/suppliers', label:'فتح الموردين' } },
+          { title:'كل شيء جاهز', body:'يمكنك البدء الآن، والدعم الفني متاح من القائمة عند الحاجة.', go:null },
         ]
         const s = steps[onboardingStep] || steps[0]
         const done = () => { localStorage.setItem('onboarding_done','1'); setShowOnboarding(false) }

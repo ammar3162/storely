@@ -21,14 +21,14 @@ export async function POST(req: Request) {
     const dr = draft as any
     const bid = enforcedBranchId(access)
     if (bid && dr.branch_id !== bid) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
-    if (dr.status === 'saved') return NextResponse.json({ error: 'الفاتورة انحفظت قبل' }, { status: 409 })
-    if (dr.status !== 'ready') return NextResponse.json({ error: 'فيه أصناف تنتظر إجابتك قبل الحفظ' }, { status: 400 })
+    if (dr.status === 'saved') return NextResponse.json({ error: 'تم حفظ الفاتورة مسبقاً' }, { status: 409 })
+    if (dr.status !== 'ready') return NextResponse.json({ error: 'توجد أصناف بانتظار إجابتك قبل الحفظ' }, { status: 400 })
     if (!dr.supplier) return NextResponse.json({ error: 'اكتب اسم المورد' }, { status: 400 })
 
     // نحجز المسودة أول (ضغطتين ورا بعض ما يحفظونها مرتين) — ولو فشل الحفظ نرجّعها
     const { data: claimed } = await db.from('invoice_drafts').update({ status: 'saved', saved_at: new Date().toISOString() } as any)
       .eq('id', id).eq('org_id', org_id).eq('status', 'ready').select('id')
-    if (!claimed?.length) return NextResponse.json({ error: 'الفاتورة انحفظت قبل' }, { status: 409 })
+    if (!claimed?.length) return NextResponse.json({ error: 'تم حفظ الفاتورة مسبقاً' }, { status: 409 })
     const release = () => db.from('invoice_drafts').update({ status: 'ready', saved_at: null } as any).eq('id', id).eq('status', 'saved')
 
     const items = ((dr.items || []) as AgentItem[]).filter(it => it.status === 'matched' || it.status === 'new' || it.status === 'expense')

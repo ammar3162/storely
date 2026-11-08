@@ -10,13 +10,13 @@ import { getMe } from '@/lib/session'
 type Done = Record<string, boolean>
 type Feats = { inventory: boolean; purchases: boolean; cashier: boolean; hr: boolean }
 const STEPS: { key: string; need?: keyof Feats; title: string; hint: string; href: string; cta: string }[] = [
-  { key: 'products', need: 'inventory', title: 'أضف منتجاتك', hint: 'ابدأ بالأصناف اللي تنقص عليك كثير', href: '/inventory', cta: 'المخزون' },
+  { key: 'products', need: 'inventory', title: 'أضف منتجاتك', hint: 'ابدأ بالأصناف الأكثر نفاداً', href: '/inventory', cta: 'المخزون' },
   { key: 'staff', title: 'أضف موظف', hint: 'يدخل من جواله برقمه ورمز سري تعطيه إياه', href: '/staff-management', cta: 'الموظفين' },
-  { key: 'dispense', need: 'inventory', title: 'أول صرف من جوال الموظف', hint: 'الموظف يسجّل اللي استخدمه، والمخزون ينقص لحاله', href: '/staff-management', cta: 'الموظفين' },
-  { key: 'closing', need: 'cashier', title: 'أول إقفال كاشير', hint: 'الكاشير يقفل من جواله، ويوصلك العجز أو الزيادة على طول', href: '/staff-management', cta: 'عيّن كاشير' },
+  { key: 'dispense', need: 'inventory', title: 'أول صرف من جوال الموظف', hint: 'يسجّل الموظف ما استخدمه، ويُخصم من المخزون تلقائياً', href: '/staff-management', cta: 'الموظفين' },
+  { key: 'closing', need: 'cashier', title: 'أول إقفال كاشير', hint: 'يُقفل الكاشير من جواله، ويصلك العجز أو الزيادة فوراً', href: '/staff-management', cta: 'عيّن كاشير' },
   { key: 'purchase', need: 'purchases', title: 'سجّل أول فاتورة مشتريات', hint: 'صوّر الفاتورة ونقرأ أصنافها لك', href: '/purchases', cta: 'المشتريات' },
   { key: 'attendance', need: 'hr', title: 'أول تسجيل حضور', hint: 'حدّد الورديات، والموظف يسجّل حضوره من جواله', href: '/attendance', cta: 'الحضور' },
-  { key: 'whatsapp', title: 'رقم واتساب للتقرير الصباحي', hint: 'يوصلك ملخص يومك كل صباح', href: '/settings', cta: 'الإعدادات' },
+  { key: 'whatsapp', title: 'رقم واتساب للتقرير الصباحي', hint: 'يصلك ملخص يومك كل صباح', href: '/settings', cta: 'الإعدادات' },
 ]
 
 export default function SetupChecklist() {
@@ -47,7 +47,7 @@ export default function SetupChecklist() {
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 16, fontWeight: 600, color: '#111827' }}>جهّز حسابك</div>
-          <div style={{ fontSize: 13, color: '#4b5565', marginTop: 2 }}>خطوات قليلة وتشوف فايدة Storely من أول أسبوع</div>
+          <div style={{ fontSize: 13, color: '#4b5565', marginTop: 2 }}>خطوات قليلة لتلمس فائدة Storely من الأسبوع الأول</div>
         </div>
         <span style={{ fontSize: 13, color: '#4b5565', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{doneCount} من {steps.length}</span>
         <button type="button" onClick={hide} aria-label="إخفاء" style={{ width: 28, height: 28, border: 'none', background: 'transparent', color: '#6b7487', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: -4 }}><X size={16} strokeWidth={1.75} /></button>

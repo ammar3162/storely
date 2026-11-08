@@ -191,12 +191,12 @@ export function usePurchases() {
     if(!orgId||submitting.current)return
     if(form.category==='مخزون'&&!form.name.trim()){toast('اكتب اسم الصنف','warning');return}
     if(!(Number(form.total_amount)>0)){toast('اكتب المبلغ الإجمالي','warning');return}
-    if(form.qty&&!(Number.isInteger(Number(form.qty))&&Number(form.qty)>=0)){toast('الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)','warning');return}
+    if(form.qty&&!(Number.isInteger(Number(form.qty))&&Number(form.qty)>=0)){toast('يجب أن تكون الكمية رقماً صحيحاً — إذا كانت فيها كسور فاستخدم وحدة أصغر (مثل الغرام بدل الكيلو)','warning');return}
     submitting.current=true
     if(!form.hasVat){toast('حدد هل الفاتورة تشمل الضريبة','warning');submitting.current=false;return}
-    if(form.hasVat==='yes'&&!form.invoice_image){toast('الفاتورة الضريبية لازم ترفق صورتها أو ملفها','warning');submitting.current=false;return}
+    if(form.hasVat==='yes'&&!form.invoice_image){toast('يجب إرفاق صورة الفاتورة الضريبية أو ملفها','warning');submitting.current=false;return}
     if(!form.supplier.trim()){toast('يرجى إدخال اسم المورد','warning');submitting.current=false;return}
-    if(form.hasVat==='yes'&&form.supplier_vat_number.trim()&&!isValidVat(normalizeVat(form.supplier_vat_number))){toast('الرقم الضريبي للمورد غير صحيح — ١٥ رقم يبدأ وينتهي بـ 3','warning');submitting.current=false;return}
+    if(form.hasVat==='yes'&&form.supplier_vat_number.trim()&&!isValidVat(normalizeVat(form.supplier_vat_number))){toast('الرقم الضريبي للمورد غير صحيح — يتكون من 15 رقماً ويبدأ وينتهي بالرقم 3','warning');submitting.current=false;return}
     setLoading(true)
     // حفظ الفاتورة + الإشعار + تحديث المخزون ومتوسط التكلفة كلها على الخادم
     const body:any={
@@ -219,7 +219,7 @@ export function usePurchases() {
       api.post('/api/sync-product-to-staff',{org_id:orgId,product_id:res.product_id})
     }
     else toast('✅ تم تسجيل الشراء')
-    if(form.invoice_date&&form.invoice_date!==todayRiyadh()) toast(`📅 انحفظت بتاريخ الفاتورة ${form.invoice_date} — تلقاها في التقارير بهالتاريخ`)
+    if(form.invoice_date&&form.invoice_date!==todayRiyadh()) toast(`📅 حُفظت بتاريخ الفاتورة ${form.invoice_date} — ستجدها في التقارير بهذا التاريخ`)
 
     // تأكيد يدوي قبل إرسال رسالة الشكر — يظهر فقط لو المورد مسجّل فعلياً بالنظام والمنتج مرتبط فيه تحديداً
     if (res.thanks_candidate && res.product_id) {

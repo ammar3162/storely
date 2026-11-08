@@ -39,7 +39,7 @@ export default function StaffCard({ m, s, i }: { m: StaffPage; s: any; i: number
                     </button>
                   )}
                   {s.role==='cashier' && !hasCashier && (
-                    <span title="الباقة الحالية ما فيها إقفال الكاشير — يرجع يشتغل بالترقية للمتوسطة أو بإضافة «إقفال الكاشير»" className="act-btn" style={{background:'#fffbeb',color:'#b45309',border:'1.5px solid #fde68a',display:'flex',alignItems:'center',gap:5,cursor:'default'}}>
+                    <span title="الباقة الحالية لا تشمل إقفال الكاشير — يعود للعمل عند الترقية أو بإضافة «إقفال الكاشير»" className="act-btn" style={{background:'#fffbeb',color:'#b45309',border:'1.5px solid #fde68a',display:'flex',alignItems:'center',gap:5,cursor:'default'}}>
                       <Lock size={13} strokeWidth={2.25}/> الكاشير مقفل بالباقة الحالية
                     </span>
                   )}

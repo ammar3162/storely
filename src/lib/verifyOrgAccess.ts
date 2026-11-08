@@ -97,7 +97,7 @@ export async function verifyOrgAccess(requestedOrgId: string) {
   // مدير الفرع: نفس صلاحيات صفحاته على مستوى الـ API (المسار يجي من proxy)
   if (profile.role === 'manager') {
     if (path && !managerApiAllowed(path, method, profile.permissions)) {
-      return { authorized: false, error: 'ما عندك صلاحية على هالقسم — كلّم مالك المنشأة', status: 403 as const }
+      return { authorized: false, error: 'ليست لديك صلاحية على هذا القسم — تواصل مع مالك المنشأة', status: 403 as const }
     }
   }
   // «ابنِ باقتك»: المخزون والمشتريات تنقفل لو ما اختارها (كل الباقات الثانية فيها الميزتين)

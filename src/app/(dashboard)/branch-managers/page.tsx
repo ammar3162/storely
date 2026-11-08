@@ -28,7 +28,7 @@ function PermGrid({ value, onChange }: { value: Record<string, boolean>; onChang
   return (
     <div style={{ display: 'grid', gap: 14 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 12.5, color: colors.text3 }}>الرئيسية والإشعارات متاحة دايماً. الإعدادات والفروع والإضافات للمالك فقط.</span>
+        <span style={{ fontSize: 12.5, color: colors.text3 }}>الرئيسية والإشعارات متاحة دائماً، أما الإعدادات والفروع والإضافات فللمالك فقط.</span>
         <button type="button" onClick={() => onChange(Object.fromEntries(MANAGER_PERMS.map(p => [p.key, !allOn])))}
           style={{ background: 'none', border: 'none', color: colors.primary, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
           {allOn ? 'إلغاء الكل' : 'تحديد الكل'}
@@ -70,7 +70,7 @@ function PermGrid({ value, onChange }: { value: Record<string, boolean>; onChang
 function WaField({ phone, setPhone, consent, setConsent }: { phone: string; setPhone: (v: string) => void; consent: boolean; setConsent: (v: boolean) => void }) {
   return (
     <div style={{ marginBottom: 14, maxWidth: 420 }}>
-      <label style={{ fontSize: 12, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 5 }}>رقم واتساب المدير (اختياري) — يوصله التقرير الصباحي لفرعه</label>
+      <label style={{ fontSize: 12, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 5 }}>رقم واتساب المدير (اختياري) — يصل إليه التقرير الصباحي لفرعه</label>
       <input dir="ltr" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} style={inp()} placeholder="05xxxxxxxx" autoComplete="off" />
       {phone.trim() && (
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 12.5, color: colors.text2, cursor: 'pointer' }}>
@@ -95,7 +95,7 @@ export default function BranchManagersPage() {
   const [branchId, setBranchId] = useState('')
   const [perms, setPerms] = useState<Record<string, boolean>>({ ...ALL_OFF, inventory: true, dispense: true, purchases: true, reports: true })
   const [saving, setSaving] = useState(false)
-  // رقم واتساب المدير (اختياري) — يوصله التقرير الصباحي لفرعه
+  // رقم واتساب المدير (اختياري) — يصل إليه التقرير الصباحي لفرعه
   const [waPhone, setWaPhone] = useState('')
   const [waConsent, setWaConsent] = useState(false)
 
@@ -140,7 +140,7 @@ export default function BranchManagersPage() {
   async function addManager() {
     if (!name.trim() || !email.trim() || !password || !branchId) { toast('عبّ الاسم والفرع والإيميل وكلمة المرور', 'warning'); return }
     if (password.length < 6) { toast('كلمة المرور ٦ أحرف على الأقل', 'warning'); return }
-    if (!countOn(perms)) { toast('اختر صفحة وحدة على الأقل يشوفها المدير', 'warning'); return }
+    if (!countOn(perms)) { toast('اختر صفحة واحدة على الأقل يطّلع عليها المدير', 'warning'); return }
     setSaving(true)
     if (waPhone.trim() && !waConsent) { toast('أكّد إن المدير موافق يستلم رسائل واتساب', 'warning'); return }
     const j = await api.post('/api/branch-managers', { org_id: orgId, full_name: name.trim(), email: email.trim(), password, branch_id: branchId, permissions: perms, report_whatsapp: waPhone.trim() || null, whatsapp_consent: waConsent })
@@ -162,13 +162,13 @@ export default function BranchManagersPage() {
     const j = await api.patch('/api/branch-managers', { id: m.id, org_id: orgId, permissions: editPerms, report_whatsapp: editWa.trim() || null, whatsapp_consent: editWaConsent, ...(editBranch && editBranch !== m.branch_id ? { branch_id: editBranch } : {}) })
     setEditSaving(false)
     if (!j.success) { toast(j.error || 'تعذر الحفظ', 'error'); return }
-    toast('✅ انحفظت صلاحيات ' + m.full_name)
+    toast('✅ تم حفظ صلاحيات ' + m.full_name)
     setEditId(null)
     loadManagers(orgId)
   }
 
   async function deleteManager(m: any) {
-    if (!(await confirmDialog({ title: 'حذف مدير الفرع', message: `حذف حساب ${m.full_name} نهائياً؟ ما يقدر يدخل النظام بعدها.` }))) return
+    if (!(await confirmDialog({ title: 'حذف مدير الفرع', message: `حذف حساب ${m.full_name} نهائياً؟ لن يتمكن من الدخول إلى النظام بعد ذلك.` }))) return
     const j = await api.del('/api/branch-managers', { id: m.id, org_id: orgId })
     if (!j.success) { toast(j.error || 'تعذر الحذف', 'error'); return }
     toast('🗑️ تم حذف ' + m.full_name)
@@ -181,7 +181,7 @@ export default function BranchManagersPage() {
     <div style={{ fontFamily: font.family, direction: 'rtl' }}>
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ ...pageTitle }}><PageIcon />مديرو الفروع</h1>
-        <p style={{ ...pageSub }}>كل مدير يدخل بإيميله وكلمة مروره، ويشوف فرعه بس — والصفحات اللي تحددها له فقط</p>
+        <p style={{ ...pageSub }}>يدخل كل مدير ببريده الإلكتروني وكلمة المرور، ويطّلع على فرعه فقط والصفحات التي تحددها له</p>
       </div>
 
       <section style={{ ...card, padding: '20px 22px', marginBottom: 20 }}>
@@ -194,7 +194,7 @@ export default function BranchManagersPage() {
               {branches.map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           </div>
-          <div><label style={lbl}>الإيميل (يدخل فيه)</label><input type="email" dir="ltr" value={email} onChange={e => setEmail(e.target.value)} style={inp()} placeholder="manager@example.com" autoComplete="off" /></div>
+          <div><label style={lbl}>البريد الإلكتروني (للدخول)</label><input type="email" dir="ltr" value={email} onChange={e => setEmail(e.target.value)} style={inp()} placeholder="manager@example.com" autoComplete="off" /></div>
           <div><label style={lbl}>كلمة المرور</label>
             <div style={{ position: 'relative' }}>
               <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} style={{ ...inp(), paddingLeft: 40 }} placeholder="٦ أحرف على الأقل" autoComplete="new-password" />
@@ -203,7 +203,7 @@ export default function BranchManagersPage() {
           </div>
         </div>
         <WaField phone={waPhone} setPhone={setWaPhone} consent={waConsent} setConsent={setWaConsent} />
-        <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={16} /> وش يشوف؟ <span style={{ fontWeight: 600, color: colors.text4 }}>({countOn(perms)} من {MANAGER_PERMS.length})</span></div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={16} /> الصفحات المتاحة <span style={{ fontWeight: 600, color: colors.text4 }}>({countOn(perms)} من {MANAGER_PERMS.length})</span></div>
         <PermGrid value={perms} onChange={setPerms} />
         <button onClick={addManager} disabled={saving} style={{ ...btnPrimary, padding: '12px 22px', marginTop: 16 }}>{saving ? 'جاري الإضافة…' : 'أضف مدير الفرع'}</button>
       </section>
@@ -211,7 +211,7 @@ export default function BranchManagersPage() {
       <section style={{ ...card, padding: '20px 22px' }}>
         <h2 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 14px' }}>المديرون الحاليون <span style={{ color: colors.text4, fontWeight: 600 }}>({managers.length})</span></h2>
         {loading ? <div style={{ color: colors.text4, fontSize: 13 }}>جاري التحميل…</div>
-          : managers.length === 0 ? <div style={{ color: colors.text4, fontSize: 13.5, textAlign: 'center', padding: 24 }}>ما فيه مديرو فروع — أضف أول مدير من فوق</div>
+          : managers.length === 0 ? <div style={{ color: colors.text4, fontSize: 13.5, textAlign: 'center', padding: 24 }}>لا يوجد مديرو فروع — أضف أول مدير من الأعلى</div>
           : <div style={{ display: 'grid', gap: 12 }}>
             {managers.map((m: any) => {
               const editing = editId === m.id
@@ -221,7 +221,7 @@ export default function BranchManagersPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <div>
                       <div style={{ fontSize: 15, fontWeight: 800 }}>{m.full_name}</div>
-                      <div style={{ fontSize: 12.5, color: colors.text3, display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}><Store size={13} /> {(m.branches as any)?.name || '—'} · يشوف {on.length} من {MANAGER_PERMS.length} صفحات</div>
+                      <div style={{ fontSize: 12.5, color: colors.text3, display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}><Store size={13} /> {(m.branches as any)?.name || '—'} · يطّلع على {on.length} من {MANAGER_PERMS.length} صفحات</div>
                     </div>
                     {!editing && <div style={{ display: 'flex', gap: 6 }}>
                       <button onClick={() => startEdit(m)} style={{ ...btnSecondary, padding: '7px 12px', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Pencil size={14} /> تعديل</button>
@@ -231,7 +231,7 @@ export default function BranchManagersPage() {
                   {!editing ? (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
                       {on.length ? on.map(p => <span key={p.key} style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 99, background: colors.primaryLight, color: colors.primary, border: `1px solid ${colors.primaryBorder}` }}>{p.label}</span>)
-                        : <span style={{ fontSize: 12.5, color: colors.warning }}>ما عنده صلاحيات — يشوف الرئيسية والإشعارات بس</span>}
+                        : <span style={{ fontSize: 12.5, color: colors.warning }}>لا توجد صلاحيات — يطّلع على الرئيسية والإشعارات فقط</span>}
                       {m.report_whatsapp && <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 99, background: colors.bg, color: colors.text3, border: `1px solid ${colors.border}` }} dir="ltr">التقرير الصباحي: {m.report_whatsapp}</span>}
                     </div>
                   ) : (

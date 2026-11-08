@@ -14,8 +14,8 @@ const WEEKDAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأر�
 const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
 const dateLabel = (d: string) => `${WEEKDAYS[new Date(`${d}T12:00:00Z`).getUTCDay()]} ${Number(d.slice(8))} ${MONTHS[Number(d.slice(5, 7)) - 1]}`
 const NOW_PERIODS: { key: ManualPeriodKey; label: string }[] = [
-  { key: 'scheduled', label: 'آخر فترة حسب الموعد' }, { key: 'last_month', label: 'الشهر اللي فات' },
-  { key: 'this_month', label: 'هذا الشهر لين أمس' }, { key: 'last_week', label: 'آخر ٧ أيام' }, { key: 'yesterday', label: 'أمس' },
+  { key: 'scheduled', label: 'آخر فترة حسب الموعد' }, { key: 'last_month', label: 'الشهر الماضي' },
+  { key: 'this_month', label: 'هذا الشهر حتى أمس' }, { key: 'last_week', label: 'آخر ٧ أيام' }, { key: 'yesterday', label: 'أمس' },
   { key: 'custom', label: 'من تاريخ إلى تاريخ' },
 ]
 const todaySA = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
@@ -74,12 +74,12 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
   const upcoming = saved?.is_active ? nextSend(saved, saved.last_period_end) : null
 
   async function save() {
-    if (form.channels.includes('whatsapp') && !consent) { toast('أكّد إن المحاسب موافق يوصله التقرير على الواتساب', 'warning'); return }
+    if (form.channels.includes('whatsapp') && !consent) { toast('أكّد موافقة المحاسب على استلام التقرير عبر واتساب', 'warning'); return }
     setBusy('save')
     const j = await api.put('/api/accountant-link', { org_id: orgId, ...form, branch_id: form.branch_id || null })
     setBusy('')
     if (!j.success) { toast(j.error || 'تعذر الحفظ', 'error'); return }
-    toast(j.invite_sent ? '✅ انحفظ — أرسلنا للمحاسب إيميل «قبول الدعوة»، والتقارير تبدأ توصله أول ما يقبل' : '✅ تم حفظ الربط مع المحاسب')
+    toast(j.invite_sent ? '✅ تم الحفظ — أرسلنا إلى المحاسب بريد «قبول الدعوة»، وستبدأ التقارير بالوصول إليه فور قبوله' : '✅ تم حفظ الربط مع المحاسب')
     load()
   }
   async function resendInvite() {
@@ -100,7 +100,7 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
     load()
   }
   async function remove() {
-    const ok = await confirmDialog({ title: 'إيقاف الربط مع المحاسب؟', message: 'ما عاد يوصله أي تقرير، والروابط اللي وصلته تتوقف.', confirmText: 'إيقاف وحذف', type: 'danger' })
+    const ok = await confirmDialog({ title: 'إيقاف الربط مع المحاسب؟', message: 'لن يصله أي تقرير بعد ذلك، وستتوقف الروابط التي وصلته.', confirmText: 'إيقاف وحذف', type: 'danger' })
     if (!ok) return
     setBusy('delete')
     const j = await api.del('/api/accountant-link', { org_id: orgId })
@@ -119,23 +119,23 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
       <div style={{ ...box, background: colors.primaryLight, borderColor: colors.primaryBorder }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: colors.text }}>الربط مع المحاسب</div>
         <div style={{ fontSize: 12.5, color: colors.text3, marginTop: 4, lineHeight: 1.7 }}>
-          يوصل محاسبك تقرير تلقائي فيه ملف إكسل بكل البيانات اللي تختارها — بالإيميل أو الواتساب — فيه بس البيانات اللي تختارها، بالموعد اللي تحدده.
+          يصل إلى محاسبك تقرير تلقائي يتضمن ملف إكسل بالبيانات التي تختارها فقط — عبر البريد الإلكتروني أو واتساب — في الموعد الذي تحدده.
         </div>
         {invite?.status === 'pending' && (
           <div style={{ marginTop: 10, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
             <div style={{ flex: 1, minWidth: 200, fontSize: 12.5, lineHeight: 1.7, color: '#92400e' }}>
-              <b>بانتظار قبول المحاسب</b> — أرسلنا له إيميل فيه زر «قبول الدعوة» على <span dir="ltr">{saved?.email}</span>. التقارير تبدأ توصله أول ما يقبل.
+              <b>بانتظار قبول المحاسب</b> — أرسلنا إليه بريداً إلكترونياً يتضمن زر «قبول الدعوة» على <span dir="ltr">{saved?.email}</span>. وستبدأ التقارير بالوصول إليه فور قبوله.
             </div>
             <button onClick={resendInvite} disabled={!!busy} style={{ ...btnSecondary, padding: '6px 12px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Send size={13} /> إعادة إرسال الدعوة</button>
           </div>
         )}
-        {invite?.status === 'active' && <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize: 12.5, fontWeight: 700, color: '#047857' }}><CheckCircle2 size={14} /> المحاسب قبل الدعوة — يوصله التقرير ويقدر يدخل بوابته</div>}
+        {invite?.status === 'active' && <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize: 12.5, fontWeight: 700, color: '#047857' }}><CheckCircle2 size={14} /> قبل المحاسب الدعوة — يصله التقرير ويمكنه الدخول إلى بوابته</div>}
         {upcoming && invite?.status !== 'pending' && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize: 12.5, fontWeight: 700, color: colors.primary }}>
-            <Clock size={14} /> التقرير الجاي: {dateLabel(upcoming.date)} الساعة {hourLabel(saved.send_hour ?? 8)} — عن {periodLabel(upcoming.period)}
+            <Clock size={14} /> التقرير القادم: {dateLabel(upcoming.date)} الساعة {hourLabel(saved.send_hour ?? 8)} — عن {periodLabel(upcoming.period)}
           </div>
         )}
-        {saved && !saved.is_active && <div style={{ marginTop: 10, fontSize: 12.5, fontWeight: 700, color: colors.warning }}>الربط موقوف مؤقتاً — ما يوصل المحاسب شي</div>}
+        {saved && !saved.is_active && <div style={{ marginTop: 10, fontSize: 12.5, fontWeight: 700, color: colors.warning }}>الربط موقوف مؤقتاً — لا يصل إلى المحاسب أي تقرير</div>}
       </div>
 
       {/* 1) المحاسب */}
@@ -146,21 +146,21 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
           <div><label style={label}>الإيميل</label><input value={form.email} onChange={e => set('email', e.target.value)} placeholder="accountant@example.com" dir="ltr" type="email" style={inp()} /></div>
           <div><label style={label}>رقم الواتساب</label><input value={form.whatsapp} onChange={e => set('whatsapp', e.target.value)} placeholder="05xxxxxxxx" dir="ltr" inputMode="tel" style={inp()} /></div>
         </div>
-        <label style={{ ...label, marginTop: 14 }}>يوصله عن طريق</label>
+        <label style={{ ...label, marginTop: 14 }}>طريقة الإرسال</label>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
           <button onClick={() => set('channels', toggle(form.channels, 'email'))} style={chip(form.channels.includes('email'))}><Mail size={15} /> إيميل + ملف إكسل</button>
           <button onClick={() => set('channels', toggle(form.channels, 'whatsapp'))} style={chip(form.channels.includes('whatsapp'))}><MessageCircle size={15} /> واتساب + ملف إكسل</button>
         </div>
         {form.channels.includes('whatsapp') && (
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 12.5, color: colors.text2, cursor: 'pointer' }}>
-            <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /> المحاسب موافق يوصله التقرير على الواتساب
+            <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /> المحاسب موافق على استلام التقرير عبر واتساب
           </label>
         )}
       </div>
 
       {/* 2) وش يوصله */}
       <div style={box}>
-        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>٢. وش يوصله</div>
+        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>٢. محتوى التقرير</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 8 }}>
           {ACC_SECTIONS.map(s => {
             const on = form.sections.includes(s.key)
@@ -185,7 +185,7 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
 
       {/* 3) متى */}
       <div style={box}>
-        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>٣. متى يوصله</div>
+        <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>٣. موعد الإرسال</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
           {FREQ.map(f => <button key={f.key} onClick={() => set('frequency', f.key)} style={chip(form.frequency === f.key)}>{f.label}</button>)}
         </div>
@@ -212,13 +212,13 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
           </select>
         </div>
         <div style={{ fontSize: 12, color: colors.text4, marginTop: 10, lineHeight: 1.7 }}>
-          {form.frequency === 'daily' && `كل يوم الساعة ${hourLabel(form.send_hour)}، عن اليوم اللي قبله. الرواتب ما تطلع باليومي.`}
-          {form.frequency === 'weekly' && `كل ${WEEKDAYS[form.weekday]} الساعة ${hourLabel(form.send_hour)}، عن الأسبوع اللي قبله. الرواتب ما تطلع بالأسبوعي.`}
-          {form.frequency === 'monthly' && `يوم ${form.month_day} من كل شهر الساعة ${hourLabel(form.send_hour)}، عن الشهر اللي فات كامل.`}
+          {form.frequency === 'daily' && `كل يوم الساعة ${hourLabel(form.send_hour)}، عن اليوم السابق. ولا تظهر الرواتب في التقرير اليومي.`}
+          {form.frequency === 'weekly' && `كل ${WEEKDAYS[form.weekday]} الساعة ${hourLabel(form.send_hour)}، عن الأسبوع السابق. ولا تظهر الرواتب في التقرير الأسبوعي.`}
+          {form.frequency === 'monthly' && `يوم ${form.month_day} من كل شهر الساعة ${hourLabel(form.send_hour)}، عن الشهر الماضي كاملاً.`}
         </div>
         {saved && (
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: 12.5, color: colors.text2, cursor: 'pointer' }}>
-            <input type="checkbox" checked={form.is_active} onChange={e => set('is_active', e.target.checked)} /> الربط شغّال
+            <input type="checkbox" checked={form.is_active} onChange={e => set('is_active', e.target.checked)} /> الربط فعّال
           </label>
         )}
       </div>
@@ -236,7 +236,7 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
             <input type="date" value={to} min={from} max={todaySA()} onChange={e => setTo(e.target.value)} disabled={!!busy || dirty} style={{ ...inp(), width: 'auto', padding: '9px 10px', fontSize: 13 }} />
           </>}
           <button onClick={test} disabled={!!busy || dirty} title={dirty ? 'احفظ التعديلات أول' : ''} style={{ ...btnSecondary, padding: '11px 18px', display: 'inline-flex', alignItems: 'center', gap: 6, opacity: dirty ? .6 : 1 }}>
-            <Send size={15} /> {busy === 'test' ? 'جاري الإرسال...' : 'أرسل الحين'}</button>
+            <Send size={15} /> {busy === 'test' ? 'جاري الإرسال...' : 'أرسل الآن'}</button>
         </span>}
         {saved && <button onClick={remove} disabled={!!busy} style={{ ...btnSecondary, padding: '11px 18px', color: colors.danger, display: 'inline-flex', alignItems: 'center', gap: 6, marginInlineStart: 'auto' }}>
           <Trash2 size={15} /> إيقاف الربط</button>}

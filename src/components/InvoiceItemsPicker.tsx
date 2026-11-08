@@ -3,14 +3,14 @@ import { useEffect, useMemo, useState } from 'react'
 import NumberInput from '@/components/NumberInput'
 import { bestMatch } from '@/lib/productMatch'
 
-// أصناف الفاتورة المقروءة من الصورة: لكل صنف الكمية والسعر و«ينضاف إلى» (صنف موجود تزيد كميته أو صنف جديد)
+// أصناف الفاتورة المقروءة من الصورة: لكل صنف الكمية والسعر و«يُضاف إلى» (صنف موجود تزيد كميته أو صنف جديد)
 export type OcrItem = { name: string; qty?: number | null; unit?: string | null; total?: number | null }
 export type PickedItem = { name: string; qty: number; unit: string; total: number; product_id: string }   // product_id: 'new' = صنف جديد
 type Row = { on: boolean; qty: string; price: string; target: string }
 
 const T = {
   ar: { found: (n: number) => `${n === 2 ? 'صنفين' : n <= 10 ? `${n} أصناف` : `${n} صنف`} بالفاتورة — راجعها واحفظ`, qty: 'الكمية', price: 'السعر شامل الضريبة',
-    to: 'ينضاف إلى', newItem: '➕ صنف جديد', matched: 'موجود بالمخزون', sum: 'مجموع المحدد', inv: 'إجمالي الفاتورة', save: 'حفظ الفاتورة', saving: 'جاري الحفظ...' },
+    to: 'يُضاف إلى', newItem: '➕ صنف جديد', matched: 'موجود بالمخزون', sum: 'مجموع المحدد', inv: 'إجمالي الفاتورة', save: 'حفظ الفاتورة', saving: 'جاري الحفظ...' },
   en: { found: (n: number) => `${n} items on the invoice — review and save`, qty: 'Qty', price: 'Price incl. VAT',
     to: 'Add to', newItem: '➕ New item', matched: 'In stock', sum: 'Selected total', inv: 'Invoice total', save: 'Save invoice', saving: 'Saving...' },
 }

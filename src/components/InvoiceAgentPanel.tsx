@@ -39,7 +39,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
   async function onFile(file: File) {
     const prep = await prepareInvoiceFile(file)
     if ('error' in prep) { toast(prep.error, 'warning'); return }
-    if (!prep.ocrType) { toast('الوكيل يقرأ الصور وملفات PDF بس', 'warning'); return }
+    if (!prep.ocrType) { toast('يقرأ الوكيل الصور وملفات PDF فقط', 'warning'); return }
     setReading(true)
     try {
       const sb = createClient()
@@ -78,7 +78,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
   }
 
   async function cancel(d: Draft) {
-    if (!(await confirmDialog({ title: 'إلغاء الفاتورة', message: 'تنحذف هالمسودة وما ينسجّل منها شي.', confirmText: 'ألغِها' }))) return
+    if (!(await confirmDialog({ title: 'إلغاء الفاتورة', message: 'ستُحذف هذه المسودة ولن يُسجَّل منها شيء.', confirmText: 'ألغِها' }))) return
     const j = await api.del('/api/invoice-agent', undefined, { org_id: orgId, id: d.id })
     if (!j.success) { toast(j.error || 'تعذر الإلغاء', 'error'); return }
     load()
@@ -94,7 +94,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
         <span style={{ width: 36, height: 36, borderRadius: 10, background: colors.primaryLight, color: colors.primary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Sparkles size={18} /></span>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>تسجيل المشتريات</div>
-          <div style={{ fontSize: 11.5, color: colors.text3, marginTop: 2 }}>ارفع الفاتورة — الوكيل الذكي يقرأها ويطابق الأصناف مع مخزونك، ويسألك بس عن اللي مو واضح</div>
+          <div style={{ fontSize: 11.5, color: colors.text3, marginTop: 2 }}>ارفع الفاتورة — يقرأها الوكيل الذكي ويطابق الأصناف مع مخزونك، ويسألك فقط عمّا ليس واضحاً</div>
         </div>
       </div>
 
@@ -142,14 +142,14 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                     </div>
                     {it.status === 'matched' && <span style={pill(colors.primaryLight, colors.primary)}><Check size={12} /> مخزون: {it.product_name}{it.learned ? ' (تعلّمها)' : ''}</span>}
                     {it.status === 'new' && <span style={pill('#eff6ff', '#1d4ed8')}><Plus size={12} /> مخزون: صنف جديد</span>}
-                    {it.status === 'expense' && <span style={pill('#faf5ff', '#7e22ce')}><Receipt size={12} /> مشتريات — ما تنضاف للمخزون</span>}
+                    {it.status === 'expense' && <span style={pill('#faf5ff', '#7e22ce')}><Receipt size={12} /> مشتريات — لا تُضاف إلى المخزون</span>}
                     {(it.status === 'new' || it.status === 'expense') && (
                       <button onClick={() => patch(d, { index: i, action: it.status === 'new' ? 'expense' : 'new' })} disabled={busy === d.id}
                         style={{ border: 'none', background: 'none', color: colors.text3, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>
-                        {it.status === 'new' ? 'خلّه مشتريات' : 'خلّه مخزون'}
+                        {it.status === 'new' ? 'اجعله مشتريات' : 'اجعله مخزوناً'}
                       </button>
                     )}
-                    {it.status === 'skip' && <span style={pill('#f1f5f9', colors.text3)}>ما ينسجّل</span>}
+                    {it.status === 'skip' && <span style={pill('#f1f5f9', colors.text3)}>لا يُسجَّل</span>}
                     {it.status !== 'ask' && (
                       <button onClick={() => patch(d, { index: i, action: it.status === 'skip' ? 'new' : 'skip' })} disabled={busy === d.id}
                         style={{ border: 'none', background: 'none', color: colors.text3, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>
@@ -161,7 +161,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                   {it.status === 'ask' && it.question === 'which_product' && (
                     <div style={{ marginTop: 10 }}>
                       <div style={{ fontSize: 12.5, fontWeight: 700, color: '#92400e', marginBottom: 8 }}>
-                        {it.candidates.length ? 'هذا أي صنف بمخزونك؟' : 'ما لقيته بمخزونك — صنف مخزون جديد، ولا مشتريات ما تنحسب مخزون؟'}
+                        {it.candidates.length ? 'ما الصنف المقابل له في مخزونك؟' : 'لم يُعثر عليه في مخزونك — هل هو صنف مخزون جديد، أم مشتريات لا تُحتسب ضمن المخزون؟'}
                       </div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                         {it.candidates.map(c => (
@@ -191,7 +191,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
               <div style={{ flex: 1, fontSize: 12, color: colors.text3 }}>
-                ينسجّل {saving.length} صنف · {fmt(sum)} {curr}{d.total ? ` من إجمالي الفاتورة ${fmt(d.total)} ${curr}` : ''}
+                سيُسجَّل {saving.length} صنف · {fmt(sum)} {curr}{d.total ? ` من إجمالي الفاتورة ${fmt(d.total)} ${curr}` : ''}
               </div>
               <button onClick={() => cancel(d)} disabled={busy === d.id} style={{ ...opt, color: colors.danger, borderColor: '#fecaca', display: 'flex', alignItems: 'center', gap: 4 }}><Trash2 size={13} /> إلغاء</button>
               <button onClick={() => confirm(d)} disabled={busy === d.id || d.status !== 'ready'}

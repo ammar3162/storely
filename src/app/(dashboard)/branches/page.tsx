@@ -108,7 +108,7 @@ export default function BranchesPage() {
     if (!offer?.canAdd) return
     const ok = await confirmDialog({
       title: 'طلب فرع إضافي',
-      message: `الفرع الإضافي بـ${offer.price} ريال شهرياً${offer.yearly ? ' (بخصم السنوي)' : ''}، ومعه ${offer.staff} موظفين و${offer.suppliers} موردين. بعد الموافقة ينضاف لفاتورتك، ومحسوب على الأيام الباقية من اشتراكك بس.`,
+      message: `الفرع الإضافي بـ${offer.price} ريال شهرياً${offer.yearly ? ' (بخصم السنوي)' : ''}، ومعه ${offer.staff} موظفين و${offer.suppliers} موردين. بعد الموافقة يُضاف إلى فاتورتك، ويُحتسب على الأيام المتبقية من اشتراكك فقط.`,
       confirmText: 'إرسال الطلب', type: 'success',
     })
     if (!ok) return
@@ -116,7 +116,7 @@ export default function BranchesPage() {
     const r = await api.post('/api/branches/extra', { org_id: orgId })
     setBuyingBranch(false)
     if (!r.success) { toast(r.error || 'فشل إرسال الطلب — حاول مرة أخرى', 'error'); return }
-    toast('وصل طلبك — بيوصلك إشعار أول ما يتفعّل الفرع')
+    toast('تم استلام طلبك — سيصلك إشعار فور تفعيل الفرع')
     init()
   }
 
@@ -353,8 +353,8 @@ export default function BranchesPage() {
           <div style={{padding:'10px 16px',borderBottom:`1px solid ${colors.border}`,fontSize:font.xs,fontWeight:700,color:colors.text4}}>
             فروع موقوفة ({inactiveBranches.length})
             {branches.length<maxBranches
-              ? <span style={{fontWeight:600,color:colors.primary}}> — عندك مكان لـ{maxBranches-branches.length} فرع، اختر اللي تبي تفعّله</span>
-              : <span style={{fontWeight:600}}> — لتفعيل فرع: أوقف فرعاً شغّالاً بداله{offer?.canAdd && <span className="hide-in-app">، أو اطلب فرع إضافي من تحت</span>}</span>}
+              ? <span style={{fontWeight:600,color:colors.primary}}> — لديك مكان لـ{maxBranches-branches.length} فرع، اختر الفرع الذي تريد تفعيله</span>
+              : <span style={{fontWeight:600}}> — لتفعيل فرع: أوقف فرعاً نشطاً بدلاً منه{offer?.canAdd && <span className="hide-in-app">، أو اطلب فرعاً إضافياً من الأسفل</span>}</span>}
           </div>
           {inactiveBranches.map((b:any,i:number)=>(
             <div key={b.id} style={{padding:'14px 16px',borderBottom:i<inactiveBranches.length-1?`1px solid ${colors.border}`:'none',display:'flex',alignItems:'center',gap:12}}>
@@ -362,7 +362,7 @@ export default function BranchesPage() {
               <div style={{flex:1}}>
                 <div style={{fontSize:font.sm,fontWeight:700,color:colors.text3}}>{b.name}</div>
                 {b.location&&<div style={{fontSize:font.xs,color:colors.text4,marginTop:1}}>📍 {b.location}</div>}
-                {b.plan_locked_at&&<div style={{fontSize:font.xs,color:colors.warning||'#b45309',marginTop:2}}>موقوف لأن الفروع تعدّت حد الباقة — يرجع لو رقّيت أو أضفت فرعاً</div>}
+                {b.plan_locked_at&&<div style={{fontSize:font.xs,color:colors.warning||'#b45309',marginTop:2}}>موقوف لأن عدد الفروع تجاوز حد الباقة — يعود عند ترقية الباقة أو إضافة فرع</div>}
               </div>
               <button onClick={()=>reactivateBranch(b.id)} disabled={reactivatingId===b.id || branches.length>=maxBranches}
                 style={{background:colors.primaryLight,color:colors.primary,border:`1px solid ${colors.primaryBorder}`,borderRadius:radius.sm,padding:'6px 12px',fontSize:font.xs,fontWeight:700,cursor:(reactivatingId===b.id||branches.length>=maxBranches)?'not-allowed':'pointer',fontFamily:font.family,opacity:branches.length>=maxBranches?.5:1}}>
@@ -389,17 +389,17 @@ export default function BranchesPage() {
         <div style={{...card,padding:'16px',background:colors.warningLight||'#fffbeb',textAlign:'center',fontSize:font.sm,color:colors.text3}}>
           باقتك فيها {maxBranches} {maxBranches===1?'فرع':'فروع'} وكلها مستخدمة.
           {offer?.pending > 0 && (
-            <div style={{marginTop:10,fontWeight:700,color:colors.primary}}>طلب {offer.pending === 1 ? 'فرع إضافي' : `${offer.pending} فروع إضافية`} قيد المراجعة — بيوصلك إشعار أول ما يتفعّل</div>
+            <div style={{marginTop:10,fontWeight:700,color:colors.primary}}>طلب {offer.pending === 1 ? 'فرع إضافي' : `${offer.pending} فروع إضافية`} قيد المراجعة — سيصلك إشعار فور التفعيل</div>
           )}
           {offer?.canAdd ? (
             <div className="hide-in-app" style={{marginTop:12}}>
               <button onClick={buyBranch} disabled={buyingBranch} style={{...btnPrimary,padding:'10px 18px'}}>
                 {buyingBranch ? 'جاري الإرسال...' : `+ اطلب فرع إضافي (${offer.price} ريال شهرياً)`}
               </button>
-              <div style={{fontSize:font.xs,color:colors.text3,marginTop:8}}>معه {offer.staff} موظفين و{offer.suppliers} موردين · تقدر توصل لـ{offer.maxTotal} فروع</div>
+              <div style={{fontSize:font.xs,color:colors.text3,marginTop:8}}>معه {offer.staff} موظفين و{offer.suppliers} موردين · يمكنك الوصول إلى{offer.maxTotal} فروع</div>
             </div>
           ) : offer?.nextPlan && !offer?.pending ? (
-            <a className="hide-in-app" href="/settings" style={{display:'block',marginTop:10,color:colors.primary,fontWeight:700,textDecoration:'none'}}>وصلت أقصى فروع باقتك ({offer.maxTotal}) — رقّ باقتك من الإعدادات عشان تضيف أكثر</a>
+            <a className="hide-in-app" href="/settings" style={{display:'block',marginTop:10,color:colors.primary,fontWeight:700,textDecoration:'none'}}>وصلت أقصى فروع باقتك ({offer.maxTotal}) — رقِّ باقتك من الإعدادات لإضافة المزيد</a>
           ) : offer ? (
             <a className="hide-in-app" href="https://wa.me/966594351667" target="_blank" rel="noreferrer" style={{display:'block',marginTop:10,color:colors.primary,fontWeight:700,textDecoration:'none'}}>تحتاج أكثر من {offer.maxTotal} فروع؟ تواصل معنا لباقة المؤسسات</a>
           ) : null}
@@ -438,7 +438,7 @@ export default function BranchesPage() {
           <div style={{position:'absolute',inset:0,background:'rgba(15,23,42,.4)',backdropFilter:'blur(6px)'}} onClick={()=>{if(!copyingProducts)setShowCopyProducts(false)}}/>
           <div style={{background:'white',borderRadius:16,padding:22,width:'100%',maxWidth:420,maxHeight:'80vh',display:'flex',flexDirection:'column' as const,position:'relative',boxShadow:'0 24px 60px rgba(0,0,0,.2)'}}>
             <div style={{fontSize:15,fontWeight:800,color:colors.text,marginBottom:4}}>📦 نسخ منتجات للفرع الجديد</div>
-            <div style={{fontSize:11,color:colors.text3,marginBottom:14,lineHeight:1.6}}>اختر المنتجات اللي تحب تضيفها لهذا الفرع (بنفس الاسم والوحدة، بدون أي كمية — يبدأ الفرع بمخزون صفر)</div>
+            <div style={{fontSize:11,color:colors.text3,marginBottom:14,lineHeight:1.6}}>اختر المنتجات التي تريد إضافتها لهذا الفرع (بنفس الاسم والوحدة ودون أي كمية — يبدأ الفرع بمخزون صفر)</div>
 
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,paddingBottom:8,borderBottom:`1px solid ${colors.border2}`}}>
               <span style={{fontSize:11,color:colors.text3}}>{selectedProductIds.size} من {sourceProducts.length} محدد</span>

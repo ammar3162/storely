@@ -10,9 +10,9 @@ export default function StarterProducts({ m }: { m: InventoryState }) {
         <div className="u" style={{background:'white',borderRadius:14,padding:'28px 24px',border:`1.5px solid ${C.primaryB}`}}>
           <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
             <div style={{display:'flex',justifyContent:'center'}}><Sparkles size={22} strokeWidth={1.75}/></div>
-            <div style={{fontSize:15,fontWeight:800,color:C.text}}>نقترح عليك هذي الأصناف الشائعة لـ{businessType}</div>
+            <div style={{fontSize:15,fontWeight:800,color:C.text}}>نقترح عليك هذه الأصناف الشائعة لـ{businessType}</div>
           </div>
-          <div style={{fontSize:12,color:C.text4,marginBottom:18}}>اختر اللي يناسبك وراح نضيفها لمخزونك بضغطة وحدة — أو تجاهل وابدأ يدوياً</div>
+          <div style={{fontSize:12,color:C.text4,marginBottom:18}}>اختر ما يناسبك وسنضيفه إلى مخزونك بضغطة واحدة، أو تجاهل ذلك وابدأ يدوياً</div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))',gap:8,marginBottom:18}}>
             {(STARTER_PRODUCTS[businessType]||[]).map(item=>(
               <label key={item.name} style={{display:'flex',alignItems:'center',gap:8,padding:'10px 12px',background:selectedTemplate[item.name]?(C.primaryL):C.bg,border:`1.5px solid ${selectedTemplate[item.name]?(C.primaryB):C.border}`,borderRadius:9,cursor:'pointer',transition:'all .15s'}}>

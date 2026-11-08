@@ -104,7 +104,7 @@ export default function ProfitabilityPage() {
   }
 
   async function closeMonth() {
-    if(!(await confirmDialog({ title: 'إقفال الشهر', message: `تأكيد إقفال شهر ${monthLabel(month)}؟\n\nبعد الإقفال ما راح تقدر تضيف أو تحذف مصروفات لهذا الشهر، وأرقامه بتصير ثابتة حتى لو تغيّرت بيانات المشتريات لاحقاً.`, type: 'warning' }))) return
+    if(!(await confirmDialog({ title: 'إقفال الشهر', message: `تأكيد إقفال شهر ${monthLabel(month)}؟\n\nبعد الإقفال لن تتمكن من إضافة مصروفات لهذا الشهر أو حذفها، وستبقى أرقامه ثابتة حتى لو تغيّرت بيانات المشتريات لاحقاً.`, type: 'warning' }))) return
     setClosing(true)
     const res = await fetch('/api/profitability', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -230,7 +230,7 @@ export default function ProfitabilityPage() {
     <div style={{fontFamily:font.family,direction:'rtl',maxWidth:680,margin:'40px auto',textAlign:'center' as const}}>
       <div style={{fontSize:44,marginBottom:12}}>🔒</div>
       <div style={{fontSize:16,fontWeight:800,color:colors.text,marginBottom:8}}>ميزة الربحية متاحة بباقة أعلى أو بإضافتها من صفحة الإضافات</div>
-      <div className="hide-in-app" style={{fontSize:13,color:colors.text3}}>رقّي باقتك عشان تتابع مبيعاتك ومصروفاتك وأرباحك الشهرية</div>
+      <div className="hide-in-app" style={{fontSize:13,color:colors.text3}}>رقِّ باقتك لمتابعة مبيعاتك ومصروفاتك وأرباحك الشهرية</div>
     </div>
   )
 
@@ -345,7 +345,7 @@ export default function ProfitabilityPage() {
             </div>
             )}
             {fixedList.length===0 ? (
-              <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:16}}>ما فيه مصروفات ثابتة مسجّلة</div>
+              <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:16}}>لا توجد مصروفات ثابتة مسجّلة</div>
             ) : (
               <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
                 {fixedList.map((e:any)=>(
@@ -363,7 +363,7 @@ export default function ProfitabilityPage() {
 
           <div style={{...card,padding:'16px 18px'}}>
             <div style={{fontSize:font.base,fontWeight:700,color:colors.text,marginBottom:2}}>مصروفات متغيّرة</div>
-            <div style={{fontSize:11,color:colors.text4,marginBottom:14}}>كهرباء، صيانة... تُدخل يدوياً كل شهر لحاله</div>
+            <div style={{fontSize:11,color:colors.text4,marginBottom:14}}>كهرباء، صيانة... تُدخل يدوياً لكل شهر على حدة</div>
             {!data.closed && (
             <div style={{display:'flex',gap:6,marginBottom:12}}>
               <input value={newVarName} onChange={e=>setNewVarName(e.target.value)} placeholder="اسم المصروف" style={{...inp(),flex:1}}/>
@@ -372,7 +372,7 @@ export default function ProfitabilityPage() {
             </div>
             )}
             {variableList.length===0 ? (
-              <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:16}}>ما فيه مصروفات متغيرة هالشهر</div>
+              <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:16}}>لا توجد مصروفات متغيرة هذا الشهر</div>
             ) : (
               <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
                 {variableList.map((e:any)=>(
@@ -412,7 +412,7 @@ export default function ProfitabilityPage() {
               </div>
               )}
               {(data.deliveryIncomeList||[]).length===0 ? (
-                <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>ما فيه دخل توصيل مسجّل هالشهر</div>
+                <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>لا يوجد دخل توصيل مسجّل هذا الشهر</div>
               ) : (
                 <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
                   {(data.deliveryIncomeList||[]).map((e:any)=>(

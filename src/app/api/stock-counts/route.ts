@@ -28,7 +28,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const { org_id, counts } = await req.json()
-    if (!org_id || !Array.isArray(counts) || !counts.length) return NextResponse.json({ error: 'ما فيه أصناف للجرد' }, { status: 400 })
+    if (!org_id || !Array.isArray(counts) || !counts.length) return NextResponse.json({ error: 'لا توجد أصناف للجرد' }, { status: 400 })
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     }))
     if (adjustments.length) {
       const { error: mErr } = await db.from('stock_movements').insert(adjustments as any)
-      if (mErr) return NextResponse.json({ error: 'انحفظ الجرد لكن فشلت تسوية الرصيد' }, { status: 500 })
+      if (mErr) return NextResponse.json({ error: 'تم حفظ الجرد لكن فشلت تسوية الرصيد' }, { status: 500 })
     }
     return NextResponse.json({ success: true, counted: rows.length, adjusted: adjustments.length })
   } catch {

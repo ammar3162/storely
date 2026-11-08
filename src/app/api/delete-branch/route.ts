@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     if (result.lockedMonths?.length) {
       // ما انحذف شي — الفرع فيه سجلات بشهور راجعها المحاسب وأقفلها
       const months = result.lockedMonths.map(monthName).join('، ')
-      return NextResponse.json({ error: `ما ينقدر ينحذف: الفرع فيه مشتريات أو إقفالات كاشير في ${result.lockedMonths.length > 1 ? 'شهور مقفلة' : 'شهر مقفل'} من المحاسب (${months}). اطلب من المحاسب يفتح الشهر، أو أوقف الفرع بدل حذفه — الإيقاف يحفظ بياناته.`, locked_months: result.lockedMonths }, { status: 409 })
+      return NextResponse.json({ error: `لا يمكن الحذف: يحتوي الفرع على مشتريات أو إقفالات كاشير في ${result.lockedMonths.length > 1 ? 'أشهر مقفلة' : 'شهر مقفل'} من المحاسب (${months}). اطلب من المحاسب فتح الشهر، أو أوقف الفرع بدلاً من حذفه — فالإيقاف يحفظ بياناته.`, locked_months: result.lockedMonths }, { status: 409 })
     }
     if (!result.success) {
       console.error('delete-branch partial failure:', result.errors)

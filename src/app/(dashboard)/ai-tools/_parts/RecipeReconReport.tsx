@@ -15,7 +15,7 @@ export default function RecipeReconReport({ m }: { m: AiToolsPage }) {
 
           {!recipeReconReport.hasData ? (
             <div style={{textAlign:'center',padding:'24px',color:'#9ca3af',fontSize:13}}>
-              ما فيه أي وصفة معرّفة بعد<br/>
+              لا توجد أي وصفة معرّفة بعد<br/>
               <span style={{fontSize:11}}>اضغط "+ وصفة جديدة" وأضف اسمها ومكوناتها أولاً</span>
             </div>
           ) : (
@@ -43,10 +43,10 @@ export default function RecipeReconReport({ m }: { m: AiToolsPage }) {
                     </div>
                   )}
                   {r.basis==='shared' && (
-                    <div style={{fontSize:10,color:'#475569',background:'#f1f5f9',borderRadius:7,padding:'6px 10px',marginBottom:8,display:'flex',gap:6,alignItems:'flex-start'}}><Info size={12} style={{flexShrink:0,marginTop:2}}/>كل مكوّنات هذي الوصفة مستخدمة بوصفات ثانية، فالرقم حد أعلى. أضف مكوّن خاص بها (مثل الكوب أو العلبة) عشان يصير التقدير أدق</div>
+                    <div style={{fontSize:10,color:'#475569',background:'#f1f5f9',borderRadius:7,padding:'6px 10px',marginBottom:8,display:'flex',gap:6,alignItems:'flex-start'}}><Info size={12} style={{flexShrink:0,marginTop:2}}/>جميع مكوّنات هذه الوصفة مستخدمة في وصفات أخرى، لذا يمثّل الرقم حداً أعلى. أضف مكوّناً خاصاً بها (مثل الكوب أو العلبة) ليكون التقدير أدق</div>
                   )}
                   {r.basis==='none' && (
-                    <div style={{fontSize:10,color:'#475569',marginBottom:8}}>{recipeReconReport.method==='count'?'ما فيه جردين لمكوّنات هذي الوصفة خلال الفترة — سوّ جرد من صفحة المخزون أول الفترة وآخرها':'ما فيه صرف مسجّل لمكوّنات هذي الوصفة خلال الفترة'}</div>
+                    <div style={{fontSize:10,color:'#475569',marginBottom:8}}>{recipeReconReport.method==='count'?'لا يوجد جردان لمكوّنات هذه الوصفة خلال الفترة — أجرِ جرداً من صفحة المخزون في بداية الفترة ونهايتها':'لا يوجد صرف مسجّل لمكوّنات هذه الوصفة خلال الفترة'}</div>
                   )}
                   {r.bottleneckName && r.basis!=='none' && (
                     <div style={{fontSize:10,color:'#b45309',marginBottom:8,display:'flex',gap:5,alignItems:'center'}}><AlertTriangle size={12}/>التقدير مبني على: {r.bottleneckName} (أقل مكوّن صرفاً نسبةً لكميته بالوصفة)</div>
@@ -58,13 +58,13 @@ export default function RecipeReconReport({ m }: { m: AiToolsPage }) {
                         return (
                           <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:10,color:isBottleneck?'#b45309':c.untracked?'#94a3b8':C.text4,fontWeight:isBottleneck?700:400}}>
                             <span>{c.name}{c.shared?' (مشترك)':''}: {recipeReconReport.method==='count'?'استُهلك':'صُرف'} {formatQty(c.consumed,c)} · بالوصفة {formatQty(c.qtyPerUnit,c)}</span>
-                            <span>{c.untracked ? (recipeReconReport.method==='count'?'ما له جردين — مستثنى':'ما ينصرف بالنظام — مستثنى') : `يكفي لـ ${c.impliedCount} وحدة`}</span>
+                            <span>{c.untracked ? (recipeReconReport.method==='count'?'ليس له جردان — مستثنى':'لا يُصرف عبر النظام — مستثنى') : `يكفي لـ ${c.impliedCount} وحدة`}</span>
                           </div>
                         )
                       })}
                     </div>
                   ) : (
-                    <div style={{fontSize:10,color:C.text4}}>هذي الوصفة بدون مكوّنات بعد</div>
+                    <div style={{fontSize:10,color:C.text4}}>هذه الوصفة بدون مكوّنات بعد</div>
                   )}
                 </div>
               ))}

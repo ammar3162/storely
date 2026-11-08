@@ -13,7 +13,7 @@ export default function DeleteAccountModal({ m }: { m: SettingsState }) {
           <div style={{textAlign:'center',marginBottom:20}}>
             <div style={{fontSize:44,marginBottom:10}}>⚠️</div>
             <div style={{fontSize:font.lg,fontWeight:900,color:colors.text,marginBottom:8}}>تأكيد حذف الحساب</div>
-            <p style={{fontSize:font.sm,color:colors.text3,lineHeight:1.7}}>بعد التأكيد، تحصل على <b style={{color:colors.text}}>15 يوم فترة سماح</b> — إذا سجّلت دخول خلالها، يُلغى الحذف تلقائياً. بعد انتهاء المهلة، <b style={{color:colors.danger}}>يُحذف كل شي نهائياً بدون رجعة</b>.</p>
+            <p style={{fontSize:font.sm,color:colors.text3,lineHeight:1.7}}>بعد التأكيد، تحصل على <b style={{color:colors.text}}>15 يوم فترة سماح</b> — إذا سجّلت الدخول خلالها، يُلغى الحذف تلقائياً. بعد انتهاء المهلة، <b style={{color:colors.danger}}>تُحذف جميع البيانات نهائياً دون إمكانية الاسترجاع</b>.</p>
           </div>
           {deleteMsg&&<div style={{background:colors.dangerLight,border:`1px solid ${colors.dangerBorder}`,borderRadius:radius.md,padding:'10px 14px',marginBottom:14,fontSize:font.sm,color:colors.danger,fontWeight:600}}>{deleteMsg.text}</div>}
           <div style={{marginBottom:18}}>

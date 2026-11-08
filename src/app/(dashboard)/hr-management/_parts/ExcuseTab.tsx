@@ -14,7 +14,7 @@ export default function ExcuseTab({ m, s }: { m: HrPage; s: any }) {
                       {loadingExcuse ? (
                         <ListSkeleton/>
                       ) : excuseRequests.filter((e:any)=>e.status==='pending').length===0 ? (
-                        <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>ما فيه طلبات استئذان معلّقة</div>
+                        <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>لا توجد طلبات استئذان معلّقة</div>
                       ) : (
                         <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
                           {excuseRequests.filter((e:any)=>e.status==='pending').map((e:any)=>(

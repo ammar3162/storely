@@ -21,7 +21,7 @@ export default function TrustedDevices() {
     const ok = await confirmDialog({
       title: 'إزالة الجهاز',
       message: d.current
-        ? 'هذا هو الجهاز الحالي. بعد الإزالة بيُطلب منك رمز على الإيميل في الطلب الجاي.'
+        ? 'هذا هو الجهاز الحالي. بعد الإزالة سيُطلب منك رمز عبر البريد الإلكتروني عند الدخول القادم.'
         : `إزالة «${d.label}»؟ لو أحد دخل منه بيحتاج رمز على إيميلك.`,
     })
     if (!ok) return
@@ -39,10 +39,10 @@ export default function TrustedDevices() {
         <MonitorSmartphone size={18} /> الأجهزة الموثوقة
       </div>
       <div style={{ fontSize: font.sm, color: colors.text, lineHeight: 1.7, marginBottom: 12 }}>
-        تدخل من هذي الأجهزة بدون رمز. أي جهاز جديد يحتاج رمز يوصل على إيميلك.
+        تدخل من هذه الأجهزة دون رمز، ويحتاج أي جهاز جديد إلى رمز يصل إلى بريدك الإلكتروني.
       </div>
       {devices === null && <div style={{ fontSize: font.sm, color: colors.text }}>جاري التحميل…</div>}
-      {devices?.length === 0 && <div style={{ fontSize: font.sm, color: colors.text }}>ما فيه أجهزة مسجّلة.</div>}
+      {devices?.length === 0 && <div style={{ fontSize: font.sm, color: colors.text }}>لا توجد أجهزة مسجّلة.</div>}
       <div style={{ display: 'grid', gap: 8 }}>
         {devices?.map(d => (
           <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 12px', border: `1px solid ${colors.border}`, borderRadius: radius.md }}>

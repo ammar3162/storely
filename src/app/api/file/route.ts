@@ -62,7 +62,7 @@ export async function GET(req: Request) {
   const path = storedInvoicePath(u)
   const orgId = path ? orgOfInvoicePath(path) : null
   if (!path || !orgId) return deny(req, 400, 'رابط غير صالح')
-  if (!(await allowed(req, orgId))) return deny(req, 403, 'غير مصرح — الملف يفتح بس لأصحاب المنشأة بعد تسجيل الدخول')
+  if (!(await allowed(req, orgId))) return deny(req, 403, 'غير مصرح — يُفتح الملف لأصحاب المنشأة فقط بعد تسجيل الدخول')
   const db = sb()
   if (!(await isSubscriptionActive(db, orgId).catch(() => true))) return deny(req, 403, 'اشتراك المنشأة متوقف حالياً')
   // نرجّع الملف نفسه من رابطنا (بدون تحويل لرابط مؤقت) — عشان أي نسخة للرابط تمر بالتحقق دايماً

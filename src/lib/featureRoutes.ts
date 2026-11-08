@@ -77,7 +77,7 @@ export async function branchFeatureDenied(orgId: string, need: Feature[], branch
     if (!need.some(f => hit.f[f])) return `ميزة ${FEATURE_LABEL[need[0]]} غير مشمولة باشتراكك — أضفها من صفحة الإضافات`
     if (!branchId) return null
     const bf = await orgFeatures(db || admin(), orgId, hit.plan, branchId)
-    return need.some(f => bf[f]) ? null : `ميزة ${FEATURE_LABEL[need[0]]} غير مفعّلة لهذا الفرع — المالك يقدر يضيفها للفرع من صفحة الإضافات`
+    return need.some(f => bf[f]) ? null : `ميزة ${FEATURE_LABEL[need[0]]} غير مفعّلة لهذا الفرع — يمكن للمالك إضافتها للفرع من صفحة الإضافات`
   } catch { return null }
 }
 

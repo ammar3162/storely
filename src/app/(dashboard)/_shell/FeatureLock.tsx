@@ -15,7 +15,7 @@ export default function FeatureLock({ feature, otherBranch, owner }: { feature: 
         </div>
         <div style={{ fontSize: 14, color: colors.text, lineHeight: 1.8, marginBottom: 18 }}>
           {owner
-            ? (otherBranch ? 'تقدر تضيفها لهالفرع من صفحة الإضافات، أو تبدّل الفرع من فوق.' : 'تقدر تضيفها لاشتراكك من صفحة الإضافات، وتختار الفروع اللي تبيها فيها.')
+            ? (otherBranch ? 'يمكنك إضافتها لهذا الفرع من صفحة الإضافات، أو تغيير الفرع من الأعلى.' : 'يمكنك إضافتها إلى اشتراكك من صفحة الإضافات، واختيار الفروع التي تريدها.')
             : 'كلّم مالك المنشأة يضيفها من صفحة الإضافات.'}
         </div>
         {owner && (

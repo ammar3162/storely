@@ -65,7 +65,7 @@ export default function ProductSheet({ m }: { m: InventoryState }) {
                         <span style={{fontSize:12,fontWeight:600,color:C.primary,marginRight:'auto'}}>محدد</span>
                       )}
                     </div>
-                    <div style={{fontSize:12,color:C.text3,marginBottom:8,lineHeight:1.6}}>مفيد لو تستخدم هذا المنتج بوصفات — مثال: الكيس فيه كم جرام، الكرتون فيه كم علبة</div>
+                    <div style={{fontSize:12,color:C.text3,marginBottom:8,lineHeight:1.6}}>مفيد إذا كنت تستخدم هذا المنتج في الوصفات — مثال: كم غراماً في الكيس، وكم علبة في الكرتون</div>
                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                       <div>
                         <label style={lbl}>الوحدة الدقيقة</label>

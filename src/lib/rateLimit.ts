@@ -59,7 +59,7 @@ export function waitText(sec: number): string {
 }
 
 export function tooManyMessage(sec: number): string {
-  return `طلبات كثيرة خلال وقت قصير — حاول مرة ثانية بعد ${waitText(sec)}`
+  return `طلبات كثيرة خلال وقت قصير — حاول مرة أخرى بعد ${waitText(sec)}`
 }
 
 /** رد 429 جاهز */

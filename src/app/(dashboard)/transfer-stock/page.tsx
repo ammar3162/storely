@@ -90,7 +90,7 @@ export default function TransferStockPage() {
 
   function addToCart() {
     if(!fromBranch||!toBranch){ toast('اختر الفرعين أول','warning'); return }
-    if(fromBranch===toBranch){ toast('لازم يكون الفرعين مختلفين','warning'); return }
+    if(fromBranch===toBranch){ toast('يجب أن يكون الفرعان مختلفين','warning'); return }
     if(!productId||!qty){ toast('اختر صنف وكمية','warning'); return }
     const qtyNum = Number(qty)
     if(!(qtyNum>0)){ toast('الكمية غير صحيحة','warning'); return }
@@ -216,7 +216,7 @@ export default function TransferStockPage() {
       <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:20}}>
         <div>
           <h1 style={{...pageTitle,marginBottom:1}}><PageIcon/>نقل مخزون بين الفروع</h1>
-          <p style={{...pageSub}}>اختر الفروع، جمّع الأصناف اللي تبي تنقلها، وأكّد النقلة دفعة وحدة</p>
+          <p style={{...pageSub}}>اختر الفروع، واجمع الأصناف التي تريد نقلها، ثم أكّد النقل دفعة واحدة</p>
         </div>
       </div>
 
@@ -260,7 +260,7 @@ export default function TransferStockPage() {
             {showProductList && fromBranch && toBranch && (
               <div style={{position:'absolute',top:'100%',right:0,left:0,marginTop:4,background:colors.surface,border:`1px solid ${colors.border2}`,borderRadius:radius.md,boxShadow:'0 8px 24px rgba(0,0,0,.1)',zIndex:20,maxHeight:220,overflowY:'auto' as const}}>
                 {products.filter((p:any)=>!productSearch||p.name.includes(productSearch)).length===0 ? (
-                  <div style={{padding:'12px 14px',fontSize:12,color:colors.text4}}>ما فيه أصناف مطابقة</div>
+                  <div style={{padding:'12px 14px',fontSize:12,color:colors.text4}}>لا توجد أصناف مطابقة</div>
                 ) : products.filter((p:any)=>!productSearch||p.name.includes(productSearch)).map((p:any)=>{
                   const inCartQty = cart.find(c=>c.productId===p.id)?.qty || 0
                   return (
@@ -358,7 +358,7 @@ export default function TransferStockPage() {
         ) : filteredHistory.length===0 ? (
           <div style={{textAlign:'center' as const,padding:'28px 16px'}}>
             <div style={{fontSize:28,marginBottom:8,opacity:0.5}}>📭</div>
-            <div style={{fontSize:12,color:colors.text4}}>ما فيه عمليات نقل مطابقة</div>
+            <div style={{fontSize:12,color:colors.text4}}>لا توجد عمليات نقل مطابقة</div>
           </div>
         ) : (
           <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>

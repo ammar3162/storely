@@ -19,13 +19,13 @@ export default function TasksTab({ m, s }: { m: HrPage; s: any }) {
                         </div>
                         <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
                           <input type="checkbox" checked={newTaskPhoto} onChange={e=>setNewTaskPhoto(e.target.checked)} style={{accentColor:colors.primary,width:14,height:14}}/>
-                          <span style={{fontSize:12,color:colors.text2,display:'flex',alignItems:'center',gap:5}}><Camera size={13} strokeWidth={2.25}/> يرفق صورة إثبات لما يخلصها</span>
+                          <span style={{fontSize:12,color:colors.text2,display:'flex',alignItems:'center',gap:5}}><Camera size={13} strokeWidth={2.25}/> يرفق صورة إثبات عند إنجازها</span>
                         </label>
                       </div>
                       {loadingTasks ? (
                         <ListSkeleton/>
                       ) : tasks.length===0 ? (
-                        <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>ما فيه مهام بعد</div>
+                        <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>لا توجد مهام بعد</div>
                       ) : (
                         <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
                           {tasks.map((t:any)=>{

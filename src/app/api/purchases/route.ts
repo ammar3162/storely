@@ -99,11 +99,11 @@ export async function POST(req: Request) {
     // (vat_amount و total_amount تحسبها قاعدة البيانات من amount و has_vat)
     const hasVat = body.has_vat !== false
     if (body.invoice_image && !isStoredInvoiceUrl(body.invoice_image)) return NextResponse.json({ error: 'رابط الفاتورة غير صالح — ارفع الصورة من جديد' }, { status: 400 })
-    if (hasVat && !body.invoice_image) return NextResponse.json({ error: 'الفاتورة الضريبية لازم ترفق صورتها أو ملفها' }, { status: 400 })
+    if (hasVat && !body.invoice_image) return NextResponse.json({ error: 'يجب إرفاق صورة الفاتورة الضريبية أو ملفها' }, { status: 400 })
     const amount = netFromTotal(total, hasVat)
     const invoiceTs = invoiceTimestamp(body.invoice_date)   // اليوم = الوقت الفعلي، تاريخ سابق = 12 الظهر
     const qty = body.qty ? Number(body.qty) : 0
-    if (!(Number.isInteger(qty) && qty >= 0)) return NextResponse.json({ error: 'الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)' }, { status: 400 })
+    if (!(Number.isInteger(qty) && qty >= 0)) return NextResponse.json({ error: 'يجب أن تكون الكمية رقماً صحيحاً — إذا كانت فيها كسور فاستخدم وحدة أصغر (مثل الغرام بدل الكيلو)' }, { status: 400 })
     const locked = await lockedFor(db, org_id, [body.invoice_date])
     if (locked) return NextResponse.json({ error: locked }, { status: 423 })
     const tax = await resolvePurchaseTax(db, org_id, supplier, body, hasVat, total)

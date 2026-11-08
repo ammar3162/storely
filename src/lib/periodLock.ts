@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
 export const monthName = (m: string) => `${MONTHS[Number(m.slice(5, 7)) - 1]} ${m.slice(0, 4)}`
 export const monthOf = (d: string) => `${d.slice(0, 7)}-01`
-export const lockedMessage = (m: string) => `شهر ${monthName(m)} مقفل من المحاسب — ما ينقدر يتعدّل. اطلب منه يفتحه لو تحتاج`
+export const lockedMessage = (m: string) => `شهر ${monthName(m)} مقفل من المحاسب ولا يمكن تعديله. اطلب منه فتحه عند الحاجة`
 const saudiDate = (iso: string) => new Date(Date.parse(iso) + 3 * 3600e3).toISOString().slice(0, 10)
 
 /** أي تاريخ من هذي التواريخ داخل شهر مقفل؟ يرجّع الرسالة أو null */

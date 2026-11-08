@@ -138,7 +138,7 @@ export async function POST(req: Request) {
     }))
 
     if (items.length === 0) {
-      return NextResponse.json({ suggestions: [], message: '✅ كل شي تمام — لا يوجد أصناف تحتاج شراء حالياً بناءً على معدل الصرف الحالي' })
+      return NextResponse.json({ suggestions: [], message: '✅ كل شيء على ما يرام — لا توجد أصناف تحتاج شراء حالياً بناءً على معدل الصرف الحالي' })
     }
 
     const withSupplier = items.filter((i:any)=>i.supplier_id)

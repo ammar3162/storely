@@ -34,7 +34,7 @@ export async function POST(req: Request) {
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
+    if (access.role !== 'owner') return NextResponse.json({ error: 'هذه الصلاحية للمالك فقط' }, { status: 403 })
 
     const supabase = sb()
     const { data, error } = await supabase.from('late_penalty_rules').insert({
@@ -62,7 +62,7 @@ export async function DELETE(req: Request) {
 
     const access = await verifyOrgAccess((existing as any).org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
+    if (access.role !== 'owner') return NextResponse.json({ error: 'هذه الصلاحية للمالك فقط' }, { status: 403 })
 
     const { error } = await supabase.from('late_penalty_rules').delete().eq('id', id)
     if (error) return NextResponse.json({ error: 'حدث خطأ أثناء الحذف' }, { status: 500 })

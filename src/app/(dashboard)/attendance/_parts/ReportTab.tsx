@@ -60,7 +60,7 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
                 {loading ? (
                   <ListSkeleton/>
                 ) : rows.length === 0 ? (
-                  <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>ما فيه موظفين نشطين بهذا الفرع</div>
+                  <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>لا يوجد موظفون نشطون في هذا الفرع</div>
                 ) : (
                   <div style={{ overflowX: 'auto' as const }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 }}>
@@ -73,13 +73,13 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
                           <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجمالي الساعات</th>
                           <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>التأخير</th>
                           <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الخصم</th>
-                          <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الأوفر تايم</th>
+                          <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>العمل الإضافي</th>
                         </tr>
                       </thead>
                       <tbody>
                         {rows.map((r, i) => (
                           <tr key={r.staff_id} style={{ borderBottom: i < rows.length - 1 ? `1px solid ${colors.border}` : 'none' }}>
-                            <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف مو مربوط بشفت — ما ينحسب له تأخير ولا أوفر تايم' : 'شفت 24 ساعة — ما ينحسب تأخير ولا أوفر تايم'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? '⚠️ بدون شفت' : '⚠️ شفت 24 ساعة'}</span>}</td>
+                            <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف غير مرتبط بوردية — لا يُحتسب له تأخير أو عمل إضافي' : 'وردية 24 ساعة — لا يُحتسب تأخير أو عمل إضافي'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? '⚠️ بدون وردية' : '⚠️ وردية 24 ساعة'}</span>}</td>
                             <td style={{ padding: '11px 14px' }}>
                               <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(r.status), background: statusBg(r.status), padding: '3px 10px', borderRadius: 99 }}>{r.status}</span>
                             </td>
@@ -114,7 +114,7 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
               {loading ? (
                 <ListSkeleton/>
               ) : rangeRows.length === 0 ? (
-                <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>ما فيه بيانات لهذي الفترة</div>
+                <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>لا توجد بيانات لهذه الفترة</div>
               ) : (
                 <div style={{ overflowX: 'auto' as const }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 }}>
@@ -126,13 +126,13 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
                         <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجازات</th>
                         <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجمالي التأخير</th>
                         <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>إجمالي الخصومات</th>
-                        <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الأوفر تايم</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'center' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>العمل الإضافي</th>
                       </tr>
                     </thead>
                     <tbody>
                       {rangeRows.map((r, i) => (
                         <tr key={r.staff_id} style={{ borderBottom: i < rangeRows.length - 1 ? `1px solid ${colors.border}` : 'none' }}>
-                          <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف مو مربوط بشفت — ما ينحسب له تأخير ولا أوفر تايم' : 'شفت 24 ساعة — ما ينحسب تأخير ولا أوفر تايم'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? '⚠️ بدون شفت' : '⚠️ شفت 24 ساعة'}</span>}</td>
+                          <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف غير مرتبط بوردية — لا يُحتسب له تأخير أو عمل إضافي' : 'وردية 24 ساعة — لا يُحتسب تأخير أو عمل إضافي'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? '⚠️ بدون وردية' : '⚠️ وردية 24 ساعة'}</span>}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: colors.primary, fontWeight: 700 }}>{r.days_present}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.days_absent ? colors.danger : colors.text4, fontWeight: 700 }}>{r.days_absent || '—'}</td>
                           <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.days_off ? '#1d4ed8' : colors.text4, fontWeight: 700 }}>
@@ -151,12 +151,12 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
               )}
               {!loading && rangeRows[0]?.days && (
                 <div style={{ borderTop: `1px solid ${colors.border2}` }}>
-                  <div style={{ padding: '12px 14px', fontWeight: 800, fontSize: 13, color: colors.text }}>📅 السجل اليومي — {rangeRows[0].name}{rangeRows[0].shift_warning && <span style={{ marginRight: 8, fontSize: 11, fontWeight: 600, color: '#b45309' }}>⚠️ {rangeRows[0].shift_warning === 'none' ? 'مو مربوط بشفت' : 'شفت 24 ساعة'} — ما ينحسب له تأخير ولا أوفر تايم. اربطه من تبويب الإعدادات.</span>}</div>
+                  <div style={{ padding: '12px 14px', fontWeight: 800, fontSize: 13, color: colors.text }}>📅 السجل اليومي — {rangeRows[0].name}{rangeRows[0].shift_warning && <span style={{ marginRight: 8, fontSize: 11, fontWeight: 600, color: '#b45309' }}>⚠️ {rangeRows[0].shift_warning === 'none' ? 'غير مرتبط بوردية' : 'وردية 24 ساعة'} — لا يُحتسب له تأخير أو عمل إضافي. اربطه بوردية من تبويب الإعدادات.</span>}</div>
                   <div style={{ overflowX: 'auto' as const }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 }}>
                       <thead>
                         <tr style={{ background: colors.bg, borderBottom: `1px solid ${colors.border2}` }}>
-                          {['التاريخ', 'الحالة', 'الحضور', 'الانصراف', 'الساعات', 'التأخير', 'الخصم', 'الأوفر تايم'].map(h => (
+                          {['التاريخ', 'الحالة', 'الحضور', 'الانصراف', 'الساعات', 'التأخير', 'الخصم', 'العمل الإضافي'].map(h => (
                             <th key={h} style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11, whiteSpace: 'nowrap' as const }}>{h}</th>
                           ))}
                         </tr>
@@ -186,7 +186,7 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
                 </div>
               )}
               {!loading && !staffFilter && rangeRows.length > 0 && (
-                <div style={{ padding: '10px 14px', fontSize: 11, color: colors.text4, borderTop: `1px solid ${colors.border}` }}>💡 اختر موظف من القائمة فوق عشان يطلع لك سجله يوم بيوم</div>
+                <div style={{ padding: '10px 14px', fontSize: 11, color: colors.text4, borderTop: `1px solid ${colors.border}` }}>💡 اختر موظفاً من القائمة أعلاه لعرض سجله يوماً بيوم</div>
               )}
             </div>
           )}

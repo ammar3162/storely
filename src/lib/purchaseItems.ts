@@ -87,6 +87,6 @@ export async function saveInvoiceItems(db: SupabaseClient, o: {
 export function itemsSummary(r: ItemResult[]) {
   const added = r.filter(x => x.action === 'added').length, created = r.filter(x => x.action === 'created').length, failed = r.filter(x => x.action === 'failed').length
   const expense = r.filter(x => x.action === 'expense').length
-  return [added && `زادت كمية ${added} ${added === 1 ? 'صنف موجود' : 'أصناف موجودة'}`, created && `انضاف ${created} ${created === 1 ? 'صنف جديد' : 'أصناف جديدة'}`,
-    expense && `${expense} مشتريات بدون مخزون`, failed && `ما انحفظ ${failed}`].filter(Boolean).join(' · ')
+  return [added && `زادت كمية ${added} ${added === 1 ? 'صنف موجود' : 'أصناف موجودة'}`, created && `أُضيف ${created} ${created === 1 ? 'صنف جديد' : 'أصناف جديدة'}`,
+    expense && `${expense} مشتريات بدون مخزون`, failed && `لم يُحفظ ${failed}`].filter(Boolean).join(' · ')
 }

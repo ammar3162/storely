@@ -14,8 +14,8 @@ export default function RealWasteReport({ m }: { m: AiToolsPage }) {
 
           {!realWasteReport.hasData ? (
             <div style={{textAlign:'center',padding:'24px',color:'#9ca3af',fontSize:13}}>
-              ما فيه أي هدر مسجّل خلال آخر 30 يوم 🎉<br/>
-              <span style={{fontSize:11}}>يقدر الموظفون يسجّلون الهدر من صفحة "الصرف" → وضع "🗑️ تسجيل هدر"</span>
+              لا يوجد أي هدر مسجّل خلال آخر 30 يوماً<br/>
+              <span style={{fontSize:11}}>يمكن للموظفين تسجيل الهدر من صفحة "الصرف" → وضع "🗑️ تسجيل هدر"</span>
             </div>
           ) : (
             <>

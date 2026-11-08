@@ -20,7 +20,7 @@ export async function GET(req: Request) {
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على هالقسم — كلّم مالك المنشأة' }, { status: 403 })
+    if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ليست لديك صلاحية على هذا القسم — تواصل مع مالك المنشأة' }, { status: 403 })
 
     const supabase = sb()
     const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', org_id).single()

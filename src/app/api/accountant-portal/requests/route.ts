@@ -110,6 +110,6 @@ async function requestMissingVat(g: any, raw: unknown[]) {
   const { error } = await g.db.from('accountant_requests').insert(rows as any)
   if (error) return NextResponse.json({ error: 'تعذر إرسال الطلب' }, { status: 500 })
   await g.db.from('notifications').insert({ org_id: org, type: 'warning', read: false, title: '📝 طلب من محاسبك', ref_type: 'accountant_request',
-    message: `${g.me.name || g.me.email}: كمّلوا الرقم الضريبي أو رقم الفاتورة لـ ${rows.length} ${rows.length === 1 ? 'فاتورة' : 'فواتير'} — من «طلبات المحاسب»` } as any)
+    message: `${g.me.name || g.me.email}: يرجى إكمال الرقم الضريبي أو رقم الفاتورة لـ ${rows.length} ${rows.length === 1 ? 'فاتورة' : 'فواتير'} — من «طلبات المحاسب»` } as any)
   return NextResponse.json({ success: true, created: rows.length, skipped: targets.length - rows.length })
 }

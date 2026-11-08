@@ -136,11 +136,11 @@ export function useHrManagement() {
   useEffect(() => { try { setCurrentBranchId(sessionStorage.getItem('s_branch_id')) } catch {} }, [])
 
   async function saveBranchLocation(id:string) {
-    if(!navigator.geolocation){ toast('المتصفح ما يدعم تحديد الموقع','error'); return }
+    if(!navigator.geolocation){ toast('المتصفح لا يدعم تحديد الموقع','error'); return }
     // الموقع ينحفظ من مكان الجهاز — نتأكد إن المالك فعلاً داخل الفرع
-    if (id !== currentBranchId) { toast('اختر هذا الفرع من القائمة فوق وأنت موجود فيه','warning'); return }
+    if (id !== currentBranchId) { toast('اختر هذا الفرع من القائمة أعلاه وأنت موجود فيه','warning'); return }
     const bName = branches.find((b:any)=>b.id===id)?.name || 'الفرع'
-    if (!(await confirmDialog({ title:`تحديد موقع ${bName}`, message:`تأكد إنك موجود الحين داخل ${bName} — الموقع يتسجّل من مكان جهازك، والموظفين يحضّرون بناءً عليه.`, confirmText:'أنا داخل الفرع — حدّد', type:'warning' }))) return
+    if (!(await confirmDialog({ title:`تحديد موقع ${bName}`, message:`تأكد أنك موجود الآن داخل ${bName} — يُسجَّل الموقع من مكان جهازك، ويسجّل الموظفون حضورهم بناءً عليه.`, confirmText:'أنا داخل الفرع — حدّد', type:'warning' }))) return
     setSavingLocationId(id)
 
     let bestPos: GeolocationPosition | null = null
@@ -169,7 +169,7 @@ export function useHrManagement() {
     setSavingLocationId(null)
     if(!r.success){ toast('فشل حفظ الموقع — حاول مرة أخرى','error'); return }
     setBranches(prev=>prev.map((br:any)=>br.id===id?{...br,latitude:bestPos!.coords.latitude,longitude:bestPos!.coords.longitude}:br))
-    toast('✅ تم حفظ موقع الفرع — الموظفون الآن يقدروا يسجّلوا حضورهم')
+    toast('✅ تم حفظ موقع الفرع — يمكن للموظفين الآن تسجيل حضورهم')
   }
 
   function toggleExpand(s:any) {
@@ -248,7 +248,7 @@ export function useHrManagement() {
     setSalaryVisible(next)
     const r = await api.patch('/api/org-settings', { org_id: orgId, staff_salary_visible: next })
     if (!r.success) { setSalaryVisible(!next); toast(r.error || 'حدث خطأ', 'error'); return }
-    toast(next ? '✅ الموظفين يقدرون يشوفون كشف رواتبهم الحين' : 'انقفل كشف الراتب عن الموظفين')
+    toast(next ? '✅ يمكن للموظفين الآن الاطلاع على كشوف رواتبهم' : 'تم إخفاء كشف الراتب عن الموظفين')
   }
 
   async function loadReport() {
@@ -369,7 +369,7 @@ export function useHrManagement() {
     })
     const j = await res.json()
     if (!j.success) { toast(j.error||'خطأ','error'); return }
-    toast(j.is_daily ? '🔁 صارت مهمة يومية' : 'تم إيقاف التكرار اليومي')
+    toast(j.is_daily ? '🔁 أصبحت مهمة يومية' : 'تم إيقاف التكرار اليومي')
     loadTasks(staffId)
   }
 

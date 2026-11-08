@@ -46,7 +46,7 @@ export async function acceptInvite(db: SupabaseClient, req: Request, accessId: s
     const { data: done } = await db.from('accountant_access').update({ accountant_id: uid, status: 'active', accepted_at: new Date().toISOString() } as any)
       .eq('id', a.id).eq('status', 'pending').select('id')
     if (done?.length) await db.from('notifications').insert({ org_id: a.org_id, type: 'info', read: false, title: 'المحاسب قبل الدعوة',
-      message: `${a.name || email} قبل دعوتك وصار يشوف بيانات منشأتك. تقدر تعدّل وش يشوف أو تسحب الإذن من الإعدادات ← المحاسب.` } as any)
+      message: `${a.name || email} قبل دعوتك وأصبح بإمكانه الاطلاع على بيانات منشأتك. يمكنك تعديل الأقسام المتاحة له أو سحب الإذن من الإعدادات ← المحاسب.` } as any)
   }
   if (!withSession) return { ok: true as const, orgId: a.org_id as string, session: null }
   const { data: sess } = await db.from('accountant_sessions').insert({ accountant_id: uid, ip: clientIp(req),

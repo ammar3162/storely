@@ -53,7 +53,7 @@ export default function HrStaffCard({ m, s }: { m: HrPage; s: any }) {
                   return (
                     <div style={{marginTop:10,padding:'10px 12px',background:colors.bg,borderRadius:10,display:'flex',flexDirection:'column' as const,gap:6}}>
                       <div style={{fontSize:10.5,fontWeight:700,color:colors.text4}}>هذا الشهر</div>
-                      {p.overtimePay>0 && line('أوفر تايم', `+${fmtN(p.overtimePay)} ${curr}`, colors.primary)}
+                      {p.overtimePay>0 && line('العمل الإضافي', `+${fmtN(p.overtimePay)} ${curr}`, colors.primary)}
                       {p.bonusesTotal>0 && line('تعويض أيام إضافية', `+${fmtN(p.bonusesTotal)} ${curr}`, colors.primary)}
                       {p.latePenaltiesTotal>0 && line(`غرامات تأخير (${p.latePenaltiesCount})`, `−${fmtN(p.latePenaltiesTotal)} ${curr}`, colors.danger)}
                       {p.otherDeductionsTotal>0 && line('خصومات', `−${fmtN(p.otherDeductionsTotal)} ${curr}`, colors.danger)}

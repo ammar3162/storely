@@ -66,7 +66,7 @@ export default function PurchaseHistory({ m }: { m: PurchasesState }) {
                           </a>
                         )}
                         {p.edited_at&&(()=>{ const acc=p.edited_source==='accountant'
-                          return <button onClick={()=>isOwner&&setEditLog(p)} title={`عدّله ${p.edited_by||''}${isOwner?' — اضغط تشوف السجل':''}`}
+                          return <button onClick={()=>isOwner&&setEditLog(p)} title={`عدّله ${p.edited_by||''}${isOwner?' — اضغط لعرض السجل':''}`}
                             style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:10,fontWeight:800,color:acc?'#7c3aed':C.warning,background:acc?'#f5f3ff':C.warningL,border:'none',borderRadius:99,padding:'2px 8px',cursor:isOwner?'pointer':'default',fontFamily:'inherit'}}>
                             <Pencil size={10} strokeWidth={2.5}/> {acc?'معدّل من المحاسب':'معدّل'}</button> })()}
                       </div>

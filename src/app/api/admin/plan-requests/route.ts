@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   if (action === 'reject') {
     const why = typeof reason === 'string' ? reason.trim().slice(0, 300) : ''
     await db.from('plan_requests').update({ status: 'rejected', reason: why || null, decided_at: now, decided_by_name: admin.full_name } as any).eq('id', id).eq('status', 'pending')
-    await db.from('notifications').insert({ org_id: q.org_id, title: `طلب الترقية للباقة ${label}`, message: why ? `ما تمت الموافقة: ${why}` : 'ما تمت الموافقة على الطلب — تواصل معنا لو عندك استفسار', type: 'warning', read: false } as any)
+    await db.from('notifications').insert({ org_id: q.org_id, title: `طلب الترقية للباقة ${label}`, message: why ? `لم تتم الموافقة: ${why}` : 'لم تتم الموافقة على الطلب — تواصل معنا إذا كان لديك استفسار', type: 'warning', read: false } as any)
     await logAdminAction(admin, 'reject_plan_request', q.org_id, orgName, { request_id: id, target_plan: q.target_plan, reason: why })
     return NextResponse.json({ success: true })
   }
@@ -53,8 +53,8 @@ export async function POST(req: Request) {
   const res = await changeOrgPlan(db, q.org_id, { planName: q.target_plan, maxBranches: br, maxStaff: caps.staff * per, maxSuppliers: caps.suppliers * per, billingCycle: q.organizations?.billing_cycle })
   if (!res.ok) return NextResponse.json({ error: res.error }, { status: 500 })
   await db.from('plan_requests').update({ status: 'approved', decided_at: now, decided_by_name: admin.full_name } as any).eq('id', id)
-  await db.from('notifications').insert({ org_id: q.org_id, title: `تمت ترقيتك للباقة ${label}`, message: 'كل ميزات الباقة الجديدة صارت مفتوحة لك الحين', type: 'success', read: false } as any)
-  sendPushToOrg(q.org_id, `تمت ترقيتك للباقة ${label}`, 'كل ميزات الباقة الجديدة صارت مفتوحة لك الحين', '/addons-market').catch(() => {})
+  await db.from('notifications').insert({ org_id: q.org_id, title: `تمت ترقيتك للباقة ${label}`, message: 'أصبحت جميع مزايا الباقة الجديدة متاحة لك الآن', type: 'success', read: false } as any)
+  sendPushToOrg(q.org_id, `تمت ترقيتك للباقة ${label}`, 'أصبحت جميع مزايا الباقة الجديدة متاحة لك الآن', '/addons-market').catch(() => {})
   await logAdminAction(admin, 'approve_plan_request', q.org_id, orgName, { request_id: id, target_plan: q.target_plan })
   return NextResponse.json({ success: true })
 }

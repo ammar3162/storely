@@ -341,7 +341,7 @@ export default function DashboardPage() {
             <span className="dh-card-title"><span className="dh-card-icon" style={{color:TONES.indigo.fg,background:TONES.indigo.bg}}><Activity size={15}/></span>آخر الحركات</span>
             {activity.length>0 && <button className="dh-link" onClick={()=>router.push('/reports')}>التقارير</button>}
           </div>
-          {activity.length===0 ? <div className="dh-empty">ما فيه حركات بعد</div> : activity.map((m:any,i:number)=>(
+          {activity.length===0 ? <div className="dh-empty">لا توجد حركات بعد</div> : activity.map((m:any,i:number)=>(
             <div key={i} className="dh-row">
               <div className="dh-row-main">
                 <div className="dh-row-title">{(m.products as any)?.name||'—'}</div>

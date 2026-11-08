@@ -31,7 +31,7 @@ export async function resolveTaxInfo(db: SupabaseClient, orgId: string, supplier
   : Promise<{ ok: true; info: TaxInfo } | { ok: false; error: string }> {
   const invoice_number = normalizeInvoiceNumber(body.invoice_number)
   let vat = normalizeVat(body.supplier_vat_number)
-  if (vat && !isValidVat(vat)) return { ok: false, error: 'الرقم الضريبي للمورد غير صحيح — لازم ١٥ رقم يبدأ وينتهي بـ 3' }
+  if (vat && !isValidVat(vat)) return { ok: false, error: 'الرقم الضريبي للمورد غير صحيح — يجب أن يتكون من 15 رقماً ويبدأ وينتهي بالرقم 3' }
   if (!hasVat) return { ok: true, info: { invoice_number, supplier_vat_number: null } }
 
   const name = (supplierName || '').trim()
@@ -70,7 +70,7 @@ export async function resolvePurchaseTax(db: SupabaseClient, orgId: string, supp
     // بدون باركود: نفس رقم الفاتورة من نفس المورد، أو نفس المورد ونفس اليوم ونفس المبلغ = غالباً تكرار
     if (body.allow_duplicate !== true) {
       const dup = await findDuplicateInvoice(db, orgId, supplierName, tax.invoice_number, enteredTotal, typeof body.invoice_date === 'string' ? body.invoice_date : null)
-      if (dup) return { ok: false, status: 409, duplicate: true, error: `هذي الفاتورة مسجلة قبل (${dup}) — لو هي فاتورة ثانية فعلاً أكّد التسجيل` }
+      if (dup) return { ok: false, status: 409, duplicate: true, error: `هذه الفاتورة مسجّلة مسبقاً (${dup}) — إذا كانت فاتورة أخرى فعلاً فأكّد التسجيل` }
     }
     return { ok: true, tax, alert: null }
   }
@@ -82,7 +82,7 @@ export async function resolvePurchaseTax(db: SupabaseClient, orgId: string, supp
   const already = Math.round(rows.reduce((s, r) => s + (Number(r.total_amount) || 0), 0) * 100) / 100
   if (rows.length && already >= qr.total - TOL) {
     const d = new Date(Date.parse(rows[0].created_at) + 3 * 3600e3).toISOString().slice(0, 10)
-    return { ok: false, status: 409, error: `هذي الفاتورة مسجلة كاملة من قبل (${d}) — ما تنسجل مرتين` }
+    return { ok: false, status: 409, error: `هذه الفاتورة مسجّلة كاملة مسبقاً (${d}) — لا يمكن تسجيلها مرتين` }
   }
   const mismatch = already + enteredTotal > qr.total + TOL
   Object.assign(tax, {

@@ -35,7 +35,7 @@ export default function LeaveTab({ m, s }: { m: HrPage; s: any }) {
                             </div>
                           )}
                           {leaveRequests.length===0 ? (
-                            <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>ما فيه طلبات إجازة بعد</div>
+                            <div style={{fontSize:12,color:colors.text4,textAlign:'center' as const,padding:12}}>لا توجد طلبات إجازة بعد</div>
                           ) : (
                             <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
                               {leaveRequests.filter((l:any)=>l.status!=='pending').map((l:any)=>(

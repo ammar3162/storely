@@ -16,10 +16,10 @@ export function useVatStatus(orgId: string) {
 }
 
 const LEVEL_MSG: Record<VatLevel, { text: (s: number) => string; color: string; bg: string }> = {
-  ok: { text: () => 'مبيعاتك تحت حد التسجيل — ما يلزمك تتسجل حالياً.', color: colors.text3, bg: colors.bg },
-  voluntary: { text: () => `تعدّيت ${money(VAT_VOLUNTARY)} ريال — تقدر تتسجل اختيارياً، والإلزامي عند ${money(VAT_MANDATORY)}.`, color: colors.info, bg: colors.infoLight },
+  ok: { text: () => 'مبيعاتك دون حد التسجيل — لا يلزمك التسجيل حالياً.', color: colors.text3, bg: colors.bg },
+  voluntary: { text: () => `تجاوزت ${money(VAT_VOLUNTARY)} ريال — يمكنك التسجيل اختيارياً، ويكون إلزامياً عند ${money(VAT_MANDATORY)}.`, color: colors.info, bg: colors.infoLight },
   near: { text: s => `قربت من الحد الإلزامي — باقي ${money(VAT_MANDATORY - s)} ريال. جهّز التسجيل مع محاسبك.`, color: colors.warning, bg: colors.warningLight },
-  over: { text: () => `تعدّيت الحد الإلزامي (${money(VAT_MANDATORY)} ريال) — لازم تتسجل في الضريبة خلال ٣٠ يوم وإلا تجيك غرامة. كلّم محاسبك.`, color: colors.danger, bg: colors.dangerLight },
+  over: { text: () => `تجاوزت الحد الإلزامي (${money(VAT_MANDATORY)} ريال) — يجب التسجيل في ضريبة القيمة المضافة خلال 30 يوماً لتجنّب الغرامة. تواصل مع محاسبك.`, color: colors.danger, bg: colors.dangerLight },
 }
 
 // إعداد واحد للمنشأة: مسجلة أو لا — وتقارير المحاسب كلها تمشي عليه
@@ -32,8 +32,8 @@ export default function VatRegistration({ orgId }: { orgId: string }) {
     setBusy(true)
     const r = await api.patch('/api/org-settings', { org_id: orgId, vat_registered: v })
     setBusy(false)
-    if (!r.success) return toast(r.error || 'ما انحفظ', 'error')
-    setS({ ...s, vat_registered: v }); toast('✅ انحفظ — تقارير المحاسب تمشي عليه')
+    if (!r.success) return toast(r.error || 'لم يتم الحفظ', 'error')
+    setS({ ...s, vat_registered: v }); toast('✅ تم الحفظ — تعتمد عليه تقارير المحاسب')
   }
   // نفس شكل باقي حقول الإعدادات: عنوان صغير + اختيار من خيارين — يتحفظ مباشرة
   const btn = (on: boolean): React.CSSProperties => ({ flex: 1, padding: '10px 12px', borderRadius: 9, fontSize: 13, fontWeight: 700, fontFamily: font.family, cursor: s.is_owner ? 'pointer' : 'default',
@@ -49,7 +49,7 @@ export default function VatRegistration({ orgId }: { orgId: string }) {
         <button type="button" disabled={!s.is_owner || busy} onClick={() => set(false)} style={btn(s.vat_registered === false)}>غير مسجلة</button>
       </div>
       <div style={{ fontSize: 11, color: s.vat_registered === null ? colors.warning : colors.text4, fontWeight: s.vat_registered === null ? 700 : 400, marginTop: 6 }}>
-        {s.vat_registered === null ? 'حدد هذا الخيار عشان تقرير الضريبة عند محاسبك يطلع صح' : '💡 تقارير المحاسب والإقرار الضريبي تمشي على هذا الخيار — يتحفظ مباشرة'}
+        {s.vat_registered === null ? 'حدد هذا الخيار ليظهر تقرير الضريبة لدى محاسبك بشكل صحيح' : '💡 تعتمد تقارير المحاسب والإقرار الضريبي على هذا الخيار — يُحفظ مباشرة'}
       </div>
       {s.vat_registered !== true && s.level !== 'ok' && (
         <div style={{ marginTop: 10, background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: 12, padding: '12px 14px' }}>
@@ -74,7 +74,7 @@ export function VatStatusLine({ orgId }: { orgId: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: s.vat_registered === null ? colors.warning : colors.text3, fontWeight: 600, marginBottom: 12, fontFamily: font.family }}>
       <Receipt size={14} /> {txt} ·
-      <a href="/settings?tab=org" style={{ color: colors.primary, fontWeight: 700 }}>{s.vat_registered === null ? 'حدده الحين' : 'تغيير'}</a>
+      <a href="/settings?tab=org" style={{ color: colors.primary, fontWeight: 700 }}>{s.vat_registered === null ? 'حدده الآن' : 'تغيير'}</a>
     </div>
   )
 }
@@ -90,7 +90,7 @@ export function VatThresholdBanner({ orgId }: { orgId: string }) {
       <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: 2 }} />
       <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.6 }}>
         {over ? 'مبيعاتك آخر ١٢ شهر تعدّت حد التسجيل الإلزامي في ضريبة القيمة المضافة' : 'مبيعاتك آخر ١٢ شهر قربت من حد التسجيل الإلزامي في ضريبة القيمة المضافة'}
-{' — '}{money(s.sales12m)} ريال من حد {money(VAT_MANDATORY)}. {over ? 'لازم تتسجل خلال ٣٠ يوم.' : 'جهّز التسجيل مع محاسبك.'}
+{' — '}{money(s.sales12m)} ريال من حد {money(VAT_MANDATORY)}. {over ? 'يجب التسجيل خلال 30 يوماً.' : 'جهّز التسجيل مع محاسبك.'}
         <span style={{ textDecoration: 'underline', marginInlineStart: 6 }}>التفاصيل</span>
       </div>
     </a>

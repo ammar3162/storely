@@ -17,7 +17,7 @@ export type SaveInvoiceResult =
 export async function saveInvoice(db: SupabaseClient, o: { orgId: string; branchId: string | null; profileId: string | null; body: any }): Promise<SaveInvoiceResult> {
   const { body } = o
   const items = cleanItems(body.items)
-  if (items.some(it => !Number.isInteger(it.qty))) return { ok: false, status: 400, error: 'الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)' }
+  if (items.some(it => !Number.isInteger(it.qty))) return { ok: false, status: 400, error: 'يجب أن تكون الكمية رقماً صحيحاً — إذا كانت فيها كسور فاستخدم وحدة أصغر (مثل الغرام بدل الكيلو)' }
   if (!items.length) return { ok: false, status: 400, error: 'حدد صنف واحد على الأقل واكتب سعره' }
   if (!DATE_RE.test(String(body.invoice_date || ''))) return { ok: false, status: 400, error: 'تاريخ غير صالح' }
   if (o.branchId) {
@@ -28,7 +28,7 @@ export async function saveInvoice(db: SupabaseClient, o: { orgId: string; branch
   if (locked) return { ok: false, status: 423, error: locked }
   const hasVat = body.has_vat !== false
   if (body.invoice_image && !isStoredInvoiceUrl(body.invoice_image)) return { ok: false, status: 400, error: 'رابط الفاتورة غير صالح — ارفع الصورة من جديد' }
-  if (hasVat && !body.invoice_image) return { ok: false, status: 400, error: 'الفاتورة الضريبية لازم ترفق صورتها أو ملفها' }
+  if (hasVat && !body.invoice_image) return { ok: false, status: 400, error: 'يجب إرفاق صورة الفاتورة الضريبية أو ملفها' }
   const sup = String(body.supplier || '').trim().slice(0, 120) || null
   const tax = await resolvePurchaseTax(db, o.orgId, sup, body, hasVat, items.reduce((s, it) => s + it.total, 0))   // كل الأصناف = فاتورة وحدة للمحاسب
   if (!tax.ok) return { ok: false, status: tax.status, error: tax.error, duplicate: tax.duplicate || undefined }

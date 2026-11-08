@@ -95,7 +95,7 @@ export async function PATCH(req: Request) {
     const dr = draft as any
     const bid = enforcedBranchId(access)
     if (bid && dr.branch_id !== bid) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
-    if (!['needs_review', 'ready'].includes(dr.status)) return NextResponse.json({ error: 'الفاتورة انحفظت أو انلغت' }, { status: 409 })
+    if (!['needs_review', 'ready'].includes(dr.status)) return NextResponse.json({ error: 'تم حفظ الفاتورة أو إلغاؤها مسبقاً' }, { status: 409 })
 
     const update: any = {}
     if (typeof body.supplier === 'string') update.supplier = body.supplier.trim().slice(0, 120) || null

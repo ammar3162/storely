@@ -44,7 +44,7 @@ export default function TodayDecisions({ full, curr }: { full: boolean; curr: st
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: C.text }}>قرارات اليوم</div>
-          <div style={{ fontSize: 11, color: C.text3, marginTop: 2 }}>{DAY_NAMES[today.getUTCDay()]} — أهم اللي تسويه اليوم من بياناتك</div>
+          <div style={{ fontSize: 11, color: C.text3, marginTop: 2 }}>{DAY_NAMES[today.getUTCDay()]} — أهم ما يجب فعله اليوم بناءً على بياناتك</div>
         </div>
         <button onClick={load} disabled={loading} aria-label="تحديث" title="تحديث" style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${C.border2}`, background: C.surface, color: C.text3, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <RefreshCw size={14} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
@@ -56,7 +56,7 @@ export default function TodayDecisions({ full, curr }: { full: boolean; curr: st
         {list === null && [0, 1, 2].map(i => <div key={i} style={{ height: 58, borderRadius: 10, background: C.bg, opacity: .7 }} />)}
         {list?.length === 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px', borderRadius: 10, background: C.primaryLight, color: C.primary, fontSize: 13, fontWeight: 700 }}>
-            <CheckCircle2 size={16} /> كل شي تمام اليوم — ما فيه قرارات عاجلة
+            <CheckCircle2 size={16} /> كل شيء على ما يرام اليوم — لا توجد قرارات عاجلة
           </div>
         )}
         {list?.map((d, i) => {

@@ -61,7 +61,7 @@ export default function SupplierCardDetails({ m }: { m: SupplierCardState }) {
                       if (productSearch && filteredUnlinked.length === 0) {
                         return (
                           <div style={{padding:'20px 12px',textAlign:'center' as const,fontSize:12,color:'#94a3b8'}}>
-                            🔍 ما فيه منتج مطابق لـ "{productSearch}"
+                            🔍 لا يوجد منتج مطابق لـ "{productSearch}"
                           </div>
                         )
                       }

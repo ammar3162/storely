@@ -25,7 +25,7 @@ export async function GET(req: Request) {
   if (!org_id) return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-  if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
+  if (access.role !== 'owner') return NextResponse.json({ error: 'هذه الصلاحية للمالك فقط' }, { status: 403 })
 
   const db = sb()
   const { data, error } = await db.from('profiles')
@@ -44,11 +44,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
   }
   if (String(password).length < 6) {
-    return NextResponse.json({ error: 'كلمة المرور لازم تكون 6 أحرف على الأقل' }, { status: 400 })
+    return NextResponse.json({ error: 'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل' }, { status: 400 })
   }
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-  if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
+  if (access.role !== 'owner') return NextResponse.json({ error: 'هذه الصلاحية للمالك فقط' }, { status: 403 })
 
   const db = sb()
   const { data: branch } = await db.from('branches').select('id').eq('id', branch_id).eq('org_id', org_id).maybeSingle()
@@ -92,7 +92,7 @@ export async function PATCH(req: Request) {
   if (!id || !org_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-  if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
+  if (access.role !== 'owner') return NextResponse.json({ error: 'هذه الصلاحية للمالك فقط' }, { status: 403 })
 
   const db = sb()
   const update: any = {}
@@ -122,7 +122,7 @@ export async function DELETE(req: Request) {
   if (!id || !org_id) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-  if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
+  if (access.role !== 'owner') return NextResponse.json({ error: 'هذه الصلاحية للمالك فقط' }, { status: 403 })
 
   const db = sb()
   const { data: mgr } = await db.from('profiles').select('id').eq('id', id).eq('org_id', org_id).eq('role', 'manager').maybeSingle()

@@ -52,7 +52,7 @@ export default function SecurityTab({ m }: { m: SettingsState }) {
                       <div style={{fontSize:font.xs,color:colors.danger,opacity:.8}}>لا يمكن التراجع عن هذا الإجراء</div>
                     </div>
                   </div>
-                  <p style={{fontSize:font.xs,color:colors.danger,opacity:.85,marginBottom:14,lineHeight:1.7}}>عند الحذف، تحصل على <b>15 يوم فترة سماح</b> — بعدها يُحذف كل شي نهائياً (المخزون، المشتريات، الموظفين، والتقارير). تسجيل الدخول خلال هذي الفترة يلغي الحذف تلقائياً.</p>
+                  <p style={{fontSize:font.xs,color:colors.danger,opacity:.85,marginBottom:14,lineHeight:1.7}}>عند الحذف، تحصل على <b>15 يوم فترة سماح</b> — بعدها تُحذف جميع البيانات نهائياً (المخزون، والمشتريات، والموظفون، والتقارير). وتسجيل الدخول خلال هذه الفترة يلغي الحذف تلقائياً.</p>
                   <button onClick={()=>setShowDelete(true)}
                     style={{width:'100%',padding:'11px',background:colors.danger,color:'white',border:'none',borderRadius:radius.md,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
                     حذف حسابي

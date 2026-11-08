@@ -19,7 +19,7 @@ export async function GET(req: Request) {
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
+    if (access.role !== 'owner') return NextResponse.json({ error: 'هذه الصلاحية للمالك فقط' }, { status: 403 })
 
     const { data, error } = await sb().from('products').select(SOURCE_FIELDS)
       .eq('org_id', org_id).eq('branch_id', from_branch_id).eq('is_active', true).order('name')
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
+    if (access.role !== 'owner') return NextResponse.json({ error: 'هذه الصلاحية للمالك فقط' }, { status: 403 })
 
     const db = sb()
     const { data: target } = await db.from('branches').select('id').eq('id', to_branch_id).eq('org_id', org_id).maybeSingle()
