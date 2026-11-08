@@ -194,7 +194,7 @@ export default function PurchaseDetail({ period, from, to, onBack }: { period:Fi
         ):(
           <>
           <div style={{overflowX:'auto'}}>
-            <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
+            <table className="m-cards" style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
                   {['التاريخ','الصنف','النوع','بدون ضريبة','ضريبة','الإجمالي','المورد','فاتورة','إجراء'].map((h,i)=>(
@@ -206,18 +206,18 @@ export default function PurchaseDetail({ period, from, to, onBack }: { period:Fi
                 {filtered.map((p,i)=>(
                   <tr key={p.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}>
                     <td style={{padding:'11px 12px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(p.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
-                    <td style={{padding:'11px 12px',fontSize:font.sm,fontWeight:700,color:colors.text,maxWidth:140,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.name}</td>
-                    <td style={{padding:'11px 12px'}}><span style={catTag(p.category)}>{p.category}</span></td>
-                    <td style={{padding:'11px 12px',fontSize:font.sm}}>{Number(p.amount||0).toFixed(0)} {curr}</td>
-                    <td style={{padding:'11px 12px',fontSize:font.sm,color:colors.warning,fontWeight:600}}>{Number(p.vat_amount||0).toFixed(0)} {curr}</td>
-                    <td style={{padding:'11px 12px',fontSize:font.sm,fontWeight:700,color:colors.primary}}>{Number(p.total_amount||0).toFixed(0)} {curr}</td>
-                    <td style={{padding:'11px 12px',fontSize:font.xs,color:colors.text4,maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.supplier||'—'}</td>
-                    <td style={{padding:'11px 12px',textAlign:'center' as const}}>
+                    <td data-label="الصنف" style={{padding:'11px 12px',fontSize:font.sm,fontWeight:700,color:colors.text,maxWidth:140,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.name}</td>
+                    <td data-label="النوع" style={{padding:'11px 12px'}}><span style={catTag(p.category)}>{p.category}</span></td>
+                    <td data-label="بدون ضريبة" style={{padding:'11px 12px',fontSize:font.sm}}>{Number(p.amount||0).toFixed(0)} {curr}</td>
+                    <td data-label="ضريبة" style={{padding:'11px 12px',fontSize:font.sm,color:colors.warning,fontWeight:600}}>{Number(p.vat_amount||0).toFixed(0)} {curr}</td>
+                    <td data-label="الإجمالي" style={{padding:'11px 12px',fontSize:font.sm,fontWeight:700,color:colors.primary}}>{Number(p.total_amount||0).toFixed(0)} {curr}</td>
+                    <td data-label="المورد" style={{padding:'11px 12px',fontSize:font.xs,color:colors.text4,maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.supplier||'—'}</td>
+                    <td data-label="فاتورة" style={{padding:'11px 12px',textAlign:'center' as const}}>
                       {p.invoice_image
                         ? <a href={fileLink(p.invoice_image)} target="_blank" rel="noreferrer" style={{background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap' as const,display:'inline-flex',alignItems:'center',gap:4}}><Paperclip size={11} strokeWidth={2.25}/> عرض</a>
                         : <span style={{color:colors.border2}}>—</span>}
                     </td>
-                    <td style={{padding:'11px 12px',textAlign:'center' as const}}>
+                    <td data-label="إجراء" style={{padding:'11px 12px',textAlign:'center' as const}}>
                       <button onClick={()=>{setConfirmDelete(p);setDeletePassword('');setDeleteError('')}}
                         style={{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                         <Trash2 size={12} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> حذف
@@ -229,10 +229,10 @@ export default function PurchaseDetail({ period, from, to, onBack }: { period:Fi
               <tfoot>
                 <tr style={{background:colors.primaryLight,borderTop:`2px solid ${colors.primaryBorder}`}}>
                   <td colSpan={3} style={{padding:'11px 12px',fontWeight:800,fontSize:font.sm,color:colors.text}}>الإجمالي ({filtered.length} فاتورة)</td>
-                  <td style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm}}>{totalAmount.toFixed(0)} {curr}</td>
-                  <td style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm,color:colors.warning}}>{totalVat.toFixed(0)} {curr}</td>
-                  <td style={{padding:'11px 12px',fontWeight:900,fontSize:font.md,color:colors.primary}}>{totalWithVat.toFixed(0)} {curr}</td>
-                  <td/><td/><td/>
+                  <td data-label="الصنف" style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm}}>{totalAmount.toFixed(0)} {curr}</td>
+                  <td data-label="النوع" style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm,color:colors.warning}}>{totalVat.toFixed(0)} {curr}</td>
+                  <td data-label="بدون ضريبة" style={{padding:'11px 12px',fontWeight:900,fontSize:font.md,color:colors.primary}}>{totalWithVat.toFixed(0)} {curr}</td>
+                  <td data-label="ضريبة"/><td data-label="الإجمالي"/><td data-label="المورد"/>
                 </tr>
               </tfoot>
             </table>

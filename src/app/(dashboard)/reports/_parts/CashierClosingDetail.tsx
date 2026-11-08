@@ -214,7 +214,7 @@ export default function CashierClosingDetail({ period, from, to, onBack }: { per
         ):closings.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><Inbox size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد تقارير إقفال</div></div>
         ):(
           <div style={{overflowX:'auto',overflowY:'auto',maxHeight:480}}>
-            <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
+            <table className="m-cards" style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`,position:'sticky' as const,top:0,zIndex:2}}>
                   {['التاريخ','الكاشير','المبيعات','الشبكة',...(hasDelivery?['التوصيل']:[]),'الكاش الفعلي','المسحوبات','الكاش بعد الخصم','الصافي','النتيجة','المرفقات','إجراء'].map((h,i)=>(
@@ -238,11 +238,11 @@ export default function CashierClosingDetail({ period, from, to, onBack }: { per
                         </div>
                       )}
                     </td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{c.staff_name}</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.total_sales).toFixed(0)} {curr}</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.network_amount).toFixed(0)} {curr}</td>
+                    <td data-label="الكاشير" style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{c.staff_name}</td>
+                    <td data-label="المبيعات" style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.total_sales).toFixed(0)} {curr}</td>
+                    <td data-label="الشبكة" style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.network_amount).toFixed(0)} {curr}</td>
                     {hasDelivery && (
-                      <td style={{padding:'12px 16px',fontSize:font.sm,color:Number(c.delivery_amount)>0?colors.text2:colors.text4}}>
+                      <td data-label="التوصيل" style={{padding:'12px 16px',fontSize:font.sm,color:Number(c.delivery_amount)>0?colors.text2:colors.text4}}>
                         {Number(c.delivery_amount)>0 ? (
                           <div title={(c.delivery||[]).map((d:any)=>`${d.name}: ${Number(d.amount).toFixed(2)}`).join('\n')}>
                             {Number(c.delivery_amount).toFixed(0)} {curr}
@@ -251,8 +251,8 @@ export default function CashierClosingDetail({ period, from, to, onBack }: { per
                         ) : '—'}
                       </td>
                     )}
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.cash_amount).toFixed(0)} {curr}</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:Number(c.total_purchases)>0?colors.danger:colors.text4}}>
+                    <td data-label="الكاش الفعلي" style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>{Number(c.cash_amount).toFixed(0)} {curr}</td>
+                    <td data-label="المسحوبات" style={{padding:'12px 16px',fontSize:font.sm,color:Number(c.total_purchases)>0?colors.danger:colors.text4}}>
                       {Number(c.total_purchases)>0 ? (
                         <div onClick={()=>setExpandedReasons(prev=>({...prev,[c.id]:!prev[c.id]}))} style={{cursor:'pointer'}}>
                           <div style={{fontWeight:700,display:'flex',alignItems:'center',gap:4}}>
@@ -267,9 +267,9 @@ export default function CashierClosingDetail({ period, from, to, onBack }: { per
                         </div>
                       ) : '—'}
                     </td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{(Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} {curr}</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{netOf(c).toFixed(0)} {curr}</td>
-                    <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:statusColor[c.status],minWidth:150}}>
+                    <td data-label="الكاش بعد الخصم" style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{(Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} {curr}</td>
+                    <td data-label="الصافي" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{netOf(c).toFixed(0)} {curr}</td>
+                    <td data-label="النتيجة" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:statusColor[c.status],minWidth:150}}>
                       {statusLabel[c.status]}{c.status!=='balanced'?` (${Math.abs(Number(c.difference)).toFixed(0)} ${curr})`:''}
                       {c.status==='deficit' && (
                         <div style={{fontSize:11,fontWeight:600,marginTop:4,lineHeight:1.5,color:c.deficit_reason?colors.text2:colors.text4,background:c.deficit_reason?colors.dangerLight:'transparent',borderRadius:6,padding:c.deficit_reason?'4px 8px':0,maxWidth:220,whiteSpace:'normal' as const}}>
@@ -289,7 +289,7 @@ export default function CashierClosingDetail({ period, from, to, onBack }: { per
                       {c.status==='deficit' && c.deficit_decision==='approved' && <div style={{fontSize:11,fontWeight:700,color:colors.danger,marginTop:4}}>خُصم من الراتب</div>}
                       {c.status==='deficit' && c.deficit_decision==='rejected' && <div style={{fontSize:11,fontWeight:600,color:colors.text4,marginTop:4}}>رُفض الخصم</div>}
                     </td>
-                    <td style={{padding:'12px 16px'}}>
+                    <td data-label="المرفقات" style={{padding:'12px 16px'}}>
                       <div style={{display:'flex',gap:6}}>
                         {c.sales_image && (
                           <a href={fileLink(c.sales_image)} target="_blank" rel="noopener noreferrer" title="صورة تقرير المبيعات" style={{width:28,height:28,borderRadius:7,background:colors.infoLight,display:'flex',alignItems:'center',justifyContent:'center',textDecoration:'none',color:colors.info}}><BarChart3 size={13} strokeWidth={2.25}/></a>
@@ -302,7 +302,7 @@ export default function CashierClosingDetail({ period, from, to, onBack }: { per
                         )}
                       </div>
                     </td>
-                    <td style={{padding:'12px 16px'}}>
+                    <td data-label="إجراء" style={{padding:'12px 16px'}}>
                       {isOwner ? (<div style={{display:'flex',gap:6}}>
                       <button onClick={()=>setEditing(c)}
                         style={{background:colors.primaryLight,color:colors.primary,border:`1px solid ${colors.primaryBorder}`,borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
@@ -320,15 +320,15 @@ export default function CashierClosingDetail({ period, from, to, onBack }: { per
               <tfoot style={{position:'sticky' as const,bottom:0,zIndex:2}}>
                 <tr style={{background:colors.primaryLight,borderTop:`2px solid ${colors.primaryBorder}`,boxShadow:'0 -2px 8px rgba(0,0,0,.06)'}}>
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}} colSpan={2}>الإجمالي ({closings.length})</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_sales),0).toFixed(0)} {curr}</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.network_amount),0).toFixed(0)} {curr}</td>
-                  {hasDelivery && <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{totalDelivery.toFixed(0)} {curr}</td>}
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.cash_amount),0).toFixed(0)} {curr}</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0)>0?'−'+closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0).toFixed(0)+' '+curr:'—'}</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount)-Number(c.total_purchases)),0).toFixed(0)} {curr}</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{closings.reduce((s:number,c:any)=>s+netOf(c),0).toFixed(0)} {curr}</td>
-                  <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.difference),0).toFixed(0)} {curr}</td>
-                  <td/><td/>
+                  <td data-label="الكاشير" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_sales),0).toFixed(0)} {curr}</td>
+                  <td data-label="المبيعات" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.network_amount),0).toFixed(0)} {curr}</td>
+                  {hasDelivery && <td data-label="الشبكة" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{totalDelivery.toFixed(0)} {curr}</td>}
+                  <td data-label="التوصيل" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.cash_amount),0).toFixed(0)} {curr}</td>
+                  <td data-label="الكاش الفعلي" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0)>0?'−'+closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0).toFixed(0)+' '+curr:'—'}</td>
+                  <td data-label="المسحوبات" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount)-Number(c.total_purchases)),0).toFixed(0)} {curr}</td>
+                  <td data-label="الكاش بعد الخصم" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{closings.reduce((s:number,c:any)=>s+netOf(c),0).toFixed(0)} {curr}</td>
+                  <td data-label="الصافي" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.difference),0).toFixed(0)} {curr}</td>
+                  <td data-label="النتيجة"/><td data-label="المرفقات"/>
                 </tr>
               </tfoot>
             </table>

@@ -681,3 +681,18 @@ button[data-navitem] {
 /* حقل التاريخ الفاضي (components/DateField): نخفي «mm/dd/yyyy» حق المتصفح ونعرض نصّنا فوقه */
 input.df-empty { -webkit-text-fill-color: transparent; }
 input.df-empty::-webkit-datetime-edit { opacity: 0; }
+
+/* الجداول الخام (التقارير، الحضور، الرواتب) على الجوال: كل صف بطاقة.
+   أول عمود عنوان البطاقة، والباقي سطر «اسم العمود: القيمة» (data-label). */
+@media (max-width: 640px) {
+  table.m-cards { display: block; min-width: 0 !important; width: 100% !important; }
+  table.m-cards thead { display: none; }
+  table.m-cards tbody, table.m-cards tfoot { display: block; }
+  table.m-cards tr { display: block; padding: 12px 16px; border-bottom: 1px solid var(--storely-border) !important; background: transparent !important; opacity: 1 !important; }
+  table.m-cards tr:last-child { border-bottom: 0 !important; }
+  table.m-cards td { display: flex !important; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; padding: 2px 0 !important; border: 0 !important; text-align: start !important; white-space: normal !important; width: auto !important; }
+  table.m-cards td[data-label]::before { content: attr(data-label); flex-shrink: 0; font-size: 12px; font-weight: 500; color: var(--storely-muted); }
+  table.m-cards td:first-child { font-size: 14px; font-weight: 700; padding-bottom: 4px !important; }
+  table.m-cards td:first-child::before { content: none; }
+  table.m-cards td:empty { display: none !important; }
+}

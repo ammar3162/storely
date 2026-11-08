@@ -119,20 +119,20 @@ export default function StaffMonthlyDetail({ onBack }: { onBack: () => void }) {
     <div style={{ ...card, padding: 0, overflow: 'hidden', marginBottom: 12 }}>
       <div style={{ padding: '12px 16px', fontWeight: 800, fontSize: 13.5, color: colors.text, borderBottom: `1px solid ${colors.border}` }}>{title}</div>
       <div style={{ overflowX: 'auto' as const }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' as const }}>
+        <table className="m-cards" style={{ width: '100%', borderCollapse: 'collapse' as const }}>
           <thead><tr>{['البند', 'التاريخ', 'التفاصيل', 'المبلغ'].map(h => <th key={h} style={th}>{h}</th>)}</tr></thead>
           <tbody>
             {rows.map((r, i) => (
               <tr key={i} style={{ borderTop: `1px solid ${colors.border}` }}>
                 <td style={{ ...td, fontWeight: 700, color: colors.text }}>{r.label}</td>
-                <td style={td}>{smDay(r.date)}</td>
-                <td style={{ ...td, whiteSpace: 'normal' as const, minWidth: 160, color: r.detail ? colors.text2 : colors.text4 }}>{r.detail || '—'}</td>
-                <td style={td}>{money(r.amount, sign || undefined, color)}</td>
+                <td data-label="التاريخ" style={td}>{smDay(r.date)}</td>
+                <td data-label="التفاصيل" style={{ ...td, whiteSpace: 'normal' as const, minWidth: 160, color: r.detail ? colors.text2 : colors.text4 }}>{r.detail || '—'}</td>
+                <td data-label="المبلغ" style={td}>{money(r.amount, sign || undefined, color)}</td>
               </tr>
             ))}
             <tr style={{ borderTop: `1.5px solid ${colors.border2}`, background: colors.bg }}>
               <td style={{ ...td, fontWeight: 800, color: colors.text }} colSpan={3}>{totalLabel}</td>
-              <td style={td}>{money(total, sign || undefined, color)}</td>
+              <td data-label="التاريخ" style={td}>{money(total, sign || undefined, color)}</td>
             </tr>
           </tbody>
         </table>
@@ -202,30 +202,30 @@ export default function StaffMonthlyDetail({ onBack }: { onBack: () => void }) {
           </div>
           <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
             <div style={{ overflowX: 'auto' as const }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' as const }}>
+              <table className="m-cards" style={{ width: '100%', borderCollapse: 'collapse' as const }}>
                 <thead><tr>{['الموظف', 'الراتب', 'عمل إضافي', 'غرامات التأخير', 'خصومات', 'سلف', 'الصافي', ''].map((h, i) => <th key={i} style={th}>{h}</th>)}</tr></thead>
                 <tbody>
                   {all.rows.map(r => (
                     <tr key={r.staff_id} onClick={() => setStaffId(r.staff_id)} style={{ borderTop: `1px solid ${colors.border}`, cursor: 'pointer' }}
                       onMouseEnter={e => (e.currentTarget.style.background = colors.bg)} onMouseLeave={e => (e.currentTarget.style.background = '')}>
                       <td style={{ ...td, fontWeight: 700, color: colors.text }}>{r.name}</td>
-                      <td style={td}>{money(r.gross)}</td>
-                      <td style={td}>{r.overtime_pay ? money(r.overtime_pay, '+', '#047857') : <span style={{ color: colors.text4 }}>—</span>}</td>
-                      <td style={td}>{r.late_total ? <>{money(r.late_total, '−', colors.warning)} <span style={{ fontSize: 11, color: colors.text4 }}>({r.late_count})</span></> : <span style={{ color: colors.text4 }}>—</span>}</td>
-                      <td style={td}>{r.deductions_total ? money(r.deductions_total, '−', colors.danger) : <span style={{ color: colors.text4 }}>—</span>}</td>
-                      <td style={td}>{r.advances_total ? money(r.advances_total, '−', colors.danger) : <span style={{ color: colors.text4 }}>—</span>}</td>
-                      <td style={td}>{money(r.net, undefined, colors.primary)}</td>
+                      <td data-label="الراتب" style={td}>{money(r.gross)}</td>
+                      <td data-label="عمل إضافي" style={td}>{r.overtime_pay ? money(r.overtime_pay, '+', '#047857') : <span style={{ color: colors.text4 }}>—</span>}</td>
+                      <td data-label="غرامات التأخير" style={td}>{r.late_total ? <>{money(r.late_total, '−', colors.warning)} <span style={{ fontSize: 11, color: colors.text4 }}>({r.late_count})</span></> : <span style={{ color: colors.text4 }}>—</span>}</td>
+                      <td data-label="خصومات" style={td}>{r.deductions_total ? money(r.deductions_total, '−', colors.danger) : <span style={{ color: colors.text4 }}>—</span>}</td>
+                      <td data-label="سلف" style={td}>{r.advances_total ? money(r.advances_total, '−', colors.danger) : <span style={{ color: colors.text4 }}>—</span>}</td>
+                      <td data-label="الصافي" style={td}>{money(r.net, undefined, colors.primary)}</td>
                       <td style={{ ...td, color: colors.primary, fontSize: 12, fontWeight: 700 }}>التفاصيل ←</td>
                     </tr>
                   ))}
                   <tr style={{ borderTop: `1.5px solid ${colors.border2}`, background: colors.bg }}>
                     <td style={{ ...td, fontWeight: 900, color: colors.text }}>الإجمالي</td>
-                    <td style={td}>{money(t.gross)}</td>
-                    <td style={td}>{money(t.overtime_pay, '+', '#047857')}</td>
-                    <td style={td}>{money(t.late_total, '−', colors.warning)}</td>
-                    <td style={td}>{money(t.deductions_total, '−', colors.danger)}</td>
-                    <td style={td}>{money(t.advances_total, '−', colors.danger)}</td>
-                    <td style={td}>{money(t.net, undefined, colors.primary)}</td>
+                    <td data-label="الراتب" style={td}>{money(t.gross)}</td>
+                    <td data-label="عمل إضافي" style={td}>{money(t.overtime_pay, '+', '#047857')}</td>
+                    <td data-label="غرامات التأخير" style={td}>{money(t.late_total, '−', colors.warning)}</td>
+                    <td data-label="خصومات" style={td}>{money(t.deductions_total, '−', colors.danger)}</td>
+                    <td data-label="سلف" style={td}>{money(t.advances_total, '−', colors.danger)}</td>
+                    <td data-label="الصافي" style={td}>{money(t.net, undefined, colors.primary)}</td>
                     <td style={td} />
                   </tr>
                 </tbody>

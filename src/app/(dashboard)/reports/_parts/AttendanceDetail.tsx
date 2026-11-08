@@ -153,7 +153,7 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
               </div>
             </div>
             <div style={{ overflowX:'auto' as const }}>
-              <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+              <table className="m-cards" style={{ width:'100%', borderCollapse:'collapse' as const }}>
                 <thead><tr style={{ background:colors.bg, borderBottom:`1px solid ${colors.border}` }}>
                   {['التاريخ','الحالة','الحضور','الانصراف','الساعات','التأخير','العمل الإضافي'].map(h => <th key={h} style={th}>{h}</th>)}
                 </tr></thead>
@@ -161,14 +161,14 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
                   {[...person.days].reverse().map((d: any) => (
                     <tr key={d.date} style={{ borderBottom:`1px solid ${colors.border}`, background: d.check_in ? undefined : colors.bg }}>
                       <td style={{ ...td, fontWeight:700, color:colors.text }}>{attDay(d.date)}</td>
-                      <td style={td}>{!d.check_in ? pill('غياب', colors.danger, colors.dangerLight) : d.check_out ? pill('انصرف', colors.primary, colors.primaryLight) : pill('حاضر', colors.info, colors.infoLight)}</td>
-                      <td style={td}>{attTime(d.check_in)}</td>
-                      <td style={td}>{attTime(d.check_out)}{d.is_excused && <span style={{ marginRight:6 }}>{pill('مستأذن', colors.warning, colors.warningLight)}</span>}</td>
-                      <td style={{ ...td, fontWeight:600 }}>{d.hours_worked !== null ? `${d.hours_worked} ساعة` : '—'}</td>
-                      <td style={{ ...td, color: d.late_minutes ? colors.warning : colors.text4, fontWeight: d.late_minutes ? 700 : 400 }}>
+                      <td data-label="الحالة" style={td}>{!d.check_in ? pill('غياب', colors.danger, colors.dangerLight) : d.check_out ? pill('انصرف', colors.primary, colors.primaryLight) : pill('حاضر', colors.info, colors.infoLight)}</td>
+                      <td data-label="الحضور" style={td}>{attTime(d.check_in)}</td>
+                      <td data-label="الانصراف" style={td}>{attTime(d.check_out)}{d.is_excused && <span style={{ marginRight:6 }}>{pill('مستأذن', colors.warning, colors.warningLight)}</span>}</td>
+                      <td data-label="الساعات" style={{ ...td, fontWeight:600 }}>{d.hours_worked !== null ? `${d.hours_worked} ساعة` : '—'}</td>
+                      <td data-label="التأخير" style={{ ...td, color: d.late_minutes ? colors.warning : colors.text4, fontWeight: d.late_minutes ? 700 : 400 }}>
                         {d.late_minutes ? attMin(d.late_minutes) : '—'}{d.penalty_amount ? <div style={{ fontSize:11, color:colors.danger }}>خصم {d.penalty_amount} ⃁</div> : null}
                       </td>
-                      <td style={{ ...td, color: d.overtime_minutes ? colors.info : colors.text4, fontWeight: d.overtime_minutes ? 700 : 400 }}>
+                      <td data-label="العمل الإضافي" style={{ ...td, color: d.overtime_minutes ? colors.info : colors.text4, fontWeight: d.overtime_minutes ? 700 : 400 }}>
                         {d.overtime_minutes ? attMin(d.overtime_minutes) : '—'}{d.overtime_pay ? <div style={{ fontSize:11, color:colors.text3 }}>{d.overtime_pay} ⃁</div> : null}
                       </td>
                     </tr>
@@ -181,7 +181,7 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
           <div style={{ textAlign:'center' as const, padding:48, color:colors.text4, fontSize:13 }}>لا يوجد موظفون نشطون في هذا الفرع</div>
         ) : (
           <div style={{ overflowX:'auto' as const }}>
-            <table style={{ width:'100%', borderCollapse:'collapse' as const }}>
+            <table className="m-cards" style={{ width:'100%', borderCollapse:'collapse' as const }}>
               <thead><tr style={{ background:colors.bg, borderBottom:`1px solid ${colors.border}` }}>
                 {['الموظف','الحضور','الغياب','التأخير','الخصومات','العمل الإضافي',''].map((h, i) => <th key={i} style={th}>{h}</th>)}
               </tr></thead>
@@ -190,11 +190,11 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
                   <tr key={r.staff_id} onClick={() => setStaffId(r.staff_id)} style={{ borderBottom:`1px solid ${colors.border}`, cursor:'pointer' }}
                     onMouseEnter={e => (e.currentTarget.style.background = colors.bg)} onMouseLeave={e => (e.currentTarget.style.background = '')}>
                     <td style={{ ...td, fontWeight:700, color:colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف غير مرتبط بوردية — لا يُحتسب له تأخير أو عمل إضافي' : 'وردية 24 ساعة — لا يُحتسب تأخير أو عمل إضافي'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color:'#b45309', background:'#fffbeb', border:'1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? 'بدون وردية' : 'وردية 24 ساعة'}</span>}</td>
-                    <td style={td}>{pill(`${r.days_present} يوم`, colors.primary, colors.primaryLight)}</td>
-                    <td style={td}>{r.days_absent ? pill(`${r.days_absent} يوم`, colors.danger, colors.dangerLight) : '—'}</td>
-                    <td style={{ ...td, color: r.total_late_minutes ? colors.warning : colors.text4, fontWeight:600 }}>{r.total_late_minutes ? attMin(r.total_late_minutes) : '—'}</td>
-                    <td style={{ ...td, color: r.total_penalty ? colors.danger : colors.text4, fontWeight:600 }}>{r.total_penalty ? `${r.total_penalty} ⃁` : '—'}</td>
-                    <td style={{ ...td, color: r.total_overtime_minutes ? colors.info : colors.text4, fontWeight:600 }}>
+                    <td data-label="الحضور" style={td}>{pill(`${r.days_present} يوم`, colors.primary, colors.primaryLight)}</td>
+                    <td data-label="الغياب" style={td}>{r.days_absent ? pill(`${r.days_absent} يوم`, colors.danger, colors.dangerLight) : '—'}</td>
+                    <td data-label="التأخير" style={{ ...td, color: r.total_late_minutes ? colors.warning : colors.text4, fontWeight:600 }}>{r.total_late_minutes ? attMin(r.total_late_minutes) : '—'}</td>
+                    <td data-label="الخصومات" style={{ ...td, color: r.total_penalty ? colors.danger : colors.text4, fontWeight:600 }}>{r.total_penalty ? `${r.total_penalty} ⃁` : '—'}</td>
+                    <td data-label="العمل الإضافي" style={{ ...td, color: r.total_overtime_minutes ? colors.info : colors.text4, fontWeight:600 }}>
                       {r.total_overtime_minutes ? attMin(r.total_overtime_minutes) : '—'}{r.total_overtime_pay ? <div style={{ fontSize:11, color:colors.text3 }}>{r.total_overtime_pay} ⃁</div> : null}
                     </td>
                     <td style={{ ...td, color:colors.primary, fontSize:12, fontWeight:700 }}>السجل ←</td>

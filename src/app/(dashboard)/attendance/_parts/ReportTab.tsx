@@ -64,7 +64,7 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
                   <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>لا يوجد موظفون نشطون في هذا الفرع</div>
                 ) : (
                   <div style={{ overflowX: 'auto' as const }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 }}>
+                    <table className="m-cards" style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 }}>
                       <thead>
                         <tr style={{ background: colors.bg, borderBottom: `1px solid ${colors.border2}` }}>
                           <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الموظف</th>
@@ -81,25 +81,25 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
                         {rows.map((r, i) => (
                           <tr key={r.staff_id} style={{ borderBottom: i < rows.length - 1 ? `1px solid ${colors.border}` : 'none' }}>
                             <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف غير مرتبط بوردية — لا يُحتسب له تأخير أو عمل إضافي' : 'وردية 24 ساعة — لا يُحتسب تأخير أو عمل إضافي'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color:'#b45309', background:'#fffbeb', border:'1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? 'بدون وردية' : 'وردية 24 ساعة'}</span>}</td>
-                            <td style={{ padding: '11px 14px' }}>
+                            <td data-label="الحالة" style={{ padding: '11px 14px' }}>
                               <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(r.status), background: statusBg(r.status), padding: '3px 10px', borderRadius: 99 }}>{r.status}</span>
                             </td>
-                            <td style={{ padding: '11px 14px', color: colors.text2 }}>
+                            <td data-label="وقت الحضور" style={{ padding: '11px 14px', color: colors.text2 }}>
                               {fmtTime(r.check_in)}
                             </td>
-                            <td style={{ padding: '11px 14px', color: colors.text2 }}>
+                            <td data-label="وقت الانصراف" style={{ padding: '11px 14px', color: colors.text2 }}>
                               {checkOutCell(r, r.name)}
                             </td>
-                            <td style={{ padding: '11px 14px', color: colors.text2, fontWeight: 600 }}>
+                            <td data-label="إجمالي الساعات" style={{ padding: '11px 14px', color: colors.text2, fontWeight: 600 }}>
                               {r.hours_worked !== null ? `${r.hours_worked} ساعة` : '—'}
                             </td>
-                            <td style={{ padding: '11px 14px', color: r.late_minutes ? colors.warning : colors.text4 }}>
+                            <td data-label="التأخير" style={{ padding: '11px 14px', color: r.late_minutes ? colors.warning : colors.text4 }}>
                               {r.late_minutes ? `${r.late_minutes} دقيقة` : '—'}
                             </td>
-                            <td style={{ padding: '11px 14px', fontWeight: 700 }}>
+                            <td data-label="الخصم" style={{ padding: '11px 14px', fontWeight: 700 }}>
                               {penaltyCell(r)}
                             </td>
-                            <td style={{ padding: '11px 14px', color: r.overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
+                            <td data-label="العمل الإضافي" style={{ padding: '11px 14px', color: r.overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
                               {r.overtime_minutes ? <>{fmtMinutes(r.overtime_minutes)}{r.overtime_pay ? <span style={{ fontSize: 11, fontWeight: 600, color: colors.text3 }}> · {r.overtime_pay} ⃁</span> : null}</> : '—'}
                             </td>
                           </tr>
@@ -118,7 +118,7 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
                 <div style={{ padding: 40, textAlign: 'center' as const, color: colors.text4, fontSize: 12 }}>لا توجد بيانات لهذه الفترة</div>
               ) : (
                 <div style={{ overflowX: 'auto' as const }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 }}>
+                  <table className="m-cards" style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: colors.bg, borderBottom: `1px solid ${colors.border2}` }}>
                         <th style={{ padding: '10px 14px', textAlign: 'right' as const, color: colors.text3, fontWeight: 700, fontSize: 11 }}>الموظف</th>
@@ -134,14 +134,14 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
                       {rangeRows.map((r, i) => (
                         <tr key={r.staff_id} style={{ borderBottom: i < rangeRows.length - 1 ? `1px solid ${colors.border}` : 'none' }}>
                           <td style={{ padding: '11px 14px', fontWeight: 700, color: colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف غير مرتبط بوردية — لا يُحتسب له تأخير أو عمل إضافي' : 'وردية 24 ساعة — لا يُحتسب تأخير أو عمل إضافي'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color:'#b45309', background:'#fffbeb', border:'1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? 'بدون وردية' : 'وردية 24 ساعة'}</span>}</td>
-                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: colors.primary, fontWeight: 700 }}>{r.days_present}</td>
-                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.days_absent ? colors.danger : colors.text4, fontWeight: 700 }}>{r.days_absent || '—'}</td>
-                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.days_off ? '#1d4ed8' : colors.text4, fontWeight: 700 }}>
+                          <td data-label="أيام الحضور" style={{ padding: '11px 14px', textAlign: 'center' as const, color: colors.primary, fontWeight: 700 }}>{r.days_present}</td>
+                          <td data-label="أيام الغياب" style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.days_absent ? colors.danger : colors.text4, fontWeight: 700 }}>{r.days_absent || '—'}</td>
+                          <td data-label="إجازات" style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.days_off ? '#1d4ed8' : colors.text4, fontWeight: 700 }}>
                             {r.days_off || '—'}{r.extra_days ? <div style={{ fontSize: 10.5, color: colors.primary, fontWeight: 700 }}>+{r.extra_days} يوم إضافي</div> : null}
                           </td>
-                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_late_minutes ? colors.warning : colors.text4 }}>{r.total_late_minutes ? `${r.total_late_minutes} دقيقة` : '—'}</td>
-                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_penalty ? colors.danger : colors.text4, fontWeight: 700 }}>{r.total_penalty ? `${r.total_penalty} ⃁` : '—'}</td>
-                          <td style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
+                          <td data-label="إجمالي التأخير" style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_late_minutes ? colors.warning : colors.text4 }}>{r.total_late_minutes ? `${r.total_late_minutes} دقيقة` : '—'}</td>
+                          <td data-label="إجمالي الخصومات" style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_penalty ? colors.danger : colors.text4, fontWeight: 700 }}>{r.total_penalty ? `${r.total_penalty} ⃁` : '—'}</td>
+                          <td data-label="العمل الإضافي" style={{ padding: '11px 14px', textAlign: 'center' as const, color: r.total_overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
                             {r.total_overtime_minutes ? <>{fmtMinutes(r.total_overtime_minutes)}{r.total_overtime_pay ? <div style={{ fontSize: 11, fontWeight: 600, color: colors.text3 }}>{r.total_overtime_pay} ⃁</div> : null}</> : '—'}
                           </td>
                         </tr>
@@ -154,7 +154,7 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
                 <div style={{ borderTop: `1px solid ${colors.border2}` }}>
                   <div style={{ padding: '12px 14px', fontWeight: 800, fontSize: 13, color: colors.text }}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><FeatureIcon name="📅" size={15} /></span> السجل اليومي — {rangeRows[0].name}{rangeRows[0].shift_warning && <span style={{ marginRight: 8, fontSize: 11, fontWeight: 600, color:'#b45309' }}>⚠️ {rangeRows[0].shift_warning === 'none' ? 'غير مرتبط بوردية' : 'وردية 24 ساعة'} — لا يُحتسب له تأخير أو عمل إضافي. اربطه بوردية من تبويب الإعدادات.</span>}</div>
                   <div style={{ overflowX: 'auto' as const }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 }}>
+                    <table className="m-cards" style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: 13 }}>
                       <thead>
                         <tr style={{ background: colors.bg, borderBottom: `1px solid ${colors.border2}` }}>
                           {['التاريخ', 'الحالة', 'الحضور', 'الانصراف', 'الساعات', 'التأخير', 'الخصم', 'العمل الإضافي'].map(h => (
@@ -166,17 +166,17 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
                         {rangeRows[0].days.map((d: any, i: number) => (
                           <tr key={d.date} style={{ borderBottom: i < rangeRows[0].days.length - 1 ? `1px solid ${colors.border}` : 'none', opacity: d.check_in ? 1 : 0.6 }}>
                             <td style={{ padding: '10px 14px', fontWeight: 700, color: colors.text, whiteSpace: 'nowrap' as const }}>{fmtDay(d.date)}</td>
-                            <td style={{ padding: '10px 14px' }}>
+                            <td data-label="الحالة" style={{ padding: '10px 14px' }}>
                               <span style={{ fontSize: 11, fontWeight: 700, color: statusColor(d.status), background: statusBg(d.status), padding: '3px 10px', borderRadius: 99, whiteSpace: 'nowrap' as const }}>{d.status === 'لم يحضر' ? 'غياب' : d.status}</span>
                             </td>
-                            <td style={{ padding: '10px 14px', color: colors.text2 }}>{fmtTime(d.check_in)}</td>
-                            <td style={{ padding: '10px 14px', color: colors.text2 }}>
+                            <td data-label="الحضور" style={{ padding: '10px 14px', color: colors.text2 }}>{fmtTime(d.check_in)}</td>
+                            <td data-label="الانصراف" style={{ padding: '10px 14px', color: colors.text2 }}>
                               {checkOutCell(d, rangeRows[0].name)}
                             </td>
-                            <td style={{ padding: '10px 14px', color: colors.text2, fontWeight: 600 }}>{d.hours_worked !== null ? `${d.hours_worked} ساعة` : '—'}</td>
-                            <td style={{ padding: '10px 14px', color: d.late_minutes ? colors.warning : colors.text4 }}>{d.late_minutes ? `${d.late_minutes} دقيقة` : '—'}</td>
-                            <td style={{ padding: '10px 14px', fontWeight: 700 }}>{penaltyCell(d)}</td>
-                            <td style={{ padding: '10px 14px', color: d.overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
+                            <td data-label="الساعات" style={{ padding: '10px 14px', color: colors.text2, fontWeight: 600 }}>{d.hours_worked !== null ? `${d.hours_worked} ساعة` : '—'}</td>
+                            <td data-label="التأخير" style={{ padding: '10px 14px', color: d.late_minutes ? colors.warning : colors.text4 }}>{d.late_minutes ? `${d.late_minutes} دقيقة` : '—'}</td>
+                            <td data-label="الخصم" style={{ padding: '10px 14px', fontWeight: 700 }}>{penaltyCell(d)}</td>
+                            <td data-label="العمل الإضافي" style={{ padding: '10px 14px', color: d.overtime_minutes ? colors.primary : colors.text4, fontWeight: 700 }}>
                               {d.overtime_minutes ? <>{fmtMinutes(d.overtime_minutes)}{d.overtime_pay ? <span style={{ fontSize: 11, fontWeight: 600, color: colors.text3 }}> · {d.overtime_pay} ⃁</span> : null}</> : '—'}
                             </td>
                           </tr>
