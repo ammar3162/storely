@@ -175,6 +175,7 @@ export function StorelyDataTable<T>({
                     <td
                       key={column.key}
                       data-dense={dense}
+                      data-label={typeof column.header === 'string' ? column.header : undefined}
                       className={cn(
                         'storely-table-cell',
                         column.className,

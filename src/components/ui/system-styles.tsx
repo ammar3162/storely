@@ -149,6 +149,18 @@ export const storelySystemCss = `
     .storely-duration-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
     .storely-card-header, .storely-toolbar, .storely-pagination, .storely-drawer-header, .storely-drawer-body { padding: ${t.spacing[4]}px; }
     .storely-metric-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    /* الجداول على الجوال: كل صف بطاقة — العمود الأول عنوانها، والباقي «العنوان: القيمة» */
+    .storely-table { min-width: 0; display: block; }
+    .storely-table thead { display: none; }
+    .storely-table tbody { display: block; }
+    .storely-table tbody tr { display: block; padding: 12px 16px; border-bottom: 1px solid ${t.color.border}; }
+    .storely-table tbody tr:last-child { border-bottom: 0; }
+    .storely-table td { border: 0; padding: 2px 0; }
+    .storely-table td:not(.hidden) { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; }
+    .storely-table td[data-label]::before { content: attr(data-label); flex-shrink: 0; font-size: 12px; font-weight: 500; color: ${t.color.textMuted}; }
+    .storely-table td:first-child { font-size: 14px; font-weight: 600; padding-bottom: 4px; }
+    .storely-table td:first-child::before { content: none; }
+    .storely-table td[data-dense=true] { padding-block: 2px; }
     .storely-metric:last-child:nth-child(odd) { grid-column: 1 / -1; }
     .storely-metric { padding: 12px 14px; }
     .storely-metric-value { margin-top: 2px; font-size: 20px; }
