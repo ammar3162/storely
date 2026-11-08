@@ -8,7 +8,7 @@ import { getMe } from '@/lib/session'
 import { cache } from '@/lib/cache'
 import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
-import { AlertTriangle, ArrowUpRight, Bell, Package, Plus, Send, ShoppingCart, TrendingDown, TrendingUp } from 'lucide-react'
+import { ArrowUpRight, Package, Plus, Send, ShoppingCart, TrendingDown, TrendingUp } from 'lucide-react'
 import { StorelyButton, StorelyCard, StorelyDataTable, StorelyEmptyState, StorelyMetricStrip, StorelyPageHeader, StorelyStatusBadge, StorelyTableAction, StorelyTableActionGroup, type StorelyDataTableColumn, type StorelyMetric } from '@/components/ui'
 import { VatThresholdBanner } from '@/components/VatRegistration'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
@@ -49,7 +49,7 @@ function WeeklyBars({ data }: { data:{label:string;value:number}[] }) {
 
 const cardClass = ''
 const compactCardClass = ''
-const tableClass = 'border-0 rounded-none'
+const tableClass = 'border-0 rounded-none max-sm:[&_.storely-table]:min-w-0'
 const secondaryButtonClass = ''
 
 export default function DashboardPage() {
@@ -240,14 +240,14 @@ export default function DashboardPage() {
   const lowStockColumns: StorelyDataTableColumn<any>[] = [
     { key: 'name', header: 'الصنف', sortable: true, sortValue: (p:any) => p.name || '', cell: (p:any) => <span className="font-semibold leading-7 text-[#203640]">{p.name}</span> },
     { key: 'qty', header: 'المتاح', sortable: true, sortValue: (p:any) => Number(p.qty || 0), cell: (p:any) => <span className="tabular-nums">{p.qty} {p.unit}</span> },
-    { key: 'reorder', header: 'حد إعادة الطلب', sortable: true, sortValue: (p:any) => Number(p.reorder_point || 0), cell: (p:any) => <span className="tabular-nums text-[#66737C]">{p.reorder_point} {p.unit}</span> },
+    { key: 'reorder', header: 'حد إعادة الطلب', className: 'hidden sm:table-cell', headerClassName: 'hidden sm:table-cell', sortable: true, sortValue: (p:any) => Number(p.reorder_point || 0), cell: (p:any) => <span className="tabular-nums text-[#66737C]">{p.reorder_point} {p.unit}</span> },
     { key: 'status', header: 'الحالة', cell: (p:any) => Number(p.qty) <= 0 ? <StorelyStatusBadge status="danger">نافد</StorelyStatusBadge> : <StorelyStatusBadge status="warning">منخفض</StorelyStatusBadge> },
-    { key: 'action', header: '', className: 'w-12 text-left', cell: () => <StorelyTableActionGroup className="justify-end"><StorelyTableAction action="view" className="hover:bg-[#EEF3F5]" onClick={(event)=>{event.stopPropagation(); router.push('/inventory')}} /></StorelyTableActionGroup> },
+    { key: 'action', header: '', className: 'hidden w-12 text-left sm:table-cell', headerClassName: 'hidden sm:table-cell', cell: () => <StorelyTableActionGroup className="justify-end"><StorelyTableAction action="view" className="hover:bg-[#EEF3F5]" onClick={(event)=>{event.stopPropagation(); router.push('/inventory')}} /></StorelyTableActionGroup> },
   ]
 
   const activityColumns: StorelyDataTableColumn<any>[] = [
     { key: 'product', header: 'الصنف', sortable: true, sortValue: (m:any) => (m.products as any)?.name || '', cell: (m:any) => <span className="font-semibold leading-7 text-[#203640]">{(m.products as any)?.name || '—'}</span> },
-    { key: 'type', header: 'النوع', cell: (m:any) => { const label = m.type==='out' ? 'صرف' : m.type==='in' ? 'إضافة' : m.type==='waste' ? 'هدر' : m.type==='adjustment' ? 'تسوية جرد' : m.type==='transfer_in'||m.type==='transfer_out' ? 'تحويل' : 'حركة'; const status = m.type==='out' ? 'info' : m.type==='in' ? 'success' : m.type==='waste' ? 'danger' : 'warning'; return <StorelyStatusBadge status={status}>{label}</StorelyStatusBadge> } },
+    { key: 'type', header: 'النوع', className: 'hidden sm:table-cell', headerClassName: 'hidden sm:table-cell', cell: (m:any) => { const label = m.type==='out' ? 'صرف' : m.type==='in' ? 'إضافة' : m.type==='waste' ? 'هدر' : m.type==='adjustment' ? 'تسوية جرد' : m.type==='transfer_in'||m.type==='transfer_out' ? 'تحويل' : 'حركة'; const status = m.type==='out' ? 'info' : m.type==='in' ? 'success' : m.type==='waste' ? 'danger' : 'warning'; return <StorelyStatusBadge status={status}>{label}</StorelyStatusBadge> } },
     { key: 'qty', header: 'الكمية', sortable: true, sortValue: (m:any) => Number(m.qty_change || 0), cell: (m:any) => <span className={m.qty_change < 0 ? 'font-semibold tabular-nums text-[#B91C1C]' : 'font-semibold tabular-nums text-[#047857]'}>{m.qty_change>0?'+':''}{m.qty_change} {(m.products as any)?.unit}</span> },
     { key: 'date', header: 'الوقت', sortable: true, sortValue: (m:any) => m.created_at || '', cell: (m:any) => <span className="whitespace-nowrap text-[#66737C]">{new Date(m.created_at).toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</span> },
   ]
@@ -259,11 +259,6 @@ export default function DashboardPage() {
     ...(inv ? [{ metric:'عمليات الصرف', current:Number(monthComp.current.dispenseCount).toLocaleString('en-US'), change:monthComp.changes.dispenseCount, inverse:false }] : []),
   ] : []
 
-  const performanceColumns: StorelyDataTableColumn<any>[] = [
-    { key:'metric', header:'المؤشر', accessor:'metric', sortable:true },
-    { key:'current', header:'هذا الشهر', accessor:'current', className:'font-semibold tabular-nums' },
-    { key:'change', header:'التغير', cell:(row:any) => row.change===null || row.change===undefined ? <span className="text-[#8EA0B1]">-</span> : <StorelyStatusBadge status={(row.change>=0)!==!!row.inverse ? 'success' : 'warning'}>{row.change>=0?'+':'-'}{Math.abs(row.change)}%</StorelyStatusBadge> },
-  ]
 
   if(loading) return (
     <div className="mx-auto max-w-[1500px] space-y-7">
@@ -289,7 +284,7 @@ export default function DashboardPage() {
           eyebrow={orgName || undefined}
           title={greeting + '، ' + (userName || t('dashboard.defaultGreeting'))}
           description={branchName ? branchName + ' - ' + new Date().toLocaleDateString(lang==='ar'?'ar-SA-u-ca-gregory':'en-US',{numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'}) : new Date().toLocaleDateString(lang==='ar'?'ar-SA-u-ca-gregory':'en-US',{numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'})}
-          actions={(pur || inv) ? <div className="flex flex-wrap items-center gap-3">{pur && <StorelyButton variant="secondary" size="md" className={secondaryButtonClass} icon={<ShoppingCart size={15}/>} onClick={()=>router.push('/purchases')}>تسجيل شراء</StorelyButton>}{inv && <StorelyButton variant="secondary" size="md" className={secondaryButtonClass} icon={<Plus size={15}/>} onClick={()=>router.push('/inventory')}>إضافة منتج</StorelyButton>}{inv && <StorelyButton variant="primary" size="md" icon={<ArrowUpRight size={15}/>} onClick={()=>router.push('/dispense')}>تسجيل صرف</StorelyButton>}</div> : undefined}
+          actions={(pur || inv) ? <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3 [&>button]:w-full sm:[&>button]:w-auto">{inv && <StorelyButton variant="primary" size="md" className="col-span-2 sm:order-last" icon={<ArrowUpRight size={15}/>} onClick={()=>router.push('/dispense')}>تسجيل صرف</StorelyButton>}{pur && <StorelyButton variant="secondary" size="md" className={secondaryButtonClass + (inv ? '' : ' col-span-2')} icon={<ShoppingCart size={15}/>} onClick={()=>router.push('/purchases')}>تسجيل شراء</StorelyButton>}{inv && <StorelyButton variant="secondary" size="md" className={secondaryButtonClass + (pur ? '' : ' col-span-2')} icon={<Plus size={15}/>} onClick={()=>router.push('/inventory')}>إضافة منتج</StorelyButton>}</div> : undefined}
         />
         </div>
 
@@ -305,13 +300,13 @@ export default function DashboardPage() {
 
         {monthComp?.success ? (
           <StorelyCard title="هذا الشهر" description="مقارنة بالشهر الماضي" className={cardClass}>
-            <div className="grid divide-y divide-[#E6ECEF] sm:grid-cols-2 sm:divide-x sm:divide-y-0 sm:divide-x-reverse xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-px bg-[var(--storely-border)] xl:grid-cols-4">
               {performanceRows.map((m,i)=>(
-                <div key={i} className="min-w-0 px-[18px] py-4">
-                  <div className="text-[13px] font-semibold leading-5 text-[#66737C]">{m.metric}</div>
-                  <div className="mt-2 break-words text-[22px] font-bold leading-8 tabular-nums text-[#203640]">{m.current}</div>
+                <div key={i} className={'min-w-0 bg-[var(--storely-surface)] px-3.5 py-3 sm:px-[18px] sm:py-4' + (performanceRows.length % 2 && i === performanceRows.length - 1 ? ' col-span-2 xl:col-span-1' : '')}>
+                  <div className="text-[12.5px] font-semibold leading-5 text-[#66737C]">{m.metric}</div>
+                  <div className="mt-1 break-words text-[19px] font-bold leading-7 tabular-nums text-[#203640] sm:mt-2 sm:text-[22px] sm:leading-8">{m.current}</div>
                   {m.change!==null && m.change!==undefined ? (
-                    <div className={((m.change>=0)!==!!m.inverse ? 'text-[#047857]' : 'text-[#B45309]') + ' mt-2 inline-flex items-center gap-1 text-[13px] font-semibold'} dir="ltr">
+                    <div className={((m.change>=0)!==!!m.inverse ? 'text-[#047857]' : 'text-[#B45309]') + ' mt-1 inline-flex items-center gap-1 text-[12.5px] font-semibold sm:mt-2'} dir="ltr">
                       {(m.change>=0)!==!!m.inverse ? <TrendingUp size={14}/> : <TrendingDown size={14}/>}
                       {m.change>=0?'+':'-'}{Math.abs(m.change)}%
                     </div>
@@ -349,7 +344,10 @@ export default function DashboardPage() {
               <StorelyDataTable columns={activityColumns} data={activity} rowKey={(row:any,index:number)=>row.id || row.created_at || String(index)} searchable={false} pageSize={8} dense={false} className={tableClass} emptyState={<StorelyEmptyState icon={<Send size={16}/>} title="لا توجد حركات بعد" />} />
             </StorelyCard>}
 
-            <div className="grid gap-4 lg:grid-cols-2">
+          </div>
+
+          <div className="min-w-0 space-y-4">
+            <div className="grid gap-4">
               {[
                 pur && {title:'المشتريات آخر 7 أيام', data:weeklyP, unit:'فاتورة'},
                 inv && {title:'الصرف آخر 7 أيام', data:weeklyD, unit:'عملية'},
@@ -364,16 +362,6 @@ export default function DashboardPage() {
                 </StorelyCard>
               ))}
             </div>
-          </div>
-
-          <div className="min-w-0 space-y-4">
-            <StorelyCard title="أداء الفرع" description="ملخص تشغيلي مقارنة بالشهر السابق" className={compactCardClass}>
-              {performanceRows.length>0 ? <StorelyDataTable columns={performanceColumns} data={performanceRows} rowKey="metric" searchable={false} pageSize={8} dense={false} className={tableClass} /> : <StorelyEmptyState icon={<AlertTriangle size={16}/>} title="لا توجد مقارنة بعد" description="تظهر المقارنة عند توفر بيانات شهرية كافية" />}
-            </StorelyCard>
-
-            <StorelyCard title="آخر الإشعارات" description="آخر الإشعارات الواردة إلى المنشأة" className={compactCardClass}>
-              {notifs.length>0 ? <div className="divide-y divide-[#E6ECEF]">{notifs.slice(0,5).map((n:any)=><div key={n.id} className="flex items-start gap-3 px-[18px] py-3.5 text-[13.5px]"><span className="mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-[6px] bg-[#F4F7F8] text-[#66737C]"><Bell size={15} /></span><div className="min-w-0 flex-1"><div className="break-words font-semibold leading-7 text-[#203640]">{n.title}</div><div className="mt-1.5 text-[12px] leading-5 text-[#66737C]">{n.message}</div></div></div>)}</div> : <StorelyEmptyState icon={<Bell size={16}/>} title="لا توجد إشعارات" description="ستظهر الإشعارات التشغيلية هنا عند توفرها" />}
-            </StorelyCard>
           </div>
         </div>
         </div>

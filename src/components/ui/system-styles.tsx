@@ -150,7 +150,9 @@ export const storelySystemCss = `
     .storely-card-header, .storely-toolbar, .storely-pagination, .storely-drawer-header, .storely-drawer-body { padding: ${t.spacing[4]}px; }
     .storely-metric-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
     .storely-metric:last-child:nth-child(odd) { grid-column: 1 / -1; }
-    .storely-metric { padding: ${t.spacing[4]}px; }
+    .storely-metric { padding: 12px 14px; }
+    .storely-metric-value { margin-top: 2px; font-size: 20px; }
+    .storely-metric-helper { margin-top: 0; }
     .storely-dialog { padding: ${t.spacing[4]}px; }
     .storely-dialog-shell, .storely-dialog-shell-header, .storely-dialog-shell-body { padding: ${t.spacing[4]}px; }
     .storely-page-heading { flex-basis: 100%; }
