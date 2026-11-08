@@ -6,6 +6,9 @@ export type Topic = 'business' | 'greeting' | 'other'
 
 export const OFF_TOPIC_REPLY = 'أنا مساعد منشأتك في ستورلي، وأجيب فقط عن بيانات منشأتك وطريقة استخدام النظام واشتراكك.\n\nيمكنك أن تسألني مثلاً: «ما الأصناف التي ستنفد هذا الأسبوع؟» أو «من تأخر اليوم؟» أو «متى ينتهي اشتراكي؟»'
 export const GREETING_REPLY = 'مرحباً بك، أنا مساعد منشأتك في ستورلي.\n\nيمكنني مساعدتك في المخزون والطلبات، والموظفين والحضور، وإقفالات الكاشير، والأرباح، واشتراكك، وطريقة استخدام النظام. بماذا يمكنني مساعدتك؟'
+// نفس الردود للواجهة الإنجليزية
+export const OFF_TOPIC_REPLY_EN = 'I\'m your business assistant in Storely, and I only answer about your business data, how to use the system and your subscription.\n\nFor example, you can ask me: "Which items will run out this week?", "Who was late today?" or "When does my subscription end?"'
+export const GREETING_REPLY_EN = 'Welcome, I\'m your business assistant in Storely.\n\nI can help with inventory and orders, staff and attendance, cashier closings, profits, your subscription and how to use the system. How can I help you?'
 
 const PROMPT = `صنّف رسالة مستخدم نظام إدارة منشأة (مطعم/كوفي/محل) إلى كلمة وحدة:
 business = أي سؤال عن منشأته أو بياناتها: المخزون، الأصناف، الصرف، المشتريات، الموردين، الطلبات، الموظفين، الحضور، الدوام، الرواتب، الكاشير، المبيعات، الأرباح، المصاريف، الفروع، التقارير، الاشتراك، الباقات، الفاتورة، الإضافات، أو طريقة استخدام النظام.

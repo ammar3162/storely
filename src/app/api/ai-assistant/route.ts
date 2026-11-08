@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { buildAssistantContext } from '@/lib/assistantContext'
 import { runTool } from '@/lib/assistantTools'
-import { classifyTopic, OFF_TOPIC_REPLY, GREETING_REPLY } from '@/lib/assistantTopic'
+import { classifyTopic, OFF_TOPIC_REPLY, GREETING_REPLY, OFF_TOPIC_REPLY_EN, GREETING_REPLY_EN } from '@/lib/assistantTopic'
 import { fetchExternal } from '@/lib/fetchExternal'
 import { guard, limit } from '@/lib/rateLimit'
 
@@ -14,9 +14,13 @@ import { guard, limit } from '@/lib/rateLimit'
 // جولات الأدوات تاخذ عدة ثواني
 export const maxDuration = 60
 
+// المستخدم يستخدم الواجهة بالإنجليزي: نفس القواعد، بس الرد بالإنجليزي
+const EN_REPLY_RULE = `\n\n═══ Reply language ═══\nThe user is using Storely in English. Always reply in clear, professional English (no emojis), even though these instructions, the guide and the tool results are in Arabic. Keep product, staff, supplier and branch names exactly as they are. Use "SAR" for amounts. When you point to a page or button, use its English name (Home, Inventory, Dispense, Purchases, Suppliers, Reports, Attendance, Payroll, Staff, Settings, Branches, Add-ons, Profitability, AI tools).`
+
 export async function POST(req: NextRequest) {
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY || '')
-  const { message, org_id, branch_id: requestedBranch, history: rawHistory } = await req.json()
+  const { message, org_id, branch_id: requestedBranch, history: rawHistory, lang: rawLang } = await req.json()
+  const en = rawLang === 'en'   // واجهة المستخدم بالإنجليزي ← الرد بالإنجليزي
   // آخر رسائل المحادثة من المتصفح (نصوص بس، محدودة) — تتحقق وتتنظف قبل ما تنرسل للنموذج
   const history = (Array.isArray(rawHistory) ? rawHistory : []).slice(-6)
     .filter((h: any) => h && (h.role === 'user' || h.role === 'assistant') && typeof h.text === 'string' && h.text.trim())
@@ -32,7 +36,7 @@ export async function POST(req: NextRequest) {
   const lastReply = [...history].reverse().find(h => h.role === 'assistant')?.content
   const topic = await classifyTopic(String(message), lastReply, org_id)
   if (topic !== 'business') {
-    const reply = topic === 'greeting' ? GREETING_REPLY : OFF_TOPIC_REPLY
+    const reply = topic === 'greeting' ? (en ? GREETING_REPLY_EN : GREETING_REPLY) : (en ? OFF_TOPIC_REPLY_EN : OFF_TOPIC_REPLY)
     try {
       await sb.from('assistant_questions').insert({ org_id, user_id: (access as any).userId || null, role: (access as any).role || null, branch_id: branch_id || null,
         question: String(message).slice(0, 2000), reply, sections: [topic === 'greeting' ? 'greeting' : 'off_topic'] } as any)
@@ -59,7 +63,7 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY!, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001', max_tokens: 1000, system: ctx.prompt, messages,
+        model: 'claude-haiku-4-5-20251001', max_tokens: 1000, system: en ? ctx.prompt + EN_REPLY_RULE : ctx.prompt, messages,
         // آخر جولة: الأدوات تبقى معرّفة (الرسائل فيها نتائج أدوات) بس نمنع طلب أدوات جديدة عشان يرد
         ...(ctx.tools.length ? { tools: ctx.tools, ...(round === 4 ? { tool_choice: { type: 'none' } } : {}) } : {}),
       }),
@@ -68,7 +72,7 @@ export async function POST(req: NextRequest) {
     if (response.ok) await logAiUsage({ orgId: org_id, feature: 'assistant', model: 'claude-haiku-4-5-20251001', usage: data.usage })
     if (!response.ok) {
       await reportAiFailure(response.status, JSON.stringify(data), 'المساعد الذكي')
-      if (aiFailureKind(response.status, JSON.stringify(data))) return NextResponse.json({ reply: 'المساعد متوقف مؤقتاً — جرّب بعد شوي' })
+      if (aiFailureKind(response.status, JSON.stringify(data))) return NextResponse.json({ reply: en ? 'The assistant is temporarily paused — try again shortly' : 'المساعد متوقف مؤقتاً — جرّب بعد شوي' })
       break
     }
     if (data.stop_reason !== 'tool_use') break
@@ -83,7 +87,7 @@ export async function POST(req: NextRequest) {
     messages.push({ role: 'user', content: results })
   }
 
-  const reply = (data?.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n').trim() || 'عذراً، حدث خطأ'
+  const reply = (data?.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n').trim() || (en ? 'Sorry, an error occurred' : 'عذراً، حدث خطأ')
   // سجل الأسئلة (يطلع للأدمن) — فشل التسجيل ما يوقف الرد
   try {
     await sb.from('assistant_questions').insert({

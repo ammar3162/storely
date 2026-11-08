@@ -286,7 +286,7 @@ export default function AIAssistant() {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         // آخر رسائل المحادثة (بدون الترحيب) — عشان يفهم الردود القصيرة مثل «1» أو «وأمس؟»
-        body: JSON.stringify({message:msg, org_id, branch_id, history: msgs.slice(1).slice(-6).map(m=>({role:m.role==='user'?'user':'assistant', text:m.text}))})
+        body: JSON.stringify({message:msg, org_id, branch_id, lang: (()=>{ try { return localStorage.getItem('storely_lang')==='en'?'en':'ar' } catch { return 'ar' } })(), history: msgs.slice(1).slice(-6).map(m=>({role:m.role==='user'?'user':'assistant', text:m.text}))})
       })
       const data = await res.json()
       setMsgs(m=>[...m, {role:'ai', text:data.reply||data.error||'عذراً، حدث خطأ', time:now()}])
