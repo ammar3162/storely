@@ -495,6 +495,8 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
   describe('existing subscribers choose features at the new prices (applied at renewal)', () => {
     it('pro owner sees the offer, picks two features, nothing changes until the admin renews, then the org moves to «ابنِ باقتك» at the cheaper bill', async () => {
       const sw = await import('@/app/api/pricing-switch/route')
+      const adminSw = await import('@/app/api/admin/pricing-switches/route')
+      const adminRow = async () => ((await (await adminSw.GET(new Request('http://test/api/admin/pricing-switches', { headers: { 'x-admin-key': 'it-admin' } }))).json() as any).rows || []).find((r: any) => r.org_id === orgId)
       const activate = await import('@/app/api/admin/activate-user/route')
       const { monthlyBill } = await import('@/lib/orgBill')
       const { clearFeatureCache } = await import('@/lib/featureRoutes')
@@ -504,6 +506,7 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
       const { count: n } = await db.from('branches').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('is_active', true)
       const br = Math.max(1, n || 1)
       try {
+        expect(await adminRow()).toMatchObject({ status: 'pending', bill_now: 249 })
         const g = await call(sw.GET, 'GET', `/api/pricing-switch?org_id=${orgId}`)
         expect(g.json).toMatchObject({ success: true, show: true, current: 249, branches: br })
         expect(g.json.selected).toEqual(['mod_inventory', 'mod_purchases', 'cashier_closing', 'hr_full', 'ai_tools'])
@@ -517,6 +520,7 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         expect(save.json).toMatchObject({ success: true, outcome: 'switch' })
         expect((await call(sw.GET, 'GET', `/api/pricing-switch?org_id=${orgId}`)).json.show).toBe(false)
         expect((await call(sw.POST, 'POST', '/api/pricing-switch', { org_id: orgId, modules: pick })).status).toBe(409)
+        expect(await adminRow()).toMatchObject({ status: 'will_switch', current_monthly: 249, new_monthly: (59 + 39) * br, modules: pick })
         // قبل التجديد: باقته وفاتورته كما هي
         expect((await db.from('organizations').select('plan').eq('id', orgId).single()).data).toMatchObject({ plan: 'pro' })
 
@@ -530,6 +534,7 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         expect(((subs || []) as any[]).map(r => r.marketplace_addons.slug).sort()).toEqual(['cashier_closing', 'mod_inventory'])
         expect(await monthlyBill(db as any, orgId)).toBe((59 + 39) * br)
         expect((await db.from('pricing_switches').select('applied_at').eq('org_id', orgId).single()).data?.applied_at).toBeTruthy()
+        expect(await adminRow()).toMatchObject({ status: 'applied' })
       } finally {
         await db.from('pricing_switches').delete().eq('org_id', orgId)
         await db.from('org_addon_subscriptions').delete().eq('org_id', orgId)
