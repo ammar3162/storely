@@ -36,7 +36,7 @@ const BC_STYLES = `
   .bc-page .ui-control::placeholder{color:${T.color.textSubtle};opacity:1}
   .bc-page .ui-control:focus-visible,.bc-page button:focus-visible{outline:2px solid ${T.color.navy};outline-offset:2px;box-shadow:${T.shadow.focus}}
   .bc-page input[type=number],.bc-page input[type=month]{direction:ltr;font-variant-numeric:tabular-nums}
-  .bc-page input[type=number]{text-align:right}
+  .bc-page input[type=number]{text-align:start}
   .bc-page .ui-label{display:flex;align-items:center;gap:${T.spacing[2]}px;font-size:${T.typography.body}px;line-height:${T.typography.lineHeight};margin-bottom:${T.spacing[3]}px;cursor:pointer}
   .bc-page .ui-checkbox{width:16px;height:16px;flex-shrink:0;accent-color:${T.color.navy}}
   .bc-page .ui-empty{padding:${T.spacing[8]}px ${T.spacing[6]}px;text-align:center;background:${T.color.surface};border:1px solid ${T.color.border};border-radius:${T.radius.card}}

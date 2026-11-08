@@ -11,11 +11,11 @@ export const IV_CSS = `
   .iv-tools{display:flex;gap:8px;flex-wrap:wrap}
   @media(max-width:640px){.iv-hide-sm{display:none}.iv-tools .sh-btn{padding:9px 11px}}
   .iv-note{background:${C.surface};border:1px solid ${C.border};border-radius:${T.radius.card};margin-bottom:14px}
-  .iv-note-head{width:100%;display:flex;align-items:center;gap:10px;padding:11px 14px;border:none;background:none;font-family:inherit;font-size:13px;color:${C.text2};cursor:pointer;text-align:right}
+  .iv-note-head{width:100%;display:flex;align-items:center;gap:10px;padding:11px 14px;border:none;background:none;font-family:inherit;font-size:13px;color:${C.text2};cursor:pointer;text-align:start}
   .iv-note-head svg{color:${C.text4};flex-shrink:0}
   .iv-link{color:${C.primary};font-weight:600;font-size:13px}
   .iv-note-list{border-top:1px solid ${C.border};max-height:240px;overflow-y:auto}
-  .iv-note-item{width:100%;display:flex;justify-content:space-between;padding:10px 14px;border:none;border-bottom:1px solid ${C.border};background:none;font-family:inherit;font-size:13px;color:${C.text};cursor:pointer;text-align:right}
+  .iv-note-item{width:100%;display:flex;justify-content:space-between;padding:10px 14px;border:none;border-bottom:1px solid ${C.border};background:none;font-family:inherit;font-size:13px;color:${C.text};cursor:pointer;text-align:start}
   .iv-note-item:hover{background:#f9fafb}
   .iv-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
   .iv-tabs{display:inline-flex;background:#eef0f3;border-radius:9px;padding:3px}
@@ -29,7 +29,7 @@ export const IV_CSS = `
   .iv-cat{flex-shrink:0;padding:5px 11px;border-radius:99px;border:1px solid ${C.border};background:white;font-family:inherit;font-size:12.5px;color:${C.text2};cursor:pointer;white-space:nowrap}
   .iv-cat.on{border-color:${C.text};color:${C.text};font-weight:600}
   .iv-list{display:block;background:${T.color.surface};border:1px solid ${C.border};border-radius:${T.radius.card};overflow:hidden}
-  .iv-item{width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;border:none;border-bottom:1px solid ${C.border};background:none;font-family:inherit;text-align:right;cursor:pointer}
+  .iv-item{width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;border:none;border-bottom:1px solid ${C.border};background:none;font-family:inherit;text-align:start;cursor:pointer}
   .iv-item:last-child{border-bottom:none}
   .iv-item:active{background:#f9fafb}
   .iv-name{font-size:14px;font-weight:600;color:${C.text};overflow-wrap:anywhere}
@@ -39,7 +39,7 @@ export const IV_CSS = `
   .iv-min{font-size:11.5px;color:${C.text4};margin-top:2px}
   .iv-table-wrap{background:white;border:1px solid ${C.border};border-radius:12px;overflow:hidden}
   .iv-table{width:100%;border-collapse:collapse}
-  .iv-table th{text-align:right;padding:10px 16px;font-size:12px;font-weight:600;color:${C.text3};background:#f9fafb;border-bottom:1px solid ${C.border};white-space:nowrap}
+  .iv-table th{text-align:start;padding:10px 16px;font-size:12px;font-weight:600;color:${C.text3};background:#f9fafb;border-bottom:1px solid ${C.border};white-space:nowrap}
   .iv-table td{padding:12px 16px;border-bottom:1px solid ${C.border};font-size:13px;color:${C.text};vertical-align:middle}
   .iv-table tbody tr{cursor:pointer}
   .iv-table tbody tr:hover td{background:#f9fafb}

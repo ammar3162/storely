@@ -29,7 +29,7 @@ export const SHELL_CSS = `
   .sh-group-label{--nt:${C.primary};display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:${C.text2};padding:6px 10px 7px;letter-spacing:.1px}
   .sh-group-label::before{content:'';width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--nt);box-shadow:none}
   .sh-group-label::after{content:'';flex:1;height:1px;background:${C.border}}
-  .sh-nav{--nt:${C.primary};--nb:${C.primaryL};position:relative;width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;border:none;background:transparent;color:${C.text2};font-size:13.5px;font-weight:500;font-family:inherit;cursor:pointer;text-align:right;margin-bottom:1px;transition:background .15s,color .15s}
+  .sh-nav{--nt:${C.primary};--nb:${C.primaryL};position:relative;width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;border:none;background:transparent;color:${C.text2};font-size:13.5px;font-weight:500;font-family:inherit;cursor:pointer;text-align:start;margin-bottom:1px;transition:background .15s,color .15s}
   .sh-nav svg{color:${C.text4};flex-shrink:0;transition:color .15s}
   .sh-nav:hover{background:${C.bg};color:${C.text}}
   .sh-nav:hover svg{color:var(--nt)}

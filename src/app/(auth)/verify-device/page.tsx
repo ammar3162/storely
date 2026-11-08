@@ -81,7 +81,7 @@ export default function VerifyDevicePage() {
         .vd h1{font-size:22px;font-weight:700;color:var(--storely-text);margin:0 0 8px}
         .vd p{font-size:15px;color:var(--storely-text);line-height:1.8;margin:0}
         .vd-email{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 12px;border-radius:99px;background:#f3f4f6;font-size:14px;font-weight:600;color:var(--storely-text)}
-        .vd label{display:block;text-align:right;font-size:14px;font-weight:600;color:var(--storely-text);margin:22px 0 6px}
+        .vd label{display:block;text-align:start;font-size:14px;font-weight:600;color:var(--storely-text);margin:22px 0 6px}
         .vd input{width:100%;padding:14px;border:1.5px solid #d1d5db;border-radius:12px;font-size:26px;font-weight:700;letter-spacing:10px;text-align:center;color:var(--storely-text);font-family:inherit;outline:none;direction:ltr}
         .vd input:disabled{background:#f3f4f6}
         .vd input:focus{border-color:#203640;box-shadow:0 0 0 3px rgba(15,118,110,.12)}

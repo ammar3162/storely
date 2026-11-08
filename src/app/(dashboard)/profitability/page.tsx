@@ -65,7 +65,7 @@ const PF_STYLES = `
   .pf-page .ui-control::placeholder{color:${T.color.textSubtle};opacity:1}
   .pf-page .ui-control:focus-visible,.pf-page button:focus-visible{outline:2px solid ${T.color.navy};outline-offset:2px;box-shadow:${T.shadow.focus}}
   .pf-page input[type=number],.pf-page input[type=month]{direction:ltr;font-variant-numeric:tabular-nums}
-  .pf-page input[type=number]{text-align:right}
+  .pf-page input[type=number]{text-align:start}
   .pf-page .ui-label{display:flex;align-items:center;gap:${T.spacing[2]}px;font-size:${T.typography.body}px;line-height:${T.typography.lineHeight};margin-bottom:${T.spacing[3]}px;cursor:pointer}
   .pf-page .ui-checkbox{width:16px;height:16px;flex-shrink:0;accent-color:${T.color.navy}}
   .pf-page .ui-empty{padding:${T.spacing[8]}px ${T.spacing[6]}px;text-align:center;background:${T.color.surface};border:1px solid ${T.color.border};border-radius:${T.radius.card}}

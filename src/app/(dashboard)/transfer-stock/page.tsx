@@ -233,8 +233,8 @@ export default function TransferStockPage() {
         .transfer-page .ts-control{width:100%;min-width:0;height:44px;padding:${T.spacing[2]}px ${T.spacing[3]}px;border:1px solid ${T.color.infoBorder};border-radius:${T.radius.control};background:${T.color.surface};color:${T.color.text};font-family:inherit;font-size:${T.typography.body}px;line-height:${T.typography.lineHeight};transition:border-color .15s,box-shadow .15s}
         .transfer-page .ts-control::placeholder{color:${T.color.textSubtle};opacity:1}
         .transfer-page .ts-control:disabled{background:${T.color.background};color:${T.color.textMuted};cursor:not-allowed}
-        .transfer-page input[type=number]{font-variant-numeric:tabular-nums;direction:ltr;text-align:right}
-        .transfer-page input[type=date]{direction:ltr;text-align:right}
+        .transfer-page input[type=number]{font-variant-numeric:tabular-nums;direction:ltr;text-align:start}
+        .transfer-page input[type=date]{direction:ltr;text-align:start}
         .transfer-page .ts-control:focus-visible,.transfer-page button:focus-visible{outline:2px solid ${T.color.navy};outline-offset:2px;box-shadow:${T.shadow.focus}}
         .transfer-page .ts-button{height:auto;min-height:40px;padding:${T.spacing[2]}px ${T.spacing[4]}px;gap:${T.spacing[2]}px;border:1px solid ${T.color.infoBorder};border-radius:${T.radius.control};background:${T.color.surface};color:${T.color.navy};font-size:${T.typography.body}px;line-height:1.6;font-weight:600;white-space:normal;font-family:inherit;box-shadow:none;cursor:pointer}
         .transfer-page .ts-button:hover:not(:disabled){background:${T.color.infoBg};border-color:${T.color.infoBorder}}
