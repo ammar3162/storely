@@ -30,7 +30,9 @@ export function projectSwitch(input: { org: Org; addons: Addon[]; subs: Sub[]; m
   const now = input.now ?? Date.now()
   const branches = Math.max(1, Math.min(10, Math.round(Number(input.branches) || 1)))
   const modules = CUSTOM_MODULE_ORDER.filter(s => input.modules.includes(s))
-  const current = computeOrgRevenue([org], addons, subs, now)[org.id].total
+  // الفاتورة الحالية: الاشتراكات الفعّالة بس (الملغاة تبقى صفوفها بالقاعدة) — نفس حساب orgRevenues
+  const activeSubs = subs.filter(s => s.status === 'active')
+  const current = computeOrgRevenue([org], addons, activeSubs, now)[org.id].total
 
   // بعد الانتقال: المزايا المختارة لكل الفروع + الموظفين/الموردين الإضافيين اللي اشتراهم
   const mine = subs.filter(s => s.org_id === org.id && s.status === 'active' && new Date(s.expires_at).getTime() > now)

@@ -51,6 +51,13 @@ describe('pricing switch for existing subscribers', () => {
     expect(p.extraStaffNeeded).toBe(2)
     expect(p.projected).toBe(59 + 3 * 10)
   })
+  it('cancelled add-ons are not part of the current bill', () => {
+    const org = { id: 'o1', plan: 'basic', max_branches: 1, billing_cycle: 'monthly' }
+    const cancelled = { ...sub('a-hr'), status: 'cancelled' }
+    const withCancelled = projectSwitch({ org, addons, subs: [sub('a-csh'), cancelled], modules: ['mod_inventory'], branches: 1, activeStaff: 2 })
+    const without = projectSwitch({ org, addons, subs: [sub('a-csh')], modules: ['mod_inventory'], branches: 1, activeStaff: 2 })
+    expect(withCancelled.current).toBe(without.current)
+  })
   it('yearly subscribers are compared by their monthly equivalent', () => {
     const org = { id: 'o1', plan: 'pro', max_branches: 3, billing_cycle: 'yearly' }
     const p = projectSwitch({ org, addons, subs: [], modules: ['mod_inventory'], branches: 1, activeStaff: 4 })
