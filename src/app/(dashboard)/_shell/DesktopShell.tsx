@@ -61,6 +61,7 @@ export default function DesktopShell({ m, banners, children }: { m: DashboardShe
               <span style={{fontWeight:600,color:C.text2}}>{orgName}</span>{branchName&&<><span>/</span><span>{branchName}</span></>}
             </div>
             <div style={{display:'flex',alignItems:'center',gap:4}}>
+              <button className="sh-icon-btn" data-no-translate title={m.lang==='en'?'العربية':'English'} onClick={()=>m.setLang(m.lang==='en'?'ar':'en')} style={{fontSize:12.5,fontWeight:700,width:'auto',padding:'0 10px'}}>{m.lang==='en'?'عربي':'EN'}</button>
               <HelpVideoButton/>
               <button className="sh-icon-btn" title="الدعم الفني" onClick={()=>window.open('https://wa.me/966594351667','_blank')}><HelpCircle size={19}/></button>
               <button className="sh-icon-btn" title="الإعدادات" onClick={()=>router.push('/settings')}><Settings size={19}/></button>

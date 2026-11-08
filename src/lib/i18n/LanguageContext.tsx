@@ -36,8 +36,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, [lang, hydrated])
 
   const setLang = useCallback((l: Lang) => {
+    const prev = (() => { try { return localStorage.getItem(STORAGE_KEY) } catch { return null } })()
     setLangState(l)
     try { localStorage.setItem(STORAGE_KEY, l) } catch {}
+    // الترجمة التلقائية (AutoTranslate): للعربي نعيد التحميل لترجع النصوص الأصلية
+    if (typeof window !== 'undefined') {
+      if (l === 'ar' && prev === 'en') window.location.reload()
+      else window.dispatchEvent(new Event('storely-lang'))
+    }
   }, [])
 
   const t = useCallback((path: string) => getNested(translations[lang], path), [lang])

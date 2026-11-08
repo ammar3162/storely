@@ -1,5 +1,6 @@
 'use client'
 import AIAssistant from '@/components/AIAssistant'
+import AutoTranslate from '@/components/AutoTranslate'
 import { LanguageProvider } from '@/lib/i18n/LanguageContext'
 import { SHELL_CSS } from './_shell/shellCss'
 import { useDashboardShell } from './_shell/useDashboardShell'
@@ -49,6 +50,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <LanguageProvider>
+      <AutoTranslate/>
       <DashboardLayoutInner>{children}</DashboardLayoutInner>
     </LanguageProvider>
   )

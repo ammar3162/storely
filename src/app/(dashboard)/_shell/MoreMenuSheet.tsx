@@ -1,5 +1,5 @@
 'use client'
-import { LogOut, Moon, Sun } from 'lucide-react'
+import { LogOut, Moon, Sun, Languages } from 'lucide-react'
 import { C, navTone, Icon } from './nav'
 import type { DashboardShell } from './useDashboardShell'
 
@@ -39,6 +39,7 @@ export default function MoreMenuSheet({ m }: { m: DashboardShell }) {
               </div>
             ))}
             <div style={{display:'flex',gap:8,marginTop:16,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
+              <button className="sh-btn" data-no-translate style={{flex:1}} onClick={()=>m.setLang(m.lang==='en'?'ar':'en')}><Languages size={16}/> {m.lang==='en'?'العربية':'English'}</button>
               <button className="sh-btn" style={{flex:1}} onClick={toggleTheme}>{theme==='light'?<Moon size={16}/>:<Sun size={16}/>} {theme==='light'?'الوضع الداكن':'الوضع الفاتح'}</button>
               <button className="sh-btn sh-btn-danger" style={{flex:1}} onClick={signOut}><LogOut size={16}/> تسجيل الخروج</button>
             </div>
