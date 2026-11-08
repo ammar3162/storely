@@ -62,8 +62,6 @@ html{scroll-behavior:smooth}
 .lp-halo::before{content:'';position:absolute;inset:-34px;border-radius:50%;border:1px dashed rgba(15,118,110,.35)}
 .lp-phone{position:relative;width:290px;aspect-ratio:9/19.2;border-radius:44px;background:#0b1413;padding:10px;box-shadow:0 50px 80px -40px rgba(11,59,58,.7),0 0 0 1px rgba(255,255,255,.06) inset;transform:rotate(-3deg)}
 .lp-phone video{width:100%;height:100%;object-fit:cover;border-radius:35px;display:block;background:#0b3b3a}
-.lp-screen{position:relative;width:100%;max-width:600px;aspect-ratio:16/9;border-radius:20px;background:#0b1413;padding:8px;box-shadow:0 50px 90px -30px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08) inset}
-.lp-screen video{width:100%;height:100%;object-fit:cover;border-radius:13px;display:block;background:#0b3b3a}
 .lp-float{position:absolute;background:#fff;border-radius:18px;padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 24px 40px -20px rgba(20,32,31,.35);border:1px solid var(--line);animation:lpBob 6s ease-in-out infinite}
 .lp-float b{display:block;font-size:14px}
 .lp-float small{display:block;font-size:12px;color:var(--ink3);margin-top:2px}
