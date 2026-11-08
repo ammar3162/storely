@@ -31,17 +31,17 @@ export default function AcceptInvitePage() {
     const j = await fetch('/api/accountant-portal/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: token, action }) })
       .then(r => r.json()).catch(() => ({ error: 'تأكد من الإنترنت' }))
     setBusy('')
-    if (!j.success) { setErr(j.error || 'حدث خطأ، حاول مرة ثانية'); return }
+    if (!j.success) { setErr(j.error || 'حدث خطأ، حاول مرة أخرى'); return }
     if (action === 'decline') { setState('declined'); return }
     router.replace(`/accountant-portal/${j.org_id}`)
   }
 
   const msg: Partial<Record<State, { icon: any; tone: string; title: string; text: string }>> = {
-    accepted: { icon: CheckCircle2, tone: '#047857', title: 'قبلت الدعوة من قبل', text: 'ادخل صفحتك برمز يوصلك على إيميلك.' },
-    expired: { icon: Clock, tone: '#b45309', title: 'رابط الدعوة انتهى', text: 'اطلب من المنشأة تضغط «إعادة إرسال الدعوة» من إعداداتها.' },
-    invalid: { icon: XCircle, tone: '#b91c1c', title: 'الرابط غير صحيح', text: 'افتح الرابط من إيميل الدعوة نفسه بدون تعديل.' },
-    gone: { icon: XCircle, tone: '#b91c1c', title: 'الدعوة ما عادت موجودة', text: 'يمكن المنشأة سحبتها. تواصل معهم إذا تتوقع غير كذا.' },
-    declined: { icon: CheckCircle2, tone: colors.text3, title: 'رفضت الدعوة', text: 'وصلنا للمنشأة إنك رفضت، وما راح تشوف شي من بياناتها.' },
+    accepted: { icon: CheckCircle2, tone: '#047857', title: 'قبلت الدعوة مسبقاً', text: 'ادخل إلى صفحتك برمز يصل إلى بريدك الإلكتروني.' },
+    expired: { icon: Clock, tone: '#b45309', title: 'انتهت صلاحية رابط الدعوة', text: 'اطلب من المنشأة الضغط على «إعادة إرسال الدعوة» من إعداداتها.' },
+    invalid: { icon: XCircle, tone: '#b91c1c', title: 'الرابط غير صحيح', text: 'افتح الرابط من بريد الدعوة نفسه دون تعديل.' },
+    gone: { icon: XCircle, tone: '#b91c1c', title: 'لم تعد الدعوة موجودة', text: 'ربما سحبتها المنشأة. تواصل معها إذا كنت تتوقع غير ذلك.' },
+    declined: { icon: CheckCircle2, tone: colors.text3, title: 'رفضت الدعوة', text: 'أبلغنا المنشأة برفضك، ولن تطّلع على أي من بياناتها.' },
     error: { icon: XCircle, tone: '#b91c1c', title: 'تعذر التحميل', text: 'تأكد من الإنترنت وحدّث الصفحة.' },
   }
   const m = msg[state]
@@ -65,14 +65,14 @@ export default function AcceptInvitePage() {
               </div>
             </div>
             <div style={{ fontSize: 14.5, lineHeight: 1.8, color: colors.text2, marginBottom: 14 }}>
-              {inv.name ? `هلا ${inv.name}، ` : ''}المنشأة تبيك تكون محاسبها في Storely. بعد القبول تشوف بياناتها وتحمّلها إكسل لأي فترة.
+              {inv.name ? `مرحباً ${inv.name}، ` : ''}تدعوك المنشأة لتكون محاسبها في Storely. بعد القبول يمكنك الاطلاع على بياناتها وتحميلها بصيغة إكسل لأي فترة.
             </div>
             <div style={{ background: '#f8fafa', border: `1px solid ${colors.border}`, borderRadius: 14, padding: '12px 14px', marginBottom: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 800, color: colors.text2, marginBottom: 8 }}><Eye size={14} /> اللي بتشوفه</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 800, color: colors.text2, marginBottom: 8 }}><Eye size={14} /> ما ستطّلع عليه</div>
               <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6 }}>
                 {inv.sections.map((s: string) => <span key={s} style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 99, background: colors.primaryLight, color: colors.primary }}>{s}</span>)}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: colors.text4, marginTop: 10 }}><ShieldCheck size={13} /> قراءة بس — ما تقدر تعدّل شي، والمنشأة تسحب الإذن متى ما بغت</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: colors.text4, marginTop: 10 }}><ShieldCheck size={13} /> للقراءة فقط — لا يمكنك تعديل أي شيء، ويمكن للمنشأة سحب الإذن في أي وقت</div>
             </div>
             <button onClick={() => act('accept')} disabled={!!busy} style={{ ...btn, opacity: busy ? .7 : 1 }}>{busy === 'accept' ? 'جاري القبول...' : 'قبول الدعوة والدخول'}</button>
             <button onClick={() => act('decline')} disabled={!!busy} style={{ ...btn, background: 'transparent', color: colors.text3, fontSize: 13.5, marginTop: 6 }}>{busy === 'decline' ? 'جاري الرفض...' : 'رفض الدعوة'}</button>
@@ -83,7 +83,7 @@ export default function AcceptInvitePage() {
               <m.icon size={40} color={m.tone} />
               <div style={{ fontSize: 19, fontWeight: 800, margin: '10px 0 6px' }}>{m.title}</div>
               <div style={{ fontSize: 14, color: colors.text3, lineHeight: 1.8, marginBottom: 18 }}>{m.text}</div>
-              {state !== 'declined' && <a href="/accountant-portal" style={{ ...btn, display: 'block', textDecoration: 'none', boxSizing: 'border-box' as const }}>ادخل بوابة المحاسب</a>}
+              {state !== 'declined' && <a href="/accountant-portal" style={{ ...btn, display: 'block', textDecoration: 'none', boxSizing: 'border-box' as const }}>الدخول إلى بوابة المحاسب</a>}
             </div>
           )}
         </div>

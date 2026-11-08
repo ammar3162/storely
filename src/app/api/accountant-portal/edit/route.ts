@@ -16,19 +16,19 @@ export async function POST(req: Request) {
     const b = await req.json()
     const db = sb()
     const me = await currentAccountant(db, req)
-    if (!me) return NextResponse.json({ error: 'سجّل دخولك' }, { status: 401 })
+    if (!me) return NextResponse.json({ error: 'سجّل الدخول' }, { status: 401 })
     const access = await accessFor(db, me.id, String(b.org_id || ''))
-    if (!access) return NextResponse.json({ error: 'ما عندك صلاحية على هالمنشأة' }, { status: 403 })
+    if (!access) return NextResponse.json({ error: 'ليست لديك صلاحية على هذه المنشأة' }, { status: 403 })
     if (!UUID.test(String(b.id || ''))) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const sections: string[] = Array.isArray(access.sections) ? access.sections : []
     const editor = me.name || me.email
     const orgId = access.org_id as string
 
     if (b.kind === 'closing') {
-      if (!sections.some(s => CLOSING_SECTIONS.includes(s))) return NextResponse.json({ error: 'ما عندك صلاحية على الإقفالات' }, { status: 403 })
+      if (!sections.some(s => CLOSING_SECTIONS.includes(s))) return NextResponse.json({ error: 'ليست لديك صلاحية على الإقفالات' }, { status: 403 })
       const { data: c } = await db.from('cashier_closings').select('id,branch_id,closing_date,staff_name').eq('id', b.id).eq('org_id', orgId).maybeSingle()
       if (!c) return NextResponse.json({ error: 'الإقفال غير موجود' }, { status: 404 })
-      if (access.branch_id && (c as any).branch_id !== access.branch_id) return NextResponse.json({ error: 'هالإقفال من فرع ثاني' }, { status: 403 })
+      if (access.branch_id && (c as any).branch_id !== access.branch_id) return NextResponse.json({ error: 'هذا الإقفال من فرع آخر' }, { status: 403 })
       // حقول التعديل المسموحة فقط (التاريخ يبقى زي ما هو)
       const r = await editClosing(db, orgId, b.id, {
         total_sales: b.total_sales, mada_amount: b.mada_amount, visa_amount: b.visa_amount, mastercard_amount: b.mastercard_amount,
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     }
 
     if (b.kind === 'purchase') {
-      if (!sections.some(s => PURCHASE_SECTIONS.includes(s))) return NextResponse.json({ error: 'ما عندك صلاحية على المشتريات' }, { status: 403 })
+      if (!sections.some(s => PURCHASE_SECTIONS.includes(s))) return NextResponse.json({ error: 'ليست لديك صلاحية على المشتريات' }, { status: 403 })
       const r = await editPurchase(db, orgId, b.id, {
         amount: b.amount, has_vat: b.has_vat, invoice_number: b.invoice_number, supplier_vat_number: b.supplier_vat_number,
       }, editor, { source: 'accountant', accountantId: me.id }, access.branch_id || null)

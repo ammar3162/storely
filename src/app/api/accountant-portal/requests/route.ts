@@ -9,9 +9,9 @@ const FIELDS = 'id,invoice_group,purchase_id,closing_id,kind,message,status,owne
 async function guard(req: Request, orgId: unknown) {
   const db = sb()
   const me = await currentAccountant(db, req)
-  if (!me) return { error: NextResponse.json({ error: 'سجّل دخولك' }, { status: 401 }) }
+  if (!me) return { error: NextResponse.json({ error: 'سجّل الدخول' }, { status: 401 }) }
   const access = await accessFor(db, me.id, String(orgId || ''))
-  if (!access) return { error: NextResponse.json({ error: 'ما عندك صلاحية على هالمنشأة' }, { status: 403 }) }
+  if (!access) return { error: NextResponse.json({ error: 'ليست لديك صلاحية على هذه المنشأة' }, { status: 403 }) }
   return { db, me, access }
 }
 
@@ -23,7 +23,7 @@ export async function GET(req: Request) {
       // كل الطلبات عند كل المنشآت المفعّلة
       const db = sb()
       const me = await currentAccountant(db, req)
-      if (!me) return NextResponse.json({ error: 'سجّل دخولك' }, { status: 401 })
+      if (!me) return NextResponse.json({ error: 'سجّل الدخول' }, { status: 401 })
       const { data: acc } = await db.from('accountant_access').select('org_id,expires_on,organizations(name,logo_url)').eq('accountant_id', me.id).eq('status', 'active')
       const orgs = ((acc || []) as any[]).filter(a => !accessExpired(a.expires_on))
       if (!orgs.length) return NextResponse.json({ success: true, requests: [] })
@@ -51,17 +51,17 @@ export async function POST(req: Request) {
     if (Array.isArray(b.targets)) return requestMissingVat(g, b.targets)
     if (!isKind(b.kind)) return NextResponse.json({ error: 'اختر نوع الطلب' }, { status: 400 })
     const message = String(b.message || '').trim().slice(0, 500) || null
-    if ((b.kind === 'other' || b.kind === 'document') && !message) return NextResponse.json({ error: 'اكتب وش تحتاج' }, { status: 400 })
+    if ((b.kind === 'other' || b.kind === 'document') && !message) return NextResponse.json({ error: 'اكتب ما تحتاجه' }, { status: 400 })
     const target = await validateTarget(g.db, g.access.org_id, b)
     if (!target) return NextResponse.json({ error: 'الفاتورة غير موجودة' }, { status: 404 })
     // نفس الطلب على نفس الفاتورة وهو لسا مفتوح = تكرار
     if (target.invoice_group || target.purchase_id) {
       const { data: same } = await g.db.from('accountant_requests').select('id').eq('org_id', g.access.org_id).eq('kind', b.kind).neq('status', 'resolved')
         .eq(target.invoice_group ? 'invoice_group' : 'purchase_id', (target.invoice_group || target.purchase_id) as string).limit(1)
-      if (same?.length) return NextResponse.json({ error: 'فيه طلب مفتوح بنفس النوع على هالفاتورة — انتظر رد المنشأة' }, { status: 409 })
+      if (same?.length) return NextResponse.json({ error: 'يوجد طلب مفتوح من النوع نفسه على هذه الفاتورة — انتظر رد المنشأة' }, { status: 409 })
     }
     const { count } = await g.db.from('accountant_requests').select('id', { count: 'exact', head: true }).eq('org_id', g.access.org_id).neq('status', 'resolved')
-    if ((count || 0) >= MAX_OPEN_PER_ORG) return NextResponse.json({ error: 'فيه طلبات مفتوحة كثيرة لهالمنشأة — اقفل اللي انحلت أول' }, { status: 429 })
+    if ((count || 0) >= MAX_OPEN_PER_ORG) return NextResponse.json({ error: 'توجد طلبات مفتوحة كثيرة لهذه المنشأة — أغلق الطلبات المحلولة أولاً' }, { status: 429 })
 
     const { data, error } = await g.db.from('accountant_requests').insert({ org_id: g.access.org_id, accountant_id: g.me.id, kind: b.kind, message, ...target } as any).select(FIELDS).single()
     if (error) return NextResponse.json({ error: 'تعذر إرسال الطلب' }, { status: 500 })
@@ -97,7 +97,7 @@ async function requestMissingVat(g: any, raw: unknown[]) {
     const v = await validateTarget(g.db, org, { invoice_group: t?.invoice_group || null, purchase_id: t?.invoice_group ? null : t?.purchase_id || null })
     if (v && (v.invoice_group || v.purchase_id)) targets.push({ invoice_group: v.invoice_group, purchase_id: v.purchase_id, closing_id: null })
   }
-  if (!targets.length) return NextResponse.json({ error: 'ما لقينا الفواتير' }, { status: 404 })
+  if (!targets.length) return NextResponse.json({ error: 'لم يُعثر على الفواتير' }, { status: 404 })
   const { data: open } = await g.db.from('accountant_requests').select('invoice_group,purchase_id').eq('org_id', org).eq('kind', 'missing_vat').neq('status', 'resolved')
   const have = new Set(((open || []) as any[]).map(r => r.invoice_group || r.purchase_id))
   const seen = new Set<string>()
@@ -105,7 +105,7 @@ async function requestMissingVat(g: any, raw: unknown[]) {
   if (!fresh.length) return NextResponse.json({ success: true, created: 0, skipped: targets.length })
   const { count } = await g.db.from('accountant_requests').select('id', { count: 'exact', head: true }).eq('org_id', org).neq('status', 'resolved')
   const room = MAX_OPEN_PER_ORG - (count || 0)
-  if (room <= 0) return NextResponse.json({ error: 'فيه طلبات مفتوحة كثيرة لهالمنشأة — اقفل اللي انحلت أول' }, { status: 429 })
+  if (room <= 0) return NextResponse.json({ error: 'توجد طلبات مفتوحة كثيرة لهذه المنشأة — أغلق الطلبات المحلولة أولاً' }, { status: 429 })
   const rows = fresh.slice(0, room).map(t => ({ org_id: org, accountant_id: g.me.id, kind: 'missing_vat', message: null, ...t }))
   const { error } = await g.db.from('accountant_requests').insert(rows as any)
   if (error) return NextResponse.json({ error: 'تعذر إرسال الطلب' }, { status: 500 })

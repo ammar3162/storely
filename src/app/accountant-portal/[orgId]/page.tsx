@@ -47,17 +47,17 @@ export default function PortalClientPage() {
 
   const name = data?.report?.orgName || ''
   const xlsx = range ? `/api/accountant-portal/report?org_id=${orgId}&from=${range.from}&to=${range.to}&format=xlsx` : '#'
-  const TABS: { k: Tab; l: string; icon: any }[] = [{ k: 'report', l: 'التقرير', icon: BarChart3 }, { k: 'requests', l: 'الطلبات', icon: MessageSquareText }, { k: 'locks', l: 'إقفال الشهور', icon: Lock }]
+  const TABS: { k: Tab; l: string; icon: any }[] = [{ k: 'report', l: 'التقرير', icon: BarChart3 }, { k: 'requests', l: 'الطلبات', icon: MessageSquareText }, { k: 'locks', l: 'إقفال الأشهر', icon: Lock }]
 
   // طلب واحد لكل فاتورة ناقصة (الرقم الضريبي أو رقم الفاتورة) — المنشأة يوصلها إشعار واحد وتعبّيها من «طلبات المحاسب»
   async function requestMissing(invs: any[]) {
-    if (!invs.length || !window.confirm(`نرسل للمنشأة طلب تكمّل الرقم الضريبي أو رقم الفاتورة لـ ${invs.length === 1 ? 'فاتورة وحدة' : `${invs.length} فواتير`}؟`)) return
+    if (!invs.length || !window.confirm(`سنرسل إلى المنشأة طلباً لإكمال الرقم الضريبي أو رقم الفاتورة لـ ${invs.length === 1 ? 'فاتورة واحدة' : `${invs.length} فواتير`}؟`)) return
     const j = await fetch('/api/accountant-portal/requests', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ org_id: orgId, targets: invs.map(i => ({ invoice_group: i.group || null, purchase_id: i.firstId || null })) }) })
       .then(r => r.json()).catch(() => ({ error: 'تأكد من الإنترنت' }))
     if (j.error) { window.alert(j.error); return }
-    if (!j.created) { window.alert('كل الفواتير الناقصة عليها طلبات مفتوحة من قبل — تابعها من «الطلبات»'); setTab('requests'); return }
-    window.alert(`انرسل للمنشأة ${j.created === 1 ? 'طلب واحد' : `${j.created} طلبات`}${j.skipped ? ` (${j.skipped} عليها طلب من قبل)` : ''} ✓`)
+    if (!j.created) { window.alert('جميع الفواتير الناقصة عليها طلبات مفتوحة مسبقاً — تابعها من «الطلبات»'); setTab('requests'); return }
+    window.alert(`أُرسل إلى المنشأة ${j.created === 1 ? 'طلب واحد' : `${j.created} طلبات`}${j.skipped ? ` (${j.skipped} عليها طلب مسبقاً)` : ''} ✓`)
     setReqKey(k => k + 1); setTab('requests')
   }
 

@@ -16,7 +16,7 @@ async function ownerOnly(orgId: unknown) {
   if (typeof orgId !== 'string' || !UUID.test(orgId)) return { error: NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 }) }
   const access = await verifyOrgAccess(orgId)
   if (!access.authorized) return { error: NextResponse.json({ error: access.error }, { status: access.status }) }
-  if (access.role !== 'owner') return { error: NextResponse.json({ error: 'طلبات المحاسب يرد عليها مالك الحساب' }, { status: 403 }) }
+  if (access.role !== 'owner') return { error: NextResponse.json({ error: 'يرد مالك الحساب على طلبات المحاسب' }, { status: 403 }) }
   return { ok: true as const }
 }
 
@@ -49,11 +49,11 @@ export async function PATCH(req: Request) {
     if (b.invoice_number !== undefined && String(b.invoice_number).trim()) fix.invoice_number = normalizeInvoiceNumber(b.invoice_number)!
     if (b.supplier_vat_number !== undefined && String(b.supplier_vat_number).trim()) {
       const v = normalizeVat(b.supplier_vat_number)
-      if (!isValidVat(v)) return NextResponse.json({ error: 'الرقم الضريبي غير صحيح — ١٥ رقم يبدأ وينتهي بـ 3' }, { status: 400 })
+      if (!isValidVat(v)) return NextResponse.json({ error: 'الرقم الضريبي غير صحيح — يتكون من 15 رقماً ويبدأ وينتهي بالرقم 3' }, { status: 400 })
       fix.supplier_vat_number = v!
     }
     if (Object.keys(fix).length) {
-      if (!(r as any).invoice_group && !(r as any).purchase_id) return NextResponse.json({ error: 'هذا الطلب مو مربوط بفاتورة' }, { status: 400 })
+      if (!(r as any).invoice_group && !(r as any).purchase_id) return NextResponse.json({ error: 'هذا الطلب غير مرتبط بفاتورة' }, { status: 400 })
       const { data: inv } = await db.from('purchases').select('created_at').eq('org_id', b.org_id).eq((r as any).invoice_group ? 'invoice_group' : 'id', (r as any).invoice_group || (r as any).purchase_id).limit(1).maybeSingle()
       const locked = await lockedFor(db, b.org_id, [(inv as any)?.created_at])
       if (locked) return NextResponse.json({ error: locked }, { status: 423 })
@@ -67,7 +67,7 @@ export async function PATCH(req: Request) {
         if ((p as any)?.supplier) await db.from('suppliers').update({ vat_number: fix.supplier_vat_number } as any).eq('org_id', b.org_id).eq('name', (p as any).supplier).is('vat_number', null)
       }
     }
-    if (!reply && !Object.keys(fix).length) return NextResponse.json({ error: 'اكتب ردك أو كمّل البيانات' }, { status: 400 })
+    if (!reply && !Object.keys(fix).length) return NextResponse.json({ error: 'اكتب ردك أو أكمل البيانات' }, { status: 400 })
 
     const done = [fix.invoice_number && `رقم الفاتورة: ${fix.invoice_number}`, fix.supplier_vat_number && `الرقم الضريبي: ${fix.supplier_vat_number}`].filter(Boolean).join(' · ')
     const ownerReply = [reply, done && `✓ تم تحديث ${done}`].filter(Boolean).join('\n')

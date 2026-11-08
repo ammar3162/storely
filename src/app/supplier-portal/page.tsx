@@ -20,7 +20,7 @@ export default function SupplierPortalAuthPage() {
     setError(''); setLoading(true)
     document.cookie = 'oauth_next=suppliers-join; path=/; max-age=600; samesite=lax'
     const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth/callback` } })
-    if (error) { setError('تعذر الدخول بحساب Google — حاول مرة ثانية'); setLoading(false) }
+    if (error) { setError('تعذر الدخول بحساب Google — حاول مرة أخرى'); setLoading(false) }
   }
 
   async function handleLogin(e: React.FormEvent) {
@@ -41,7 +41,7 @@ export default function SupplierPortalAuthPage() {
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault(); setLoading(true); setError('')
     if (!businessName.trim() || !email.trim() || !password.trim()) {
-      setError('عبّي كل الحقول المطلوبة'); setLoading(false); return
+      setError('عبّئ جميع الحقول المطلوبة'); setLoading(false); return
     }
     const { error: signUpErr, data } = await sb.auth.signUp({ email, password })
     if (signUpErr) {
@@ -91,7 +91,7 @@ export default function SupplierPortalAuthPage() {
           <span style={{fontSize:12,fontWeight:700,color:'#029FA2',background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:99,padding:'3px 10px',marginRight:4}}>بوابة الموردين</span>
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
-          <span style={{fontSize:13,color:'#6b7280'}}>{mode==='login'?'ما عندك حساب؟':'عندك حساب؟'}</span>
+          <span style={{fontSize:13,color:'#6b7280'}}>{mode==='login'?'ليس لديك حساب؟':'لديك حساب؟'}</span>
           <button onClick={()=>{setMode(mode==='login'?'register':'login');setError('')}}
             style={{padding:'8px 18px',background:'none',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:'#374151',transition:'border-color .2s'}}
             onMouseEnter={e=>e.currentTarget.style.borderColor='#029FA2'}
@@ -128,7 +128,7 @@ export default function SupplierPortalAuthPage() {
                   </button>
                 </form>
                 <div style={{textAlign:'center',marginTop:24,fontSize:13,color:'#6b7280'}}>
-                  ما عندك حساب مورد؟{' '}
+                  ليس لديك حساب مورد؟{' '}
                   <button onClick={()=>{setMode('register');setError('')}} style={{background:'none',border:'none',color:'#029FA2',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
                     سجّل الآن
                   </button>
@@ -175,7 +175,7 @@ export default function SupplierPortalAuthPage() {
                   </button>
                 </form>
                 <div style={{textAlign:'center',marginTop:20,fontSize:13,color:'#6b7280'}}>
-                  عندك حساب؟{' '}
+                  لديك حساب؟{' '}
                   <button onClick={()=>{setMode('login');setError('')}} style={{background:'none',border:'none',color:'#029FA2',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
                     سجّل الدخول
                   </button>

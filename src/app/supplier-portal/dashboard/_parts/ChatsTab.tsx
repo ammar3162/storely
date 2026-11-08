@@ -11,7 +11,7 @@ export default function ChatsTab({ m }: { m: SupplierDashboard }) {
             <h2>المحادثات</h2>
             {(() => {
               const orgIds = Array.from(new Set(chatMessages.map((m:any)=>m.org_id)))
-              if (orgIds.length===0) return <div className="sd-empty"><MessageCircle size={28}/><b>ما فيه محادثات</b><span>رسائل العملاء لك تطلع هنا.</span></div>
+              if (orgIds.length===0) return <div className="sd-empty"><MessageCircle size={28}/><b>لا توجد محادثات</b><span>تظهر هنا رسائل العملاء إليك.</span></div>
               return (
                 <div className="sd-list">
                   {orgIds.map((oid:any) => {

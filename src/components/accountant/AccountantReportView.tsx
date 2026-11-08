@@ -7,7 +7,7 @@ import { fileLink } from '@/lib/invoiceUrl'
 
 // عرض تقرير المحاسب — صفحة الرابط وبوابة المحاسب تستخدمه
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-const DECISION: Record<string, string> = { pending: 'بانتظار قرار المالك', approved: 'خُصم من الموظف', rejected: 'ما انخصم' }
+const DECISION: Record<string, string> = { pending: 'بانتظار قرار المالك', approved: 'خُصم من الموظف', rejected: 'لم يُخصم' }
 
 // wide = بعرض الصفحة (الجداول الكبيرة)؛ الباقي عمودين على الشاشات العريضة
 function Card({ title, children, wide }: { title: string; children: React.ReactNode; wide?: boolean }) {
@@ -32,7 +32,7 @@ function Lines({ rows }: { rows: [string, number, boolean?][] }) {
   )
 }
 function Table({ head, rows, moneyCols = [] }: { head: string[]; rows: (string | number | React.ReactNode)[][]; moneyCols?: number[] }) {
-  if (!rows.length) return <div style={{ fontSize: 12.5, color: colors.text4, padding: '8px 0' }}>ما فيه بيانات لهذي الفترة</div>
+  if (!rows.length) return <div style={{ fontSize: 12.5, color: colors.text4, padding: '8px 0' }}>لا توجد بيانات لهذه الفترة</div>
   return (
     <div style={{ overflowX: 'auto', marginTop: 10 }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, minWidth: 420 }}>
@@ -94,8 +94,8 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
       </div>}
       {t.taxMismatch > 0 && <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: '#dc2626' }}>⚠️ {t.taxMismatch} فاتورة مبلغها المسجّل أكبر من الأصلية — راجعها</div>}
       {onlyMissing && <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontSize: 12.5, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '8px 12px', marginTop: 6 }}>
-        تعرض الفواتير الناقصة بس ({missing.length})
-        {onRequestMissing && missing.length > 0 && <button onClick={() => onRequestMissing(missing)} style={btn(true)}>اطلب من المنشأة تكمّلها</button>}
+        يتم عرض الفواتير الناقصة فقط ({missing.length})
+        {onRequestMissing && missing.length > 0 && <button onClick={() => onRequestMissing(missing)} style={btn(true)}>اطلب من المنشأة إكمالها</button>}
         <button onClick={() => setOnlyMissing(false)} style={btn(false)}>اعرض الكل</button>
       </div>}
       <Table head={['التاريخ', 'رقم الفاتورة', 'المورد', 'الرقم الضريبي', 'الضريبة', 'الإجمالي', 'الحالة', 'الفاتورة', ...(onRequest ? [''] : []), ...(onEditPurchase ? [''] : [])]} moneyCols={[4, 5]}
@@ -173,17 +173,17 @@ function VatReturnView({ r, onShowMissing, onRequestMissing }: { r: any; onShowM
       </table>
     </div>
     <div style={{ display: 'grid', gap: 6, marginTop: 12, fontSize: 12, color: colors.text3, lineHeight: 1.7 }}>
-      <div>«—» يعني النظام ما يسجّل هذا البند — عبّه من سجلاتك لو موجود.</div>
-      {v.hidden.length > 0 && <div>الخانات {v.hidden.join(' و')} ما تخص المطاعم والكوفيهات — مخفية، وتبقى فاضية في نموذج الهيئة.</div>}
+      <div>«—» تعني أن النظام لا يسجّل هذا البند — عبّئه من سجلاتك إن وُجد.</div>
+      {v.hidden.length > 0 && <div>الخانات {v.hidden.join(' و')} لا تخص المطاعم والمقاهي — مخفية، وتبقى فارغة في نموذج الهيئة.</div>}
       {v.review.count > 0 && <div style={{ color: colors.danger, fontWeight: 700, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '9px 12px' }}>
-        ⚠️ {invoicesLabel(v.review.count)} فيها ضريبة <span dir="ltr">{fmt(v.review.vat)}</span> ما دخلت خانة ٧ لأنها ناقصة الرقم الضريبي أو رقم الفاتورة.
+        ⚠️ {invoicesLabel(v.review.count)} فيها ضريبة <span dir="ltr">{fmt(v.review.vat)}</span> لم تدخل الخانة 7 لنقص الرقم الضريبي أو رقم الفاتورة.
         {(onShowMissing || onRequestMissing) && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
           {onShowMissing && <button onClick={onShowMissing} style={btn(false)}>اعرض الفواتير الناقصة</button>}
-          {onRequestMissing && <button onClick={onRequestMissing} style={btn(true)}>اطلب من المنشأة تكمّلها</button>}
+          {onRequestMissing && <button onClick={onRequestMissing} style={btn(true)}>اطلب من المنشأة إكمالها</button>}
         </div>}
       </div>}
-      {v.nonVat.count > 0 && <div>مشتريات بدون ضريبة: {invoicesLabel(v.nonVat.count)} بـ <span dir="ltr">{fmt(v.nonVat.total)}</span> — حدد هل تدخل خانة ١٠ أو ١١ أو خارج النطاق.</div>}
-      {v.drawerExpenses > 0 && <div>مصروفات من درج الكاشير <span dir="ltr">{fmt(v.drawerExpenses)}</span> — بدون فواتير ضريبية، ما دخلت الإقرار.</div>}
+      {v.nonVat.count > 0 && <div>مشتريات بدون ضريبة: {invoicesLabel(v.nonVat.count)} بـ <span dir="ltr">{fmt(v.nonVat.total)}</span> — حدد ما إذا كانت تدخل الخانة 10 أو 11 أو خارج النطاق.</div>}
+      {v.drawerExpenses > 0 && <div>مصروفات من درج الكاشير <span dir="ltr">{fmt(v.drawerExpenses)}</span> — دون فواتير ضريبية، فلم تدخل الإقرار.</div>}
       <div style={{ color: colors.text4 }}>المبيعات من إقفالات الكاشير (شاملة ضريبة ١٥٪) والمشتريات من الفواتير المسجلة — راجعها قبل التقديم.</div>
     </div>
   </>

@@ -7,8 +7,8 @@ import { PortalShell, OrgLogo } from '@/components/accountant/PortalShell'
 import { REQUEST_KINDS, type RequestKind } from '@/lib/accountantRequests'
 
 // كل طلبات المحاسب عند كل المنشآت
-const ST: Record<string, [string, string, string]> = { open: ['بانتظار الرد', '#fffbeb', '#b45309'], answered: ['ردّت المنشأة', '#eff6ff', '#1d4ed8'], resolved: ['انحل', '#ecfdf5', '#047857'] }
-const FILTERS = [{ k: 'active', l: 'تحتاج متابعة' }, { k: 'answered', l: 'ردود جديدة' }, { k: 'open', l: 'بانتظار الرد' }, { k: 'resolved', l: 'انحلت' }]
+const ST: Record<string, [string, string, string]> = { open: ['بانتظار الرد', '#fffbeb', '#b45309'], answered: ['ردّت المنشأة', '#eff6ff', '#1d4ed8'], resolved: ['تم الحل', '#ecfdf5', '#047857'] }
+const FILTERS = [{ k: 'active', l: 'تحتاج متابعة' }, { k: 'answered', l: 'ردود جديدة' }, { k: 'open', l: 'بانتظار الرد' }, { k: 'resolved', l: 'تم حلها' }]
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function PortalRequestsPage() {
@@ -31,7 +31,7 @@ export default function PortalRequestsPage() {
       </div>
       {!list ? <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={24} color={colors.primary} className="spin" /></div>
         : !shown.length ? <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: 18, padding: 40, textAlign: 'center', color: colors.text3, fontSize: 14 }}>
-            {f === 'active' ? 'كل شي تمام — ما فيه طلبات تحتاج متابعة 👌' : 'ما فيه طلبات هنا'}<div style={{ fontSize: 12.5, color: colors.text4, marginTop: 6 }}>تقدر تطلب من صفحة أي منشأة، جنب أي فاتورة ضريبية.</div></div>
+            {f === 'active' ? 'كل شيء على ما يرام — لا توجد طلبات تحتاج إلى متابعة' : 'لا توجد طلبات هنا'}<div style={{ fontSize: 12.5, color: colors.text4, marginTop: 6 }}>يمكنك الطلب من صفحة أي منشأة، بجانب أي فاتورة ضريبية.</div></div>
         : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(360px,1fr))', gap: 12 }}>
           {shown.map(r => (
             <div key={r.id} style={{ background: '#fff', border: `1px solid ${r.status === 'answered' ? '#bfdbfe' : colors.border}`, borderRadius: 16, padding: 16 }}>
@@ -47,8 +47,8 @@ export default function PortalRequestsPage() {
               <div style={{ display: 'flex', alignItems: 'center', marginTop: 10 }}>
                 <span style={{ fontSize: 11.5, color: colors.text4 }} dir="ltr">{r.created_at.slice(0, 10)}</span>
                 {r.status !== 'resolved'
-                  ? <button onClick={() => setStatus(r, 'resolved')} style={{ marginInlineStart: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: 800, color: '#047857', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 9, padding: '6px 11px', cursor: 'pointer', fontFamily: font.family }}><CheckCircle2 size={14} /> انحل</button>
-                  : <button onClick={() => setStatus(r, 'open')} style={{ marginInlineStart: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: 700, color: colors.text3, background: 'none', border: `1px solid ${colors.border}`, borderRadius: 9, padding: '6px 11px', cursor: 'pointer', fontFamily: font.family }}><RotateCcw size={13} /> افتحه</button>}
+                  ? <button onClick={() => setStatus(r, 'resolved')} style={{ marginInlineStart: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: 800, color: '#047857', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 9, padding: '6px 11px', cursor: 'pointer', fontFamily: font.family }}><CheckCircle2 size={14} /> تم الحل</button>
+                  : <button onClick={() => setStatus(r, 'open')} style={{ marginInlineStart: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: 700, color: colors.text3, background: 'none', border: `1px solid ${colors.border}`, borderRadius: 9, padding: '6px 11px', cursor: 'pointer', fontFamily: font.family }}><RotateCcw size={13} /> فتح</button>}
               </div>
             </div>
           ))}

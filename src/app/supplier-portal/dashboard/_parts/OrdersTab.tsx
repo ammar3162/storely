@@ -13,7 +13,7 @@ export default function OrdersTab({ m, v }: { m: SupplierDashboard; v: Dashboard
           <section className="sd-panel">
             <h2>الطلبات الواردة <small>{quoteRequests.length}</small></h2>
             {quoteRequests.length===0 ? (
-              <div className="sd-empty"><ClipboardList size={28}/><b>ما وصلتك طلبات للحين</b><span>لما يطلب منك عميل، يوصلك الطلب هنا وعلى واتساب.</span></div>
+              <div className="sd-empty"><ClipboardList size={28}/><b>لم تصلك طلبات بعد</b><span>عندما يطلب منك عميل، يصلك الطلب هنا وعبر واتساب.</span></div>
             ) : (
               <div className="sd-orders">
                 {quoteRequests.map((r:any)=>{ const st = STATUS[r.status] || {label:r.status,tone:'slate'}; return (
@@ -33,10 +33,10 @@ export default function OrdersTab({ m, v }: { m: SupplierDashboard; v: Dashboard
                           <input className="sd-in" type="date" value={deliveryDate} onChange={e=>setDeliveryDate(e.target.value)}/>
                           <button className="sd-btn" onClick={()=>approveDelivery(r)} disabled={approveSaving || !selectedRepId || !deliveryDate}>{approveSaving?'…':'تأكيد التوريد'}</button>
                           <button className="sd-btn ghost" onClick={()=>setApprovingId(null)}>إلغاء</button>
-                          {reps.length===0 && <div className="sd-warn">أضف مندوب أول من «المناديب»</div>}
+                          {reps.length===0 && <div className="sd-warn">أضف مندوباً أولاً من «المناديب»</div>}
                         </div>
                       ) : (
-                        <div className="sd-order-foot"><span>سعرك: <b>{money(r.quoted_price)} ⃁</b> — العميل وافق</span><button className="sd-btn" onClick={()=>startApprove(r.id)}>أكّد التوريد</button></div>
+                        <div className="sd-order-foot"><span>سعرك: <b>{money(r.quoted_price)} ⃁</b> — وافق العميل</span><button className="sd-btn" onClick={()=>startApprove(r.id)}>أكّد التوريد</button></div>
                       )
                     ) : r.status==='confirmed' ? (
                       <div className="sd-order-foot"><span>المندوب {r.rep_name} ({r.rep_phone}) · موعد التوريد {r.delivery_date}</span><button className="sd-btn" onClick={()=>markFulfilled(r.id)}>تم التوريد</button></div>

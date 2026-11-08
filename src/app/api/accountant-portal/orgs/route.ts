@@ -9,7 +9,7 @@ export async function GET(req: Request) {
   try {
     const db = sb()
     const me = await currentAccountant(db, req)
-    if (!me) return NextResponse.json({ error: 'سجّل دخولك' }, { status: 401 })
+    if (!me) return NextResponse.json({ error: 'سجّل الدخول' }, { status: 401 })
     const [{ data: rows }, { data: reqs }] = await Promise.all([
       db.from('accountant_access').select('org_id,expires_on,organizations(name,logo_url),branches(name)').eq('accountant_id', me.id).eq('status', 'active'),
       db.from('accountant_requests').select('org_id,status').eq('accountant_id', me.id).neq('status', 'resolved'),

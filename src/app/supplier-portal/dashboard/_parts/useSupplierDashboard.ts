@@ -248,8 +248,8 @@ export function useSupplierDashboard() {
   async function uploadLogo(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]; e.target.value = ''
     if (!file || !profile) return
-    if (!/^image\/(png|jpe?g|webp)$/.test(file.type)) { alert('الشعار لازم يكون صورة PNG أو JPG'); return }
-    if (file.size > 2 * 1024 * 1024) { alert('حجم الشعار أكبر من ٢ ميجا'); return }
+    if (!/^image\/(png|jpe?g|webp)$/.test(file.type)) { alert('يجب أن يكون الشعار صورة PNG أو JPG'); return }
+    if (file.size > 2 * 1024 * 1024) { alert('حجم الشعار أكبر من 2 ميجابايت'); return }
     setLogoBusy(true)
     const path = `${profile.id}/logo-${Date.now()}.${file.type.split('/')[1].replace('jpeg','jpg')}`
     const { error } = await sb.storage.from('supplier-items').upload(path, file, { upsert: true, contentType: file.type })

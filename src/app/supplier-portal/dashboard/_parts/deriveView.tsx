@@ -20,12 +20,12 @@ export function deriveView(m: SupplierDashboard) {
     { id:'account', label:'بيانات المنشأة', Icon:UserRound },
   ]
   const PAGE_HINT: Record<Tab,string> = {
-    products:'الأصناف اللي يشوفها العملاء ويطلبونها منك',
+    products:'الأصناف التي يراها العملاء ويطلبونها منك',
     orders:'طلبات التسعير والتوريد من عملاء ستورلي',
     chats:'رسائل العملاء لك',
-    reps:'مناديب التوصيل اللي تسند لهم الطلبات',
+    reps:'مناديب التوصيل الذين تُسند إليهم الطلبات',
     reports:'مبيعاتك وفواتيرك الآجلة والمسددة',
-    activity:'آخر ما صار في حسابك',
+    activity:'آخر ما حدث في حسابك',
     account:'اسم منشأتك وموقعها',
   }
   const activeNav = NAV_ITEMS.find(n=>n.id===activeTab)!
@@ -68,7 +68,7 @@ export function deriveView(m: SupplierDashboard) {
 
   const STATUS: Record<string,{label:string;tone:string}> = {
     pending:{label:'بانتظار سعرك',tone:'amber'}, quoted:{label:'أرسلت السعر',tone:'slate'},
-    accepted:{label:'العميل وافق — أكّد التوريد',tone:'teal'}, confirmed:{label:'مجدول للتوريد',tone:'blue'},
+    accepted:{label:'وافق العميل — أكّد التوريد',tone:'teal'}, confirmed:{label:'مجدول للتوريد',tone:'blue'},
     fulfilled:{label:'تم التوريد',tone:'green'},
   }
   const visible = profile?.is_visible!==false

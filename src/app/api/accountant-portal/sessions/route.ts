@@ -8,7 +8,7 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 export async function GET(req: Request) {
   const db = sb()
   const me = await currentAccountant(db, req)
-  if (!me) return NextResponse.json({ error: 'سجّل دخولك' }, { status: 401 })
+  if (!me) return NextResponse.json({ error: 'سجّل الدخول' }, { status: 401 })
   const { data } = await db.from('accountant_sessions').select('id,user_agent,created_at,last_seen_at')
     .eq('accountant_id', me.id).is('revoked_at', null).gte('created_at', new Date(Date.now() - 15 * 86400e3).toISOString())
     .order('last_seen_at', { ascending: false }).limit(20)
@@ -19,7 +19,7 @@ export async function GET(req: Request) {
 export async function DELETE(req: Request) {
   const db = sb()
   const me = await currentAccountant(db, req)
-  if (!me) return NextResponse.json({ error: 'سجّل دخولك' }, { status: 401 })
+  if (!me) return NextResponse.json({ error: 'سجّل الدخول' }, { status: 401 })
   const { searchParams } = new URL(req.url)
   let q = db.from('accountant_sessions').update({ revoked_at: new Date().toISOString() } as any).eq('accountant_id', me.id).is('revoked_at', null)
   if (searchParams.get('others') === '1') q = q.neq('id', me.sessionId)

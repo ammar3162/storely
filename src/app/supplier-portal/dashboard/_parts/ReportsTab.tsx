@@ -16,18 +16,18 @@ export default function ReportsTab({ m, v }: { m: SupplierDashboard; v: Dashboar
           </div>
           <div className="sd-grid-2">
             <section className="sd-panel"><h2>أكثر الأصناف طلباً</h2>
-              {topItems.length===0 ? <div className="sd-muted">ما فيه بيانات للحين</div> : <ul className="sd-rank">{topItems.map(([n,q])=>(<li key={n}><span>{n}</span><b>{q} وحدة</b></li>))}</ul>}
+              {topItems.length===0 ? <div className="sd-muted">لا توجد بيانات بعد</div> : <ul className="sd-rank">{topItems.map(([n,q])=>(<li key={n}><span>{n}</span><b>{q} وحدة</b></li>))}</ul>}
             </section>
             <section className="sd-panel"><h2>أكثر العملاء طلباً</h2>
-              {topCustomers.length===0 ? <div className="sd-muted">ما فيه بيانات للحين</div> : <ul className="sd-rank">{topCustomers.map(([n,a])=>(<li key={n}><span>{n}</span><b>{a.count} طلب · {money(a.total)} ⃁</b></li>))}</ul>}
+              {topCustomers.length===0 ? <div className="sd-muted">لا توجد بيانات بعد</div> : <ul className="sd-rank">{topCustomers.map(([n,a])=>(<li key={n}><span>{n}</span><b>{a.count} طلب · {money(a.total)} ⃁</b></li>))}</ul>}
             </section>
           </div>
           <section className="sd-panel"><h2>التوريد حسب المندوب</h2>
-            {repStats.length===0 ? <div className="sd-muted">ما فيه توريدات مسندة للحين</div> : <ul className="sd-rank">{repStats.map(([n,c])=>(<li key={n}><span>{n}</span><b>{c} توريد</b></li>))}</ul>}
+            {repStats.length===0 ? <div className="sd-muted">لا توجد توريدات مسندة بعد</div> : <ul className="sd-rank">{repStats.map(([n,c])=>(<li key={n}><span>{n}</span><b>{c} توريد</b></li>))}</ul>}
           </section>
           <section className="sd-panel">
             <h2>الفواتير <small>آجلة {unpaidInvoices.length} · مسددة {paidInvoices.length} ({money(paidTotal)} ⃁)</small></h2>
-            {fulfilledRequests.length===0 ? <div className="sd-muted">الفواتير تطلع هنا بعد ما تأكد توريد أي طلب.</div> : (
+            {fulfilledRequests.length===0 ? <div className="sd-muted">تظهر الفواتير هنا بعد تأكيد توريد أي طلب.</div> : (
               <div className="sd-list">
                 {fulfilledRequests.map((r:any)=>(
                   <div key={r.id} className="sd-item">

@@ -50,7 +50,7 @@ export function PortalShell({ title, subtitle, actions, children, orgLogo }: {
   const NAV = [
     { href: '/accountant-portal', label: 'نظرة عامة', icon: LayoutGrid },
     { href: '/accountant-portal/requests', label: 'الطلبات', icon: MessageSquareText, badge: pending },
-    { href: '/accountant-portal/locks', label: 'إقفال الشهور', icon: Lock },
+    { href: '/accountant-portal/locks', label: 'إقفال الأشهر', icon: Lock },
     { href: '/accountant-portal/devices', label: 'أجهزتي', icon: Smartphone },
   ]
   const isActive = (h: string) => h === '/accountant-portal' ? path === h : path.startsWith(h)
@@ -83,7 +83,7 @@ export function PortalShell({ title, subtitle, actions, children, orgLogo }: {
       <div style={{ padding: '10px 12px 6px', flex: 1, overflowY: 'auto', minHeight: 0 }}>
         <div className="ap-sec">عملاؤك {data ? `(${data.orgs.length})` : ''}</div>
         {!data ? <ListSkeleton/>
-          : !data.orgs.length ? <div style={{ fontSize: 12, opacity: .6, padding: '6px 10px', lineHeight: 1.7 }}>ما عندك عملاء للحين — تطلع المنشآت هنا أول ما تدعوك</div>
+          : !data.orgs.length ? <div style={{ fontSize: 12, opacity: .6, padding: '6px 10px', lineHeight: 1.7 }}>لا يوجد لديك عملاء بعد — تظهر المنشآت هنا فور دعوتك</div>
           : data.orgs.map(o => {
             const href = `/accountant-portal/${o.org_id}`, on = path === href
             return (
@@ -184,7 +184,7 @@ export function presetRange(key: string): { from: string; to: string } {
   }
   return { from: `${t.slice(0, 8)}01`, to: t }
 }
-const PRESETS = [{ k: 'month', l: 'هذا الشهر' }, { k: 'last_month', l: 'الشهر اللي فات' }, { k: 'quarter', l: 'هذا الربع' }, { k: 'last_quarter', l: 'الربع اللي فات' }]
+const PRESETS = [{ k: 'month', l: 'هذا الشهر' }, { k: 'last_month', l: 'الشهر الماضي' }, { k: 'quarter', l: 'هذا الربع' }, { k: 'last_quarter', l: 'الربع الماضي' }]
 
 export function PeriodBar({ from, to, onChange }: { from: string; to: string; onChange: (r: { from: string; to: string }) => void }) {
   const active = PRESETS.find(p => { const r = presetRange(p.k); return r.from === from && r.to === to })?.k

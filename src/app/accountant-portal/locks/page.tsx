@@ -4,7 +4,7 @@ import { Loader2, Lock, Unlock } from 'lucide-react'
 import { colors, font } from '@/lib/ds'
 import { PortalShell, OrgLogo } from '@/components/accountant/PortalShell'
 
-// إقفال الشهور لكل العملاء: جدول المنشآت × آخر ٦ شهور
+// إقفال الأشهر لكل العملاء: جدول المنشآت × آخر ٦ شهور
 export default function PortalLocksPage() {
   const [data, setData] = useState<any>(null)
   const [busy, setBusy] = useState('')
@@ -13,17 +13,17 @@ export default function PortalLocksPage() {
   useEffect(() => { load() }, [])
   async function toggle(o: any, m: any) {
     const lock = !o.locked[m.month]
-    if (!window.confirm(lock ? `تقفل ${m.label} لـ ${o.name}؟ ما ينقدر يتعدّل فيه مشتريات ولا إقفالات كاشير.` : `تفتح ${m.label} لـ ${o.name}؟`)) return
+    if (!window.confirm(lock ? `هل تريد إقفال ${m.label} لـ ${o.name}؟ لن يمكن تعديل المشتريات أو إقفالات الكاشير فيه.` : `هل تريد فتح ${m.label} لـ ${o.name}؟`)) return
     setBusy(o.org_id + m.month); setErr('')
     const j = await fetch('/api/accountant-portal/locks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: o.org_id, month: m.month, action: lock ? 'lock' : 'unlock' }) }).then(r => r.json()).catch(() => ({ error: 'تأكد من الإنترنت' }))
     setBusy('')
     if (j.error) setErr(j.error); else load()
   }
   return (
-    <PortalShell title="إقفال الشهور" subtitle="بعد ما تراجع الشهر أقفله — ما ينقدر يتعدّل فيه شي إلا لو فتحته أنت. تسجيل الدفع للموردين لاحقاً يبقى مسموح.">
+    <PortalShell title="إقفال الأشهر" subtitle="بعد مراجعة الشهر أقفله — ولن يمكن تعديل أي شيء فيه إلا إذا فتحته أنت. ويبقى تسجيل الدفع للموردين لاحقاً مسموحاً.">
       {err && <div style={{ color: colors.danger, fontSize: 13, marginBottom: 10 }}>{err}</div>}
       {!data ? <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={24} color={colors.primary} className="spin" /></div>
-        : !data.orgs?.length ? <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: 18, padding: 40, textAlign: 'center', color: colors.text3 }}>ما عندك عملاء مفعّلين</div>
+        : !data.orgs?.length ? <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: 18, padding: 40, textAlign: 'center', color: colors.text3 }}>لا يوجد لديك عملاء مفعّلون</div>
         : <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: 18, overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720, fontFamily: font.family }}>
             <thead><tr style={{ background: '#f8fafc' }}>
@@ -39,7 +39,7 @@ export default function PortalLocksPage() {
                   const l = o.locked[m.month], k = o.org_id + m.month
                   // إذن على فرع واحد: الحالة بس بدون زر (الإقفال لمحاسب المنشأة كاملة)
                   return <td key={m.month} style={{ textAlign: 'center', padding: 6 }}>
-                    <button onClick={() => o.can_lock !== false && toggle(o, m)} disabled={!!busy || o.can_lock === false} title={o.can_lock === false ? 'إذنك على فرع واحد — الإقفال لمحاسب المنشأة كاملة' : l ? `مقفل · ${l.by || ''} · ${String(l.at).slice(0, 10)}` : 'مفتوح — اضغط للإقفال'}
+                    <button onClick={() => o.can_lock !== false && toggle(o, m)} disabled={!!busy || o.can_lock === false} title={o.can_lock === false ? 'إذنك على فرع واحد — الإقفال من صلاحية محاسب المنشأة كاملة' : l ? `مقفل · ${l.by || ''} · ${String(l.at).slice(0, 10)}` : 'مفتوح — اضغط للإقفال'}
                       style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 11px', borderRadius: 10, cursor: o.can_lock === false ? 'default' : 'pointer', fontFamily: font.family, fontSize: 12, fontWeight: 800,
                         border: `1px solid ${l ? '#a7f3d0' : colors.border}`, background: l ? '#ecfdf5' : '#fff', color: l ? '#047857' : colors.text4, opacity: busy === k ? .5 : 1 }}>
                       {l ? <Lock size={13} /> : <Unlock size={13} />}{l ? 'مقفل' : 'مفتوح'}</button>

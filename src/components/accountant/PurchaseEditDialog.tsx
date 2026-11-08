@@ -16,7 +16,7 @@ export default function PurchaseEditDialog({ target, onClose, submit }: { target
 
   async function save() {
     setErr('')
-    if (!vatOk) return setErr('الرقم الضريبي ١٥ رقم يبدأ وينتهي بـ 3')
+    if (!vatOk) return setErr('يتكون الرقم الضريبي من 15 رقماً ويبدأ وينتهي بالرقم 3')
     const payload: Record<string, unknown> = { invoice_number: f.invoice_number, supplier_vat_number: f.supplier_vat_number.replace(/\s/g, '') }
     if (target.mode === 'line') {
       if (f.amount === '' || !(Number(f.amount) >= 0)) return setErr('اكتب المبلغ')
@@ -37,7 +37,7 @@ export default function PurchaseEditDialog({ target, onClose, submit }: { target
           <span style={{ width: 36, height: 36, borderRadius: 10, background: colors.primaryLight, color: colors.primary, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Pencil size={17} /></span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 16, fontWeight: 800 }}>{target.mode === 'invoice' ? 'تعديل بيانات الفاتورة' : 'تعديل سطر المشتريات'}</div>
-            <div style={{ fontSize: 12, color: colors.text3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{target.label} · يوصل المنشأة إشعار بالتعديل</div>
+            <div style={{ fontSize: 12, color: colors.text3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{target.label} · يصل إلى المنشأة إشعار بالتعديل</div>
           </div>
           <button onClick={() => !busy && onClose()} aria-label="إغلاق" style={{ background: colors.bg, border: 'none', borderRadius: 9, padding: 7, cursor: 'pointer', display: 'inline-flex' }}><X size={18} /></button>
         </div>
@@ -61,7 +61,7 @@ export default function PurchaseEditDialog({ target, onClose, submit }: { target
             <input value={f.supplier_vat_number} onChange={e => setF(x => ({ ...x, supplier_vat_number: e.target.value }))} maxLength={20} inputMode="numeric" dir="ltr" placeholder="3XXXXXXXXXXXXX3"
               style={{ ...inp(), fontSize: 16, textAlign: 'right', borderColor: vatOk ? undefined : colors.danger }} />
           </div>
-          <div style={{ fontSize: 11.5, color: colors.text3 }}>رقم الفاتورة والرقم الضريبي يتعدّلون لكل أصناف نفس الفاتورة.</div>
+          <div style={{ fontSize: 11.5, color: colors.text3 }}>يُعدَّل رقم الفاتورة والرقم الضريبي لجميع أصناف الفاتورة نفسها.</div>
           {err && <div style={{ fontSize: 13, color: colors.danger, fontWeight: 600 }}>{err}</div>}
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => !busy && onClose()} style={{ flex: 1, padding: 12, background: colors.bg, color: colors.text3, border: 'none', borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>إلغاء</button>

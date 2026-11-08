@@ -10,34 +10,34 @@ export async function POST(req: Request) {
   try {
     const b = await req.json()
     const email = normalizeEmail(b.email), code = String(b.code || '').replace(/\D/g, '')
-    if (!email || code.length !== 6) return NextResponse.json({ error: 'اكتب الرمز المكوّن من ٦ أرقام' }, { status: 400 })
+    if (!email || code.length !== 6) return NextResponse.json({ error: 'اكتب الرمز المكوّن من 6 أرقام' }, { status: 400 })
     const db = sb()
     const { data: row } = await db.from('accountant_login_codes').select('id,code_hash,attempts,expires_at')
       .eq('email', email).is('used_at', null).order('created_at', { ascending: false }).limit(1).maybeSingle()
     const r = row as any
-    if (!r || Date.parse(r.expires_at) < Date.now()) return NextResponse.json({ error: 'الرمز انتهى — اطلب رمز جديد' }, { status: 400 })
-    if (r.attempts >= CODE_MAX_ATTEMPTS) return NextResponse.json({ error: 'محاولات كثيرة — اطلب رمز جديد' }, { status: 429 })
+    if (!r || Date.parse(r.expires_at) < Date.now()) return NextResponse.json({ error: 'انتهت صلاحية الرمز — اطلب رمزاً جديداً' }, { status: 400 })
+    if (r.attempts >= CODE_MAX_ATTEMPTS) return NextResponse.json({ error: 'محاولات كثيرة — اطلب رمزاً جديداً' }, { status: 429 })
     if (r.code_hash !== hashCode(email, code)) {
       await db.from('accountant_login_codes').update({ attempts: r.attempts + 1 } as any).eq('id', r.id)
-      return NextResponse.json({ error: 'الرمز غلط' }, { status: 400 })
+      return NextResponse.json({ error: 'الرمز غير صحيح' }, { status: 400 })
     }
     await db.from('accountant_login_codes').update({ used_at: new Date().toISOString() } as any).eq('id', r.id)
 
     const { data: invite } = await db.from('accountant_access').select('name').eq('email', email).not('name', 'is', null).limit(1).maybeSingle()
     const { data: user, error } = await db.from('accountant_users').upsert({ email, last_login_at: new Date().toISOString() } as any, { onConflict: 'email' }).select('id,name').single()
-    if (error || !user) return NextResponse.json({ error: 'حدث خطأ، حاول مرة ثانية' }, { status: 500 })
+    if (error || !user) return NextResponse.json({ error: 'حدث خطأ، حاول مرة أخرى' }, { status: 500 })
     if (!(user as any).name && (invite as any)?.name) await db.from('accountant_users').update({ name: (invite as any).name } as any).eq('id', (user as any).id)
     // الدعوات ما تتفعل بالدخول — المحاسب يقبل كل دعوة بنفسه (من الإيميل أو من البوابة)
 
     // جهاز جديد — المحاسب يشوفه في «أجهزتي» ويقدر يطلّعه
     const { data: sess } = await db.from('accountant_sessions').insert({ accountant_id: (user as any).id, ip: clientIp(req),
       user_agent: (req.headers.get('user-agent') || '').slice(0, 200) || null } as any).select('id').single()
-    if (!sess) return NextResponse.json({ error: 'حدث خطأ، حاول مرة ثانية' }, { status: 500 })
+    if (!sess) return NextResponse.json({ error: 'حدث خطأ، حاول مرة أخرى' }, { status: 500 })
 
     const res = NextResponse.json({ success: true })
     res.headers.set('Set-Cookie', sessionCookie(makeSession((user as any).id, (sess as any).id)))
     return res
   } catch {
-    return NextResponse.json({ error: 'حدث خطأ، حاول مرة ثانية' }, { status: 500 })
+    return NextResponse.json({ error: 'حدث خطأ، حاول مرة أخرى' }, { status: 500 })
   }
 }

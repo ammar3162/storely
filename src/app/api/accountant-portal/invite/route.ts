@@ -19,7 +19,7 @@ export async function GET(req: Request) {
       org: a.organizations?.name || 'منشأة', logo_url: a.organizations?.logo_url || null, branch: a.branches?.name || null,
       name: a.name, email: a.email, sections: sectionLabels(a.sections || []) } })
   } catch {
-    return NextResponse.json({ error: 'حدث خطأ، حاول مرة ثانية' }, { status: 500 })
+    return NextResponse.json({ error: 'حدث خطأ، حاول مرة أخرى' }, { status: 500 })
   }
 }
 
@@ -33,12 +33,12 @@ export async function POST(req: Request) {
     let id: string, email: string
     if (b.t) {
       const t = readInviteToken(String(b.t))
-      if (t === 'expired') return NextResponse.json({ error: 'رابط الدعوة انتهى — اطلب من المنشأة ترسله مرة ثانية' }, { status: 410 })
+      if (t === 'expired') return NextResponse.json({ error: 'انتهت صلاحية رابط الدعوة — اطلب من المنشأة إعادة إرساله' }, { status: 410 })
       if (!t) return NextResponse.json({ error: 'رابط الدعوة غير صحيح' }, { status: 400 })
       id = t.iid; email = t.em
     } else {
       const me = await currentAccountant(db, req)
-      if (!me) return NextResponse.json({ error: 'سجّل دخولك' }, { status: 401 })
+      if (!me) return NextResponse.json({ error: 'سجّل الدخول' }, { status: 401 })
       if (!UUID_RE.test(String(b.id || ''))) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
       id = b.id; email = me.email
     }
@@ -52,6 +52,6 @@ export async function POST(req: Request) {
     if (r.session) res.headers.set('Set-Cookie', sessionCookie(r.session))
     return res
   } catch {
-    return NextResponse.json({ error: 'حدث خطأ، حاول مرة ثانية' }, { status: 500 })
+    return NextResponse.json({ error: 'حدث خطأ، حاول مرة أخرى' }, { status: 500 })
   }
 }

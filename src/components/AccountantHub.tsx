@@ -9,7 +9,7 @@ import AccountantLinkSettings from '@/components/AccountantLinkSettings'
 import OwnerAccountantRequests from '@/components/OwnerAccountantRequests'
 import OwnerPeriodLocks from '@/components/OwnerPeriodLocks'
 
-// تبويب «المحاسب» في الإعدادات: ملخص فوق + أقسام فرعية (المحاسبين، التقارير، الطلبات، إقفال الشهور)
+// تبويب «المحاسب» في الإعدادات: ملخص فوق + أقسام فرعية (المحاسبين، التقارير، الطلبات، إقفال الأشهر)
 type Sub = 'people' | 'reports' | 'requests' | 'locks'
 const SUBS: Sub[] = ['people', 'reports', 'requests', 'locks']
 const initials = (s: string) => (s.replace(/^(أ\.|د\.)\s*/, '').trim()[0] || '؟').toUpperCase()
@@ -49,7 +49,7 @@ export default function AccountantHub({ orgId }: { orgId: string }) {
     { k: 'people', label: 'المحاسبين', short: 'المحاسبين', icon: Users, badge: people.length || undefined },
     { k: 'reports', label: 'التقارير التلقائية', short: 'التقارير', icon: Send },
     { k: 'requests', label: 'الطلبات', short: 'الطلبات', icon: MessageSquareText, badge: openReq || undefined, tone: '#b45309' },
-    { k: 'locks', label: 'إقفال الشهور', short: 'الإقفال', icon: Lock, badge: locks || undefined },
+    { k: 'locks', label: 'إقفال الأشهر', short: 'الإقفال', icon: Lock, badge: locks || undefined },
   ]
 
   return (
