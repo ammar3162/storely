@@ -115,7 +115,7 @@ function StaffLoginInner() {
         @keyframes dotPulse{0%,100%{opacity:.25;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
         .kp-btn{transition:background-color .12s cubic-bezier(.22,1,.36,1), transform .08s ease}
         .kp-btn:active{transform:scale(.97);background:#eceef1 !important}
-        @media(hover:hover){.kp-btn:hover{background:#f9fafb}}
+        @media(hover:hover){.kp-btn:hover{background:var(--storely-background)}}
         @media (prefers-reduced-motion:reduce){.fade-up,.shake{animation:none}}
       `}</style>
 
@@ -123,8 +123,8 @@ function StaffLoginInner() {
 
         {/* شريط علوي: الشعار وزر اللغة */}
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:16}}>
-          <img src="/storely-logo.png" alt="Storely" style={{width:40,height:40,objectFit:'contain',borderRadius:10,background:'white',padding:4,border:'1px solid #e5e7eb'}}/>
-          <button onClick={()=>setLang(lang==='ar'?'en':'ar')} style={{background:'#eceef1',border:'none',borderRadius:10,height:36,padding:'0 12px',fontSize:13,fontWeight:500,color:'#111827',cursor:'pointer',fontFamily:'inherit'}}>
+          <img src="/storely-logo.png" alt="Storely" style={{width:40,height:40,objectFit:'contain',borderRadius:10,background:'white',padding:4,border:'1px solid var(--storely-border)'}}/>
+          <button onClick={()=>setLang(lang==='ar'?'en':'ar')} style={{background:'#eceef1',border:'none',borderRadius:10,height:36,padding:'0 12px',fontSize:13,fontWeight:500,color:'var(--storely-text)',cursor:'pointer',fontFamily:'inherit'}}>
             {lang==='ar'?'English':'عربي'}
           </button>
         </div>
@@ -132,7 +132,7 @@ function StaffLoginInner() {
         {/* المحتوى الرئيسي — بدون بطاقة: العنوان والخطوات ثم الحقل ولوحة الأرقام */}
         <div style={{flex:1,display:'flex',flexDirection:'column' as const,justifyContent:'flex-start',paddingTop:'clamp(24px, 6vh, 48px)',paddingBottom:24}}>
          <div>
-          <h1 style={{fontSize:26,fontWeight:600,lineHeight:'36px',color:'#111827',marginBottom:4}}>{t('staffLogin.title')}</h1>
+          <h1 style={{fontSize:26,fontWeight:600,lineHeight:'36px',color:'var(--storely-text)',marginBottom:4}}>{t('staffLogin.title')}</h1>
           {/* الخطوات: رقم الجوال ← الرمز السري */}
           <div style={{display:'flex',alignItems:'center',gap:16,margin:'16px 0 20px',direction:dir}}>
             {[t('staffLogin.stepPhone'),t('staffLogin.stepPin')].map((label,i)=>{
@@ -158,16 +158,16 @@ function StaffLoginInner() {
                     <ChevronDown size={14} style={{transform:showCountryPicker?'rotate(180deg)':'none',color:'#4b5565'}}/>
                   </button>
                   <div style={{width:1,height:24,background:'#e5e7eb'}}/>
-                  <div style={{flex:1,padding:'12px 12px',fontSize:20,fontWeight:500,fontFamily:"'IBM Plex Mono',ui-monospace,monospace",color:'#111827',textAlign:'left' as const,direction:'ltr' as const,minHeight:24,letterSpacing:'1px'}}>
-                    {phone ? groupDigits(phone) : <span style={{color:'#9ca3af',fontWeight:400}}>{phonePlaceholder}</span>}
+                  <div style={{flex:1,padding:'12px 12px',fontSize:20,fontWeight:500,fontFamily:"'IBM Plex Mono',ui-monospace,monospace",color:'var(--storely-text)',textAlign:'left' as const,direction:'ltr' as const,minHeight:24,letterSpacing:'1px'}}>
+                    {phone ? groupDigits(phone) : <span style={{color:'var(--storely-subtle)',fontWeight:400}}>{phonePlaceholder}</span>}
                   </div>
                 </div>
 
                 {showCountryPicker && (
-                  <div style={{position:'absolute' as const,top:'calc(100% + 8px)',right:0,left:0,background:'#ffffff',border:'1px solid #e5e7eb',borderRadius:14,padding:6,zIndex:20,maxHeight:260,overflowY:'auto' as const,boxShadow:'0 20px 50px -12px rgba(16,24,40,.25)'}}>
+                  <div style={{position:'absolute' as const,top:'calc(100% + 8px)',right:0,left:0,background:'#ffffff',border:'1px solid var(--storely-border)',borderRadius:14,padding:6,zIndex:20,maxHeight:260,overflowY:'auto' as const,boxShadow:'0 20px 50px -12px rgba(16,24,40,.25)'}}>
                     {COUNTRY_PHONE_LEN.map(c=>(
                       <button key={c.code} onClick={()=>{setCountry(c.name);setPhone('');setShowCountryPicker(false)}}
-                        style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'11px 12px',background:country===c.name?'#e7f3f1':'transparent',border:'none',borderRadius:10,color:'#111827',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
+                        style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'11px 12px',background:country===c.name?'#e7f3f1':'transparent',border:'none',borderRadius:10,color:'var(--storely-text)',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
                         <span style={{fontSize:18}}>{c.flag}</span>
                         <span style={{flex:1}}>{t('staffLogin.'+c.key)}</span>
                         <span style={{color:'#4b5565',fontSize:12,direction:'ltr' as const}}>+{c.code}</span>
@@ -190,7 +190,7 @@ function StaffLoginInner() {
               </div>
 
               <button onClick={goToPin} disabled={phone.length<requiredLen}
-                style={{width:'100%',height:48,marginBottom:16,background:phone.length>=requiredLen?'#0f766e':'#eceef1',color:phone.length>=requiredLen?'#ffffff':'#6b7487',border:'none',borderRadius:10,fontSize:16,fontWeight:600,cursor:phone.length>=requiredLen?'pointer':'not-allowed',fontFamily:'inherit',transition:'background .15s, color .15s'}}>
+                style={{width:'100%',height:48,marginBottom:16,background:phone.length>=requiredLen?'#203640':'#eceef1',color:phone.length>=requiredLen?'#ffffff':'#6b7487',border:'none',borderRadius:10,fontSize:16,fontWeight:600,cursor:phone.length>=requiredLen?'pointer':'not-allowed',fontFamily:'inherit',transition:'background .15s, color .15s'}}>
                 {t('staffLogin.continueBtn')}
               </button>
               <div style={{textAlign:'center' as const}}>
@@ -208,7 +208,7 @@ function StaffLoginInner() {
               </button>
 
               <p style={{fontSize:15,color:'#4b5565',marginBottom:4}}>{t('staffLogin.enterPin')}</p>
-              <p style={{fontSize:16,color:'#111827',marginBottom:24,direction:'ltr' as const,textAlign:dir==='rtl'?'right':'left',fontFamily:"'IBM Plex Mono',ui-monospace,monospace"}}>+{selectedCountry.code} {groupDigits(phone)}</p>
+              <p style={{fontSize:16,color:'var(--storely-text)',marginBottom:24,direction:'ltr' as const,textAlign:dir==='rtl'?'right':'left',fontFamily:"'IBM Plex Mono',ui-monospace,monospace"}}>+{selectedCountry.code} {groupDigits(phone)}</p>
 
               {/* نقاط عرض PIN */}
               <div className={shake?'shake':''} style={{display:'flex',justifyContent:'center',gap:14,marginBottom:32,direction:'ltr' as const}}>

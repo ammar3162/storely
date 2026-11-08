@@ -26,7 +26,7 @@ export default function DispenseTab({ m, v }: { m: StaffDispense; v: PageVals })
       {list.map(p=>(
         <button key={p.id} className="list-row" onClick={()=>setSelected(p)}>
           <span style={{flex:1,minWidth:0}}>
-            <span style={{display:'block',fontSize:15,fontWeight:500,color:'#111827',lineHeight:'22px'}}>{tx(p.name)}</span>
+            <span style={{display:'block',fontSize:15,fontWeight:500,color:'var(--storely-text)',lineHeight:'22px'}}>{tx(p.name)}</span>
             {lang!=='ar'&&<span style={{display:'block',fontSize:13,color:'#6b7487'}}>{p.name}</span>}
           </span>
           <Qty p={p}/>
@@ -41,7 +41,7 @@ export default function DispenseTab({ m, v }: { m: StaffDispense; v: PageVals })
         <div style={{position:'relative' as const,marginBottom:16}}>
           <Search size={16} strokeWidth={1.75} style={{position:'absolute',top:'50%',transform:'translateY(-50%)',insetInlineStart:12,color:'#6b7487',pointerEvents:'none'}}/>
           <input value={search} onChange={e=>{setSearch(e.target.value);setActiveCategory(null)}}
-            style={{width:'100%',height:44,paddingInlineStart:36,paddingInlineEnd:12,border:'1px solid #e5e7eb',borderRadius:10,fontSize:16,background:'white',color:'#111827',fontFamily:'inherit',boxSizing:'border-box' as const}}
+            style={{width:'100%',height:44,paddingInlineStart:36,paddingInlineEnd:12,border:'1px solid var(--storely-border)',borderRadius:10,fontSize:16,background:'white',color:'var(--storely-text)',fontFamily:'inherit',boxSizing:'border-box' as const}}
             placeholder={T('search',lang)}/>
         </div>
 
@@ -63,8 +63,8 @@ export default function DispenseTab({ m, v }: { m: StaffDispense; v: PageVals })
                 <div style={label}>{T('mostUsed',lang)} <span style={{color:'#6b7487',fontWeight:400}}>· {T('last14',lang)}</span></div>
                 <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4,scrollbarWidth:'none' as const}}>
                   {mostUsed.map((p:any)=>(
-                    <button key={p.id} onClick={()=>setSelected(p)} style={{flexShrink:0,background:'white',border:'1px solid #e5e7eb',borderRadius:10,padding:'10px 12px',cursor:'pointer',fontFamily:'inherit',minWidth:120,maxWidth:160,textAlign:'start' as const}}>
-                      <div style={{fontSize:14,fontWeight:500,color:'#111827',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{tx(p.name)}</div>
+                    <button key={p.id} onClick={()=>setSelected(p)} style={{flexShrink:0,background:'white',border:'1px solid var(--storely-border)',borderRadius:10,padding:'10px 12px',cursor:'pointer',fontFamily:'inherit',minWidth:120,maxWidth:160,textAlign:'start' as const}}>
+                      <div style={{fontSize:14,fontWeight:500,color:'var(--storely-text)',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{tx(p.name)}</div>
                       <div style={{fontSize:12,color:'#6b7487',marginTop:2,whiteSpace:'nowrap' as const}}>{lang==='ar'?`صُرف ${p.dispense_count} ${p.dispense_count>=3&&p.dispense_count<=10?'مرات':'مرة'}`:T('timesUsed',lang,{n:p.dispense_count})}</div>
                     </button>
                   ))}
@@ -77,7 +77,7 @@ export default function DispenseTab({ m, v }: { m: StaffDispense; v: PageVals })
                 <button key={cat} className="list-row" onClick={()=>setActiveCategory(cat)}>
                   <span style={iconBox}>{iconFor(cat)}</span>
                   <span style={{flex:1,minWidth:0}}>
-                    <span style={{display:'block',fontSize:15,fontWeight:500,color:'#111827',lineHeight:'22px'}}>{tx(cat)}</span>
+                    <span style={{display:'block',fontSize:15,fontWeight:500,color:'var(--storely-text)',lineHeight:'22px'}}>{tx(cat)}</span>
                     {lang!=='ar'&&<span style={{display:'block',fontSize:12,color:'#6b7487'}}>{cat}</span>}
                   </span>
                   <span style={{fontSize:13,color:'#6b7487',flexShrink:0}}><span style={{fontVariantNumeric:'tabular-nums'}}>{categoriesMap[cat]}</span> {T('items',lang)}</span>
@@ -89,11 +89,11 @@ export default function DispenseTab({ m, v }: { m: StaffDispense; v: PageVals })
         ) : (
           <div>
             <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
-              <button onClick={()=>setActiveCategory(null)} aria-label={T('back',lang)} style={{width:36,height:36,flexShrink:0,background:'#eceef1',border:'none',borderRadius:10,color:'#111827',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <button onClick={()=>setActiveCategory(null)} aria-label={T('back',lang)} style={{width:36,height:36,flexShrink:0,background:'#eceef1',border:'none',borderRadius:10,color:'var(--storely-text)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
                 <ChevronRight size={18} strokeWidth={1.75} style={{transform:isRTL?'none':'scaleX(-1)'}}/>
               </button>
               <div style={{minWidth:0}}>
-                <div style={{fontSize:16,fontWeight:600,color:'#111827'}}>{tx(activeCategory)}</div>
+                <div style={{fontSize:16,fontWeight:600,color:'var(--storely-text)'}}>{tx(activeCategory)}</div>
                 <div style={{fontSize:13,color:'#6b7487'}}>{lang!=='ar'?`${activeCategory} · `:''}{categoryProducts.length} {T('items',lang)}</div>
               </div>
             </div>

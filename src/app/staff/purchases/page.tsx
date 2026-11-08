@@ -29,15 +29,15 @@ interface StaffSession {
 }
 
 const C = {
-  primary:'#0f766e', primaryD:'#0f766e', primaryL:'#e7f3f1', primaryB:'#b9dcd7',
+  primary:'#203640', primaryD:'#203640', primaryL:'#e7f3f1', primaryB:'#b9dcd7',
   danger:'#dc2626', dangerL:'#fef2f2',
   warning:'#b45309', warningL:'#fffbeb',
   text:'#111827', text2:'#111827', text3:'#4b5565', text4:'#1f2937',   // تصميم «كاونتر»: نص غامق واضح
-  bg:'#f4f5f6', surface:'#ffffff', border:'#e5e7eb', border2:'#e5e7eb',
+  bg:'#f4f5f6', surface:'#ffffff', border:'var(--storely-border)', border2:'#e5e7eb',
 }
 
 const inp: React.CSSProperties = {width:'100%',padding:'11px 12px',border:`1.5px solid #d1d5db`,borderRadius:10,fontSize:16,outline:'none',boxSizing:'border-box' as const,background:'white',color:C.text,fontFamily:'inherit'}
-const lbl: React.CSSProperties = {fontSize:14,fontWeight:500,color:'#111827',display:'block',marginBottom:8}
+const lbl: React.CSSProperties = {fontSize:14,fontWeight:500,color:'var(--storely-text)',display:'block',marginBottom:8}
 
 
 const PUI: Record<string,Record<'ar'|'en',string>> = {

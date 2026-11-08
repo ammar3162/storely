@@ -36,10 +36,10 @@ const UI_STRINGS: Record<string, Record<string,string>> = {
 }
 
 const STATUS_KEYS: Record<string, {key:string; color:string; bg:string}> = {
-  pending:   { key: 'statusPending',   color: '#d97706', bg: '#fffbeb' },
-  completed: { key: 'statusCompleted', color: '#2563eb', bg: '#eff6ff' },
-  confirmed: { key: 'statusConfirmed', color: '#0f766e', bg: '#e7f3f1' },
-  rejected:  { key: 'statusRejected',  color: '#dc2626', bg: '#fef2f2' },
+  pending:   { key: 'statusPending',   color:'#d97706', bg: '#fffbeb' },
+  completed: { key: 'statusCompleted', color:'#2563eb', bg: '#eff6ff' },
+  confirmed: { key: 'statusConfirmed', color:'#203640', bg: '#e7f3f1' },
+  rejected:  { key: 'statusRejected',  color:'#dc2626', bg: '#fef2f2' },
 }
 
 export default function StaffTasksPage() {
@@ -141,7 +141,7 @@ export default function StaffTasksPage() {
 
   if (!session) return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f4f5f6',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
-      <div style={{width:32,height:32,border:'3px solid #e5e7eb',borderTopColor:'#0f766e',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
+      <div style={{width:32,height:32,border:'3px solid var(--storely-border)',borderTopColor:'#203640',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -161,7 +161,7 @@ export default function StaffTasksPage() {
               {LANGUAGES.map(l=>(
                 <button key={l.code}
                   onClick={()=>{setLang(l.code as any);setShowLangMenu(false)}}
-                  style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#e7f3f1':'white',color:lang===l.code?'#0f766e':'#111827',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
+                  style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#e7f3f1':'white',color:lang===l.code?'#203640':'#111827',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
                   {l.label}
                 </button>
               ))}
@@ -186,12 +186,12 @@ export default function StaffTasksPage() {
                 <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
                   {pendingTasks.map((tk:any)=>(
                     <div key={tk.id} style={{background:'white',border:'1.5px solid #fde68a',borderRadius:14,padding:'16px'}}>
-                      <div style={{fontSize:15,fontWeight:600,color:'#111827',marginBottom:6}}>{lang!=='ar'&&taskTranslations[tk.id]?.title || tk.title}</div>
+                      <div style={{fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:6}}>{lang!=='ar'&&taskTranslations[tk.id]?.title || tk.title}</div>
                       {(lang!=='ar'&&taskTranslations[tk.id]?.description || tk.description) && <div style={{fontSize:13,color:'#6b7487',marginBottom:12,lineHeight:1.6}}>{lang!=='ar'&&taskTranslations[tk.id]?.description || tk.description}</div>}
                       <input id={`photo-input-${tk.id}`} type="file" accept="image/*" capture="environment" style={{display:'none'}}
                         onChange={e=>{ const f=e.target.files?.[0]; if(f) handlePhotoSelected(tk.id, f) }}/>
                       <button onClick={()=>completeTask(tk.id, tk.requires_photo)} disabled={completingId===tk.id||uploadingId===tk.id}
-                        style={{width:'100%',padding:'12px',background:'#0f766e',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',opacity:(completingId===tk.id||uploadingId===tk.id)?0.6:1}}>
+                        style={{width:'100%',padding:'12px',background:'#203640',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',opacity:(completingId===tk.id||uploadingId===tk.id)?0.6:1}}>
                         {uploadingId===tk.id ? t('uploadingPhoto') : completingId===tk.id ? t('confirming') : tk.requires_photo ? <span style={{display:'inline-flex',alignItems:'center',gap:6}}><Camera size={16}/>{t('completeWithPhoto')}</span> : <span style={{display:'inline-flex',alignItems:'center',gap:6}}><Check size={16}/>{t('completeTask')}</span>}
                       </button>
                     </div>
@@ -209,7 +209,7 @@ export default function StaffTasksPage() {
                     return (
                       <div key={tk.id} style={{background:st.bg,border:'1px solid #eceef1',borderRadius:12,padding:'12px 14px'}}>
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-                          <span style={{fontSize:13,fontWeight:600,color:'#111827'}}>{lang!=='ar'&&taskTranslations[tk.id]?.title || tk.title}</span>
+                          <span style={{fontSize:13,fontWeight:600,color:'var(--storely-text)'}}>{lang!=='ar'&&taskTranslations[tk.id]?.title || tk.title}</span>
                           <span style={{fontSize:10,fontWeight:600,color:st.color}}>{t(st.key)}</span>
                         </div>
                       </div>

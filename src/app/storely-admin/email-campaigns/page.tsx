@@ -114,7 +114,7 @@ export default function EmailCampaignsPage() {
 
           <Card title="المعاينة" actions={<Eye size={16} color={A.text3} />} pad={0}>
             {html
-              ? <iframe title="معاينة الإيميل" srcDoc={html} style={{ width: '100%', height: 640, border: 'none', background: '#eef4f4', display: 'block' }} sandbox="" />
+              ? <iframe title="معاينة الإيميل" srcDoc={html} style={{ width: '100%', height: 640, border: 'none', background:'#eef4f4', display: 'block' }} sandbox="" />
               : <div style={{ padding: 20 }}><Loading label="جارٍ تجهيز المعاينة..." /></div>}
           </Card>
         </div>

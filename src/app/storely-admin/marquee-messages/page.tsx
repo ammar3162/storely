@@ -61,8 +61,8 @@ export default function MarqueeMessagesPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 880 }}>
         <Card title="معاينة الشريط" subtitle="كما يظهر للزوار الآن">
-          <div style={{ borderRadius: 12, background: '#0b3b3a', color: 'white', padding: '9px 16px', overflow: 'hidden', whiteSpace: 'nowrap', display: 'flex', gap: 28, fontSize: 13.5, fontWeight: 500 }}>
-            {active.length ? active.map(m => <span key={m.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}><span style={{ width: 5, height: 5, borderRadius: 99, background: '#5eead4' }} />{m.message}</span>)
+          <div style={{ borderRadius: 12, background:'#203640', color: 'white', padding: '9px 16px', overflow: 'hidden', whiteSpace: 'nowrap', display: 'flex', gap: 28, fontSize: 13.5, fontWeight: 500 }}>
+            {active.length ? active.map(m => <span key={m.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}><span style={{ width: 5, height: 5, borderRadius: 99, background:'#5eead4' }} />{m.message}</span>)
               : <span style={{ opacity: .6 }}>لا توجد رسائل مفعّلة، ولن يظهر الشريط في الموقع</span>}
           </div>
         </Card>

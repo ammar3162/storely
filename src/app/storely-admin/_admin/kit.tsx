@@ -5,33 +5,33 @@ import { usePathname } from 'next/navigation'
 import { Inbox, Loader2, Lock, Search, X, type LucideIcon } from 'lucide-react'
 import { navItemFor } from './nav'
 
-// تصميم «Clean Modern SaaS»: خلفية فاتحة، بطاقات بيضاء بزوايا دائرية وظلال ناعمة وحدود خفيفة
+// تصميم «Clean Modern SaaS» بألوان نظام Storely الموحّد (الكحلي — src/components/ui/design-tokens)
 export const A = {
-  bg: '#f7f8fa',
+  bg: '#F7F9FA',
   surface: '#ffffff',
   sidebar: '#ffffff',
-  muted: '#f4f5f7',
-  border: '#eaecf0',
-  borderStrong: '#dfe2e7',
-  text: '#101828',
-  text2: '#475467',
-  text3: '#667085',
-  primary: '#0f8f8c',
-  primaryHover: '#0b7573',
-  primarySoft: '#e7f6f5',
-  danger: '#d92d20',
+  muted: '#F3F5F6',
+  border:'var(--storely-border)',
+  borderStrong:'var(--storely-border)',
+  text: '#203640',
+  text2: '#4F6678',
+  text3: '#66737C',
+  primary: '#203640',
+  primaryHover: '#16262D',
+  primarySoft: '#EEF2F4',
+  danger: '#B91C1C',
   dangerSoft: '#fef3f2',
-  warning: '#b54708',
+  warning: '#B45309',
   warningSoft: '#fffaeb',
   info: '#175cd3',
   infoSoft: '#eff8ff',
   violet: '#6941c6',
   violetSoft: '#f4f3ff',
-  radius: 10,
-  radiusCard: 16,
-  shadowSm: '0 1px 2px rgba(16,24,40,.04)',
-  shadow: '0 1px 3px rgba(16,24,40,.06), 0 1px 2px rgba(16,24,40,.03)',
-  shadowLg: '0 12px 32px -8px rgba(16,24,40,.14), 0 4px 8px -4px rgba(16,24,40,.06)',
+  radius: 6,
+  radiusCard: 12,
+  shadowSm: '0 1px 2px rgba(32,54,64,.04)',
+  shadow: '0 1px 2px rgba(32,54,64,.04)',
+  shadowLg: '0 12px 32px rgba(32,54,64,.12)',
   font: "'IBM Plex Sans Arabic', system-ui, sans-serif",
 }
 
@@ -79,7 +79,7 @@ export function PageHeader({ title, subtitle, actions, icon }: { title: string; 
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 28 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, minWidth: 0, maxWidth: 820, flex: '1 1 420px' }}>
         {Icon && (
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: A.surface, border: `1px solid ${A.border}`, boxShadow: A.shadow, color: A.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 8, background: A.surface, border: `1px solid ${A.border}`, boxShadow: A.shadow, color: A.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Icon size={20} />
           </div>
         )}
@@ -119,7 +119,7 @@ export function Stat({ label, value, hint, tone = 'default', onClick, icon: Icon
       style={{ background: A.surface, border: `1px solid ${active ? A.primary : A.border}`, borderRadius: A.radiusCard, boxShadow: active ? `0 0 0 3px ${A.primary}1a` : A.shadow, padding: '18px 20px', cursor: onClick ? 'pointer' : 'default' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <div style={{ fontSize: 13, fontWeight: 500, color: A.text2 }}>{label}</div>
-        {Icon && <div style={{ width: 32, height: 32, borderRadius: 9, background: soft, color: tone === 'default' ? A.text2 : color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={16} /></div>}
+        {Icon && <div style={{ width: 32, height: 32, borderRadius: 6, background: soft, color: tone === 'default' ? A.text2 : color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={16} /></div>}
       </div>
       <div style={{ fontSize: 28, fontWeight: 700, color, marginTop: Icon ? 4 : 8, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
       {hint && <div style={{ fontSize: 12, color: A.text3, marginTop: 6 }}>{hint}</div>}
@@ -138,7 +138,7 @@ const TONES = {
 export type Tone = keyof typeof TONES
 export function Badge({ tone = 'neutral', children }: { tone?: Tone; children: ReactNode }) {
   const t = TONES[tone]
-  return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: t.bg, color: t.fg, border: `1px solid ${t.fg}1f`, fontSize: 12, fontWeight: 600, padding: '2px 9px', borderRadius: 99, whiteSpace: 'nowrap', lineHeight: 1.6 }}>{children}</span>
+  return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: t.bg, color: t.fg, border: `1px solid ${t.fg}2e`, fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 6, whiteSpace: 'nowrap', lineHeight: 1.6 }}>{children}</span>
 }
 
 type BtnKind = 'primary' | 'secondary' | 'danger' | 'ghost'
@@ -146,14 +146,14 @@ export function Btn({ kind = 'secondary', children, onClick, disabled, loading, 
   kind?: BtnKind; children: ReactNode; onClick?: () => void; disabled?: boolean; loading?: boolean; type?: 'button' | 'submit'; full?: boolean; small?: boolean; title?: string
 }) {
   const s: Record<BtnKind, CSSProperties> = {
-    primary: { background: A.primary, color: 'white', border: `1px solid ${A.primary}`, boxShadow: '0 1px 2px rgba(15,143,140,.25)' },
+    primary: { background: A.primary, color: 'white', border: `1px solid ${A.primary}` },
     secondary: { background: A.surface, color: A.text, border: `1px solid ${A.borderStrong}`, boxShadow: A.shadowSm },
-    danger: { background: A.surface, color: A.danger, border: `1px solid #fecdca`, boxShadow: A.shadowSm },
+    danger: { background: A.surface, color: A.danger, border:`1px solid #fecdca`, boxShadow: A.shadowSm },
     ghost: { background: 'transparent', color: A.text2, border: '1px solid transparent' },
   }
   return (
     <button type={type} onClick={onClick} disabled={disabled || loading} title={title} className={`adm-btn adm-btn-${kind}`}
-      style={{ ...s[kind], display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: small ? 30 : 38, padding: small ? '4px 10px' : '8px 16px', borderRadius: small ? 8 : 10,
+      style={{ ...s[kind], display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: small ? 30 : 38, padding: small ? '4px 10px' : '8px 16px', borderRadius: 6,
         fontSize: small ? 12.5 : 13.5, fontWeight: 600, fontFamily: 'inherit', cursor: disabled || loading ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
         width: full ? '100%' : undefined, whiteSpace: 'nowrap' }}>
       {loading && <Loader2 size={14} className="adm-spin" />}
@@ -163,7 +163,7 @@ export function Btn({ kind = 'secondary', children, onClick, disabled, loading, 
 }
 
 export const inputStyle: CSSProperties = {
-  width: '100%', minHeight: 40, padding: '9px 12px', border: `1px solid ${A.borderStrong}`, borderRadius: 10, fontSize: 14,
+  width: '100%', minHeight: 40, padding: '8px 12px', border: `1px solid ${A.border}`, borderRadius: 6, fontSize: 14,
   fontFamily: 'inherit', background: A.surface, color: A.text, outline: 'none', boxShadow: A.shadowSm,
 }
 
@@ -188,7 +188,7 @@ export function Loading({ label = 'جارٍ التحميل...' }: { label?: stri
 export function Empty({ title, hint, icon: Icon = Inbox, action }: { title: string; hint?: ReactNode; icon?: LucideIcon; action?: ReactNode }) {
   return (
     <div style={{ padding: '48px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <div style={{ width: 48, height: 48, borderRadius: 14, background: A.muted, color: A.text3, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}><Icon size={22} /></div>
+      <div style={{ width: 48, height: 48, borderRadius: 12, background: A.muted, color: A.text3, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}><Icon size={22} /></div>
       <div style={{ fontSize: 14.5, fontWeight: 600, color: A.text }}>{title}</div>
       {hint && <div style={{ fontSize: 13, color: A.text3, marginTop: 4, maxWidth: 420, lineHeight: 1.7 }}>{hint}</div>}
       {action && <div style={{ marginTop: 16 }}>{action}</div>}
@@ -199,7 +199,7 @@ export function Empty({ title, hint, icon: Icon = Inbox, action }: { title: stri
 export function Notice({ tone = 'info', children, action }: { tone?: Tone; children: ReactNode; action?: ReactNode }) {
   const t = TONES[tone]
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: t.bg, color: t.fg, border: `1px solid ${t.fg}24`, borderRadius: 12, padding: '12px 16px', fontSize: 13.5, fontWeight: 500, lineHeight: 1.7 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: t.bg, color: t.fg, border: `1px solid ${t.fg}24`, borderRadius: 6, padding: '12px 16px', fontSize: 13.5, fontWeight: 500, lineHeight: 1.7 }}>
       <div style={{ flex: 1 }}>{children}</div>
       {action}
     </div>
@@ -212,13 +212,13 @@ export function Drawer({ open, onClose, title, subtitle, children, width = 520 }
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000 }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(16,24,40,.32)', backdropFilter: 'blur(2px)' }} />
-      <aside style={{ position: 'absolute', top: 8, bottom: 8, left: 8, width: `min(${width}px, calc(100vw - 16px))`, background: A.bg, borderRadius: 20, overflow: 'hidden', border: `1px solid ${A.border}`, boxShadow: A.shadowLg, display: 'flex', flexDirection: 'column', animation: 'admDrawer .2s ease' }}>
+      <aside style={{ position: 'absolute', top: 8, bottom: 8, left: 8, width: `min(${width}px, calc(100vw - 16px))`, background: A.bg, borderRadius: 14, overflow: 'hidden', border: `1px solid ${A.border}`, boxShadow: A.shadowLg, display: 'flex', flexDirection: 'column', animation: 'admDrawer .2s ease' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '18px 20px', background: A.surface, borderBottom: `1px solid ${A.border}` }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 17, fontWeight: 700, color: A.text }}>{title}</div>
             {subtitle && <div style={{ fontSize: 12.5, color: A.text2, marginTop: 2 }}>{subtitle}</div>}
           </div>
-          <button onClick={onClose} aria-label="إغلاق" className="adm-btn" style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${A.border}`, background: A.surface, boxShadow: A.shadowSm, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: A.text2 }}>
+          <button onClick={onClose} aria-label="إغلاق" className="adm-btn" style={{ width: 36, height: 36, borderRadius: 6, border: `1px solid ${A.border}`, background: A.surface, boxShadow: A.shadowSm, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: A.text2 }}>
             <X size={16} />
           </button>
         </div>
@@ -236,7 +236,7 @@ export function Table({ head, children, minWidth = 720 }: { head: string[]; chil
         <thead>
           <tr>
             {head.map((h, i) => (
-              <th key={i} style={{ textAlign: 'right', padding: '11px 16px', fontSize: 12.5, fontWeight: 600, color: A.text3, background: '#fafbfc', borderBottom: `1px solid ${A.border}`, whiteSpace: 'nowrap' }}>{h}</th>
+              <th key={i} style={{ textAlign: 'right', padding: '11px 16px', fontSize: 12.5, fontWeight: 600, color: A.text3, background:'#fafbfc', borderBottom: `1px solid ${A.border}`, whiteSpace: 'nowrap' }}>{h}</th>
             ))}
           </tr>
         </thead>
@@ -281,12 +281,12 @@ export function SearchBox({ value, onChange, placeholder = 'بحث', onSubmit, s
 /** تبويبات مقسّمة (Segmented) — للتصفية بين الحالات */
 export function Tabs<K extends string>({ items, value, onChange }: { items: { k: K; l: string; n?: number }[]; value: K; onChange: (k: K) => void }) {
   return (
-    <div role="tablist" style={{ display: 'inline-flex', flexWrap: 'wrap', gap: 2, padding: 3, background: A.muted, border: `1px solid ${A.border}`, borderRadius: 11, maxWidth: '100%' }}>
+    <div role="tablist" style={{ display: 'inline-flex', flexWrap: 'wrap', gap: 2, padding: 3, background: A.muted, border: `1px solid ${A.border}`, borderRadius: 6, maxWidth: '100%' }}>
       {items.map(it => {
         const on = it.k === value
         return (
           <button key={it.k} role="tab" aria-selected={on} type="button" onClick={() => onChange(it.k)} className="adm-tab"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px', borderRadius: 8, border: 'none', fontFamily: 'inherit', fontSize: 13, fontWeight: on ? 600 : 500, cursor: 'pointer', whiteSpace: 'nowrap',
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px', borderRadius: 4, border: 'none', fontFamily: 'inherit', fontSize: 13, fontWeight: on ? 600 : 500, cursor: 'pointer', whiteSpace: 'nowrap',
               background: on ? A.surface : 'transparent', color: on ? A.text : A.text2, boxShadow: on ? '0 1px 2px rgba(16,24,40,.08), 0 0 0 1px rgba(16,24,40,.04)' : 'none' }}>
             {it.l}
             {it.n !== undefined && <span style={{ fontSize: 11.5, fontWeight: 600, minWidth: 20, padding: '0 6px', height: 18, borderRadius: 99, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: on ? A.primarySoft : A.surface, color: on ? A.primary : A.text3 }}>{it.n}</span>}
@@ -308,7 +308,7 @@ export function Avatar({ name, size = 36 }: { name?: string | null; size?: numbe
   const n = (name || '').trim()
   let h = 0; for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0
   const [bg, fg] = AVATAR_TINTS[h % AVATAR_TINTS.length]
-  return <div aria-hidden style={{ width: size, height: size, borderRadius: size >= 40 ? 12 : 10, background: bg, color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: size * 0.4, flexShrink: 0 }}>{n[0] || '؟'}</div>
+  return <div aria-hidden style={{ width: size, height: size, borderRadius: 6, background: bg, color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: size * 0.4, flexShrink: 0 }}>{n[0] || '؟'}</div>
 }
 
 /** صف داخل بطاقة (قائمة) — مع حد علوي بين الصفوف */
@@ -327,7 +327,7 @@ export function NoAccess({ title }: { title?: string }) {
 export function LinkBtn({ href, children, kind = 'secondary', small }: { href: string; children: ReactNode; kind?: 'primary' | 'secondary'; small?: boolean }) {
   return (
     <a href={href} target="_blank" rel="noopener noreferrer" className={`adm-btn adm-btn-${kind}`}
-      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: small ? 30 : 38, padding: small ? '4px 10px' : '8px 16px', borderRadius: small ? 8 : 10, fontSize: small ? 12.5 : 13.5, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap',
+      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: small ? 30 : 38, padding: small ? '4px 10px' : '8px 16px', borderRadius: 6, fontSize: small ? 12.5 : 13.5, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap',
         ...(kind === 'primary' ? { background: A.primary, color: 'white', border: `1px solid ${A.primary}` } : { background: A.surface, color: A.text, border: `1px solid ${A.borderStrong}`, boxShadow: A.shadowSm }) }}>
       {children}
     </a>
@@ -337,19 +337,19 @@ export function LinkBtn({ href, children, kind = 'secondary', small }: { href: s
 export const ADMIN_CSS = `
   .adm-root *{box-sizing:border-box}
   .adm-root{-webkit-font-smoothing:antialiased}
-  .adm-root input:focus,.adm-root select:focus,.adm-root textarea:focus{border-color:${A.primary}!important;box-shadow:0 0 0 4px ${A.primary}1a!important;outline:none}
+  .adm-root input:focus,.adm-root select:focus,.adm-root textarea:focus{border-color:${A.primary}!important;box-shadow:0 0 0 3px rgba(32,54,64,.14)!important;outline:none}
   .adm-root button:focus-visible,.adm-root a:focus-visible{outline:2px solid ${A.primary};outline-offset:2px}
   .adm-root tbody tr:last-child td{border-bottom:none}
   .adm-btn{transition:background .15s,border-color .15s,color .15s,box-shadow .15s}
   .adm-btn-primary:hover:not(:disabled){background:${A.primaryHover}!important}
-  .adm-btn-secondary:hover:not(:disabled){background:#f9fafb!important;border-color:${A.borderStrong}!important}
+  .adm-btn-secondary:hover:not(:disabled){background:var(--storely-background)!important;border-color:${A.borderStrong}!important}
   .adm-btn-danger:hover:not(:disabled){background:${A.dangerSoft}!important}
   .adm-btn-ghost:hover:not(:disabled){background:${A.muted}!important}
   .adm-hover{transition:border-color .15s,box-shadow .15s,transform .15s}
   .adm-hover:hover{border-color:${A.borderStrong}!important;box-shadow:0 6px 16px -6px rgba(16,24,40,.12)!important}
   .adm-row{cursor:pointer;transition:background .1s}
-  .adm-row:hover td{background:#f9fafb}
-  .adm-row-btn:hover{background:#f9fafb!important}
+  .adm-row:hover td{background:var(--storely-background)}
+  .adm-row-btn:hover{background:var(--storely-background)!important}
   .adm-row-btn:last-child,.adm-list-row:last-child{border-bottom:none!important}
   .adm-tab:hover[aria-selected=false]{color:${A.text}!important;background:rgba(255,255,255,.6)!important}
   .adm-bar{transition:opacity .12s}

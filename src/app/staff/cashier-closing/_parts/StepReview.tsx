@@ -65,13 +65,13 @@ export default function StepReview({ m }: { m: CashierClosing }) {
               <div className="fu" style={{...card,padding:16,marginBottom:16}}>
                 {status==='deficit' && (
                   <div style={{marginBottom:16,textAlign:'start' as const}}>
-                    <div style={{fontSize:14,fontWeight:600,color:'#111827',marginBottom:8}}>{ct('deficitReasonLbl',lang)}</div>
+                    <div style={{fontSize:14,fontWeight:600,color:'var(--storely-text)',marginBottom:8}}>{ct('deficitReasonLbl',lang)}</div>
                     <div style={{display:'flex',flexDirection:'column' as const,gap:6,marginBottom:10}}>
                       {DEFICIT_REASONS.map(r=>{
                         const on = deficitChoice===r.key
                         return (
                           <button key={r.key} type="button" onClick={()=>setDeficitChoice(r.key)}
-                            style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'11px 12px',borderRadius:10,border:`1px solid ${on?'#dc2626':'#e5e7eb'}`,background:on?'#fef2f2':'white',cursor:'pointer',fontFamily:'inherit',textAlign:'start' as const}}>
+                            style={{display:'flex',alignItems:'center',gap:10,width:'100%',padding:'11px 12px',borderRadius:10,border:`1px solid ${on?'#dc2626':'var(--storely-border)'}`,background:on?'#fef2f2':'white',cursor:'pointer',fontFamily:'inherit',textAlign:'start' as const}}>
                             <span style={{width:18,height:18,borderRadius:'50%',border:`2px solid ${on?'#dc2626':'#d4d4d0'}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                               {on && <span style={{width:8,height:8,borderRadius:'50%',background:'#dc2626'}}/>}
                             </span>
@@ -85,7 +85,7 @@ export default function StepReview({ m }: { m: CashierClosing }) {
                         <label style={{display:'block',fontSize:12,fontWeight:600,color:'#1f2937',marginBottom:6}}>{ct(deficitChoice==='other'?'deficitOtherLbl':'deficitNoteLbl',lang)}</label>
                         <textarea value={deficitNote} onChange={e=>setDeficitNote(e.target.value.slice(0,400))} rows={2}
                           placeholder={ct('deficitReasonPh',lang)}
-                          style={{width:'100%',padding:'11px 12px',border:`1px solid ${deficitChoice==='other'&&!deficitReasonOk?'#fca5a5':'#e5e7eb'}`,borderRadius:12,fontSize:16,fontFamily:'inherit',boxSizing:'border-box' as const,resize:'vertical' as const,background:'white',outline:'none'}}/>
+                          style={{width:'100%',padding:'11px 12px',border:`1px solid ${deficitChoice==='other'&&!deficitReasonOk?'#fca5a5':'var(--storely-border)'}`,borderRadius:12,fontSize:16,fontFamily:'inherit',boxSizing:'border-box' as const,resize:'vertical' as const,background:'white',outline:'none'}}/>
                       </>
                     )}
                     {!deficitReasonOk && <div style={{fontSize:11.5,color:'#b42318',marginTop:5,fontWeight:600}}>{ct(deficitChoice==='other'?'deficitOtherReq':'deficitReasonReq',lang)}</div>}

@@ -21,7 +21,7 @@ export default function InventoryTab({ m }: { m: StaffDispense }) {
             <div style={{position:'relative' as const,flex:1}}>
               <Search size={16} strokeWidth={1.75} style={{position:'absolute',top:'50%',transform:'translateY(-50%)',insetInlineStart:12,color:'#6b7487',pointerEvents:'none'}}/>
               <input value={invSearch} onChange={e=>setInvSearch(e.target.value)} placeholder={T('searchProduct',lang)}
-                style={{width:'100%',height:44,paddingInlineStart:36,paddingInlineEnd:12,border:'1px solid #e5e7eb',borderRadius:10,fontSize:16,background:'white',color:'#111827',fontFamily:'inherit',boxSizing:'border-box' as const}}/>
+                style={{width:'100%',height:44,paddingInlineStart:36,paddingInlineEnd:12,border:'1px solid var(--storely-border)',borderRadius:10,fontSize:16,background:'white',color:'var(--storely-text)',fontFamily:'inherit',boxSizing:'border-box' as const}}/>
             </div>
             <button onClick={()=>setShowAddProduct(true)}
               style={{height:44,padding:'0 14px',background:'#e7f3f1',color:'#0b5d56',border:'none',borderRadius:10,fontSize:14,fontWeight:500,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
@@ -48,11 +48,11 @@ export default function InventoryTab({ m }: { m: StaffDispense }) {
               {shown.map(p=>(
                 <div key={p.id} className="list-row" style={{cursor:'default',minHeight:64}}>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:15,fontWeight:500,color:'#111827',lineHeight:'22px'}}>{tx(p.name)}</div>
+                    <div style={{fontSize:15,fontWeight:500,color:'var(--storely-text)',lineHeight:'22px'}}>{tx(p.name)}</div>
                     <div style={{fontSize:13,color:'#6b7487',lineHeight:'18px'}}>{p.category ? tx(p.category) : '—'}</div>
                   </div>
                   <div style={{textAlign:'end' as const,flexShrink:0}}>
-                    <span style={{fontSize:18,fontWeight:500,color:'#111827',fontVariantNumeric:'tabular-nums'}}>{p.qty}</span>
+                    <span style={{fontSize:18,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{p.qty}</span>
                     <span style={{fontSize:12,color:'#6b7487',marginInlineStart:4}}>{p.unit}</span>
                     {isLow(p) && <div style={{fontSize:12,color:'#dc2626',display:'flex',alignItems:'center',gap:4,justifyContent:'flex-end'}}><span style={{width:6,height:6,borderRadius:3,background:'#dc2626'}}/>{T('lowShort',lang)}</div>}
                   </div>

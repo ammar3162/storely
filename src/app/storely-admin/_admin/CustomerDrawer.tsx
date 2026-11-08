@@ -329,7 +329,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
       </Card>
 
       {staffUsage && staffUsage.active > staffUsage.limit && staffUsage.limit < 999 && (
-        <div style={{ padding: '12px 14px', borderRadius: 10, background: '#fef3c7', border: '1px solid #fcd34d', fontSize: 12.5, color: '#92400e', lineHeight: 1.8 }}>
+        <div style={{ padding: '12px 14px', borderRadius: 10, background:'#fef3c7', border:'1px solid #fcd34d', fontSize: 12.5, color:'#92400e', lineHeight: 1.8 }}>
           <b>الموظفون فوق حد الباقة:</b> عنده {staffUsage.active} موظف نشط والحد {staffUsage.limit}.
           فعّل له «موظف إضافي» × {staffUsage.active - staffUsage.limit}، أو رقّ باقته — أو لو ألغيت/قلّلت إضافة يتوقف الأحدث تلقائياً.
         </div>

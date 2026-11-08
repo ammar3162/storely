@@ -139,7 +139,7 @@ export default function AddonRequestsPage() {
           {shownPlans.length > 0 && (
             <Section icon={ArrowUpCircle} title="طلبات الترقية" n={shownPlans.length}>
               {shownPlans.map(r => (
-                <Card key={r.id} style={r.status === 'pending' ? { borderColor: '#fedf89' } : undefined}>
+                <Card key={r.id} style={r.status === 'pending' ? { borderColor:'#fedf89' } : undefined}>
                   {head(r, r.organizations?.name,
                     <>{fmtDate(r.created_at, true)}{r.bill_at_request != null ? ` · فاتورته وقت الطلب ${r.bill_at_request} ⃁ شهرياً` : ''}</>, 'plan')}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, flexWrap: 'wrap', fontSize: 13.5 }}>
@@ -157,7 +157,7 @@ export default function AddonRequestsPage() {
           {shownAddons.length > 0 && (
             <Section icon={PackagePlus} title="طلبات الإضافات" n={shownAddons.length}>
               {shownAddons.map(r => (
-                <Card key={r.id} style={r.status === 'pending' ? { borderColor: '#fedf89' } : undefined}>
+                <Card key={r.id} style={r.status === 'pending' ? { borderColor:'#fedf89' } : undefined}>
                   {head(r, <>{r.marketplace_addons?.name} <span style={{ color: A.text2, fontWeight: 500, fontSize: 13.5 }}>· {r.organizations?.name}</span></>, fmtDate(r.created_at, true), 'addon')}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(220px,100%),1fr))', gap: 10, marginTop: 14 }}>
                     <Info label="المطلوب">{r.branch_names?.length && r.marketplace_addons?.slug !== 'extra_staff' ? `${r.branch_names.length} فرع` : `${r.quantity} وحدة`} <span style={{ color: A.text3, fontWeight: 400 }}>({addonQty(r) * (r.marketplace_addons?.monthly_price || 0)} ⃁ شهرياً)</span></Info>

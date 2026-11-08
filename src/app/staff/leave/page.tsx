@@ -12,9 +12,9 @@ interface StaffSession {
 }
 
 const STATUS_STYLE: Record<string, {key:string; color:string; bg:string}> = {
-  pending:  { key: 'pending',  color: '#d97706', bg: '#fffbeb' },
-  approved: { key: 'approved', color: '#0f766e', bg: '#e7f3f1' },
-  rejected: { key: 'rejected', color: '#dc2626', bg: '#fef2f2' },
+  pending:  { key: 'pending',  color:'#d97706', bg: '#fffbeb' },
+  approved: { key: 'approved', color:'#203640', bg: '#e7f3f1' },
+  rejected: { key: 'rejected', color:'#dc2626', bg: '#fef2f2' },
 }
 
 const L: Dict = {
@@ -90,7 +90,7 @@ export default function StaffLeavePage() {
 
   if (!session) return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f4f5f6',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
-      <div style={{width:32,height:32,border:'3px solid #e5e7eb',borderTopColor:'#0f766e',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
+      <div style={{width:32,height:32,border:'3px solid var(--storely-border)',borderTopColor:'#203640',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -101,31 +101,31 @@ export default function StaffLeavePage() {
 
       <div style={{maxWidth:520,margin:'0 auto',padding:'20px 16px'}}>
         {balance !== null && (
-          <div style={{background:'white',border:'1px solid #e5e7eb',borderRadius:14,padding:16,marginBottom:16,display:'flex',justifyContent:'space-between',alignItems:'baseline'}}>
+          <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:16,marginBottom:16,display:'flex',justifyContent:'space-between',alignItems:'baseline'}}>
             <div style={{fontSize:14,color:'#4b5565'}}>{t('balance')}</div>
-            <div><span style={{fontSize:28,fontWeight:500,color:'#111827',fontVariantNumeric:'tabular-nums'}}>{balance}</span> <span style={{fontSize:13,color:'#6b7487'}}>{t('days')}</span></div>
+            <div><span style={{fontSize:28,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{balance}</span> <span style={{fontSize:13,color:'#6b7487'}}>{t('days')}</span></div>
           </div>
         )}
 
-        <div style={{background:'white',border:'1px solid #e5e7eb',borderRadius:14,padding:'16px',marginBottom:20}}>
-          <div style={{fontSize:15,fontWeight:600,color:'#111827',marginBottom:12}}>{t('newRequest')}</div>
+        <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:'16px',marginBottom:20}}>
+          <div style={{fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:12}}>{t('newRequest')}</div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
             <div>
               <label style={{fontSize:13,color:'#4b5565',display:'block',marginBottom:6}}>{t('from')}</label>
               <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}
-                style={{width:'100%',padding:'10px',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const}}/>
+                style={{width:'100%',padding:'10px',border:'1.5px solid var(--storely-border)',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const}}/>
             </div>
             <div>
               <label style={{fontSize:13,color:'#4b5565',display:'block',marginBottom:6}}>{t('to')}</label>
               <input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}
-                style={{width:'100%',padding:'10px',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const}}/>
+                style={{width:'100%',padding:'10px',border:'1.5px solid var(--storely-border)',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const}}/>
             </div>
           </div>
           <textarea value={reason} onChange={e=>setReason(e.target.value)} placeholder={t('reason')}
-            style={{width:'100%',padding:'10px',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const,minHeight:60,resize:'none' as const,marginBottom:12}}/>
+            style={{width:'100%',padding:'10px',border:'1.5px solid var(--storely-border)',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const,minHeight:60,resize:'none' as const,marginBottom:12}}/>
           {error && <div style={{fontSize:12,color:'#dc2626',marginBottom:10}}>{error}</div>}
           <button onClick={submitRequest} disabled={submitting||!startDate||!endDate}
-            style={{width:'100%',height:48,background:(submitting||!startDate||!endDate)?'#eceef1':'#0f766e',color:(submitting||!startDate||!endDate)?'#6b7487':'white',border:'none',borderRadius:10,fontSize:16,fontWeight:600,cursor:(submitting||!startDate||!endDate)?'not-allowed':'pointer',fontFamily:'inherit'}}>
+            style={{width:'100%',height:48,background:(submitting||!startDate||!endDate)?'#eceef1':'#203640',color:(submitting||!startDate||!endDate)?'#6b7487':'white',border:'none',borderRadius:10,fontSize:16,fontWeight:600,cursor:(submitting||!startDate||!endDate)?'not-allowed':'pointer',fontFamily:'inherit'}}>
             {submitting?t('sending'):t('send')}
           </button>
         </div>
@@ -142,7 +142,7 @@ export default function StaffLeavePage() {
               return (
                 <div key={r.id} style={{background:st.bg,border:'1px solid #eceef1',borderRadius:12,padding:'12px 14px'}}>
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
-                    <span style={{fontSize:13,fontWeight:600,color:'#111827'}}>{r.start_date} → {r.end_date}</span>
+                    <span style={{fontSize:13,fontWeight:600,color:'var(--storely-text)'}}>{r.start_date} → {r.end_date}</span>
                     <span style={{fontSize:10,fontWeight:600,color:st.color}}>{t(st.key)}</span>
                   </div>
                   <div style={{fontSize:13,color:'#6b7487'}}>{r.days_count} {t('days')}{r.reason?` — ${r.reason}`:''}</div>

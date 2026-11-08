@@ -15,7 +15,7 @@ const TC: Record<NType, { label: string; tone: Tone; color: string; bg: string; 
   warning: { label: 'تنبيه', tone: 'warning', color: A.warning, bg: A.warningSoft, icon: AlertTriangle },
   danger: { label: 'هام', tone: 'danger', color: A.danger, bg: A.dangerSoft, icon: OctagonAlert },
 }
-const BANNER_COLOR: Record<NType, string> = { danger: '#ef4444', warning: '#f59e0b', success: '#029FA2', info: '#7c3aed' }
+const BANNER_COLOR: Record<NType, string> = { danger: '#ef4444', warning: '#f59e0b', success: '#203640', info: '#7c3aed' }
 
 const TEMPLATES: { name: string; type: NType; title: string; message: string }[] = [
   { name: 'ميزة جديدة', type: 'success', title: 'ميزة جديدة في Storely', message: 'أضفنا ميزة جديدة تساعدك في إدارة منشأتك بسهولة أكبر. اطّلع عليها من القائمة، وتواصل معنا إن كان لديك أي سؤال.' },
