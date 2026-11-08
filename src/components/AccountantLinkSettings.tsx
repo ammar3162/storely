@@ -28,7 +28,7 @@ const EMPTY: Form = { name: '', email: '', whatsapp: '', channels: ['email'], se
 
 const label: React.CSSProperties = { fontSize: 12.5, fontWeight: 700, color: colors.text2, display: 'block', marginBottom: 6 }
 const chip = (on: boolean): React.CSSProperties => ({ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 99, fontSize: 13, fontWeight: 700, cursor: 'pointer',
-  fontFamily: font.family, border: `1.5px solid ${on ? colors.primary : colors.border}`, background: on ? colors.primaryLight : colors.surface, color: on ? colors.primary : colors.text3 })
+  fontFamily: font.family, border: `1px solid ${on ? colors.primary : colors.border}`, background: on ? colors.primary : colors.surface, color: on ? '#fff' : colors.text3 })
 const box: React.CSSProperties = { background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: radius.lg, padding: 16, marginBottom: 12 }
 
 export default function AccountantLinkSettings({ orgId, onChange }: { orgId: string; onChange?: () => void }) {

@@ -13,7 +13,7 @@ import OwnerPeriodLocks from '@/components/OwnerPeriodLocks'
 type Sub = 'people' | 'reports' | 'requests' | 'locks'
 const SUBS: Sub[] = ['people', 'reports', 'requests', 'locks']
 const initials = (s: string) => (s.replace(/^(أ\.|د\.)\s*/, '').trim()[0] || '؟').toUpperCase()
-const dateAr = (iso: string) => new Date(iso).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long' })
+const dateAr = (iso: string) => new Date(iso).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'short' })
 
 export default function AccountantHub({ orgId }: { orgId: string }) {
   const [sub, setSub] = useState<Sub | null>(null)
@@ -54,13 +54,13 @@ export default function AccountantHub({ orgId }: { orgId: string }) {
 
   return (
     <div style={{ fontFamily: font.family }}>
-      <style>{`.ah-head{display:grid;grid-template-columns:1fr;gap:14px}.ah-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-        @media(min-width:900px){.ah-head{grid-template-columns:minmax(0,1fr) auto;align-items:center}.ah-stats{grid-template-columns:repeat(3,128px)}}
+      <style>{`.ah-head{display:grid;grid-template-columns:1fr;gap:14px}.ah-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--storely-border);border:1px solid var(--storely-border);border-radius:12px;overflow:hidden}
+        @media(min-width:900px){.ah-head{grid-template-columns:minmax(0,1fr) auto;align-items:center}.ah-stats{grid-template-columns:repeat(3,120px)}}
         .ah-tab:hover{background:${colors.bg}}.ah-tabs{display:flex}.ah-s{display:none}
         @media(max-width:640px){.ah-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))}.ah-tab{flex-direction:column;gap:3px!important;padding:9px 2px!important;font-size:12px!important}.ah-l{display:none}.ah-s{display:inline}}`}</style>
 
       {/* الملخص */}
-      <div style={{ background: 'linear-gradient(135deg,#f0fdfa 0%,#ffffff 70%)', border: `1px solid ${colors.primaryBorder}`, borderRadius: radius.xl, padding: 18, marginBottom: 14 }}>
+      <div style={{ background: 'var(--storely-surface)', border: '1px solid var(--storely-border)', borderRadius: radius.xl, padding: 16, marginBottom: 14 }}>
         <div className="ah-head">
           <div style={{ minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -77,10 +77,10 @@ export default function AccountantHub({ orgId }: { orgId: string }) {
                 {people.map(p => {
                   const on = p.status === 'active'
                   return (
-                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: `1px solid ${colors.border}`, borderRadius: 99, padding: '4px 12px 4px 4px', maxWidth: '100%' }}>
-                      <span style={{ width: 28, height: 28, borderRadius: 99, background: on ? colors.primary : '#f59e0b', color: '#fff', fontSize: 12.5, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{initials(p.name || p.email)}</span>
+                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--storely-surface)', border: `1px solid ${colors.border}`, borderRadius: 99, padding: '4px 12px 4px 4px', maxWidth: '100%' }}>
+                      <span style={{ width: 28, height: 28, borderRadius: 99, background: on ? colors.primary : 'var(--storely-background)', color: on ? '#fff' : 'var(--storely-text)', border: on ? 'none' : '1px solid var(--storely-border)', fontSize: 12.5, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{initials(p.name || p.email)}</span>
                       <span style={{ fontSize: 12.5, fontWeight: 700, color: colors.text2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{p.name || p.email}</span>
-                      <span style={{ width: 7, height: 7, borderRadius: 99, background: on ? '#10b981' : '#f59e0b', flexShrink: 0 }} title={on ? 'مفعّل' : 'بانتظار القبول'} />
+                      <span style={{ width: 7, height: 7, borderRadius: 99, background: on ? '#047857' : '#B45309', flexShrink: 0 }} title={on ? 'مفعّل' : 'بانتظار القبول'} />
                     </div>
                   )
                 })}
@@ -93,9 +93,9 @@ export default function AccountantHub({ orgId }: { orgId: string }) {
               { l: 'آخر تقرير', v: lastReport ? dateAr(lastReport) : '—', s: 'reports' as Sub },
               { l: 'شهور مقفلة', v: String(locks), s: 'locks' as Sub },
             ].map(x => (
-              <button key={x.l} onClick={() => go(x.s)} style={{ textAlign: 'start' as const, background: '#fff', border: `1px solid ${x.warn ? '#fcd34d' : colors.border}`, borderRadius: 12, padding: '10px 12px', cursor: 'pointer', fontFamily: font.family }}>
-                <div style={{ fontSize: 11.5, color: colors.text3 }}>{x.l}</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: x.warn ? '#b45309' : colors.text, marginTop: 2, overflowWrap: 'anywhere' as const }}>{x.v}</div>
+              <button key={x.l} onClick={() => go(x.s)} style={{ textAlign: 'center' as const, background: 'var(--storely-surface)', border: 'none', padding: '10px 6px', cursor: 'pointer', fontFamily: font.family, minWidth: 0 }}>
+                <div style={{ fontSize: 17, fontWeight: 700, color: x.warn ? '#B45309' : colors.text, fontVariantNumeric: 'tabular-nums', lineHeight: 1.3, whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' }}>{x.v}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: colors.text3, marginTop: 2, whiteSpace: 'nowrap' as const }}>{x.l}</div>
               </button>
             ))}
           </div>

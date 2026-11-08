@@ -677,3 +677,7 @@ button[data-navitem] {
 }
 /* أعمدة الشبكة (1fr 1fr) ما تتوسع بسبب حقل عريض — تبقى داخل الشاشة */
 [style*="grid-template-columns: 1fr 1fr"] > *, [style*="grid-template-columns:1fr 1fr"] > * { min-width: 0; }
+
+/* حقل التاريخ الفاضي (components/DateField): نخفي «mm/dd/yyyy» حق المتصفح ونعرض نصّنا فوقه */
+input.df-empty { -webkit-text-fill-color: transparent; }
+input.df-empty::-webkit-datetime-edit { opacity: 0; }

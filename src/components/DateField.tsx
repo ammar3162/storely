@@ -9,7 +9,7 @@ export default function DateField({ value, onChange, min, max, placeholder = 'ا
 }) {
   return (
     <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', width, maxWidth: '100%', flexShrink: 0 }}>
-      <input type="date" value={value} min={min} max={max} disabled={disabled} aria-label={ariaLabel || placeholder}
+      <input type="date" className={value ? undefined : 'df-empty'} value={value} min={min} max={max} disabled={disabled} aria-label={ariaLabel || placeholder}
         onChange={e => onChange(e.target.value)}
         style={{ width: '100%', minHeight: 34, padding: '5px 10px', fontSize: 13, fontFamily: 'inherit', border: '1px solid var(--storely-border)', borderRadius: 8, background: 'var(--storely-surface)', ...style, color: value ? 'var(--storely-text)' : 'transparent' }} />
       {!value && (

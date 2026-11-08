@@ -1,4 +1,5 @@
 'use client'
+import { MessageCircle, Mail } from 'lucide-react'
 import { FeatureIcon } from '@/components/ui/feature-icon'
 import type { LoginState } from './useLogin'
 
@@ -8,7 +9,7 @@ export default function SentNotices({ m }: { m: LoginState }) {
     <>
             {mode==='forgot-sent-wa' && (
               <div style={{textAlign:'center',padding:'40px 0'}}>
-                <div style={{width:64,height:64,borderRadius:16,background:'var(--storely-background)',border:'1px solid var(--storely-border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,margin:'0 auto 20px'}}></div>
+                <div style={{width:64,height:64,borderRadius:16,background:'var(--storely-background)',border:'1px solid var(--storely-border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,margin:'0 auto 20px'}}><MessageCircle size={28} color="var(--storely-text)"/></div>
                 <h2 style={{fontSize:22,fontWeight:800,color:'var(--storely-text)',marginBottom:8}}>{t('login.checkWhatsapp')}</h2>
                 <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:8}}>{t('login.ifRegisteredMsg')}</p>
                 <p style={{fontSize:12,color:'var(--storely-subtle)',marginBottom:28}}>{t('login.linkValidHour')}</p>
@@ -36,7 +37,7 @@ export default function SentNotices({ m }: { m: LoginState }) {
             )}
             {mode==='forgot-sent' && (
               <div style={{textAlign:'center',padding:'40px 0'}}>
-                <div style={{width:64,height:64,borderRadius:16,background:'var(--storely-background)',border:'1px solid var(--storely-border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,margin:'0 auto 20px'}}></div>
+                <div style={{width:64,height:64,borderRadius:16,background:'var(--storely-background)',border:'1px solid var(--storely-border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,margin:'0 auto 20px'}}><Mail size={28} color="var(--storely-text)"/></div>
                 <h2 style={{fontSize:22,fontWeight:800,color:'var(--storely-text)',marginBottom:8}}>{t('login.sentTitle')}</h2>
                 <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:28}}>{t('login.checkEmailMsg')} <b style={{color:'var(--storely-text)'}}>{email}</b><br/>{t('login.clickToReset')}</p>
                 <button onClick={()=>{setMode('login');setError('')}} className="btn-main">{t('login.backToLogin')}</button>
