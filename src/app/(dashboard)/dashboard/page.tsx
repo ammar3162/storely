@@ -58,7 +58,7 @@ function FoldCard({ title, summary, children }: { title: string; summary?: strin
           <span className="block text-[15px] font-bold text-[#203640]">{title}</span>
           {summary ? <span className="mt-0.5 block text-[12px] font-medium text-[#66737C]">{summary}</span> : null}
         </span>
-        <ChevronDown size={18} className={'shrink-0 text-[#66737C] transition-transform ' + (open ? 'rotate-180' : '')} />
+        <ChevronDown size={18} className="shrink-0 text-[#66737C]" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
       </button>
       {open ? <div className="border-t border-[var(--storely-border)]">{children}</div> : null}
     </section>
