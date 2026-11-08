@@ -1,37 +1,28 @@
 'use client'
 import { Search } from 'lucide-react'
-import { C } from './constants'
+import { StorelyButton } from '@/components/ui'
 import type { InventoryState } from './useInventory'
 
 export default function InventoryFilters({ m }: { m: InventoryState }) {
   const { products, setPage, search, setSearch, statusFilter, setStatusFilter, catFilter, setCatFilter, allCats, lowCount } = m
+  const filtered = !!search || catFilter !== 'all' || statusFilter !== 'all'
   return (
-    <>
-      {/* الفلاتر */}
-      <div className="iv-bar">
-        <div className="iv-tabs">
-          {([
-            {k:'all' as const, l:'الكل', n:products.length},
-            {k:'low' as const, l:'ناقص', n:lowCount},
-            {k:'ok' as const, l:'كافٍ', n:products.length-lowCount},
-          ]).map(tb=>(
-            <button key={tb.k} className={`iv-tab${statusFilter===tb.k?' on':''}`} onClick={()=>{setStatusFilter(tb.k);setPage(1)}}>
-              {tb.l} <span className="iv-tab-n" style={tb.k==='low'&&tb.n>0?{color:C.danger}:undefined}>{tb.n}</span>
-            </button>
-          ))}
-        </div>
-        <div className="iv-search">
-          <Search size={15}/>
-          <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}} placeholder="ابحث بالاسم أو الباركود"/>
-        </div>
-      </div>
+    <div className="iv-filterbar">
+      <label className="iv-search">
+        <Search size={16}/>
+        <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}} placeholder="ابحث بالاسم أو الباركود" aria-label="بحث"/>
+      </label>
+      <select className="iv-select" value={statusFilter} aria-label="الحالة" onChange={e=>{setStatusFilter(e.target.value as 'all'|'low'|'ok');setPage(1)}}>
+        <option value="all">كل الحالات ({products.length})</option>
+        <option value="low">ناقص ({lowCount})</option>
+        <option value="ok">كافٍ ({products.length-lowCount})</option>
+      </select>
       {allCats.length>1 && (
-        <div className="iv-cats">
-          {allCats.map(cat=>(
-            <button key={cat} className={`iv-cat${catFilter===cat?' on':''}`} onClick={()=>{setCatFilter(cat);setPage(1)}}>{cat==='all'?'كل الفئات':cat}</button>
-          ))}
-        </div>
+        <select className="iv-select" value={catFilter} aria-label="الفئة" onChange={e=>{setCatFilter(e.target.value);setPage(1)}}>
+          {allCats.map(cat=><option key={cat} value={cat}>{cat==='all'?'كل الفئات':cat}</option>)}
+        </select>
       )}
-    </>
+      {filtered && <StorelyButton variant="ghost" onClick={()=>{setSearch('');setCatFilter('all');setStatusFilter('all');setPage(1)}}>إزالة الفلاتر</StorelyButton>}
+    </div>
   )
 }
