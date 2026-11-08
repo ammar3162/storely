@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       .ilike('phone', '%' + localDigits)
       .maybeSingle()
 
-    const genericResponse = NextResponse.json({ success: true, message: 'إذا كان الرقم مسجّل، وصلتك رسالة واتساب فيها رابط الاستعادة' })
+    const genericResponse = NextResponse.json({ success: true, message: 'إذا كان الرقم مسجّلاً، فستصلك رسالة واتساب تتضمن رابط الاستعادة' })
 
     if (!profile) return genericResponse
 
