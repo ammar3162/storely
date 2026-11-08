@@ -2,7 +2,7 @@
 import { Check, ArrowLeft } from 'lucide-react'
 import { WA_ICON, PhoneVideo } from './constants'
 import type { LandingState } from './useLanding'
-import { CUSTOM_MIN_MONTHLY } from '@/lib/planPricing'  // أقل سعر ممكن: «ابنِ باقتك» بميزة وحدة
+import { STARTING_PRICE as CUSTOM_MIN_MONTHLY } from '@/lib/planPricing'  // «يبدأ من»: أرخص ميزة لكل فرع
 
 export default function Hero({ m }: { m: LandingState }) {
   const { partners, lang, router, top, t } = m

@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Check, Minus, Plus, Store, ArrowLeft, Sun, MessageCircle, TrendingUp, GitCompare, Calculator, UserCog, Languages, Truck, Bell, FileDown, Percent, Package, Receipt, Wallet, UserCheck, Sparkles, type LucideIcon } from 'lucide-react'
 import type { Billing } from './landing-data'
-import { CUSTOM_MODULES, CUSTOM_MODULE_ORDER, CUSTOM_MIN_MONTHLY, NEW_ADDON_PRICES, PLAN_CAPS, YEARLY_FACTOR, customMonthly, yearlyOf } from '@/lib/planPricing'
+import { CUSTOM_MODULES, CUSTOM_MODULE_ORDER, NEW_ADDON_PRICES, PLAN_CAPS, YEARLY_FACTOR, customMonthly, yearlyOf } from '@/lib/planPricing'
 import { FEATURE_PRESETS } from '@/lib/featurePresets'
 
 const FEATURES: Record<string, { name: string; icon: LucideIcon; desc: string; items: string[] }> = {
@@ -100,7 +100,7 @@ export default function FeaturePricing({ billing, onBilling }: { billing: Billin
           ابدأ تجربتك المجانية <ArrowLeft size={18} />
         </button>
       </div>
-      <p className="fp-note">جرّب كل المزايا مجاناً 14 يوم. الحد الأدنى للاشتراك {CUSTOM_MIN_MONTHLY} ⃁ شهرياً، وتقدر تضيف أو تشيل أي ميزة من داخل النظام بأي وقت.</p>
+      <p className="fp-note">جرّب كل المزايا مجاناً 14 يوم. تدفع مجموع المزايا اللي تختارها بس، وكل فرع بنفس السعر، وتقدر تضيف أو تشيل أي ميزة من داخل النظام بأي وقت.</p>
 
       <section className="fp-sec">
         <h3>مشمول مع أي اختيار</h3>

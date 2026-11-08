@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { PLAN_PRICING, PLAN_CAPS, ENTERPRISE_LABEL, isNewPlan, isCustomPlan, CUSTOM_MODULES, CUSTOM_MODULE_ORDER, CUSTOM_MIN_MONTHLY } from '@/lib/planPricing'
+import { PLAN_PRICING, PLAN_CAPS, ENTERPRISE_LABEL, isNewPlan, isCustomPlan, CUSTOM_MODULES, CUSTOM_MODULE_ORDER, STARTING_PRICE } from '@/lib/planPricing'
 
 const MOD_AR: Record<string, string> = { mod_inventory: 'المخزون والموردين', mod_purchases: 'المشتريات والفواتير', cashier_closing: 'إقفال الكاشير', hr_full: 'الحضور والرواتب', ai_tools: 'الذكاء الاصطناعي' }
 import { A, Badge, Card, Loading, PageHeader, adminFetch, useAdmin } from '../_admin/kit'
@@ -33,8 +33,8 @@ export default function PackagesPage() {
                 <Badge tone={PLAN_TONE[k]}>{planLabel(k)}</Badge>
                 {isCustomPlan(k) ? (<>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 12 }}>
-                    <span style={{ fontSize: 30, fontWeight: 800 }}>{CUSTOM_MIN_MONTHLY}</span>
-                    <span style={{ fontSize: 13, color: A.text2 }}>⃁ / شهر حد أدنى</span>
+                    <span style={{ fontSize: 30, fontWeight: 800 }}>{STARTING_PRICE}</span>
+                    <span style={{ fontSize: 13, color: A.text2 }}>⃁ / فرع — يبدأ من (بدون حد أدنى)</span>
                   </div>
                   <div style={{ fontSize: 12.5, color: A.text3, marginTop: 2 }}>كل ميزة بسعرها (الفرع الأول / كل فرع بعده)</div>
                   <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16, fontSize: 13, color: A.text2 }}>

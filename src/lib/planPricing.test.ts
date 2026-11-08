@@ -188,20 +188,21 @@ describe('«ابنِ باقتك» (custom)', () => {
     expect(customModuleAmount('mod_inventory', 2)).toBe(98)
     expect(customModuleAmount('ai_tools', 5)).toBe(15)
   })
-  it('cashier alone, 1 branch, 6 staff = 49 minimum; 3 staff → still the minimum', () => {
-    expect(customMonthly({ cashier_closing: 1 }, 1, 6)).toBe(49)
+  it('no minimum: cashier alone = 30; no discount for fewer staff', () => {
+    expect(customMonthly({ cashier_closing: 1 }, 1, 6)).toBe(30)
+    expect(customMonthly({ ai_tools: 1 }, 1, 3)).toBe(15)
     expect(customMonthly({ cashier_closing: 1, mod_purchases: 1 }, 1, 6)).toBe(74)
-    expect(customMonthly({ cashier_closing: 1, mod_purchases: 1 }, 1, 3)).toBe(49)
+    expect(customMonthly({ cashier_closing: 1, mod_purchases: 1 }, 1, 3)).toBe(74)
     expect(customMonthly({ cashier_closing: 1, mod_purchases: 1 }, 1, 9)).toBe(104)
-    expect(customMonthly({ cashier_closing: 1, mod_purchases: 1 }, 1, 1)).toBe(49)   // أقل شي 3 لكل فرع
+    expect(customMonthly({ cashier_closing: 1, mod_purchases: 1 }, 1, 1)).toBe(74)   // أقل شي 6 لكل فرع
   })
-  it('bill: modules per branch, staff discount, minimum, no plan line', () => {
+  it('bill: modules per branch, no staff discount, no minimum, no plan line', () => {
     const b = billLines('custom', 'monthly', [mod('mod_inventory', 3), mod('cashier_closing', 2), mod('ai_tools', 1)], null, null, 3, 12)
-    expect(b.lines.map(l => l.amount)).toEqual([49 * 3, 30 * 2, 15, -60])
-    expect(b.total).toBe(147 + 60 + 15 - 60)
-    expect(billLines('custom', 'monthly', [mod('cashier_closing', 1)], null, null, 1, 6).total).toBe(49)
-    expect(billLines('custom', 'yearly', [mod('mod_purchases', 1)], null, null, 1, 6).total).toBe(Math.round(49 * 12 * 0.8))
-    expect(billLines('custom', 'yearly', [mod('cashier_closing', 1)], null, null, 1, 6).total).toBe(Math.round(49 * 12 * 0.8))
+    expect(b.lines.map(l => l.amount)).toEqual([49 * 3, 30 * 2, 15])
+    expect(b.total).toBe(147 + 60 + 15)
+    expect(billLines('custom', 'monthly', [mod('cashier_closing', 1)], null, null, 1, 6).total).toBe(30)
+    expect(billLines('custom', 'yearly', [mod('mod_purchases', 1)], null, null, 1, 6).total).toBe(Math.round(44 * 12 * 0.8))
+    expect(billLines('custom', 'yearly', [mod('cashier_closing', 1)], null, null, 1, 6).total).toBe(Math.round(30 * 12 * 0.8))
   })
   it('modules show only for custom; per-branch features carry first/extra prices', () => {
     const list = addonsForPlan('custom', [{ slug: 'mod_inventory', monthly_price: 69 }, { slug: 'cashier_closing', monthly_price: 29 }, { slug: 'profitability', monthly_price: 29 }, { slug: 'extra_branch', monthly_price: 79 }])

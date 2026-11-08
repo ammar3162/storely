@@ -1,6 +1,6 @@
 'use client'
 import { ArrowLeft } from 'lucide-react'
-import { CUSTOM_MIN_MONTHLY, CUSTOM_MODULES } from '@/lib/planPricing'
+import { STARTING_PRICE as CUSTOM_MIN_MONTHLY, CUSTOM_MODULES } from '@/lib/planPricing'
 import type { LandingState } from './useLanding'
 
 // شريط الأسعار في الرئيسية — التفاصيل في صفحة /pricing

@@ -34,8 +34,11 @@ export const CUSTOM_MODULES: Record<string, { first: number; extra: number; perB
 export const FEATURE_PRICES = CUSTOM_MODULES
 export const CUSTOM_MODULE_ORDER = ['mod_inventory', 'mod_purchases', 'cashier_closing', 'hr_full', 'ai_tools'] as const
 export const CUSTOM_STAFF_STEP = 10          // كل موظف أقل/أكثر من 6 لكل فرع
-export const CUSTOM_MIN_STAFF_PER_BRANCH = 3
-export const CUSTOM_MIN_MONTHLY = 49
+// 2026-11-08: ما فيه خصم «موظفين أقل» — كل فرع يشمل 6 (عداد الموظفين انشال)، فالأقل = 6
+export const CUSTOM_MIN_STAFF_PER_BRANCH = 6
+// 2026-11-08 (المالك: «طبّق اللي تطبقه الشركات»): ما فيه حد أدنى للفاتورة — تدفع مجموع المزايا اللي اخترتها بالضبط
+// (مثل فودكس وMarketMan: سعر لكل فرع بدون حد أدنى ولا خصم تلقائي للفرع الإضافي؛ الخصم للمؤسسات بالتفاوض).
+export const CUSTOM_MIN_MONTHLY = 0
 /** سعر ميزة «ابنِ باقتك» لعدد الفروع اللي فيها (first = المثبّت للمشترك لو موجود) */
 export function customModuleAmount(slug: string, branches: number, first?: number | null): number {
   const m = CUSTOM_MODULES[slug]
@@ -50,6 +53,8 @@ export function customMonthly(modules: Record<string, number>, branches: number,
   const st = Math.max(CUSTOM_MIN_STAFF_PER_BRANCH * Math.max(1, branches), staff)
   return Math.max(CUSTOM_MIN_MONTHLY, mods + (st - base) * CUSTOM_STAFF_STEP)
 }
+/** «يبدأ من»: أرخص ميزة لكل فرع (للعرض بالموقع) */
+export const STARTING_PRICE = Math.min(...Object.values(CUSTOM_MODULES).filter(m => m.perBranch).map(m => m.first))
 /** مزايا كل باقة جاهزة بلغة «ابنِ باقتك» — عشان نحسب سعرها لو انشرت بالقطعة */
 export const PLAN_MODULES: Record<NewPlanKey, string[]> = {
   essential: ['mod_inventory', 'mod_purchases'],

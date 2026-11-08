@@ -3,7 +3,7 @@
 // تحليل البيانات مع ميزة الذكاء الاصطناعي؛ أسئلة الاشتراك وطريقة الاستخدام مجانية للكل.
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { orgFeatures, FEATURE_LABEL, type Features } from '@/lib/planFeatures'
-import { billLines, planLabel, planKeyOf, activeDiscount, staffBase, supplierBase, PLAN_CAPS, PLAN_PRICING, isNewPlan, addonsForPlan, CUSTOM_MODULES, CUSTOM_MIN_MONTHLY } from '@/lib/planPricing'
+import { billLines, planLabel, planKeyOf, activeDiscount, staffBase, supplierBase, PLAN_CAPS, PLAN_PRICING, isNewPlan, addonsForPlan, CUSTOM_MODULES } from '@/lib/planPricing'
 import { getBranchLimit } from '@/lib/branchLimit'
 import { assistantGuide } from '@/lib/assistantGuide'
 import { allowedTools, ASSISTANT_TOOLS, type ToolCtx } from '@/lib/assistantTools'
@@ -115,7 +115,7 @@ ${bill.lines.map(l => `• ${l.label}: ${l.amount} ريال`).join('\n')}
 ${isNewPlan(o.plan) ? `الأسعار للمشتركين الجدد: ما فيه باقات ثابتة — يختار المزايا اللي يحتاجها، وكل ميزة بسعرها الشهري لكل فرع:
 • المخزون والموردين ${CUSTOM_MODULES.mod_inventory.first} ريال، المشتريات والفواتير ${CUSTOM_MODULES.mod_purchases.first} ريال، إقفال الكاشير ${CUSTOM_MODULES.cashier_closing.first} ريال، الحضور والرواتب ${CUSTOM_MODULES.hr_full.first} ريال
 • أدوات الذكاء الاصطناعي ${CUSTOM_MODULES.ai_tools.first} ريال للمنشأة كلها مرة وحدة
-• كل فرع بسعر كامل مثل الأول، والحد الأدنى ${CUSTOM_MIN_MONTHLY} ريال شهرياً
+• كل فرع بسعر كامل مثل الأول، ويدفع مجموع المزايا اللي يختارها بس (بدون حد أدنى، وبدون خصم تلقائي للفرع الإضافي؛ أكثر من 10 فروع = سعر المؤسسات بالتفاوض)
 • المشترك يضيف أو يشيل ميزة من «سوق الإضافات» بأي وقت${o.plan !== 'custom' ? `\n• باقته الحالية «${planLabel(o.plan, o.max_branches)}» تستمر بسعرها` : ''}
 • كل فرع فيه ${PLAN_CAPS.essential.staff} موظفين وحتى ${PLAN_CAPS.essential.suppliers} مورد
 • المؤسسات: أكثر من 10 فروع بسعر خاص (تواصل معنا)

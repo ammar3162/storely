@@ -413,7 +413,7 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
     }, 180_000)
   })
   describe('«ابنِ باقتك» (custom plan)', () => {
-    it('cashier only, 1 branch, 3 staff: only the cashier opens, inventory/purchase writes are locked, bill = minimum 49', async () => {
+    it('cashier only, 1 branch, 3 staff: only the cashier opens, inventory/purchase writes are locked, bill = cashier 30 (no minimum, staff at least 6)', async () => {
       const s3 = newStamp()
       const { data: u } = await db.auth.admin.createUser({ email: `it-cus-${s3}@storely.test`, password: `It-${s3}-x!`, email_confirm: true })
       const uid = u.user!.id
@@ -429,7 +429,7 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         expect(res.status).toBe(200)
         oid = ((await res.json()) as any).org_id
         const { data: org } = await db.from('organizations').select('plan,max_branches,staff_included').eq('id', oid).single()
-        expect(org).toMatchObject({ plan: 'custom', max_branches: 1, staff_included: 3 })
+        expect(org).toMatchObject({ plan: 'custom', max_branches: 1, staff_included: 6 })
         // بعد التجربة (مدفوع): الكاشير بس
         await db.from('profiles').update({ subscription_type: 'paid' } as any).eq('id', uid)
         const { orgFeatures } = await import('@/lib/planFeatures')
@@ -441,9 +441,9 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         expect(await routeFeatureError(oid, '/api/products', 'GET', db as any)).toBeNull()
         expect(await routeFeatureError(oid, '/api/cashier-closing', 'POST', db as any)).toBeNull()
         const { monthlyBill } = await import('@/lib/orgBill')
-        expect(await monthlyBill(db as any, oid)).toBe(49)
+        expect(await monthlyBill(db as any, oid)).toBe(30)
         const { staffLimitFor } = await import('@/lib/staffCapacity')
-        expect(await staffLimitFor(db as any, oid)).toBe(3)
+        expect(await staffLimitFor(db as any, oid)).toBe(6)
       } finally {
         vi.doUnmock('@/lib/supabase/server')
         if (oid) {
