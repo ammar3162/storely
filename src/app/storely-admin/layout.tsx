@@ -83,7 +83,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <style>{ADMIN_CSS + SHELL_CSS}</style>
       {content}
       {newAlert && (
-        <div role="alert" style={{ position: 'fixed', bottom: 20, left: 20, zIndex: 1000, background: A.surface, border: `1px solid ${A.border}`, borderRadius: 12, boxShadow: A.shadowLg, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, maxWidth: 'calc(100vw - 40px)' }}>
+        <div role="alert" style={{ position: 'fixed', bottom: 20, left: 20, zIndex: 1000, background: A.surface, border: `1px solid ${A.border}`, borderRadius: 14, boxShadow: A.shadowLg, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, maxWidth: 'calc(100vw - 40px)' }}>
           <PackagePlus size={20} color={A.primary} />
           <div style={{ fontSize: 13.5, fontWeight: 600 }}>وصل طلب جديد (إضافة أو ترقية)</div>
           <button onClick={() => { setNewAlert(false); router.push('/storely-admin/addon-requests') }} style={{ background: A.primary, color: 'white', border: 'none', borderRadius: 10, padding: '7px 14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>عرض</button>
@@ -103,7 +103,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const sidebar = (
     <nav style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ height: 64, padding: '0 20px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid rgba(255,255,255,.1)' }}>
-        <img src="/icon-192.png" alt="" width={32} height={32} style={{ borderRadius: 6, boxShadow: A.shadowSm }} />
+        <img src="/icon-192.png" alt="" width={32} height={32} style={{ borderRadius: 9, boxShadow: A.shadowSm }} />
         <div>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>Storely</div>
           <div style={{ fontSize: 12, color: '#CBD4DC' }}>لوحة الإدارة</div>
@@ -133,7 +133,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         ))}
       </div>
-      <div style={{ margin: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, border: '1px solid rgba(255,255,255,.14)', borderRadius: 12, background: 'rgba(255,255,255,.06)' }}>
+      <div style={{ margin: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, border: '1px solid rgba(255,255,255,.14)', borderRadius: 14, background: 'rgba(255,255,255,.06)' }}>
         <div style={{ width: 34, height: 34, borderRadius: 99, background: 'rgba(255,255,255,.14)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: 14, flexShrink: 0 }}>
           {admin.full_name?.[0] || '؟'}
         </div>
@@ -142,7 +142,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div style={{ fontSize: 12, color: '#CBD4DC' }}>{admin.role === 'super_admin' ? 'مشرف كامل' : 'مشرف'}</div>
         </div>
         <button onClick={logout} title="تسجيل الخروج" aria-label="تسجيل الخروج" className="adm-btn adm-side-btn"
-          style={{ width: 32, height: 32, borderRadius: 6, border: 'none', background: 'transparent', color: '#CBD4DC', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', color: '#CBD4DC', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <LogOut size={16} />
         </button>
       </div>
@@ -160,7 +160,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
       <header className="adm-topbar">
         <button onClick={() => setMenuOpen(v => !v)} aria-label="القائمة" className="adm-menu-btn"
-          style={{ width: 38, height: 38, borderRadius: 6, border: `1px solid ${A.border}`, background: A.surface, boxShadow: A.shadowSm, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: A.text }}>
+          style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${A.border}`, background: A.surface, boxShadow: A.shadowSm, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: A.text }}>
           {menuOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, minWidth: 0 }}>
@@ -182,7 +182,7 @@ const SHELL_CSS = `
   .adm-topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:40;height:64px;padding:0 32px;margin-right:264px;background:rgba(247,248,250,.85);backdrop-filter:saturate(180%) blur(10px);-webkit-backdrop-filter:saturate(180%) blur(10px);border-bottom:1px solid ${A.border}}
   .adm-menu-btn{display:none!important}
   .adm-main{margin-right:264px;padding:32px 32px 56px;max-width:1440px}
-  .adm-nav{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:6px;color:rgba(255,255,255,.88);font-size:14px;font-weight:500;text-decoration:none;margin-bottom:2px;transition:background .15s,color .15s}
+  .adm-nav{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:9px;color:rgba(255,255,255,.88);font-size:14px;font-weight:500;text-decoration:none;margin-bottom:2px;transition:background .15s,color .15s}
   .adm-nav svg{color:rgba(255,255,255,.65);flex-shrink:0;transition:color .15s}
   .adm-nav:hover{background:rgba(255,255,255,.07);color:#fff}
   .adm-nav:hover svg{color:#fff}
