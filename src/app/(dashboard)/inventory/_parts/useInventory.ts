@@ -121,7 +121,7 @@ export function useInventory() {
       if(addQty>0){
         if(r.movement_failed){toast('تم حفظ التعديلات لكن فشلت إضافة الكمية — حاول تضيفها مرة أخرى','warning');setSaving(false);setShowAdd(false);setEditItem(null);setAddQty(0);cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:');load();return}
       }
-      toast('تم حفظ التعديلات ')
+      toast('تم حفظ التعديلات')
     } else {
       if(!form.qty){toast('أدخل كمية أكبر من صفر','warning');setSaving(false);return}
       // لو ما فيه فرع محدد، الخادم يستخدم أول فرع نشط

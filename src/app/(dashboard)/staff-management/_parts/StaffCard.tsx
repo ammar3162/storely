@@ -68,8 +68,8 @@ export default function StaffCard({ m, s, i }: { m: StaffPage; s: any; i: number
 
               {expandedId===s.id&&(
                 <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${colors.border}`,animation:'slideUp .2s ease'}}>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:14}}>
-                    <div style={{background:colors.bg,borderRadius:radius.md,padding:'12px 14px',border:`1px solid ${colors.border}`}}>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,180px),1fr))',gap:14,marginBottom:14}}>
+                    <div style={{minWidth:0,background:colors.bg,borderRadius:radius.md,padding:'12px 14px',border:`1px solid ${colors.border}`}}>
                       <div style={{fontSize:10,fontWeight:700,color:colors.text4,marginBottom:6,textTransform:'uppercase' as const}}>رقم الجوال</div>
                       {editingStaffPhoneId===s.id ? (
                         <div onClick={e=>e.stopPropagation()} style={{display:'flex',alignItems:'center',gap:6}}>
@@ -84,7 +84,7 @@ export default function StaffCard({ m, s, i }: { m: StaffPage; s: any; i: number
                         </div>
                       )}
                     </div>
-                    <div style={{background:colors.primaryLight,borderRadius:radius.md,padding:'12px 14px',border:`1px solid ${colors.primaryBorder}`}}>
+                    <div style={{minWidth:0,background:colors.primaryLight,borderRadius:radius.md,padding:'12px 14px',border:`1px solid ${colors.primaryBorder}`}}>
                       <div style={{fontSize:10,fontWeight:700,color:colors.primary,marginBottom:6,textTransform:'uppercase' as const}}>رمز PIN الحالي</div>
                       {String(s.pin||'').startsWith('$2') && !s.has_pin_enc ? (
                         <div>
@@ -94,8 +94,8 @@ export default function StaffCard({ m, s, i }: { m: StaffPage; s: any; i: number
                           </button>
                         </div>
                       ) : (
-                        <div style={{display:'flex',alignItems:'center',gap:10}}>
-                          <div style={{fontSize:28,fontWeight:900,color:colors.primary,letterSpacing:8,minWidth:90}}>
+                        <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+                          <div style={{fontSize:28,fontWeight:900,color:colors.primary,letterSpacing:6,minWidth:0}}>
                             {visiblePins[s.id] ? (revealedPins[s.id] || s.pin) : '••••'}
                           </div>
                           <button onClick={e=>{e.stopPropagation();togglePin(s)}} style={{background:'transparent',border:'none',cursor:'pointer',padding:4,lineHeight:1,display:'flex',alignItems:'center'}} title={visiblePins[s.id]?'إخفاء':'إظهار'}>
@@ -111,7 +111,7 @@ export default function StaffCard({ m, s, i }: { m: StaffPage; s: any; i: number
                               </svg>
                             )}
                           </button>
-                          <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} style={{fontSize:11,fontWeight:700,color:colors.primary,background:'transparent',border:`1px solid ${colors.primaryBorder}`,borderRadius:6,padding:'4px 8px',cursor:'pointer',fontFamily:'inherit'}}>
+                          <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} style={{fontSize:11,fontWeight:700,color:colors.primary,background:'transparent',border:`1px solid ${colors.primaryBorder}`,borderRadius:6,padding:'4px 8px',cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',marginInlineStart:'auto'}}>
                             إعادة توليد
                           </button>
                         </div>
@@ -122,7 +122,7 @@ export default function StaffCard({ m, s, i }: { m: StaffPage; s: any; i: number
                     <div style={{fontSize:10,fontWeight:700,color:colors.text4,marginBottom:6,textTransform:'uppercase' as const}}>رابط دخول الموظف</div>
                     <div style={{display:'flex',gap:8,alignItems:'center'}}>
                       <div style={{fontSize:font.xs,color:colors.text,background:colors.bg,padding:'9px 12px',borderRadius:8,border:`1px solid ${colors.border}`,flex:1,direction:'ltr',textAlign:'left' as const,overflowX:'auto',whiteSpace:'nowrap' as const}}>https://storely.dev/staff</div>
-                      <button onClick={()=>{navigator.clipboard.writeText('https://storely.dev/staff');toast('تم نسخ الرابط ')}} style={{background:colors.primary,color:'white',border:'none',borderRadius:8,padding:'9px 14px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family,whiteSpace:'nowrap' as const,display:'flex',alignItems:'center',gap:5}}>
+                      <button onClick={()=>{navigator.clipboard.writeText('https://storely.dev/staff');toast('تم نسخ الرابط')}} style={{background:colors.primary,color:'white',border:'none',borderRadius:8,padding:'9px 14px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family,whiteSpace:'nowrap' as const,display:'flex',alignItems:'center',gap:5}}>
                         <Copy size={13} strokeWidth={2.25}/> نسخ الكل
                       </button>
                     </div>
