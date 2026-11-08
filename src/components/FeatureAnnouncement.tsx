@@ -2,15 +2,16 @@
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { api } from '@/lib/api-client'
-import { colors, radius, shadow, font } from '@/lib/ds'
+import { BarChart3, MessageCircle, Package, ShoppingCart, Upload, Users } from 'lucide-react'
+import { StorelyButton } from '@/components/ui/button'
 
 const FEATURES = [
-  { icon:'📦', title:'المخزون',      desc:'أضف منتجاتك وحدد الحد الأدنى — سنبلّغك قبل أن ينفد أي صنف',    color:'#029FA2', page:'/inventory' },
-  { icon:'📤', title:'الصرف',        desc:'سجّل الصرف اليومي بضغطة واحدة — سريع ومرتب بالفئات',           color:'#dc2626', page:'/dispense' },
-  { icon:'🛒', title:'المشتريات',    desc:'سجّل فواتير الشراء مع احتساب ضريبة 15% تلقائياً',               color:'#2563eb', page:'/purchases' },
-  { icon:'📊', title:'التقارير',     desc:'تقارير الصرف والمشتريات والجرد — صدّر بـ CSV بضغطة',            color:'#7c3aed', page:'/reports' },
-  { icon:'👥', title:'الموظفون',     desc:'أضف موظفين يصرفون برمز PIN فقط — بدون وصول لبياناتك',          color:'#d97706', page:'/staff-management' },
-  { icon:'📲', title:'تنبيهات واتساب', desc:'يصلك إشعار فوري على واتساب عند نقص أي صنف',                  color:'#25d366', page:'/settings' },
+  { icon:<Package size={18}/>, title:'المخزون',      desc:'أضف منتجاتك وحدد الحد الأدنى — سنبلّغك قبل أن ينفد أي صنف', page:'/inventory' },
+  { icon:<Upload size={18}/>, title:'الصرف',        desc:'سجّل الصرف اليومي بضغطة واحدة — سريع ومرتب بالفئات', page:'/dispense' },
+  { icon:<ShoppingCart size={18}/>, title:'المشتريات',    desc:'سجّل فواتير الشراء مع احتساب ضريبة 15% تلقائياً', page:'/purchases' },
+  { icon:<BarChart3 size={18}/>, title:'التقارير',     desc:'تقارير الصرف والمشتريات والجرد — صدّر بـ CSV بضغطة', page:'/reports' },
+  { icon:<Users size={18}/>, title:'الموظفون',     desc:'أضف موظفين يصرفون برمز PIN فقط — بدون وصول لبياناتك', page:'/staff-management' },
+  { icon:<MessageCircle size={18}/>, title:'تنبيهات واتساب', desc:'يصلك إشعار فوري على واتساب عند نقص أي صنف', page:'/settings' },
 ]
 
 interface Announcement {
@@ -70,99 +71,40 @@ export default function FeatureAnnouncement() {
 
   return (
     <>
-      <style>{`
-        @keyframes tourIn{from{opacity:0;transform:scale(.94) translateY(16px)}to{opacity:1;transform:none}}
-        @keyframes bannerIn{from{opacity:0;transform:translateY(-100%)}to{opacity:1;transform:none}}
-        .tour-feat:hover{transform:translateY(-3px)!important;box-shadow:0 8px 24px rgba(0,0,0,.08)!important}
-      `}</style>
-
-      {/* ===== WELCOME TOUR ===== */}
       {show && (
-        <div style={{position:'fixed',inset:0,zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.7)',backdropFilter:'blur(12px)'}}/>
-          <div style={{
-            background:'white',borderRadius:28,width:'100%',maxWidth:560,
-            position:'relative',boxShadow:'0 32px 80px rgba(0,0,0,.25)',
-            fontFamily:font.family,direction:'rtl',overflow:'hidden',
-            animation:'tourIn .4s cubic-bezier(.4,0,.2,1)',
-          }}>
-            {/* Green top bar */}
-            <div style={{height:5,background:`linear-gradient(90deg,#029FA2,#2dd4bf,#029FA2)`}}/>
-
-            <div style={{padding:'28px 28px 24px'}}>
-              {/* Header */}
-              <div style={{textAlign:'center',marginBottom:28}}>
-                <div style={{fontSize:52,marginBottom:12}}>👋</div>
-                <h2 style={{fontSize:22,fontWeight:900,color:'#0f172a',marginBottom:8}}>
-                  أهلاً{orgName?` بـ ${orgName}`:''}!
-                </h2>
-                <p style={{fontSize:14,color:'#64748b',lineHeight:1.8,maxWidth:400,margin:'0 auto'}}>
-                  إليك نظرة سريعة على أهم ما يقدمه Storely — كل ما تحتاجه لإدارة مخزونك باحترافية
-                </p>
-              </div>
-
-              {/* Features grid */}
-              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:24}}>
-                {FEATURES.map((f,i)=>(
-                  <button key={i} className="tour-feat" onClick={()=>{ dismiss(); router.push(f.page) }}
-                    style={{
-                      background:'white',border:`1.5px solid ${f.color}22`,borderRadius:16,
-                      padding:'16px 12px',cursor:'pointer',fontFamily:font.family,
-                      textAlign:'center',transition:'all .25s',
-                      boxShadow:'0 2px 8px rgba(0,0,0,.04)',
-                    }}>
-                    <div style={{width:44,height:44,borderRadius:12,background:f.color+'12',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,margin:'0 auto 10px',border:`1px solid ${f.color}22`}}>
-                      {f.icon}
-                    </div>
-                    <div style={{fontSize:13,fontWeight:800,color:'#0f172a',marginBottom:4}}>{f.title}</div>
-                    <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.5}}>{f.desc}</div>
-                  </button>
-                ))}
-              </div>
-
-              {/* Actions */}
-              <button onClick={()=>{ dismiss(); router.push('/dashboard') }}
-                style={{width:'100%',padding:'14px',background:'linear-gradient(135deg,#029FA2,#0f766e)',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:font.family,boxShadow:'0 6px 20px rgba(22,163,74,.3)',marginBottom:10}}>
-                ابدأ الاستخدام ←
-              </button>
-              <button onClick={dismiss}
-                style={{width:'100%',padding:'10px',background:'none',color:'#94a3b8',border:'none',fontSize:13,cursor:'pointer',fontFamily:font.family}}>
-                تخطي
-              </button>
+        <div className="storely-overlay">
+          <div className="storely-dialog storely-tour">
+            <h2 className="storely-dialog-title">أهلاً{orgName?` بـ ${orgName}`:''}!</h2>
+            <p className="storely-dialog-message">إليك نظرة سريعة على أهم ما يقدمه Storely — كل ما تحتاجه لإدارة مخزونك باحترافية</p>
+            <div className="storely-tour-grid">
+              {FEATURES.map((f,i)=>(
+                <button key={i} className="storely-feature" onClick={()=>{ dismiss(); router.push(f.page) }}>
+                  <div className="storely-actions mb-2">{f.icon}<span className="storely-feature-title">{f.title}</span></div>
+                  <div className="storely-feature-description">{f.desc}</div>
+                </button>
+              ))}
+            </div>
+            <div className="storely-dialog-actions">
+              <StorelyButton onClick={()=>{ dismiss(); router.push('/dashboard') }} variant="primary">ابدأ الاستخدام ←</StorelyButton>
+              <StorelyButton onClick={dismiss} variant="ghost">تخطي</StorelyButton>
             </div>
           </div>
         </div>
       )}
-
-      {/* ===== FEATURE BANNER ===== */}
       {currentBanner && (
-        <div style={{
-          position:'fixed',top:0,right:0,left:0,zIndex:8000,
-          background:currentBanner.color,color:'white',
-          padding:'14px 24px',display:'flex',alignItems:'center',justifyContent:'space-between',
-          fontFamily:font.family,direction:'rtl',animation:'bannerIn .3s ease',
-          boxShadow:'0 4px 20px rgba(0,0,0,.2)',
-        }}>
-          <div style={{display:'flex',alignItems:'center',gap:12}}>
-            <div style={{width:38,height:38,borderRadius:10,background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>
-              {currentBanner.icon}
-            </div>
-            <div>
-              <div style={{fontSize:14,fontWeight:800}}>✨ {currentBanner.title}</div>
-              <div style={{fontSize:12,opacity:.85,marginTop:2}}>{currentBanner.description}</div>
+        <div className="storely-announcement">
+          <div className="storely-actions min-w-0 flex-1">
+            <span className="shrink-0">{currentBanner.icon}</span>
+            <div className="min-w-0 flex-1 break-words">
+              <div className="storely-feature-title">{currentBanner.title}</div>
+              <div className="storely-feature-description">{currentBanner.description}</div>
             </div>
           </div>
-          <div style={{display:'flex',gap:8,alignItems:'center',flexShrink:0,marginRight:16}}>
+          <div className="storely-actions">
             {currentBanner.page&&(
-              <button onClick={()=>{ markSeen(currentBanner.version); router.push(currentBanner.page!) }}
-                style={{padding:'8px 16px',background:'rgba(255,255,255,.2)',color:'white',border:'1px solid rgba(255,255,255,.3)',borderRadius:8,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
-                جربها
-              </button>
+              <StorelyButton onClick={()=>{ markSeen(currentBanner.version); router.push(currentBanner.page!) }}>جربها</StorelyButton>
             )}
-            <button onClick={()=>markSeen(currentBanner.version)}
-              style={{width:30,height:30,borderRadius:'50%',background:'rgba(255,255,255,.15)',color:'white',border:'none',cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:font.family}}>
-              ×
-            </button>
+            <StorelyButton onClick={()=>markSeen(currentBanner.version)} variant="ghost" className="!w-10 !px-0">×</StorelyButton>
           </div>
         </div>
       )}

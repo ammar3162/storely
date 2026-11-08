@@ -11,7 +11,7 @@ export default function PageIcon({ size = 36 }: { size?: number }) {
     <span aria-hidden="true" style={{
       width:size, height:size, borderRadius:Math.round(size*0.3), flexShrink:0,
       display:'inline-grid', placeItems:'center', color:tone.fg, background:tone.bg,
-      boxShadow:`inset 0 0 0 1px ${tone.soft}66`,
+      boxShadow:`inset 0 0 0 1px ${tone.soft}`,
     }}>
       <Icon size={Math.round(size*0.5)} strokeWidth={2}/>
     </span>
