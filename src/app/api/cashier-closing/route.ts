@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     const { data: staffRow } = await sb().from('staff_members')
       .select('name,branch_id,role,is_active,permissions').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
     if (!staffRow || (staffRow as any).is_active === false) return NextResponse.json({ error: 'الحساب غير فعّال' }, { status: 403 })
-    if (!canCloseCashier(staffRow as any)) return NextResponse.json({ error: 'إقفال الصندوق للكاشير أو لموظف عنده صلاحية إقفال الكاشير' }, { status: 403 })
+    if (!canCloseCashier(staffRow as any)) return NextResponse.json({ error: 'إقفال الصندوق متاح للكاشير أو لموظف لديه صلاحية إقفال الكاشير' }, { status: 403 })
     const staff_name: string = (staffRow as any).name
     const branch_id: string | null = (staffRow as any).branch_id ?? auth.data.branch_id ?? null
 

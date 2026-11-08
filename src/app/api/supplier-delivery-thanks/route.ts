@@ -76,7 +76,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ sent: false, reason: 'no_consent' })
     }
 
-    const msg = `🟢 *Storely*\n\nشكراً لكم على توصيل الطلب بنجاح ✅\n\nالصنف: *${product_name}*\n\nنقدّر تعاملكم ونتطلع للتعامل معكم دايماً 🌿`
+    const msg = `🟢 *Storely*\n\nشكراً لكم على توصيل الطلب بنجاح ✅\n\nالصنف: *${product_name}*\n\nنقدّر تعاملكم ونتطلع إلى استمرار التعامل معكم`
 
     await fetchExternal('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',

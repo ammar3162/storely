@@ -61,7 +61,7 @@ const STOCK_MENU = `📦 *حالة المخزون*\n\n1️⃣ المخزون ا�
 const GUEST_MENU = `مرحباً بك في *Storely* 🏪\n\nنظام واحد يربط كل أعمال منشأتك\n\n1️⃣ الاشتراكات والباقات\n2️⃣ طريقة الاستخدام\n3️⃣ الدعم الفني\n4️⃣ التواصل مع الفريق\n\n👇 أرسل رقم الخيار`
 
 const GUEST_V: Record<string,string> = {
-  '1': `🏷️ *الأسعار* — تختار المزايا اللي تحتاجها بس، وكل ميزة بسعرها لكل فرع شهرياً\n\n• المخزون والموردين: ${CUSTOM_MODULES.mod_inventory.first} ر.س\n• المشتريات والفواتير: ${CUSTOM_MODULES.mod_purchases.first} ر.س\n• إقفال الكاشير: ${CUSTOM_MODULES.cashier_closing.first} ر.س\n• الحضور والرواتب: ${CUSTOM_MODULES.hr_full.first} ر.س\n• أدوات الذكاء الاصطناعي: ${CUSTOM_MODULES.ai_tools.first} ر.س للمنشأة كلها\n\n👥 كل فرع فيه ${PLAN_CAPS.custom.staff} موظفين وحتى ${PLAN_CAPS.custom.suppliers} مورد\n🏬 من الفرع الثالث: كل فرع بخصم 20%\n💰 السنوي يوفّر 20%\n🏛️ *المؤسسات* — لأكثر من 10 فروع بسعر خاص\n\n🎁 جرّب كل المميزات مجاناً 14 يوم\n🔗 storely.dev/pricing\n\nاكتب 0 للقائمة`,
+  '1': `🏷️ *الأسعار* — تختار المزايا التي تحتاجها فقط، ولكل ميزة سعر شهري لكل فرع\n\n• المخزون والموردين: ${CUSTOM_MODULES.mod_inventory.first} ر.س\n• المشتريات والفواتير: ${CUSTOM_MODULES.mod_purchases.first} ر.س\n• إقفال الكاشير: ${CUSTOM_MODULES.cashier_closing.first} ر.س\n• الحضور والرواتب: ${CUSTOM_MODULES.hr_full.first} ر.س\n• أدوات الذكاء الاصطناعي: ${CUSTOM_MODULES.ai_tools.first} ر.س للمنشأة كلها\n\n👥 يشمل كل فرع ${PLAN_CAPS.custom.staff} موظفين وحتى ${PLAN_CAPS.custom.suppliers} مورد\n🏬 من الفرع الثالث: كل فرع بخصم 20%\n💰 السنوي يوفّر 20%\n🏛️ *المؤسسات* — لأكثر من 10 فروع بسعر خاص\n\n🎁 جرّب جميع المزايا مجاناً لمدة 14 يوماً\n🔗 storely.dev/pricing\n\nاكتب 0 للقائمة`,
   '2': `📱 *طريقة الاستخدام*\n\n✅ سجّل حسابك\n✅ أضف منتجاتك\n✅ سجّل المشتريات والصرف\n✅ استقبل تنبيهات تلقائية\n\n🔗 storely.dev\n\nاكتب 0 للقائمة`,
   '3': `🛠️ *الدعم الفني*\n\n⏰ السبت-الخميس: 9ص-10م\nاكتب 4 للتواصل\nاكتب 0 للقائمة`,
   '4': `👋 *التواصل*\n\n📱 +966594351667\nhttps://wa.me/966594351667\n\nاكتب 0 للقائمة`,
@@ -356,14 +356,14 @@ export async function POST(req: Request) {
             continue
           }
           if (t==='3') { await send(to,GUEST_V['1']); continue }
-          if (t==='4') { await pauseBot(to, 5); await send(to,'👋 تم استلام طلبك\n\nراح يتواصل معك أحد أعضاء فريقنا خلال دقائق 🙏\n\nاكتب 0 في أي وقت للرجوع للقائمة'); continue }
+          if (t==='4') { await pauseBot(to, 5); await send(to,'👋 تم استلام طلبك\n\nسيتواصل معك أحد أعضاء فريقنا خلال دقائق\n\nاكتب 0 في أي وقت للرجوع للقائمة'); continue }
           // بحث عن منتج
           if (t.length>1 && isNaN(Number(t))) {
             await searchProduct(to, user.org_id, t)
             continue
           }
           const orgNameForGreet = (user as any).organizations?.name
-          await send(to, `${greeting(orgNameForGreet)}\n\nما فهمت طلبك بالضبط 🤔 تقدر تكتب رقم أو حتى الكلمة نفسها (مثلاً: "مخزون" أو "دعم")\n\n${MAIN_MENU}`)
+          await send(to, `${greeting(orgNameForGreet)}\n\nلم أفهم طلبك تماماً. يمكنك كتابة رقم الخيار أو الكلمة نفسها (مثل: "مخزون" أو "دعم")\n\n${MAIN_MENU}`)
         }
 
         // ── اختيار الفرع ──
@@ -372,7 +372,7 @@ export async function POST(req: Request) {
           const idx = Number(t) - 1
           if (!branches || isNaN(idx) || idx < 0 || idx >= branches.length) {
             const list = (branches||[]).map((b:any,i:number)=>`${i+1}️⃣ ${b.name}`).join('\n')
-            await send(to, `⚠️ اختر رقم صحيح\n\n${list}`)
+            await send(to, `⚠️ اختر رقماً صحيحاً\n\n${list}`)
             continue
           }
           await setSelectedBranch(to, branches[idx].id)
@@ -386,7 +386,7 @@ export async function POST(req: Request) {
           if (t==='8') { await send(to,STOCK_MENU); continue }
           if (t==='9') {
             const { data: branches } = await sb().from('branches').select('id,name').eq('org_id',user.org_id).eq('is_active',true).order('created_at')
-            if (!branches || branches.length <= 1) { await send(to,'منشأتك فيها فرع واحد بس\n\nاكتب 0 للقائمة'); continue }
+            if (!branches || branches.length <= 1) { await send(to,'لدى منشأتك فرع واحد فقط\n\nاكتب 0 للقائمة'); continue }
             const list = branches.map((b:any,i:number)=>`${i+1}️⃣ ${b.name}`).join('\n')
             await send(to, `🏪 *اختر الفرع*\n\n${list}\n\nأرسل رقم الفرع`)
             await setState(to,'select_branch')
@@ -449,7 +449,7 @@ export async function POST(req: Request) {
       } else {
         // زائر غير مسجل
         await setState(to,'main')
-        if (t==='4') { await pauseBot(to, 5); await send(to,'👋 تم استلام طلبك\n\nراح يتواصل معك أحد أعضاء فريقنا خلال دقائق 🙏\n\nاكتب 0 في أي وقت للرجوع للقائمة') }
+        if (t==='4') { await pauseBot(to, 5); await send(to,'👋 تم استلام طلبك\n\nسيتواصل معك أحد أعضاء فريقنا خلال دقائق\n\nاكتب 0 في أي وقت للرجوع للقائمة') }
         else await send(to, GUEST_V[t]||GUEST_MENU)
       }
     }

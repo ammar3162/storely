@@ -171,10 +171,10 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
       // الأساسية بدون إضافات: الاشتراك والدليل بس
       let c = await buildAssistantContext(db as any, orgId, null, { role: 'owner' })
       expect(names(c)).toEqual([])
-      expect(c.prompt).toContain('باقي 9 يوم')
+      expect(c.prompt).toContain('المتبقي 9 يوم')
       expect(c.prompt).toContain('دليل استخدام النظام')
       expect(c.prompt).toContain('يحتاج إضافة «الذكاء الاصطناعي»')
-      expect(c.prompt).toContain('قل له وين يلقاها بنفسه في النظام')   // بدون الذكاء: يعلّمه وين يلقى بياناته بدل الأرقام
+      expect(c.prompt).toContain('وضّح له أين يجدها بنفسه في النظام')   // بدون الذكاء: يعلّمه وين يلقى بياناته بدل الأرقام
 
       // إضافة الذكاء: أدوات البيانات (بدون الكاشير والحضور لأن إضافاتهم مو مفعّلة)
       const { data: ads } = await db.from('marketplace_addons').select('id,slug').in('slug', ['ai_tools', 'hr_full'])
@@ -210,7 +210,7 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
       // مدير فرع عنده المخزون بس: أداة المخزون بس، والمشتريات مقفلة
       const m = await buildAssistantContext(db as any, orgId, branchA, { role: 'manager', permissions: { inventory: true } })
       expect(names(m)).toEqual(['dispense', 'inventory'])
-      expect(m.prompt).not.toContain('باقي 9 يوم')   // الاشتراك للمالك
+      expect(m.prompt).not.toContain('المتبقي 9 يوم')   // الاشتراك للمالك
       expect(await runTool('purchases', {}, m.toolCtx, m.features, { role: 'manager', permissions: { inventory: true } })).toMatchObject({ error: expect.any(String) })
 
       await db.from('purchases').delete().eq('org_id', orgId).eq('name', tag)

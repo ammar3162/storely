@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   }
 
   const cleanItems = items.filter((it: any) => it?.label && it?.amount != null).map((it: any) => ({ label: String(it.label), amount: Number(it.amount) }))
-  if (cleanItems.length === 0) return NextResponse.json({ error: 'ما فيه بنود صالحة' }, { status: 400 })
+  if (cleanItems.length === 0) return NextResponse.json({ error: 'لا توجد بنود صالحة' }, { status: 400 })
   const total = cleanItems.reduce((s: number, it: any) => s + it.amount, 0)
 
   const { data: inv, error: insErr } = await supabase.from('invoices').insert({

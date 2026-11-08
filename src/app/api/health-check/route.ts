@@ -83,7 +83,7 @@ async function checkStalePendingUsers(supabase: any): Promise<Issue | null> {
 
   if (!count || count === 0) return null
   return {
-    type: 'مستخدمين معلّقين أكثر من أسبوع',
+    type: 'مستخدمون معلّقون منذ أكثر من أسبوع',
     severity: 'warning',
     detail: `${count} مستخدم بانتظار الموافقة منذ أكثر من 7 أيام: ${(data || []).map((u: any) => u.full_name).join('، ')}`,
     count,

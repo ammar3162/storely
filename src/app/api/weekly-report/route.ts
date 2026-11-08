@@ -84,7 +84,7 @@ export async function GET(req: Request) {
 
       if (urgentList.length > 0) {
         report += `⚡ *تنبيه عاجل — ستنفد خلال أسبوع:*\n`
-        urgentList.slice(0,5).forEach(p => { report += `• ${p.name}: باقي ${p.daysLeft} يوم\n` })
+        urgentList.slice(0,5).forEach(p => { report += `• ${p.name}: المتبقي ${p.daysLeft} يوم\n` })
         report += '\n'
       }
 

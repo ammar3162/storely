@@ -42,10 +42,10 @@ export async function buildAssistantContext(db: SupabaseClient, orgId: string, b
   ]
   // ليش القسم مقفل: الميزة غير مفعّلة، أو المدير ما عنده صلاحيته
   const lockedWhy = (name: string) => {
-    if (!features.ai) return `يحتاج إضافة «${FEATURE_LABEL.ai}» (أو باقة فيها الذكاء)`
+    if (!features.ai) return `يحتاج إضافة «${FEATURE_LABEL.ai}» (أو باقة تتضمن الذكاء الاصطناعي)`
     if (name === 'cashier_closings' && !features.cashier) return `يحتاج إضافة «${FEATURE_LABEL.cashier}»`
     if (name === 'attendance' && !features.hr) return `يحتاج إضافة «${FEATURE_LABEL.hr}»`
-    return 'ما عندك صلاحيته — يفعّلها لك مالك المنشأة'
+    return 'ليست لديك صلاحيته — يفعّلها لك مالك المنشأة'
   }
   const locked = ASSISTANT_TOOLS.filter(t => !on.has(t.name)).map(t => `• ${TOOL_AR[t.name] || t.name}: ${lockedWhy(t.name)}`)
 
@@ -53,17 +53,17 @@ export async function buildAssistantContext(db: SupabaseClient, orgId: string, b
   if (!isManager) parts.push(await subscriptionSection(db, orgId, o, features))
   parts.push(await assistantGuide(db))
 
-  const prompt = `أنت المساعد الذكي في نظام Storely لمنشأة «${o.name || ''}». تجاوب بالعربي (لهجة سعودية بسيطة)، مختصر وعملي، وبأرقام محددة.
+  const prompt = `أنت المساعد الذكي في نظام Storely لمنشأة «${o.name || ''}». تجيب بالعربية الفصحى المبسطة بأسلوب رسمي واضح (دون لهجة عامية ودون رموز تعبيرية)، وبإيجاز وعملية، وبأرقام محددة.
 
 قواعد:
-- تجاوب بس عن المنشأة وبياناتها وطريقة استخدام النظام والاشتراك. أي سؤال ثاني (عام، شخصي، معلومات خارجية) اعتذر بجملة وحدة وقل إنك مساعد المنشأة بس.
-- بيانات المنشأة (مشتريات، موردين، صرف، مخزون، ضريبة، كاشير، حضور) تجيبها بالأدوات بس — لا تخمّن ولا تخترع أرقام. لو الأداة ما رجعت بيانات قل ذلك.
-- اختر الأداة والفترة المناسبة للسؤال (أمس، هالشهر، شهر معيّن…) وجاوب على طول. معاني النظام: «الصرف/صرف/صرفنا» = صرف المخزون (أداة الصرف)، «اشترينا/المشتريات/الفواتير/دفعنا للمورد» = المشتريات. «أكثر موظف صرف» = الصرف حسب الموظف.
-- اسأل للتوضيح بس لو مستحيل تفهم السؤال، وبجملة وحدة بدون قوائم خيارات. وكمّل المحادثة: لو المستخدم رد على سؤالك السابق (رقم أو كلمة)، افهمه من المحادثة.
-- اليوم بتوقيت السعودية: ${saudiDay(new Date())}.${isManager ? '\n- المستخدم مدير فرع: بياناته لفرعه بس، وأسئلة الاشتراك والفواتير يجاوب عليها مالك المنشأة.' : ''}
-${tools.length ? `\nالأدوات المتاحة: ${tools.map(t => TOOL_AR[t.name] || t.name).join('، ')}` : `\nهالمنشأة ما عندها تحليل البيانات: دورك تعلّمها كيف تستخدم النظام (خطوات من الدليل ورابط فيديو الشرح)، وتجاوب عن اشتراكها وباقتها، وتشرح وش تسوي كل ميزة.
-لو سأل عن بياناته (مثل آخر فاتورة، أكثر موظف صرف، ضريبته): لا تجاوب بأرقام — قل له وين يلقاها بنفسه في النظام (اسم الصفحة والخطوة)، وإن المساعد يجاوبه عليها مباشرة مع إضافة «${FEATURE_LABEL.ai}» (أو باقة فيها الذكاء).`}
-${locked.length ? `\n═══ بيانات مقفلة (لو سأل عنها قل إنها تحتاج تفعيل، بدون أرقام) ═══\n${locked.join('\n')}\n` : ''}
+- أجب فقط عن المنشأة وبياناتها وطريقة استخدام النظام والاشتراك. وإذا كان السؤال خارج ذلك (عاماً أو شخصياً أو عن معلومات خارجية) فاعتذر بجملة واحدة، ووضّح أنك مساعد المنشأة فقط.
+- بيانات المنشأة (مشتريات، موردين، صرف، مخزون، ضريبة، كاشير، حضور) احصل عليها عبر الأدوات فقط — لا تخمّن ولا تخترع أرقاماً. وإذا لم تُرجع الأداة بيانات فوضّح ذلك.
+- اختر الأداة والفترة المناسبتين للسؤال (أمس، هذا الشهر، شهر معيّن…) وأجب مباشرة. معاني النظام: «الصرف/صرف/صرفنا» = صرف المخزون (أداة الصرف)، «اشترينا/المشتريات/الفواتير/دفعنا للمورد» = المشتريات. «أكثر موظف صرف» = الصرف حسب الموظف.
+- اطلب التوضيح فقط إذا تعذّر فهم السؤال تماماً، وبجملة واحدة دون قوائم خيارات. وتابع المحادثة: إذا ردّ المستخدم على سؤالك السابق (برقم أو كلمة) فافهمه من سياق المحادثة.
+- اليوم بتوقيت السعودية: ${saudiDay(new Date())}.${isManager ? '\n- المستخدم مدير فرع: بياناته لفرعه فقط، وأسئلة الاشتراك والفواتير يجيب عنها مالك المنشأة.' : ''}
+${tools.length ? `\nالأدوات المتاحة: ${tools.map(t => TOOL_AR[t.name] || t.name).join('، ')}` : `\nهذه المنشأة ليس لديها تحليل البيانات: دورك أن تعلّمها كيفية استخدام النظام (خطوات من الدليل ورابط فيديو الشرح)، وأن تجيب عن اشتراكها وباقتها، وتشرح وظيفة كل ميزة.
+إذا سأل عن بياناته (مثل آخر فاتورة، أو أكثر موظف صرفاً، أو ضريبته): لا تُجب بأرقام — بل وضّح له أين يجدها بنفسه في النظام (اسم الصفحة والخطوة)، وأن المساعد يجيبه عنها مباشرة مع إضافة «${FEATURE_LABEL.ai}» (أو باقة تتضمن الذكاء الاصطناعي).`}
+${locked.length ? `\n═══ بيانات مقفلة (إذا سأل عنها فوضّح أنها تحتاج إلى تفعيل، دون أرقام) ═══\n${locked.join('\n')}\n` : ''}
 ${parts.join('\n\n')}`
   return {
     prompt, sections,
@@ -95,35 +95,35 @@ async function subscriptionSection(db: SupabaseClient, orgId: string, o: any, fe
   const extraSup = rows.filter(a => a.slug === 'extra_suppliers').flatMap(a => a.subscriptions).filter((s: any) => s.isValid).reduce((t: number, s: any) => t + (Number(s.quantity) || 0), 0)
   const active = rows.filter(a => a.subscriptions.some((s: any) => s.isValid)).map(a => {
     const s = a.subscriptions.find((x: any) => x.isValid)
-    return `${a.name}${Number(s.quantity) > 1 ? ` × ${s.quantity}` : ''} (لين ${saudiDay(s.expires_at)})`
+    return `${a.name}${Number(s.quantity) > 1 ? ` × ${s.quantity}` : ''} (حتى ${saudiDay(s.expires_at)})`
   })
   const forSale = rows.filter(a => a.is_active).map(a => `${a.name} ${n(a.monthly_price)} ريال`)
   const disc = activeDiscount(o)
   return `═══ الاشتراك والباقة ═══
 الباقة: ${planLabel(o.plan, o.max_branches)} (${cycle === 'yearly' ? 'سنوي' : 'شهري'})
-نوع الاشتراك: ${ow.subscription_type === 'trial' ? 'تجربة مجانية (كل المميزات مفتوحة طول التجربة)' : 'مدفوع'}
-ينتهي: ${ends ? `${saudiDay(ends)} (${daysLeft! >= 0 ? `باقي ${daysLeft} يوم` : `منتهي من ${-daysLeft!} يوم`})` : 'غير محدد'}
+نوع الاشتراك: ${ow.subscription_type === 'trial' ? 'تجربة مجانية (جميع المزايا مفتوحة طوال التجربة)' : 'مدفوع'}
+ينتهي: ${ends ? `${saudiDay(ends)} (${daysLeft! >= 0 ? `المتبقي ${daysLeft} يوم` : `منتهٍ منذ ${-daysLeft!} يوم`})` : 'غير محدد'}
 الفروع: ${limit.total} مسموح (${limit.base} من الباقة + ${limit.extra} إضافي)
 الموظفين النشطين: ${staffCount || 0} من ${staffBase(o.plan, o.max_staff, limit.extra, limit.base, o.staff_included) + extraStaff}
 الموردين النشطين: ${supCount || 0} من ${supplierBase(o.plan, o.max_suppliers, limit.extra, limit.base) + extraSup}
 الإضافات المفعّلة: ${active.length ? active.join('، ') : 'لا يوجد'}
 الميزات المفتوحة: ${(Object.keys(features) as (keyof Features)[]).filter(k => features[k]).map(k => FEATURE_LABEL[k]).join('، ') || 'الأساسية فقط'}
-${disc ? `خصم خاص: ${disc.type === 'percent' ? `${disc.value}%` : `${disc.value} ريال شهرياً`}${disc.note ? ` (${disc.note})` : ''}${disc.until ? ` لين ${disc.until}` : ''}\n` : ''}الفاتورة ${cycle === 'yearly' ? 'السنوية' : 'الشهرية'}:
+${disc ? `خصم خاص: ${disc.type === 'percent' ? `${disc.value}%` : `${disc.value} ريال شهرياً`}${disc.note ? ` (${disc.note})` : ''}${disc.until ? ` حتى ${disc.until}` : ''}\n` : ''}الفاتورة ${cycle === 'yearly' ? 'السنوية' : 'الشهرية'}:
 ${bill.lines.map(l => `• ${l.label}: ${l.amount} ريال`).join('\n')}
 • الإجمالي: ${bill.total} ريال
 
-${isNewPlan(o.plan) ? `الأسعار للمشتركين الجدد: ما فيه باقات ثابتة — يختار المزايا اللي يحتاجها، وكل ميزة بسعرها الشهري لكل فرع:
+${isNewPlan(o.plan) ? `الأسعار للمشتركين الجدد: لا توجد باقات ثابتة — يختار المشترك المزايا التي يحتاجها، ولكل ميزة سعر شهري لكل فرع:
 • المخزون والموردين ${CUSTOM_MODULES.mod_inventory.first} ريال، المشتريات والفواتير ${CUSTOM_MODULES.mod_purchases.first} ريال، إقفال الكاشير ${CUSTOM_MODULES.cashier_closing.first} ريال، الحضور والرواتب ${CUSTOM_MODULES.hr_full.first} ريال
-• أدوات الذكاء الاصطناعي ${CUSTOM_MODULES.ai_tools.first} ريال للمنشأة كلها مرة وحدة
-• الفرع الثاني بنفس السعر، ومن الفرع الثالث كل فرع بخصم 20% (الذكاء ما يدخل)، ويدفع مجموع المزايا اللي يختارها بس بدون حد أدنى؛ أكثر من 10 فروع = سعر المؤسسات بالتفاوض
-• المشترك يضيف أو يشيل ميزة من «سوق الإضافات» بأي وقت${o.plan !== 'custom' ? `\n• باقته الحالية «${planLabel(o.plan, o.max_branches)}» تستمر بسعرها` : ''}
-• كل فرع فيه ${PLAN_CAPS.essential.staff} موظفين وحتى ${PLAN_CAPS.essential.suppliers} مورد
+• أدوات الذكاء الاصطناعي ${CUSTOM_MODULES.ai_tools.first} ريال مرة واحدة للمنشأة كلها
+• الفرع الثاني بالسعر نفسه، ومن الفرع الثالث يحصل كل فرع على خصم 20% (لا يشمل الذكاء الاصطناعي)، ويدفع المشترك مجموع المزايا التي يختارها فقط دون حد أدنى؛ ولأكثر من 10 فروع يكون سعر المؤسسات بالتفاوض
+• يمكن للمشترك إضافة أي ميزة أو إزالتها من «سوق الإضافات» في أي وقت${o.plan !== 'custom' ? `\n• باقته الحالية «${planLabel(o.plan, o.max_branches)}» تستمر بسعرها` : ''}
+• يشمل كل فرع ${PLAN_CAPS.essential.staff} موظفين وحتى ${PLAN_CAPS.essential.suppliers} مورد
 • المؤسسات: أكثر من 10 فروع بسعر خاص (تواصل معنا)
 • الدفع السنوي بخصم 20%
-الإضافات (تقدر تحدد الفروع لكل إضافة): ${addonsForPlan(o.plan, rows.filter(a => a.is_active)).map(a => `${a.name} ${n(Number(a.monthly_price))} ريال${a.per_branch ? (a.extra_price != null && a.extra_price !== Number(a.monthly_price) ? ` للفرع الأول و${a.extra_price} لكل فرع بعده` : ' لكل فرع') : ''}`).join('، ')}` : `الباقات المتاحة:
-• الأساسية ${PLAN_PRICING.basic.monthly} ريال: فرع واحد (يوصل ${PLAN_CAPS.basic.maxBranches})، ${PLAN_CAPS.basic.staff} موظفين، ${PLAN_CAPS.basic.suppliers} موردين، والمميزات بالإضافات
-• الشاملة ${PLAN_PRICING.pro.monthly} ريال: كل المميزات، ${PLAN_CAPS.pro.branches} فروع (يوصل ${PLAN_CAPS.pro.maxBranches})، ${PLAN_CAPS.pro.staff} موظف، ${PLAN_CAPS.pro.suppliers} مورد
-• المتقدمة ${PLAN_PRICING.advanced.monthly} ريال: كل المميزات، ${PLAN_CAPS.advanced.branches} فروع (يوصل ${PLAN_CAPS.advanced.maxBranches})، ${PLAN_CAPS.advanced.staff} موظف، ${PLAN_CAPS.advanced.suppliers} مورد
+الإضافات (يمكن تحديد الفروع لكل إضافة): ${addonsForPlan(o.plan, rows.filter(a => a.is_active)).map(a => `${a.name} ${n(Number(a.monthly_price))} ريال${a.per_branch ? (a.extra_price != null && a.extra_price !== Number(a.monthly_price) ? ` للفرع الأول و${a.extra_price} لكل فرع بعده` : ' لكل فرع') : ''}`).join('، ')}` : `الباقات المتاحة:
+• الأساسية ${PLAN_PRICING.basic.monthly} ريال: فرع واحد (حتى ${PLAN_CAPS.basic.maxBranches})، ${PLAN_CAPS.basic.staff} موظفين، ${PLAN_CAPS.basic.suppliers} موردين، والمزايا عبر الإضافات
+• الشاملة ${PLAN_PRICING.pro.monthly} ريال: جميع المزايا، ${PLAN_CAPS.pro.branches} فروع (حتى ${PLAN_CAPS.pro.maxBranches})، ${PLAN_CAPS.pro.staff} موظف، ${PLAN_CAPS.pro.suppliers} مورد
+• المتقدمة ${PLAN_PRICING.advanced.monthly} ريال: جميع المزايا، ${PLAN_CAPS.advanced.branches} فروع (حتى ${PLAN_CAPS.advanced.maxBranches})، ${PLAN_CAPS.advanced.staff} موظف، ${PLAN_CAPS.advanced.suppliers} مورد
 • المؤسسات: أكثر من ${PLAN_CAPS.advanced.maxBranches} فروع بسعر خاص (تواصل معنا)
 • الدفع السنوي بخصم 20%
 الإضافات للأساسية: ${forSale.join('، ')}`}

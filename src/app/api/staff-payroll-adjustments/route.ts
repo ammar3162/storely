@@ -29,7 +29,7 @@ export async function GET(req: Request) {
     if (orgIdParam) {
       const access = await verifyOrgAccess(orgIdParam)
       if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-      if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على الرواتب والإجازات — كلّم مالك المنشأة' }, { status: 403 })
+      if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ليست لديك صلاحية على الرواتب والإجازات — تواصل مع مالك المنشأة' }, { status: 403 })
       orgId = orgIdParam
       staffFilter = staffIdParam
       forcedBranch = enforcedBranchId(access)
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
       // المالك يضيف خصم مباشر (موافق فوراً)
       const access = await verifyOrgAccess(body.org_id)
       if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-      if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على الرواتب والإجازات — كلّم مالك المنشأة' }, { status: 403 })
+      if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ليست لديك صلاحية على الرواتب والإجازات — تواصل مع مالك المنشأة' }, { status: 403 })
 
       const { data: orgCheck } = await supabase.from('organizations').select('plan').eq('id', body.org_id).single()
       if (!(await orgHasFeature(supabase, body.org_id, 'hr', (orgCheck as any)?.plan))) {
@@ -106,7 +106,7 @@ export async function POST(req: Request) {
       if (monthly > 0 && amountNum > monthly) return NextResponse.json({ error: `السلفة أكبر من راتبك الشهري (${monthly} ⃁)` }, { status: 400 })
       // طلب واحد بانتظار الرد — يمنع تكرار الطلب ورسائل الواتساب للمالك
       const { data: pendingAdv } = await supabase.from('staff_payroll_adjustments').select('id').eq('org_id', org_id).eq('staff_id', staff_id).eq('type', 'advance').eq('status', 'pending').limit(1).maybeSingle()
-      if (pendingAdv) return NextResponse.json({ error: 'عندك طلب سلفة بانتظار الرد — انتظر رد صاحب العمل' }, { status: 409 })
+      if (pendingAdv) return NextResponse.json({ error: 'لديك طلب سلفة بانتظار الرد — انتظر رد صاحب العمل' }, { status: 409 })
 
       const { data: created, error } = await supabase.from('staff_payroll_adjustments').insert({
         org_id, staff_id, type: 'advance', amount: Math.round(amountNum * 100) / 100, reason: reason ? String(reason).trim().slice(0, 300) : null,
@@ -149,7 +149,7 @@ export async function PATCH(req: Request) {
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على الرواتب والإجازات — كلّم مالك المنشأة' }, { status: 403 })
+    if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ليست لديك صلاحية على الرواتب والإجازات — تواصل مع مالك المنشأة' }, { status: 403 })
 
     const supabase = sb()
     const { data: adj } = await supabase.from('staff_payroll_adjustments').select('id,status,type,amount,staff_id,staff_members(branch_id)').eq('id', adjustment_id).eq('org_id', org_id).maybeSingle()
