@@ -87,13 +87,13 @@ export default function ProductSheet({ m }: { m: InventoryState }) {
                     <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:12}}>
                       <div style={{fontSize:13,color:C.text2,marginBottom:8}}>الكمية الحالية: <b style={{color:C.text}}>{editItem.qty} {form.unit}</b></div>
                       <label style={lbl}>كمية تضيفها</label>
-                      <NumberInput min="0" value={addQty||''} onChange={e=>setAddQty(Number(e.target.value)||0)} style={{...inp(),fontSize:16,fontWeight:600}} placeholder="0"/>
+                      <NumberInput min="0" value={addQty||''} onChange={e=>setAddQty(Number(e.target.value)||0)} style={{...inp(),fontSize:16,fontWeight:600,textAlign:'center'}} placeholder="0"/>
                       {addQty>0&&<div style={{fontSize:12,color:C.text2,marginTop:6}}>الإجمالي بعد الإضافة: {editItem.qty+addQty} {form.unit}</div>}
                     </div>
                   ):(
                     <div>
                       <label style={lbl}>الكمية الابتدائية *</label>
-                      <NumberInput min="1" required value={form.qty||''} onChange={e=>setForm({...form,qty:Number(e.target.value)})} style={{...inp(),fontSize:16,fontWeight:600}} placeholder="0"/>
+                      <NumberInput min="1" required value={form.qty||''} onChange={e=>setForm({...form,qty:Number(e.target.value)})} style={{...inp(),fontSize:16,fontWeight:600,textAlign:'center'}} placeholder="0"/>
                     </div>
                   )}
                 </div>
