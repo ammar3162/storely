@@ -9,9 +9,7 @@ import HowItWorks from './_parts/HowItWorks'
 import SuppliersSection from './_parts/SuppliersSection'
 import FeaturesSection from './_parts/FeaturesSection'
 import PricingTeaser from './_parts/PricingTeaser'
-import ProofStrip from './_parts/ProofStrip'
 import LossCalculator from './_parts/LossCalculator'
-import type { LandingStats } from '@/lib/landingStats'
 import DemoRequestSection from './_parts/DemoRequestSection'
 import FaqSection from './_parts/FaqSection'
 import FinalCta from './_parts/FinalCta'
@@ -19,7 +17,7 @@ import SiteFooter from './_parts/SiteFooter'
 import WhatsAppFloat from './_parts/WhatsAppFloat'
 
 // ترتيب مثل صفحات الشركات (فودكس، قيود، رواء): العنوان بزرين ← المزايا ← كيف يشتغل ← الموردين ← قصة عميل ← الأسعار (صفحة مستقلة) ← طلب عرض ← الأسئلة
-export default function LandingPage({ initialMarquee, stats = null }: { initialMarquee?: string[]; stats?: LandingStats | null } = {}) {
+export default function LandingPage({ initialMarquee }: { initialMarquee?: string[] } = {}) {
   const m = useLanding(initialMarquee)
   const { rootRef } = m
 
@@ -33,7 +31,6 @@ export default function LandingPage({ initialMarquee, stats = null }: { initialM
 
       <Hero m={m}/>
 
-      <ProofStrip m={m} stats={stats}/>
 
       <FeaturesSection m={m}/>
 

@@ -53,7 +53,7 @@ export default function Hero({ m }: { m: LandingState }) {
 
         <div className="lp-wrap">
           <div className="lp-stats">
-            {[[CUSTOM_MIN_MONTHLY+' '+(lang==='ar'?'⃁':'SAR'),t('statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('statFree')],['7',t('statLangs')],['24/7',t('statAlerts')]].map(([n,l])=>(
+            {[[CUSTOM_MIN_MONTHLY+' '+(lang==='ar'?'⃁':'SAR'),t('statStart')],['14 '+(lang==='ar'?'يوماً':'days'),t('statFree')],['7',t('statLangs')],['24/7',t('statAlerts')]].map(([n,l])=>(
               <div key={l}><strong>{n}</strong><span>{l}</span></div>
             ))}
           </div>
