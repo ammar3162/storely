@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check, Minus, Plus, ChevronDown, Wallet, UserCheck, Sparkles, Users, Store, ArrowLeft, Sun, MessageCircle, TrendingUp, GitCompare, Calculator, UserCog, Languages, Truck, Bell, FileDown, Percent, type LucideIcon } from 'lucide-react'
 import type { Billing } from './landing-data'
-import { CUSTOM_MIN_STAFF_PER_BRANCH, CUSTOM_MODULES, CUSTOM_MODULE_ORDER, CUSTOM_STAFF_STEP, NEW_ADDON_PRICES, NEW_PLANS, PLAN_CAPS, PLAN_PRICING, YEARLY_FACTOR, customModuleAmount, customMonthly, planPriceFor, signupAddonsMonthly, type NewPlanKey, alaCarteMonthly } from '@/lib/planPricing'
+import { CUSTOM_MIN_STAFF_PER_BRANCH, CUSTOM_MODULES, CUSTOM_MODULE_ORDER, CUSTOM_STAFF_STEP, NEW_ADDON_PRICES, NEW_PLANS, PLAN_CAPS, PLAN_PRICING, YEARLY_FACTOR, customModuleAmount, customMonthly, planPriceFor, signupAddonsMonthly, type NewPlanKey, alaCarteMonthly, yearlyOf } from '@/lib/planPricing'
 
 type PlanKey = NewPlanKey
 const price = (k: PlanKey) => PLAN_PRICING[k].monthly
@@ -111,11 +111,12 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
                 <h3>{p.name}</h3>
                 <p className="st-desc">{p.desc}</p>
                 <div className="st-price">
-                  {pct > 0 && branches === 1 && <s className="st-was">{shown(alone)}</s>}
+                  {yearly ? <s className="st-was">{p.price}</s> : pct > 0 && branches === 1 && <s className="st-was">{alone}</s>}
                   <strong>{shown(p.price)}</strong><span>⃁ / شهرياً<br />لكل فرع</span>
                 </div>
-                <p className="st-sub">{yearly ? `تُدفع سنوياً · ` : ''}الفرع الإضافي {shown(p.extra)} ⃁ · يشمل {PLAN_CAPS[p.key].staff} موظفين لكل فرع</p>
-                {branches > 1 && <p className="st-total">المجموع لـ {branchWord}: {pct > 0 && <><s className="st-was sm">{shown(alone)}</s>{' '}</>}<b>{shown(total)} ⃁</b> شهرياً</p>}
+                {yearly && <p className="st-yearly">تدفع <b>{yearlyOf(total).toLocaleString('en-US')} ⃁</b> مرة وحدة بالسنة، وتوفّر {(total * 12 - yearlyOf(total)).toLocaleString('en-US')} ⃁</p>}
+                <p className="st-sub">الفرع الإضافي {shown(p.extra)} ⃁ · يشمل {PLAN_CAPS[p.key].staff} موظفين لكل فرع</p>
+                {branches > 1 && <p className="st-total">المجموع لـ {branchWord}: {(yearly || pct > 0) && <><s className="st-was sm">{yearly ? total : alone}</s>{' '}</>}<b>{shown(total)} ⃁</b> شهرياً</p>}
               </>)
             })()}
             <button type="button" className={`st-cta${p.popular ? ' dark' : ''}`} onClick={() => router.push(`/login?mode=register&plan=${p.key}&branches=${branches}&billing=${billing}`)}>ابدأ تجربتك المجانية</button>
@@ -286,6 +287,8 @@ button.st-cmp-row{cursor:pointer;transition:background-color .15s}
 .st-cmp-list li::before{content:"";position:absolute;inset-inline-start:0;top:.7em;width:4px;height:4px;border-radius:2px;background:#c4ccca}
 @media(max-width:640px){.st-cmp-row{grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr));padding:0 10px}.st-cmp-name{font-size:14px;gap:6px}.st-cmp-name em{display:none}.st-cmp-head{font-size:13px}.st-cmp-list{grid-template-columns:1fr;padding-inline-start:30px}}
 .st-was{color:#98a2b3;font-size:20px;font-weight:600;margin-inline-end:8px;text-decoration-thickness:1.5px;align-self:center}
+.st-yearly{margin:6px 0 0;font-size:13.5px;color:var(--ink2)}
+.st-yearly b{color:var(--ink)}
 .st-was.sm{font-size:14px;font-weight:500;margin-inline-end:6px}
 .st-yes{color:var(--teal2)}
 .st-no{color:#c4ccca}
