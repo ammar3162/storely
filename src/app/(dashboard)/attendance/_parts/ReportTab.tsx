@@ -12,25 +12,27 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
       {tab === 'report' && (
         <>
           <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: 10 }}>
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, alignItems: 'center', width: '100%' }}>
+              <div style={{ display: 'flex', gap: 2, padding: 3, background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: 10 }}>
               {[{ id: 'day', label: 'يوم واحد' }, { id: 'range', label: 'فترة مخصصة' }].map(m => (
-                <button key={m.id} onClick={() => setPeriodMode(m.id as any)}
-                  style={{ padding: '7px 14px', whiteSpace: 'nowrap', borderRadius: 99, border: `1.5px solid ${periodMode === m.id ? colors.primary : colors.border2}`, background: periodMode === m.id ? colors.primaryLight : colors.surface, color: periodMode === m.id ? colors.primary : colors.text3, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
+                <button key={m.id} onClick={() => setPeriodMode(m.id as any)} aria-pressed={periodMode === m.id}
+                  style={{ padding: '7px 14px', whiteSpace: 'nowrap', borderRadius: 8, border: 'none', background: periodMode === m.id ? colors.surface : 'transparent', boxShadow: periodMode === m.id ? '0 1px 2px rgba(15,23,42,.08)' : 'none', color: periodMode === m.id ? colors.text : colors.text3, fontSize: 13, fontWeight: periodMode === m.id ? 800 : 600, cursor: 'pointer', fontFamily: font.family }}>
                   {m.label}
                 </button>
               ))}
-              <select value={staffFilter} onChange={e => setStaffFilter(e.target.value)} style={{ ...inp(), width: 170, padding: '7px 10px', fontSize: 12 }}>
+              </div>
+              <select value={staffFilter} onChange={e => setStaffFilter(e.target.value)} style={{ ...inp(), flex: '1 1 150px', width: 'auto', minWidth: 0, padding: '7px 10px', fontSize: 13 }}>
                 <option value="">كل الموظفين</option>
                 {staffList.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
             {periodMode === 'day' ? (
-              <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ ...inp(), width: 170 }} />
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ ...inp(), width: 170, textAlign: 'center' as const }} />
             ) : (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <input type="date" value={rangeFrom} onChange={e => setRangeFrom(e.target.value)} style={{ ...inp(), width: 150 }} />
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' as const }}>
+                <input type="date" value={rangeFrom} onChange={e => setRangeFrom(e.target.value)} style={{ ...inp(), width: 140, textAlign: 'center' as const }} />
                 <span style={{ color: colors.text4, fontSize: 12 }}>إلى</span>
-                <input type="date" value={rangeTo} onChange={e => setRangeTo(e.target.value)} style={{ ...inp(), width: 150 }} />
+                <input type="date" value={rangeTo} onChange={e => setRangeTo(e.target.value)} style={{ ...inp(), width: 140, textAlign: 'center' as const }} />
                 <button onClick={exportRangePdf} disabled={exporting || rangeRows.length===0} style={{ ...btnPrimary, padding: '9px 16px', fontSize: 13 }}>
                   {exporting ? '...' : 'تصدير PDF'}
                 </button>
@@ -41,18 +43,18 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
           {periodMode === 'day' ? (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${offCount ? 3 : 2},1fr)`, gap: 8, marginBottom: 16 }}>
-                <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}` }}>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: colors.primary }}>{presentCount}</div>
-                  <div style={{ fontSize: 11, color: colors.primary, fontWeight: 600, marginTop: 2 }}>حضروا اليوم</div>
+                <div style={{ ...card, padding: '12px', textAlign: 'center' as const }}>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: presentCount ? '#047857' : colors.text }}>{presentCount}</div>
+                  <div style={{ fontSize: 12, color: colors.text3, fontWeight: 600, marginTop: 2 }}>حضروا اليوم</div>
                 </div>
-                <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: colors.dangerLight, border: `1px solid ${colors.dangerBorder}` }}>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: colors.danger }}>{absentCount}</div>
-                  <div style={{ fontSize: 11, color: colors.danger, fontWeight: 600, marginTop: 2 }}>لم يحضروا</div>
+                <div style={{ ...card, padding: '12px', textAlign: 'center' as const }}>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: absentCount ? colors.danger : colors.text }}>{absentCount}</div>
+                  <div style={{ fontSize: 12, color: colors.text3, fontWeight: 600, marginTop: 2 }}>لم يحضروا</div>
                 </div>
                 {offCount > 0 && (
-                  <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background:'#eff6ff', border:'1px solid #bfdbfe' }}>
-                    <div style={{ fontSize: 22, fontWeight: 900, color:'#1d4ed8' }}>{offCount}</div>
-                    <div style={{ fontSize: 11, color:'#1d4ed8', fontWeight: 600, marginTop: 2 }}>بإجازة</div>
+                  <div style={{ ...card, padding: '12px', textAlign: 'center' as const }}>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: colors.text }}>{offCount}</div>
+                    <div style={{ fontSize: 12, color: colors.text3, fontWeight: 600, marginTop: 2 }}>بإجازة</div>
                   </div>
                 )}
               </div>
