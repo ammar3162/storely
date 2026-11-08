@@ -163,15 +163,13 @@ export default function ReportsPage() {
             title="تقرير الصرف"
             subtitle="عمليات الصرف من المخزون"
             icon={<Upload size={20} strokeWidth={1.75}/>}
-            color={colors.danger}
-            bg={colors.dangerLight}
-            border={colors.dangerBorder}
+            color={colors.primary}
             loading={statsLoading}
             chartData={weeklyD}
             stats={[
-              {label:'عمليات الصرف',value:dispenseStats.ops,color:colors.danger,highlight:true},
-              {label:'وحدات مصروفة',value:dispenseStats.qty,color:colors.danger},
-              {label:'أصناف مختلفة',value:dispenseStats.items,color:colors.danger},
+              {label:'عمليات الصرف',value:dispenseStats.ops,color:colors.text,highlight:true},
+              {label:'وحدات مصروفة',value:dispenseStats.qty,color:colors.text},
+              {label:'أصناف مختلفة',value:dispenseStats.items,color:colors.text},
             ]}
             onClick={()=>setView('dispense')}
           />
@@ -182,13 +180,11 @@ export default function ReportsPage() {
             subtitle="فواتير المشتريات مع الضريبة 15%"
             icon={<Receipt size={20} strokeWidth={1.75}/>}
             color={colors.primary}
-            bg={colors.primaryLight}
-            border={colors.primaryBorder}
             loading={statsLoading}
             chartData={weeklyP}
             stats={[
-              {label:'عدد الفواتير',value:purchaseStats.invoices,color:colors.primary,highlight:true},
-              {label:'إجمالي شامل',value:purchaseStats.total.toFixed(0)+' '+homeCurr,color:colors.primary},
+              {label:'عدد الفواتير',value:purchaseStats.invoices,color:colors.text,highlight:true},
+              {label:'إجمالي شامل',value:purchaseStats.total.toFixed(0)+' '+homeCurr,color:colors.text},
               {label:'ضريبة القيمة',value:purchaseStats.vat.toFixed(0)+' '+homeCurr,color:colors.warning},
             ]}
             onClick={()=>setView('purchase')}
@@ -199,13 +195,11 @@ export default function ReportsPage() {
             title="تقرير الجرد اليومي"
             subtitle="ملخص المخزون الحالي والأصناف الناقصة"
             icon={<ClipboardList size={20} strokeWidth={1.75}/>}
-            color={'#7c3aed'}
-            bg={'#f5f3ff'}
-            border={'#ddd6fe'}
+            color={colors.primary}
             loading={statsLoading}
             chartData={[]}
             stats={[
-              {label:'إجمالي الأصناف',value:inventoryStats.total,color:'#7c3aed',highlight:true},
+              {label:'إجمالي الأصناف',value:inventoryStats.total,color:colors.text,highlight:true},
               {label:'مخزون ناقص',value:inventoryStats.low,color:colors.warning},
               {label:'نفد المخزون',value:inventoryStats.out,color:colors.danger},
             ]}
@@ -218,15 +212,13 @@ export default function ReportsPage() {
             title="إقفال الكاشير اليومي"
             subtitle="تقارير إقفال الكاشير والفروقات"
             icon={<Wallet size={20} strokeWidth={1.75}/>}
-            color={'#0891b2'}
-            bg={'#ecfeff'}
-            border={'#a5f3fc'}
+            color={colors.primary}
             loading={statsLoading}
             chartData={[]}
             stats={[
-              {label:'عدد التقارير',value:cashierStats.count,color:'#0891b2',highlight:true},
+              {label:'عدد التقارير',value:cashierStats.count,color:colors.text,highlight:true},
               {label:'حالات عجز',value:cashierStats.deficit,color:colors.danger},
-              {label:'حالات زيادة',value:cashierStats.surplus,color:colors.info},
+              {label:'حالات زيادة',value:cashierStats.surplus,color:colors.text},
             ]}
             onClick={()=>setView('cashier')}
           />
@@ -237,9 +229,7 @@ export default function ReportsPage() {
             title="الحضور والانصراف"
             subtitle="الحضور والتأخير والعمل الإضافي لكل موظف"
             icon={<CalendarDays size={20} strokeWidth={1.75}/>}
-            color={'#203640'}
-            bg={'#f0fdfa'}
-            border={'#99f6e4'}
+            color={colors.primary}
             loading={false}
             chartData={[]}
             stats={[]}
@@ -251,9 +241,7 @@ export default function ReportsPage() {
             title="تقرير الموظف الشهري"
             subtitle="الرواتب والعمل الإضافي والتأخير والخصومات والسلف"
             icon={<Wallet size={20} strokeWidth={1.75}/>}
-            color={'#b45309'}
-            bg={'#fffbeb'}
-            border={'#fde68a'}
+            color={colors.primary}
             loading={false}
             chartData={[]}
             stats={[]}
@@ -265,15 +253,13 @@ export default function ReportsPage() {
             title="تقرير الهدر"
             subtitle="الأصناف المهدورة وأسبابها"
             icon={<Trash2 size={20} strokeWidth={1.75}/>}
-            color={colors.danger}
-            bg={colors.dangerLight}
-            border={colors.dangerBorder}
+            color={colors.primary}
             loading={statsLoading}
             chartData={[]}
             stats={[
-              {label:'عمليات الهدر',value:wasteStats.ops,color:colors.danger,highlight:true},
-              {label:'وحدات مهدورة',value:wasteStats.qty,color:colors.danger},
-              {label:'أصناف مختلفة',value:wasteStats.items,color:colors.danger},
+              {label:'عمليات الهدر',value:wasteStats.ops,color:colors.text,highlight:true},
+              {label:'وحدات مهدورة',value:wasteStats.qty,color:colors.text},
+              {label:'أصناف مختلفة',value:wasteStats.items,color:colors.text},
             ]}
             onClick={()=>setView('waste')}
           />
@@ -296,8 +282,8 @@ export default function ReportsPage() {
         const maxVal = Math.max(...top.map(p=>p.qty),1)
         if(top.length===0) return null
         return (
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20}}>
-            <div style={{...card,padding:'20px 24px'}}>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,300px),1fr))',gap:14,marginTop:14,marginBottom:14}}>
+            <div style={{...card,padding:'16px'}}>
               <div style={{fontSize:font.md,fontWeight:900,color:colors.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><Flame size={17} strokeWidth={2.25}/> أكثر المنتجات صرفاً</div>
               <div style={{fontSize:font.xs,color:colors.text3,marginBottom:16}}>الفترة المحددة</div>
               <div style={{display:'flex',flexDirection:'column',gap:10}}>
@@ -311,13 +297,13 @@ export default function ReportsPage() {
                       <span style={{fontSize:12,fontWeight:800,color:colors.primary}}>{p.qty} {p.unit}</span>
                     </div>
                     <div style={{height:6,background:colors.border,borderRadius:99,overflow:'hidden'}}>
-                      <div style={{height:'100%',width:`${(p.qty/maxVal)*100}%`,background:i===0?colors.primary:i===1?'#2563eb':i===2?'#7c3aed':colors.border2,borderRadius:99}}/>
+                      <div style={{height:'100%',width:`${(p.qty/maxVal)*100}%`,background:i===0?colors.primary:i<3?`${colors.primary}99`:`${colors.primary}44`,borderRadius:99}}/>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-            <div style={{...card,padding:'20px 24px'}}>
+            <div style={{...card,padding:'16px'}}>
               <div style={{fontSize:font.md,fontWeight:900,color:colors.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><BarChart3 size={17} strokeWidth={2.25}/> الصرف الشهري</div>
               <div style={{fontSize:font.xs,color:colors.text3,marginBottom:16}}>توزيع الكميات</div>
               <div style={{display:'flex',alignItems:'flex-end',gap:6,height:120}}>

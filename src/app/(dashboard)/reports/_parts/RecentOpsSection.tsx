@@ -45,19 +45,18 @@ export default function RecentOpsSection({ recentOps, colors }: { recentOps:any[
       {sheet==='add'&&<OpsSheet items={additions} title="آخر عمليات الإضافة" color={colors.primary} bg={colors.primaryLight} border={colors.primaryBorder} onClose={()=>setSheet(null)}/>}
       {sheet==='purchase'&&<OpsSheet items={recentOps} title="آخر العمليات" color={colors.info} bg={colors.infoLight} border={colors.infoBorder} onClose={()=>setSheet(null)}/>}
 
-      <div style={{marginTop:16,display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
+      {/* ثلاث خانات هادئة في بطاقة واحدة */}
+      <div style={{marginTop:14,display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:1,background:'var(--storely-border)',border:'1px solid var(--storely-border)',borderRadius:14,overflow:'hidden'}}>
         {[
-          {key:'dispense' as const, title:'آخر الصرف',    count:dispense.length,  color:colors.danger,  bg:colors.dangerLight,  border:colors.dangerBorder,  icon:<Upload size={24} strokeWidth={1.75}/>},
-          {key:'add' as const,      title:'آخر الإضافات', count:additions.length, color:colors.primary, bg:colors.primaryLight, border:colors.primaryBorder, icon:<Download size={24} strokeWidth={1.75}/>},
-          {key:'purchase' as const, title:'آخر العمليات', count:recentOps.length, color:colors.info,    bg:colors.infoLight,    border:colors.infoBorder,    icon:<ClipboardList size={24} strokeWidth={1.75}/>},
+          {key:'dispense' as const, title:'آخر الصرف',    count:dispense.length,  icon:<Upload size={18} strokeWidth={1.75}/>},
+          {key:'add' as const,      title:'آخر الإضافات', count:additions.length, icon:<Download size={18} strokeWidth={1.75}/>},
+          {key:'purchase' as const, title:'آخر العمليات', count:recentOps.length, icon:<ClipboardList size={18} strokeWidth={1.75}/>},
         ].map(s=>(
           <button key={s.key} onClick={()=>setSheet(s.key)}
-            style={{background:'white',borderRadius:12,padding:'14px 10px',border:`1.5px solid ${s.border}`,cursor:'pointer',fontFamily:'inherit',textAlign:'center',transition:'all .15s',boxShadow:`0 2px 8px ${s.color}10`}}
-            onMouseEnter={e=>(e.currentTarget as HTMLElement).style.transform='translateY(-2px)'}
-            onMouseLeave={e=>(e.currentTarget as HTMLElement).style.transform='none'}>
-            <div style={{marginBottom:8,display:'flex',justifyContent:'center',color:s.color}}>{s.icon}</div>
-            <div style={{fontSize:20,fontWeight:900,color:s.color,marginBottom:4}}>{s.count}</div>
-            <div style={{fontSize:11,fontWeight:700,color:'var(--storely-text)'}}>{s.title}</div>
+            style={{background:'var(--storely-surface)',padding:'12px 8px',border:'none',cursor:'pointer',fontFamily:'inherit',textAlign:'center',minWidth:0}}>
+            <div style={{display:'flex',justifyContent:'center',color:'var(--storely-muted)',marginBottom:4}}>{s.icon}</div>
+            <div style={{fontSize:18,fontWeight:800,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{s.count}</div>
+            <div style={{fontSize:11.5,fontWeight:600,color:'var(--storely-muted)',marginTop:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{s.title}</div>
           </button>
         ))}
       </div>
