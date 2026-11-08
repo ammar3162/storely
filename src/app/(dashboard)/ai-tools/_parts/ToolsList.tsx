@@ -13,7 +13,7 @@ export default function ToolsList({ m }: { m: AiToolsPage }) {
         {TOOLS.map((tool,i)=>(
           <div key={i} className="fu" style={{animationDelay:`${i*.08}s`}}>
             <button onClick={()=>planAllows(plan,tool.minPlan,!!hasAiAddon)?(tool.href.startsWith('#')?document.getElementById(tool.href.slice(1))?.scrollIntoView({behavior:'smooth',block:'start'}):router.push(tool.href)):router.push('/settings')}
-              style={{width:'100%',background:'white',border:`1.5px solid ${tool.border}`,borderRadius:16,padding:'20px',cursor:'pointer',fontFamily:'inherit',textAlign:'right',transition:'all .2s',boxShadow:`0 2px 8px ${tool.color}10`,opacity:planAllows(plan,tool.minPlan,!!hasAiAddon)?1:.6,position:'relative'}}
+              style={{width:'100%',background:'white',border:`1px solid ${tool.border}`,borderRadius:14,padding:'20px',cursor:'pointer',fontFamily:'inherit',textAlign:'right',transition:'all .2s',boxShadow:`0 2px 8px ${tool.color}10`,opacity:planAllows(plan,tool.minPlan,!!hasAiAddon)?1:.6,position:'relative'}}
               onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow=`0 8px 24px ${tool.color}20`}}
               onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='none';(e.currentTarget as HTMLElement).style.boxShadow=`0 2px 8px ${tool.color}10`}}>
               {aiKnown && !planAllows(plan,tool.minPlan,!!hasAiAddon) && (

@@ -207,7 +207,7 @@ export default function NotificationsPage() {
                         <div className="mb-2"><StorelyStatusBadge status={n.decision==='approved'?(n.ref_type==='cashier_deficit'?'danger':'success'):'info'}>{n.decision==='approved' ? DECISIONS[n.ref_type].approved : DECISIONS[n.ref_type].rejected}</StorelyStatusBadge></div>
                       )
                     )}
-                    <div className="notification-date" dir="ltr">{new Date(n.created_at).toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
+                    <div className="notification-date">{new Date(n.created_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
                   </div>
                   <StorelyButton onClick={e=>{e.stopPropagation();del(n.id)}} variant="ghost" size="sm" className="!w-8 !px-0" aria-label="حذف" title="حذف">
                     <X size={16} />

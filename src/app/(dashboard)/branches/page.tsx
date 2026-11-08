@@ -15,7 +15,7 @@ import { confirmDialog } from '@/components/ConfirmDialog'
 import { cache } from '@/lib/cache'
 import { ListSkeleton } from '@/components/PageSkeleton'
 import { useLiveRefresh } from '@/lib/useLiveRefresh'
-import { PauseCircle, MapPin, Plus, AlertTriangle } from 'lucide-react'
+import { PauseCircle, MapPin, Plus, AlertTriangle, Pencil } from 'lucide-react'
 
 
 const BRANCH_STYLES = `
@@ -377,8 +377,9 @@ export default function BranchesPage() {
                     <div className="br-identity-link"  onClick={()=>selectBranch(b)}>
                       <div className="br-section-title" style={{color:T.color.text}}>
                         {b.name}
-                        <StorelyButton className="br-button br-edit-icon" onClick={e=>{e.stopPropagation();setEditingNameId(b.id);setEditNameValue(b.name)}}>
-                                                  </StorelyButton>
+                        <StorelyButton className="br-button br-edit-icon" onClick={e=>{e.stopPropagation();setEditingNameId(b.id);setEditNameValue(b.name)}} aria-label="تعديل الاسم" title="تعديل الاسم">
+                          <Pencil size={14}/>
+                        </StorelyButton>
                       </div>
                       {b.location&&<div className="br-supporting" style={{color:T.color.textMuted,display:'inline-flex',alignItems:'center',gap:4}}><MapPin size={12}/>{b.location}</div>}
                     </div>

@@ -5,7 +5,7 @@ import { StorelyCard } from '@/components/ui/card'
 import { StorelyFormField } from '@/components/ui/form-field'
 import { StorelyEmptyState } from '@/components/ui/empty-state'
 import { storelyTokens as T } from '@/components/ui/design-tokens'
-import { ArrowRightLeft } from 'lucide-react'
+import { ArrowRightLeft, ArrowLeftRight } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { getMe, getOrgId } from '@/lib/session'
@@ -314,8 +314,9 @@ export default function TransferStockPage() {
             </select>
           </StorelyFormField>
           <StorelyButton className="ts-button ts-swap" type="button" onClick={swapBranches} disabled={!fromBranch&&!toBranch}
-            title="بدّل الفرعين">
-                      </StorelyButton>
+            title="بدّل الفرعين" aria-label="بدّل الفرعين">
+            <ArrowLeftRight size={18}/>
+          </StorelyButton>
           <StorelyFormField label={<>إلى فرع</>} htmlFor="transfer-field-2">
             <select id="transfer-field-2" className="ts-control" value={toBranch} onChange={e=>setToBranch(e.target.value)}>
               <option value="">اختر الفرع الوجهة</option>

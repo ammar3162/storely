@@ -15,7 +15,7 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
             <div style={{ display: 'flex', gap: 6 }}>
               {[{ id: 'day', label: 'يوم واحد' }, { id: 'range', label: 'فترة مخصصة' }].map(m => (
                 <button key={m.id} onClick={() => setPeriodMode(m.id as any)}
-                  style={{ padding: '7px 14px', borderRadius: 99, border: `1.5px solid ${periodMode === m.id ? colors.primary : colors.border2}`, background: periodMode === m.id ? colors.primaryLight : colors.surface, color: periodMode === m.id ? colors.primary : colors.text3, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
+                  style={{ padding: '7px 14px', whiteSpace: 'nowrap', borderRadius: 99, border: `1.5px solid ${periodMode === m.id ? colors.primary : colors.border2}`, background: periodMode === m.id ? colors.primaryLight : colors.surface, color: periodMode === m.id ? colors.primary : colors.text3, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
                   {m.label}
                 </button>
               ))}

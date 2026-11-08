@@ -1,4 +1,5 @@
 'use client'
+import { StorelyMetricStrip } from '@/components/ui'
 import { FeatureIcon } from '@/components/ui/feature-icon'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
@@ -30,20 +31,11 @@ export default function AttendancePage() {
       )}
 
       {monthStats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 18 }}>
-          <div style={{ ...card, padding: '14px', textAlign: 'center' as const }}>
-            <div style={{ fontSize: 10, color: colors.text4, fontWeight: 600, marginBottom: 4 }}>معدّل الحضور — هذا الشهر</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: colors.text }}>{monthStats.attendanceRate !== null ? `${monthStats.attendanceRate}%` : '—'}</div>
-          </div>
-          <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: monthStats.totalPenalty>0?colors.dangerLight:undefined, border: monthStats.totalPenalty>0?`1px solid ${colors.dangerBorder}`:undefined }}>
-            <div style={{ fontSize: 10, color: monthStats.totalPenalty>0?colors.danger:colors.text4, fontWeight: 600, marginBottom: 4 }}>إجمالي الخصومات — هذا الشهر</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: monthStats.totalPenalty>0?colors.danger:colors.text }}>{monthStats.totalPenalty>0?`${monthStats.totalPenalty} ⃁`:'—'}</div>
-          </div>
-          <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: monthStats.mostLate?colors.warningLight:undefined, border: monthStats.mostLate?`1px solid ${colors.warningBorder}`:undefined }}>
-            <div style={{ fontSize: 10, color: monthStats.mostLate?colors.warning:colors.text4, fontWeight: 600, marginBottom: 4 }}>الأكثر تأخيراً — هذا الشهر</div>
-            <div style={{ fontSize: monthStats.mostLate?15:22, fontWeight: 900, color: monthStats.mostLate?colors.warning:colors.text }}>{monthStats.mostLate ? `${monthStats.mostLate.name} (${monthStats.mostLate.minutes} د)` : '—'}</div>
-          </div>
-        </div>
+        <StorelyMetricStrip className="mb-4" metrics={[
+          { label: 'معدّل الحضور', value: monthStats.attendanceRate !== null ? `${monthStats.attendanceRate}%` : '—', helper: 'هذا الشهر' },
+          { label: 'إجمالي الخصومات', value: monthStats.totalPenalty > 0 ? `${monthStats.totalPenalty} ⃁` : '—', helper: 'هذا الشهر', tone: monthStats.totalPenalty > 0 ? 'danger' : 'neutral' },
+          { label: 'الأكثر تأخيراً', value: monthStats.mostLate ? monthStats.mostLate.name : '—', helper: monthStats.mostLate ? `${monthStats.mostLate.minutes} دقيقة هذا الشهر` : 'هذا الشهر', tone: monthStats.mostLate ? 'warning' : 'neutral' },
+        ]} />
       )}
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>

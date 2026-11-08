@@ -1,4 +1,5 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
 import { cache } from '@/lib/cache'
@@ -214,7 +215,7 @@ export default function AddonsMarketPage() {
               const qty = qtyMap[a.id] || 1
               return (
                 <div key={a.id} style={{ ...card, padding: 20 }}>
-                  <div style={{ fontSize: 32, marginBottom: 10 }}>{a.icon}</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--storely-background)', border: '1px solid var(--storely-border)', color: 'var(--storely-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}><FeatureIcon name={a.icon || ''} size={22} /></div>
                   <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
                   <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14 }}>{a.description}</div>
                   <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 14 }}>
@@ -330,7 +331,7 @@ export default function AddonsMarketPage() {
                     {cancelling === a.id ? '…' : <Trash2 size={14} />}
                   </button>
                 )}
-                <div style={{ fontSize: 32, marginBottom: 10 }}>{a.icon}</div>
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--storely-background)', border: '1px solid var(--storely-border)', color: 'var(--storely-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}><FeatureIcon name={a.icon || ''} size={22} /></div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
                 <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14, minHeight: 40 }}>{a.description}</div>
                 {a.slug === 'extra_branch' ? (

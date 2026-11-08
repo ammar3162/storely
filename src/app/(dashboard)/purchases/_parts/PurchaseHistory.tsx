@@ -22,7 +22,9 @@ export default function PurchaseHistory({ m }: { m: PurchasesState }) {
         <input className="storely-input" style={{flex:'1 1 180px',maxWidth:320}} value={filterSupplier} onChange={e=>setFilterSupplier(e.target.value)} placeholder="ابحث باسم المورد" aria-label="بحث بالمورد"/>
       </div>
 
-      <div style={{maxHeight:640,overflowY:'auto'}}>
+      {/* على الجوال: القائمة تمشي مع الصفحة بدل تمرير داخلي */}
+      <style>{'@media(max-width:767px){.ph-scroll{max-height:none!important;overflow:visible!important}}'}</style>
+      <div className="ph-scroll" style={{maxHeight:640,overflowY:'auto'}}>
         {filteredHistory.length===0 ? (
           <StorelyEmptyState icon={<ShoppingCart size={20}/>} title="لا توجد مشتريات" description="سجّل أول فاتورة من النموذج أو من قارئ الفواتير" />
         ) : filteredHistory.map((p,i)=>{
