@@ -7,7 +7,7 @@
 begin;
 insert into public.marketplace_addons (slug, name, description, icon, monthly_price, is_active, sort_order)
 values
-  ('mod_inventory', 'المخزون والموردين', 'المخزون والصرف والهدر والجرد والوصفات والموردين وطلب التوريد', '', 59, true, 2),
+  ('mod_inventory', 'المخزون والموردين', 'المخزون والصرف والهدر والجرد والوصفات والموردين وطلب التوريد', '', 49, true, 2),
   ('mod_purchases', 'المشتريات والفواتير', 'فواتير الشراء وقراءتها بالذكاء الاصطناعي ومستحقات الموردين والإقرار الضريبي', '', 54, true, 3)
 on conflict (slug) do nothing;
 alter table public.organizations add column if not exists staff_included integer;

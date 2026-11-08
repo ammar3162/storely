@@ -88,7 +88,6 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                       <button key={p.key} type="button" onClick={()=>setSignupAddons([...p.mods])} aria-pressed={on}
                         style={{padding:'10px 8px',borderRadius:10,border:`1.5px solid ${on?'#029FA2':'#e5e7eb'}`,background:on?'#f0fdfa':'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center',display:'flex',flexDirection:'column',gap:2}}>
                         <span style={{fontSize:13,fontWeight:700,color:'#111827',lineHeight:1.4}}>{lang==='ar'?p.ar:p.en}</span>
-                        <span className="hide-in-app" style={{fontSize:12,color:'#4b5563'}}>{cur(total(p.mods))} {sar}</span>
                       </button>
                     )})}
                   </div>

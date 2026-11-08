@@ -350,12 +350,12 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         const r = await activateAddon(db as any, { orgId, addonId: cashierId, branchIds: [branchA, '00000000-0000-0000-0000-000000000000'] })
         expect(r).toMatchObject({ ok: true, quantity: 1, branchIds: [branchA] })
         const sub = (await db.from('org_addon_subscriptions').select('locked_price,branch_ids').eq('org_id', orgId).eq('addon_id', cashierId).single()).data as any
-        expect(Number(sub.locked_price)).toBe(40)
+        expect(Number(sub.locked_price)).toBe(30)
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential', branchA)).toBe(true)
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential', branchB)).toBe(false)
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential')).toBe(true)
-        // الفاتورة: 113 + فرع 113 (كل فرع بسعر كامل) + كاشير فرع واحد 40
-        expect(await monthlyBill(db as any, orgId)).toBe(266)
+        // الفاتورة: 103 + فرع 103 (كل فرع بسعر كامل) + كاشير فرع واحد 30
+        expect(await monthlyBill(db as any, orgId)).toBe(236)
 
         // الترقية من نفس العائلة بس
         expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'pro' })).status).toBe(400)
@@ -367,7 +367,7 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         const st = (await db.from('org_addon_subscriptions').select('status').eq('org_id', orgId).eq('addon_id', cashierId).single()).data as any
         expect(st.status).toBe('cancelled')
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'ops', branchB)).toBe(true)
-        expect(await monthlyBill(db as any, orgId)).toBe(306)
+        expect(await monthlyBill(db as any, orgId)).toBe(266)
       } finally {
         await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).eq('addon_id', cashierId)
         await db.from('plan_requests').delete().eq('org_id', orgId)
@@ -399,8 +399,8 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         const { data: subs } = await db.from('org_addon_subscriptions').select('quantity,status,branch_ids,locked_price,marketplace_addons(slug)').eq('org_id', oid)
         expect((subs as any[]).map(r => [r.marketplace_addons.slug, r.quantity, r.status, r.branch_ids, Number(r.locked_price)])).toEqual([['hr_full', 3, 'active', null, 69]])
         const { monthlyBill } = await import('@/lib/orgBill')
-        // كل فرع بسعر كامل: التشغيل 153 × 3 + الحضور 69 × 3 — والمجموع + الذكاء 15 = الكاملة لـ3 فروع
-        expect(await monthlyBill(db as any, oid)).toBe(459 + 3 * 69)
+        // كل فرع بسعر كامل: التشغيل 133 × 3 + الحضور 69 × 3 — والمجموع + الذكاء 15 = الكاملة لـ3 فروع
+        expect(await monthlyBill(db as any, oid)).toBe(399 + 3 * 69)
       } finally {
         vi.doUnmock('@/lib/supabase/server')
         if (oid) {

@@ -58,14 +58,13 @@ export default function FeaturePricing({ billing, onBilling }: { billing: Billin
       </div>
 
       {/* اختيارات جاهزة */}
-      <div className="fp-label">ابدأ من اختيار جاهز</div>
+      <div className="fp-label">ابدأ من اختيار جاهز، والسعر يطلع تحت حسب اختيارك</div>
       <div className="fp-presets">
         {PRESETS.map(p => (
           <button key={p.key} type="button" className={`fp-preset${same(p.mods) ? ' on' : ''}`} onClick={() => setMods(p.mods)} aria-pressed={same(p.mods)}>
             {p.popular && <span className="fp-pop">الأكثر اختياراً</span>}
             <b>{p.name}</b>
             <small>{p.desc}</small>
-            <span className="fp-preset-price">{shown(total(p.mods)).toLocaleString('en-US')} ⃁ <i>/ شهرياً</i></span>
           </button>
         ))}
       </div>
