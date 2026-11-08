@@ -8,7 +8,7 @@ export default function SecurityPage() {
       <style>{`*{box-sizing:border-box;margin:0;padding:0}`}</style>
 
       {/* Header */}
-      <div style={{background:'#042f2e',padding:'16px 32px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+      <div style={{background:'#16262D',padding:'16px 32px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
         <div style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer'}} onClick={()=>router.push('/')}>
           <img src="/storely-logo.png" alt="Storely" style={{width:32,height:32,borderRadius:8,objectFit:'cover'}}/>
           <span style={{fontSize:18,fontWeight:800,color:'white'}}>Storely</span>
@@ -59,8 +59,8 @@ export default function SecurityPage() {
           </div>
         ))}
 
-        <div style={{marginTop:48,padding:'20px 24px',background:'#f0fdfa',borderRadius:16,border:'1px solid #99f6e4',textAlign:'center'}}>
-          <p style={{fontSize:14,color:'#029FA2',fontWeight:600}}>Storely — نحوّل التعقيد إلى تحكّم · storely.dev</p>
+        <div style={{marginTop:48,padding:'20px 24px',background:'#F3F5F6',borderRadius:16,border:'1px solid #D8CEC2',textAlign:'center'}}>
+          <p style={{fontSize:14,color:'#203640',fontWeight:600}}>Storely — نحوّل التعقيد إلى تحكّم · storely.dev</p>
         </div>
       </div>
     </div>

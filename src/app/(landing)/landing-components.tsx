@@ -7,7 +7,7 @@ export function FaqItem({ q, a }: { q:string; a:string }) {
     <div style={{borderBottom:'1px solid #f3f4f6'}}>
       <button onClick={()=>setOpen(o=>!o)} style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',padding:'20px 0',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
         <span style={{fontSize:16,fontWeight:600,color:'#111827'}}>{q}</span>
-        <span style={{fontSize:20,color:'#0f766e',transition:'transform .25s',transform:open?'rotate(45deg)':'none',flexShrink:0,marginRight:16}}>+</span>
+        <span style={{fontSize:20,color:'#2E4B58',transition:'transform .25s',transform:open?'rotate(45deg)':'none',flexShrink:0,marginRight:16}}>+</span>
       </button>
       {open && <p style={{paddingBottom:20,fontSize:14,color:'#6b7280',lineHeight:1.8}}>{a}</p>}
     </div>
@@ -20,9 +20,9 @@ export function MiniMockup({ variant }: { variant: 'stats'|'whatsapp'|'staff'|'c
       <div style={{fontSize:11,fontWeight:800,color:'#111827',textAlign:'center' as const}}>أهلاً محمد</div>
       <div style={{background:'#f8fafc',borderRadius:10,padding:8,textAlign:'center' as const}}>
         <div style={{fontSize:8,color:'#d97706',fontWeight:700,marginBottom:5}}>● لم تسجّل حضورك بعد</div>
-        <div style={{background:'#029FA2',borderRadius:7,padding:'6px 0',fontSize:9,fontWeight:800,color:'white'}}>تسجيل حضور</div>
+        <div style={{background:'#203640',borderRadius:7,padding:'6px 0',fontSize:9,fontWeight:800,color:'white'}}>تسجيل حضور</div>
       </div>
-      <div style={{background:'linear-gradient(135deg,#115e59,#0f766e)',borderRadius:9,padding:'8px 10px',fontSize:9,fontWeight:800,color:'white',textAlign:'center' as const}}>صرف المخزون</div>
+      <div style={{background:'linear-gradient(135deg,#115e59,#2E4B58)',borderRadius:9,padding:'8px 10px',fontSize:9,fontWeight:800,color:'white',textAlign:'center' as const}}>صرف المخزون</div>
       <div style={{display:'flex',gap:6}}>
         <div style={{flex:1,background:'#f8fafc',border:'1px solid #f1f5f9',borderRadius:8,padding:'7px 0',fontSize:8,fontWeight:700,color:'#374151',textAlign:'center' as const}}>طلباتي</div>
         <div style={{flex:1,background:'#f8fafc',border:'1px solid #f1f5f9',borderRadius:8,padding:'7px 0',fontSize:8,fontWeight:700,color:'#374151',textAlign:'center' as const}}>مهامي</div>
@@ -35,7 +35,7 @@ export function MiniMockup({ variant }: { variant: 'stats'|'whatsapp'|'staff'|'c
       {[['خضار','400 ⃁'],['بيض','20 ⃁'],['هالاينو','200 ⃁']].map(([n,v])=>(
         <div key={n} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 9px',background:'#fafafa',borderRadius:7}}>
           <span style={{fontSize:9,fontWeight:700,color:'#374151'}}>{n}</span>
-          <span style={{fontSize:9,fontWeight:800,color:'#0f766e'}}>{v}</span>
+          <span style={{fontSize:9,fontWeight:800,color:'#2E4B58'}}>{v}</span>
         </div>
       ))}
     </div>
@@ -43,7 +43,7 @@ export function MiniMockup({ variant }: { variant: 'stats'|'whatsapp'|'staff'|'c
   if (variant === 'chart') return (
     <div style={{background:'white',borderRadius:16,padding:14,height:'100%',display:'flex',flexDirection:'column',gap:6}}>
       <div style={{fontSize:10,fontWeight:800,color:'#111827',marginBottom:2}}>المخزون</div>
-      {[['أكواب ورقية','21 كيس','#029FA2','كافٍ'],['ورقية ميديم','1 كرتون','#d97706','ناقص'],['بابريكا','0 علبة','#dc2626','نفد']].map(([n,q,c,s])=>(
+      {[['أكواب ورقية','21 كيس','#203640','كافٍ'],['ورقية ميديم','1 كرتون','#d97706','ناقص'],['بابريكا','0 علبة','#dc2626','نفد']].map(([n,q,c,s])=>(
         <div key={n} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 9px',background:'#fafafa',borderRadius:7}}>
           <span style={{fontSize:9,fontWeight:700,color:'#374151'}}>{n}</span>
           <div style={{display:'flex',alignItems:'center',gap:5}}>
@@ -57,7 +57,7 @@ export function MiniMockup({ variant }: { variant: 'stats'|'whatsapp'|'staff'|'c
   return (
     <div style={{background:'white',borderRadius:16,padding:16,height:'100%'}}>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
-        {[['0','صرف اليوم','#0f766e'],['26','ناقص','#dc2626'],['71','الأصناف','#2563eb'],['1,545','الكميات','#7c3aed']].map(([v,l,c])=>(
+        {[['0','صرف اليوم','#2E4B58'],['26','ناقص','#dc2626'],['71','الأصناف','#203640'],['1,545','الكميات','#203640']].map(([v,l,c])=>(
           <div key={l} style={{background:'#f8fafc',borderRadius:10,padding:'9px 6px',textAlign:'center' as const}}>
             <div style={{fontSize:15,fontWeight:900,color:c}}>{v}</div>
             <div style={{fontSize:8,color:'#9ca3af',marginTop:2}}>{l}</div>

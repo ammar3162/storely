@@ -132,7 +132,7 @@ export default function FeaturePricing({ billing, onBilling }: { billing: Billin
 .fp-label{font-size:14px;font-weight:600;color:var(--ink2);margin:10px 4px 0}
 .fp-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .fp-preset{position:relative;text-align:right;background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:18px;cursor:pointer;font-family:inherit;color:var(--ink);display:flex;flex-direction:column;gap:4px;transition:border-color .15s,background-color .15s}
-.fp-preset.on{border-color:var(--teal2);background:#f3faf8}
+.fp-preset.on{border-color:var(--teal2);background:#F3F5F6}
 .fp-preset b{font-size:17px}
 .fp-preset small{font-size:13px;color:var(--ink2)}
 .fp-preset-price{margin-top:8px;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -140,7 +140,7 @@ export default function FeaturePricing({ billing, onBilling }: { billing: Billin
 .fp-pop{position:absolute;top:-11px;inset-inline-start:16px;background:var(--teal2);color:#fff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}
 .fp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
 .fp-feat{position:relative;text-align:right;background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:18px 16px;cursor:pointer;font-family:inherit;color:var(--ink);display:flex;flex-direction:column;gap:6px;transition:border-color .15s,background-color .15s}
-.fp-feat.on{border-color:var(--teal2);background:#f3faf8}
+.fp-feat.on{border-color:var(--teal2);background:#F3F5F6}
 .fp-check{position:absolute;top:14px;left:14px;width:22px;height:22px;border-radius:6px;border:1.5px solid #c9cdd3;display:grid;place-items:center;color:#fff;background:#fff}
 .fp-feat.on .fp-check{background:var(--teal2);border-color:var(--teal2)}
 .fp-ic{width:36px;height:36px;border-radius:10px;background:#f1f2f3;color:var(--ink2);display:grid;place-items:center}
@@ -172,6 +172,7 @@ export default function FeaturePricing({ billing, onBilling }: { billing: Billin
 .fp-ent b{font-size:16px}
 .fp-ent div span{font-size:14px;color:var(--ink2)}
 .fp-ent a{color:var(--teal2);font-weight:700;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+@media(max-width:560px){.fp-feat{padding:14px}.fp-feat ul{display:grid;grid-template-columns:1fr 1fr;column-gap:12px;row-gap:3px}.fp-feat li{font-size:12px}}
 @media(max-width:820px){.fp-presets{grid-template-columns:1fr}.fp-total{flex-direction:column;align-items:stretch}.fp-cta{justify-content:center}.fp-ent{flex-wrap:wrap}}
 `}</style>
     </div>
