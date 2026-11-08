@@ -18,16 +18,16 @@ function LoginPage() {
         *{box-sizing:border-box}
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
         @keyframes spin{to{transform:rotate(360deg)}}
-        .inp{width:100%;padding:13px 16px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;outline:none;background:white;color:#111827;font-family:inherit;transition:border-color .2s}
-        .inp:focus{border-color:#029FA2;box-shadow:0 0 0 3px rgba(13,148,136,.08)}
-        .inp::placeholder{color:#9ca3af}
-        .btn-main{width:100%;padding:14px;background:linear-gradient(180deg,#0d4543 0%,#0b3b3a 100%);color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
-        .btn-main:hover{background:#0a3231}
+        .inp{width:100%;padding:13px 16px;border:1.5px solid var(--storely-border);border-radius:10px;font-size:15px;outline:none;background:white;color:var(--storely-text);font-family:inherit;transition:border-color .2s}
+        .inp:focus{border-color:#203640;box-shadow:0 0 0 3px rgba(13,148,136,.08)}
+        .inp::placeholder{color:var(--storely-subtle)}
+        .btn-main{width:100%;padding:14px;background:#203640;color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
+        .btn-main:hover{background:#16262D}
         .btn-main:disabled{opacity:.6;cursor:not-allowed}
         .tab{flex:1;padding:12px;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .2s}
-        .biz{padding:12px 8px;border-radius:10px;border:1.5px solid #e5e7eb;background:white;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .15s;font-size:12px;font-weight:600;color:#374151}
-        .biz:hover{border-color:#029FA2}
-        .biz.on{border-color:#029FA2;background:#f0fdfa;color:#029FA2}
+        .biz{padding:12px 8px;border-radius:10px;border:1.5px solid var(--storely-border);background:white;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .15s;font-size:12px;font-weight:600;color:var(--storely-text)}
+        .biz:hover{border-color:#203640}
+        .biz.on{border-color:#203640;background:var(--storely-background);color:#203640}
         .auth-card{background:white;border:1px solid #e6efee;border-radius:20px;padding:32px 28px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 12px 40px rgba(2,159,162,.08)}
         @media(max-width:480px){.auth-card{padding:24px 18px;border-radius:16px}}
       `}</style>
@@ -39,7 +39,7 @@ function LoginPage() {
             {/* الشعار والجملة فوق البطاقة */}
             <a href="/" style={{display:'flex',flexDirection:'column',alignItems:'center',gap:10,marginBottom:22,textDecoration:'none'}}>
               <img src="/storely-logo.png" alt="Storely" style={{width:52,height:52,objectFit:'contain'}}/>
-              <span style={{fontSize:14,fontWeight:700,color:'#0f766e'}}>نظام واحد يربط كل أعمال منشأتك</span>
+              <span style={{fontSize:14,fontWeight:700,color:'#203640'}}>نظام واحد يربط كل أعمال منشأتك</span>
             </a>
             <div className="auth-card">
 

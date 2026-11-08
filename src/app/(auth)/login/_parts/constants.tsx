@@ -54,8 +54,8 @@ export const PHONE_RULES: Record<string,{length:number, prefix:string, placehold
 // v = عدد الفروع (يحدد الباقة المطلوبة بعد التجربة) — التجربة نفسها بكل المميزات
 // الباقات الجديدة (2026-11) — السعر لكل فرع من lib/planPricing
 export const PLANS: { v: 'essential' | 'ops' | 'full'; desc: string; descEn: string; color: string }[] = [
-  { v:'essential', desc:'المخزون والموردين والمشتريات والفواتير',          descEn:'Inventory, suppliers, purchases & invoices', color:'#029FA2' },
-  { v:'ops',       desc:'كل الأساسية + إقفال الكاشير اليومي',             descEn:'Essential + daily cashier closing',          color:'#029FA2' },
+  { v:'essential', desc:'المخزون والموردين والمشتريات والفواتير',          descEn:'Inventory, suppliers, purchases & invoices', color:'#203640' },
+  { v:'ops',       desc:'كل الأساسية + إقفال الكاشير اليومي',             descEn:'Essential + daily cashier closing',          color:'#203640' },
   { v:'full',      desc:'كل المميزات: الحضور والرواتب والذكاء الاصطناعي', descEn:'Everything: attendance, payroll & AI',       color:'#7c3aed' },
 ]
 export const PLAN_EN: Record<string, string> = { essential: 'Essential', ops: 'Operations', full: 'Complete' }

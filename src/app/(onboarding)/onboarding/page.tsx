@@ -193,11 +193,11 @@ export default function OnboardingPage() {
   const head = (Icon: typeof Store, title: string, sub: React.ReactNode) => (
     <div style={{marginBottom:28}}>
       <span style={{width:48,height:48,borderRadius:14,background:'#eceef1',color:'#4b5565',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:16}}><Icon size={22} strokeWidth={1.75}/></span>
-      <h1 style={{fontSize:24,fontWeight:600,lineHeight:'34px',color:'#111827',marginBottom:6}}>{title}</h1>
+      <h1 style={{fontSize:24,fontWeight:600,lineHeight:'34px',color:'var(--storely-text)',marginBottom:6}}>{title}</h1>
       <p style={{fontSize:15,color:'#4b5565',lineHeight:1.7}}>{sub}</p>
     </div>
   )
-  const lbl: React.CSSProperties = { fontSize:14, fontWeight:500, color:'#111827', display:'block', marginBottom:8 }
+  const lbl: React.CSSProperties = { fontSize:14, fontWeight:500, color:'var(--storely-text)', display:'block', marginBottom:8 }
   const back = (to: Step) => <button onClick={()=>setStep(to)} style={{...btnSecondary,flex:1,padding:'13px',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><ArrowRight size={16} strokeWidth={1.75}/>السابق</button>
 
   return (
@@ -207,21 +207,21 @@ export default function OnboardingPage() {
         .su{animation:su .3s cubic-bezier(.22,1,.36,1) both}
         @media (prefers-reduced-motion:reduce){.su{animation:none}}
         input:focus,select:focus{border-color:${colors.primary}!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)!important;outline:none!important}
-        .biz-card{border-radius:14px;padding:18px 12px;cursor:pointer;transition:border-color .15s,background-color .15s;border:1.5px solid #e5e7eb;background:white;font-family:inherit;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;color:#111827}
+        .biz-card{border-radius:14px;padding:18px 12px;cursor:pointer;transition:border-color .15s,background-color .15s;border:1.5px solid var(--storely-border);background:white;font-family:inherit;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--storely-text)}
         @media(hover:hover){.biz-card:hover{border-color:#9ca3af}}
         .biz-card.active{border-color:${colors.primary};background:#f3faf8}
         .prod-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:white;transition:background-color .15s}
-        .prod-item+.prod-item{border-top:1px solid #e5e7eb}
+        .prod-item+.prod-item{border-top:1px solid var(--storely-border)}
         .check{width:22px;height:22px;border-radius:6px;border:1.5px solid #c9cdd3;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;color:white}
         .check.on{background:${colors.primary};border-color:${colors.primary}}
       `}</style>
 
       {/* الرأس: الشعار والخطوات */}
-      <div style={{background:'white',borderBottom:'1px solid #e5e7eb',position:'sticky',top:0,zIndex:100}}>
+      <div style={{background:'white',borderBottom:'1px solid var(--storely-border)',position:'sticky',top:0,zIndex:100}}>
         <div style={{maxWidth:640,margin:'0 auto',padding:'12px 20px',display:'flex',justifyContent:'space-between',alignItems:'center',gap:12}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <img src="/storely-logo.png" alt="Storely" style={{width:36,height:36,borderRadius:10,border:'1px solid #e5e7eb',background:'white',padding:3,objectFit:'contain'}}/>
-            <span style={{fontSize:16,fontWeight:600,color:'#111827'}}>Storely</span>
+            <img src="/storely-logo.png" alt="Storely" style={{width:36,height:36,borderRadius:10,border:'1px solid var(--storely-border)',background:'white',padding:3,objectFit:'contain'}}/>
+            <span style={{fontSize:16,fontWeight:600,color:'var(--storely-text)'}}>Storely</span>
           </div>
           {step!=='done'&&<button onClick={skipToDashboard} style={{fontSize:14,color:'#4b5565',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>تخطي الإعداد<ArrowLeft size={15} strokeWidth={1.75}/></button>}
         </div>
@@ -252,8 +252,8 @@ export default function OnboardingPage() {
         {step==='business'&&(
           <div className="su">
             <div style={{marginBottom:28}}>
-              <img src="/storely-logo.png" alt="" style={{width:56,height:56,borderRadius:14,border:'1px solid #e5e7eb',background:'white',padding:5,objectFit:'contain',marginBottom:16}}/>
-              <h1 style={{fontSize:26,fontWeight:600,lineHeight:'36px',color:'#111827',marginBottom:6}}>أهلاً بك في Storely</h1>
+              <img src="/storely-logo.png" alt="" style={{width:56,height:56,borderRadius:14,border:'1px solid var(--storely-border)',background:'white',padding:5,objectFit:'contain',marginBottom:16}}/>
+              <h1 style={{fontSize:26,fontWeight:600,lineHeight:'36px',color:'var(--storely-text)',marginBottom:6}}>أهلاً بك في Storely</h1>
               <p style={{fontSize:15,color:'#4b5565',lineHeight:1.7}}>دقيقتين ونجهّز حسابك. وش نوع نشاطك؟</p>
             </div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:10,marginBottom:28}}>
@@ -276,7 +276,7 @@ export default function OnboardingPage() {
         {step==='setup'&&(
           <div className="su">
             {head(Store, 'بيانات منشأتك', 'اسم منشأتك ورقم الواتساب اللي توصله التنبيهات')}
-            <div style={{background:'white',border:'1px solid #e5e7eb',borderRadius:14,padding:20,display:'flex',flexDirection:'column' as const,gap:18,marginBottom:24}}>
+            <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:20,display:'flex',flexDirection:'column' as const,gap:18,marginBottom:24}}>
               <div>
                 <label style={lbl}>اسم المنشأة</label>
                 <input value={orgName} onChange={e=>setOrgName(e.target.value)} style={{...inp(),fontSize:16}} placeholder={`مثال: ${businessType || 'مطعم'} الأصيل`}/>
@@ -300,9 +300,9 @@ export default function OnboardingPage() {
         {/* 3: المنتجات */}
         {step==='products'&&(
           <div className="su">
-            {head(Package, 'منتجاتك الأساسية', <>جهّزنا منتجات شائعة لـ<b style={{color:'#111827',fontWeight:600}}> {businessType}</b>. اختر اللي عندك واكتب الكمية، وتقدر تضيف الباقي بعدين</>)}
+            {head(Package, 'منتجاتك الأساسية', <>جهّزنا منتجات شائعة لـ<b style={{color:'var(--storely-text)',fontWeight:600}}> {businessType}</b>. اختر اللي عندك واكتب الكمية، وتقدر تضيف الباقي بعدين</>)}
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-              <span style={{fontSize:14,color:'#111827',fontWeight:500}}>{selectedCount} منتج مختار</span>
+              <span style={{fontSize:14,color:'var(--storely-text)',fontWeight:500}}>{selectedCount} منتج مختار</span>
               <div style={{display:'flex',gap:14}}>
                 <button onClick={()=>setSelectedProducts(p=>p.map(x=>({...x,selected:true})))} style={{fontSize:13,color:colors.primary,background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontWeight:500}}>تحديد الكل</button>
                 <button onClick={()=>setSelectedProducts(p=>p.map(x=>({...x,selected:false})))} style={{fontSize:13,color:'#4b5565',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>إلغاء الكل</button>
@@ -312,7 +312,7 @@ export default function OnboardingPage() {
               {categories.map(cat=>(
                 <div key={cat} style={{marginBottom:16}}>
                   <div style={{fontSize:13,fontWeight:500,color:'#4b5565',margin:'0 4px 8px'}}>{cat}</div>
-                  <div style={{border:'1px solid #e5e7eb',borderRadius:14,overflow:'hidden'}}>
+                  <div style={{border:'1px solid var(--storely-border)',borderRadius:14,overflow:'hidden'}}>
                   {selectedProducts.filter(p=>p.category===cat).map((p,i)=>{
                     const idx=selectedProducts.findIndex(x=>x.name===p.name&&x.category===p.category)
                     return (
@@ -321,15 +321,15 @@ export default function OnboardingPage() {
                           {p.selected&&<Check size={14} strokeWidth={3}/>}
                         </div>
                         <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:15,fontWeight:500,color:'#111827'}}>{p.name}</div>
+                          <div style={{fontSize:15,fontWeight:500,color:'var(--storely-text)'}}>{p.name}</div>
                           <div style={{fontSize:12,color:'#6b7487'}}>{p.unit} · ننبهك تحت {p.reorder}</div>
                         </div>
                         {p.selected&&(
                           <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
-                            <button onClick={()=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:Math.max(0,x.qty-1)}:x))} aria-label="نقص" style={{width:30,height:30,borderRadius:8,border:'none',background:'#eceef1',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#111827'}}><Minus size={14}/></button>
+                            <button onClick={()=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:Math.max(0,x.qty-1)}:x))} aria-label="نقص" style={{width:30,height:30,borderRadius:8,border:'none',background:'#eceef1',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--storely-text)'}}><Minus size={14}/></button>
                             <NumberInput min="0" value={p.qty||''} onChange={e=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:Number(e.target.value)||0}:x))}
-                              style={{width:52,textAlign:'center',border:'1px solid #e5e7eb',borderRadius:8,padding:'5px',fontSize:16,fontWeight:500,color:'#111827',fontFamily:'inherit',outline:'none'}} placeholder="0"/>
-                            <button onClick={()=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:x.qty+1}:x))} aria-label="زيادة" style={{width:30,height:30,borderRadius:8,border:'none',background:'#eceef1',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#111827'}}><Plus size={14}/></button>
+                              style={{width:52,textAlign:'center',border:'1px solid var(--storely-border)',borderRadius:8,padding:'5px',fontSize:16,fontWeight:500,color:'var(--storely-text)',fontFamily:'inherit',outline:'none'}} placeholder="0"/>
+                            <button onClick={()=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:x.qty+1}:x))} aria-label="زيادة" style={{width:30,height:30,borderRadius:8,border:'none',background:'#eceef1',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--storely-text)'}}><Plus size={14}/></button>
                           </div>
                         )}
                       </div>
@@ -353,7 +353,7 @@ export default function OnboardingPage() {
         {step==='staff'&&(
           <div className="su">
             {head(Users, 'أضف موظفيك', 'كل موظف يدخل من جواله برقمه ورمز سري نعطيك إياه. هذي الخطوة اختيارية')}
-            <div style={{background:'white',border:'1px solid #e5e7eb',borderRadius:14,padding:16,display:'flex',flexDirection:'column' as const,gap:10,marginBottom:20}}>
+            <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:16,display:'flex',flexDirection:'column' as const,gap:10,marginBottom:20}}>
               {staffList.map((s,i)=>(
                 <div key={i} style={{display:'grid',gridTemplateColumns:staffList.length>1?'1fr 1fr 36px':'1fr 1fr',gap:8,alignItems:'center'}}>
                   <input value={s.name} onChange={e=>setStaffList(prev=>prev.map((x,j)=>j===i?{...x,name:e.target.value}:x))} style={{...inp(),fontSize:16}} placeholder="اسم الموظف"/>
@@ -361,7 +361,7 @@ export default function OnboardingPage() {
                   {staffList.length>1&&<button onClick={()=>setStaffList(prev=>prev.filter((_,j)=>j!==i))} aria-label="حذف" style={{width:36,height:36,borderRadius:8,background:'transparent',color:'#6b7487',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><X size={16} strokeWidth={1.75}/></button>}
                 </div>
               ))}
-              <button onClick={()=>setStaffList(prev=>[...prev,{name:'',phone:''}])} style={{height:44,borderRadius:10,border:'1px dashed #9ca3af',background:'transparent',color:'#111827',fontSize:15,fontWeight:500,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+              <button onClick={()=>setStaffList(prev=>[...prev,{name:'',phone:''}])} style={{height:44,borderRadius:10,border:'1px dashed #9ca3af',background:'transparent',color:'var(--storely-text)',fontSize:15,fontWeight:500,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                 <Plus size={16} strokeWidth={1.75}/>موظف آخر
               </button>
             </div>
@@ -380,28 +380,28 @@ export default function OnboardingPage() {
           <div className="su">
             <div style={{marginBottom:24}}>
               <span style={{width:56,height:56,borderRadius:16,background:'#f3faf8',color:colors.primary,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:16,border:'1px solid #cfe8e4'}}><Check size={28} strokeWidth={2}/></span>
-              <h1 style={{fontSize:26,fontWeight:600,lineHeight:'36px',color:'#111827',marginBottom:6}}>منشأتك جاهزة</h1>
+              <h1 style={{fontSize:26,fontWeight:600,lineHeight:'36px',color:'var(--storely-text)',marginBottom:6}}>منشأتك جاهزة</h1>
               <p style={{fontSize:15,color:'#4b5565',lineHeight:1.7}}>كل شي جاهز تبدأ فيه. تقدر تعدّل أي شي بعدين من الإعدادات</p>
             </div>
-            <div style={{display:'grid',gridTemplateColumns:hasInventory?'1fr 1fr':'1fr',background:'white',border:'1px solid #e5e7eb',borderRadius:14,marginBottom:16}}>
-              {hasInventory && <div style={{padding:16}}><div style={{fontSize:26,fontWeight:500,color:'#111827',fontVariantNumeric:'tabular-nums'}}>{selectedCount}</div><div style={{fontSize:13,color:'#6b7487'}}>منتج أضفناه</div></div>}
-              <div style={{padding:16,borderInlineStart:hasInventory?'1px solid #e5e7eb':'none'}}><div style={{fontSize:26,fontWeight:500,color:'#111827',fontVariantNumeric:'tabular-nums'}}>{createdStaff.length}</div><div style={{fontSize:13,color:'#6b7487'}}>موظف أضفناه</div></div>
+            <div style={{display:'grid',gridTemplateColumns:hasInventory?'1fr 1fr':'1fr',background:'white',border:'1px solid var(--storely-border)',borderRadius:14,marginBottom:16}}>
+              {hasInventory && <div style={{padding:16}}><div style={{fontSize:26,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{selectedCount}</div><div style={{fontSize:13,color:'#6b7487'}}>منتج أضفناه</div></div>}
+              <div style={{padding:16,borderInlineStart:hasInventory?'1px solid #e5e7eb':'none'}}><div style={{fontSize:26,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{createdStaff.length}</div><div style={{fontSize:13,color:'#6b7487'}}>موظف أضفناه</div></div>
             </div>
             {createdStaff.length>0&&(
-              <div style={{background:'white',border:'1px solid #e5e7eb',borderRadius:14,padding:16,marginBottom:16}}>
-                <div style={{display:'flex',alignItems:'center',gap:8,fontSize:15,fontWeight:600,color:'#111827',marginBottom:4}}><KeyRound size={16} strokeWidth={1.75}/>رموز دخول الموظفين</div>
+              <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:16,marginBottom:16}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}><KeyRound size={16} strokeWidth={1.75}/>رموز دخول الموظفين</div>
                 <p style={{fontSize:13,color:'#4b5565',lineHeight:1.7,marginBottom:10}}>احفظها وأرسلها لكل موظف. يدخل برقم جواله وهذا الرمز، وتقدر تغيّرها من صفحة الموظفين</p>
                 {createdStaff.map((c,i)=>(
-                  <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'10px 0',borderTop:'1px solid #e5e7eb',fontSize:15}}>
-                    <span style={{color:'#111827'}}>{c.name}</span>
-                    <span style={{fontFamily:"'IBM Plex Mono',ui-monospace,monospace",fontWeight:500,fontSize:17,letterSpacing:2,color:'#111827',direction:'ltr'}}>{c.pin}</span>
+                  <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'10px 0',borderTop:'1px solid var(--storely-border)',fontSize:15}}>
+                    <span style={{color:'var(--storely-text)'}}>{c.name}</span>
+                    <span style={{fontFamily:"'IBM Plex Mono',ui-monospace,monospace",fontWeight:500,fontSize:17,letterSpacing:2,color:'var(--storely-text)',direction:'ltr'}}>{c.pin}</span>
                   </div>
                 ))}
               </div>
             )}
             {!pushEnabled ? (
-              <div style={{background:'white',border:'1px solid #e5e7eb',borderRadius:14,padding:16,marginBottom:20}}>
-                <div style={{display:'flex',alignItems:'center',gap:8,fontSize:15,fontWeight:600,color:'#111827',marginBottom:4}}><Bell size={16} strokeWidth={1.75}/>فعّل الإشعارات</div>
+              <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:16,marginBottom:20}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}><Bell size={16} strokeWidth={1.75}/>فعّل الإشعارات</div>
                 <p style={{fontSize:13,color:'#4b5565',lineHeight:1.7,marginBottom:12}}>يوصلك تنبيه نقص المخزون وإقفال الكاشير وتوريد الموردين أول بأول، حتى لو التطبيق مقفول</p>
                 <button onClick={enablePushOnboarding} disabled={pushLoading}
                   style={{...btnSecondary,width:'100%',padding:'12px',fontSize:15}}>
