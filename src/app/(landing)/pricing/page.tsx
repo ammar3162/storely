@@ -6,7 +6,7 @@ export const revalidate = 300
 
 export const metadata: Metadata = {
   title: 'الأسعار | Storely',
-  description: 'باقات Storely: الأساسية والتشغيل والكاملة، أو ابنِ باقتك بالمزايا اللي تحتاجها. جرّب كل المزايا مجاناً 14 يوماً.',
+  description: 'باقات Storely: الأساسية والتشغيل والكاملة، أو ابنِ باقتك بالمزايا التي تحتاجها. جرّب جميع المزايا مجاناً لمدة 14 يوماً.',
   alternates: { canonical: 'https://storely.dev/pricing' },
 }
 

@@ -13,7 +13,7 @@ export default function SuppliersSection({ m }: { m: LandingState }) {
             <img src="/supplier-team.jpg" alt="مورد يسلّم طلبية لصاحب منشأة" width={1100} height={600} loading="lazy" decoding="async"/>
             <figcaption className="lp-chat">
               <div className="lp-bubble lp-bubble-out"><b>🟢 Storely</b><br/>طلب توريد: دقيق — 20 كيس</div>
-              <div className="lp-bubble">تم ✅ أبشر، بيوصلكم اليوم</div>
+              <div className="lp-bubble">تم — سيصلكم الطلب اليوم</div>
             </figcaption>
           </figure>
           <div className="lp-copy rv">

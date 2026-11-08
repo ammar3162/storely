@@ -16,8 +16,8 @@ export default function AccountBlocked({ m }: { m: LoginState }) {
                 </h1>
                 <p style={{fontSize:14,color:'#6b7280',lineHeight:1.7,marginBottom:28,maxWidth:340,marginInline:'auto'}}>
                   {accountStatus==='suspended'
-                    ? 'إما انتهى اشتراكك أو تم إيقاف الحساب مؤقتاً. تواصل معنا وبنساعدك تفعّله من جديد خلال دقائق.'
-                    : 'هذا الحساب لم يعد متاحاً على المنصة. تواصل معنا لو تحتاج مساعدة أو توضيح.'}
+                    ? 'إما انتهى اشتراكك أو تم إيقاف الحساب مؤقتاً. تواصل معنا وسنساعدك على إعادة تفعيله خلال دقائق.'
+                    : 'هذا الحساب لم يعد متاحاً على المنصة. تواصل معنا إذا كنت بحاجة إلى مساعدة أو توضيح.'}
                 </p>
                 <a href="https://wa.me/966594351667?text=مرحباً، حسابي في Storely موقوف وأحتاج مساعدة"
                   target="_blank" rel="noopener noreferrer"

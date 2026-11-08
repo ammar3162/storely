@@ -78,7 +78,7 @@ export async function PATCH(req: Request) {
     if (acc?.email) {
       const { data: org } = await db.from('organizations').select('name').eq('id', b.org_id).single()
       sendEmail({ to: acc.email, fromName: `${(org as any)?.name || 'منشأة'} عبر Storely`, subject: `ردّت ${(org as any)?.name || 'المنشأة'} على طلبك`,
-        html: brandEmail({ title: 'رد على طلبك', greeting: acc.name ? `هلا ${acc.name}،` : 'هلا،', paragraphs: [ownerReply], button: { label: 'افتح بوابة المحاسب', url: `${siteUrl()}/accountant-portal` } }) }).catch(() => {})
+        html: brandEmail({ title: 'رد على طلبك', greeting: acc.name ? `مرحباً ${acc.name}،` : 'مرحباً،', paragraphs: [ownerReply], button: { label: 'افتح بوابة المحاسب', url: `${siteUrl()}/accountant-portal` } }) }).catch(() => {})
     }
     return NextResponse.json({ success: true })
   } catch {

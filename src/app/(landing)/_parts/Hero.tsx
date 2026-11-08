@@ -31,7 +31,7 @@ export default function Hero({ m }: { m: LandingState }) {
             <PhoneVideo src="/videos/storely-ad.mp4" poster="/videos/storely-ad.jpg" label="إعلان Storely"/>
             <div className="lp-float lp-float-a">
               <span className="lp-wa"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d={WA_ICON}/></svg></span>
-              <div><b>نقص مخزون: دقيق</b><small>انرسل الطلب للمورد تلقائياً</small></div>
+              <div><b>نقص مخزون: دقيق</b><small>أُرسل الطلب إلى المورد تلقائياً</small></div>
             </div>
             <div className="lp-float lp-float-b"><span className="lp-stamp">✓ مطابق</span><small>إقفال الكاشير اليوم</small></div>
           </div>

@@ -30,7 +30,7 @@ export function accountantEmail(r: AccountantReport, o: { accountantName: string
   if (has('purchases')) html += block(`المشتريات (${invoicesLabel(t.invoices)})`, [['قبل الضريبة', t.purNet], ['الضريبة', t.purVat], ['الإجمالي', t.purTotal, true], ['منها آجلة', t.purUnpaid]])
   if (has('vat')) html += r.vatRegistered
     ? block('ضريبة القيمة المضافة', [['ضريبة المبيعات', t.outputVat], ['ضريبة المشتريات القابلة للخصم', t.inputVatClaimable], ['صافي الضريبة المستحقة', t.vatNet, true]],
-        `<div style="font-size:12px;margin-top:8px;color:${t.taxInvoices === t.taxComplete ? '#15803d' : '#b45309'}">${t.taxInvoices === 0 ? 'ما فيه فواتير ضريبية بهذي الفترة' : t.taxInvoices === t.taxComplete
+        `<div style="font-size:12px;margin-top:8px;color:${t.taxInvoices === t.taxComplete ? '#15803d' : '#b45309'}">${t.taxInvoices === 0 ? 'لا توجد فواتير ضريبية في هذه الفترة' : t.taxInvoices === t.taxComplete
           ? `✓ كل الفواتير الضريبية مكتملة (${esc(String(t.taxInvoices))})`
           : `${esc(String(t.taxInvoices - t.taxComplete))} من ${esc(String(t.taxInvoices))} فواتير ناقصة بياناتها — ضريبتها ${esc(sar(t.inputVatReview))} تحتاج مراجعة (التفاصيل في ورقة «الفواتير الضريبية»)`}</div>`)
     : `<tr><td style="padding:12px 28px 4px;font-size:12px;color:${C.muted}">المنشأة غير مسجلة في ضريبة القيمة المضافة.</td></tr>`
@@ -52,11 +52,11 @@ export function accountantEmail(r: AccountantReport, o: { accountantName: string
       preheader: `تقرير ${r.orgName} المحاسبي — ${r.label}`,
       eyebrow: r.orgName + (r.branchName ? ` · ${r.branchName}` : ''),
       headerSide: { title: 'تقرير المحاسب', sub: `${r.period.start} → ${r.period.end}` },
-      greeting: `هلا ${o.accountantName}،`,
-      paragraphs: [`هذا تقرير ${r.orgName} عن ${r.label}، والتفاصيل كاملة في ملف الإكسل المرفق 📎`],
+      greeting: `مرحباً ${o.accountantName}،`,
+      paragraphs: [`هذا تقرير ${r.orgName} عن ${r.label}، والتفاصيل كاملة في ملف الإكسل المرفق`],
       rawSections: html,
-      ...(o.portalUrl ? { button: { label: 'ادخل بوابة المحاسب', url: o.portalUrl } } : {}),
-      small: 'يوصلك هذا التقرير تلقائياً لأن المنشأة أضافتك محاسباً لها في Storely. للإيقاف تواصل مع المنشأة.',
+      ...(o.portalUrl ? { button: { label: 'الدخول إلى بوابة المحاسب', url: o.portalUrl } } : {}),
+      small: 'يصلك هذا التقرير تلقائياً لأن المنشأة أضافتك محاسباً لها في Storely. للإيقاف تواصل مع المنشأة.',
     }),
   }
 }

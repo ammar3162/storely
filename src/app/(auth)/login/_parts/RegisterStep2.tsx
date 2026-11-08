@@ -82,7 +82,7 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                     </div>
                   </div>
                   {/* اختيارات جاهزة — تعلّم المزايا عنه بضغطة */}
-                  <div style={{fontSize:13,fontWeight:700,color:'#374151',marginTop:4}}>{lang==='ar'?'ابدأ من اختيار جاهز':'Start from a preset'}</div>
+                  <div style={{fontSize:13,fontWeight:700,color:'#374151',marginTop:4}}>{lang==='ar'?'ابدأ باختيار جاهز':'Start from a preset'}</div>
                   <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:6}}>
                     {FEATURE_PRESETS.map(p => { const on = same(p.mods); return (
                       <button key={p.key} type="button" onClick={()=>setSignupAddons([...p.mods])} aria-pressed={on}
@@ -105,7 +105,7 @@ export default function RegisterStep2({ m }: { m: LoginState }) {
                         </button>
                       )
                     })}
-                    <div style={{fontSize:13,color:'#374151',padding:'2px'}}>{lang==='ar'?`يشمل ${staff} موظفين (${PLAN_CAPS.custom.staff} لكل فرع)، وتقدر تضيف أو تشيل أي ميزة من داخل النظام بأي وقت`:`Includes ${staff} staff (${PLAN_CAPS.custom.staff} per branch); add or remove features anytime inside the app`}</div>
+                    <div style={{fontSize:13,color:'#374151',padding:'2px'}}>{lang==='ar'?`يشمل ${staff} موظفين (${PLAN_CAPS.custom.staff} لكل فرع)، ويمكنك إضافة أي ميزة أو إزالتها من داخل النظام في أي وقت`:`Includes ${staff} staff (${PLAN_CAPS.custom.staff} per branch); add or remove features anytime inside the app`}</div>
                     {branchDiscountSaving(picked, branchCount) > 0 && <div className="hide-in-app" style={{fontSize:13,fontWeight:700,color:'#0f766e'}}>{lang==='ar'?`من الفرع الثالث خصم 20% — وفّرت ${cur(branchDiscountSaving(picked, branchCount))} ⃁`:`20% off from the 3rd branch — you save ${cur(branchDiscountSaving(picked, branchCount))} SAR`}</div>}
                     <div className="hide-in-app" style={{display:'flex',justifyContent:'space-between',borderTop:'1px solid #e5e7eb',paddingTop:8,fontSize:14,fontWeight:800,color:'#111827'}}>
                       <span>{lang==='ar'?'المجموع':'Total'}</span>

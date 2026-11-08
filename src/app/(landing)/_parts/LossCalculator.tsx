@@ -27,9 +27,9 @@ export default function LossCalculator({ m }: { m: LandingState }) {
         <div className="lp-calc rv">
           <div className="lp-calc-in">
             <div className="lp-calc-k">{ar ? 'احسبها على منشأتك' : 'Run your numbers'}</div>
-            <h2 className="lp-calc-h">{ar ? 'كم ممكن يطلع عندك عجز كاشير بالشهر؟' : 'How much cashier shortage could you have each month?'}</h2>
+            <h2 className="lp-calc-h">{ar ? 'كم قد يبلغ عجز الكاشير لديك شهرياً؟' : 'How much cashier shortage could you have each month?'}</h2>
             <label className="lp-calc-l" htmlFor="calc-daily">{ar ? 'مبيعاتك اليومية تقريباً' : 'Your daily sales, roughly'}</label>
-            <div className="lp-calc-val"><b>{daily.toLocaleString('en-US')}</b> {ar ? '⃁ باليوم' : 'SAR / day'}</div>
+            <div className="lp-calc-val"><b>{daily.toLocaleString('en-US')}</b> {ar ? '⃁ يومياً' : 'SAR / day'}</div>
             <input id="calc-daily" type="range" min={500} max={20000} step={500} value={daily} onChange={e => setDaily(Number(e.target.value))} className="lp-calc-range" aria-label={ar ? 'المبيعات اليومية' : 'Daily sales'} />
             <div className="lp-calc-scale"><span>500</span><span>20,000</span></div>
           </div>
@@ -37,9 +37,9 @@ export default function LossCalculator({ m }: { m: LandingState }) {
             <div className="lp-calc-ol">{ar ? 'العجز الشهري، تقدير تقريبي' : 'Monthly shortage, rough estimate'}</div>
             <div className="lp-calc-big"><b>{monthly.toLocaleString('en-US')}</b> ⃁</div>
             <p className="lp-calc-note">{ar
-              ? `العجز ما يطلع كل يوم، بس يتكرر ويتجمّع. Storely يطلّعه لك يوم بيوم وباسم الكاشير عشان توقفه، وميزة إقفال الكاشير بـ${ops} ⃁ بالشهر لكل فرع.`
+              ? `لا يظهر العجز كل يوم، لكنه يتكرر ويتراكم. يكشفه لك Storely يوماً بيوم وباسم الكاشير لتتمكن من إيقافه، وميزة إقفال الكاشير بسعر ${ops} ⃁ شهرياً لكل فرع.`
               : `Shortages don't happen every day, but they add up. Storely shows each one per cashier so you can stop it; cashier closing is ${ops} SAR a month per branch.`}</p>
-            <button type="button" className="lp-btn lp-btn-dark lp-btn-lg" style={{width:'100%'}} onClick={() => m.router.push('/login?mode=register&plan=custom&modules=cashier_closing')}>{ar ? 'جرّب الإقفال مجاناً 14 يوم' : 'Try closing free for 14 days'} <ArrowLeft size={18} /></button>
+            <button type="button" className="lp-btn lp-btn-dark lp-btn-lg" style={{width:'100%'}} onClick={() => m.router.push('/login?mode=register&plan=custom&modules=cashier_closing')}>{ar ? 'جرّب الإقفال مجاناً لمدة 14 يوماً' : 'Try closing free for 14 days'} <ArrowLeft size={18} /></button>
           </div>
         </div>
       </div>

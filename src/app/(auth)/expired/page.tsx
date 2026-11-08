@@ -36,7 +36,7 @@ export default function ExpiredPage() {
         {isManager ? (
           <p style={{fontSize:14,color:'#374151',lineHeight:1.8,marginBottom:32}}>
             انتهى اشتراك المنشأة في ستورلي.<br/>
-            تواصل مع مالك المنشأة لتجديد الاشتراك، وترجع تقدر تدخل مباشرة بعد التجديد.
+            تواصل مع مالك المنشأة لتجديد الاشتراك، ويمكنك الدخول مباشرة بعد التجديد.
           </p>
         ) : (
           <p style={{fontSize:14,color:'#374151',lineHeight:1.8,marginBottom:32}}>

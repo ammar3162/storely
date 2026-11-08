@@ -112,7 +112,7 @@ export function brandEmail(o: {
     ${o.rawSections || ''}
     ${o.button ? `<tr><td style="padding:18px 28px 6px;text-align:center">
       <a href="${btnUrl}" style="display:inline-block;background:${b.color};color:#ffffff;text-decoration:none;font-weight:bold;font-size:14px;padding:13px 30px;border-radius:12px">${esc(o.button.label)}</a>
-      ${o.rawLinkFallback ? `<div style="font-size:11px;color:${b.muted};margin-top:10px;line-height:1.7">إذا ما اشتغل الزر، انسخ هذا الرابط:<br><span dir="ltr" style="word-break:break-all">${o.rawLinkFallback}</span></div>` : ''}
+      ${o.rawLinkFallback ? `<div style="font-size:11px;color:${b.muted};margin-top:10px;line-height:1.7">إذا لم يعمل الزر، انسخ هذا الرابط:<br><span dir="ltr" style="word-break:break-all">${o.rawLinkFallback}</span></div>` : ''}
     </td></tr>` : ''}
     ${o.note ? `<tr><td style="padding:14px 28px 0"><div style="font-size:12px;line-height:1.8;background:rgba(2,159,162,.06);border:1px solid rgba(2,159,162,.18);border-radius:12px;padding:10px 12px;color:#334155">${esc(o.note)}</div></td></tr>` : ''}
     <tr><td style="padding:20px 28px 24px;text-align:center">
@@ -137,7 +137,7 @@ export function invoiceEmail(o: { invoiceNumber: string | number; orgName: strin
   return {
     subject: `فاتورة اشتراك #${o.invoiceNumber} — ${o.orgName} — ${sar(total)}`,
     html: brandEmail({
-      title: paid ? 'شكراً لك، هذي فاتورة اشتراكك' : 'فاتورة مستحقة الدفع',
+      title: paid ? 'شكراً لك، هذه فاتورة اشتراكك' : 'فاتورة مستحقة الدفع',
       preheader: `فاتورة #${o.invoiceNumber} بقيمة ${sar(total)}`,
       headerSide: { title: 'فاتورة اشتراك', sub: `#${o.invoiceNumber}` },
       rows: [
@@ -161,10 +161,10 @@ export function resetPasswordEmail(o: { name?: string; link: string }) {
       preheader: 'رابط تعيين كلمة مرور جديدة لحسابك في Storely',
       eyebrow: 'أمان الحساب',
       greeting: `مرحباً${o.name ? ` ${o.name}` : ''}،`,
-      paragraphs: ['وصلنا طلب لتعيين كلمة مرور جديدة لحسابك. اضغط الزر التالي للمتابعة:'],
+      paragraphs: ['تلقّينا طلباً لتعيين كلمة مرور جديدة لحسابك. اضغط الزر التالي للمتابعة:'],
       button: { label: 'تعيين كلمة مرور جديدة', url: o.link },
-      note: 'الرابط صالح لمدة ساعة واحدة، ويشتغل مرة وحدة فقط.',
-      small: 'إذا ما طلبت هذا، تجاهل الرسالة وحسابك بأمان.',
+      note: 'الرابط صالح لمدة ساعة واحدة، ويُستخدم مرة واحدة فقط.',
+      small: 'إذا لم تطلب ذلك، فتجاهل هذه الرسالة، وحسابك في أمان.',
     }),
   }
 }
@@ -195,14 +195,14 @@ export function welcomeEmail(o: { name: string; trialEnds?: string | null }) {
       title: `أهلاً بك في Storely، ${o.name}`,
       preheader: 'حسابك جاهز، ابدأ بإضافة مخزونك',
       eyebrow: 'تم إنشاء حسابك',
-      paragraphs: ['حسابك جاهز الحين. ابدأ بإضافة منتجاتك ومخزونك، وStorely ينبهك قبل ما ينقص أي صنف.'],
+      paragraphs: ['حسابك جاهز الآن. ابدأ بإضافة منتجاتك ومخزونك، وسينبّهك Storely قبل نقص أي صنف.'],
       rows: [
         { label: 'المنشأة', value: o.name, strong: true },
-        { label: 'نوع الاشتراك', value: 'تجربة مجانية 14 يوم' },
+        { label: 'نوع الاشتراك', value: 'تجربة مجانية لمدة 14 يوماً' },
         ...(o.trialEnds ? [{ label: 'تنتهي التجربة', value: arDate(o.trialEnds) }] : []),
       ],
       badge: { text: 'تجربة مجانية', tone: 'info' },
-      button: { label: 'ادخل لحسابك', url: `${BRAND.site}/login` },
+      button: { label: 'الدخول إلى حسابك', url: `${BRAND.site}/login` },
     }),
   }
 }
@@ -215,14 +215,14 @@ export function activationEmail(o: { name: string; orgName: string; paid: boolea
       preheader: `حساب ${o.orgName} مفعّل${o.endsAt ? ` حتى ${arDate(o.endsAt)}` : ''}`,
       eyebrow: 'تفعيل الاشتراك',
       greeting: `أهلاً ${o.name}،`,
-      paragraphs: ['تم تفعيل حسابك في Storely، وتقدر تستخدم كل المزايا الحين.'],
+      paragraphs: ['تم تفعيل حسابك في Storely، ويمكنك استخدام جميع المزايا الآن.'],
       rows: [
         { label: 'المنشأة', value: o.orgName || '—', strong: true },
         { label: 'نوع الاشتراك', value: o.paid ? 'مدفوع' : 'تجريبي' },
         { label: 'ينتهي في', value: o.endsAt ? arDate(o.endsAt) : '—' },
       ],
       badge: o.paid ? { text: 'مفعّل', tone: 'success' } : { text: 'تجريبي', tone: 'info' },
-      button: { label: 'ادخل لحسابك', url: `${BRAND.site}/login` },
+      button: { label: 'الدخول إلى حسابك', url: `${BRAND.site}/login` },
     }),
   }
 }

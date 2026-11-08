@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     if (limited) return limited
     const db = sb()
 
-    const genericResponse = NextResponse.json({ success: true, message: 'إذا كان البريد مسجّل، وصلتك رسالة فيها رابط الاستعادة' })
+    const genericResponse = NextResponse.json({ success: true, message: 'إذا كان البريد مسجّلاً، فستصلك رسالة تتضمن رابط الاستعادة' })
 
     const authUser = await findAuthUserByEmail(db, String(email))
     if (!authUser?.email) return genericResponse

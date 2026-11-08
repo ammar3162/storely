@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     await sendEmail({
       to: email, subject: `رمز الدخول لبوابة المحاسب: ${code}`,
       html: brandEmail({ title: 'رمز الدخول لبوابة المحاسب', preheader: `رمزك ${code}`, code,
-        paragraphs: [`اكتب هذا الرمز في صفحة الدخول. صالح ${CODE_MINUTES} دقايق.`], small: 'إذا ما طلبت الرمز، تجاهل هالإيميل.' }),
+        paragraphs: [`اكتب هذا الرمز في صفحة الدخول. صالح لمدة ${CODE_MINUTES} دقائق.`], small: 'إذا لم تطلب الرمز، فتجاهل هذا البريد.' }),
     })
     return NextResponse.json({ success: true, message: GENERIC })
   } catch {

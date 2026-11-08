@@ -18,15 +18,15 @@ export async function sendInviteEmail(db: SupabaseClient, a: { id: string; org_i
   return sendEmail({
     to: a.email, fromName: `${orgName} عبر Storely`, subject: `${orgName} تدعوك محاسباً لها في Storely`,
     html: brandEmail({ title: 'دعوة لتكون محاسب المنشأة', preheader: `${orgName} تدعوك لمتابعة حساباتها — اضغط قبول الدعوة`,
-      greeting: a.name ? `هلا ${a.name}،` : 'هلا،',
+      greeting: a.name ? `مرحباً ${a.name}،` : 'مرحباً،',
       paragraphs: [
-        `منشأة ${orgName} تدعوك تكون محاسبها في Storely، وتشوف بياناتها قراءة بس وتحمّلها إكسل لأي فترة.`,
-        `اللي بتشوفه: ${sectionLabels(a.sections).join('، ')}.`,
-        'اضغط «قبول الدعوة» — يتفعل الربط عند المنشأة وتدخل صفحتك على طول.',
+        `تدعوك منشأة ${orgName} لتكون محاسبها في Storely، وتطّلع على بياناتها للقراءة فقط وتحمّلها بصيغة إكسل لأي فترة.`,
+        `ما ستطّلع عليه: ${sectionLabels(a.sections).join('، ')}.`,
+        'اضغط «قبول الدعوة» — يتفعّل الربط لدى المنشأة وتدخل إلى صفحتك مباشرة.',
       ],
       button: { label: 'قبول الدعوة', url: acceptUrl },
-      note: `بعدها تدخل صفحتك متى ما بغيت من: ${base}/accountant-portal (برمز يوصلك على هالإيميل، بدون كلمة مرور).`,
-      small: `زر القبول صالح ${INVITE_DAYS} أيام. إذا ما تعرف هالمنشأة تجاهل الإيميل أو ارفض الدعوة من نفس الرابط.` }),
+      note: `بعد ذلك يمكنك الدخول إلى صفحتك في أي وقت من: ${base}/accountant-portal (برمز يصل إلى هذا البريد، دون كلمة مرور).`,
+      small: `زر القبول صالح ${INVITE_DAYS} أيام. إذا كنت لا تعرف هذه المنشأة فتجاهل هذا البريد أو ارفض الدعوة من الرابط نفسه.` }),
   })
 }
 
@@ -34,11 +34,11 @@ export async function sendInviteEmail(db: SupabaseClient, a: { id: string; org_i
 export async function acceptInvite(db: SupabaseClient, req: Request, accessId: string, email: string, withSession: boolean) {
   const { data: row } = await db.from('accountant_access').select('id,org_id,name,status').eq('id', accessId).eq('email', email).maybeSingle()
   const a = row as any
-  if (!a) return { error: 'الدعوة ما عادت موجودة — يمكن المنشأة سحبتها', status: 404 } as const
+  if (!a) return { error: 'لم تعد الدعوة موجودة — ربما سحبتها المنشأة', status: 404 } as const
   // رابط الإيميل يُستخدم مرة وحدة بس — بعد القبول الدخول يصير برمز الإيميل العادي
-  if (withSession && a.status !== 'pending') return { error: 'قبلت الدعوة من قبل — ادخل البوابة برمز يوصلك على إيميلك', status: 409 } as const
+  if (withSession && a.status !== 'pending') return { error: 'قبلت الدعوة مسبقاً — ادخل إلى البوابة برمز يصل إلى بريدك الإلكتروني', status: 409 } as const
   const { data: user, error } = await db.from('accountant_users').upsert({ email, last_login_at: new Date().toISOString() } as any, { onConflict: 'email' }).select('id,name').single()
-  if (error || !user) return { error: 'حدث خطأ، حاول مرة ثانية', status: 500 } as const
+  if (error || !user) return { error: 'حدث خطأ، حاول مرة أخرى', status: 500 } as const
   const uid = (user as any).id
   if (!(user as any).name && a.name) await db.from('accountant_users').update({ name: a.name } as any).eq('id', uid)
   if (a.status === 'pending') {
@@ -51,7 +51,7 @@ export async function acceptInvite(db: SupabaseClient, req: Request, accessId: s
   if (!withSession) return { ok: true as const, orgId: a.org_id as string, session: null }
   const { data: sess } = await db.from('accountant_sessions').insert({ accountant_id: uid, ip: clientIp(req),
     user_agent: (req.headers.get('user-agent') || '').slice(0, 200) || null } as any).select('id').single()
-  if (!sess) return { error: 'حدث خطأ، حاول مرة ثانية', status: 500 } as const
+  if (!sess) return { error: 'حدث خطأ، حاول مرة أخرى', status: 500 } as const
   return { ok: true as const, orgId: a.org_id as string, session: makeSession(uid, (sess as any).id) }
 }
 
@@ -60,7 +60,7 @@ export async function declineInvite(db: SupabaseClient, accessId: string, email:
   const { data } = await db.from('accountant_access').delete().eq('id', accessId).eq('email', email).eq('status', 'pending').select('org_id,name')
   const a = (data as any[] | null)?.[0]
   if (a) await db.from('notifications').insert({ org_id: a.org_id, type: 'warning', read: false, title: 'المحاسب رفض الدعوة',
-    message: `${a.name || email} رفض دعوة بوابة المحاسب. تأكد من الإيميل وادعه مرة ثانية إذا لزم.` } as any)
+    message: `${a.name || email} رفض دعوة بوابة المحاسب. تأكد من البريد الإلكتروني وأعد دعوته عند الحاجة.` } as any)
   return !!a
 }
 

@@ -77,12 +77,12 @@ export async function POST() {
     if (!sent?.success) {
       // الرمز ما وصل: نشيله عشان ما يمنع إعادة الإرسال
       await db.from('login_codes').delete().eq('id', (row as { id: string }).id)
-      return reply({ error: 'تعذّر إرسال الرمز — حاول مرة ثانية' }, 502)
+      return reply({ error: 'تعذّر إرسال الرمز — حاول مرة أخرى' }, 502)
     }
 
     return reply({ success: true, sent: true, email: maskEmail(email), wait: RESEND_AFTER_MS / 1000 })
   } catch (e) {
     console.error('device send-code failed:', e)
-    return NextResponse.json({ error: 'حدث خطأ — حاول مرة ثانية' }, { status: 500 })
+    return NextResponse.json({ error: 'حدث خطأ — حاول مرة أخرى' }, { status: 500 })
   }
 }

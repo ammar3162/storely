@@ -67,19 +67,19 @@ export function useLanding(initialMarquee?: string[]) {
 
   async function submitDemoRequest(e: React.FormEvent) {
     e.preventDefault()
-    if (!agreed) { setSubmitMsg({ok:false,text:'لازم توافق على الشروط والأحكام أولاً'}); return }
+    if (!agreed) { setSubmitMsg({ok:false,text:'يجب الموافقة على الشروط والأحكام أولاً'}); return }
     setSubmitting(true); setSubmitMsg(null)
     try {
       const res = await fetch('/api/demo-request', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(form)})
       const data = await res.json()
       if (data.success) {
-        setSubmitMsg({ok:true,text:'✅ تم إرسال طلبك بنجاح! بنتواصل معك قريباً عبر واتساب'})
+        setSubmitMsg({ok:true,text:'تم إرسال طلبك بنجاح، وسنتواصل معك قريباً عبر واتساب'})
         setForm({firstName:'',lastName:'',phone:'',email:'',businessName:'',branchCount:''})
         setAgreed(false)
       } else {
-        setSubmitMsg({ok:false,text:data.error || 'حدث خطأ، حاول مرة ثانية'})
+        setSubmitMsg({ok:false,text:data.error || 'حدث خطأ، حاول مرة أخرى'})
       }
-    } catch { setSubmitMsg({ok:false,text:'خطأ بالاتصال، حاول مرة ثانية'}) }
+    } catch { setSubmitMsg({ok:false,text:'خطأ في الاتصال، حاول مرة أخرى'}) }
     setSubmitting(false)
   }
 

@@ -58,8 +58,8 @@ export async function POST(req: Request) {
       const reason = String(b.reason || '').trim().slice(0, 300)
       await db.from('period_lock_log').insert({ org_id: b.org_id, month, action: 'request_unlock', by_name: 'المالك' } as any)
       await Promise.all(accs.map(a => sendEmail({ to: a.email, fromName: `${orgName} عبر Storely`, subject: `${orgName} تطلب فتح شهر ${label}`,
-        html: brandEmail({ title: `طلب فتح شهر ${label}`, greeting: a.name ? `هلا ${a.name}،` : 'هلا،',
-          paragraphs: [`${orgName} تطلب فتح شهر ${label} عشان تعدّل فيه.`, ...(reason ? [`السبب: ${reason}`] : [])],
+        html: brandEmail({ title: `طلب فتح شهر ${label}`, greeting: a.name ? `مرحباً ${a.name}،` : 'مرحباً،',
+          paragraphs: [`${orgName} تطلب فتح شهر ${label} لإجراء تعديلات فيه.`, ...(reason ? [`السبب: ${reason}`] : [])],
           button: { label: 'افتح بوابة المحاسب', url: `${siteUrl()}/accountant-portal` } }) }).catch(() => null)))
       return NextResponse.json({ success: true })
     }

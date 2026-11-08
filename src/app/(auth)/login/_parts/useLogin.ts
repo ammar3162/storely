@@ -77,7 +77,7 @@ export function useLogin() {
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState(() =>
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('error') === 'google'
-      ? 'تعذّر الدخول بحساب Google — حاول مرة ثانية' : '')
+      ? 'تعذّر الدخول بحساب Google — حاول مرة أخرى' : '')
   const [accountStatus, setAccountStatus] = useState<'suspended'|'deleted'|null>(() => {
     if (typeof window !== 'undefined') {
       const reason = new URLSearchParams(window.location.search).get('reason')
@@ -118,7 +118,7 @@ export function useLogin() {
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
-    if (error) { setError('تعذّر الدخول بحساب Google — حاول مرة ثانية'); setLoading(false) }
+    if (error) { setError('تعذّر الدخول بحساب Google — حاول مرة أخرى'); setLoading(false) }
   }
 
   async function leaveOauth() {
@@ -140,7 +140,7 @@ export function useLogin() {
     if (error) {
       // رسالة واحدة موحّدة بغض النظر عن السبب الفعلي — نتجنب كشف
       // أي إيميل مسجّل عندنا كعميل ولّا لأ (ثغرة "تعداد الإيميلات")
-      setError('البريد الإلكتروني أو كلمة المرور غير صحيحة — تقدر تستخدم "نسيت كلمة المرور؟"')
+      setError('البريد الإلكتروني أو كلمة المرور غير صحيحة — يمكنك استخدام "نسيت كلمة المرور؟"')
       setLoading(false); return
     }
     if (data.session) {
@@ -193,7 +193,7 @@ export function useLogin() {
     if (oauth) { setStep(2); return }
     const pwErr = validatePassword(password)
     if (pwErr) { setError(pwErr); return }
-    if (password.length < 6) { setError('كلمة المرور 6 أحرف على الأقل'); return }
+    if (password.length < 6) { setError('يجب أن تتكون كلمة المرور من 6 أحرف على الأقل'); return }
     setStep(2)
   }
 
@@ -246,7 +246,7 @@ export function useLogin() {
     e.preventDefault()
     // تم تعطيل إجبارية تحقق الـOTP مؤقتاً (2026-07-24) لحين حل مشكلة توصيل واتساب — راجع notification_logs
     if (!planChoice) { setError('اختر الباقة المناسبة'); return }
-    if (planChoice === 'custom' && !signupAddons.length) { setError('اختر ميزة وحدة على الأقل'); return }
+    if (planChoice === 'custom' && !signupAddons.length) { setError('اختر ميزة واحدة على الأقل'); return }
     if (!agreedTerms) { setError('يجب الموافقة على الشروط والأحكام للمتابعة'); return }
     setLoading(true); setError('')
     if (oauth) {

@@ -59,7 +59,7 @@ export default function ResetPasswordPage() {
     setLoading(true)
     const { error } = await supabase.auth.updateUser({ password })
     setLoading(false)
-    if (error) { setError('حدث خطأ، حاول مرة أخرى أو اطلب رابط جديد'); return }
+    if (error) { setError('حدث خطأ، حاول مرة أخرى أو اطلب رابطاً جديداً'); return }
     setDone(true)
   }
 

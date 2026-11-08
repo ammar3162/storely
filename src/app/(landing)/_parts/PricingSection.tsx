@@ -13,7 +13,7 @@ export default function PricingSection({ m }: { m: LandingState }) {
         <div className="lp-head rv">
           <span className="lp-tag">{t('pricingTag')}</span>
           <h2 className="lp-h2">{t('pricingTitle')}</h2>
-          <p className="lp-plans-trial">اختر المزايا اللي تحتاجها بس، وكل ميزة بسعرها لكل فرع</p>
+          <p className="lp-plans-trial">اختر المزايا التي تحتاجها فقط، ولكل ميزة سعرها لكل فرع</p>
         </div>
         <FeaturePricing billing={billing} onBilling={setBilling} />
       </div>
@@ -27,7 +27,7 @@ export default function PricingSection({ m }: { m: LandingState }) {
           <div className="lp-head rv">
             <span className="lp-tag">{t('pricingTag')}</span>
             <h2 className="lp-h2">{t('pricingTitle')}</h2>
-            <p className="lp-plans-trial">{(lang as string)==='ar'?'جرّب كل المميزات مجاناً لمدة 14 يوم، وبعدها اختر الباقة اللي تناسبك':'Try every feature free for 14 days, then pick the plan that fits you'}</p>
+            <p className="lp-plans-trial">{(lang as string)==='ar'?'جرّب جميع المزايا مجاناً لمدة 14 يوماً، ثم اختر الباقة التي تناسبك':'Try every feature free for 14 days, then pick the plan that fits you'}</p>
             <div className="lp-toggle">
               <button className={billing==='monthly'?'on':''} onClick={()=>setBilling('monthly')}>{t('billMonthly')}</button>
               <button className={billing==='yearly'?'on':''} onClick={()=>setBilling('yearly')}>{t('billYearly')} <span>{t('billSave')}</span></button>
@@ -43,7 +43,7 @@ export default function PricingSection({ m }: { m: LandingState }) {
                   ? <div className="lp-plan-price"><strong style={{fontSize:30}}>{(lang as string)==='ar'?'سعر مخصص':'Custom'}</strong></div>
                   : <>
                       <div className="lp-plan-price"><strong>{billing==='yearly'?Math.round(Number(p.yearlyPrice)/12):p.price}</strong><span>{(lang as string)==='ar'?'⃁':'SAR'} {t('perMonth')}</span></div>
-                      {billing==='yearly' && <div className="lp-plan-yearly">{(lang as string)==='ar'?`تُدفع سنوياً: ${p.yearlyPrice} ⃁ بدل ${Number(p.price)*12}`:`Billed yearly: ${p.yearlyPrice} SAR instead of ${Number(p.price)*12}`}</div>}
+                      {billing==='yearly' && <div className="lp-plan-yearly">{(lang as string)==='ar'?`تُدفع سنوياً: ${p.yearlyPrice} ⃁ بدلاً من ${Number(p.price)*12}`:`Billed yearly: ${p.yearlyPrice} SAR instead of ${Number(p.price)*12}`}</div>}
                     </>}
                 <div className="lp-plan-limits">{((lang as string)==='ar'?p.limits:p.limitsEn).join(' · ')}</div>
                 {p.extra && <div className="lp-plan-extra">{(lang as string)==='ar'?p.extra:p.extraEn}</div>}
@@ -55,7 +55,7 @@ export default function PricingSection({ m }: { m: LandingState }) {
                 </ul>
                 {p.addons && (
                   <div className="lp-plan-note">
-                    <div style={{fontWeight:700,marginBottom:6}}>{(lang as string)==='ar'?'أضف اللي تحتاجه:':'Add what you need:'}</div>
+                    <div style={{fontWeight:700,marginBottom:6}}>{(lang as string)==='ar'?'أضف ما تحتاجه:':'Add what you need:'}</div>
                     {((lang as string)==='ar'?p.addons:p.addonsEn).map(([n]:string[],j:number)=>(
                       <div key={j} style={{padding:'3px 0'}}>{n}</div>
                     ))}
@@ -64,7 +64,7 @@ export default function PricingSection({ m }: { m: LandingState }) {
               </div>
             ))}
           </div>
-          <p className="lp-plans-foot">{(lang as string)==='ar'?'السعر لكل فرع. تقدر تضيف فروع وموظفين وإضافات من داخل النظام في أي وقت.':'Priced per branch. Add branches, staff and add-ons anytime from inside the app. Add-ons: cashier closing 40 SAR per branch, attendance & payroll 69 SAR per branch, AI tools 15 SAR/month.'}</p>
+          <p className="lp-plans-foot">{(lang as string)==='ar'?'السعر لكل فرع، ويمكنك إضافة الفروع والموظفين والإضافات من داخل النظام في أي وقت.':'Priced per branch. Add branches, staff and add-ons anytime from inside the app. Add-ons: cashier closing 40 SAR per branch, attendance & payroll 69 SAR per branch, AI tools 15 SAR/month.'}</p>
           <div className="lp-compare rv">
             <h3>{(lang as string)==='ar'?'قارن الباقات':'Compare plans'}</h3>
             <div className="lp-compare-scroll">

@@ -59,7 +59,7 @@ export default function FeaturePricing({ billing, onBilling }: { billing: Billin
       <div className="fp-disc">من الفرع {BRANCH_DISCOUNT_FROM === 3 ? 'الثالث' : BRANCH_DISCOUNT_FROM}، كل فرع بخصم {Math.round(BRANCH_DISCOUNT * 100)}%</div>
 
       {/* اختيارات جاهزة */}
-      <div className="fp-label">ابدأ من اختيار جاهز، والسعر يطلع تحت حسب اختيارك</div>
+      <div className="fp-label">ابدأ باختيار جاهز، ويظهر السعر أدناه حسب اختيارك</div>
       <div className="fp-presets">
         {PRESETS.map(p => (
           <button key={p.key} type="button" className={`fp-preset${same(p.mods) ? ' on' : ''}`} onClick={() => setMods(p.mods)} aria-pressed={same(p.mods)}>
@@ -94,15 +94,15 @@ export default function FeaturePricing({ billing, onBilling }: { billing: Billin
           <span>المجموع{branches > 1 ? ` لـ ${branchWord}` : ''}</span>
           <strong>{picked.length ? `${shown(monthly).toLocaleString('en-US')} ⃁` : '—'}<i>{picked.length ? ' / شهرياً' : ''}</i></strong>
           {picked.length > 0 && branchDiscountSaving(picked, branches) > 0 && <em className="fp-save">وفّرت {shown(branchDiscountSaving(picked, branches)).toLocaleString('en-US')} ⃁ بخصم الفروع</em>}
-          <small>{!picked.length ? 'اختر ميزة وحدة على الأقل'
-            : yearly ? `تدفع ${yearlyOf(monthly).toLocaleString('en-US')} ⃁ مرة وحدة بالسنة` : `يشمل ${PLAN_CAPS.custom.staff * branches} موظفين (${PLAN_CAPS.custom.staff} لكل فرع)، والموظف الإضافي ${NEW_ADDON_PRICES.extra_staff.monthly} ⃁ شهرياً`}</small>
+          <small>{!picked.length ? 'اختر ميزة واحدة على الأقل'
+            : yearly ? `تدفع ${yearlyOf(monthly).toLocaleString('en-US')} ⃁ مرة واحدة في السنة` : `يشمل ${PLAN_CAPS.custom.staff * branches} موظفين (${PLAN_CAPS.custom.staff} لكل فرع)، والموظف الإضافي ${NEW_ADDON_PRICES.extra_staff.monthly} ⃁ شهرياً`}</small>
         </div>
         <button type="button" className="fp-cta" disabled={!picked.length}
           onClick={() => router.push(`/login?mode=register&plan=custom&modules=${picked.join(',')}&branches=${branches}&billing=${billing}`)}>
           ابدأ تجربتك المجانية <ArrowLeft size={18} />
         </button>
       </div>
-      <p className="fp-note">جرّب كل المزايا مجاناً 14 يوم. تدفع مجموع المزايا اللي تختارها بس، ومن الفرع الثالث كل فرع بخصم 20%، وتقدر تضيف أو تشيل أي ميزة من داخل النظام بأي وقت.</p>
+      <p className="fp-note">جرّب جميع المزايا مجاناً لمدة 14 يوماً. تدفع مجموع المزايا التي تختارها فقط، ومن الفرع الثالث يحصل كل فرع على خصم 20%، ويمكنك إضافة أي ميزة أو إزالتها من داخل النظام في أي وقت.</p>
 
       <section className="fp-sec">
         <h3>مشمول مع أي اختيار</h3>

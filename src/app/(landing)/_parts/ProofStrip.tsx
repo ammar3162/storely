@@ -11,8 +11,8 @@ export default function ProofStrip({ m, stats }: { m: LandingState; stats: Landi
   const ar = m.lang === 'ar'
   const items = [
     { v: n(stats.closings), l: ar ? 'إقفال كاشير يومي' : 'daily cashier closings' },
-    { v: `${k(stats.sales, ar)} ⃁`, l: ar ? 'مبيعات مرّت بالإقفال اليومي' : 'sales checked in daily closings' },
-    { v: `${n(stats.deficits)} ⃁`, l: ar ? 'عجز كاشير انكشف وتسجّل' : 'cashier shortages caught' },
+    { v: `${k(stats.sales, ar)} ⃁`, l: ar ? 'مبيعات سُجّلت عبر الإقفال اليومي' : 'sales checked in daily closings' },
+    { v: `${n(stats.deficits)} ⃁`, l: ar ? 'عجز كاشير كُشف وسُجّل' : 'cashier shortages caught' },
     { v: n(stats.moves), l: ar ? 'حركة مخزون مسجّلة' : 'stock movements recorded' },
   ]
   return (
