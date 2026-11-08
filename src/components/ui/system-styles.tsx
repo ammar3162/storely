@@ -20,8 +20,8 @@ export const storelySystemCss = `
     cursor: pointer; text-align: center; transition: background .15s, border-color .15s;
     text-decoration: none; transform: none; overflow-wrap: anywhere;
   }
-  .storely-button { min-height: ${t.control.medium}px; padding: ${t.spacing[2]}px ${t.spacing[4]}px; }
-  .storely-button[data-size=sm] { min-height: ${t.control.small}px; padding: ${t.spacing[1]}px ${t.spacing[3]}px; font-size: 13px; }
+  .storely-button { min-height: ${t.control.medium}px; padding: 9px 16px; }
+  .storely-button[data-size=sm] { min-height: 32px; padding: 6px 11px; font-size: 12.5px; }
   .storely-button[data-size=lg] { min-height: ${t.control.large}px; padding: ${t.spacing[2]}px ${t.spacing[5]}px; }
   .storely-button[data-variant=primary] { background: ${t.color.navy}; border-color: ${t.color.navy}; color: ${t.color.onPrimary}; }
   .storely-button[data-variant=primary]:hover:not(:disabled) { background: ${t.color.navyHover}; border-color: ${t.color.navyHover}; }
@@ -38,34 +38,34 @@ export const storelySystemCss = `
   .storely-button-icon > svg { width: 16px; height: 16px; }
   .storely-card, .storely-data-table { min-width: 0; overflow: hidden; background: ${t.color.surface}; border: 1px solid ${t.color.border}; border-radius: ${t.radius.card}; box-shadow: ${t.shadow.surface}; color: ${t.color.text}; }
   .storely-card, .storely-data-table, .storely-metric-strip, .storely-page-header, .storely-field, .storely-empty, .storely-pagination { font-family: ${t.typography.family}; font-size: ${t.typography.body}px; line-height: ${t.typography.lineHeight}; }
-  .storely-card-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: ${t.spacing[4]}px; padding: ${t.spacing[5]}px ${t.spacing[6]}px; border-bottom: 1px solid ${t.color.border}; }
+  .storely-card-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: ${t.spacing[3]}px; padding: 14px 18px; border-bottom: 1px solid ${t.color.border}; }
   .storely-card-heading { min-width: 0; flex: 1 1 180px; }
-  .storely-card-title { margin: 0; font-size: ${t.typography.section}px; font-weight: 600; line-height: 1.7; overflow-wrap: anywhere; }
-  .storely-card-description { margin-top: ${t.spacing[1]}px; font-size: ${t.typography.body}px; line-height: 1.7; color: ${t.color.textMuted}; overflow-wrap: anywhere; }
+  .storely-card-title { margin: 0; font-size: ${t.typography.section}px; font-weight: 700; line-height: 1.6; overflow-wrap: anywhere; }
+  .storely-card-description { margin-top: 2px; font-size: 12px; line-height: 1.7; color: ${t.color.textMuted}; overflow-wrap: anywhere; }
   .storely-actions { display: flex; flex-wrap: wrap; align-items: center; gap: ${t.spacing[2]}px; min-width: 0; }
-  .storely-page-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: ${t.spacing[5]}px; margin-bottom: ${t.spacing[6]}px; }
+  .storely-page-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
   .storely-page-heading { min-width: 0; flex: 1 1 300px; }
-  .storely-page-title { margin: 0; font-size: ${t.typography.title}px; line-height: 1.5; font-weight: 600; color: ${t.color.text}; overflow-wrap: anywhere; }
-  .storely-page-description { max-width: 760px; margin-top: ${t.spacing[2]}px; font-size: ${t.typography.body}px; line-height: 1.8; color: ${t.color.textMuted}; overflow-wrap: anywhere; }
+  .storely-page-title { margin: 0; font-size: ${t.typography.title}px; line-height: 1.5; font-weight: 700; color: ${t.color.text}; overflow-wrap: anywhere; }
+  .storely-page-description { max-width: 760px; margin-top: 3px; font-size: 13px; line-height: 1.8; color: ${t.color.textMuted}; overflow-wrap: anywhere; }
   .storely-eyebrow { margin-bottom: ${t.spacing[1]}px; font-size: ${t.typography.supporting}px; font-weight: 600; color: ${t.color.textMuted}; }
   .storely-metric-strip { min-width: 0; background: transparent; border: 0; box-shadow: none; }
   .storely-metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 1px; overflow: hidden; border: 1px solid ${t.color.border}; border-radius: ${t.radius.card}; background: ${t.color.border}; }
-  .storely-metric { min-width: 0; padding: ${t.spacing[4]}px ${t.spacing[5]}px; background: ${t.color.surface}; }
-  .storely-metric-label { font-size: 14px; line-height: 1.7; font-weight: 500; color: ${t.color.textMuted}; overflow-wrap: anywhere; }
-  .storely-metric-value { margin-top: ${t.spacing[2]}px; font-size: ${t.typography.title}px; line-height: 1.4; font-weight: 600; font-variant-numeric: tabular-nums; color: ${t.color.text}; overflow-wrap: anywhere; }
-  .storely-metric-helper { margin-top: ${t.spacing[2]}px; font-size: 13px; line-height: 1.7; color: ${t.color.textMuted}; overflow-wrap: anywhere; }
+  .storely-metric { min-width: 0; padding: 14px 16px; background: ${t.color.surface}; }
+  .storely-metric-label { font-size: 12px; line-height: 1.7; font-weight: 500; color: ${t.color.textMuted}; overflow-wrap: anywhere; }
+  .storely-metric-value { margin-top: 6px; font-size: ${t.typography.title}px; line-height: 1.4; font-weight: 600; font-variant-numeric: tabular-nums; color: ${t.color.text}; overflow-wrap: anywhere; }
+  .storely-metric-helper { margin-top: 2px; font-size: 11.5px; line-height: 1.7; color: ${t.color.textMuted}; overflow-wrap: anywhere; }
   .storely-metric-value[data-tone=success] { color: ${t.color.success}; }
   .storely-metric-value[data-tone=warning] { color: ${t.color.warning}; }
   .storely-metric-value[data-tone=danger] { color: ${t.color.danger}; }
   .storely-metric-value[data-tone=info] { color: ${t.color.info}; }
-  .storely-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: ${t.spacing[4]}px; padding: ${t.spacing[5]}px ${t.spacing[6]}px; border-bottom: 1px solid ${t.color.border}; }
+  .storely-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 12px 14px; border-bottom: 1px solid ${t.color.border}; }
   .storely-search { display: block; position: relative; flex: 1 1 240px; max-width: 480px; min-width: 0; }
   .storely-search-icon { pointer-events: none; position: absolute; inset-inline-start: ${t.spacing[3]}px; top: 50%; transform: translateY(-50%); color: ${t.color.textMuted}; }
   .storely-search .storely-input { padding-inline-start: 40px; }
   .storely-table-scroll { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
-  .storely-table { width: 100%; min-width: ${t.layout.tableMinWidth}px; border-collapse: collapse; text-align: start; font-size: ${t.typography.body}px; line-height: 1.8; }
-  .storely-table th { padding: ${t.spacing[3]}px ${t.spacing[4]}px; background: ${t.color.background}; border-bottom: 1px solid ${t.color.border}; color: ${t.color.textMuted}; font-size: 13px; font-weight: 600; text-align: start; white-space: nowrap; }
-  .storely-table td { padding: ${t.spacing[4]}px; border-bottom: 1px solid ${t.color.border}; vertical-align: middle; color: ${t.color.text}; font-size: ${t.typography.body}px; }
+  .storely-table { width: 100%; min-width: ${t.layout.tableMinWidth}px; border-collapse: collapse; text-align: start; font-size: 13px; line-height: 1.6; }
+  .storely-table th { padding: 10px 16px; background: ${t.color.background}; border-bottom: 1px solid ${t.color.border}; color: ${t.color.textMuted}; font-size: 12px; font-weight: 600; text-align: start; white-space: nowrap; }
+  .storely-table td { padding: 12px 16px; border-bottom: 1px solid ${t.color.border}; vertical-align: middle; color: ${t.color.text}; font-size: 13px; }
   .storely-table td[data-dense=true] { padding-block: ${t.spacing[3]}px; }
   .storely-table tbody tr:last-child td { border-bottom: 0; }
   .storely-table tbody tr:hover { background: ${t.color.background}; }
@@ -104,12 +104,12 @@ export const storelySystemCss = `
   .storely-field[data-error=true] .storely-field-control :is(input,select,textarea) { border-color: ${t.color.danger}; }
   .storely-input::placeholder, .storely-textarea::placeholder, .storely-field-control :is(input,textarea)::placeholder { color: ${t.color.textSubtle}; }
   .storely-input:disabled, .storely-select:disabled, .storely-textarea:disabled, .storely-field-control :is(input,select,textarea):disabled { background: ${t.color.background}; color: ${t.color.textMuted}; cursor: not-allowed; opacity: .65; }
-  .storely-badge { display: inline-flex; align-items: center; min-height: 28px; padding: ${t.spacing[1]}px ${t.spacing[2]}px; border: 1px solid; border-radius: ${t.radius.control}; font-size: 12px; font-weight: 600; line-height: 1.5; white-space: nowrap; }
+  .storely-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border: 1px solid; border-radius: ${t.radius.pill}; font-size: 11px; font-weight: 700; line-height: 1.5; white-space: nowrap; }
   .storely-badge[data-status=success] { color: ${t.color.success}; border-color: ${t.color.successBorder}; background: ${t.color.successBg}; }
   .storely-badge[data-status=warning] { color: ${t.color.warning}; border-color: ${t.color.warningBorder}; background: ${t.color.warningBg}; }
   .storely-badge[data-status=danger] { color: ${t.color.danger}; border-color: ${t.color.dangerBorder}; background: ${t.color.dangerBg}; }
   .storely-badge[data-status=info] { color: ${t.color.info}; border-color: ${t.color.infoBorder}; background: ${t.color.infoBg}; }
-  .storely-empty { display: flex; min-height: 176px; flex-direction: column; align-items: center; justify-content: center; gap: ${t.spacing[2]}px; padding: ${t.spacing[8]}px ${t.spacing[6]}px; text-align: center; background: ${t.color.surface}; border: 1px dashed ${t.color.border}; border-radius: ${t.radius.card}; }
+  .storely-empty { display: flex; min-height: 140px; flex-direction: column; align-items: center; justify-content: center; gap: ${t.spacing[2]}px; padding: ${t.spacing[8]}px ${t.spacing[6]}px; text-align: center; background: ${t.color.surface}; border: 1px dashed ${t.color.border}; border-radius: ${t.radius.card}; }
   .storely-empty-icon { display: inline-flex; align-items: center; justify-content: center; color: ${t.color.textMuted}; margin-bottom: ${t.spacing[2]}px; }
   .storely-empty-title { font-size: ${t.typography.body}px; line-height: 1.8; font-weight: 600; color: ${t.color.text}; }
   .storely-empty-description { max-width: 480px; font-size: 13px; line-height: 1.8; color: ${t.color.textMuted}; }

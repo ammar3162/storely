@@ -41,9 +41,12 @@ export const colors = {
 
 // زوايا متدرجة حسب كثافة العنصر -- مو زاوية واحدة موحّدة على كل شي
 export const radius = {
-  xs: storelyTokens.radius.control, sm: storelyTokens.radius.control,
-  md: storelyTokens.radius.card, lg: storelyTokens.radius.card,
-  xl: storelyTokens.radius.panel, full: storelyTokens.radius.pill,
+  xs:  '6px',   // صفوف الجداول، الوسوم الصغيرة، عناصر داخل الجدول
+  sm:  '8px',   // الأزرار والحقول
+  md:  '10px',
+  lg:  '12px',  // البطاقات
+  xl:  '14px',  // النوافذ المنبثقة
+  full:'999px',
 }
 
 export const shadow = {
@@ -57,25 +60,30 @@ export const numeric: React.CSSProperties = {
 }
 
 export const font = {
-  family: storelyTokens.typography.family,
-  xs: '12px', sm: '14px', base: '14px', md: '16px',
-  lg: '18px', xl: '26px', xxl: '28px',
+  family: "'IBM Plex Sans Arabic', system-ui, sans-serif",
+  xs:  '10px',
+  sm:  '12px',
+  base:'14px',
+  md:  '15px',
+  lg:  '18px',
+  xl:  '22px',
+  xxl: '26px',
 }
 
 // Common styles
 export const inp = (extra?: object): React.CSSProperties => ({
-  width:'100%', minWidth:0, minHeight:storelyTokens.control.medium, padding:'8px 12px',
+  width:'100%', padding:'11px 14px',
   border:`1px solid ${colors.border2}`,
   borderRadius:radius.sm, fontSize:font.base,
   outline:'none', boxSizing:'border-box',
-  background:colors.surface, color:colors.text, lineHeight:1.5,
+  background:colors.surface, color:colors.text,
   fontFamily:font.family, transition:'border .15s',
   ...extra,
 })
 
 export const card: React.CSSProperties = {
   background: colors.surface,
-  borderRadius: radius.lg,
+  borderRadius: '14px',
   border: `1px solid ${colors.border}`,
   boxShadow: storelyTokens.shadow.surface,
   overflow: 'hidden',
@@ -83,37 +91,37 @@ export const card: React.CSSProperties = {
 
 export const btnPrimary: React.CSSProperties = {
   display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-  minHeight:storelyTokens.control.medium, padding:'8px 16px',
+  padding:'10px 18px',
   background:colors.primary,
-  color:'white', border:`1px solid ${colors.primary}`, borderRadius:radius.sm,
-  fontSize:font.base, fontWeight:600, lineHeight:1.5, cursor:'pointer',
+  color:'white', border:'none', borderRadius:radius.sm,
+  fontSize:font.base, fontWeight:700, cursor:'pointer',
   fontFamily:font.family,
   transition:'background .15s',
 }
 
 export const btnSecondary: React.CSSProperties = {
   display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-  minHeight:storelyTokens.control.medium, padding:'8px 16px',
+  padding:'10px 18px',
   background:colors.surface, color:colors.text2,
   border:`1px solid ${colors.border2}`,
   borderRadius:radius.sm, fontSize:font.base,
-  fontWeight:600, lineHeight:1.5, cursor:'pointer', fontFamily:font.family,
+  fontWeight:600, cursor:'pointer', fontFamily:font.family,
   transition:'all .15s',
 }
 
 export const btnDanger: React.CSSProperties = {
   display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-  minHeight:storelyTokens.control.medium, padding:'8px 16px',
-  background:colors.surface, color:colors.danger,
+  padding:'10px 18px',
+  background:colors.dangerLight, color:colors.danger,
   border:`1px solid ${colors.dangerBorder}`,
   borderRadius:radius.sm, fontSize:font.base,
-  fontWeight:600, lineHeight:1.5, cursor:'pointer', fontFamily:font.family,
+  fontWeight:700, cursor:'pointer', fontFamily:font.family,
 }
 
 export const tag = (color:string, bg:string, border:string): React.CSSProperties => ({
   display:'inline-flex', alignItems:'center', gap:4,
-  minHeight:28, padding:`${storelyTokens.spacing[1]}px ${storelyTokens.spacing[2]}px`, borderRadius:radius.sm,
-  fontSize:font.xs, fontWeight:600, lineHeight:1.5,
+  padding:'3px 10px', borderRadius:radius.full,
+  fontSize:font.xs, fontWeight:700,
   color, background:bg, border:`1px solid ${border}`,
   whiteSpace:'nowrap',
 })
@@ -127,10 +135,11 @@ export const pageHeader: React.CSSProperties = {
 // العنوان صف مرن عشان أيقونة الصفحة (<PageIcon/>) تجي بجانبه
 export const pageTitle: React.CSSProperties = {
   display:'flex', alignItems:'center', gap:12,
-  fontSize:storelyTokens.typography.title, fontWeight:600, lineHeight:1.5,
-  color:colors.text, margin:0,
+  fontSize:font.xl, fontWeight:700,
+  color:colors.text, letterSpacing:'-0.2px',
+  marginBottom:3,
 }
 
 export const pageSub: React.CSSProperties = {
-  fontSize:storelyTokens.typography.body, color:colors.text3, lineHeight:1.8, marginTop:storelyTokens.spacing[2], maxWidth:760,
+  fontSize:'13px', color:colors.text3,
 }

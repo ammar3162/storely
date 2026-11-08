@@ -272,7 +272,7 @@ export default function DashboardPage() {
         <div className="h-36 animate-pulse rounded-[8px] border border-[#DEE6EA] bg-white" />
         <div className="h-36 animate-pulse rounded-[8px] border border-[#DEE6EA] bg-white" />
       </div>
-      <div className="grid gap-7 xl:grid-cols-[minmax(0,1.08fr)_minmax(380px,0.92fr)]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(380px,0.92fr)]">
         <div className="h-80 animate-pulse rounded-[8px] border border-[#DEE6EA] bg-white" />
         <div className="h-80 animate-pulse rounded-[8px] border border-[#DEE6EA] bg-white" />
       </div>
@@ -282,14 +282,14 @@ export default function DashboardPage() {
   return (
     <ErrorBoundary>
       <div className="min-h-full text-[#203640] [&_button]:rounded-[6px] [&_button]:font-semibold" dir={dir}>
-        <div className="mx-auto max-w-[1500px] space-y-6 pb-8">
+        <div className="mx-auto max-w-[1500px] space-y-4 pb-8">
         <div className="py-2">
         <StorelyPageHeader
           className="mb-0"
           eyebrow={orgName || undefined}
           title={greeting + '، ' + (userName || t('dashboard.defaultGreeting'))}
           description={branchName ? branchName + ' - ' + new Date().toLocaleDateString(lang==='ar'?'ar-SA':'en-US',{numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'}) : new Date().toLocaleDateString(lang==='ar'?'ar-SA':'en-US',{numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'})}
-          actions={(pur || inv) ? <div className="flex flex-wrap items-center gap-3">{pur && <StorelyButton variant="secondary" size="lg" className={secondaryButtonClass} icon={<ShoppingCart size={15}/>} onClick={()=>router.push('/purchases')}>تسجيل شراء</StorelyButton>}{inv && <StorelyButton variant="secondary" size="lg" className={secondaryButtonClass} icon={<Plus size={15}/>} onClick={()=>router.push('/inventory')}>إضافة منتج</StorelyButton>}{inv && <StorelyButton variant="primary" size="lg" icon={<ArrowUpRight size={15}/>} onClick={()=>router.push('/dispense')}>تسجيل صرف</StorelyButton>}</div> : undefined}
+          actions={(pur || inv) ? <div className="flex flex-wrap items-center gap-3">{pur && <StorelyButton variant="secondary" size="md" className={secondaryButtonClass} icon={<ShoppingCart size={15}/>} onClick={()=>router.push('/purchases')}>تسجيل شراء</StorelyButton>}{inv && <StorelyButton variant="secondary" size="md" className={secondaryButtonClass} icon={<Plus size={15}/>} onClick={()=>router.push('/inventory')}>إضافة منتج</StorelyButton>}{inv && <StorelyButton variant="primary" size="md" icon={<ArrowUpRight size={15}/>} onClick={()=>router.push('/dispense')}>تسجيل صرف</StorelyButton>}</div> : undefined}
         />
         </div>
 
@@ -307,9 +307,9 @@ export default function DashboardPage() {
           <StorelyCard title="هذا الشهر" description="مقارنة بالشهر الماضي" className={cardClass}>
             <div className="grid divide-y divide-[#E6ECEF] sm:grid-cols-2 sm:divide-x sm:divide-y-0 sm:divide-x-reverse xl:grid-cols-4">
               {performanceRows.map((m,i)=>(
-                <div key={i} className="min-w-0 px-6 py-6 md:px-7">
+                <div key={i} className="min-w-0 px-[18px] py-4">
                   <div className="text-[13px] font-semibold leading-5 text-[#66737C]">{m.metric}</div>
-                  <div className="mt-2 break-words text-[27px] font-semibold leading-9 tabular-nums text-[#203640]">{m.current}</div>
+                  <div className="mt-2 break-words text-[22px] font-bold leading-8 tabular-nums text-[#203640]">{m.current}</div>
                   {m.change!==null && m.change!==undefined ? (
                     <div className={((m.change>=0)!==!!m.inverse ? 'text-[#047857]' : 'text-[#B45309]') + ' mt-2 inline-flex items-center gap-1 text-[13px] font-semibold'} dir="ltr">
                       {(m.change>=0)!==!!m.inverse ? <TrendingUp size={14}/> : <TrendingDown size={14}/>}
@@ -322,20 +322,20 @@ export default function DashboardPage() {
           </StorelyCard>
         ) : null}
 
-        <div className="grid items-start gap-7 xl:grid-cols-[minmax(0,1.08fr)_minmax(380px,0.92fr)]">
-          <div className="min-w-0 space-y-6">
+        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(380px,0.92fr)]">
+          <div className="min-w-0 space-y-4">
             {attention ? (
               <StorelyCard title="تحتاج انتباهك" className={`${cardClass} border-[#D7E3E8]`} actions={<StorelyStatusBadge status="warning" className="h-7 px-2.5 text-[13px]">{notifs.length + suggestions.length + (subAlert ? 1 : 0)}</StorelyStatusBadge>}>
                 <div className="divide-y divide-[#E6ECEF]">
-                  {subAlert ? <div className="flex flex-col gap-4 px-6 py-6 text-[15px] sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0 font-semibold leading-7 text-[#203640]">{subAlert}</div><StorelyButton size="md" variant="secondary" className={`${secondaryButtonClass} hide-in-app`} onClick={()=>router.push('/settings')}>التفاصيل</StorelyButton></div> : null}
+                  {subAlert ? <div className="flex flex-col gap-4 px-[18px] py-3.5 text-[13.5px] sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0 font-semibold leading-7 text-[#203640]">{subAlert}</div><StorelyButton size="md" variant="secondary" className={`${secondaryButtonClass} hide-in-app`} onClick={()=>router.push('/settings')}>التفاصيل</StorelyButton></div> : null}
                   {suggestions.slice(0,4).map((s:any,i:number)=>(
-                    <div key={'s'+i} className="flex flex-col gap-4 px-6 py-6 text-[15px] sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0"><div className="flex flex-wrap items-center gap-2 font-semibold leading-7 text-[#203640]"><StorelyStatusBadge status={s.urgency==='now'?'danger':'warning'}>{s.urgency==='now'?'اطلب الآن':'خلال ' + Math.max(s.suggestedOrderInDays,0) + ' ' + t('dashboard.days')}</StorelyStatusBadge><span>{s.name}</span></div><div className="mt-1 text-[13px] leading-6 text-[#66737C]">استهلاك {s.dailyRate} {s.unit} يومياً · التوريد يأخذ {s.avgLeadTimeDays} {t('dashboard.days')} عادة</div></div>
+                    <div key={'s'+i} className="flex flex-col gap-4 px-[18px] py-3.5 text-[13.5px] sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0"><div className="flex flex-wrap items-center gap-2 font-semibold leading-7 text-[#203640]"><StorelyStatusBadge status={s.urgency==='now'?'danger':'warning'}>{s.urgency==='now'?'اطلب الآن':'خلال ' + Math.max(s.suggestedOrderInDays,0) + ' ' + t('dashboard.days')}</StorelyStatusBadge><span>{s.name}</span></div><div className="mt-1 text-[12px] leading-5 text-[#66737C]">استهلاك {s.dailyRate} {s.unit} يومياً · التوريد يأخذ {s.avgLeadTimeDays} {t('dashboard.days')} عادة</div></div>
                       <StorelyButton size="md" variant="secondary" className={secondaryButtonClass} onClick={()=>router.push('/suppliers')}>الموردين</StorelyButton>
                     </div>
                   ))}
                   {notifs.map((n:any)=>(
-                    <div key={n.id} className="flex items-start justify-between gap-5 px-6 py-6 text-[15px]"><div className="min-w-0"><div className="font-semibold leading-7 text-[#203640]">{n.title}</div><div className="mt-1.5 text-[13px] leading-6 text-[#66737C]">{n.message}</div></div><StorelyTableActionGroup><StorelyTableAction action="delete" onClick={()=>dismiss(n.id)} aria-label="إخفاء" /></StorelyTableActionGroup></div>
+                    <div key={n.id} className="flex items-start justify-between gap-5 px-[18px] py-3.5 text-[13.5px]"><div className="min-w-0"><div className="font-semibold leading-7 text-[#203640]">{n.title}</div><div className="mt-1.5 text-[12px] leading-5 text-[#66737C]">{n.message}</div></div><StorelyTableActionGroup><StorelyTableAction action="delete" onClick={()=>dismiss(n.id)} aria-label="إخفاء" /></StorelyTableActionGroup></div>
                   ))}
                 </div>
               </StorelyCard>
@@ -349,7 +349,7 @@ export default function DashboardPage() {
               <StorelyDataTable columns={activityColumns} data={activity} rowKey={(row:any,index:number)=>row.id || row.created_at || String(index)} searchable={false} pageSize={8} dense={false} className={tableClass} emptyState={<StorelyEmptyState icon={<Send size={16}/>} title="لا توجد حركات بعد" />} />
             </StorelyCard>}
 
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-4 lg:grid-cols-2">
               {[
                 pur && {title:'المشتريات آخر 7 أيام', data:weeklyP, unit:'فاتورة'},
                 inv && {title:'الصرف آخر 7 أيام', data:weeklyD, unit:'عملية'},
@@ -366,13 +366,13 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="min-w-0 space-y-6">
+          <div className="min-w-0 space-y-4">
             <StorelyCard title="أداء الفرع" description="ملخص تشغيلي مقارنة بالشهر السابق" className={compactCardClass}>
               {performanceRows.length>0 ? <StorelyDataTable columns={performanceColumns} data={performanceRows} rowKey="metric" searchable={false} pageSize={8} dense={false} className={tableClass} /> : <StorelyEmptyState icon={<AlertTriangle size={16}/>} title="لا توجد مقارنة بعد" description="تظهر المقارنة عند توفر بيانات شهرية كافية" />}
             </StorelyCard>
 
             <StorelyCard title="آخر الإشعارات" description="آخر الإشعارات الواردة إلى المنشأة" className={compactCardClass}>
-              {notifs.length>0 ? <div className="divide-y divide-[#E6ECEF]">{notifs.slice(0,5).map((n:any)=><div key={n.id} className="flex items-start gap-3 px-6 py-5 text-[15px]"><span className="mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-[6px] bg-[#F4F7F8] text-[#66737C]"><Bell size={15} /></span><div className="min-w-0 flex-1"><div className="break-words font-semibold leading-7 text-[#203640]">{n.title}</div><div className="mt-1.5 text-[13px] leading-6 text-[#66737C]">{n.message}</div></div></div>)}</div> : <StorelyEmptyState icon={<Bell size={16}/>} title="لا توجد إشعارات" description="ستظهر الإشعارات التشغيلية هنا عند توفرها" />}
+              {notifs.length>0 ? <div className="divide-y divide-[#E6ECEF]">{notifs.slice(0,5).map((n:any)=><div key={n.id} className="flex items-start gap-3 px-[18px] py-3.5 text-[13.5px]"><span className="mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-[6px] bg-[#F4F7F8] text-[#66737C]"><Bell size={15} /></span><div className="min-w-0 flex-1"><div className="break-words font-semibold leading-7 text-[#203640]">{n.title}</div><div className="mt-1.5 text-[12px] leading-5 text-[#66737C]">{n.message}</div></div></div>)}</div> : <StorelyEmptyState icon={<Bell size={16}/>} title="لا توجد إشعارات" description="ستظهر الإشعارات التشغيلية هنا عند توفرها" />}
             </StorelyCard>
           </div>
         </div>

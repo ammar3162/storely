@@ -26,8 +26,8 @@ export const storelyTokens = {
     backdrop: 'rgba(32, 54, 64, .4)',
   },
   radius: {
-    control: '6px',
-    card: '12px',
+    control: '8px',
+    card: '14px',
     panel: '14px',
     pill: '999px',
   },
@@ -41,8 +41,8 @@ export const storelyTokens = {
   layout: { tableMinWidth: 720 },
   typography: {
     family: "'IBM Plex Sans Arabic', system-ui, sans-serif",
-    title: 26,
-    section: 18,
+    title: 22,
+    section: 15,
     body: 14,
     supporting: 12,
     lineHeight: 1.7,

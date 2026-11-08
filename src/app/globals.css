@@ -7,7 +7,7 @@
   --bg: var(--storely-background); --surface: var(--storely-surface);
   --border: var(--storely-border); --text: var(--storely-text);
   --text-2: var(--storely-muted); --text-3: var(--storely-muted);
-  --radius: 12px; --radius-sm: 6px;
+  --radius: 16px; --radius-sm: 10px;
   --shadow: var(--storely-shadow); --shadow-md: var(--storely-shadow); --shadow-lg: var(--storely-panel-shadow);
 }
 
@@ -93,7 +93,7 @@ html.kb-open [style*="position:fixed"][style*="inset:0"] > div:last-child { max-
 a { text-decoration: none; color: inherit; }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar { width: 3px; height: 3px; }
 ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
 
 /* Animations */
