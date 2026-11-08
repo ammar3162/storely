@@ -8,7 +8,7 @@ import { getMe } from '@/lib/session'
 import { cache } from '@/lib/cache'
 import { useRouter } from 'next/navigation'
 import { currencySymbol } from '@/lib/currencySymbol'
-import { ArrowUpRight, Package, Plus, Send, ShoppingCart, TrendingDown, TrendingUp } from 'lucide-react'
+import { ArrowUpRight, ChevronDown, Package, Plus, Send, ShoppingCart, TrendingDown, TrendingUp } from 'lucide-react'
 import { StorelyButton, StorelyCard, StorelyDataTable, StorelyEmptyState, StorelyMetricStrip, StorelyPageHeader, StorelyStatusBadge, StorelyTableAction, StorelyTableActionGroup, type StorelyDataTableColumn, type StorelyMetric } from '@/components/ui'
 import { VatThresholdBanner } from '@/components/VatRegistration'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
@@ -27,7 +27,7 @@ class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|nu
 function WeeklyBars({ data }: { data:{label:string;value:number}[] }) {
   const max = Math.max(...data.map(d=>d.value), 1)
   return (
-    <div className="flex h-36 items-end gap-4 px-6 py-6">
+    <div className="flex h-36 items-end gap-3 px-4 pb-4 pt-3 sm:gap-4 sm:px-6">
       {data.map((d,i)=>{
         const last = i===data.length-1
         return (
@@ -44,6 +44,24 @@ function WeeklyBars({ data }: { data:{label:string;value:number}[] }) {
         )
       })}
     </div>
+  )
+}
+
+// بطاقة تنطوي: مطوية على الجوال ومفتوحة على الشاشات الكبيرة
+function FoldCard({ title, summary, children }: { title: string; summary?: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false)
+  useEffect(() => { if (window.innerWidth >= 1024) setOpen(true) }, [])
+  return (
+    <section className="storely-card">
+      <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} className="flex w-full items-center gap-3 px-4 py-3.5 text-right sm:px-[18px]">
+        <span className="min-w-0 flex-1">
+          <span className="block text-[15px] font-bold text-[#203640]">{title}</span>
+          {summary ? <span className="mt-0.5 block text-[12px] font-medium text-[#66737C]">{summary}</span> : null}
+        </span>
+        <ChevronDown size={18} className={'shrink-0 text-[#66737C] transition-transform ' + (open ? 'rotate-180' : '')} />
+      </button>
+      {open ? <div className="border-t border-[var(--storely-border)]">{children}</div> : null}
+    </section>
   )
 }
 
@@ -71,6 +89,7 @@ export default function DashboardPage() {
   // «ابنِ باقتك»: نخفي أقسام المخزون/المشتريات لو ما هي باشتراكه (الافتراضي ظاهر)
   const [feat, setFeat]         = useState<{ inventory?: boolean; purchases?: boolean; ai?: boolean }>({})
   const [featKnown, setFeatKnown] = useState(false)
+  const [decCount, setDecCount] = useState(0)
   const inv = feat.inventory !== false, pur = feat.purchases !== false
   const [curr, setCurr]         = useState('⃁')
   const [subExpired, setSubExpired] = useState(false)
@@ -193,7 +212,9 @@ export default function DashboardPage() {
     setNotifs(prev=>prev.filter(x=>x.id!==id))
   }
   // اقتراحات الطلب من المخزون — بس لو المخزون باشتراكه
-  const suggestions = inv ? smartSuggestions : []
+  // لما تظهر «قرارات اليوم» (فيها الطلب الذكي) ما نكرر اقتراحات الطلب في «تحتاج انتباهك»
+  const showDecisions = featKnown && inv
+  const suggestions = inv && !showDecisions ? smartSuggestions : []
   const attention = notifs.length>0 || suggestions.length>0 || !!subAlert
 
   const branchName = typeof window !== 'undefined' ? sessionStorage.getItem('s_branch_name') || '' : ''
@@ -231,9 +252,9 @@ export default function DashboardPage() {
     },
     {
       label: 'إجراءات مطلوبة',
-      value: (notifs.length + suggestions.length + (subAlert ? 1 : 0)).toLocaleString('en-US'),
-      helper: attention ? 'تحتاج إلى مراجعة' : 'لا توجد إجراءات معلّقة',
-      tone: attention ? 'warning' : 'success',
+      value: (notifs.length + suggestions.length + (subAlert ? 1 : 0) + (showDecisions ? decCount : 0)).toLocaleString('en-US'),
+      helper: attention || (showDecisions && decCount) ? 'تحتاج إلى مراجعة' : 'لا توجد إجراءات معلّقة',
+      tone: attention || (showDecisions && decCount) ? 'warning' : 'success',
     },
   ] as (StorelyMetric | false)[]).filter((m): m is StorelyMetric => !!m)
 
@@ -296,7 +317,7 @@ export default function DashboardPage() {
         <StorelyMetricStrip metrics={metrics} className="[&_.storely-metric-grid]:grid-cols-2 lg:[&_.storely-metric-grid]:grid-cols-3 xl:[&_.storely-metric-grid]:grid-cols-6" />
 
         {/* قرارات اليوم (من المخزون) — كاملة مع الذكاء، ومختصرة بدونه */}
-        {featKnown && inv && <TodayDecisions full={feat.ai === true} curr={curr} />}
+        {showDecisions && <TodayDecisions full={feat.ai === true} curr={curr} onCount={setDecCount} />}
 
         {monthComp?.success ? (
           <StorelyCard title="هذا الشهر" description="مقارنة بالشهر الماضي" className={cardClass}>
@@ -340,28 +361,31 @@ export default function DashboardPage() {
               <StorelyDataTable columns={lowStockColumns} data={lowItems} rowKey={(row:any,index:number)=>row.id || row.name || String(index)} searchable={false} pageSize={8} dense={false} className={tableClass} onRowClick={()=>router.push('/inventory')} emptyState={<StorelyEmptyState icon={<Package size={16}/>} title="كل الأصناف فوق الحد الأدنى" />} />
             </StorelyCard>}
 
-            {inv && <StorelyCard title="آخر الحركات" className={compactCardClass} actions={activity.length>0 ? <StorelyButton size="md" variant="secondary" className={secondaryButtonClass} onClick={()=>router.push('/reports')}>التقارير</StorelyButton> : undefined}>
+            {inv && <FoldCard title="آخر الحركات" summary={activity.length ? 'آخر حركة ' + new Date(activity[0].created_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn',{day:'numeric',month:'short'}) : 'لا توجد حركات بعد'}>
               <StorelyDataTable columns={activityColumns} data={activity} rowKey={(row:any,index:number)=>row.id || row.created_at || String(index)} searchable={false} pageSize={8} dense={false} className={tableClass} emptyState={<StorelyEmptyState icon={<Send size={16}/>} title="لا توجد حركات بعد" />} />
-            </StorelyCard>}
+              {activity.length>0 ? <div className="border-t border-[var(--storely-border)] p-3"><StorelyButton size="md" variant="secondary" className="w-full" onClick={()=>router.push('/reports')}>كل الحركات في التقارير</StorelyButton></div> : null}
+            </FoldCard>}
 
           </div>
 
           <div className="min-w-0 space-y-4">
-            <div className="grid gap-4">
-              {[
-                pur && {title:'المشتريات آخر 7 أيام', data:weeklyP, unit:'فاتورة'},
-                inv && {title:'الصرف آخر 7 أيام', data:weeklyD, unit:'عملية'},
-              ].filter((c): c is {title:string;data:{label:string;value:number}[];unit:string} => !!c).map((c,i)=>(
-                <StorelyCard
-                  key={i}
-                  title={c.title}
-                  className={compactCardClass}
-                  actions={<StorelyStatusBadge status="info">{c.data.reduce((s,d)=>s+d.value,0)} {c.unit}</StorelyStatusBadge>}
-                >
-                  <WeeklyBars data={c.data} />
-                </StorelyCard>
-              ))}
-            </div>
+            {(() => {
+              const charts = [
+                pur && {title:'المشتريات', data:weeklyP, unit:'فاتورة'},
+                inv && {title:'الصرف', data:weeklyD, unit:'عملية صرف'},
+              ].filter((c): c is {title:string;data:{label:string;value:number}[];unit:string} => !!c)
+              if (!charts.length) return null
+              return (
+                <FoldCard title="آخر 7 أيام" summary={charts.map(c => c.data.reduce((s,d)=>s+d.value,0) + ' ' + c.unit).join(' · ')}>
+                  {charts.map((c,i)=>(
+                    <div key={i} className={i ? 'border-t border-[var(--storely-border)]' : ''}>
+                      <div className="flex items-center justify-between px-4 pt-3.5 text-[13px] sm:px-[18px]"><span className="font-semibold text-[#203640]">{c.title}</span><span className="tabular-nums text-[#66737C]">{c.data.reduce((s,d)=>s+d.value,0)} {c.unit}</span></div>
+                      <WeeklyBars data={c.data} />
+                    </div>
+                  ))}
+                </FoldCard>
+              )
+            })()}
           </div>
         </div>
         </div>
