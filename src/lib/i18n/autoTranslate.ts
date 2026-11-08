@@ -88,6 +88,22 @@ export function translateText(raw: string, depth = 0): string | null {
     const m = t.match(/^(.*?)([.:،؟?!…]+)$/)
     if (m && m[1]) { const o = core(m[1], depth); if (o != null) out = o + m[2].replace('؟', '?').replace('،', ',') }
   }
+  // جمل مركّبة بفواصل (« · » / « — » / « - » / « | » / «، »): نترجم كل جزء لحاله
+  if (out == null && depth < 2) {
+    const parts = t.split(/( · | — | - | \| |، |: )/)
+    if (parts.length > 1) {
+      let any = false
+      const mapped = parts.map((x, i) => {
+        if (i % 2) return x === '، ' ? ', ' : x
+        if (!AR.test(x)) return x
+        const r = translateText(x, depth + 1)
+        if (r != null) { any = true; return r }
+        return x
+      })
+      if (any) out = mapped.join('')
+    }
+  }
+  if (out != null) out = out.replace(/،/g, ',').replace(/؟/g, '?').replace(/؛/g, ';')
   cache.set(t, out)
   return out == null ? null : lead + out + trail
 }
@@ -102,6 +118,7 @@ function skip(el: Element | null) { return !el || !!el.closest(SKIP) }
 function doText(n: Text) {
   const v = n.nodeValue
   if (!v || !AR.test(v) || skip(n.parentElement)) return
+  if (!/[\u0621-\u064A]/.test(v)) { const p = v.replace(/،/g, ',').replace(/؟/g, '?').replace(/؛/g, ';'); if (p !== v) n.nodeValue = p; return }
   const tr = translateText(v)
   if (tr != null && tr !== v) n.nodeValue = tr
 }
