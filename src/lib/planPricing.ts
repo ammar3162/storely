@@ -19,7 +19,7 @@ export const isNewPlan = (plan: string | null | undefined): plan is NewPlanKey |
  * mod_inventory / mod_purchases مفتوحة لكل الباقات الثانية — تنباع لـ custom بس.
  */
 export const CUSTOM_MODULES: Record<string, { first: number; extra: number; perBranch: boolean }> = {
-  mod_inventory:   { first: 75, extra: 35, perBranch: true },   // المخزون + المشتريات = سعر «الأساسية» (129)
+  mod_inventory:   { first: 69, extra: 35, perBranch: true },   // قرار المالك 2026-11-08: 69 (المخزون + المشتريات = 123، أقل من «الأساسية» 129)
   mod_purchases:   { first: 54, extra: 20, perBranch: true },
   cashier_closing: { first: 40, extra: 25, perBranch: true },
   hr_full:         { first: 89, extra: 35, perBranch: true },   // أغلى من إضافتها للباقات (69) عشان «الكاملة» تبقى الأوفر
