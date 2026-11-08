@@ -32,7 +32,7 @@ export default function HrStaffCard({ m, s }: { m: HrPage; s: any }) {
                         </span>
                       )}
                     </div>
-                    <div style={{fontSize:11,color:colors.text4,marginTop:2}}>إجمالي الراتب: {savedTotal.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</div>
+                    <div style={{fontSize:11,color:colors.text4,marginTop:2}}>إجمالي الراتب: {savedTotal.toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn'})} {curr}</div>
                   </div>
                   <ChevronDown size={16} color={colors.text3} strokeWidth={2.25} style={{transition:'transform .2s',transform:isOpen?'rotate(180deg)':'none'}}/>
                 </div>
@@ -41,7 +41,7 @@ export default function HrStaffCard({ m, s }: { m: HrPage; s: any }) {
                   // راتب الشهر الحالي — نفس أرقام كشف راتب الموظف
                   const p = cardPayroll[s.id]
                   if (!p) return null
-                  const fmtN = (n:number) => Number(n||0).toLocaleString('ar-SA',{numberingSystem:'latn'})
+                  const fmtN = (n:number) => Number(n||0).toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn'})
                   const line = (label:string, value:string, color:string) => (
                     <div style={{display:'flex',justifyContent:'space-between',fontSize:11}}>
                       <span style={{color:colors.text3}}>{label}</span>

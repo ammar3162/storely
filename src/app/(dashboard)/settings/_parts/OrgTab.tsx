@@ -86,7 +86,7 @@ export default function OrgTab({ m }: { m: SettingsState }) {
                     {subEndsAt && (
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:10,borderTop:`1px solid ${colors.border}`}}>
                         <span style={{fontSize:font.sm,color:colors.text3}}>ينتهي في</span>
-                        <span style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{new Date(subEndsAt).toLocaleDateString('ar-SA', {numberingSystem:'latn',year:'numeric',month:'long',day:'numeric'})}</span>
+                        <span style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{new Date(subEndsAt).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',year:'numeric',month:'long',day:'numeric'})}</span>
                       </div>
                     )}
                   </div>

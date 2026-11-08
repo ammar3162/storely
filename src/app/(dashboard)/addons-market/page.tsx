@@ -70,13 +70,13 @@ export default function AddonsMarketPage() {
     // الوحدات الزايدة على اشتراك ساري بسعره المثبّت، والجديدة بالسعر الحالي
     const live = addon.subscription?.isValid ? addon.subscription : null
     const pr = proratedCharge(unitPrice(addon.monthly_price, live), qty, end)
-    return { ...pr, endStr: end.toLocaleDateString('ar-SA', { numberingSystem: 'latn', month: 'long', day: 'numeric' }) }
+    return { ...pr, endStr: end.toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', month: 'long', day: 'numeric' }) }
   }
 
   function DueNote({ addon, qty, monthlyDelta }: { addon: any; qty: number; monthlyDelta?: number }) {
     // «ابنِ باقتك»: الفرق الشهري (الفرع الأول + الإضافي) بالتناسب
     const d = monthlyDelta != null
-      ? (() => { const end = addonPeriodEnd(subEndsAt); return { ...proratedCharge(monthlyDelta, 1, end), endStr: end.toLocaleDateString('ar-SA', { numberingSystem: 'latn', month: 'long', day: 'numeric' }) } })()
+      ? (() => { const end = addonPeriodEnd(subEndsAt); return { ...proratedCharge(monthlyDelta, 1, end), endStr: end.toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', month: 'long', day: 'numeric' }) } })()
       : dueNow(addon, qty)
     return (
       <div style={{ fontSize: 11, color: colors.text3, lineHeight: 1.7, marginBottom: 12 }}>
@@ -228,7 +228,7 @@ export default function AddonsMarketPage() {
                         return (
                           <div key={s.branch_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}` }}>
                             <div style={{ flex: 1, fontSize: 11, color: colors.text }}>
-                              {branchName} — مفعّلة لـ{s.quantity} حتى {new Date(s.expires_at).toLocaleDateString('ar-SA', { numberingSystem: 'latn' })}
+                              {branchName} — مفعّلة لـ{s.quantity} حتى {new Date(s.expires_at).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn' })}
                             </div>
                             <button onClick={() => cancelAddon(a, s.branch_id)} disabled={cancelling === a.id + s.branch_id}
                               style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -281,7 +281,7 @@ export default function AddonsMarketPage() {
                   </div>
                   {active && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 10 }}>
-                      <Check size={15} /> مفعّلة لـ {subBranches.length} {subBranches.length === 1 ? 'فرع' : 'فروع'} حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA', { numberingSystem: 'latn' })}
+                      <Check size={15} /> مفعّلة لـ {subBranches.length} {subBranches.length === 1 ? 'فرع' : 'فروع'} حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn' })}
                     </div>
                   )}
                   {branches.length > 1 && (
@@ -350,7 +350,7 @@ export default function AddonsMarketPage() {
                 {active ? (
                   <div style={{ textAlign: 'center' as const }}>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 4 }}><Check size={15} /> مفعّلة{(a.slug==='extra_suppliers'||a.slug==='extra_branch') ? ` (${a.subscription?.quantity||1})` : ''}</div>
-                    <div style={{ fontSize: 10, color: colors.text4 }}>حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA', { numberingSystem: 'latn' })}</div>
+                    <div style={{ fontSize: 10, color: colors.text4 }}>حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn' })}</div>
                     {a.slug === 'extra_branch' && (
                       <a href="/branches" style={{ display: 'block', marginTop: 8, fontSize: 12, fontWeight: 700, color: colors.primary, textDecoration: 'none' }}>تحتاج فرع زيادة؟ اطلبه من صفحة الفروع</a>
                     )}

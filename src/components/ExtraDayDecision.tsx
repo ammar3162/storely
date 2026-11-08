@@ -10,7 +10,7 @@ export type ExtraDay = {
   status: 'pending' | 'paid' | 'comp' | 'rejected'; amount?: number | null; comp_date?: string | null
 }
 
-const dayLabel = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long', calendar: 'gregory', numberingSystem: 'latn', timeZone: 'UTC' })
+const dayLabel = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('ar-SA-u-ca-gregory', { weekday: 'long', day: 'numeric', month: 'long', calendar: 'gregory', numberingSystem: 'latn', timeZone: 'UTC' })
 const plusDays = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 86400e3).toISOString().slice(0, 10)
 
 // قرار المالك على يوم إضافي: تعويض مالي (مبلغ يحدده) أو يوم إجازة بديل أو رفض

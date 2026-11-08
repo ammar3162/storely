@@ -18,8 +18,8 @@ async function pdfOrgInfo() {
 
 // ═══ تقرير الموظف الشهري — نفس أرقام كشف راتب الموظف ═══
 const smMonthNow = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 7)
-const smMonthLabel = (m: string) => new Date(`${m}-15T12:00:00Z`).toLocaleDateString('ar-SA', { month: 'long', year: 'numeric', calendar: 'gregory', numberingSystem: 'latn', timeZone: 'UTC' })
-const smDay = (d: string | null) => d ? new Date(`${d}T12:00:00Z`).toLocaleDateString('ar-SA', { weekday: 'short', day: 'numeric', month: 'short', calendar: 'gregory', numberingSystem: 'latn', timeZone: 'UTC' }) : '—'
+const smMonthLabel = (m: string) => new Date(`${m}-15T12:00:00Z`).toLocaleDateString('ar-SA-u-ca-gregory', { month: 'long', year: 'numeric', calendar: 'gregory', numberingSystem: 'latn', timeZone: 'UTC' })
+const smDay = (d: string | null) => d ? new Date(`${d}T12:00:00Z`).toLocaleDateString('ar-SA-u-ca-gregory', { weekday: 'short', day: 'numeric', month: 'short', calendar: 'gregory', numberingSystem: 'latn', timeZone: 'UTC' }) : '—'
 const smNum = (n: number) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })
 const smDur = (min: number) => { const h = Math.floor(min / 60), m = min % 60; return h && m ? `${h}س ${m}د` : h ? `${h} ساعة` : `${m} دقيقة` }
 

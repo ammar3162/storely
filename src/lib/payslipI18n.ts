@@ -2,7 +2,7 @@
 export type PayslipLang = 'ar' | 'en' | 'ur' | 'hi' | 'tl' | 'bn' | 'fr'
 
 export const PAYSLIP_LANGS: { code: PayslipLang; label: string; locale: string; rtl: boolean }[] = [
-  { code: 'ar', label: 'العربية', locale: 'ar-SA', rtl: true },
+  { code: 'ar', label: 'العربية', locale: 'ar-SA-u-ca-gregory', rtl: true },
   { code: 'en', label: 'English', locale: 'en-GB', rtl: false },
   { code: 'ur', label: 'اردو', locale: 'ur-PK', rtl: true },
   { code: 'hi', label: 'हिन्दी', locale: 'hi-IN', rtl: false },

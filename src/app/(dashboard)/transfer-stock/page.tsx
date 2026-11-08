@@ -192,7 +192,7 @@ export default function TransferStockPage() {
           { header: 'الكمية', key: 'qty', align: 'left' },
         ],
         rows: filteredHistory.map((h:any) => ({
-          date: new Date(h.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'}),
+          date: new Date(h.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn'}),
           product: (h.products as any)?.name || '—',
           from: branchName(h.branch_id),
           to: destBranchFromNote(h.note),
@@ -421,7 +421,7 @@ export default function TransferStockPage() {
             <div className="ts-supporting">عدد عمليات النقل</div>
           </div>
           <div className="ts-summary-item">
-            <div className="ts-summary-value">{totalQty.toLocaleString('ar-SA', {numberingSystem:'latn'})}</div>
+            <div className="ts-summary-value">{totalQty.toLocaleString('ar-SA-u-ca-gregory', {numberingSystem:'latn'})}</div>
             <div className="ts-supporting">إجمالي الكمية المنقولة</div>
           </div>
         </div>
@@ -440,7 +440,7 @@ export default function TransferStockPage() {
                 </div>
                 <div className="ts-inline">
                   <span className="ts-history-quantity">-{Math.abs(h.qty_change)} {(h.products as any)?.unit}</span>
-                  <span className="ts-supporting">{new Date(h.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'})}</span>
+                  <span className="ts-supporting">{new Date(h.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn'})}</span>
                 </div>
               </div>
             ))}

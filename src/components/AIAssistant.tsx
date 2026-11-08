@@ -213,7 +213,7 @@ export default function AIAssistant() {
   const inputRef   = useRef<HTMLInputElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout>|null>(null)
 
-  const now = () => new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'})
+  const now = () => new Date().toLocaleTimeString('ar-SA-u-ca-gregory',{hour:'2-digit',minute:'2-digit'})
 
   function resetTimer() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current)

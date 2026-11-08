@@ -15,7 +15,7 @@ export default function BackupTab({ m }: { m: SettingsState }) {
                   <FeatureIcon name="💾" size={18} />
                   <div>
                     <div style={{fontSize:font.xs,color:colors.primary,fontWeight:700}}>آخر نسخة احتياطية</div>
-                    <div style={{fontSize:font.xs,color:colors.primary,opacity:.8,marginTop:1}}>{new Date(lastBackup).toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
+                    <div style={{fontSize:font.xs,color:colors.primary,opacity:.8,marginTop:1}}>{new Date(lastBackup).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
                   </div>
                 </div>
               )}

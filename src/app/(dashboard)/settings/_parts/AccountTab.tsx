@@ -52,7 +52,7 @@ export default function AccountTab({ m }: { m: SettingsState }) {
                   </div>
                 )}
                 {subEndsAt&&(
-                  <div style={{fontSize:font.xs,color:colors.text3}}>ينتهي الاشتراك بتاريخ: <b style={{color:colors.text}}>{new Date(subEndsAt).toLocaleDateString('ar-SA', {numberingSystem:'latn',year:'numeric',month:'long',day:'numeric'})}</b></div>
+                  <div style={{fontSize:font.xs,color:colors.text3}}>ينتهي الاشتراك بتاريخ: <b style={{color:colors.text}}>{new Date(subEndsAt).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',year:'numeric',month:'long',day:'numeric'})}</b></div>
                 )}
               </div>
             </div>

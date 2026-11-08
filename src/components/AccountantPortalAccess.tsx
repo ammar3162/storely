@@ -1,4 +1,5 @@
 'use client'
+import DateField from '@/components/DateField'
 import { useEffect, useState } from 'react'
 import { UserPlus, Trash2, ShieldCheck, Clock, Send } from 'lucide-react'
 import { api } from '@/lib/api-client'
@@ -65,7 +66,7 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
     const j = await api.patch('/api/accountant-access', { org_id: orgId, id: a.id, expires_on: value || null })
     if (!j.success) { toast(j.error || 'تعذر الحفظ', 'error'); return }
     setList(prev => prev.map(x => x.id === a.id ? { ...x, expires_on: value || null } : x))
-    toast(value ? `✅ الإذن حتى ${value}` : '✅ الإذن بدون نهاية')
+    toast(value ? `الإذن حتى ${value}` : 'الإذن بدون نهاية')
   }
   async function revoke(a: any) {
     if (!(await confirmDialog({ title: 'سحب إذن المحاسب؟', message: `${a.name || a.email} لن يتمكن بعد ذلك من الاطلاع على بيانات منشأتك.`, confirmText: 'سحب الإذن', type: 'danger' }))) return
@@ -104,9 +105,8 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Clock size={12} /> {a.status !== 'active' ? `أُرسلت الدعوة ${ago(a.invited_at)}` : a.last_view_at ? `آخر دخول ${ago(a.last_view_at)}` : 'قبل الدعوة — لم يفتح التقارير بعد'}</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               الإذن حتى
-              <input type="date" value={a.expires_on || ''} min={todaySA()} onChange={e => setExpiry(a, e.target.value)}
-                style={{ fontSize: 11.5, padding: '2px 6px', border: `1px solid ${colors.border}`, borderRadius: 6, fontFamily: font.family }} />
-              {a.expires_on ? <button onClick={() => setExpiry(a, '')} style={{ fontSize: 11, color: colors.primary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family }}>بدون نهاية</button> : <span>(بدون نهاية)</span>}
+              <DateField value={a.expires_on || ''} min={todaySA()} onChange={v => setExpiry(a, v)} placeholder="بدون نهاية" ariaLabel="الإذن حتى" width={150} />
+              {a.expires_on ? <button onClick={() => setExpiry(a, '')} style={{ fontSize: 11, color: colors.primary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family }}>إلغاء التاريخ</button> : null}
             </span>
           </div>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' as const }}>
@@ -134,8 +134,8 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
             )}
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: colors.text2 }}>
               الإذن حتى
-              <input type="date" value={form.expires_on} min={todaySA()} onChange={e => setForm(f => ({ ...f, expires_on: e.target.value }))} style={{ ...inp(), width: 'auto', minWidth: 150, padding: '6px 8px' }} />
-              <span style={{ color: colors.text4 }}>{form.expires_on ? '' : '(اختياري — فارغ = دون نهاية)'}</span>
+              <DateField value={form.expires_on} min={todaySA()} onChange={v => setForm(f => ({ ...f, expires_on: v }))} placeholder="بدون نهاية" ariaLabel="الإذن حتى" />
+              <span style={{ color: colors.text4 }}>{form.expires_on ? '' : '(اختياري)'}</span>
             </label>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>

@@ -31,7 +31,7 @@ export default function SupplierTimeline({ m }: { m: SupplierCardState }) {
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontSize:12,fontWeight:700,color:colors[e.type]||'#203640'}}>{e.title}</div>
                         {e.detail && <div style={{fontSize:11,color:'var(--storely-muted)',marginTop:2}}>{e.detail}</div>}
-                        <div style={{fontSize:10,color:'var(--storely-subtle)',marginTop:3}}>{new Date(e.at).toLocaleDateString('ar-SA', {numberingSystem:'latn',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                        <div style={{fontSize:10,color:'var(--storely-subtle)',marginTop:3}}>{new Date(e.at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
                       </div>
                     </div>
                   )

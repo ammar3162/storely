@@ -8,7 +8,7 @@ import { toast } from '@/components/toast'
 import { colors, radius, font, card } from '@/lib/ds'
 
 type Device = { id: string; label: string; created_at: string; last_seen_at: string; current: boolean }
-const fmt = (d: string) => new Date(d).toLocaleDateString('ar-SA-u-nu-latn', { year: 'numeric', month: 'short', day: 'numeric' })
+const fmt = (d: string) => new Date(d).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { year: 'numeric', month: 'short', day: 'numeric' })
 
 export default function TrustedDevices() {
   const [devices, setDevices] = useState<Device[] | null>(null)

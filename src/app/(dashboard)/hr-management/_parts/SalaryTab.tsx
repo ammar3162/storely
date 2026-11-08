@@ -28,7 +28,7 @@ export default function SalaryTab({ m, s }: { m: HrPage; s: any }) {
                         </div>
                       </div>
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,flexWrap:'wrap' as const,background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`,borderRadius:radius.md,padding:'10px 14px'}}>
-                        <span style={{fontSize:13,fontWeight:700,color:colors.primary}}>الإجمالي الشهري: <b style={{fontSize:18,fontWeight:900}}>{totalSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</b></span>
+                        <span style={{fontSize:13,fontWeight:700,color:colors.primary}}>الإجمالي الشهري: <b style={{fontSize:18,fontWeight:900}}>{totalSalary.toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn'})} {curr}</b></span>
                         <button onClick={()=>saveSalary(s.id)} disabled={savingSalary} style={{...btnPrimary,padding:'9px 22px',fontSize:13,opacity:savingSalary?0.6:1}}>{savingSalary?'جاري الحفظ…':'حفظ الراتب'}</button>
                       </div>
                     </div>}

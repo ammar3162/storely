@@ -151,7 +151,7 @@ export function branchBlock(r: BranchReport, v: ReportView): string | null {
 /** الرسالة كاملة: عنوان + فرع أو أكثر */
 export function reportMessage(orgName: string, blocks: { name: string; text: string }[], multiBranch: boolean, nowMs = Date.now()): string | null {
   if (!blocks.length) return null
-  const date = new Date(nowMs).toLocaleDateString('ar-SA', { numberingSystem: 'latn', timeZone: 'Asia/Riyadh', weekday: 'long', day: 'numeric', month: 'long' })
+  const date = new Date(nowMs).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', timeZone: 'Asia/Riyadh', weekday: 'long', day: 'numeric', month: 'long' })
   const body = blocks.map(b => (multiBranch ? `▬▬ *${b.name}* ▬▬\n\n` : '') + b.text).join('\n\n\n')
   return `*التقرير الصباحي*\n${orgName} | ${date}\n\n${body}\n\n_ستورلي · storely.dev_`
 }

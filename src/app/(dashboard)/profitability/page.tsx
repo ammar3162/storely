@@ -198,7 +198,7 @@ export default function ProfitabilityPage() {
       ]
       await (await import('@/lib/pdfExport')).exportReportPdf({
         title: 'تقرير الربحية الشهرية',
-        subtitle: `${monthLabel(month)}${data.closed?' — مقفل '+new Date(data.closedAt).toLocaleDateString('ar-SA',{numberingSystem:'latn',day:'numeric',month:'long',year:'numeric'}):''}`,
+        subtitle: `${monthLabel(month)}${data.closed?' — مقفل '+new Date(data.closedAt).toLocaleDateString('ar-SA-u-ca-gregory',{numberingSystem:'latn',day:'numeric',month:'long',year:'numeric'}):''}`,
         orgName: '',
         columns: [
           {header:'البند', key:'name', align:'right'},
@@ -349,7 +349,7 @@ export default function ProfitabilityPage() {
               <span className="ui-supporting" style={{color:T.color.textMuted}}>صافي الربح — {monthLabel(month)}</span>
               {data.closed ? (
                 <span className="ui-strong" style={{color:T.color.danger}}>
-                  مقفل {new Date(data.closedAt).toLocaleDateString('ar-SA', {numberingSystem:'latn',day:'numeric',month:'long'})}
+                  مقفل {new Date(data.closedAt).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',day:'numeric',month:'long'})}
                 </span>
               ) : (
                 <StorelyButton className="ui-button" onClick={closeMonth} disabled={closing}>

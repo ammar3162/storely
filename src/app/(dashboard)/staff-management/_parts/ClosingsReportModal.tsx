@@ -48,7 +48,7 @@ export default function ClosingsReportModal({ m }: { m: StaffPage }) {
                       {c.status==='balanced' ? <CheckCircle2 size={16} color={statusColor[c.status]} strokeWidth={2}/> : c.status==='deficit' ? <AlertCircle size={16} color={statusColor[c.status]} strokeWidth={2}/> : <TrendingUp size={16} color={statusColor[c.status]} strokeWidth={2}/>}
                     </div>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:13,fontWeight:600,color:'#1c1c1a'}}>{new Date(c.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'short',month:'short',day:'numeric'})}</div>
+                      <div style={{fontSize:13,fontWeight:600,color:'#1c1c1a'}}>{new Date(c.closing_date).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',weekday:'short',month:'short',day:'numeric'})}</div>
                       <div style={{fontSize:10,color:'#888780',marginTop:1}}>مبيعات {Number(c.total_sales).toFixed(0)} {curr} · شبكة {Number(c.network_amount).toFixed(0)} {curr}</div>
                       {c.status==='deficit' && <div style={{fontSize:11,color:'#b42318',marginTop:3,lineHeight:1.5}}>السبب: {c.deficit_reason || <span style={{color:'#a8a7a1'}}>ما انكتب سبب (إقفال قديم)</span>}</div>}
                     </div>

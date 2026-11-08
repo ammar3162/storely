@@ -249,7 +249,7 @@ export default function DashboardPage() {
     { key: 'product', header: 'الصنف', sortable: true, sortValue: (m:any) => (m.products as any)?.name || '', cell: (m:any) => <span className="font-semibold leading-7 text-[#203640]">{(m.products as any)?.name || '—'}</span> },
     { key: 'type', header: 'النوع', cell: (m:any) => { const label = m.type==='out' ? 'صرف' : m.type==='in' ? 'إضافة' : m.type==='waste' ? 'هدر' : m.type==='adjustment' ? 'تسوية جرد' : m.type==='transfer_in'||m.type==='transfer_out' ? 'تحويل' : 'حركة'; const status = m.type==='out' ? 'info' : m.type==='in' ? 'success' : m.type==='waste' ? 'danger' : 'warning'; return <StorelyStatusBadge status={status}>{label}</StorelyStatusBadge> } },
     { key: 'qty', header: 'الكمية', sortable: true, sortValue: (m:any) => Number(m.qty_change || 0), cell: (m:any) => <span className={m.qty_change < 0 ? 'font-semibold tabular-nums text-[#B91C1C]' : 'font-semibold tabular-nums text-[#047857]'}>{m.qty_change>0?'+':''}{m.qty_change} {(m.products as any)?.unit}</span> },
-    { key: 'date', header: 'الوقت', sortable: true, sortValue: (m:any) => m.created_at || '', cell: (m:any) => <span className="whitespace-nowrap text-[#66737C]">{new Date(m.created_at).toLocaleString('ar-SA',{numberingSystem:'latn',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</span> },
+    { key: 'date', header: 'الوقت', sortable: true, sortValue: (m:any) => m.created_at || '', cell: (m:any) => <span className="whitespace-nowrap text-[#66737C]">{new Date(m.created_at).toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</span> },
   ]
 
   const performanceRows = monthComp?.success ? [
@@ -288,7 +288,7 @@ export default function DashboardPage() {
           className="mb-0"
           eyebrow={orgName || undefined}
           title={greeting + '، ' + (userName || t('dashboard.defaultGreeting'))}
-          description={branchName ? branchName + ' - ' + new Date().toLocaleDateString(lang==='ar'?'ar-SA':'en-US',{numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'}) : new Date().toLocaleDateString(lang==='ar'?'ar-SA':'en-US',{numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'})}
+          description={branchName ? branchName + ' - ' + new Date().toLocaleDateString(lang==='ar'?'ar-SA-u-ca-gregory':'en-US',{numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'}) : new Date().toLocaleDateString(lang==='ar'?'ar-SA-u-ca-gregory':'en-US',{numberingSystem:'latn',weekday:'long',month:'long',day:'numeric'})}
           actions={(pur || inv) ? <div className="flex flex-wrap items-center gap-3">{pur && <StorelyButton variant="secondary" size="md" className={secondaryButtonClass} icon={<ShoppingCart size={15}/>} onClick={()=>router.push('/purchases')}>تسجيل شراء</StorelyButton>}{inv && <StorelyButton variant="secondary" size="md" className={secondaryButtonClass} icon={<Plus size={15}/>} onClick={()=>router.push('/inventory')}>إضافة منتج</StorelyButton>}{inv && <StorelyButton variant="primary" size="md" icon={<ArrowUpRight size={15}/>} onClick={()=>router.push('/dispense')}>تسجيل صرف</StorelyButton>}</div> : undefined}
         />
         </div>

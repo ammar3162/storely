@@ -30,7 +30,7 @@ export default function StockCountSheet({ orgId, products, lastCounts, onClose, 
     onSaved()
   }
 
-  const fmt = (iso: string) => new Date(iso).toLocaleDateString('ar-SA', { numberingSystem: 'latn', day: 'numeric', month: 'short' })
+  const fmt = (iso: string) => new Date(iso).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', day: 'numeric', month: 'short' })
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div onClick={e => e.stopPropagation()} dir="rtl" style={{ background: colors.surface || 'white', borderRadius: 16, width: '100%', maxWidth: 560, maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}>

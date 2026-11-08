@@ -66,7 +66,7 @@ export async function adminFetch(path: string, opts: { method?: string; body?: u
 }
 
 export const fmtDate = (d?: string | null, withTime = false) =>
-  d ? new Date(d).toLocaleDateString('ar-SA', { numberingSystem: 'latn', year: 'numeric', month: 'short', day: 'numeric', ...(withTime ? { hour: '2-digit', minute: '2-digit' } : {}) }) : '—'
+  d ? new Date(d).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', year: 'numeric', month: 'short', day: 'numeric', ...(withTime ? { hour: '2-digit', minute: '2-digit' } : {}) }) : '—'
 
 export const daysLeft = (d?: string | null) => (d ? Math.ceil((new Date(d).getTime() - Date.now()) / 86400000) : null)
 

@@ -31,7 +31,7 @@ export default function ReportsTab({ m, v }: { m: SupplierDashboard; v: Dashboar
               <div className="sd-list">
                 {fulfilledRequests.map((r:any)=>(
                   <div key={r.id} className="sd-item">
-                    <div className="sd-item-main"><b>{r.org_name || 'عميل'}</b><span>{r.delivery_date || new Date(r.created_at).toLocaleDateString('ar-SA',{numberingSystem:'latn'})}</span></div>
+                    <div className="sd-item-main"><b>{r.org_name || 'عميل'}</b><span>{r.delivery_date || new Date(r.created_at).toLocaleDateString('ar-SA-u-ca-gregory',{numberingSystem:'latn'})}</span></div>
                     <div className="sd-price">{money(r.quoted_price)} <small>⃁</small></div>
                     <button onClick={()=>togglePaymentStatus(r.id, r.payment_status)} className={'sd-badge '+(r.payment_status==='paid'?'t-green':'t-amber')} title="اضغط لتغيير حالة السداد">{r.payment_status==='paid'?'مسددة':'آجلة'}</button>
                   </div>

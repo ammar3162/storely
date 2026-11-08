@@ -12,7 +12,7 @@ const KEY = 'staff_lang'
 const EVENT = 'staff-lang-change'
 
 export const isRtlLang = (l: StaffLang) => !!STAFF_LANGS.find(x => x.code === l)?.rtl
-export const localeOf = (l: StaffLang) => STAFF_LANGS.find(x => x.code === l)?.locale || 'ar-SA'
+export const localeOf = (l: StaffLang) => STAFF_LANGS.find(x => x.code === l)?.locale || 'ar-SA-u-ca-gregory'
 
 /** نص من القاموس باللغة المختارة — لو ناقص: الإنجليزي ثم العربي */
 export function pick(dict: Dict, key: string, lang: StaffLang, vars?: Record<string, string | number>) {

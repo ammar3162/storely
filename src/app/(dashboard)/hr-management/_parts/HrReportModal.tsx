@@ -32,11 +32,11 @@ export default function HrReportModal({ m }: { m: HrPage }) {
                     return (
                       <tr key={r.staffId} style={{borderBottom:`1px solid ${colors.border}`}}>
                         <td style={{padding:'10px',fontWeight:700,color:colors.text,whiteSpace:'nowrap' as const}}>{r.name}</td>
-                        <td style={{padding:'10px',color:colors.text2}}>{r.grossSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</td>
-                        <td style={{padding:'10px',color:colors.primary,whiteSpace:'nowrap' as const}}>{r.overtimePay>0?`+${r.overtimePay.toLocaleString('ar-SA',{numberingSystem:'latn'})} (${Math.round(r.overtimeMinutes/6)/10} س)`:'—'}</td>
-                        <td style={{padding:'10px',color:colors.danger}}>{r.deductionsTotal>0?`-${r.deductionsTotal.toLocaleString('ar-SA',{numberingSystem:'latn'})}`:'—'}</td>
-                        <td style={{padding:'10px',color:colors.danger}}>{r.advancesTotal>0?`-${r.advancesTotal.toLocaleString('ar-SA',{numberingSystem:'latn'})}`:'—'}</td>
-                        <td style={{padding:'10px',fontWeight:800,color:colors.primary}}>{r.netSalary.toLocaleString('ar-SA',{numberingSystem:'latn'})} {curr}</td>
+                        <td style={{padding:'10px',color:colors.text2}}>{r.grossSalary.toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn'})} {curr}</td>
+                        <td style={{padding:'10px',color:colors.primary,whiteSpace:'nowrap' as const}}>{r.overtimePay>0?`+${r.overtimePay.toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn'})} (${Math.round(r.overtimeMinutes/6)/10} س)`:'—'}</td>
+                        <td style={{padding:'10px',color:colors.danger}}>{r.deductionsTotal>0?`-${r.deductionsTotal.toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn'})}`:'—'}</td>
+                        <td style={{padding:'10px',color:colors.danger}}>{r.advancesTotal>0?`-${r.advancesTotal.toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn'})}`:'—'}</td>
+                        <td style={{padding:'10px',fontWeight:800,color:colors.primary}}>{r.netSalary.toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn'})} {curr}</td>
                         <td style={{padding:'10px',color:colors.text2,whiteSpace:'nowrap' as const}}>{r.daysPresent}/{r.daysInMonth} ({r.attendanceRate}%)</td>
                         <td style={{padding:'10px',color:r.lateCount>0?colors.warning:colors.text2}}>{r.lateCount} مرة</td>
                         <td style={{padding:'10px',color:colors.text2,whiteSpace:'nowrap' as const}}>{r.leaveDaysTaken} يوم (متبقي {r.leaveBalance})</td>

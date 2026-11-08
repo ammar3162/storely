@@ -13,7 +13,7 @@ import OwnerPeriodLocks from '@/components/OwnerPeriodLocks'
 type Sub = 'people' | 'reports' | 'requests' | 'locks'
 const SUBS: Sub[] = ['people', 'reports', 'requests', 'locks']
 const initials = (s: string) => (s.replace(/^(أ\.|د\.)\s*/, '').trim()[0] || '؟').toUpperCase()
-const dateAr = (iso: string) => new Date(iso).toLocaleDateString('ar-SA-u-nu-latn', { day: 'numeric', month: 'long' })
+const dateAr = (iso: string) => new Date(iso).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long' })
 
 export default function AccountantHub({ orgId }: { orgId: string }) {
   const [sub, setSub] = useState<Sub | null>(null)
@@ -95,7 +95,7 @@ export default function AccountantHub({ orgId }: { orgId: string }) {
             ].map(x => (
               <button key={x.l} onClick={() => go(x.s)} style={{ textAlign: 'start' as const, background: '#fff', border: `1px solid ${x.warn ? '#fcd34d' : colors.border}`, borderRadius: 12, padding: '10px 12px', cursor: 'pointer', fontFamily: font.family }}>
                 <div style={{ fontSize: 11.5, color: colors.text3 }}>{x.l}</div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: x.warn ? '#b45309' : colors.text, marginTop: 2, whiteSpace: 'nowrap' as const }}>{x.v}</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: x.warn ? '#b45309' : colors.text, marginTop: 2, overflowWrap: 'anywhere' as const }}>{x.v}</div>
               </button>
             ))}
           </div>

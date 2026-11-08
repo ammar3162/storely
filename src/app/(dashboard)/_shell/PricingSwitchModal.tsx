@@ -14,7 +14,7 @@ type Result = { current: number; projected: number; outcome: 'switch' | 'keep' }
 
 const LATER_KEY = 'pricing_switch_later'
 const fmt = (n: number) => Math.round(n).toLocaleString('en-US')
-const dateAr = (d: string | null) => d ? new Date(d).toLocaleDateString('ar-SA', { day: 'numeric', month: 'long', year: 'numeric', calendar: 'gregory', numberingSystem: 'latn' }) : ''
+const dateAr = (d: string | null) => d ? new Date(d).toLocaleDateString('ar-SA-u-ca-gregory', { day: 'numeric', month: 'long', year: 'numeric', calendar: 'gregory', numberingSystem: 'latn' }) : ''
 
 export default function PricingSwitchModal({ m }: { m: DashboardShell }) {
   const [orgId, setOrgId] = useState<string | null>(null)

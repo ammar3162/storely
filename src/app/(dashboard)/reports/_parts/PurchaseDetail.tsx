@@ -51,7 +51,7 @@ export default function PurchaseDetail({ period, from, to, onBack }: { period:Fi
     if(hrs<24) return `قبل ${hrs} ساعة`
     const days = Math.floor(hrs/24)
     if(days<30) return `قبل ${days} يوم`
-    return new Date(iso).toLocaleDateString('ar-SA', {numberingSystem:'latn'})
+    return new Date(iso).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn'})
   }
 
   async function restorePurchase(item:any) {
@@ -118,7 +118,7 @@ export default function PurchaseDetail({ period, from, to, onBack }: { period:Fi
           { header: 'فاتورة', key: 'invoice' },
         ],
         rows: filtered.map((p:any) => ({
-          date: new Date(p.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'}),
+          date: new Date(p.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn'}),
           name: p.name || '—',
           category: p.category || '—',
           amount: Number(p.amount || 0).toFixed(2) + ' ' + curr,
@@ -205,7 +205,7 @@ export default function PurchaseDetail({ period, from, to, onBack }: { period:Fi
               <tbody>
                 {filtered.map((p,i)=>(
                   <tr key={p.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}>
-                    <td style={{padding:'11px 12px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(p.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
+                    <td style={{padding:'11px 12px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(p.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
                     <td style={{padding:'11px 12px',fontSize:font.sm,fontWeight:700,color:colors.text,maxWidth:140,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.name}</td>
                     <td style={{padding:'11px 12px'}}><span style={catTag(p.category)}>{p.category}</span></td>
                     <td style={{padding:'11px 12px',fontSize:font.sm}}>{Number(p.amount||0).toFixed(0)} {curr}</td>

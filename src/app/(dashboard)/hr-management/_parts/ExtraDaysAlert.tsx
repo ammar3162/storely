@@ -17,7 +17,7 @@ export default function ExtraDaysAlert({ m }: { m: HrPage }) {
               <div key={e.id} style={{background:colors.bg,borderRadius:10,padding:'10px 12px'}}>
                 <div style={{fontSize:13,fontWeight:700,color:colors.text}}>{e.name}</div>
                 <div style={{fontSize:11.5,color:colors.text3,marginTop:2}}>
-                  {e.reason==='monthly' ? 'حضر بعد إكمال أيام دوامه المطلوبة هذا الشهر' : 'حضر في يوم إجازته'} — {new Date(`${e.work_date}T12:00:00Z`).toLocaleDateString('ar-SA',{weekday:'long',day:'numeric',month:'long',calendar:'gregory',numberingSystem:'latn',timeZone:'UTC'})}
+                  {e.reason==='monthly' ? 'حضر بعد إكمال أيام دوامه المطلوبة هذا الشهر' : 'حضر في يوم إجازته'} — {new Date(`${e.work_date}T12:00:00Z`).toLocaleDateString('ar-SA-u-ca-gregory',{weekday:'long',day:'numeric',month:'long',calendar:'gregory',numberingSystem:'latn',timeZone:'UTC'})}
                 </div>
                 <ExtraDayDecision item={e} orgId={orgId} canDecide={canDecideExtra} onDone={()=>setTimeout(()=>setExtraDays(prev=>prev.filter((x:any)=>x.id!==e.id)),1200)}/>
               </div>

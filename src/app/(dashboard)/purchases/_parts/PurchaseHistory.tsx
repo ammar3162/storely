@@ -46,7 +46,7 @@ export default function PurchaseHistory({ m }: { m: PurchasesState }) {
                 {p.qty&&<div style={{fontSize:13,color:C.text3,marginBottom:2}}>{p.qty} {p.unit}</div>}
                 <div style={{fontSize:12,color:C.text3,display:'flex',gap:10,flexWrap:'wrap',alignItems:'center'}}>
                   {p.supplier&&<span style={{display:'inline-flex',alignItems:'center',gap:4}}><Store size={12}/>{p.supplier}</span>}
-                  <span>{new Date(p.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',day:'numeric',month:'short'})}</span>
+                  <span>{new Date(p.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',day:'numeric',month:'short'})}</span>
                 </div>
               </div>
               <div style={{textAlign:'left',flexShrink:0,display:'flex',flexDirection:'column',alignItems:'flex-end',gap:8}}>

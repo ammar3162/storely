@@ -162,8 +162,8 @@ export async function POST(req: Request) {
       if (whatsappNumber && shouldSendNow && ownerConsented) {
         const now = new Date()
         const effectiveDate = now
-        const timeStr = effectiveDate.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Riyadh' })
-        const dateStr = effectiveDate.toLocaleDateString('ar-SA', {numberingSystem:'latn', weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })
+        const timeStr = effectiveDate.toLocaleTimeString('ar-SA-u-ca-gregory', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Riyadh' })
+        const dateStr = effectiveDate.toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn', weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })
         const branchLine = (isMultiBranch && branchName) ? `🏪 الفرع: *${branchName}*\n` : ''
 
         let msg: string

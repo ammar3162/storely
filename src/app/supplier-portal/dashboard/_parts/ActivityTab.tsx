@@ -14,7 +14,7 @@ export default function ActivityTab({ m, v }: { m: SupplierDashboard; v: Dashboa
             {activityFeed.length===0 ? <div className="sd-empty"><Bell size={28}/><b>لا توجد أحداث</b><span>تظهر هنا الطلبات والرسائل الجديدة.</span></div> : (
               <ol className="sd-feed">
                 {activityFeed.map((ev:any,i:number)=>(
-                  <li key={i}>{ev.type==='order'?<ClipboardList size={16}/>:<MessageCircle size={16}/>}<div><span>{ev.text}</span><time>{new Date(ev.at).toLocaleString('ar-SA',{numberingSystem:'latn'})}</time></div></li>
+                  <li key={i}>{ev.type==='order'?<ClipboardList size={16}/>:<MessageCircle size={16}/>}<div><span>{ev.text}</span><time>{new Date(ev.at).toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn'})}</time></div></li>
                 ))}
               </ol>
             )}

@@ -5,7 +5,7 @@ import { colors, font } from '@/lib/ds'
 
 // محفظة السفير: الدخول برمز على الإيميل، وبعدها الرصيد والمنشآت والصرف
 const sar = (n: number) => `${Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`
-const dt = (iso: string) => new Date(iso).toLocaleDateString('ar-SA-u-nu-latn', { day: 'numeric', month: 'short', year: 'numeric' })
+const dt = (iso: string) => new Date(iso).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'short', year: 'numeric' })
 const inp: React.CSSProperties = { width: '100%', padding: '13px 14px', borderRadius: 12, border: `1.5px solid ${colors.border}`, fontSize: 15, fontFamily: font.family, boxSizing: 'border-box', background:'#fff' }
 const btn: React.CSSProperties = { width: '100%', padding: 13, borderRadius: 12, border: 'none', background: colors.primary, color:'#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: font.family }
 const post = (u: string, b: any) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }).then(r => r.json()).catch(() => ({ error: 'تأكد من الإنترنت' }))

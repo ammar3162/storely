@@ -267,7 +267,7 @@ export default function SupplierStorefrontPage() {
                     {m.message}
                   </div>
                   <div style={{fontSize:9,color:'var(--storely-subtle)',marginTop:2,textAlign:m.sender_type==='customer'?'left' as const:'right' as const}}>
-                    {new Date(m.created_at).toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'})}
+                    {new Date(m.created_at).toLocaleTimeString('ar-SA-u-ca-gregory',{hour:'2-digit',minute:'2-digit'})}
                   </div>
                 </div>
               ))}
@@ -296,7 +296,7 @@ export default function SupplierStorefrontPage() {
                   <div style={{padding:'12px 16px',background:'var(--storely-background)',borderBottom:'1px solid #eef2f7',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                     <div style={{display:'flex',alignItems:'center',gap:8}}>
                       <span style={{fontSize:12,fontWeight:800,color:'var(--storely-text)'}}>{orderNo}</span>
-                      <span style={{fontSize:11,color:'var(--storely-subtle)'}}>{new Date(r.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'})}</span>
+                      <span style={{fontSize:11,color:'var(--storely-subtle)'}}>{new Date(r.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn'})}</span>
                     </div>
                     <span style={{fontSize:11,fontWeight:700,padding:'4px 12px',borderRadius:20,
                       background:r.status==='fulfilled'?'#dbeafe':r.status==='confirmed'?'#e0f2fe':r.status==='accepted'?'#ccfbf1':r.status==='quoted'?'#fef3c7':'#f1f5f9',

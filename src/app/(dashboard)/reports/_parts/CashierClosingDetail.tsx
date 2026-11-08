@@ -75,7 +75,7 @@ export default function CashierClosingDetail({ period, from, to, onBack }: { per
           { header: 'سبب العجز', key: 'reason' },
         ],
         rows: closings.map((c: any) => ({
-          date: new Date(c.closing_date+'T12:00:00Z').toLocaleDateString('ar-SA', {numberingSystem:'latn',calendar:'gregory',timeZone:'UTC'}) + (c.created_at ? ' · ' + new Date(c.created_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'}) : ''),
+          date: new Date(c.closing_date+'T12:00:00Z').toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',calendar:'gregory',timeZone:'UTC'}) + (c.created_at ? ' · ' + new Date(c.created_at).toLocaleTimeString('ar-SA-u-ca-gregory',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'}) : ''),
           staff: c.staff_name || '—',
           sales: Number(c.total_sales || 0).toFixed(2) + ' ' + curr,
           network: Number(c.network_amount || 0).toFixed(2) + ' ' + curr,
@@ -226,15 +226,15 @@ export default function CashierClosingDetail({ period, from, to, onBack }: { per
                 {closings.map((c:any)=>(
                   <tr key={c.id} style={{borderBottom:`1px solid ${colors.border}`}}>
                     <td style={{padding:'12px 16px',fontSize:font.sm,color:colors.text2}}>
-                      <div style={{fontWeight:600,color:colors.text}}>{new Date(c.closing_date+'T12:00:00Z').toLocaleDateString('ar-SA', {numberingSystem:'latn',calendar:'gregory',timeZone:'UTC'})}</div>
+                      <div style={{fontWeight:600,color:colors.text}}>{new Date(c.closing_date+'T12:00:00Z').toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',calendar:'gregory',timeZone:'UTC'})}</div>
                       {c.edited_at && (()=>{ const acc = c.edited_source==='accountant'
-                        return <button onClick={()=>isOwner&&setHistory(c)} title={`عدّله ${c.edited_by||'المالك'} — ${new Date(c.edited_at).toLocaleString('ar-SA',{numberingSystem:'latn',timeZone:'Asia/Riyadh'})}${isOwner?' — اضغط لعرض السجل':''}`}
+                        return <button onClick={()=>isOwner&&setHistory(c)} title={`عدّله ${c.edited_by||'المالك'} — ${new Date(c.edited_at).toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn',timeZone:'Asia/Riyadh'})}${isOwner?' — اضغط لعرض السجل':''}`}
                           style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:10,fontWeight:800,color:acc?'#7c3aed':colors.warning,background:acc?'#f5f3ff':colors.warningLight,border:'none',borderRadius:5,padding:'2px 7px',marginTop:3,cursor:isOwner?'pointer':'default',fontFamily:'inherit'}}>
                           <Pencil size={10} strokeWidth={2.5}/> {acc?'معدّل من المحاسب':'معدّل'}{c.edit_count>1?` (${c.edit_count})`:''}</button> })()}
                       {c.created_at && (
                         <div style={{fontSize:11,color:colors.text4,marginTop:2,whiteSpace:'nowrap' as const}}>
-                          قُفل {new Date(c.created_at).toLocaleTimeString('ar-SA',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'})}
-                          {new Date(c.created_at).toLocaleDateString('en-CA',{timeZone:'Asia/Riyadh'}) !== c.closing_date && <> · {new Date(c.created_at).toLocaleDateString('ar-SA',{numberingSystem:'latn',day:'numeric',month:'short',calendar:'gregory',timeZone:'Asia/Riyadh'})}</>}
+                          قُفل {new Date(c.created_at).toLocaleTimeString('ar-SA-u-ca-gregory',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'})}
+                          {new Date(c.created_at).toLocaleDateString('en-CA',{timeZone:'Asia/Riyadh'}) !== c.closing_date && <> · {new Date(c.created_at).toLocaleDateString('ar-SA-u-ca-gregory',{numberingSystem:'latn',day:'numeric',month:'short',calendar:'gregory',timeZone:'Asia/Riyadh'})}</>}
                         </div>
                       )}
                     </td>
@@ -351,7 +351,7 @@ export default function CashierClosingDetail({ period, from, to, onBack }: { per
             <div style={{width:48,height:48,borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',color:'#dc2626'}}><Lock size={22} strokeWidth={2}/></div>
             <div style={{fontSize:15,fontWeight:800,color:colors.text,textAlign:'center',marginBottom:6}}>تأكيد حذف تقرير الإقفال</div>
             <div style={{fontSize:12,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
-              سيتم حذف إقفال <b style={{color:colors.text}}>{confirmDelete.staff_name}</b> بتاريخ {confirmDelete?.closing_date ? new Date(confirmDelete.closing_date).toLocaleDateString('ar-SA', {numberingSystem:'latn'}) : ''} نهائياً.<br/>أدخل كلمة مرور حسابك للتأكيد
+              سيتم حذف إقفال <b style={{color:colors.text}}>{confirmDelete.staff_name}</b> بتاريخ {confirmDelete?.closing_date ? new Date(confirmDelete.closing_date).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn'}) : ''} نهائياً.<br/>أدخل كلمة مرور حسابك للتأكيد
             </div>
             <div style={{marginBottom:10}}><Suspense fallback={null}><PasswordBox value={deletePassword} onChange={setDeletePassword} onEnter={()=>{ if(!deleting) confirmDeleteClosing() }}/></Suspense></div>
             {deleteError && <div style={{fontSize:12,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><AlertTriangle size={13} strokeWidth={2.25}/> {deleteError}</div>}

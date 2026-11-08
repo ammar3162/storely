@@ -10,8 +10,8 @@ import { pdfOrgInfo } from './shared'
 
 // تقرير الحضور — نفس بيانات صفحة الحضور والانصراف (/api/attendance-report) عشان الأرقام تطابق
 const saudiToday = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
-const attTime = (iso: string | null) => iso ? new Date(iso).toLocaleTimeString('ar-SA', { numberingSystem: 'latn', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Riyadh' }) : '—'
-const attDay = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString('ar-SA', { numberingSystem: 'latn', weekday: 'short', day: 'numeric', month: 'short', calendar: 'gregory', timeZone: 'UTC' })
+const attTime = (iso: string | null) => iso ? new Date(iso).toLocaleTimeString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Riyadh' }) : '—'
+const attDay = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', weekday: 'short', day: 'numeric', month: 'short', calendar: 'gregory', timeZone: 'UTC' })
 const attMin = (m: number) => { const h = Math.floor(m / 60), r = m % 60; return h ? (r ? `${h}س ${r}د` : `${h} ساعة`) : `${r} دقيقة` }
 
 export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {

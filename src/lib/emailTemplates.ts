@@ -127,7 +127,7 @@ export function brandEmail(o: {
 }
 
 const arDate = (d: string | number | Date) =>
-  new Date(d).toLocaleDateString('ar-SA', { numberingSystem: 'latn', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Riyadh' })
+  new Date(d).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Riyadh' })
 
 // ─── الإيميلات الجاهزة ───
 

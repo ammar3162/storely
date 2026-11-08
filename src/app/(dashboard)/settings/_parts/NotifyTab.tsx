@@ -95,7 +95,7 @@ export default function NotifyTab({ m }: { m: SettingsState }) {
               )}
               {lastSent&&(
                 <div style={{fontSize:font.xs,color:colors.text4,marginTop:10,display:'flex',alignItems:'center',gap:4}}>
-                  <span></span> آخر إرسال: <span style={{fontWeight:600,color:colors.text2}}>{new Date(lastSent).toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'long',hour:'2-digit',minute:'2-digit'})}</span>
+                  <span></span> آخر إرسال: <span style={{fontWeight:600,color:colors.text2}}>{new Date(lastSent).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',weekday:'long',hour:'2-digit',minute:'2-digit'})}</span>
                 </div>
               )}
             </form>

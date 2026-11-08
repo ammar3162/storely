@@ -332,7 +332,7 @@ export default function DispensePage() {
                       {(h.products as any)?.name}
                       {isWaste&&<span style={{fontSize:T.typography.supporting,fontWeight:700,color:C.warning,background:C.warningL,padding:'1px 6px',borderRadius:T.radius.control,marginRight:T.spacing[2],border:`1px solid ${C.warningB}`}}>هدر{h.waste_reason?` · ${h.waste_reason}`:''}</span>}
                     </div>
-                    <div style={{fontSize:T.typography.supporting,color:C.text4,marginTop:T.spacing[1]}}>{new Date(h.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                    <div style={{fontSize:T.typography.supporting,color:C.text4,marginTop:T.spacing[1]}}>{new Date(h.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
                   </div>
                   <span style={{fontSize:T.typography.body,fontWeight:800,color:badgeColor,flexShrink:0}}>{Math.abs(h.qty_change)} <span style={{fontSize:T.typography.supporting,color:C.text4,fontWeight:400}}>{(h.products as any)?.unit}</span></span>
                 </div>

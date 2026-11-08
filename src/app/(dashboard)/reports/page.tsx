@@ -332,7 +332,7 @@ export default function ReportsPage() {
                   const maxM=Math.max(...months.map(m=>m[1]),1)
                   return months.map(([key,val],i)=>{
                     const [y,m]=key.split('-')
-                    const mn=new Date(Number(y),Number(m)-1).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short'})
+                    const mn=new Date(Number(y),Number(m)-1).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',month:'short'})
                     return (
                       <div key={key} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
                         <span style={{fontSize:9,color:colors.text4,fontWeight:700}}>{val}</span>

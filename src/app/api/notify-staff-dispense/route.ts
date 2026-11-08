@@ -71,8 +71,8 @@ export async function POST(req: Request) {
     if ((ownerProfile as any)?.whatsapp_consent !== true) return NextResponse.json({ success: false, message: 'لا يوجد موافقة واتساب' })
 
     const now = new Date()
-    const timeStr = now.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Riyadh'})
-    const dateStr = now.toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'long',day:'numeric',month:'long',timeZone:'Asia/Riyadh'})
+    const timeStr = now.toLocaleTimeString('ar-SA-u-ca-gregory',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Riyadh'})
+    const dateStr = now.toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',weekday:'long',day:'numeric',month:'long',timeZone:'Asia/Riyadh'})
     const msg = `🟢 *Storely*\n\nمرحباً ${(org as any).name}،\n${branchLine}\n👤 *${staff_name}* قام بصرف:\n• ${product_name} — *${qty} ${unit}*\n\n🕐 ${timeStr} · ${dateStr}`
 
     const waRes = await fetchExternal('https://www.wasenderapi.com/api/send-message', {

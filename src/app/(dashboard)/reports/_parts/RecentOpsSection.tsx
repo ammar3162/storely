@@ -28,7 +28,7 @@ export default function RecentOpsSection({ recentOps, colors }: { recentOps:any[
                 </div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:13,fontWeight:700,color:'var(--storely-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(m.products as any)?.name}</div>
-                  <div style={{fontSize:11,color:'var(--storely-subtle)',marginTop:2}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                  <div style={{fontSize:11,color:'var(--storely-subtle)',marginTop:2}}>{new Date(m.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
                 </div>
                 <span style={{fontSize:13,fontWeight:800,color,flexShrink:0}}>{m.type==='out'?'-':'+'}{Math.abs(m.qty_change)} <span style={{fontSize:10,fontWeight:400,color:'var(--storely-subtle)'}}>{(m.products as any)?.unit}</span></span>
               </div>

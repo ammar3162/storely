@@ -169,7 +169,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <span style={{ fontWeight: 600, color: A.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{current?.label || 'لوحة الإدارة'}</span>
         </div>
         <div style={{ marginInlineStart: 'auto', fontSize: 12.5, color: A.text3 }} className="adm-crumb-group">
-          {new Date().toLocaleDateString('ar-SA', { numberingSystem: 'latn', weekday: 'long', day: 'numeric', month: 'long' })}
+          {new Date().toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', weekday: 'long', day: 'numeric', month: 'long' })}
         </div>
       </header>
       <main className="adm-main">{children}</main>

@@ -7,23 +7,23 @@ export default function SupplierCardHeader({ m }: { m: SupplierCardState }) {
   return (
     <>
       {/* Header */}
-      <div style={{ padding:'16px 20px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:12, cursor:'pointer', flex:1 }} onClick={()=>setOpen(o=>!o)}>
-          <div style={{ width:44, height:44, borderRadius:12, background:'linear-gradient(135deg,#203640,#203640)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:800, color:'white', flexShrink:0 }}>
+      <div style={{ padding:'16px 20px', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:12 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12, cursor:'pointer', flex:'1 1 240px', minWidth:0 }} onClick={()=>setOpen(o=>!o)}>
+          <div style={{ width:44, height:44, borderRadius:12, background:'#203640', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, fontWeight:800, color:'white', flexShrink:0 }}>
             {s.name[0]}
           </div>
-          <div>
-            <div style={{display:'flex',alignItems:'center',gap:8}}>
-              <div style={{ fontSize:15, fontWeight:700, color:'var(--storely-text)' }}>{s.name}</div>
+          <div style={{minWidth:0}}>
+            <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+              <div style={{ fontSize:15, fontWeight:700, color:'var(--storely-text)', marginInlineEnd:2 }}>{s.name}</div>
               {rating?.details?.dealCount>0 && (
-                <span title="عدد فواتير الشراء المسجّلة من هذا المورد" style={{fontSize:11,fontWeight:700,background:'var(--storely-background)',color:'var(--storely-muted)',border:'1px solid var(--storely-border)',borderRadius:20,padding:'2px 8px'}}>
+                <span title="عدد فواتير الشراء المسجّلة من هذا المورد" style={{fontSize:11,fontWeight:700,background:'var(--storely-background)',color:'var(--storely-muted)',border:'1px solid var(--storely-border)',borderRadius:20,padding:'2px 8px',whiteSpace:'nowrap'}}>
                   {rating.details.dealCount} تعامل
                 </span>
               )}
-              {linked.length>0 && <span style={{fontSize:11,fontWeight:700,background:'var(--storely-background)',color:'var(--storely-text)',border:'1px solid var(--storely-border)',borderRadius:20,padding:'2px 8px'}}>{linked.length} منتج مرتبط</span>}
-              {linked.length===0 && <span style={{fontSize:11,fontWeight:700,background:'#fef3c7',color:'#92400e',border:'1px solid #fcd34d',borderRadius:20,padding:'2px 8px'}}>لا منتجات مرتبطة</span>}
+              {linked.length>0 && <span style={{fontSize:11,fontWeight:700,background:'var(--storely-background)',color:'var(--storely-text)',border:'1px solid var(--storely-border)',borderRadius:20,padding:'2px 8px',whiteSpace:'nowrap'}}>{linked.length} منتج مرتبط</span>}
+              {linked.length===0 && <span style={{fontSize:11,fontWeight:700,background:'#fef3c7',color:'#92400e',border:'1px solid #fcd34d',borderRadius:20,padding:'2px 8px',whiteSpace:'nowrap'}}>لا منتجات مرتبطة</span>}
               {recentFailedCount>0 && (
-                <span onClick={e=>{e.stopPropagation();openTimeline()}} title="اضغط لمشاهدة سجل التواصل" style={{fontSize:11,fontWeight:700,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:20,padding:'2px 8px',cursor:'pointer'}}>
+                <span onClick={e=>{e.stopPropagation();openTimeline()}} title="اضغط لمشاهدة سجل التواصل" style={{fontSize:11,fontWeight:700,background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:20,padding:'2px 8px',cursor:'pointer',whiteSpace:'nowrap'}}>
                   فشل إرسال ({recentFailedCount})
                 </span>
               )}

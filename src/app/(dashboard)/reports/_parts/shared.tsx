@@ -35,7 +35,7 @@ export function getRange(period: FilterPeriod, from: string, to: string) {
 export function formatRange(period: FilterPeriod, from: string, to: string) {
   if (period==='today') return 'اليوم'
   if (period==='week')  return 'آخر 7 أيام'
-  if (period==='month') return new Date().toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'long',year:'numeric'})
+  if (period==='month') return new Date().toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',month:'long',year:'numeric'})
   if (period==='year')  return new Date().getFullYear().toString()
   if (from&&to) return `${from} — ${to}`
   if (from) return `من ${from}`

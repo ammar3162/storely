@@ -9,7 +9,7 @@ export default function Banners({ m }: { m: DashboardShell }) {
   // التجربة: كل المزايا مفتوحة — سطر هادي يوضح كم ميزة تنقفل بعدها، والتفاصيل بضغطة (يقدر يخفيه لهالجلسة)
   const [hideTrial, setHideTrial] = useState(() => { try { return sessionStorage.getItem('s_hide_trial') === '1' } catch { return false } })
   const [trialOpen, setTrialOpen] = useState(false)
-  const endsTxt = trialEnds ? new Date(trialEnds).toLocaleDateString('ar-SA', { numberingSystem: 'latn', month: 'long', day: 'numeric' }) : null
+  const endsTxt = trialEnds ? new Date(trialEnds).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', month: 'long', day: 'numeric' }) : null
   const n = trialLocked.length
   const countTxt = n === 1 ? 'ميزة واحدة' : n === 2 ? 'ميزتين' : `${n} مزايا`
   return (

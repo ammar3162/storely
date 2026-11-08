@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   if (insErr) return NextResponse.json({ error: 'فشل إنشاء الفاتورة' }, { status: 500 })
 
   const invoiceNumber = (inv as any)?.invoice_number
-  const today = new Date().toLocaleDateString('ar-SA', { numberingSystem: 'latn', year: 'numeric', month: 'long', day: 'numeric' })
+  const today = new Date().toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', year: 'numeric', month: 'long', day: 'numeric' })
 
   // توليد ملف PDF احترافي مفصّل للفاتورة
   let pdfBuffer: Buffer

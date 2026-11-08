@@ -120,7 +120,7 @@ function buildAlertMessage(issues: Issue[]) {
   if (warning.length) {
     msg += `🟡 *تحتاج مراجعة:*\n` + warning.map(i => `• ${i.type}: ${i.detail}`).join('\n') + '\n\n'
   }
-  msg += `🔗 راجع التفاصيل: storely.dev/storely-admin\n_فحص تلقائي ${new Date().toLocaleString('ar-SA', {numberingSystem:'latn', timeZone: 'Asia/Riyadh' })}_`
+  msg += `🔗 راجع التفاصيل: storely.dev/storely-admin\n_فحص تلقائي ${new Date().toLocaleString('ar-SA-u-ca-gregory', {numberingSystem:'latn', timeZone: 'Asia/Riyadh' })}_`
   return msg
 }
 

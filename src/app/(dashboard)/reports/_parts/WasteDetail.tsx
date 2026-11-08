@@ -49,7 +49,7 @@ export default function WasteDetail({ period, from, to, onBack }: { period:Filte
           { header: 'الموظف', key: 'staff' },
         ],
         rows: filtered.map((m:any) => ({
-          date: new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'}),
+          date: new Date(m.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn'}),
           product: (m.products as any)?.name || '—',
           qty: Math.abs(m.qty_change) + ' ' + ((m.products as any)?.unit || ''),
           reason: (m as any).waste_reason || '—',
@@ -144,7 +144,7 @@ export default function WasteDetail({ period, from, to, onBack }: { period:Filte
               <tbody>
                 {filtered.map((m,i)=>(
                   <tr key={m.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}>
-                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
+                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
                     <td style={{padding:'11px 16px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td>
                     <td style={{padding:'11px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:900}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
                     <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#fffbeb',color:'#b45309',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #fde68a'}}>

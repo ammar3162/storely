@@ -60,7 +60,7 @@ export default function EditHistoryDialog({ orgId, kind, id, title, onClose, onR
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, borderRadius: 999, padding: '2px 8px', color: acc ? '#7c3aed' : colors.warning, background: acc ? '#f5f3ff' : colors.warningLight }}>{acc ? 'المحاسب' : 'المنشأة'}</span>
                     <span style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{e.edited_by || '—'}</span>
-                    <span style={{ fontSize: 11.5, color: colors.text4 }}>{new Date(e.created_at).toLocaleString('ar-SA', { numberingSystem: 'latn', timeZone: 'Asia/Riyadh', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                    <span style={{ fontSize: 11.5, color: colors.text4 }}>{new Date(e.created_at).toLocaleString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', timeZone: 'Asia/Riyadh', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
                     {e.reverted_at && <span style={{ fontSize: 11, fontWeight: 700, color: colors.text3 }}>· انرجع</span>}
                   </div>
                   {list.length ? list.map(c => (
