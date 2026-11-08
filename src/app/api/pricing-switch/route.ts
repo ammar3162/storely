@@ -13,7 +13,11 @@ export async function GET(req: Request) {
   if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
   if (access.role === 'manager') return NextResponse.json({ success: true, show: false })
   const ctx = await loadSwitchContext(sb(), org_id)
-  if (!ctx || !eligibleForSwitch(ctx.org.plan, ctx.owner.subscription_type, !!ctx.chosen)) return NextResponse.json({ success: true, show: false })
+  if (!ctx || !eligibleForSwitch(ctx.org.plan, ctx.owner.subscription_type, !!ctx.chosen)) {
+    // اختار قبل: نرجّع اختياره (للإعدادات) بدون إظهار الرسالة
+    const chosen = ctx?.chosen ? { modules: ctx.chosen.modules, outcome: ctx.chosen.outcome, applied: !!ctx.chosen.applied_at } : null
+    return NextResponse.json({ success: true, show: false, chosen })
+  }
   const selected = currentModules(ctx.org.plan, ctx.addons, ctx.subs)
   const p = projectSwitch({ org: ctx.org, addons: ctx.addons, subs: ctx.subs, modules: selected, branches: ctx.branches, activeStaff: ctx.activeStaff })
   return NextResponse.json({

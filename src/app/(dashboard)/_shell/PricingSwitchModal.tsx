@@ -25,11 +25,18 @@ export default function PricingSwitchModal({ m }: { m: DashboardShell }) {
   const [done, setDone] = useState<Result | null>(null)
   const [error, setError] = useState('')
   const reqId = useRef(0)
+  const [manual, setManual] = useState(0)   // فتح يدوي من الإعدادات («اختر مزاياك بالأسعار الجديدة»)
+
+  useEffect(() => {
+    const open = () => { try { sessionStorage.removeItem(LATER_KEY) } catch {}; setManual(n => n + 1) }
+    window.addEventListener('pricing-switch-open', open)
+    return () => window.removeEventListener('pricing-switch-open', open)
+  }, [])
 
   // المالك فقط، وبعد موافقة الشروط — و«ذكّرني لاحقاً» تخفيها لهذه الجلسة بس
   useEffect(() => {
     if (!m.ready || m.userRole === 'manager' || m.showTermsConsent) return
-    try { if (sessionStorage.getItem(LATER_KEY)) return } catch {}
+    try { if (!manual && sessionStorage.getItem(LATER_KEY)) return } catch {}
     let off = false
     ;(async () => {
       const id = await getOrgId()
@@ -39,7 +46,7 @@ export default function PricingSwitchModal({ m }: { m: DashboardShell }) {
       setOrgId(id); setData(r); setPicked(r.selected)
     })()
     return () => { off = true }
-  }, [m.ready, m.userRole, m.showTermsConsent])
+  }, [m.ready, m.userRole, m.showTermsConsent, manual])
 
   // الفاتورة المتوقعة مع كل تغيير في الاختيار
   useEffect(() => {

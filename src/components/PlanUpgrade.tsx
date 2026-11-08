@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { api } from '@/lib/api-client'
 import { colors, font, radius } from '@/lib/ds'
 import { toast } from '@/components/toast'
-import { PLAN_CAPS, PLAN_PRICING, CUSTOM_MODULES, planKeyOf, planPriceFor, upgradeTargets, missingFeatures, isNewPlan, isCustomPlan, type PlanKey } from '@/lib/planPricing'
+import { PLAN_CAPS, PLAN_PRICING, CUSTOM_MODULES, CUSTOM_MODULE_ORDER, planKeyOf, planPriceFor, missingFeatures, isNewPlan, isCustomPlan, type PlanKey } from '@/lib/planPricing'
 import { FEATURE_NAMES } from '@/lib/featurePresets'
 
 const NEW_DESC: Record<string, string> = { essential: 'المخزون والموردين والمشتريات والفواتير', ops: 'كل الأساسية + إقفال الكاشير لكل الفروع', full: 'كل المميزات: الكاشير والحضور والرواتب والذكاء' }
@@ -19,15 +19,20 @@ export default function PlanUpgrade({ orgId, plan, maxBranches, activeSlugs = []
   const [pending, setPending] = useState<any>(null)
   const [sending, setSending] = useState<string | null>(null)
 
+  const [switchInfo, setSwitchInfo] = useState<{ show: boolean; chosen: { modules: string[]; outcome: string; applied: boolean } | null } | null>(null)
   const load = () => api.get('/api/plan-requests', { org_id: orgId }).then(j => setPending((j.requests || []).find((r: any) => r.status === 'pending') || null)).catch(() => {})
   useEffect(() => { if (orgId) load() }, [orgId])   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!orgId || isCustomPlan(plan)) return
+    api.get<{ show?: boolean; chosen?: { modules: string[]; outcome: string; applied: boolean } | null }>('/api/pricing-switch', { org_id: orgId }).then(j => { if (j.success) setSwitchInfo({ show: !!j.show, chosen: j.chosen || null }) }).catch(() => {})
+  }, [orgId, plan])
 
   async function request(k: PlanKey) {
     setSending(k)
     const j = await api.post('/api/plan-requests', { org_id: orgId, target_plan: k })
     setSending(null)
-    if (!j.success) { toast(j.error || 'فشل إرسال الطلب', 'error'); return }
-    toast('وصل طلب الترقية — بنفعّلها لك بأقرب وقت')
+    if (!j.success) { toast(j.error || 'تعذّر إرسال الطلب', 'error'); return }
+    toast('وصل طلب الترقية، وسنفعّلها لك في أقرب وقت')
     load()
   }
   async function cancel() {
@@ -55,8 +60,40 @@ export default function PlanUpgrade({ orgId, plan, maxBranches, activeSlugs = []
       </div>
     )
   }
-  const higher = upgradeTargets(current, activeSlugs)
-  if (!higher.length) return null
+  // باقة ثابتة (قديمة أو جاهزة): الأسعار الجديدة = اختيار المزايا، ويُطبَّق مع التجديد (lib/pricingSwitch)
+  if (switchInfo) {
+    if (switchInfo.chosen) return (
+      <div className="hide-in-app" style={{ marginTop: 16, padding: '12px 14px', borderRadius: radius.md, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, fontSize: font.sm, color: colors.text, lineHeight: 1.7 }}>
+        {switchInfo.chosen.applied ? 'انتقلت إلى الأسعار الجديدة بالمزايا التي اخترتها.' : switchInfo.chosen.outcome === 'switch'
+          ? <>اخترت مزاياك بالأسعار الجديدة: <b>{switchInfo.chosen.modules.map(sl => FEATURE_NAMES[sl]?.ar || sl).join('، ')}</b>، ويُطبَّق اختيارك مع التجديد القادم.</>
+          : 'اخترت مزاياك، وتبقى على باقتك الحالية لأنها أوفر لك.'}
+      </div>
+    )
+    if (switchInfo.show) return (
+      <div className="hide-in-app" style={{ marginTop: 16, padding: '14px', borderRadius: radius.md, border: `1px solid ${colors.border}`, display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+        <div style={{ fontSize: font.sm, fontWeight: 700, color: colors.text }}>الأسعار الجديدة: ادفع فقط للمزايا التي تحتاجها</div>
+        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
+          {CUSTOM_MODULE_ORDER.map(slug => {
+            const mod = CUSTOM_MODULES[slug]
+            return (
+              <div key={slug} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: font.sm, color: colors.text }}>
+                <span style={{ flex: 1 }}>{FEATURE_NAMES[slug]?.ar || slug}{activeSlugs.includes(slug) ? <span style={{ color: colors.text3, fontSize: 12 }}> · مفعّلة لديك</span> : null}</span>
+                <span style={{ color: colors.text2, whiteSpace: 'nowrap' as const }}>{mod.first} ريال {mod.perBranch ? 'لكل فرع' : 'للمنشأة'}</span>
+              </div>
+            )
+          })}
+        </div>
+        <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7 }}>خصم 20% على كل فرع من الفرع الثالث، و6 موظفين مشمولين لكل فرع. لن تدفع أكثر من فاتورتك الحالية.</div>
+        <button type="button" onClick={() => window.dispatchEvent(new Event('pricing-switch-open'))}
+          style={{ alignSelf: 'flex-start', padding: '9px 16px', borderRadius: 8, border: 'none', background: colors.primary, color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
+          اختر مزاياك بالأسعار الجديدة
+        </button>
+      </div>
+    )
+  }
+  // الترقية لباقة ثابتة توقّفت مع الأسعار الجديدة — نعرض فقط طلب ترقية معلّق قديم إن وُجد
+  const higher: PlanKey[] = []
+  if (!pending) return null
   return (
     <div className="hide-in-app" style={{ marginTop: 16, display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
       {pending ? (
