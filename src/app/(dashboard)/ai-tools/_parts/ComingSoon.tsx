@@ -1,4 +1,5 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 import { C } from './config'
 import type { AiToolsPage } from './useAiTools'
 
@@ -10,7 +11,7 @@ export default function ComingSoon({ m }: { m: AiToolsPage }) {
       <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`,animationDelay:'.2s'}}>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <span style={{fontSize:18}}>📅</span>
+            <FeatureIcon name="📅" size={18} />
             <div style={{flex:1}}>
               <div style={{fontSize:13,fontWeight:700,color:C.text}}>التقرير الأسبوعي</div>
               <div style={{fontSize:11,color:C.text3}}>يُرسل كل أحد على واتساب تلقائياً</div>

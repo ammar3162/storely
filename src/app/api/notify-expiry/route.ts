@@ -61,7 +61,7 @@ export async function POST(req: Request) {
       const sorted = [...group.items].sort((a, b) => new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime())
       const lines = sorted.map((p: any) => {
         const days = Math.ceil((new Date(p.expiry_date).getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
-        const daysLabel = days <= 0 ? 'انتهت اليوم!' : `باقي ${days} ${days === 1 ? 'يوم' : 'أيام'}`
+        const daysLabel = days <= 0 ? 'انتهت اليوم!' : `المتبقي ${days} ${days === 1 ? 'يوم' : 'أيام'}`
         return `▸ ${p.name} — ${p.qty} ${p.unit} (${daysLabel})`
       }).join('\n')
 
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
       const branchKey = key !== 'none' ? key : null
       await supabase.from('notifications').insert({
         org_id: org.id, branch_id: branchKey, type: 'warning',
-        title: 'منتجات قربت تنتهي صلاحيتها',
+        title: 'منتجات قاربت صلاحيتها على الانتهاء',
         message: `${sorted.length} منتج قرب ينتهي خلال 7 أيام: ${sorted.slice(0,3).map((p:any)=>p.name).join('، ')}${sorted.length>3?' وغيرها':''}`,
       } as any)
 

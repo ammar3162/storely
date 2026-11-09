@@ -2,6 +2,7 @@ import { managerMay } from '@/lib/managerPerms'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { branchFeatureDenied } from '@/lib/featureRoutes'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,7 +20,7 @@ export async function GET(req: Request) {
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (!managerMay(access as any, 'dispense')) return NextResponse.json({ error: 'ما عندك صلاحية على هالقسم — كلّم مالك المنشأة' }, { status: 403 })
+    if (!managerMay(access as any, 'dispense')) return NextResponse.json({ error: 'ليست لديك صلاحية على هذا القسم — تواصل مع مالك المنشأة' }, { status: 403 })
     const effectiveBranchId = enforcedBranchId(access, branch_id)
 
     let q = sb().from('stock_movements')
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (!managerMay(access as any, 'dispense')) return NextResponse.json({ error: 'ما عندك صلاحية على هالقسم — كلّم مالك المنشأة' }, { status: 403 })
+    if (!managerMay(access as any, 'dispense')) return NextResponse.json({ error: 'ليست لديك صلاحية على هذا القسم — تواصل مع مالك المنشأة' }, { status: 403 })
 
     const supabase = sb()
     const { data: product } = await supabase.from('products').select('id,qty,branch_id').eq('id', product_id).eq('org_id', org_id).single()
@@ -58,6 +59,8 @@ export async function POST(req: Request) {
     if (effectiveBranchId && (product as any).branch_id !== effectiveBranchId) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
     }
+    const denied = await branchFeatureDenied(org_id, ['inventory'], (product as any).branch_id, supabase)
+    if (denied) return NextResponse.json({ error: denied }, { status: 403 })
     if (Number((product as any).qty) < qn) return NextResponse.json({ error: 'الكمية أكبر من المتاح!' }, { status: 400 })
 
     const { error } = await supabase.from('stock_movements').insert({

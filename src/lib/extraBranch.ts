@@ -1,7 +1,7 @@
 // طلب فرع إضافي — العميل يطلبه من صفحة الفروع، والأدمن يوافق عليه من «طلبات الإضافات».
 // الطلب لين حد باقته (lib/planPricing PLAN_CAPS.maxBranches)، وسعره حسب باقته (يتثبّت وقت الموافقة — lib/addonActivation).
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { PLAN_CAPS, branchPriceFor, maxSelfServeBranches, planKeyOf, YEARLY_FACTOR } from '@/lib/planPricing'
+import { PLAN_CAPS, branchPriceFor, maxSelfServeBranches, nextPlanOf, isNewPlan, planKeyOf, YEARLY_FACTOR } from '@/lib/planPricing'
 import { getBranchLimit, EXTRA_BRANCH_SLUG } from '@/lib/branchLimit'
 
 export type BranchOffer = {
@@ -30,7 +30,8 @@ export async function branchOffer(db: SupabaseClient, orgId: string): Promise<Br
     plan, total: limit.total, maxTotal, pending, canAdd: limit.total + pending < maxTotal,
     price: branchPriceFor(plan), yearly: (org as any)?.billing_cycle === 'yearly',
     staff: caps.branchStaff, suppliers: caps.branchSuppliers,
-    nextPlan: plan === 'basic' ? 'pro' : plan === 'pro' ? 'advanced' : null,
+    // الجديدة كلها توصل 10 فروع — فوقها «المؤسسات» بالتواصل، فما فيه باقة أعلى نقترحها هنا
+    nextPlan: isNewPlan(plan) ? null : nextPlanOf(plan),
   }
 }
 
@@ -44,7 +45,7 @@ async function pendingBranchRequest(db: SupabaseClient, orgId: string): Promise<
 export async function requestExtraBranch(db: SupabaseClient, orgId: string, userId: string | null):
   Promise<{ ok: true; pending: number } | { ok: false; status: number; error: string; code?: string }> {
   const offer = await branchOffer(db, orgId)
-  if (!offer.canAdd) return { ok: false, status: 403, code: 'plan_max', error: `وصلت أقصى عدد فروع لباقتك (${offer.maxTotal})${offer.pending ? ' مع الطلبات المعلّقة' : ''} — رقّ باقتك عشان تضيف فروع أكثر` }
+  if (!offer.canAdd) return { ok: false, status: 403, code: 'plan_max', error: `وصلت إلى الحد الأقصى لعدد فروع باقتك (${offer.maxTotal})${offer.pending ? ' مع الطلبات المعلّقة' : ''} — ${isNewPlan(offer.plan) ? 'تواصل معنا لباقة المؤسسات' : 'رقِّ باقتك لإضافة المزيد من الفروع'}` }
 
   const { data: addon } = await db.from('marketplace_addons').select('id').eq('slug', EXTRA_BRANCH_SLUG).maybeSingle()
   if (!addon) return { ok: false, status: 500, error: 'إضافة الفرع غير متاحة' }

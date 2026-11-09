@@ -1,5 +1,5 @@
 import { cleanPerms } from '@/lib/staffRoles'
-import { orgHasFeature, lockedMessage } from '@/lib/planFeatures'
+import { branchFeatureError } from '@/lib/planFeatures'
 import { NextResponse } from 'next/server'
 import { samePhone } from '@/lib/loginThrottle'
 import { encryptPinSafe } from '@/lib/pinVault'
@@ -29,8 +29,9 @@ export async function POST(req: Request) {
     const supabase = sb()
 
     const { data: org } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
-    if (role === 'cashier' && !(await orgHasFeature(supabase, org_id, 'cashier', (org as any)?.plan))) {
-      return NextResponse.json({ error: lockedMessage('cashier') }, { status: 403 })
+    if (role === 'cashier') {
+      const locked = await branchFeatureError(supabase, org_id, 'cashier', (org as any)?.plan, effectiveBranchId)
+      if (locked) return NextResponse.json({ error: locked }, { status: 403 })
     }
 
     const capacity = await checkStaffCapacity(supabase, org_id, effectiveBranchId)
@@ -43,14 +44,14 @@ export async function POST(req: Request) {
       .eq('org_id', org_id)
     const dup = ((sameOrg || []) as any[]).find(x => samePhone(String(x.phone || ''), String(phone)))
     if (dup) {
-      const where = dup.branches?.name ? ` بفرع «${dup.branches.name}»` : ''
+      const where = dup.branches?.name ? ` في فرع «${dup.branches.name}»` : ''
       const msg = dup.branches && dup.branches.is_active === false
-        ? `رقم الجوال مسجّل للموظف «${dup.name}» بفرع «${dup.branches.name}» الموقوف. تلقاه بصفحة الموظفين تحت «موظفين بفروع موقوفة»: انقله لهذا الفرع أو احذفه.`
+        ? `رقم الجوال مسجّل للموظف «${dup.name}» في فرع «${dup.branches.name}» الموقوف. تجده في صفحة الموظفين ضمن «موظفين بفروع موقوفة»: انقله إلى هذا الفرع أو احذفه.`
         : dup.is_active
         ? `رقم الجوال مسجّل للموظف «${dup.name}»${where}.`
         : dup.hidden_from_list
-          ? `رقم الجوال مسجّل للموظف «${dup.name}»${where}، وهو موقوف بسبب انتهاء إضافة «موظف إضافي». تلقاه بصفحة الموظفين تحت «موقوفين بسبب انتهاء إضافة» — احذفه عشان يتحرر الرقم.`
-          : `رقم الجوال مسجّل للموظف «${dup.name}»${where}، وهو موقوف — فعّله من صفحة الموظفين بدل ما تضيفه من جديد، أو احذفه لو ما تحتاجه.`
+          ? `رقم الجوال مسجّل للموظف «${dup.name}»${where}، وهو موقوف بسبب انتهاء إضافة «موظف إضافي». تجده في صفحة الموظفين ضمن «موقوفين بسبب انتهاء إضافة» — احذفه لتحرير الرقم.`
+          : `رقم الجوال مسجّل للموظف «${dup.name}»${where}، وهو موقوف — فعّله من صفحة الموظفين بدلاً من إضافته من جديد، أو احذفه إذا لم تعد بحاجة إليه.`
       return NextResponse.json({ error: msg, duplicate: { id: dup.id, name: dup.name, is_active: dup.is_active } }, { status: 409 })
     }
 

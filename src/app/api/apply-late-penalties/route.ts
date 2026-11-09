@@ -65,7 +65,7 @@ export async function POST(req: Request) {
           .in('id', pending.map((r: any) => r.id)).eq('penalty_applied', false).select('id,penalty_amount')
       : { data: [] as any[] }
     if (!records || records.length === 0) {
-      return NextResponse.json({ error: 'ما فيه غرامات معلّقة لهذا الموظف' }, { status: 400 })
+      return NextResponse.json({ error: 'لا توجد غرامات معلّقة لهذا الموظف' }, { status: 400 })
     }
 
     const total = Math.round(records.reduce((sum: number, r: any) => sum + Number(r.penalty_amount || 0), 0) * 100) / 100

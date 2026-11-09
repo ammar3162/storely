@@ -2,11 +2,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 // طلبات المحاسب للمنشأة
 export const REQUEST_KINDS = {
-  missing_vat: 'ناقص الرقم الضريبي أو رقم الفاتورة',
-  unclear_image: 'صورة الفاتورة مو واضحة',
-  amount: 'المبلغ ما يطابق الفاتورة',
-  explain: 'وش هالمصروف؟',
-  document: 'أرسلوا مستند',
+  missing_vat: 'الرقم الضريبي أو رقم الفاتورة ناقص',
+  unclear_image: 'صورة الفاتورة غير واضحة',
+  amount: 'المبلغ لا يطابق الفاتورة',
+  explain: 'توضيح هذا المصروف',
+  document: 'طلب مستند',
   other: 'ملاحظة',
 } as const
 export type RequestKind = keyof typeof REQUEST_KINDS

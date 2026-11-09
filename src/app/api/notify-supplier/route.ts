@@ -121,7 +121,7 @@ async function run(body: any) {
       })
       if (orderErr) console.log('supplier_orders insert error:', orderErr.message)
 
-      const text = buildOrderMessage(orgName, messageItems, supplier.notes) + `\n\nإذا الصنف غير متوفر أو عندك ملاحظات، تواصل مع *${orgName}*`
+      const text = buildOrderMessage(orgName, messageItems, supplier.notes) + `\n\nإذا كان الصنف غير متوفر أو لديك ملاحظات، فتواصل مع *${orgName}*`
       const result = await sendWhatsAppMessage(formatPhone(supplier.phone), text)
       const ok = result.ok
       const numericMsgId = result.data?.data?.msgId || result.data?.msgId || null

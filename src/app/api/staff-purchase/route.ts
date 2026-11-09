@@ -6,6 +6,7 @@ import { resolvePurchaseTax, notifyQrMismatch } from '@/lib/taxInvoice'
 import { staffHasPermission, NO_PURCHASES } from '@/lib/staffPermission'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
+import { staffFeatureError, branchFeatureDenied } from '@/lib/featureRoutes'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,30 +18,36 @@ export async function POST(req: Request) {
     const rawStaffToken = extractStaffToken(req)
     const auth = await verifyStaffToken(rawStaffToken)
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
+    // «ابنِ باقتك»: الميزة لازم تكون لفرع الموظف
+    const featureLocked = await staffFeatureError(auth.data as any, 'purchases')
+    if (featureLocked) return NextResponse.json({ error: featureLocked }, { status: 403 })
     const { org_id, staff_id, branch_id } = auth.data!
 
     const body = await req.json()
-    const { category, name, qty, unit, reorder_point,
+    const { name, qty, unit, reorder_point,
             supplier, note, invoice_image, staff_name } = body
+    let category = body.category
 
     // المبلغ قبل الضريبة يُحسب هنا: شاملة ضريبة ← الإجمالي ÷ 1.15، بدون ← الإجمالي نفسه
     // (توافق مع النسخة القديمة من الصفحة اللي كانت ترسل amount جاهز وتعتبر الكل شامل ضريبة)
     const hasVat = body.has_vat !== false
     if (invoice_image && !isStoredInvoiceUrl(invoice_image)) return NextResponse.json({ error: 'رابط الفاتورة غير صالح — ارفع الصورة من جديد' }, { status: 400 })
-    if (hasVat && !invoice_image) return NextResponse.json({ error: 'الفاتورة الضريبية لازم ترفق صورتها أو ملفها' }, { status: 400 })
+    if (hasVat && !invoice_image) return NextResponse.json({ error: 'يجب إرفاق صورة الفاتورة الضريبية أو ملفها' }, { status: 400 })
     const total = Number(body.total_amount)
     const amount = Number.isFinite(total) && total > 0
       ? netFromTotal(total, hasVat)
       : Number(body.amount)
     if (!(amount > 0)) return NextResponse.json({ error: 'أدخل المبلغ' }, { status: 400 })
 
-    if (qty != null && qty !== '' && !(Number.isInteger(Number(qty)) && Number(qty) >= 0)) return NextResponse.json({ error: 'الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)' }, { status: 400 })
+    if (qty != null && qty !== '' && !(Number.isInteger(Number(qty)) && Number(qty) >= 0)) return NextResponse.json({ error: 'يجب أن تكون الكمية رقماً صحيحاً — إذا كانت فيها كسور فاستخدم وحدة أصغر (مثل الغرام بدل الكيلو)' }, { status: 400 })
     if (!org_id || !name) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
 
     const supabase = sb()
     if (!(await staffHasPermission(supabase, staff_id, org_id, 'purchases'))) return NextResponse.json({ error: NO_PURCHASES }, { status: 403 })
+    // الفرع بدون المخزون («ابنِ باقتك»): تنحفظ مشتريات (مصروف) بدون ما تدخل المخزون
+    if (category === 'مخزون' && await branchFeatureDenied(org_id, ['inventory'], branch_id || null, supabase)) category = 'مشتريات'
     const tax = await resolvePurchaseTax(supabase, org_id, supplier || null, body, hasVat, Number.isFinite(total) && total > 0 ? total : amount)
     if (!tax.ok) return NextResponse.json({ error: tax.error, duplicate: tax.duplicate || undefined }, { status: tax.status })
 

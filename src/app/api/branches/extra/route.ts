@@ -11,7 +11,7 @@ export async function GET(req: Request) {
   const org_id = new URL(req.url).searchParams.get('org_id') || ''
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-  if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
+  if (access.role !== 'owner') return NextResponse.json({ error: 'هذه الصلاحية للمالك فقط' }, { status: 403 })
   return NextResponse.json({ success: true, offer: await branchOffer(sb(), org_id) })
 }
 
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     const { org_id } = await req.json()
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
+    if (access.role !== 'owner') return NextResponse.json({ error: 'هذه الصلاحية للمالك فقط' }, { status: 403 })
     const db = sb()
     const res = await requestExtraBranch(db, org_id, access.userId || null)
     if (!res.ok) return NextResponse.json({ error: res.error, code: res.code }, { status: res.status })

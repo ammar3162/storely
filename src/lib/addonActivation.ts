@@ -2,7 +2,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
 import { syncStaffToLimit } from '@/lib/staffCapacity'
-import { addonPeriodEnd, branchPriceFor, planKeyOf, proratedCharge, unitPrice, YEARLY_FACTOR } from '@/lib/planPricing'
+import { clearFeatureCache } from '@/lib/featureRoutes'
+import { addonPeriodEnd, addonPriceFor, branchPriceFor, isPerBranchAddon, planKeyOf, proratedCharge, unitPrice, YEARLY_FACTOR, isNewPlan, CUSTOM_MODULES, customModuleAmount } from '@/lib/planPricing'
 
 export type ActivateResult =
   | { ok: true; expiresAt: string; quantity: number; proratedAmount: number; proratedDays: number; branchIds: string[] | null; slug: string; name: string }
@@ -13,23 +14,42 @@ export type ActivateResult =
  * unitPrice = سعر الوحدة للاشتراك الجديد لو يختلف عن سعر الإضافة (الفرع الإضافي سعره حسب الباقة) — يتثبّت بـ locked_price.
  * yearly = باقة سنوية: المستحق بالتناسب للفرع الإضافي بخصم السنوي.
  */
-export async function activateAddon(db: SupabaseClient, input: { orgId: string; addonId: string; quantity?: number; branchIds?: string[] | null; unitPrice?: number; yearly?: boolean }): Promise<ActivateResult> {
+/** allBranches = لكل فروع المنشأة (حتى اللي تنضاف بعدين) بكمية quantity — للتسجيل قبل ما تنشأ الفروع */
+export async function activateAddon(db: SupabaseClient, input: { orgId: string; addonId: string; quantity?: number; branchIds?: string[] | null; unitPrice?: number; yearly?: boolean; allBranches?: boolean }): Promise<ActivateResult> {
   const { orgId, addonId } = input
   const { data: addonRow } = await db.from('marketplace_addons').select('slug,name,monthly_price').eq('id', addonId).maybeSingle()
   if (!addonRow) return { ok: false, status: 404, error: 'الإضافة غير موجودة' }
   const slug = (addonRow as any).slug as string
 
+  const { data: org } = await db.from('organizations').select('plan,max_branches,billing_cycle').eq('id', orgId).maybeSingle()
+  const plan = (org as any)?.plan as string | null
+
   // الفرع الإضافي: سعره وخصم السنوي حسب باقة المنشأة — حتى لو فعّله الأدمن
   if (slug === 'extra_branch' && !(Number(input.unitPrice) > 0)) {
-    const { data: org } = await db.from('organizations').select('plan,max_branches,billing_cycle').eq('id', orgId).maybeSingle()
-    input = { ...input, unitPrice: branchPriceFor(planKeyOf((org as any)?.plan, (org as any)?.max_branches)), yearly: (org as any)?.billing_cycle === 'yearly' }
+    input = { ...input, unitPrice: branchPriceFor(planKeyOf(plan, (org as any)?.max_branches)), yearly: (org as any)?.billing_cycle === 'yearly' }
+  }
+  // الباقات الجديدة: سعر الإضافة من جدولها (المشتركين القدامى يكملون بسعر الإضافة العادي)
+  if (!(Number(input.unitPrice) > 0)) {
+    const p = addonPriceFor(plan, slug)
+    if (p && p > 0) input = { ...input, unitPrice: p }
+  }
+
+  // إضافة لكل فرع (الباقات الجديدة): الفروع المختارة (افتراضياً كل الفروع النشطة) والكمية = عددها
+  let branchIds: string[] | null = null
+  if (isPerBranchAddon(plan, slug) && !input.allBranches) {
+    const { data: branches } = await db.from('branches').select('id').eq('org_id', orgId).eq('is_active', true)
+    const live = ((branches || []) as any[]).map(b => b.id as string)
+    const wanted = Array.isArray(input.branchIds) && input.branchIds.length ? input.branchIds.filter(id => live.includes(id)) : live
+    if (!wanted.length) return { ok: false, status: 400, error: 'اختر فرع واحد على الأقل' }
+    branchIds = Array.from(new Set(wanted))
+    input = { ...input, quantity: branchIds.length }
   }
 
   // الإضافة تنتهي مع الباقة — المستحق الحين بالتناسب عن الأيام الباقية
   const { data: owner } = await db.from('profiles').select('subscription_ends_at').eq('org_id', orgId).eq('role', 'owner').maybeSingle()
   const periodEnd = addonPeriodEnd((owner as any)?.subscription_ends_at)
   const expiresAt = periodEnd.toISOString()
-  const qty = Math.max(1, Math.min(20, Number(input.quantity) || 1))
+  const qty = Math.max(1, Math.min(branchIds ? 50 : 20, Number(input.quantity) || 1))
 
   const { data: existingRow } = await db.from('org_addon_subscriptions').select('id,quantity,status,expires_at,locked_price').eq('org_id', orgId).eq('addon_id', addonId).maybeSingle()
   // سارية فعلاً = active وما انتهت — المنتهية تنحسب كاشتراك جديد بالكامل
@@ -38,11 +58,12 @@ export async function activateAddon(db: SupabaseClient, input: { orgId: string; 
   const qtyDelta = qty - oldQty
 
   const { error } = await db.from('org_addon_subscriptions').upsert({
-    org_id: orgId, addon_id: addonId, status: 'active', activated_at: new Date().toISOString(), expires_at: expiresAt, cancelled_at: null, quantity: qty,
+    org_id: orgId, addon_id: addonId, status: 'active', activated_at: new Date().toISOString(), expires_at: expiresAt, cancelled_at: null, quantity: qty, branch_ids: branchIds,
     // اشتراك جديد أو بعد انتهاء = السعر الحالي (أو سعر الباقة للفرع الإضافي)؛ الساري يحتفظ بسعره المثبّت
     ...(wasActive ? {} : { locked_price: Number(input.unitPrice) > 0 ? Number(input.unitPrice) : null }),
   } as any, { onConflict: 'org_id,addon_id' })
   if (error) return { ok: false, status: 500, error: 'فشل التفعيل' }
+  clearFeatureCache(orgId)
 
   // نطبّق الفرق بس على حدود المنشأة
   if (slug === 'extra_branch') {
@@ -59,7 +80,12 @@ export async function activateAddon(db: SupabaseClient, input: { orgId: string; 
 
   // المستحق الحين: الوحدات الجديدة فقط × الأيام الباقية لين التجديد
   const chargedQty = wasActive ? Math.max(0, qtyDelta) : qty
-  const unit = wasActive ? unitPrice((addonRow as any).monthly_price, existingRow as any) : (Number(input.unitPrice) > 0 ? Number(input.unitPrice) : Number((addonRow as any).monthly_price) || 0)
-  const prorated = proratedCharge(input.yearly && slug === 'extra_branch' ? unit * YEARLY_FACTOR : unit, chargedQty, periodEnd)
-  return { ok: true, expiresAt, quantity: qty, proratedAmount: prorated.amount, proratedDays: prorated.days, branchIds: null, slug, name: (addonRow as any).name }
+  const unit = wasActive ? unitPrice(addonPriceFor(plan, slug) ?? (addonRow as any).monthly_price, existingRow as any) : (Number(input.unitPrice) > 0 ? Number(input.unitPrice) : Number((addonRow as any).monthly_price) || 0)
+  // ميزة بسعر «فرع أول + فرع إضافي» (الباقات الجديدة): المستحق = فرق المبلغ الشهري بين الكمية القديمة والجديدة
+  const feat = isNewPlan(plan) ? CUSTOM_MODULES[slug] : undefined
+  const locked = Number((wasActive ? (existingRow as any)?.locked_price : input.unitPrice)) || null
+  const prorated = feat
+    ? proratedCharge(Math.max(0, customModuleAmount(slug, feat.perBranch ? qty : 1, locked) - (wasActive ? customModuleAmount(slug, feat.perBranch ? oldQty : 1, locked) : 0)), 1, periodEnd)
+    : proratedCharge(input.yearly && slug === 'extra_branch' ? unit * YEARLY_FACTOR : unit, chargedQty, periodEnd)
+  return { ok: true, expiresAt, quantity: qty, proratedAmount: prorated.amount, proratedDays: prorated.days, branchIds, slug, name: (addonRow as any).name }
 }

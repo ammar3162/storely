@@ -1,4 +1,5 @@
 'use client'
+import { ScanLine } from 'lucide-react'
 import NumberInput from '@/components/NumberInput'
 import { isPdfUrl } from '@/lib/invoiceFile'
 import { unitsFor } from '@/lib/businessTypes'
@@ -8,17 +9,18 @@ import { C, CATS, CAT_ICONS, lbl, inp } from './constants'
 import type { PurchasesState } from './usePurchases'
 
 export default function PurchaseItemFields({ m }: { m: PurchasesState }) {
-  const { products, isExisting, setIsExisting, uploading, bizType, setShowScan, previewUrl, form, setForm, handleImage } = m
+  const { invOn, products, isExisting, setIsExisting, uploading, bizType, setShowScan, previewUrl, form, setForm, handleImage } = m
+  const cats = CATS.filter(c => invOn || c !== 'مخزون')
   return (
     <>
             {/* Category */}
             <div style={{marginBottom:12}}>
               <label style={lbl}>نوع الشراء</label>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
-                {CATS.map(c=>(
+              <div style={{display:'grid',gridTemplateColumns:`repeat(${cats.length},1fr)`,gap:6}}>
+                {cats.map(c=>(
                   <button key={c} type="button" onClick={()=>setForm({...form,category:c,name:'',sku:'',unit:'قطعة'})}
                     style={{padding:'10px 6px',borderRadius:8,fontSize:12,fontWeight:600,cursor:'pointer',border:`1px solid ${form.category===c?C.primary:C.border2}`,background:form.category===c?C.primaryL:'white',color:form.category===c?C.primary:C.text3,fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:4,transition:'all .15s'}}>
-                    <span style={{fontSize:18}}>{CAT_ICONS[c]}</span>
+                    {(()=>{ const Ic=CAT_ICONS[c]; return Ic ? <Ic size={18}/> : null })()}
                     <span>{c}</span>
                   </button>
                 ))}
@@ -30,10 +32,10 @@ export default function PurchaseItemFields({ m }: { m: PurchasesState }) {
             <div style={{marginBottom:10}}>
               <label style={lbl}>صورة الفاتورة {form.hasVat==='yes'?<span style={{color:C.danger}}>*</span>:'(اختياري)'}</label>
               <InvoicePickButtons onFile={handleImage} disabled={uploading} primary={C.primary} primaryL={C.primaryL}
-                labels={{camera:'📷 تصوير',gallery:'🖼️ من الصور',file:'📄 ملف PDF'}}/>
+                labels={{camera:'تصوير',gallery:'من الصور',file:'ملف PDF'}}/>
               {(uploading||previewUrl||form.hasVat==='yes')&&(
                 <div style={{fontSize:11.5,fontWeight:700,marginTop:6,color:uploading?C.text3:previewUrl?C.primary:C.danger}}>
-                  {uploading?'⏳ جاري الرفع...':previewUrl?(isPdfUrl(previewUrl)?'📄 تم إرفاق ملف الفاتورة — اختر من جديد للتغيير':'✅ تم رفع الصورة — اختر من جديد للتغيير'):'الفاتورة مطلوبة لأن فيها ضريبة'}
+                  {uploading?'جاري الرفع...':previewUrl?(isPdfUrl(previewUrl)?'تم إرفاق ملف الفاتورة — اختر من جديد للتغيير':'تم رفع الصورة — اختر من جديد للتغيير'):'الفاتورة مطلوبة لأن فيها ضريبة'}
                 </div>
               )}
               {previewUrl&&!isPdfUrl(previewUrl)&&(
@@ -44,7 +46,7 @@ export default function PurchaseItemFields({ m }: { m: PurchasesState }) {
             {/* Existing/New toggle */}
             {form.category==='مخزون'&&(
               <div style={{display:'flex',gap:6,marginBottom:12}}>
-                {[{v:true,l:'📦 صنف موجود'},{v:false,l:'➕ صنف جديد'}].map(b=>(
+                {[{v:true,l:'صنف موجود'},{v:false,l:'صنف جديد'}].map(b=>(
                   <button key={String(b.v)} type="button" onClick={()=>setIsExisting(b.v)}
                     style={{flex:1,padding:'9px',borderRadius:8,border:`1.5px solid ${isExisting===b.v?C.primary:C.border2}`,background:isExisting===b.v?C.primaryL:'white',color:isExisting===b.v?C.primary:C.text3,fontWeight:600,cursor:'pointer',fontFamily:'inherit',fontSize:12,transition:'all .15s'}}>
                     {b.l}
@@ -86,7 +88,7 @@ export default function PurchaseItemFields({ m }: { m: PurchasesState }) {
                   <label style={lbl}>باركود (اختياري)</label>
                   <div style={{display:'flex',gap:5}}>
                     <input value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} style={{...inp,flex:1}} placeholder="امسح أو أدخل يدوياً"/>
-                    <button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 10px',background:C.primaryL,color:C.primary,border:`1px solid ${C.primaryB}`,borderRadius:8,fontSize:14,cursor:'pointer'}}>📷</button>
+                    <button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 10px',background:C.primaryL,color:C.primary,border:`1px solid ${C.primaryB}`,borderRadius:6,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center'}} aria-label="مسح الباركود"><ScanLine size={16}/></button>
                   </div>
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:10}}>

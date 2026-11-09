@@ -34,7 +34,7 @@ export default function SmartOrder() {
     const j = await api.patch('/api/products', { org_id: sessionStorage.getItem('s_org_id'), id: row.productId, reorder_point: row.reorder.suggested })
     setApplying(null)
     if (!j.success) { toast(j.error || 'تعذر الحفظ', 'error'); return }
-    toast(`صار حد التنبيه لـ${row.name}: ${row.reorder.suggested} ${row.unit}`)
+    toast(`أصبح حد التنبيه لـ${row.name}: ${row.reorder.suggested} ${row.unit}`)
     setData(d => d && { ...d, rows: d.rows.map(x => x.name === row.name ? { ...x, reorder: null } : x) })
   }
 
@@ -48,7 +48,7 @@ export default function SmartOrder() {
           <span style={{ width: 34, height: 34, borderRadius: 10, background: C.primaryLight, color: C.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><ShoppingCart size={17} /></span>
           <div>
             <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>الطلب الذكي</div>
-            <div style={{ fontSize: 11, color: C.text3, marginTop: 2 }}>وش تطلب، وكم، ومتى — من صرفك الفعلي ومدة توريد مورديك</div>
+            <div style={{ fontSize: 11, color: C.text3, marginTop: 2 }}>ماذا تطلب، وكم، ومتى — بناءً على صرفك الفعلي ومدة توريد مورديك</div>
           </div>
         </div>
         <button onClick={analyze} disabled={loading} style={{ padding: '8px 16px', background: C.primary, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
@@ -58,7 +58,7 @@ export default function SmartOrder() {
 
       {data && (
         <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8, marginTop: 14 }}>
-          {data.rows.length === 0 && <div style={{ fontSize: 13, color: C.text3, textAlign: 'center' as const, padding: 14 }}>كل أصنافك وضعها آمن — ما تحتاج تطلب شي الحين</div>}
+          {data.rows.length === 0 && <div style={{ fontSize: 13, color: C.text3, textAlign: 'center' as const, padding: 14 }}>جميع أصنافك في وضع آمن — لا تحتاج إلى طلب أي شيء الآن</div>}
           {data.rows.map(r => {
             const t = tone(r)
             return (

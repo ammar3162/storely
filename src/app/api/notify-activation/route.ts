@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     const session = process.env.WASENDER_SESSION_ID!
     const isPaid  = subscriptionType === 'paid'
     const endsDate = subscriptionEndsAt
-      ? new Date(subscriptionEndsAt).toLocaleDateString('ar-SA', {numberingSystem:'latn'})
+      ? new Date(subscriptionEndsAt).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn'})
       : '—'
 
     const msg =

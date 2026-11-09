@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { checkSupplierCapacity } from '@/lib/supplierCapacity'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { guard, limit } from '@/lib/rateLimit'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,6 +31,9 @@ export async function POST(req: Request) {
     const capacity = await checkSupplierCapacity(supabase, org_id)
     if (!capacity.ok) return NextResponse.json({ error: capacity.error }, { status: 403 })
     const addonSubscriptionId = capacity.addonSubscriptionId
+    // حد الإضافة: 20 مورد بالساعة لكل منشأة
+    const limited = await guard([limit('supplierAddOrg', org_id)], supabase)
+    if (limited) return limited
 
     const { data: newSup, error } = await supabase
       .from('suppliers')

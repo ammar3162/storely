@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { orgHasFeature, lockedMessage } from '@/lib/planFeatures'
+import { branchFeatureError } from '@/lib/planFeatures'
 import { lockedFor, lockedFromError } from '@/lib/periodLock'
 import { createClient } from '@supabase/supabase-js'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
@@ -54,14 +54,14 @@ export async function POST(req: Request) {
     const { data: staffRow } = await sb().from('staff_members')
       .select('name,branch_id,role,is_active,permissions').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
     if (!staffRow || (staffRow as any).is_active === false) return NextResponse.json({ error: 'الحساب غير فعّال' }, { status: 403 })
-    if (!canCloseCashier(staffRow as any)) return NextResponse.json({ error: 'إقفال الصندوق للكاشير أو لموظف عنده صلاحية إقفال الكاشير' }, { status: 403 })
+    if (!canCloseCashier(staffRow as any)) return NextResponse.json({ error: 'إقفال الصندوق متاح للكاشير أو لموظف لديه صلاحية إقفال الكاشير' }, { status: 403 })
     const staff_name: string = (staffRow as any).name
     const branch_id: string | null = (staffRow as any).branch_id ?? auth.data.branch_id ?? null
 
     const { data: orgCheck } = await sb().from('organizations').select('plan,delivery_apps').eq('id', org_id).single()
-    if (!(await orgHasFeature(sb(), org_id, 'cashier', (orgCheck as any)?.plan))) {
-      return NextResponse.json({ error: lockedMessage('cashier') }, { status: 403 })
-    }
+    // الميزة لازم تكون مفعّلة لفرع الكاشير (الإضافة ممكن تكون لفروع معيّنة)
+    const featureLocked = await branchFeatureError(sb(), org_id, 'cashier', (orgCheck as any)?.plan, branch_id)
+    if (featureLocked) return NextResponse.json({ error: featureLocked }, { status: 403 })
 
     // نفس حساب التعديل (lib/cashierClosingCalc) — مبالغ موجبة ومعقولة بس، وأي قيمة غريبة تنرفض
     // التوصيل: الكاشير يختار التطبيق ويكتب مبلغه
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     // العجز لازم له سبب — ما ينقبل التقفيل بدونه
     const deficitReason = status === 'deficit' ? String(deficit_reason || '').trim().slice(0, 500) : ''
     if (status === 'deficit' && deficitReason.length < 3) {
-      return NextResponse.json({ error: 'فيه عجز — اكتب سبب العجز قبل التقفيل' }, { status: 400 })
+      return NextResponse.json({ error: 'يوجد عجز — اكتب سبب العجز قبل الإقفال' }, { status: 400 })
     }
 
     const supabase = sb()
@@ -162,8 +162,8 @@ export async function POST(req: Request) {
       if (whatsappNumber && shouldSendNow && ownerConsented) {
         const now = new Date()
         const effectiveDate = now
-        const timeStr = effectiveDate.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Riyadh' })
-        const dateStr = effectiveDate.toLocaleDateString('ar-SA', {numberingSystem:'latn', weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })
+        const timeStr = effectiveDate.toLocaleTimeString('ar-SA-u-ca-gregory', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Riyadh' })
+        const dateStr = effectiveDate.toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn', weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })
         const branchLine = (isMultiBranch && branchName) ? `🏪 الفرع: *${branchName}*\n` : ''
 
         let msg: string
@@ -271,7 +271,7 @@ async function ownerWithPassword(org_id: unknown, password: unknown) {
   if (typeof org_id !== 'string' || !/^[0-9a-f-]{36}$/i.test(org_id)) return { error: NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 }) }
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return { error: NextResponse.json({ error: access.error }, { status: access.status }) }
-  if (access.role !== 'owner') return { error: NextResponse.json({ error: 'تعديل وحذف الإقفال لمالك الحساب بس' }, { status: 403 }) }
+  if (access.role !== 'owner') return { error: NextResponse.json({ error: 'تعديل الإقفال وحذفه متاحان لمالك الحساب فقط' }, { status: 403 }) }
   const v = await verifyOwnerPassword(sb(), org_id, access.userId!, password)
   if (!v.ok) return { error: NextResponse.json({ error: v.error }, { status: v.status }) }
   return { editor: (await sb().from('profiles').select('full_name').eq('id', access.userId!).maybeSingle()).data?.full_name || 'المالك' }

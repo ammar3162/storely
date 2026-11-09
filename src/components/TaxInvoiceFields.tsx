@@ -8,9 +8,9 @@ const BarcodeScanner = lazy(() => import('@/components/BarcodeScanner'))
 export type ZatcaState = { raw: string; inv: ZatcaInvoice } | null
 
 const T = {
-  ar: { inv: 'رقم الفاتورة', invPh: 'مثلاً INV-1024', vat: 'الرقم الضريبي للمورد', bad: '١٥ رقم يبدأ وينتهي بـ 3', saved: 'محفوظ من المورد', hint: 'تلقاه في أعلى الفاتورة — يحتاجه المحاسب للضريبة',
-    scan: 'امسح باركود الفاتورة', scanHint: 'الباركود المربع اللي تحت الفاتورة — يعبّي البيانات ويوثّقها', verified: 'فاتورة موثقة من باركود الهيئة', total: 'الإجمالي', tax: 'الضريبة',
-    remove: 'إلغاء', notZatca: 'هذا مو باركود فاتورة ضريبية — امسح الباركود المربع اللي تحت الفاتورة', over: 'المبلغ المكتوب أكبر من مبلغ الفاتورة الأصلي', fromQr: 'من باركود الفاتورة' },
+  ar: { inv: 'رقم الفاتورة', invPh: 'مثال: INV-1024', vat: 'الرقم الضريبي للمورد', bad: '15 رقماً يبدأ وينتهي بالرقم 3', saved: 'محفوظ من المورد', hint: 'تجده أعلى الفاتورة — يحتاجه المحاسب للضريبة',
+    scan: 'امسح باركود الفاتورة', scanHint: 'الباركود المربع أسفل الفاتورة — يعبّئ البيانات ويوثّقها', verified: 'فاتورة موثقة من باركود الهيئة', total: 'الإجمالي', tax: 'الضريبة',
+    remove: 'إلغاء', notZatca: 'هذا ليس باركود فاتورة ضريبية — امسح الباركود المربع أسفل الفاتورة', over: 'المبلغ المكتوب أكبر من مبلغ الفاتورة الأصلي', fromQr: 'من باركود الفاتورة' },
   en: { inv: 'Invoice number', invPh: 'e.g. INV-1024', vat: 'Supplier VAT number', bad: '15 digits, starts and ends with 3', saved: 'Saved from supplier', hint: 'Printed at the top of the invoice — needed for VAT',
     scan: 'Scan invoice QR', scanHint: 'The square QR at the bottom of the invoice — fills and verifies the data', verified: 'Verified by the ZATCA QR', total: 'Total', tax: 'VAT',
     remove: 'Remove', notZatca: 'This is not a tax-invoice QR — scan the square code at the bottom of the invoice', over: 'Entered amount is higher than the original invoice', fromQr: 'From the invoice QR' },
@@ -40,18 +40,18 @@ export default function TaxInvoiceFields({ invoiceNumber, vatNumber, onChange, i
       {onZatca && (zatca ? (
         <div style={{ background: '#ecfdf5', border: '1.5px solid #6ee7b7', borderRadius: 10, padding: '10px 12px', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: '#047857' }}>✅ {t.verified}</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: '#047857' }}>{t.verified}</span>
             <button type="button" onClick={() => onZatca(null)} style={{ fontSize: 11, fontWeight: 700, color: '#334155', background: 'white', border: '1px solid #e2e8f0', borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontFamily: 'inherit' }}>{t.remove}</button>
           </div>
           <div style={{ fontSize: 12, color: '#065f46', marginTop: 4, lineHeight: 1.7 }}>
             {zatca.inv.sellerName} · {t.total} <b dir="ltr">{fmt(zatca.inv.total)}</b> · {t.tax} <b dir="ltr">{fmt(zatca.inv.vat)}</b>
           </div>
-          {over && <div style={{ fontSize: 12, fontWeight: 700, color: '#dc2626', marginTop: 4 }}>⚠️ {t.over} ({fmt(zatca.inv.total)})</div>}
+          {over && <div style={{ fontSize: 12, fontWeight: 700, color: '#dc2626', marginTop: 4 }}>{t.over} ({fmt(zatca.inv.total)})</div>}
         </div>
       ) : (
         <button type="button" onClick={() => setScanning(true)}
           style={{ width: '100%', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 2, padding: '10px', borderRadius: 10, border: '1.5px dashed #029FA2', background: '#f0fdfa', color: '#0f766e', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 10 }}>
-          <span style={{ fontSize: 13, fontWeight: 800 }}>📷 {t.scan}</span>
+          <span style={{ fontSize: 13, fontWeight: 800 }}>{t.scan}</span>
           <span style={{ fontSize: 10.5, color: '#1e293b' }}>{t.scanHint}</span>
         </button>
       ))}

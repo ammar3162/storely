@@ -68,3 +68,14 @@ describe('branch manager API guard', () => {
     expect(routes.filter(r => !covered(r)), 'أضف المسار الجديد لـ API_GUARDS أو API_OPEN في managerPerms.ts').toEqual([])
   })
 })
+
+describe('permissions follow the plan features («ابنِ باقتك»)', () => {
+  it('hides permissions whose feature is off; unknown features stay available', async () => {
+    const { permAvailable } = await import('./managerPerms')
+    const cashierOnly = { inventory: false, purchases: false, cashier: true, hr: false, ai: false, profitability: true }
+    expect(['inventory', 'dispense', 'purchases', 'suppliers', 'attendance', 'hr', 'ai_tools'].map(k => permAvailable(k, cashierOnly))).toEqual([false, false, false, false, false, false, false])
+    expect(['reports', 'staff', 'profitability', 'cashier'].map(k => permAvailable(k, cashierOnly))).toEqual([true, true, true, true])
+    expect(permAvailable('suppliers', { inventory: false, purchases: true })).toBe(true)
+    expect(permAvailable('dispense', {})).toBe(true)   // قبل ما توصل الميزات: كل شي ظاهر
+  })
+})

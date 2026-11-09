@@ -1,3 +1,4 @@
+import { Package, ShoppingCart, ClipboardList, type LucideIcon } from 'lucide-react'
 import { colors as dsColors } from '@/lib/ds'
 
 // موحّد مع نظام التصميم المشترك (@/lib/ds) — نفس أسماء المفاتيح المستخدمة بالملف، قيم موحدة
@@ -11,7 +12,7 @@ export const C = {
 }
 
 export const CATS = ['مخزون','مشتريات','أخرى']
-export const CAT_ICONS: Record<string,string> = {'مخزون':'📦','مشتريات':'🛒','أخرى':'📋'}
+export const CAT_ICONS: Record<string,LucideIcon> = {'مخزون':Package,'مشتريات':ShoppingCart,'أخرى':ClipboardList}
 
 export const lbl: React.CSSProperties = {fontSize:12,fontWeight:700,color:'#1e293b',display:'block',marginBottom:6}
 export const inp: React.CSSProperties = {width:'100%',padding:'10px 12px',border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',background:'white',color:C.text,fontFamily:'inherit'}

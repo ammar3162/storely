@@ -18,7 +18,7 @@ export default function UnassignedProducts({ m }: { m: StaffPage }) {
               <Package size={18} strokeWidth={2} color={colors.info} style={{flexShrink:0}}/>
               <div style={{flex:1}}>
                 <b style={{fontSize:font.sm,color:colors.info}}>{unassignedProducts.length} منتج غير مخصص لأي موظف</b>
-                <div style={{fontSize:font.xs,color:colors.text3,marginTop:2}}>هذي المنتجات يقدر يشوفها جميع الموظفين بدون تخصيص</div>
+                <div style={{fontSize:font.xs,color:colors.text3,marginTop:2}}>هذه المنتجات متاحة لجميع الموظفين دون تخصيص</div>
               </div>
               <ChevronDown size={16} color={colors.info} strokeWidth={2.25} style={{transform:showUnassigned?'rotate(180deg)':'none',transition:'transform .2s',flexShrink:0}}/>
             </div>

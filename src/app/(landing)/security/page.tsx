@@ -8,7 +8,7 @@ export default function SecurityPage() {
       <style>{`*{box-sizing:border-box;margin:0;padding:0}`}</style>
 
       {/* Header */}
-      <div style={{background:'#042f2e',padding:'16px 32px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+      <div style={{background:'#16262D',padding:'16px 32px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
         <div style={{display:'flex',alignItems:'center',gap:10,cursor:'pointer'}} onClick={()=>router.push('/')}>
           <img src="/storely-logo.png" alt="Storely" style={{width:32,height:32,borderRadius:8,objectFit:'cover'}}/>
           <span style={{fontSize:18,fontWeight:800,color:'white'}}>Storely</span>
@@ -19,7 +19,7 @@ export default function SecurityPage() {
       </div>
 
       <div style={{maxWidth:800,margin:'0 auto',padding:'48px 24px'}}>
-        <h1 style={{fontSize:32,fontWeight:900,color:'#0f172a',marginBottom:8}}>سياسة الأمان</h1>
+        <h1 style={{fontSize:32,fontWeight:900,color:'#203640',marginBottom:8}}>سياسة الأمان</h1>
         <p style={{fontSize:14,color:'#64748b',marginBottom:8}}>آخر تحديث: أغسطس 2026</p>
         <p style={{fontSize:13,color:'#94a3b8',marginBottom:40}}>مؤسسة باسم علي خلوي لتقنية المعلومات — رقم السجل التجاري 7055023522</p>
 
@@ -46,7 +46,7 @@ export default function SecurityPage() {
           },
           {
             title:'6. الإبلاغ عن ثغرة أمنية',
-            content:'لو لاحظت أي ثغرة أمنية محتملة بمنصة Storely، نقدّر تواصلك المسؤول معنا فوراً عبر واتساب أو البريد الإلكتروني أدناه — نتعامل مع كل بلاغ بجدية وسرية تامة.'
+            content:'إذا لاحظت أي ثغرة أمنية محتملة في منصة Storely، فنقدّر تواصلك المسؤول معنا فوراً عبر واتساب أو البريد الإلكتروني أدناه — نتعامل مع كل بلاغ بجدية وسرية تامة.'
           },
           {
             title:'7. التواصل معنا',
@@ -54,13 +54,13 @@ export default function SecurityPage() {
           },
         ].map((s,i)=>(
           <div key={i} style={{marginBottom:32}}>
-            <h2 style={{fontSize:18,fontWeight:800,color:'#0f172a',marginBottom:12,paddingBottom:8,borderBottom:'2px solid #f1f5f9'}}>{s.title}</h2>
+            <h2 style={{fontSize:18,fontWeight:800,color:'#203640',marginBottom:12,paddingBottom:8,borderBottom:'2px solid #f1f5f9'}}>{s.title}</h2>
             <p style={{fontSize:15,color:'#475569',lineHeight:2,whiteSpace:'pre-line'}}>{s.content}</p>
           </div>
         ))}
 
-        <div style={{marginTop:48,padding:'20px 24px',background:'#f0fdfa',borderRadius:16,border:'1px solid #99f6e4',textAlign:'center'}}>
-          <p style={{fontSize:14,color:'#029FA2',fontWeight:600}}>Storely — نحوّل التعقيد إلى تحكّم · storely.dev</p>
+        <div style={{marginTop:48,padding:'20px 24px',background:'#F3F5F6',borderRadius:16,border:'1px solid #D8CEC2',textAlign:'center'}}>
+          <p style={{fontSize:14,color:'#203640',fontWeight:600}}>Storely — نحوّل التعقيد إلى تحكّم · storely.dev</p>
         </div>
       </div>
     </div>

@@ -1,33 +1,35 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 import React, { useState, useRef, useEffect } from 'react'
 import { getMe } from '@/lib/session'
+import { storelyTokens as uiTokens } from '@/components/ui/design-tokens'
 
 const C = {
-  primary:'#029FA2', primaryD:'#0f766e', primaryL:'#f0fdfa', primaryB:'#99f6e4',
-  text:'#111827', text2:'#374151', text3:'#6b7280', text4:'#9ca3af',
-  bg:'#f9fafb', surface:'#ffffff', border:'#f3f4f6', border2:'#e5e7eb',
+  primary:uiTokens.color.navy, primaryD:uiTokens.color.navyHover, primaryL:uiTokens.color.background, primaryB:uiTokens.color.border,
+  text:uiTokens.color.text, text2:uiTokens.color.text, text3:uiTokens.color.textMuted, text4:uiTokens.color.textMuted,
+  bg:uiTokens.color.background, surface:uiTokens.color.surface, border:uiTokens.color.border, border2:uiTokens.color.border,
 }
 
 // اقتراحات سريعة — المساعد يجاوب على كل قسم مفعّل عند المنشأة (الاشتراك دايماً)
 // اقتراحات سريعة — مع إضافة الذكاء: أسئلة بيانات، وبدونها: أسئلة تعليم واشتراك (المساعد يجاوب عليها مجاناً)
 const QUICK_AI = [
   { text:'متى ينتهي اشتراكي؟' },
-  { text:'وش الأصناف اللي بتخلص هالأسبوع؟' },
-  { text:'وش آخر فاتورة شراء؟' },
-  { text:'كم ضريبتي هالشهر؟' },
-  { text:'مين أكثر موظف صرف هالشهر؟' },
-  { text:'مين تأخر هالأسبوع؟' },
+  { text:'ما الأصناف التي ستنفد هذا الأسبوع؟' },
+  { text:'ما آخر فاتورة شراء؟' },
+  { text:'كم ضريبتي هذا الشهر؟' },
+  { text:'من أكثر موظف صرفاً هذا الشهر؟' },
+  { text:'من تأخر هذا الأسبوع؟' },
 ]
 const QUICK_BASIC = [
   { text:'كيف أضيف موظف؟' },
   { text:'كيف أسجل فاتورة شراء؟' },
   { text:'كيف أسوي جرد للمخزون؟' },
   { text:'متى ينتهي اشتراكي؟' },
-  { text:'وش الفرق بين باقتي والشاملة؟' },
-  { text:'وش فايدة إضافة الذكاء الاصطناعي؟' },
+  { text:'ما الفرق بين باقتي والباقات الأخرى؟' },
+  { text:'ما فائدة إضافة الذكاء الاصطناعي؟' },
 ]
-const WELCOME_AI = 'هلا! أنا مساعدك الذكي في Storely.\n\nأقدر أساعدك في:\n• المخزون ووش بيخلص\n• المشتريات والموردين وأسعارهم\n• الصرف والموظفين والحضور\n• الكاشير والضريبة\n• اشتراكك وطريقة استخدام النظام\n\nوش تبي تعرف؟'
-const WELCOME_BASIC = 'هلا! أنا مساعدك في Storely.\n\nأقدر أعلمك كيف تستخدم النظام خطوة بخطوة مع فيديوهات الشرح، وأجاوبك عن اشتراكك وباقتك.\n\nوتحليل بياناتك (المخزون، المشتريات، الموظفين…) متاح مع إضافة الذكاء الاصطناعي.\n\nوش تبي تعرف؟'
+const WELCOME_AI = 'مرحباً، أنا مساعدك الذكي في Storely.\n\nيمكنني مساعدتك في:\n• المخزون وما سينفد منه\n• المشتريات والموردين وأسعارهم\n• الصرف والموظفين والحضور\n• الكاشير والضريبة\n• اشتراكك وطريقة استخدام النظام\n\nبماذا يمكنني مساعدتك؟'
+const WELCOME_BASIC = 'مرحباً، أنا مساعدك في Storely.\n\nيمكنني تعليمك استخدام النظام خطوة بخطوة مع فيديوهات الشرح، والإجابة عن اشتراكك وباقتك.\n\nأما تحليل بياناتك (المخزون، والمشتريات، والموظفون…) فمتاح مع إضافة الذكاء الاصطناعي.\n\nبماذا يمكنني مساعدتك؟'
 
 interface Msg { role:'user'|'ai'; text:string; time:string }
 
@@ -68,23 +70,23 @@ function renderText(text: string): React.ReactNode {
       const cols = tableLines[0].split('|').filter((_,j,a)=>j>0&&j<a.length-1).map(c=>c.trim())
       const rows = tableLines.slice(1).map(l=>l.split('|').filter((_,j,a)=>j>0&&j<a.length-1).map(c=>c.trim()))
       elements.push(
-        <div key={i} style={{overflowX:'auto',margin:'8px 0',borderRadius:10,border:'1px solid #e5e7eb',WebkitOverflowScrolling:'touch'}}>
-          <table style={{borderCollapse:'collapse',fontSize:10,fontFamily:'inherit',direction:'rtl',minWidth:'100%'}}>
+        <div key={i} style={{overflowX:'auto',margin:'8px 0',borderRadius:uiTokens.radius.control,border:`1px solid ${C.border2}`,WebkitOverflowScrolling:'touch'}}>
+          <table style={{borderCollapse:'collapse',fontSize:uiTokens.typography.body,fontFamily:'inherit',direction:'rtl',minWidth:'100%'}}>
             <thead>
-              <tr style={{background:'#f0fdfa'}}>
-                {cols.map((h,j)=><th key={j} style={{padding:'6px 8px',color:'#029FA2',fontWeight:700,textAlign:'right',borderBottom:'1.5px solid #99f6e4',whiteSpace:'nowrap',fontSize:10}}>{h}</th>)}
+              <tr style={{background:C.primaryL}}>
+                {cols.map((h,j)=><th key={j} style={{padding:'12px 16px',color:C.primary,fontWeight:700,textAlign:'right',borderBottom:`1px solid ${C.primaryB}`,whiteSpace:'nowrap',fontSize:uiTokens.typography.body}}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
               {rows.map((row,ri)=>(
-                <tr key={ri} style={{background:ri%2===0?'white':'#f9fafb'}}>
+                <tr key={ri} style={{background:ri%2===0?'white':C.bg}}>
                   {row.map((cell,ci)=>{
                     const isGood = cell.includes('آمن')
                     const isZero = cell==='0'
-                    const color = isGood?'#029FA2':isZero?'#9ca3af':'#111827'
+                    const color = isGood?C.primary:isZero?C.text4:C.text
                     const cellParts = cell.replace(/\*\*(.*?)\*\*/g, '###BOLD###$1###BOLD###').split('###BOLD###')
-                    return <td key={ci} style={{padding:'5px 8px',borderBottom:'1px solid #f3f4f6',textAlign:ci===0?'right':'center',color,fontWeight:ci===0?600:400,fontSize:10}}>
-                      {cellParts.map((cp,cpi)=>cpi%2===0?cp:<b key={cpi} style={{color:isGood?'#029FA2':'#111827'}}>{cp}</b>)}
+                    return <td key={ci} style={{padding:'12px 16px',borderBottom:`1px solid ${C.border}`,textAlign:ci===0?'right':'center',color,fontWeight:ci===0?600:400,fontSize:uiTokens.typography.body}}>
+                      {cellParts.map((cp,cpi)=>cpi%2===0?cp:<b key={cpi} style={{color:isGood?C.primary:C.text}}>{cp}</b>)}
                     </td>
                   })}
                 </tr>
@@ -99,13 +101,13 @@ function renderText(text: string): React.ReactNode {
     // H2
     if (line.startsWith('## ')) {
       const t = line.replace(/^## /,'').replace(/\*\*(.*?)\*\*/g,'$1')
-      elements.push(<div key={i} style={{fontSize:13,fontWeight:800,color:'#111827',marginTop:i>0?14:4,marginBottom:6,paddingBottom:5,borderBottom:'1.5px solid #f0fdfa'}}>{t}</div>)
+      elements.push(<div key={i} style={{fontSize:uiTokens.typography.body,fontWeight:800,color:C.text,marginTop:i>0?14:4,marginBottom:6,paddingBottom:5,borderBottom:`1px solid ${C.primaryL}`}}>{t}</div>)
       i++; continue
     }
 
     // HR
     if (line.trim()==='---') {
-      elements.push(<div key={i} style={{height:1,background:'#f3f4f6',margin:'8px 0'}}/>)
+      elements.push(<div key={i} style={{height:1,background:C.border,margin:'8px 0'}}/>)
       i++; continue
     }
 
@@ -115,8 +117,8 @@ function renderText(text: string): React.ReactNode {
       const parts = num[2].split(/\*\*(.*?)\*\*/)
       elements.push(
         <div key={i} style={{display:'flex',gap:6,marginBottom:4}}>
-          <span style={{width:18,height:18,borderRadius:'50%',background:'#f0fdfa',border:'1px solid #99f6e4',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,color:'#029FA2',flexShrink:0,marginTop:2}}>{num[1]}</span>
-          <span style={{fontSize:12,color:'#374151',lineHeight:1.6}}>{parts.map((p,j)=>j%2===0?<Linkified key={j} text={p}/>:<b key={j} style={{color:'#111827'}}><Linkified text={p}/></b>)}</span>
+          <span style={{width:18,height:18,borderRadius:'50%',background:C.primaryL,border:`1px solid ${C.primaryB}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:uiTokens.typography.supporting,fontWeight:700,color:C.primary,flexShrink:0,marginTop:2}}>{num[1]}</span>
+          <span style={{fontSize:uiTokens.typography.body,color:C.text2,lineHeight:uiTokens.typography.lineHeight}}>{parts.map((p,j)=>j%2===0?<Linkified key={j} text={p}/>:<b key={j} style={{color:C.text}}><Linkified text={p}/></b>)}</span>
         </div>
       )
       i++; continue
@@ -128,8 +130,8 @@ function renderText(text: string): React.ReactNode {
       const parts = txt.split(/\*\*(.*?)\*\*/)
       elements.push(
         <div key={i} style={{display:'flex',gap:6,marginBottom:3}}>
-          <span style={{color:'#029FA2',flexShrink:0,marginTop:3,fontSize:10}}>•</span>
-          <span style={{fontSize:12,color:'#374151',lineHeight:1.6,flex:1}}>{parts.map((p,j)=>j%2===0?<Linkified key={j} text={p}/>:<b key={j} style={{color:'#111827'}}><Linkified text={p}/></b>)}</span>
+          <span style={{color:C.primary,flexShrink:0,marginTop:3,fontSize:uiTokens.typography.supporting}}>•</span>
+          <span style={{fontSize:uiTokens.typography.body,color:C.text2,lineHeight:uiTokens.typography.lineHeight,flex:1}}>{parts.map((p,j)=>j%2===0?<Linkified key={j} text={p}/>:<b key={j} style={{color:C.text}}><Linkified text={p}/></b>)}</span>
         </div>
       )
       i++; continue
@@ -141,8 +143,8 @@ function renderText(text: string): React.ReactNode {
     // normal
     const parts = line.split(/\*\*(.*?)\*\*/)
     elements.push(
-      <div key={i} style={{fontSize:12,color:'#374151',lineHeight:1.7,marginBottom:2}}>
-        {parts.map((p,j)=>j%2===0?<Linkified key={j} text={p}/>:<b key={j} style={{color:'#111827'}}><Linkified text={p}/></b>)}
+      <div key={i} style={{fontSize:uiTokens.typography.body,color:C.text2,lineHeight:uiTokens.typography.lineHeight,marginBottom:2}}>
+        {parts.map((p,j)=>j%2===0?<Linkified key={j} text={p}/>:<b key={j} style={{color:C.text}}><Linkified text={p}/></b>)}
       </div>
     )
     i++
@@ -156,7 +158,7 @@ function TypingDots() {
   return (
     <div style={{display:'flex',gap:4,alignItems:'center',padding:'4px 2px'}}>
       {[0,1,2].map(i=>(
-        <div key={i} style={{width:7,height:7,borderRadius:'50%',background:C.primary,animation:`bounce 1.2s ease ${i*0.15}s infinite`}}/>
+        <div key={i} style={{width:7,height:7,borderRadius:'50%',background:C.primary,animation:`aiBounce 1.2s ease ${i*0.15}s infinite`}}/>
       ))}
     </div>
   )
@@ -169,24 +171,24 @@ function MsgBubble({ msg }: { msg:Msg }) {
       {/* width:100% — عشان maxWidth 78% للفقاعة ينحسب من عرض الشات (كان ينحسب من محتوى ضيق فالكلام ينكسر كلمة كلمة) */}
       <div style={{display:'flex',alignItems:'flex-end',gap:8,flexDirection:isUser?'row':'row-reverse',width:'100%'}}>
         {!isUser && (
-          <div style={{width:30,height:30,borderRadius:9,background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-            <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+          <div style={{width:30,height:30,borderRadius:uiTokens.radius.control,background:C.primary,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <FeatureIcon name="💬" />
           </div>
         )}
         <div style={{
           maxWidth:'78%', padding:'11px 14px',
-          background: isUser ? `linear-gradient(135deg,${C.primary},${C.primaryD})` : 'white',
-          color: isUser ? 'white' : C.text,
-          borderRadius: isUser ? '18px 4px 18px 18px' : '4px 18px 18px 18px',
-          fontSize:13, lineHeight:1.65, wordBreak:'break-word',
-          boxShadow: isUser ? `0 4px 14px ${C.primary}30` : '0 2px 8px rgba(0,0,0,.06)',
-          border: isUser ? 'none' : `1px solid ${C.border}`,
+          background: isUser ? C.primaryL : C.surface,
+          color: isUser ? C.text : C.text,
+          borderRadius: uiTokens.radius.card,
+          fontSize:uiTokens.typography.body, lineHeight:uiTokens.typography.lineHeight, wordBreak:'break-word',
+          boxShadow: uiTokens.shadow.surface,
+          border: `1px solid ${C.border}`,
         }}>
           {/* رسالة العميل نص عادي أبيض (renderText يلوّن بالرمادي لردود المساعد) */}
           {isUser ? <div style={{fontSize:13.5,fontWeight:600,color:'white',whiteSpace:'pre-wrap'}}>{msg.text}</div> : <>{renderText(msg.text)}</>}
         </div>
       </div>
-      <div style={{fontSize:9,color:C.text4,marginRight:isUser?0:38,marginLeft:isUser?0:0,paddingRight:isUser?4:0,paddingLeft:isUser?0:4}}>{msg.time}</div>
+      <div style={{fontSize:uiTokens.typography.supporting,color:C.text4,marginRight:isUser?0:38,marginLeft:isUser?0:0,paddingRight:isUser?4:0,paddingLeft:isUser?0:4}}>{msg.time}</div>
     </div>
   )
 }
@@ -211,7 +213,7 @@ export default function AIAssistant() {
   const inputRef   = useRef<HTMLInputElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout>|null>(null)
 
-  const now = () => new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'})
+  const now = () => new Date().toLocaleTimeString('ar-SA-u-ca-gregory',{hour:'2-digit',minute:'2-digit'})
 
   function resetTimer() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
@@ -284,7 +286,7 @@ export default function AIAssistant() {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         // آخر رسائل المحادثة (بدون الترحيب) — عشان يفهم الردود القصيرة مثل «1» أو «وأمس؟»
-        body: JSON.stringify({message:msg, org_id, branch_id, history: msgs.slice(1).slice(-6).map(m=>({role:m.role==='user'?'user':'assistant', text:m.text}))})
+        body: JSON.stringify({message:msg, org_id, branch_id, lang: (()=>{ try { return localStorage.getItem('storely_lang')==='en'?'en':'ar' } catch { return 'ar' } })(), history: msgs.slice(1).slice(-6).map(m=>({role:m.role==='user'?'user':'assistant', text:m.text}))})
       })
       const data = await res.json()
       setMsgs(m=>[...m, {role:'ai', text:data.reply||data.error||'عذراً، حدث خطأ', time:now()}])
@@ -300,16 +302,15 @@ export default function AIAssistant() {
   return (
     <>
       <style>{`
-        @keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+        @keyframes aiBounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+        @keyframes aiFadeUp{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
         @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes glow{0%,100%{box-shadow:0 4px 20px ${C.primary}40}50%{box-shadow:0 4px 28px ${C.primary}70}}
         .ai-fab{display:flex;transition:transform .15s}
         /* على الكمبيوتر: الزر والنافذة بالزاوية السفلية (ما فيه شريط سفلي مثل الجوال) */
         @media(min-width:768px){.ai-fab{bottom:24px!important;left:24px!important;width:50px!important;height:50px!important}.ai-win{bottom:86px!important;left:24px!important;right:auto!important;width:400px;margin:0!important}}
-        .ai-fab:active{transform:scale(.92)!important}
-        .ai-win{animation:fadeUp .3s cubic-bezier(.34,1.56,.64,1)}
-        .ai-input:focus{border-color:${C.primary}!important;box-shadow:0 0 0 3px ${C.primaryL}!important;outline:none!important}
+        .ai-fab:active{transform:none}
+        .ai-win button:focus-visible{outline:2px solid ${C.primary};outline-offset:2px}.ai-win{animation:aiFadeUp .2s ease}
+        .ai-input:focus{border-color:${C.primary};box-shadow:${uiTokens.shadow.focus};outline:none}
         .quick-btn{transition:all .15s}
         .quick-btn:active{transform:scale(.95)}
         .send-btn{transition:all .2s}
@@ -319,12 +320,9 @@ export default function AIAssistant() {
       {/* FAB Button */}
       {!open && (
         <button className="ai-fab" onClick={()=>setOpen(true)}
-          aria-label="المساعد" style={{position:'fixed',bottom:84,left:14,zIndex:999,width:46,height:46,borderRadius:'50%',background:'white',border:'1px solid #d5d9df',boxShadow:'0 2px 8px rgba(16,24,40,.12)',cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke={C.primary} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
-            <path d="M18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/>
-          </svg>
-          {unreadCount>0&&<span style={{position:'absolute',top:-2,right:-2,width:16,height:16,borderRadius:'50%',background:'#ef4444',color:'white',fontSize:9,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid white'}}>{unreadCount}</span>}
+          aria-label="المساعد" style={{position:'fixed',bottom:84,left:14,zIndex:999,width:46,height:46,borderRadius:'50%',background:C.surface,border:`1px solid ${C.border}`,boxShadow:uiTokens.shadow.surface,cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <FeatureIcon name="💬" />
+          {unreadCount>0&&<span style={{position:'absolute',top:-2,right:-2,width:16,height:16,borderRadius:'50%',background:uiTokens.color.danger,color:'white',fontSize:uiTokens.typography.supporting,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid white'}}>{unreadCount}</span>}
         </button>
       )}
 
@@ -337,38 +335,36 @@ export default function AIAssistant() {
           zIndex:999,
           maxWidth:420,
           margin:'0 auto',
-          background:'white',
-          borderRadius:20,
-          boxShadow:'0 24px 64px rgba(0,0,0,.18)',
+          background:C.surface,
+          borderRadius:uiTokens.radius.panel,
+          boxShadow:uiTokens.shadow.panel,
           border:`1px solid ${C.border}`,
           display:'flex',
           flexDirection:'column',
-          height: minimized ? 'auto' : '72vh',
+          height: minimized ? 'auto' : 'min(72dvh, 580px)',
           maxHeight: minimized ? 'auto' : 580,
           overflow:'hidden',
-          fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",
+          fontFamily:uiTokens.typography.family,
           direction:'rtl',
         }}>
 
           {/* Header */}
-          <div style={{background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,padding:'14px 16px',display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
-            <div style={{width:38,height:38,borderRadius:11,background:'rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:'1.5px solid rgba(255,255,255,.3)'}}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
-              </svg>
+          <div style={{background:C.surface,borderBottom:`1px solid ${C.border}`,padding:'14px 16px',display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
+            <div style={{width:38,height:38,borderRadius:uiTokens.radius.control,background:C.primaryL,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:`1px solid ${C.border}`}}>
+              <FeatureIcon name="💬" />
             </div>
             <div style={{flex:1}}>
-              <div style={{fontSize:14,fontWeight:800,color:'white',letterSpacing:'-0.2px'}}>مساعد Storely الذكي</div>
+              <div style={{fontSize:14,fontWeight:600,color:C.text,letterSpacing:'-0.2px'}}>مساعد Storely الذكي</div>
               <div style={{display:'flex',alignItems:'center',gap:4,marginTop:1}}>
-                <div style={{width:6,height:6,borderRadius:'50%',background:'#5eead4'}}/>
-                <span style={{fontSize:10,color:'rgba(255,255,255,.8)'}}>متصل دائماً</span>
+                <div style={{width:6,height:6,borderRadius:'50%',background:uiTokens.color.success}}/>
+                <span style={{fontSize:uiTokens.typography.supporting,color:C.text3}}>متصل دائماً</span>
               </div>
             </div>
             <div style={{display:'flex',gap:6}}>
-              <button onClick={()=>setMinimized(m=>!m)} style={{width:28,height:28,borderRadius:8,background:'rgba(255,255,255,.15)',border:'1px solid rgba(255,255,255,.2)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontSize:12}}>
+              <button onClick={()=>setMinimized(m=>!m)} style={{width:uiTokens.control.icon,height:uiTokens.control.icon,borderRadius:uiTokens.radius.control,background:C.surface,border:`1px solid ${C.border}`,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:C.text,fontSize:uiTokens.typography.body}}>
                 {minimized?'▲':'▼'}
               </button>
-              <button onClick={()=>setShowCloseConfirm(true)} style={{width:28,height:28,borderRadius:8,background:'rgba(255,255,255,.15)',border:'1px solid rgba(255,255,255,.2)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontSize:14}}>✕</button>
+              <button onClick={()=>setShowCloseConfirm(true)} style={{width:uiTokens.control.icon,height:uiTokens.control.icon,borderRadius:uiTokens.radius.control,background:C.surface,border:`1px solid ${C.border}`,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:C.text,fontSize:14}}><FeatureIcon name="✕" size={14} /></button>
             </div>
           </div>
 
@@ -376,14 +372,14 @@ export default function AIAssistant() {
             <>
               {/* Close Confirm */}
           {showCloseConfirm && (
-            <div style={{position:'absolute',inset:0,zIndex:10,background:'rgba(0,0,0,.5)',backdropFilter:'blur(4px)',display:'flex',alignItems:'center',justifyContent:'center',padding:20,borderRadius:'0 0 20px 20px'}}>
-              <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:280,textAlign:'center',fontFamily:'inherit',direction:'rtl'}}>
-                <div style={{fontSize:28,marginBottom:10}}>💬</div>
-                <div style={{fontSize:14,fontWeight:800,color:'#111827',marginBottom:6}}>إغلاق المحادثة؟</div>
-                <div style={{fontSize:12,color:'#6b7280',marginBottom:18,lineHeight:1.6}}>سيتم حذف المحادثة الحالية. المرة القادمة ستبدأ محادثة جديدة.</div>
+            <div style={{position:'absolute',inset:0,zIndex:10,background:uiTokens.color.backdrop,display:'flex',alignItems:'center',justifyContent:'center',padding:20,borderRadius:uiTokens.radius.panel}}>
+              <div className="storely-dialog-shell" style={{width:'100%',maxWidth:280,textAlign:'center',direction:'rtl'}}>
+                <div style={{fontSize:28,marginBottom:10}}><FeatureIcon name="💬" size={26} /></div>
+                <div style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:6}}>إغلاق المحادثة؟</div>
+                <div style={{fontSize:uiTokens.typography.body,color:C.text3,marginBottom:18,lineHeight:uiTokens.typography.lineHeight}}>سيتم حذف المحادثة الحالية. المرة القادمة ستبدأ محادثة جديدة.</div>
                 <div style={{display:'flex',gap:8}}>
                   <button onClick={()=>setShowCloseConfirm(false)}
-                    style={{flex:1,padding:'10px',background:'#f9fafb',border:'1.5px solid #e5e7eb',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:'#374151'}}>
+                    style={{flex:1,padding:'10px',background:C.bg,border:`1px solid ${C.border2}`,borderRadius:uiTokens.radius.control,fontSize:uiTokens.typography.body,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:C.text2}}>
                     إلغاء
                   </button>
                   <button onClick={()=>{
@@ -394,7 +390,7 @@ export default function AIAssistant() {
                     sessionStorage.removeItem('ai_msgs')
                     if(timeoutRef.current) clearTimeout(timeoutRef.current)
                   }}
-                    style={{flex:1,padding:'10px',background:'#ef4444',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                    style={{flex:1,padding:'10px',background:uiTokens.color.danger,color:'white',border:'none',borderRadius:uiTokens.radius.control,fontSize:uiTokens.typography.body,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                     إغلاق
                   </button>
                 </div>
@@ -407,10 +403,10 @@ export default function AIAssistant() {
                 {msgs.map((m,i)=><MsgBubble key={i} msg={m}/>)}
                 {loading && (
                   <div style={{display:'flex',alignItems:'flex-end',gap:8}}>
-                    <div style={{width:30,height:30,borderRadius:9,background:`linear-gradient(135deg,${C.primary},${C.primaryD})`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    <div style={{width:30,height:30,borderRadius:uiTokens.radius.control,background:C.primary,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                       <div style={{width:12,height:12,border:'2px solid rgba(255,255,255,.4)',borderTopColor:'white',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
                     </div>
-                    <div style={{background:'white',padding:'11px 14px',borderRadius:'4px 18px 18px 18px',border:`1px solid ${C.border}`,boxShadow:'0 2px 8px rgba(0,0,0,.06)'}}>
+                    <div style={{background:C.surface,padding:'11px 14px',borderRadius:uiTokens.radius.card,border:`1px solid ${C.border}`,boxShadow:uiTokens.shadow.surface}}>
                       <TypingDots/>
                     </div>
                   </div>
@@ -420,15 +416,15 @@ export default function AIAssistant() {
 
               {/* Timeout message */}
           {showTimeout && (
-            <div style={{margin:'8px 12px',background:'#fffbeb',border:'1px solid #fde68a',borderRadius:12,padding:'12px 14px',textAlign:'center'}}>
-              <div style={{fontSize:13,fontWeight:700,color:'#92400e',marginBottom:10}}>⏱️ هل تريد مواصلة المحادثة؟</div>
+            <div style={{margin:'8px 12px',background:uiTokens.color.warningBg,border:`1px solid ${uiTokens.color.warningBorder}`,borderRadius:uiTokens.radius.control,padding:'12px 14px',textAlign:'center'}}>
+              <div style={{fontSize:uiTokens.typography.body,fontWeight:700,color:uiTokens.color.warning,marginBottom:10}}><FeatureIcon name="⏱️" /> هل تريد مواصلة المحادثة؟</div>
               <div style={{display:'flex',gap:8,justifyContent:'center'}}>
                 <button onClick={continueChat}
-                  style={{padding:'7px 16px',background:'#029FA2',color:'white',border:'none',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                  style={{padding:'7px 16px',background:C.primary,color:'white',border:'none',borderRadius:uiTokens.radius.control,fontSize:uiTokens.typography.body,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                   مواصلة
                 </button>
                 <button onClick={closeChat}
-                  style={{padding:'7px 16px',background:'#fef2f2',color:'#ef4444',border:'1px solid #fecaca',borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                  style={{padding:'7px 16px',background:uiTokens.color.dangerBg,color:uiTokens.color.danger,border:`1px solid ${uiTokens.color.dangerBorder}`,borderRadius:uiTokens.radius.control,fontSize:uiTokens.typography.body,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
                   إغلاق
                 </button>
               </div>
@@ -437,12 +433,12 @@ export default function AIAssistant() {
 
           {/* Quick suggestions */}
               {msgs.length<=1 && (
-                <div style={{padding:'10px 14px 0',background:'white',borderTop:`1px solid ${C.border}`,flexShrink:0}}>
-                  <div style={{fontSize:10,fontWeight:700,color:C.text4,marginBottom:8,textTransform:'uppercase',letterSpacing:'.06em'}}>اقتراحات سريعة</div>
+                <div style={{padding:'10px 14px 0',background:C.surface,borderTop:`1px solid ${C.border}`,flexShrink:0}}>
+                  <div style={{fontSize:uiTokens.typography.supporting,fontWeight:700,color:C.text4,marginBottom:8,textTransform:'uppercase',letterSpacing:'.06em'}}>اقتراحات سريعة</div>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:10}}>
                     {(hasAi===false ? QUICK_BASIC : QUICK_AI).map(q=>(
                       <button key={q.text} className="quick-btn" onClick={()=>send(q.text)}
-                        style={{display:'flex',alignItems:'center',gap:6,padding:'8px 10px',background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,fontSize:11,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
+                        style={{display:'flex',alignItems:'center',gap:6,padding:'8px 10px',background:C.bg,border:`1px solid ${C.border2}`,borderRadius:uiTokens.radius.control,fontSize:uiTokens.typography.supporting,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
                         {q.text}
                       </button>
                     ))}
@@ -451,14 +447,14 @@ export default function AIAssistant() {
               )}
 
           {/* Input */}
-              <div style={{padding:'10px 12px',borderTop:`1px solid ${C.border}`,background:'white',display:'flex',gap:8,alignItems:'flex-end',flexShrink:0}}>
+              <div style={{padding:'10px 12px',borderTop:`1px solid ${C.border}`,background:C.surface,display:'flex',gap:8,alignItems:'flex-end',flexShrink:0}}>
                 <input ref={inputRef} className="ai-input" value={input}
                   onChange={e=>setInput(e.target.value)}
                   onKeyDown={e=>e.key==='Enter'&&!e.shiftKey&&send()}
                   placeholder="اسألني عن مخزونك..."
-                  style={{flex:1,padding:'10px 14px',border:`1.5px solid ${C.border2}`,borderRadius:12,fontSize:13,fontFamily:'inherit',color:C.text,background:C.bg,resize:'none',transition:'all .15s'}}/>
+                  style={{flex:1,minWidth:0,padding:'10px 14px',border:`1.5px solid ${C.border2}`,borderRadius:uiTokens.radius.control,fontSize:uiTokens.typography.body,fontFamily:'inherit',color:C.text,background:C.bg,resize:'none',transition:'all .15s'}}/>
                 <button className="send-btn" onClick={()=>send()} disabled={!input.trim()||loading}
-                  style={{width:42,height:42,borderRadius:12,background:input.trim()&&!loading?`linear-gradient(135deg,${C.primary},${C.primaryD})`:'#e5e7eb',border:'none',cursor:input.trim()&&!loading?'pointer':'not-allowed',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:input.trim()&&!loading?`0 4px 14px ${C.primary}30`:'none'}}>
+                  style={{width:42,height:42,borderRadius:uiTokens.radius.control,background:input.trim()&&!loading?C.primary:C.border2,border:'none',cursor:input.trim()&&!loading?'pointer':'not-allowed',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:input.trim()&&!loading?uiTokens.shadow.surface:'none'}}>
                   <svg width="16" height="16" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
                 </button>
               </div>

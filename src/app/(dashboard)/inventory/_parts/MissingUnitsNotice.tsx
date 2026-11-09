@@ -15,7 +15,7 @@ export default function MissingUnitsNotice({ m }: { m: InventoryState }) {
           <div className="iv-note">
             <button type="button" className="iv-note-head" onClick={()=>setShowAudit(v=>!v)}>
               <Ruler size={15}/>
-              <span style={{flex:1}}>{missing.length} منتج بدون تحويل للوحدة الدقيقة — مهم لو تستخدمها في وصفات</span>
+              <span style={{flex:1}}>{missing.length} منتج بدون تحويل للوحدة الدقيقة — مهم إذا كنت تستخدمه في الوصفات</span>
               <span className="iv-link">{showAudit?'إخفاء':'عرض'}</span>
             </button>
             {showAudit && (

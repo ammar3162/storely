@@ -12,6 +12,7 @@ import type { Metadata, Viewport } from "next"
 import Script from "next/script"
 // الخط من موقعنا نفسه بدل Google (أسرع — بدون اتصالات خارجية تعطّل الرسم). الخط أوزانه لين 700 بس
 import "./fonts.css"
+import { StorelySystemStyles } from '@/components/ui/system-styles'
 import "./globals.css"
 
 // تكبير الشاشة مقفول: Next يضيف وسم viewport افتراضي بدون قفل التكبير، فنحدده هنا بدل وسم يدوي ثاني
@@ -55,17 +56,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preload" href="/fonts/ibm-plex-sans-arabic-arabic-400-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous"/>
         <link rel="preload" href="/fonts/ibm-plex-sans-arabic-arabic-600-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous"/>
         <link rel="preload" href="/fonts/ibm-plex-sans-arabic-arabic-700-normal.woff2" as="font" type="font/woff2" crossOrigin="anonymous"/>
+        <StorelySystemStyles/>
         <script dangerouslySetInnerHTML={{__html: IN_APP_SCRIPT}}/>
-        <meta name="theme-color" content="#042f2e"/>
+        <meta name="theme-color" content="#203640"/>
         <meta name="mobile-web-app-capable" content="yes"/>
         <meta name="apple-mobile-web-app-capable" content="yes"/>
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
         <meta name="apple-mobile-web-app-title" content="Storely"/>
         <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
         <style dangerouslySetInnerHTML={{__html:`
-          *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
-          body { font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif !important; direction: rtl; }
-          input, button, select, textarea { font-family: inherit !important; }
           html[data-in-app] .hide-in-app { display: none !important; }
           html:not([data-in-app]) .show-in-app { display: none !important; }
         `}}/>

@@ -18,10 +18,10 @@ export default function MoveBranchModal({ m }: { m: StaffPage }) {
             </select>
             <div style={{fontSize:11.5,color:colors.text3,background:colors.bg,borderRadius:10,padding:'10px 12px',marginTop:12,lineHeight:1.8}}>
               • يحضّر وينصرف من موقع الفرع الجديد<br/>
-              • لو شفته خاص بالفرع القديم ينفك — حدد له شفت بالفرع الجديد<br/>
+              • إذا كانت ورديته خاصة بالفرع السابق فسيُفك ارتباطها — حدّد له وردية في الفرع الجديد<br/>
               • المنتجات المخصصة له تنمسح (كانت من الفرع القديم)<br/>
-              • سجلاته القديمة (الحضور والخصومات والرواتب) تبقى زي ما هي<br/>
-              • يطلب منه النظام رمزه مرة وحدة عشان يدخل على فرعه الجديد
+              • تبقى سجلاته السابقة (الحضور والخصومات والرواتب) كما هي<br/>
+              • يطلب منه النظام رمزه مرة واحدة للدخول إلى فرعه الجديد
             </div>
             <div style={{display:'flex',gap:10,marginTop:16}}>
               <button onClick={()=>setMoveFor(null)} style={{...btnSecondary,flex:1,padding:'12px'}}>إلغاء</button>

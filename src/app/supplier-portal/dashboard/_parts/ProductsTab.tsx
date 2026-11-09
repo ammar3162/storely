@@ -24,7 +24,7 @@ export default function ProductsTab({ m, v }: { m: SupplierDashboard; v: Dashboa
                   <button type="button" className={priceIncludesVat?'on':''} onClick={()=>setPriceIncludesVat(true)}>نعم</button>
                   <button type="button" className={!priceIncludesVat?'on':''} onClick={()=>setPriceIncludesVat(false)}>لا</button>
                 </div>
-                {price && !priceIncludesVat && <div className="sd-note">العميل يشوف السعر بعد الضريبة: <b>{(Number(price)*1.15).toFixed(2)} ⃁</b></div>}
+                {price && !priceIncludesVat && <div className="sd-note">يرى العميل السعر بعد الضريبة: <b>{(Number(price)*1.15).toFixed(2)} ⃁</b></div>}
                 <label className="sd-img">
                   {(imagePreview || existingImageUrl) ? <img src={imagePreview || existingImageUrl} alt=""/> : <ImagePlus size={20}/>}
                   <span>{imagePreview||existingImageUrl?'تغيير الصورة':'صورة الصنف (اختياري)'}</span>
@@ -40,7 +40,7 @@ export default function ProductsTab({ m, v }: { m: SupplierDashboard; v: Dashboa
             <section className="sd-panel">
               <h2>أصنافك <small>{items.length}</small></h2>
               {items.length===0 ? (
-                <div className="sd-empty"><Package size={28}/><b>ما أضفت أصناف للحين</b><span>أضف أصنافك وأسعارك، والعملاء يطلبون منك مباشرة.</span></div>
+                <div className="sd-empty"><Package size={28}/><b>لم تضف أصنافاً بعد</b><span>أضف أصنافك وأسعارك، ليطلب منك العملاء مباشرة.</span></div>
               ) : (
                 <div className="sd-list">
                   {items.map((item:any)=>(

@@ -1,5 +1,5 @@
 import { managerMay } from '@/lib/managerPerms'
-import { orgHasFeature, lockedMessage } from '@/lib/planFeatures'
+import { orgHasFeature, lockedMessage, branchFeatureError } from '@/lib/planFeatures'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على هالقسم — كلّم مالك المنشأة' }, { status: 403 })
+    if (!managerMay(access as any, 'hr')) return NextResponse.json({ error: 'ليست لديك صلاحية على هذا القسم — تواصل مع مالك المنشأة' }, { status: 403 })
 
     const supabase = sb()
 
@@ -38,6 +38,8 @@ export async function POST(req: Request) {
     const { data: staff } = await supabase.from('staff_members').select('id,branch_id').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
     const forced = enforcedBranchId(access)
     if (!staff || (forced && (staff as any).branch_id !== forced)) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })
+    const branchLocked = await branchFeatureError(supabase, org_id, 'hr', (orgCheck as any)?.plan, (staff as any).branch_id)
+    if (branchLocked) return NextResponse.json({ error: branchLocked }, { status: 403 })
 
     const { error } = await supabase.from('staff_members').update({
       monthly_salary: salary,

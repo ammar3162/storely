@@ -1,4 +1,5 @@
 import { reportAiFailure } from '@/lib/aiAlert'
+import { logAiUsage } from '@/lib/aiUsage'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
@@ -103,6 +104,7 @@ ${namesToTranslate.map((n: string) => `- ${n}`).join('\n')}
     if (!res.ok) await reportAiFailure(res.status, await res.text().catch(() => ''), 'ترجمة الأصناف')
     if (res.ok) {
       const data = await res.json()
+      await logAiUsage({ orgId, feature: 'translate_products', model: 'claude-sonnet-4-6', usage: data.usage })
       const text = data.content?.[0]?.text || '{}'
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       newTranslations = jsonMatch ? JSON.parse(jsonMatch[0]) : {}

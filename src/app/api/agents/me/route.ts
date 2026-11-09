@@ -57,7 +57,7 @@ export async function PATCH(req: Request) {
 
 // تنبيه على الإيميل والواتساب كل ما تغيّرت طريقة الاستلام — لو أحد غيّرها بدون علم السفير يعرف فوراً
 async function payoutChanged(db: any, agentId: string, what: string) {
-  const when = new Date().toLocaleString('ar-SA', { timeZone: 'Asia/Riyadh', dateStyle: 'medium', timeStyle: 'short' })
+  const when = new Date().toLocaleString('ar-SA-u-ca-gregory', { timeZone: 'Asia/Riyadh', dateStyle: 'medium', timeStyle: 'short' })
   try {
     await notifyAgent(db, agentId, {
       title: 'تم تغيير طريقة استلام المكافآت',

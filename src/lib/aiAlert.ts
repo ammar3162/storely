@@ -20,7 +20,7 @@ export function aiFailureKind(status: number, detail: string): AiFailureKind | n
 }
 
 const TEXT: Record<AiFailureKind, { title: string; body: string }> = {
-  billing: { title: 'رصيد الذكاء الاصطناعي خلص', body: 'رصيد حساب Anthropic خلص — القراءة التلقائية للفواتير والمساعد الذكي والترجمة واقفين لين تشحن من console.anthropic.com ← Plans & Billing.' },
+  billing: { title: 'نفد رصيد الذكاء الاصطناعي', body: 'نفد رصيد حساب Anthropic — توقفت القراءة التلقائية للفواتير والمساعد الذكي والترجمة حتى تشحن الرصيد من console.anthropic.com ← Plans & Billing.' },
   auth: { title: 'مفتاح الذكاء الاصطناعي مرفوض', body: 'Anthropic رفضت مفتاح ستورلي (ANTHROPIC_API_KEY) — مميزات الذكاء الاصطناعي واقفة. تأكد من المفتاح في إعدادات Vercel.' },
 }
 
@@ -40,7 +40,7 @@ export async function reportAiFailure(status: number, detail: string, feature: s
     await Promise.allSettled([
       sendWhatsAppMessage(ADMIN_PHONE(), `🚨 *${t.title}*\n\n${t.body}\n\nأول عطل: ${feature}`),
       ...((admins || []) as any[]).filter(a => a.email).map(a => sendEmail({ to: a.email, subject: `🚨 ${t.title} — Storely`,
-        html: brandEmail({ title: t.title, paragraphs: [t.body, `أول عطل: ${feature}`, `ما راح يوصلك تنبيه ثاني عن نفس المشكلة لمدة ${AI_ALERT_HOURS} ساعات.`] }) })),
+        html: brandEmail({ title: t.title, paragraphs: [t.body, `أول عطل: ${feature}`, `لن يصلك تنبيه آخر عن المشكلة نفسها لمدة ${AI_ALERT_HOURS} ساعات.`] }) })),
     ])
     return true
   } catch {

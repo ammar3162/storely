@@ -9,6 +9,7 @@ import { cache } from '@/lib/cache'
 import { api } from '@/lib/api-client'
 import { getMe } from '@/lib/session'
 import { colors as dsColors } from '@/lib/ds'
+import { Package, Trash2, ArrowUpRight, AlertTriangle, X } from 'lucide-react'
 
 // موحّد مع نظام التصميم المشترك (@/lib/ds)
 const C = {
@@ -19,7 +20,7 @@ const C = {
   bg:dsColors.bg, surface:dsColors.surface, border:dsColors.border, border2:dsColors.border2,
 }
 
-const CAT_COLORS = ['#029FA2','#2563eb','#dc2626','#d97706','#7c3aed','#0891b2','#db2777','#65a30d']
+const CAT_COLORS = ['#203640','#2563eb','#dc2626','#d97706','#7c3aed','#0891b2','#db2777','#65a30d']
 const OTHER = 'أخرى'
 
 export default function DispensePage() {
@@ -78,11 +79,11 @@ export default function DispensePage() {
     if(!selected||!qty||!oid||!pid)return
     setSaving(true)
     const qn=Number(qty)
-    if(selected.qty<qn){toast('الكمية أكبر من المتاح!','warning');setSaving(false);return}
+    if(selected.qty<qn){toast('الكمية أكبر من المتاح','warning');setSaving(false);return}
     const r=await api.post('/api/stock-movements',{org_id:oid,product_id:selected.id,type:'out',qty:qn})
     if(!r.success){toast(r.error||'خطأ','error');setSaving(false);return}
     cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
-    toast(`✅ تم صرف ${qn} ${selected.unit} من ${selected.name}`)
+    toast(`تم صرف ${qn} ${selected.unit} من ${selected.name}`)
     fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:selected.id,new_qty:selected.qty-qn,reorder_point:(selected.supplier_reorder_point ?? selected.reorder_point)})}).catch(()=>{})
     fetch('/api/notify-staff-dispense',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,branch_id:sessionStorage.getItem('s_branch_id')||null,staff_name:sessionStorage.getItem('s_full_name')||'المالك',product_name:selected.name,qty:qn,unit:selected.unit})}).catch(()=>{})
     setSelected(null);setQty('');setWasteMode(false);setWasteReason('')
@@ -94,12 +95,12 @@ export default function DispensePage() {
     if(!selected||!qty||!oid||!pid||!wasteReason)return
     setSaving(true)
     const qn=Number(qty)
-    if(selected.qty<qn){toast('الكمية أكبر من المتاح!','warning');setSaving(false);return}
+    if(selected.qty<qn){toast('الكمية أكبر من المتاح','warning');setSaving(false);return}
     const r=await api.post('/api/stock-movements',{org_id:oid,product_id:selected.id,type:'waste',qty:qn,waste_reason:wasteReason})
     if(!r.success){toast(r.error||'خطأ','error');setSaving(false);return}
     cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
     fetch('/api/notify-waste',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,branch_id:sessionStorage.getItem('s_branch_id')||null,staff_name:sessionStorage.getItem('s_full_name')||'المالك',product_name:selected.name,qty:qn,unit:selected.unit,waste_reason:wasteReason})}).catch(()=>{})
-    toast(`🗑️ تم تسجيل هدر ${qn} ${selected.unit} من ${selected.name}`)
+    toast(`تم تسجيل هدر ${qn} ${selected.unit} من ${selected.name}`)
     setSelected(null);setQty('');setWasteMode(false);setWasteReason('')
     setSaving(false);loadProducts(oid);loadHistory(oid)
   }
@@ -137,9 +138,9 @@ export default function DispensePage() {
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         .chip{padding:5px 12px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;border:1.5px solid;transition:all .15s;font-family:inherit}
         .chip:active{transform:scale(.95)}
-        .qbtn{width:44px;height:44px;border-radius:10px;border:1.5px solid #e5e7eb;background:#f9fafb;font-size:20px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit}
-        .qbtn:active{background:#f0fdfa;border-color:#029FA2;color:#029FA2}
-        input:focus{border-color:#029FA2!important;box-shadow:0 0 0 3px #f0fdfa!important;outline:none!important}
+        .qbtn{width:44px;height:44px;border-radius:10px;border:1.5px solid var(--storely-border);background:var(--storely-background);font-size:20px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit}
+        .qbtn:active{background:var(--storely-background);border-color:#203640;color:#203640}
+        input:focus{border-color:#203640!important;box-shadow:0 0 0 3px #f0fdfa!important;outline:none!important}
         /* Product card */
         .pcard{
           background:white;border-radius:12px;padding:10px 8px;
@@ -149,9 +150,9 @@ export default function DispensePage() {
           display:flex;flex-direction:column;align-items:center;
           text-align:center;gap:6px;
         }
-        .pcard:hover{border-color:#029FA2;transform:translateY(-1px);box-shadow:0 4px 12px rgba(22,163,74,.1)}
+        .pcard:hover{border-color:#203640;transform:translateY(-1px);box-shadow:0 4px 12px rgba(22,163,74,.1)}
         .pcard:active{transform:scale(.97)}
-        .pcard.selected{border-color:#029FA2;background:#f0fdfa;box-shadow:0 0 0 2px #029FA240}
+        .pcard.selected{border-color:#203640;background:var(--storely-background);box-shadow:0 0 0 2px #029FA240}
         .pcard.out{opacity:.45;cursor:not-allowed}
         .pcard.out:hover{transform:none;box-shadow:none;border-color:#f0f0f0}
         /* Grid — auto fill */
@@ -207,7 +208,7 @@ export default function DispensePage() {
       {/* Products Grid */}
       {displayed.length===0 ? (
         <div style={{background:'white',borderRadius:12,padding:'40px 20px',textAlign:'center',border:`1px solid ${C.border}`}}>
-          <div style={{fontSize:36,marginBottom:8}}>📦</div>
+          <div style={{display:'flex',justifyContent:'center',marginBottom:8,color:C.text4}}><Package size={36} strokeWidth={1.5}/></div>
           <div style={{fontSize:13,fontWeight:700,color:C.text2}}>{search?'لا توجد نتائج':'لا يوجد منتجات'}</div>
         </div>
       ) : (
@@ -245,7 +246,7 @@ export default function DispensePage() {
             <div style={{padding:'14px 20px',borderBottom:`1px solid ${C.border}`,display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
               <div style={{width:32,height:3,borderRadius:99,background:C.border2,position:'absolute',top:8,left:'50%',transform:'translateX(-50%)'}}/>
               <span style={{fontSize:14,fontWeight:700,color:C.text}}>آخر الصرف</span>
-              <button onClick={()=>setShowHistory(false)} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:C.text3,padding:4}}>✕</button>
+              <button onClick={()=>setShowHistory(false)} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:C.text3,padding:4}} aria-label="إغلاق"><X size={16}/></button>
             </div>
             <div style={{overflowY:'auto',flex:1}}>
               {history.length===0?(
@@ -258,14 +259,14 @@ export default function DispensePage() {
                 return (
                 <div key={h.id} style={{display:'flex',alignItems:'center',gap:10,padding:'11px 20px',borderBottom:i<history.length-1?`1px solid ${C.border}`:'none'}}>
                   <div style={{width:30,height:30,borderRadius:8,background:badgeBg,border:`1px solid ${badgeBorder}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:13}}>
-                    {isWaste?'🗑️':<svg width="12" height="12" fill="none" stroke={C.danger} strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>}
+                    {isWaste?<Trash2 size={13} color="#d97706"/>:<svg width="12" height="12" fill="none" stroke={C.danger} strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                       {(h.products as any)?.name}
                       {isWaste&&<span style={{fontSize:9,fontWeight:700,color:'#b45309',background:'#fffbeb',padding:'1px 6px',borderRadius:99,marginRight:6,border:'1px solid #fde68a'}}>هدر{h.waste_reason?` · ${h.waste_reason}`:''}</span>}
                     </div>
-                    <div style={{fontSize:10,color:C.text4,marginTop:1}}>{new Date(h.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                    <div style={{fontSize:10,color:C.text4,marginTop:1}}>{new Date(h.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
                   </div>
                   <span style={{fontSize:13,fontWeight:800,color:badgeColor,flexShrink:0}}>{Math.abs(h.qty_change)} <span style={{fontSize:10,color:C.text4,fontWeight:400}}>{(h.products as any)?.unit}</span></span>
                 </div>
@@ -287,17 +288,17 @@ export default function DispensePage() {
                   <div style={{fontSize:16,fontWeight:800,color:C.text}}>{selected.name}</div>
                   <div style={{fontSize:11,color:C.text3,marginTop:2}}>متاح: <b style={{color:C.primary,fontSize:14}}>{selected.qty}</b> {selected.unit}</div>
                 </div>
-                <button onClick={()=>{setSelected(null);setQty('');setWasteMode(false);setWasteReason('')}} style={{width:28,height:28,borderRadius:'50%',background:C.bg,border:`1px solid ${C.border2}`,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}}>✕</button>
+                <button onClick={()=>{setSelected(null);setQty('');setWasteMode(false);setWasteReason('')}} style={{width:28,height:28,borderRadius:'50%',background:C.bg,border:`1px solid ${C.border2}`,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}} aria-label="إغلاق"><X size={16}/></button>
               </div>
 
               <div style={{display:'flex',gap:6,marginBottom:14,background:C.bg,padding:4,borderRadius:12}}>
                 <button onClick={()=>{setWasteMode(false);setWasteReason('')}}
                   style={{flex:1,padding:'9px',borderRadius:9,border:'none',background:!wasteMode?'white':'transparent',color:!wasteMode?C.danger:C.text3,fontWeight:800,fontSize:13,cursor:'pointer',fontFamily:'inherit',boxShadow:!wasteMode?'0 1px 4px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
-                  📤 صرف عادي
+                  <span style={{display:'inline-flex',alignItems:'center',gap:6}}><ArrowUpRight size={15}/>صرف عادي</span>
                 </button>
                 <button onClick={()=>setWasteMode(true)}
                   style={{flex:1,padding:'9px',borderRadius:9,border:'none',background:wasteMode?'white':'transparent',color:wasteMode?'#b45309':C.text3,fontWeight:800,fontSize:13,cursor:'pointer',fontFamily:'inherit',boxShadow:wasteMode?'0 1px 4px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
-                  🗑️ تسجيل هدر
+                  <span style={{display:'inline-flex',alignItems:'center',gap:6}}><Trash2 size={15}/>تسجيل هدر</span>
                 </button>
               </div>
 
@@ -338,7 +339,7 @@ export default function DispensePage() {
 
               {Number(qty)>selected.qty&&(
                 <div style={{background:C.dangerL,border:`1px solid ${C.dangerB}`,borderRadius:9,padding:'8px 14px',marginBottom:10,fontSize:12,fontWeight:700,color:C.danger}}>
-                  ⚠️ الكمية تتجاوز المتاح
+                  <span style={{display:'inline-flex',alignItems:'center',gap:6}}><AlertTriangle size={14}/>الكمية تتجاوز المتاح</span>
                 </div>
               )}
             </div>
@@ -347,12 +348,12 @@ export default function DispensePage() {
               {wasteMode ? (
                 <button disabled={saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason} onClick={handleWaste}
                   style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason?C.text4:'#d97706',color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason?.6:1,boxShadow:'0 6px 16px #d9770630',transition:'all .2s'}}>
-                  {saving?'⏳ جاري الحفظ...':`🗑️ تسجيل هدر ${qty||0} ${selected.unit}`}
+                  {saving?'جارٍ الحفظ...':`تسجيل هدر ${qty||0} ${selected.unit}`}
                 </button>
               ) : (
                 <button disabled={saving||!qty||Number(qty)<=0||Number(qty)>selected.qty} onClick={handleDispense}
                   style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?C.text4:C.danger,color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?.6:1,boxShadow:`0 6px 16px ${C.danger}30`,transition:'all .2s'}}>
-                  {saving?'⏳ جاري الحفظ...':`✓ صرف ${qty||0} ${selected.unit} من ${selected.name}`}
+                  {saving?'جارٍ الحفظ...':`صرف ${qty||0} ${selected.unit} من ${selected.name}`}
                 </button>
               )}
             </div>

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { PLAN_CAPS, type PlanKey } from '@/lib/planPricing'
+import { PLAN_CAPS, CUSTOM_MODULE_ORDER, CUSTOM_MIN_STAFF_PER_BRANCH, isCustomPlan, isNewPlan, isPerBranchAddon, signupAddonsFor, type PlanKey } from '@/lib/planPricing'
+import { activateAddon } from '@/lib/addonActivation'
 import { normalizeWhatsapp } from '@/lib/phoneNormalize'
 import { SIGNUP_BUSINESS_TYPES } from '@/lib/businessTypes'
 import { attachReferral } from '@/lib/agentReferral'
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    let { orgName, fullPhone, businessType, branchCount, billing, phone, trialEnds, countryCode, termsAcceptedAt, agentCode } = body
+    let { orgName, fullPhone, businessType, branchCount, billing, phone, trialEnds, countryCode, termsAcceptedAt, agentCode, plan: chosenPlan, addons: chosenAddons } = body
     const userId = authedUser.id
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null
     const userAgent = req.headers.get('user-agent') || null
@@ -62,10 +63,14 @@ export async function POST(req: Request) {
     const TERMS_VERSION = (settingsRow as any)?.terms_version || '2026-06-b'
 
     // التجربة المجانية على الباقة اللي اختارها (الفروع والموظفين والموردين حسبها)، والمميزات كلها مفتوحة طول التجربة (lib/planFeatures)
-    const requestedPlan: PlanKey = branchCount===1?'basic':branchCount<=5?'pro':'advanced'
-    const plan: PlanKey = requestedPlan
+    // الباقات الجديدة (2026-11): الباقة اللي اختارها وعدد فروعها (1–10). نسخة قديمة من التطبيق ما ترسل plan → التشغيل
+    const plan: PlanKey = isNewPlan(chosenPlan) ? chosenPlan : 'ops'
+    const requestedPlan: PlanKey = plan
     const caps = PLAN_CAPS[plan]
-    const maxB = caps.branches, maxStaff = caps.staff, maxSup = caps.suppliers
+    const maxB = Math.max(1, Math.min(caps.maxBranches, Math.round(Number(branchCount)) || 1))
+    // «ابنِ باقتك»: عدد الموظفين اللي اختاره (أقل شي 3 لكل فرع)
+    const staffIncluded = isCustomPlan(plan) ? Math.max(CUSTOM_MIN_STAFF_PER_BRANCH * maxB, Math.min(500, Math.round(Number(body.staff)) || caps.staff * maxB)) : null
+    const maxStaff = staffIncluded ?? caps.staff * maxB, maxSup = caps.suppliers * maxB
 
     const { data: org, error: orgErr } = await supabase
       .from('organizations')
@@ -81,6 +86,7 @@ export async function POST(req: Request) {
         max_staff: maxStaff,
         max_suppliers: maxSup,
         plan: plan,
+        staff_included: staffIncluded,
         billing_cycle: billing === 'yearly' ? 'yearly' : 'monthly'
       })
       .select().single()
@@ -114,6 +120,20 @@ export async function POST(req: Request) {
       ip_address: ip,
       user_agent: userAgent,
     }).then(({ error }: any) => { if (error) console.log('consent_logs insert error:', error.message) })
+
+    // الإضافات (أو مزايا «ابنِ باقتك») اللي اختارها: تتفعّل الحين لكل فروعه وتنتهي مع التجربة،
+    // ويجددها الأدمن مع الاشتراك المدفوع (activate-user يجدد كل الإضافات المفعّلة). المسموحة بس.
+    try {
+      const allowed = isCustomPlan(plan) ? [...CUSTOM_MODULE_ORDER] as string[] : signupAddonsFor(plan) as unknown as string[]
+      const wanted = allowed.filter(s => Array.isArray(chosenAddons) && chosenAddons.includes(s))
+      if (wanted.length) {
+        const { data: ads } = await supabase.from('marketplace_addons').select('id,slug').in('slug', wanted)
+        for (const a of (ads || []) as any[]) {
+          const r = await activateAddon(supabase, { orgId: org.id, addonId: a.id, allBranches: true, quantity: isPerBranchAddon(plan, a.slug) ? maxB : 1 })
+          if (!r.ok) console.error('SIGNUP_ADDON_ACTIVATE_FAILED (non-fatal):', a.slug, r.error)
+        }
+      }
+    } catch (e) { console.error('SIGNUP_ADDONS_FAILED (non-fatal):', e) }
 
     // سفير: الكود المكتوب في التسجيل، وإلا كوكي رابطه (أفضل جهد — ما يوقف التسجيل)
     try {

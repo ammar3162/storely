@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     if (!org_id || !attendance_id || !time) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (!managerMay(access as any, 'attendance', 'hr')) return NextResponse.json({ error: 'ما عندك صلاحية على هالقسم — كلّم مالك المنشأة' }, { status: 403 })
+    if (!managerMay(access as any, 'attendance', 'hr')) return NextResponse.json({ error: 'ليست لديك صلاحية على هذا القسم — تواصل مع مالك المنشأة' }, { status: 403 })
     if (access.role !== 'owner') return NextResponse.json({ error: 'تسجيل الانصراف عن الموظف للمالك فقط' }, { status: 403 })
 
     const db = sb()
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     // لازم يكون آخر حركة للموظف: ما انصرف بعده ولا حضر دوام ثاني
     const { data: later } = await db.from('staff_attendance').select('id').eq('org_id', org_id).eq('staff_id', checkIn.staff_id)
       .gt('recorded_at', checkIn.recorded_at).limit(1)
-    if ((later || []).length) return NextResponse.json({ error: 'الموظف مسجّل له انصراف أو حضور بعد هالحضور' }, { status: 409 })
+    if ((later || []).length) return NextResponse.json({ error: 'يوجد للموظف انصراف أو حضور مسجّل بعد هذا الحضور' }, { status: 409 })
 
     const atMs = manualCheckoutAt(checkIn.recorded_at, String(time))
     if (atMs == null) return NextResponse.json({ error: 'الوقت غير صالح' }, { status: 400 })

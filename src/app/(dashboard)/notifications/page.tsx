@@ -1,21 +1,43 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useLiveRefresh } from '@/lib/useLiveRefresh'
-import PageIcon from '@/components/PageIcon'
+import { Bell, CheckCheck, CircleAlert, CircleCheck, Info, TriangleAlert, X } from 'lucide-react'
+import { StorelyButton, StorelyCard, StorelyPageHeader, StorelyStatusBadge } from '@/components/ui'
+import { storelyTokens } from '@/components/ui/design-tokens'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
 import { toast } from '@/components/toast'
 import ExtraDayDecision from '@/components/ExtraDayDecision'
 import { getOrgId } from '@/lib/session'
-import { colors, radius, font, card, btnSecondary, tag, pageTitle, pageSub } from '@/lib/ds'
 import { cache } from '@/lib/cache'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 
-const TYPE_CFG: Record<string,{icon:string;color:string;bg:string;border:string}> = {
-  warning: { icon:'⚠️', color:colors.warning, bg:colors.warningLight, border:colors.warningBorder },
-  danger:  { icon:'🚨', color:colors.danger,  bg:colors.dangerLight,  border:colors.dangerBorder  },
-  success: { icon:'✅', color:colors.primary, bg:colors.primaryLight, border:colors.primaryBorder },
-  info:    { icon:'ℹ️', color:colors.info,    bg:colors.infoLight,    border:colors.infoBorder    },
-}
+const TYPE_CFG = {
+  warning: { icon: TriangleAlert, color: storelyTokens.color.warning, status: 'warning' },
+  danger: { icon: CircleAlert, color: storelyTokens.color.danger, status: 'danger' },
+  success: { icon: CircleCheck, color: storelyTokens.color.success, status: 'success' },
+  info: { icon: Info, color: storelyTokens.color.info, status: 'info' },
+} as const
+
+const notificationStyles = `
+  .notifications-page { max-width: 1000px; margin: 0 auto; min-width: 0; font-family: ${storelyTokens.typography.family}; color: ${storelyTokens.color.text}; line-height: ${storelyTokens.typography.lineHeight}; }
+  .notifications-page h1 { font-size: ${storelyTokens.typography.title}px; line-height: 1.5; }
+  .notifications-page .notification-toolbar { display: flex; flex-wrap: wrap; gap: ${storelyTokens.spacing[2]}px; padding: ${storelyTokens.spacing[4]}px; border-bottom: 1px solid ${storelyTokens.color.border}; }
+  .notifications-page .notification-row { display: flex; align-items: flex-start; gap: ${storelyTokens.spacing[4]}px; padding: ${storelyTokens.spacing[6]}px; background: ${storelyTokens.color.surface}; border-bottom: 1px solid ${storelyTokens.color.border}; }
+  .notifications-page .notification-row:last-child { border-bottom: 0; }
+  .notifications-page .notification-row[data-unread=true] { border-inline-start: 3px solid ${storelyTokens.color.navy}; cursor: pointer; }
+  .notifications-page .notification-row[data-unread=true]:hover { background: ${storelyTokens.color.background}; }
+  .notifications-page .notification-icon { flex-shrink: 0; margin-top: ${storelyTokens.spacing[1]}px; }
+  .notifications-page .notification-copy { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .notifications-page .notification-title { display: flex; flex-wrap: wrap; align-items: flex-start; gap: ${storelyTokens.spacing[2]}px; margin-bottom: ${storelyTokens.spacing[2]}px; }
+  .notifications-page .notification-title h2 { flex: 1; min-width: 0; font-size: ${storelyTokens.typography.body}px; }
+  .notifications-page .notification-message { font-size: ${storelyTokens.typography.body}px; color: ${storelyTokens.color.textMuted}; margin-bottom: ${storelyTokens.spacing[2]}px; white-space: pre-wrap; }
+  .notifications-page .notification-date { font-size: ${storelyTokens.typography.supporting}px; color: ${storelyTokens.color.textMuted}; }
+  .notifications-page .notification-empty { padding: ${storelyTokens.spacing[8]}px ${storelyTokens.spacing[5]}px; text-align: center; }
+  .notifications-page .notification-empty svg { margin: 0 auto ${storelyTokens.spacing[3]}px; color: ${storelyTokens.color.textMuted}; }
+  .notifications-page .notification-empty p { margin-top: ${storelyTokens.spacing[2]}px; font-size: ${storelyTokens.typography.body}px; color: ${storelyTokens.color.textMuted}; }
+  .notifications-page .notification-skeleton { height: 12px; background: ${storelyTokens.color.border}; border-radius: ${storelyTokens.radius.control}; }
+  @media (max-width: 640px) { .notifications-page .notification-row { padding: ${storelyTokens.spacing[4]}px; gap: ${storelyTokens.spacing[3]}px; } }
+`
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([])
@@ -57,7 +79,7 @@ export default function NotificationsPage() {
 
   // أزرار القرار حسب نوع الطلب — نفس الـAPI اللي تستخدمه صفحة إدارة الموظفين
   const DECISIONS: Record<string, { approve: string; reject: string; approved: string; rejected: string; call: (orgId: string, id: string, ok: boolean) => Promise<any> }> = {
-    cashier_deficit: { approve: 'اعتماد الخصم من الراتب', reject: 'رفض', approved: 'تم اعتماد الخصم من راتب الكاشير', rejected: 'تم رفض الخصم — ما انخصم من الراتب',
+    cashier_deficit: { approve: 'اعتماد الخصم من الراتب', reject: 'رفض', approved: 'تم اعتماد الخصم من راتب الكاشير', rejected: 'تم رفض الخصم — لم يُخصم من الراتب',
       call: (orgId, id, ok) => api.post('/api/cashier-deficit-decision', { org_id: orgId, closing_id: id, decision: ok ? 'approved' : 'rejected' }) },
     excuse_request: { approve: 'موافقة', reject: 'رفض', approved: 'تمت الموافقة على الاستئذان', rejected: 'تم رفض الاستئذان',
       call: (orgId, id, ok) => api.put('/api/attendance-permission-request', { org_id: orgId, id, action: ok ? 'approve' : 'reject' }) },
@@ -106,92 +128,96 @@ export default function NotificationsPage() {
     : notifications.filter(n => n.type === filter)
 
   if (loading) return (
-    <div style={{fontFamily:font.family,direction:'rtl'}}>
-      <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.4}}.sk{animation:sk 1.4s infinite}`}</style>
-      {[1,2,3].map(i=>(<div key={i} style={{...card,padding:16,marginBottom:10,display:'flex',gap:12}}><div className="sk" style={{width:40,height:40,borderRadius:radius.md,background:colors.border,flexShrink:0}}/><div style={{flex:1}}><div className="sk" style={{height:12,width:'60%',background:colors.border,borderRadius:6,marginBottom:8}}/><div className="sk" style={{height:10,width:'80%',background:colors.border,borderRadius:6}}/></div></div>))}
+    <div className="notifications-page" dir="rtl" aria-busy="true">
+      <style>{notificationStyles}</style>
+      <StorelyCard>
+        {[1,2,3].map(i => (
+          <div key={i} className="notification-row" aria-hidden="true">
+            <Bell size={20} className="notification-icon" />
+            <div className="notification-copy">
+              <div className="notification-skeleton mb-3 w-3/5" />
+              <div className="notification-skeleton w-4/5" />
+            </div>
+          </div>
+        ))}
+      </StorelyCard>
     </div>
   )
 
   return (
-    <div style={{fontFamily:font.family,direction:'rtl'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20,flexWrap:'wrap' as const,gap:12}}>
-        <div>
-          <h1 style={{...pageTitle}}><PageIcon/>الإشعارات</h1>
-          <p style={{...pageSub}}>{unread > 0 ? `${unread} إشعار غير مقروء` : 'كل الإشعارات مقروءة'}</p>
+    <div className="notifications-page" dir="rtl">
+      <style>{notificationStyles}</style>
+      <StorelyPageHeader
+        title="الإشعارات"
+        description={unread > 0 ? `${unread} إشعار غير مقروء` : 'كل الإشعارات مقروءة'}
+        actions={unread > 0 && <StorelyButton onClick={markAllRead} icon={<CheckCheck size={16} />}>تحديد الكل كمقروء</StorelyButton>}
+      />
+      <StorelyCard>
+        <div className="notification-toolbar">
+          {([
+            {key:'all',label:'الكل',icon:null},
+            {key:'unread',label:'غير مقروء',icon:null},
+            {key:'warning',label:'تحذير',icon:TriangleAlert},
+            {key:'success',label:'نجاح',icon:CircleCheck},
+            {key:'info',label:'معلومة',icon:Info},
+          ] as const).map(f => (
+            <StorelyButton key={f.key} onClick={()=>setFilter(f.key)}
+              variant={filter===f.key?'primary':'secondary'} aria-pressed={filter===f.key}
+              icon={f.icon ? <f.icon size={16} /> : undefined}>
+              {f.label}{f.key==='unread'&&unread>0&&<span className="text-xs">{unread}</span>}
+            </StorelyButton>
+          ))}
         </div>
-        {unread > 0 && <button onClick={markAllRead} style={{...btnSecondary,padding:'8px 14px',fontSize:font.xs,flexShrink:0}}>تحديد الكل كمقروء</button>}
-      </div>
-
-      <div style={{display:'flex',gap:6,flexWrap:'wrap' as const,marginBottom:18}}>
-        {([
-          {key:'all',label:'الكل'},
-          {key:'unread',label:'غير مقروء'},
-          {key:'warning',label:'⚠️ تحذير'},
-          {key:'success',label:'✅ نجاح'},
-          {key:'info',label:'ℹ️ معلومة'},
-        ] as const).map(f => (
-          <button key={f.key} onClick={()=>setFilter(f.key)}
-            style={{padding:'7px 13px',borderRadius:99,border:`1.5px solid ${filter===f.key?colors.text:colors.border2}`,background:filter===f.key?colors.text:'white',color:filter===f.key?'white':colors.text3,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family,transition:'all .15s',whiteSpace:'nowrap' as const}}>
-            {f.label}{f.key==='unread'&&unread>0&&<span style={{marginRight:4,background:colors.danger,color:'white',fontSize:9,fontWeight:700,padding:'1px 5px',borderRadius:99}}>{unread}</span>}
-          </button>
-        ))}
-      </div>
-
-      {filtered.length === 0 ? (
-        <div style={{...card,padding:'64px 20px',textAlign:'center'}}>
-          <div style={{fontSize:48,marginBottom:12}}>🔔</div>
-          <div style={{fontSize:font.md,fontWeight:600,color:colors.text2,marginBottom:4}}>{filter==='unread'?'لا توجد إشعارات غير مقروءة':'لا توجد إشعارات'}</div>
-          <div style={{fontSize:font.sm,color:colors.text4}}>ستظهر إشعارات المخزون هنا</div>
-        </div>
-      ) : (
-        <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
-          {filtered.map((n) => {
-            const c = TYPE_CFG[n.type] || TYPE_CFG.info
-            return (
-              <div key={n.id} onClick={()=>!n.read&&markRead(n.id)}
-                style={{...card,padding:'14px 16px',cursor:n.read?'default':'pointer',display:'flex',alignItems:'flex-start',gap:12,transition:'all .2s',background:n.read?colors.surface:c.bg,borderColor:n.read?colors.border:c.border}}>
-                <div style={{width:40,height:40,flexShrink:0,borderRadius:radius.md,background:n.read?colors.bg:c.bg,border:`1.5px solid ${n.read?colors.border2:c.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>{c.icon}</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8,marginBottom:4}}>
-                    <div style={{fontSize:font.sm,fontWeight:n.read?500:700,color:n.read?colors.text2:colors.text}}>{n.title}</div>
-                    {!n.read && <span style={{...tag('white',c.color,c.color),fontSize:10,flexShrink:0}}>جديد</span>}
+        {filtered.length === 0 ? (
+          <div className="notification-empty">
+            <Bell size={24} aria-hidden="true" />
+            <div className="text-sm font-semibold">{filter==='unread'?'لا توجد إشعارات غير مقروءة':'لا توجد إشعارات'}</div>
+            <p>ستظهر إشعارات المخزون هنا</p>
+          </div>
+        ) : (
+          <div>
+            {filtered.map((n) => {
+              const c = TYPE_CFG[n.type as keyof typeof TYPE_CFG] || TYPE_CFG.info
+              const Icon = c.icon
+              return (
+                <div key={n.id} onClick={()=>!n.read&&markRead(n.id)} className="notification-row" data-unread={!n.read}>
+                  <Icon size={20} className="notification-icon" style={{color:c.color}} aria-hidden="true" />
+                  <div className="notification-copy">
+                    <div className="notification-title">
+                      <h2 className={n.read?'font-medium':'font-semibold'}>{n.title}</h2>
+                      {!n.read && <StorelyStatusBadge status={c.status}>جديد</StorelyStatusBadge>}
+                    </div>
+                    <div className="notification-message">{n.message}</div>
+                    {n.ref_type === 'accountant_request' && (
+                      <div className="mb-2"><StorelyButton size="sm" variant="primary" onClick={e=>{e.stopPropagation(); window.location.href='/settings?tab=accountant&sub=requests'}}>افتح الطلب ورد عليه</StorelyButton></div>
+                    )}
+                    {n.ref_type === 'extra_day' && n.extra && (
+                      <ExtraDayDecision item={n.extra} orgId={sessionStorage.getItem('s_org_id') || ''} canDecide={!!n.can_decide}
+                        onDone={() => { setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x)); window.dispatchEvent(new Event('notifications-updated')) }} />
+                    )}
+                    {DECISIONS[n.ref_type] && n.decision && (
+                      n.decision==='pending' ? (
+                        n.can_decide ? (
+                          <div className="storely-actions mb-2" onClick={e=>e.stopPropagation()}>
+                            <StorelyButton size="sm" variant={n.ref_type==='cashier_deficit'?'danger':'primary'} disabled={deciding===n.id} onClick={()=>decide(n,true)}>{DECISIONS[n.ref_type].approve}</StorelyButton>
+                            <StorelyButton size="sm" variant="secondary" disabled={deciding===n.id} onClick={()=>decide(n,false)}>{DECISIONS[n.ref_type].reject}</StorelyButton>
+                          </div>
+                        ) : <div className="notification-date mb-2">بانتظار قرار المالك</div>
+                      ) : (
+                        <div className="mb-2"><StorelyStatusBadge status={n.decision==='approved'?(n.ref_type==='cashier_deficit'?'danger':'success'):'info'}>{n.decision==='approved' ? DECISIONS[n.ref_type].approved : DECISIONS[n.ref_type].rejected}</StorelyStatusBadge></div>
+                      )
+                    )}
+                    <div className="notification-date">{new Date(n.created_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
                   </div>
-                  <div style={{fontSize:font.xs,color:n.read?colors.text4:colors.text3,marginBottom:6,lineHeight:1.6}}>{n.message}</div>
-                  {n.ref_type === 'accountant_request' && (
-                    <a href="/settings?tab=accountant&sub=requests" style={{display:'inline-block',fontSize:12,fontWeight:700,color:'white',background:colors.primary,borderRadius:8,padding:'6px 12px',textDecoration:'none',marginBottom:6}}>افتح الطلب ورد عليه</a>
-                  )}
-                  {n.ref_type === 'extra_day' && n.extra && (
-                    <ExtraDayDecision item={n.extra} orgId={sessionStorage.getItem('s_org_id') || ''} canDecide={!!n.can_decide}
-                      onDone={() => { setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x)); window.dispatchEvent(new Event('notifications-updated')) }} />
-                  )}
-                  {DECISIONS[n.ref_type] && n.decision && (
-                    n.decision==='pending' ? (
-                      n.can_decide ? (
-                        <div style={{display:'flex',gap:8,margin:'4px 0 8px',flexWrap:'wrap' as const}} onClick={e=>e.stopPropagation()}>
-                          <button onClick={()=>decide(n,true)} disabled={deciding===n.id}
-                            style={{padding:'7px 14px',borderRadius:8,border:'none',background:n.ref_type==='cashier_deficit'?colors.danger:colors.primary,color:'white',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:deciding===n.id?.6:1}}>
-                            {DECISIONS[n.ref_type].approve}
-                          </button>
-                          <button onClick={()=>decide(n,false)} disabled={deciding===n.id}
-                            style={{padding:'7px 14px',borderRadius:8,border:`1px solid ${colors.border2}`,background:colors.surface,color:colors.text2,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:deciding===n.id?.6:1}}>
-                            {DECISIONS[n.ref_type].reject}
-                          </button>
-                        </div>
-                      ) : <div style={{fontSize:11,color:colors.text4,margin:'2px 0 8px'}}>بانتظار قرار المالك</div>
-                    ) : (
-                      <div style={{fontSize:11,fontWeight:700,color:n.decision==='approved'?(n.ref_type==='cashier_deficit'?colors.danger:colors.primary):colors.text3,margin:'2px 0 8px'}}>
-                        {n.decision==='approved' ? `✓ ${DECISIONS[n.ref_type].approved}` : DECISIONS[n.ref_type].rejected}
-                      </div>
-                    )
-                  )}
-                  <div style={{fontSize:10,color:colors.text4}}>{new Date(n.created_at).toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
+                  <StorelyButton onClick={e=>{e.stopPropagation();del(n.id)}} variant="ghost" size="sm" className="!w-8 !px-0" aria-label="حذف" title="حذف">
+                    <X size={16} />
+                  </StorelyButton>
                 </div>
-                <button onClick={e=>{e.stopPropagation();del(n.id)}} style={{width:28,height:28,borderRadius:radius.sm,border:`1px solid ${colors.border2}`,background:colors.surface,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:colors.text4,flexShrink:0,fontSize:12}}>✕</button>
-              </div>
-            )
-          })}
-        </div>
-      )}
+              )
+            })}
+          </div>
+        )}
+      </StorelyCard>
     </div>
   )
 }

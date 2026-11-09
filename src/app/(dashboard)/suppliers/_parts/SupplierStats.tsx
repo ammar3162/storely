@@ -1,28 +1,23 @@
 'use client'
-import { colors, card } from '@/lib/ds'
 import type { SuppliersPageState } from './useSuppliersPage'
 
+// شريط أرقام مختصر: رقم + عنوان صغير (بدون نص شرح) — نفس حجم الإحصائية السابقة
 export default function SupplierStats({ m, unlinkedProducts }: { m: SuppliersPageState; unlinkedProducts: any[] }) {
   const { suppliers, failedRecentMap } = m
+  const failed = Object.values(failedRecentMap).reduce((a: number, b: number) => a + b, 0)
+  const items = [
+    { label: 'إجمالي الموردين', value: suppliers.length, color: 'var(--storely-text)' },
+    { label: 'منتجات بدون مورد', value: unlinkedProducts.length, color: unlinkedProducts.length ? '#B45309' : 'var(--storely-text)' },
+    ...(failed > 0 ? [{ label: 'رسائل تعذّر إرسالها (24 ساعة)', value: failed, color: '#B91C1C' }] : []),
+  ]
   return (
-    <>
-      {/* شريط إحصائية سريعة */}
-      <div style={{display:'grid',gridTemplateColumns:`repeat(${Object.keys(failedRecentMap).length>0?3:2},1fr)`,gap:8,marginBottom:18}}>
-        <div style={{...card,padding:'12px 14px',textAlign:'center' as const}}>
-          <div style={{fontSize:20,fontWeight:900,color:colors.text}}>{suppliers.length}</div>
-          <div style={{fontSize:10,color:colors.text4,fontWeight:600,marginTop:2}}>إجمالي الموردين</div>
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${items.length},minmax(0,1fr))`, gap: 1, marginBottom: 16, background: 'var(--storely-border)', border: '1px solid var(--storely-border)', borderRadius: 12, overflow: 'hidden' }}>
+      {items.map(it => (
+        <div key={it.label} style={{ background: 'var(--storely-surface)', padding: '10px 12px', textAlign: 'center' }}>
+          <div style={{ fontSize: 20, fontWeight: 700, color: it.color, fontVariantNumeric: 'tabular-nums', lineHeight: 1.3 }}>{it.value}</div>
+          <div style={{ fontSize: 11, color: 'var(--storely-muted)', fontWeight: 600, marginTop: 2 }}>{it.label}</div>
         </div>
-        <div style={{...card,padding:'12px 14px',textAlign:'center' as const,background:unlinkedProducts.length>0?'#fffbeb':undefined,border:unlinkedProducts.length>0?'1px solid #fde68a':undefined}}>
-          <div style={{fontSize:20,fontWeight:900,color:unlinkedProducts.length>0?'#92400e':colors.text}}>{unlinkedProducts.length}</div>
-          <div style={{fontSize:10,color:unlinkedProducts.length>0?'#92400e':colors.text4,fontWeight:600,marginTop:2}}>منتجات بدون مورد</div>
-        </div>
-        {Object.keys(failedRecentMap).length>0 && (
-          <div style={{...card,padding:'12px 14px',textAlign:'center' as const,background:'#fef2f2',border:'1px solid #fecaca'}}>
-            <div style={{fontSize:20,fontWeight:900,color:'#dc2626'}}>{Object.values(failedRecentMap).reduce((a,b)=>a+b,0)}</div>
-            <div style={{fontSize:10,color:'#dc2626',fontWeight:600,marginTop:2}}>رسائل فشل إرسالها (٢٤ ساعة)</div>
-          </div>
-        )}
-      </div>
-    </>
+      ))}
+    </div>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Search, X } from 'lucide-react'
-import { A, Btn, Card, Empty, Loading, Notice, PageHeader, adminFetch, fmtDate, inputStyle, useAdmin } from '../_admin/kit'
+import { ScrollText, ChevronDown } from 'lucide-react'
+import { A, Avatar, Badge, Btn, Card, Empty, Loading, NoAccess, Notice, PageHeader, Row, SearchBox, Stack, Toolbar, adminFetch, fmtDate, useAdmin } from '../_admin/kit'
 
 export default function AuditLogPage() {
   const { can } = useAdmin()
@@ -10,6 +10,7 @@ export default function AuditLogPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const [open, setOpen] = useState<string | null>(null)
 
   async function load(q = search) {
     setLoading(true); setError('')
@@ -20,35 +21,40 @@ export default function AuditLogPage() {
   }
   useEffect(() => { if (allowed) load() }, [allowed])
 
-  if (!allowed) return <Card><Empty title="ما عندك صلاحية على هالصفحة" /></Card>
+  if (!allowed) return <NoAccess />
 
   return (
     <>
-      <PageHeader title="سجل التدقيق" subtitle="مين سوّى إيش ومتى — كل إجراء إداري حساس (تفعيل، حذف، تعديل)" />
+      <PageHeader title="سجل التدقيق" subtitle="من نفّذ ماذا ومتى، لكل إجراء إداري حساس مثل التفعيل والحذف والتعديل" />
 
-      <form onSubmit={e => { e.preventDefault(); load(search) }} style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="ابحث باسم المشرف، نوع الإجراء، أو اسم المنشأة"
-          style={{ ...inputStyle, flex: 1, minWidth: 220 }} />
-        <Btn kind="primary" type="submit" loading={loading}><Search size={14} /> بحث</Btn>
-        {search && <Btn onClick={() => { setSearch(''); load('') }}><X size={14} /> مسح</Btn>}
-      </form>
+      <Stack>
+      {error && <Notice tone="danger">{error}</Notice>}
 
-      {error && <div style={{ marginBottom: 16 }}><Notice tone="danger">{error}</Notice></div>}
-
-      {loading ? <Loading /> : (
-        <Card pad={0}>
-          {logs.length === 0 ? <Empty title={search ? 'ما فيه نتائج مطابقة' : 'ما فيه إجراءات مسجّلة بعد'} /> : logs.map(l => (
-            <div key={l.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, padding: '12px 20px', borderBottom: `1px solid ${A.border}`, flexWrap: 'wrap' }}>
+      <Card pad={0}>
+        <Toolbar>
+          <SearchBox value={search} onChange={setSearch} onSubmit={() => load(search)} placeholder="ابحث باسم المشرف أو نوع الإجراء أو اسم المنشأة" />
+          <Btn kind="primary" loading={loading} onClick={() => load(search)}>بحث</Btn>
+        </Toolbar>
+        {loading ? <Loading /> : logs.length === 0 ? <Empty icon={ScrollText} title={search ? 'لا توجد نتائج مطابقة' : 'لا توجد إجراءات مسجّلة بعد'} /> : logs.map(l => (
+          <div key={l.id} className="adm-list-row" style={{ borderBottom: `1px solid ${A.border}` }}>
+            <Row onClick={l.details ? () => setOpen(open === l.id ? null : l.id) : undefined} style={{ alignItems: 'flex-start', borderBottom: 'none' }}>
+              <Avatar name={l.admin_name} size={34} />
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 700, color: A.text }}>{l.action}</div>
-                <div style={{ fontSize: 12.5, color: A.text2, marginTop: 3 }}>{l.admin_name}{l.target_org_name ? ` · على منشأة: ${l.target_org_name}` : ''}</div>
-                {l.details && <div style={{ fontSize: 11.5, color: A.text3, marginTop: 4, fontFamily: 'monospace', direction: 'ltr', textAlign: 'right', wordBreak: 'break-all' }}>{JSON.stringify(l.details)}</div>}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: A.text }}>{l.admin_name}</span>
+                  <Badge tone="neutral"><span dir="ltr">{l.action}</span></Badge>
+                </div>
+                <div style={{ fontSize: 12.5, color: A.text3, marginTop: 4 }}>{fmtDate(l.created_at, true)}{l.target_org_name ? ` · المنشأة: ${l.target_org_name}` : ''}</div>
               </div>
-              <span style={{ fontSize: 12, color: A.text3, whiteSpace: 'nowrap' }}>{fmtDate(l.created_at, true)}</span>
-            </div>
-          ))}
-        </Card>
-      )}
+              {l.details && <ChevronDown size={16} color={A.text3} style={{ transform: open === l.id ? 'rotate(180deg)' : 'none', transition: 'transform .15s', marginTop: 4 }} />}
+            </Row>
+            {open === l.id && l.details && (
+              <pre style={{ margin: '0 20px 16px', padding: '12px 14px', borderRadius: 12, background: A.muted, fontSize: 12, color: A.text2, direction: 'ltr', textAlign: 'left', whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>{JSON.stringify(l.details, null, 2)}</pre>
+            )}
+          </div>
+        ))}
+      </Card>
+      </Stack>
     </>
   )
 }

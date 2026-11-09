@@ -23,14 +23,14 @@ export async function POST(req: Request) {
     branchCount = sanitizeShortText(branchCount || '', 20)
 
     if (!firstName || !lastName || !phone || !email || !businessName) {
-      return NextResponse.json({ error: 'كل الحقول المطلوبة لازم تُعبّى' }, { status: 400 })
+      return NextResponse.json({ error: 'يجب تعبئة جميع الحقول المطلوبة' }, { status: 400 })
     }
 
     const { error } = await sb().from('demo_requests').insert({
       first_name: firstName, last_name: lastName, phone, email,
       business_name: businessName, branch_count: branchCount,
     } as any)
-    if (error) return NextResponse.json({ error: 'حدث خطأ، حاول مرة ثانية' }, { status: 500 })
+    if (error) return NextResponse.json({ error: 'حدث خطأ، حاول مرة أخرى' }, { status: 500 })
 
     const msg = `🟢 *طلب عرض جديد — Storely*\n\n👤 ${firstName} ${lastName}\n🏢 ${businessName}\n📱 ${phone}\n✉️ ${email}\n🏪 عدد الفروع: ${branchCount || 'غير محدد'}`
     await sendWhatsAppMessage('966594351667', msg)

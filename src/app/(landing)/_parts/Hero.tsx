@@ -1,7 +1,8 @@
 'use client'
-import { Check, Play, ArrowLeft } from 'lucide-react'
-import { WA_ICON, PhoneVideo } from './constants'
+import { Check, ArrowLeft } from 'lucide-react'
+import { PhoneVideo } from './constants'
 import type { LandingState } from './useLanding'
+import { STARTING_PRICE as CUSTOM_MIN_MONTHLY } from '@/lib/planPricing'  // «يبدأ من»: أرخص ميزة لكل فرع
 
 export default function Hero({ m }: { m: LandingState }) {
   const { partners, lang, router, top, t } = m
@@ -18,7 +19,7 @@ export default function Hero({ m }: { m: LandingState }) {
             <p className="lp-lead">{t('heroSub')}</p>
             <div className="lp-cta-row">
               <button className="lp-btn lp-btn-dark lp-btn-lg" onClick={()=>router.push('/login?mode=register')}>{t('heroStart')} <ArrowLeft size={18}/></button>
-              <a className="lp-btn lp-btn-soft lp-btn-lg" href="#how"><span className="lp-play"><Play size={13} fill="currentColor"/></span>{t('heroWatch')}</a>
+              <a className="lp-btn lp-btn-soft lp-btn-lg" href="#demo">{t('heroDemo')}</a>
             </div>
             <ul className="lp-ticks">
               {['heroPoint1','heroPoint2','heroPoint3'].map(k=><li key={k}><Check size={16}/>{t(k)}</li>)}
@@ -27,12 +28,7 @@ export default function Hero({ m }: { m: LandingState }) {
 
           <div className="lp-hero-media">
             <div className="lp-halo"/>
-            <PhoneVideo src="/videos/storely-ad.mp4" poster="/videos/storely-ad.jpg" label="إعلان Storely"/>
-            <div className="lp-float lp-float-a">
-              <span className="lp-wa"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d={WA_ICON}/></svg></span>
-              <div><b>نقص مخزون: دقيق</b><small>انرسل الطلب للمورد تلقائياً</small></div>
-            </div>
-            <div className="lp-float lp-float-b"><span className="lp-stamp">✓ مطابق</span><small>إقفال الكاشير اليوم</small></div>
+            <PhoneVideo src="/videos/storely-brand.mp4" poster="/videos/storely-brand.jpg" label="إعلان Storely"/>
           </div>
         </div>
 
@@ -52,7 +48,7 @@ export default function Hero({ m }: { m: LandingState }) {
 
         <div className="lp-wrap">
           <div className="lp-stats">
-            {[['99 '+(lang==='ar'?'⃁':'SAR'),t('statStart')],['14 '+(lang==='ar'?'يوم':'days'),t('statFree')],['7',t('statLangs')],['24/7',t('statAlerts')]].map(([n,l])=>(
+            {[[CUSTOM_MIN_MONTHLY+' '+(lang==='ar'?'⃁':'SAR'),t('statStart')],['14 '+(lang==='ar'?'يوماً':'days'),t('statFree')],['7',t('statLangs')],['24/7',t('statAlerts')]].map(([n,l])=>(
               <div key={l}><strong>{n}</strong><span>{l}</span></div>
             ))}
           </div>

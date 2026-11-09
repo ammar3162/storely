@@ -19,7 +19,7 @@ async function ownerOnly(org_id: string | null) {
   if (!org_id) return { error: NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 }) }
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return { error: NextResponse.json({ error: access.error }, { status: access.status }) }
-  if (access.role !== 'owner') return { error: NextResponse.json({ error: 'الربط مع المحاسب متاح لمالك الحساب بس' }, { status: 403 }) }
+  if (access.role !== 'owner') return { error: NextResponse.json({ error: 'الربط مع المحاسب متاح لمالك الحساب فقط' }, { status: 403 }) }
   return { ok: true as const }
 }
 
@@ -49,18 +49,18 @@ export async function PUT(req: Request) {
     const name = String(b.name || '').trim().slice(0, 80)
     if (!name) return NextResponse.json({ error: 'اكتب اسم المحاسب' }, { status: 400 })
     const email = String(b.email || '').trim().toLowerCase() || null
-    if (email && (!EMAIL_RE.test(email) || email.length > 254)) return NextResponse.json({ error: 'الإيميل غير صحيح' }, { status: 400 })
+    if (email && (!EMAIL_RE.test(email) || email.length > 254)) return NextResponse.json({ error: 'البريد الإلكتروني غير صحيح' }, { status: 400 })
     const whatsapp = String(b.whatsapp || '').trim() ? formatPhone(String(b.whatsapp)).replace(/\D/g, '') : null
     if (whatsapp && !/^[0-9]{8,15}$/.test(whatsapp)) return NextResponse.json({ error: 'رقم الواتساب غير صحيح' }, { status: 400 })
 
     const channels = (Array.isArray(b.channels) ? b.channels : []).filter((c: string) => c === 'email' || c === 'whatsapp')
-    if (!channels.length) return NextResponse.json({ error: 'اختر طريقة الإرسال: إيميل أو واتساب' }, { status: 400 })
-    if (channels.includes('email') && !email) return NextResponse.json({ error: 'اكتب إيميل المحاسب أو شيل الإرسال بالإيميل' }, { status: 400 })
-    if (channels.includes('whatsapp') && !whatsapp) return NextResponse.json({ error: 'اكتب رقم واتساب المحاسب أو شيل الإرسال بالواتساب' }, { status: 400 })
+    if (!channels.length) return NextResponse.json({ error: 'اختر طريقة الإرسال: البريد الإلكتروني أو واتساب' }, { status: 400 })
+    if (channels.includes('email') && !email) return NextResponse.json({ error: 'اكتب البريد الإلكتروني للمحاسب أو ألغِ الإرسال بالبريد' }, { status: 400 })
+    if (channels.includes('whatsapp') && !whatsapp) return NextResponse.json({ error: 'اكتب رقم واتساب المحاسب أو ألغِ الإرسال بواتساب' }, { status: 400 })
 
     const allowed = new Set(ACC_SECTIONS.map(s => s.key))
     const sections = [...new Set((Array.isArray(b.sections) ? b.sections : []).filter((s: any) => allowed.has(s)))]
-    if (!sections.length) return NextResponse.json({ error: 'اختر وش يوصل للمحاسب' }, { status: 400 })
+    if (!sections.length) return NextResponse.json({ error: 'اختر محتوى التقرير المرسل إلى المحاسب' }, { status: 400 })
 
     const frequency: AccFrequency = ['daily', 'weekly', 'monthly'].includes(b.frequency) ? b.frequency : 'monthly'
     const weekday = Number.isInteger(b.weekday) && b.weekday >= 0 && b.weekday <= 6 ? b.weekday : 0
@@ -114,13 +114,13 @@ export async function POST(req: Request) {
     const g = await ownerOnly(b.org_id); if (g.error) return g.error
     const db = sb()
     const { data: link } = await db.from('accountant_links').select(FIELDS).eq('org_id', b.org_id).maybeSingle()
-    if (!link) return NextResponse.json({ error: 'احفظ بيانات المحاسب أول' }, { status: 400 })
-    if ((await inviteStatus(db, b.org_id, (link as any).email)) === 'pending') return NextResponse.json({ error: 'المحاسب ما قبل الدعوة للحين — أول ما يضغط «قبول الدعوة» في إيميله تقدر ترسل له' }, { status: 409 })
-    if (!(await isSubscriptionActive(db, b.org_id))) return NextResponse.json({ error: 'اشتراكك منتهي — جدّده عشان يشتغل الربط' }, { status: 403 })
+    if (!link) return NextResponse.json({ error: 'احفظ بيانات المحاسب أولاً' }, { status: 400 })
+    if ((await inviteStatus(db, b.org_id, (link as any).email)) === 'pending') return NextResponse.json({ error: 'لم يقبل المحاسب الدعوة بعد — يمكنك الإرسال إليه فور ضغطه على «قبول الدعوة» في بريده' }, { status: 409 })
+    if (!(await isSubscriptionActive(db, b.org_id))) return NextResponse.json({ error: 'اشتراكك منتهٍ — جدّده لتفعيل الربط' }, { status: 403 })
 
     const { count } = await db.from('accountant_reports').select('id', { count: 'exact', head: true })
       .eq('org_id', b.org_id).eq('is_test', true).gte('created_at', new Date(Date.now() - 3600e3).toISOString())
-    if ((count || 0) >= TEST_PER_HOUR) return NextResponse.json({ error: 'أرسلت تقارير كثيرة خلال ساعة — جرّب بعد شوي' }, { status: 429 })
+    if ((count || 0) >= TEST_PER_HOUR) return NextResponse.json({ error: 'أرسلت تقارير كثيرة خلال ساعة — حاول بعد قليل' }, { status: 429 })
 
     const KEYS: ManualPeriodKey[] = ['scheduled', 'last_month', 'this_month', 'last_week', 'yesterday', 'custom']
     const key: ManualPeriodKey = KEYS.includes(b.period) ? b.period : 'scheduled'
@@ -128,17 +128,17 @@ export async function POST(req: Request) {
       const p = customPeriod(String(b.from || ''), String(b.to || ''), saudiToday())
       if (typeof p === 'string') return NextResponse.json({ error: p }, { status: 400 })
       const r = await sendAccountantReport(db, link as any, p, { manual: true })
-      const failed = [r.email_status === 'failed' && 'الإيميل', r.whatsapp_status === 'failed' && 'الواتساب'].filter(Boolean)
-      if (failed.length) return NextResponse.json({ success: false, error: `ما وصل عن طريق ${failed.join(' و')} — تأكد من البيانات وجرّب مرة ثانية`, ...r })
+      const failed = [r.email_status === 'failed' && 'البريد الإلكتروني', r.whatsapp_status === 'failed' && 'الواتساب'].filter(Boolean)
+      if (failed.length) return NextResponse.json({ success: false, error: `لم يصل عبر ${failed.join(' و')} — تأكد من البيانات وحاول مرة أخرى`, ...r })
       return NextResponse.json({ success: true, ...r })
     }
     const period = manualPeriod(key, link as any, saudiToday())
-    if (!period) return NextResponse.json({ error: 'الشهر بدأ اليوم — ما فيه أيام مكتملة لسا' }, { status: 400 })
+    if (!period) return NextResponse.json({ error: 'بدأ الشهر اليوم — لا توجد أيام مكتملة بعد' }, { status: 400 })
     const r = await sendAccountantReport(db, link as any, period, { manual: true })
-    const failed = [r.email_status === 'failed' && 'الإيميل', r.whatsapp_status === 'failed' && 'الواتساب'].filter(Boolean)
-    if (failed.length) return NextResponse.json({ success: false, error: `ما وصل عن طريق ${failed.join(' و')} — تأكد من البيانات وجرّب مرة ثانية`, ...r })
+    const failed = [r.email_status === 'failed' && 'البريد الإلكتروني', r.whatsapp_status === 'failed' && 'الواتساب'].filter(Boolean)
+    if (failed.length) return NextResponse.json({ success: false, error: `لم يصل عبر ${failed.join(' و')} — تأكد من البيانات وحاول مرة أخرى`, ...r })
     return NextResponse.json({ success: true, ...r })
   } catch {
-    return NextResponse.json({ error: 'تعذر الإرسال، حاول مرة ثانية' }, { status: 500 })
+    return NextResponse.json({ error: 'تعذر الإرسال، حاول مرة أخرى' }, { status: 500 })
   }
 }

@@ -7,6 +7,7 @@ import { readInvoice } from '@/lib/invoiceOcr'
 import { noteInvoiceScan } from '@/lib/scanUsage'
 import { classifyItems, applyAnswer, draftStatus, aliasKey, type AgentItem } from '@/lib/invoiceAgent'
 import { guard, limit } from '@/lib/rateLimit'
+import { branchFeatureDenied } from '@/lib/featureRoutes'
 
 // قراءة فاتورة مفصّلة تاخذ أكثر من ١٠ ثواني
 export const maxDuration = 60
@@ -43,6 +44,8 @@ export async function POST(req: Request) {
     if (invoice_image && !isStoredInvoiceUrl(invoice_image)) return NextResponse.json({ error: 'رابط الفاتورة غير صالح — ارفع الصورة من جديد' }, { status: 400 })
     const db = sb()
     const bid = enforcedBranchId(access, branch_id) || null
+    const denied = await branchFeatureDenied(org_id, ['purchases'], bid, db)
+    if (denied) return NextResponse.json({ error: denied }, { status: 403 })
     if (bid) {
       const { data: b } = await db.from('branches').select('id').eq('id', bid).eq('org_id', org_id).maybeSingle()
       if (!b) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
@@ -51,7 +54,7 @@ export async function POST(req: Request) {
     const type = (OCR_TYPES as readonly string[]).includes(mediaType) ? mediaType : 'image/jpeg'
     const limited = await guard([limit('aiScanOrg', org_id)], db)
     if (limited) return limited
-    const ocr = await readInvoice(image, type)
+    const ocr = await readInvoice(image, type, { orgId: org_id, feature: 'invoice_agent' })
     if (!ocr.ok) return NextResponse.json({ error: ocr.error, ...(ocr.unavailable ? { unavailable: true } : {}) }, { status: ocr.status })
     const d = ocr.data
     const rawItems = Array.isArray(d.items) && d.items.length ? d.items
@@ -92,7 +95,7 @@ export async function PATCH(req: Request) {
     const dr = draft as any
     const bid = enforcedBranchId(access)
     if (bid && dr.branch_id !== bid) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
-    if (!['needs_review', 'ready'].includes(dr.status)) return NextResponse.json({ error: 'الفاتورة انحفظت أو انلغت' }, { status: 409 })
+    if (!['needs_review', 'ready'].includes(dr.status)) return NextResponse.json({ error: 'تم حفظ الفاتورة أو إلغاؤها مسبقاً' }, { status: 409 })
 
     const update: any = {}
     if (typeof body.supplier === 'string') update.supplier = body.supplier.trim().slice(0, 120) || null

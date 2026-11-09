@@ -4,6 +4,7 @@ import { CalendarDays } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import { getMe } from '@/lib/session'
 import { colors, radius, shadow, font, card, btnSecondary, inp } from '@/lib/ds'
+import DateField from '@/components/DateField'
 
 // صافي الإقفال: الشبكة + التوصيل (تحوّله التطبيقات) + الكاش − المسحوبات
 export const netOf = (c: any) => Number(c.network_amount||0) + Number(c.delivery_amount||0) + Number(c.cash_amount||0) - Number(c.total_purchases||0)
@@ -35,7 +36,7 @@ export function getRange(period: FilterPeriod, from: string, to: string) {
 export function formatRange(period: FilterPeriod, from: string, to: string) {
   if (period==='today') return 'اليوم'
   if (period==='week')  return 'آخر 7 أيام'
-  if (period==='month') return new Date().toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'long',year:'numeric'})
+  if (period==='month') return new Date().toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',month:'long',year:'numeric'})
   if (period==='year')  return new Date().getFullYear().toString()
   if (from&&to) return `${from} — ${to}`
   if (from) return `من ${from}`
@@ -44,39 +45,38 @@ export function formatRange(period: FilterPeriod, from: string, to: string) {
 }
 
 export function FilterBar({ period, setPeriod, from, setFrom, to, setTo }: any) {
+  // شريط واحد بخمس خانات (يتمرر أفقياً لو ضاق) بدل أزرار كبيرة تلتف على سطرين
   const PERIODS = [
-    {key:'custom',label:'مخصص',icon:<CalendarDays size={13} strokeWidth={2.25}/>},
-    {key:'year',label:'هذه السنة'},
-    {key:'month',label:'هذا الشهر'},
-    {key:'week',label:'الأسبوع'},
     {key:'today',label:'اليوم'},
+    {key:'week',label:'الأسبوع'},
+    {key:'month',label:'هذا الشهر'},
+    {key:'year',label:'هذه السنة'},
+    {key:'custom',label:'مخصص',icon:<CalendarDays size={13} strokeWidth={2.25}/>},
   ]
   return (
-    <div style={{marginBottom:24}}>
-      <div style={{display:'flex',gap:10,flexWrap:'wrap' as const,marginBottom:period==='custom'?16:0}}>
+    <div style={{marginBottom:16}}>
+      <div style={{display:'flex',gap:2,padding:3,background:colors.bg,border:`1px solid ${colors.border}`,borderRadius:10,overflowX:'auto' as const,marginBottom:period==='custom'?10:0}}>
         {PERIODS.map(p=>{
           const active = period===p.key
           return (
-            <button key={p.key} onClick={()=>setPeriod(p.key as FilterPeriod)}
+            <button key={p.key} onClick={()=>setPeriod(p.key as FilterPeriod)} aria-pressed={active}
               style={{
-                padding:'12px 22px',borderRadius:99,fontFamily:font.family,
-                border:active?`2px solid ${colors.primary}`:`1.5px solid ${colors.border2}`,
-                background:'white',
-                color:active?colors.primary:colors.text2,
-                fontSize:14,fontWeight:700,cursor:'pointer',
-                display:'flex',alignItems:'center',gap:6,
-                transition:'all .15s',
+                flex:'1 1 auto',padding:'8px 6px',borderRadius:8,fontFamily:font.family,border:'none',
+                background:active?colors.surface:'transparent',boxShadow:active?'0 1px 2px rgba(15,23,42,.08)':'none',
+                color:active?colors.text:colors.text3,fontSize:12.5,fontWeight:active?800:600,cursor:'pointer',
+                display:'inline-flex',alignItems:'center',justifyContent:'center',gap:5,whiteSpace:'nowrap' as const,
               }}>
-              {p.icon && <span>{p.icon}</span>}
-              {p.label}
+              {p.icon}{p.label}
             </button>
           )
         })}
       </div>
       {period==='custom'&&(
-        <div style={{...card,padding:16,display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-          <div><label style={{fontSize:font.xs,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>من تاريخ</label><input type="date" value={from} onChange={e=>setFrom(e.target.value)} style={inp()}/></div>
-          <div><label style={{fontSize:font.xs,fontWeight:700,color:colors.text4,display:'block',marginBottom:4}}>إلى تاريخ</label><input type="date" value={to} onChange={e=>setTo(e.target.value)} style={inp()}/></div>
+        <div style={{...card,padding:12,display:'flex',gap:10,flexWrap:'wrap' as const,alignItems:'center'}}>
+          <span style={{fontSize:12,fontWeight:700,color:colors.text3}}>من</span>
+          <DateField value={from} max={to||undefined} onChange={setFrom} placeholder="من تاريخ" ariaLabel="من تاريخ" width={150}/>
+          <span style={{fontSize:12,fontWeight:700,color:colors.text3}}>إلى</span>
+          <DateField value={to} min={from||undefined} onChange={setTo} placeholder="إلى تاريخ" ariaLabel="إلى تاريخ" width={150}/>
         </div>
       )}
     </div>
@@ -96,54 +96,39 @@ export function MiniChart({ data, color }: { data:number[]; color:string }) {
   )
 }
 
-export function ReportCard({ title, subtitle, icon, color, bg, border, stats, onClick, loading, chartData }: any) {
-  const [hov, setHov] = useState(false)
+export function ReportCard({ title, subtitle, icon, color, stats, onClick, loading, chartData }: any) {
+  // بطاقة هادئة: أيقونة رمادية، والأرقام في شريط واحد؛ اللون في الرقم فقط
   return (
-    <button onClick={onClick} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{width:'100%',textAlign:'right' as const,border:'none',cursor:'pointer',fontFamily:font.family,padding:0,background:'transparent'}}>
-      <div style={{
-        background:colors.surface,borderRadius:radius.xl,
-        border:`1.5px solid ${hov?color:colors.border}`,
-        boxShadow:hov?`0 12px 36px ${color}22`:shadow.sm,
-        padding:'22px 24px',transition:'all .25s cubic-bezier(.4,0,.2,1)',
-        transform:hov?'translateY(-4px)':'none',
-      }}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:18}}>
-          <div>
-            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:4}}>
-              <div style={{width:42,height:42,borderRadius:12,background:bg,border:`1.5px solid ${border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>{icon}</div>
-              <div>
-                <div style={{fontSize:font.md,fontWeight:900,color:colors.text}}>{title}</div>
-                <div style={{fontSize:font.xs,color:colors.text3,marginTop:1}}>{subtitle}</div>
-              </div>
-            </div>
-          </div>
-          <div style={{display:'flex',alignItems:'center',gap:6,background:hov?color:colors.bg,borderRadius:20,padding:'6px 12px',border:`1px solid ${hov?color:colors.border}`,transition:'all .2s'}}>
-            <span style={{fontSize:font.xs,fontWeight:700,color:hov?'white':colors.text3}}>التفاصيل</span>
-            <svg width={12} height={12} fill="none" stroke={hov?'white':colors.text3} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
-          </div>
-        </div>
+    <button onClick={onClick} className="rc-card"
+      style={{width:'100%',textAlign:'right' as const,cursor:'pointer',fontFamily:font.family,padding:0,background:colors.surface,border:`1px solid ${colors.border}`,borderRadius:radius.xl,overflow:'hidden',display:'block'}}>
+      <style>{`.rc-card:hover{border-color:${colors.text3}!important}`}</style>
+      <div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 16px'}}>
+        <span style={{width:38,height:38,borderRadius:10,background:colors.bg,border:`1px solid ${colors.border}`,color:colors.text,display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{icon}</span>
+        <span style={{flex:1,minWidth:0}}>
+          <span style={{display:'block',fontSize:15,fontWeight:800,color:colors.text}}>{title}</span>
+          <span style={{display:'block',fontSize:12,color:colors.text3,marginTop:1}}>{subtitle}</span>
+        </span>
+        <svg width={16} height={16} fill="none" stroke={colors.text3} strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" style={{flexShrink:0}}><path d="M15 19l-7-7 7-7"/></svg>
+      </div>
 
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:10,marginBottom:chartData?16:0}}>
-          {loading?[...Array(stats.length)].map((_,i)=>(
-            <div key={i} style={{background:colors.bg,borderRadius:radius.md,padding:'12px',textAlign:'center' as const}}>
-              <div style={{height:22,background:colors.border2,borderRadius:6,marginBottom:6,animation:'sk 1.4s infinite'}}/>
-              <div style={{height:10,background:colors.border,borderRadius:4,animation:'sk 1.4s infinite'}}/>
-            </div>
-          )):stats.map((s:any,i:number)=>(
-            <div key={i} style={{background:s.highlight?bg:colors.bg,borderRadius:radius.md,padding:'12px 10px',textAlign:'center' as const,border:`1px solid ${s.highlight?border:colors.border}`}}>
-              <div style={{fontSize:18,fontWeight:900,color:s.color,letterSpacing:'-0.5px'}}>{s.value}</div>
-              <div style={{fontSize:10,color:colors.text4,marginTop:3,fontWeight:600}}>{s.label}</div>
+      {stats.length>0 && (
+        <div style={{display:'grid',gridTemplateColumns:`repeat(${stats.length},minmax(0,1fr))`,gap:1,background:colors.border,borderTop:`1px solid ${colors.border}`}}>
+          {(loading?stats.map(()=>null):stats).map((s:any,i:number)=>(
+            <div key={i} style={{background:colors.surface,padding:'10px 8px',textAlign:'center' as const,minWidth:0}}>
+              {s===null
+                ? <><div style={{height:20,margin:'0 auto 6px',width:'50%',background:colors.border,borderRadius:6,animation:'sk 1.4s infinite'}}/><div style={{height:9,margin:'0 auto',width:'70%',background:colors.border,borderRadius:4,animation:'sk 1.4s infinite'}}/></>
+                : <><div style={{fontSize:18,fontWeight:800,color:(parseFloat(String(s.value).replace(/[^0-9.-]/g,''))||0)===0?colors.text:(s.color||colors.text),fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{s.value}</div>
+                   <div style={{fontSize:11.5,color:colors.text3,marginTop:2,fontWeight:600,whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{s.label}</div></>}
             </div>
           ))}
         </div>
+      )}
 
-        {chartData && chartData.length > 0 && (
-          <div style={{marginTop:4}}>
-            <MiniChart data={chartData} color={color}/>
-          </div>
-        )}
-      </div>
+      {chartData && chartData.length > 0 && (
+        <div style={{padding:'10px 16px 12px',borderTop:`1px solid ${colors.border}`}}>
+          <MiniChart data={chartData} color={color||colors.primary}/>
+        </div>
+      )}
     </button>
   )
 }

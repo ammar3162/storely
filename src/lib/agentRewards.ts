@@ -1,7 +1,7 @@
 import type { PlanKey, BillingCycle } from '@/lib/planPricing'
 
 // مكافأة السفير على أول اشتراك مدفوع للمنشأة اللي جابها — حسب الباقة، والسنوي ضعفها
-export const AGENT_REWARD: Record<PlanKey, number> = { basic: 50, pro: 100, advanced: 150 }
+export const AGENT_REWARD: Record<PlanKey, number> = { basic: 50, pro: 100, advanced: 150, essential: 50, ops: 100, full: 150, custom: 50 }
 export const agentReward = (plan: PlanKey, cycle: BillingCycle) => AGENT_REWARD[plan] * (cycle === 'yearly' ? 2 : 1)
 
 export const AGENT_TERMS_VERSION = '2026-10-09'

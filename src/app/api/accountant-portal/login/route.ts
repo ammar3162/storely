@@ -6,20 +6,20 @@ import { sendEmail } from '@/lib/email'
 import { brandEmail } from '@/lib/emailTemplates'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
-const GENERIC = 'إذا كان إيميلك مدعو من منشأة، بيوصلك رمز الدخول خلال دقيقة'
+const GENERIC = 'إذا كان بريدك الإلكتروني مدعواً من منشأة، فسيصلك رمز الدخول خلال دقيقة'
 
 // طلب رمز دخول لبوابة المحاسب — نفس الرد للكل (ما نكشف مين مدعو)
 export async function POST(req: Request) {
   try {
     const email = normalizeEmail((await req.json()).email)
-    if (!isEmail(email)) return NextResponse.json({ error: 'اكتب إيميل صحيح' }, { status: 400 })
+    if (!isEmail(email)) return NextResponse.json({ error: 'اكتب بريداً إلكترونياً صحيحاً' }, { status: 400 })
     const db = sb(), ip = clientIp(req)
     const hourAgo = new Date(Date.now() - 3600e3).toISOString()
     const [{ count: byEmail }, { count: byIp }] = await Promise.all([
       db.from('accountant_login_codes').select('id', { count: 'exact', head: true }).eq('email', email).gte('created_at', hourAgo),
       db.from('accountant_login_codes').select('id', { count: 'exact', head: true }).eq('ip', ip).gte('created_at', hourAgo),
     ])
-    if ((byEmail || 0) >= 5 || (byIp || 0) >= 20) return NextResponse.json({ error: 'طلبت رموز كثيرة — جرّب بعد ساعة' }, { status: 429 })
+    if ((byEmail || 0) >= 5 || (byIp || 0) >= 20) return NextResponse.json({ error: 'طلبت رموزاً كثيرة — حاول بعد ساعة' }, { status: 429 })
 
     const { count: invited } = await db.from('accountant_access').select('id', { count: 'exact', head: true }).eq('email', email)
     if (!invited) return NextResponse.json({ success: true, message: GENERIC })
@@ -29,10 +29,10 @@ export async function POST(req: Request) {
     await sendEmail({
       to: email, subject: `رمز الدخول لبوابة المحاسب: ${code}`,
       html: brandEmail({ title: 'رمز الدخول لبوابة المحاسب', preheader: `رمزك ${code}`, code,
-        paragraphs: [`اكتب هذا الرمز في صفحة الدخول. صالح ${CODE_MINUTES} دقايق.`], small: 'إذا ما طلبت الرمز، تجاهل هالإيميل.' }),
+        paragraphs: [`اكتب هذا الرمز في صفحة الدخول. صالح لمدة ${CODE_MINUTES} دقائق.`], small: 'إذا لم تطلب الرمز، فتجاهل هذا البريد.' }),
     })
     return NextResponse.json({ success: true, message: GENERIC })
   } catch {
-    return NextResponse.json({ error: 'حدث خطأ، حاول مرة ثانية' }, { status: 500 })
+    return NextResponse.json({ error: 'حدث خطأ، حاول مرة أخرى' }, { status: 500 })
   }
 }

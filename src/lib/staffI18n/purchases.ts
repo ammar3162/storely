@@ -27,7 +27,7 @@ export const PURCHASES_EXTRA: Record<string, L5> = {
   submitting:       { ur: '⏳ درج ہو رہا ہے...', hi: '⏳ दर्ज हो रहा है...', tl: '⏳ Itinatala...', bn: '⏳ নথিভুক্ত হচ্ছে...', fr: '⏳ Enregistrement...' },
   submitBtn:        { ur: '✅ خریداری درج کریں', hi: '✅ खरीद दर्ज करें', tl: '✅ Itala ang pagbili', bn: '✅ ক্রয় নথিভুক্ত করুন', fr: "✅ Enregistrer l'achat" },
   imgFailed:        { ur: 'تصویر اپ لوڈ نہیں ہوئی', hi: 'फोटो अपलोड नहीं हुई', tl: 'Hindi na-upload ang larawan', bn: 'ছবি আপলোড হয়নি', fr: "Échec de l'envoi de l'image" },
-  imgUploaded:      { ur: 'بل اپ لوڈ ہو گیا ✓', hi: 'बिल अपलोड हुआ ✓', tl: 'Na-upload ang resibo ✓', bn: 'বিল আপলোড হয়েছে ✓', fr: 'Facture envoyée ✓' },
+  imgUploaded:      { ur: 'بل اپ لوڈ ہو گیا', hi: 'बिल अपलोड हुआ', tl: 'Na-upload ang resibo', bn: 'বিল আপলোড হয়েছে', fr: 'Facture envoyée' },
   selectVat:        { ur: 'بتائیں کہ بل میں ٹیکس شامل ہے یا نہیں', hi: 'बताएं कि बिल में टैक्स है या नहीं', tl: 'Sabihin kung may VAT ang resibo', bn: 'বিলে ভ্যাট আছে কিনা জানান', fr: 'Indiquez si la facture inclut la TVA' },
   invoiceRequired:  { ur: 'بل کی تصویر اپ لوڈ کریں', hi: 'बिल की फोटो डालें', tl: 'I-upload ang larawan ng resibo', bn: 'বিলের ছবি আপলোড করুন', fr: 'Envoyez la photo de la facture' },
   supplierRequired: { ur: 'سپلائر کا نام لکھیں', hi: 'सप्लायर का नाम लिखें', tl: 'Ilagay ang pangalan ng supplier', bn: 'সরবরাহকারীর নাম লিখুন', fr: 'Saisissez le fournisseur' },

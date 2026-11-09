@@ -1,7 +1,6 @@
 'use client'
 import PageIcon from '@/components/PageIcon'
 import SmartOrder from '@/components/SmartOrder'
-import TodayDecisions from '@/components/TodayDecisions'
 import { C } from './_parts/config'
 import { useAiTools } from './_parts/useAiTools'
 import SmartInsights from './_parts/SmartInsights'
@@ -16,10 +15,11 @@ import WasteReport from './_parts/WasteReport'
 import RealWasteReport from './_parts/RealWasteReport'
 import WeeklyReport from './_parts/WeeklyReport'
 import RecipeModal from './_parts/RecipeModal'
+import { Sparkles } from 'lucide-react'
 
 export default function AIToolsPage() {
   const m = useAiTools()
-  const { curr, visible, plan, hasAiAddon, aiKnown } = m
+  const { visible, hasAiAddon } = m
 
   return (
     <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',opacity:visible?1:0,transition:'opacity .3s'}}>
@@ -37,13 +37,12 @@ export default function AIToolsPage() {
       </div>
 
       {/* قرارات اليوم — أعلى الصفحة (بعد ما نعرف صلاحية الذكاء عشان أدوات الهدر) */}
-      {aiKnown && <TodayDecisions full={plan!=='basic'||!!hasAiAddon} curr={curr} />}
 
       <SmartInsights m={m}/>
 
       <ToolsList m={m}/>
 
-      {(plan!=='basic'||hasAiAddon) && (
+      {hasAiAddon && (
         <>
       {/* الطلب الذكي: توقع النفاد + توقيت الطلب + الكميات + حد إعادة الطلب (lib/smartOrder) */}
       <div id="smart-order"><SmartOrder /></div>
@@ -68,14 +67,14 @@ export default function AIToolsPage() {
         </>
       )}
 
-      {plan==='basic' && hasAiAddon===false && (
-        <div className="fu" style={{marginTop:16,background:'linear-gradient(135deg,#042f2e,#0C213B)',borderRadius:16,padding:'28px 24px',textAlign:'center' as const}}>
-          <div style={{fontSize:36,marginBottom:10}}>🔒✨</div>
+      {hasAiAddon===false && (
+        <div className="fu" style={{marginTop:16,background:'linear-gradient(135deg,#203640,#0C213B)',borderRadius:16,padding:'28px 24px',textAlign:'center' as const}}>
+          <div style={{display:'flex',justifyContent:'center',marginBottom:10,color:'white'}}><Sparkles size={32}/></div>
           <div style={{fontSize:16,fontWeight:800,color:'white',marginBottom:6}}>أدوات ذكاء اصطناعي بانتظارك</div>
           <div style={{fontSize:12,color:'rgba(255,255,255,.65)',marginBottom:18,lineHeight:1.7,maxWidth:420,marginLeft:'auto',marginRight:'auto'}}>
-            توقع نفاد المخزون، اقتراح كميات الشراء، تحليل الموسمية، تحسين نقطة إعادة الطلب، والتقرير الأسبوعي التلقائي — مع الباقة الشاملة أو المتقدمة.
+            توقع نفاد المخزون، اقتراح كميات الشراء، تحليل الموسمية، تحسين نقطة إعادة الطلب، والتقرير الأسبوعي التلقائي — مع الباقة الكاملة أو إضافة «أدوات الذكاء الاصطناعي».
           </div>
-          <a className="hide-in-app" href="/settings" style={{display:'inline-block',padding:'12px 28px',background:'#029FA2',color:'white',borderRadius:10,fontSize:13,fontWeight:800,textDecoration:'none'}}>ترقية الباقة</a>
+          <a className="hide-in-app" href="/addons-market" style={{display:'inline-block',padding:'12px 28px',background:'#203640',color:'white',borderRadius:10,fontSize:13,fontWeight:800,textDecoration:'none'}}>أضف أدوات الذكاء</a>
         </div>
       )}
 

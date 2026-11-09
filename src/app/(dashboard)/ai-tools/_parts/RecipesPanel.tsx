@@ -15,7 +15,7 @@ export default function RecipesPanel({ m }: { m: AiToolsPage }) {
             <span style={{width:34,height:34,borderRadius:9,background:'#f5f3ff',color:'#7c3aed',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><ClipboardList size={18}/></span>
             <div style={{flex:1}}>
               <div style={{fontSize:13,fontWeight:700,color:C.text}}>كم حضّرت فعلاً؟</div>
-              <div style={{fontSize:11,color:C.text3}}>عرّف وصفة (اسم + مكوناتها)، والنظام يقدّر كم وحدة تم تحضيرها بناءً على استهلاك موظفيك الفعلي للمواد الخام</div>
+              <div style={{fontSize:11,color:C.text3}}>عرّف وصفة (اسم + مكوناتها)، ويقدّر النظام عدد الوحدات المحضّرة بناءً على استهلاك موظفيك الفعلي للمواد الخام</div>
             </div>
           </div>
           <div style={{display:'flex',background:C.surface,border:`1px solid ${C.border2}`,borderRadius:9,padding:3,gap:3}}>
@@ -26,7 +26,7 @@ export default function RecipesPanel({ m }: { m: AiToolsPage }) {
           <div style={{fontSize:10,color:C.text3,lineHeight:1.6}}>
             {reconMethod==='count'
               ? 'الاستهلاك = جرد أول الفترة + المشتريات − الهدر − جرد آخر الفترة. يحتاج جردين من صفحة المخزون (زر «جرد»)'
-              : 'من الكميات اللي سجّلها الموظفون كصرف. الموظف ياخذ بالوحدة الكاملة، فاستخدمها لفترة أسبوع أو أكثر'}
+              : 'من الكميات التي سجّلها الموظفون صرفاً. وبما أن الموظف يصرف بالوحدة الكاملة، فاستخدمها لفترة أسبوع أو أكثر'}
           </div>
           <div style={{display:'flex',gap:6}}>
             {([[7,'آخر أسبوع'],[30,'آخر شهر']] as const).map(([d,l])=>(
@@ -73,7 +73,7 @@ export default function RecipesPanel({ m }: { m: AiToolsPage }) {
           {showRecipesList && (
             <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
               {recipesList.length===0 ? (
-                <div style={{fontSize:11,color:C.text4,textAlign:'center' as const,padding:8}}>ما فيه وصفات مسجّلة بعد</div>
+                <div style={{fontSize:11,color:C.text4,textAlign:'center' as const,padding:8}}>لا توجد وصفات مسجّلة بعد</div>
               ) : recipesList.map((r:any)=>(
                 <div key={r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'white',border:`1px solid ${C.border2}`,borderRadius:8,padding:'8px 12px'}}>
                   <span style={{fontSize:12,fontWeight:600,color:C.text}}>{r.name}</span>

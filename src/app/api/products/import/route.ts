@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { branchFeatureDenied } from '@/lib/featureRoutes'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,6 +20,8 @@ export async function POST(req: Request) {
 
     const db = sb()
     const bid = enforcedBranchId(access, branch_id)
+    const denied = await branchFeatureDenied(org_id, ['inventory'], bid, db)
+    if (denied) return NextResponse.json({ error: denied }, { status: 403 })
     if (bid) {
       const { data: b } = await db.from('branches').select('id').eq('id', bid).eq('org_id', org_id).maybeSingle()
       if (!b) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })

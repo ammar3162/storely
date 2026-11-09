@@ -133,7 +133,7 @@ export async function POST(req: Request) {
           return NextResponse.json({ success: false, debug: orderErr.message })
         }
 
-        const supplierMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\nطلب توريد من *${(org as any).name}*\n\n• ${(product as any).name} — *${orderQty} ${(product as any).unit}*${notesLine}\nإذا الصنف غير متوفر أو عندك ملاحظات، تواصل مع *${(org as any).name}*`
+        const supplierMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\nطلب توريد من *${(org as any).name}*\n\n• ${(product as any).name} — *${orderQty} ${(product as any).unit}*${notesLine}\nإذا كان الصنف غير متوفر أو لديك ملاحظات، فتواصل مع *${(org as any).name}*`
         const sent = await sendWA((supplier as any).phone, supplierMsg)
         await logSupplierOrder(db as any, { product_id, supplier_id: (product as any).supplier_id, qty_at_trigger: Number((product as any).qty), ok: sent.ok })
         sentToSupplier = sent.ok

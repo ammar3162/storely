@@ -1,19 +1,20 @@
 'use client'
 import { ct } from './strings'
 import type { CashierClosing } from './useCashierClosing'
+import { CheckCircle2 } from 'lucide-react'
 
 export default function SavedScreen({ m }: { m: CashierClosing }) {
   const { lang, thankYouMsg, resetForm } = m
   return (
     <>
-          <div className="fu" style={{background:'white',borderRadius:20,padding:36,textAlign:'center',boxShadow:'0 4px 24px rgba(0,0,0,.06)',border:'1px solid #eeeeeb'}}>
-            <div style={{width:64,height:64,borderRadius:'50%',background:'#f0fdfa',display:'flex',alignItems:'center',justifyContent:'center',fontSize:30,margin:'0 auto 16px'}}>✅</div>
-            <div style={{fontSize:18,fontWeight:800,color:'#1c1c1a',marginBottom:10}}>{ct('savedTitle',lang)}</div>
-            <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:12,padding:'12px 16px',marginBottom:14}}>
-              <div style={{fontSize:14,fontWeight:700,color:'#0f766e'}}>{thankYouMsg}</div>
+          <div className="fu" style={{background:'white',borderRadius:14,padding:'32px 20px',textAlign:'center',border:'1px solid var(--storely-border)'}}>
+            <div style={{width:64,height:64,borderRadius:'50%',background:'#e7f3f1',display:'flex',alignItems:'center',justifyContent:'center',color:'#203640',margin:'0 auto 16px'}}><CheckCircle2 size={34}/></div>
+            <div style={{fontSize:18,fontWeight:600,color:'var(--storely-text)',marginBottom:10}}>{ct('savedTitle',lang)}</div>
+            <div style={{padding:'0 8px',marginBottom:8}}>
+              <div style={{fontSize:15,color:'var(--storely-text)'}}>{thankYouMsg}</div>
             </div>
-            <div style={{fontSize:13,color:'#8b8a84',marginBottom:24}}>{ct('savedSub',lang)}</div>
-            <button onClick={resetForm} style={{padding:'13px 28px',background:'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>
+            <div style={{fontSize:13,color:'#4b5565',marginBottom:24}}>{ct('savedSub',lang)}</div>
+            <button onClick={resetForm} style={{height:48,padding:'0 28px',background:'#203640',color:'white',border:'none',borderRadius:10,fontSize:16,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
               {ct('newClosing',lang)}
             </button>
           </div>

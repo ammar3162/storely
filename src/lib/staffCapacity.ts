@@ -14,10 +14,10 @@ import { getBranchLimit } from '@/lib/branchLimit'
 export async function checkStaffCapacity(db: SupabaseClient, org_id: string, _branch_id?: string | null):
   Promise<{ ok: true; addonSubscriptionId: string | null } | { ok: false; error: string }> {
   const [{ data: org }, branchLimit] = await Promise.all([
-    db.from('organizations').select('plan,max_staff').eq('id', org_id).single(),
+    db.from('organizations').select('plan,max_staff,staff_included').eq('id', org_id).single(),
     getBranchLimit(db, org_id),
   ])
-  const baseLimit = staffBase((org as any)?.plan, (org as any)?.max_staff, branchLimit.extra)
+  const baseLimit = staffBase((org as any)?.plan, (org as any)?.max_staff, branchLimit.extra, branchLimit.base, (org as any)?.staff_included)
 
   const { count: baseUsed } = await db.from('staff_members').select('id', { count: 'exact', head: true })
     .eq('org_id', org_id).eq('is_active', true).is('addon_subscription_id', null)
@@ -33,7 +33,7 @@ export async function checkStaffCapacity(db: SupabaseClient, org_id: string, _br
     .maybeSingle()
 
   if (!extraStaffSub) {
-    return { ok: false, error: `وصلت حد موظفين باقتك (${baseLimit} موظف) — أضف "موظف إضافي" من صفحة الإضافات أو رقّ باقتك` }
+    return { ok: false, error: `وصلت إلى حد الموظفين في باقتك (${baseLimit} موظف) — أضف "موظف إضافي" من صفحة الإضافات أو رقِّ باقتك` }
   }
 
   const addonQty = (extraStaffSub as any).quantity || 0
@@ -45,7 +45,7 @@ export async function checkStaffCapacity(db: SupabaseClient, org_id: string, _br
     .eq('addon_subscription_id', (extraStaffSub as any).id)
 
   if ((usedAddonSlots || 0) >= addonQty) {
-    return { ok: false, error: `وصلت حد موظفين باقتك (${baseLimit} موظف)، ورصيد "موظف إضافي" (${addonQty}) مستهلك بالكامل — زوّد الكمية من صفحة الإضافات` }
+    return { ok: false, error: `وصلت إلى حد الموظفين في باقتك (${baseLimit} موظف)، ورصيد "موظف إضافي" (${addonQty}) مستهلك بالكامل — زِد الكمية من صفحة الإضافات` }
   }
 
   return { ok: true, addonSubscriptionId: (extraStaffSub as any).id }
@@ -54,7 +54,7 @@ export async function checkStaffCapacity(db: SupabaseClient, org_id: string, _br
 /** الحد الكلي للموظفين النشطين = حد الباقة (مع فروعها الإضافية) + رصيد "موظف إضافي" الساري */
 export async function staffLimitFor(db: SupabaseClient, org_id: string): Promise<number> {
   const [{ data: org }, branchLimit, { data: subs }] = await Promise.all([
-    db.from('organizations').select('plan,max_staff').eq('id', org_id).single(),
+    db.from('organizations').select('plan,max_staff,staff_included').eq('id', org_id).single(),
     getBranchLimit(db, org_id),
     db.from('org_addon_subscriptions').select('quantity,expires_at,marketplace_addons!inner(slug)')
       .eq('org_id', org_id).eq('status', 'active').eq('marketplace_addons.slug', 'extra_staff'),
@@ -62,7 +62,7 @@ export async function staffLimitFor(db: SupabaseClient, org_id: string): Promise
   const now = Date.now()
   const extra = ((subs || []) as any[]).filter(s => !s.expires_at || new Date(s.expires_at).getTime() > now)
     .reduce((n, s) => n + Math.max(0, Number(s.quantity) || 0), 0)
-  return staffBase((org as any)?.plan, (org as any)?.max_staff, branchLimit.extra) + extra
+  return staffBase((org as any)?.plan, (org as any)?.max_staff, branchLimit.extra, branchLimit.base, (org as any)?.staff_included) + extra
 }
 
 /**

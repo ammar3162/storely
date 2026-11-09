@@ -22,7 +22,7 @@ export default function HowItWorks({ m }: { m: LandingState }) {
             </ol>
           </div>
           <div className="lp-how-media rv">
-            <PhoneVideo src="/videos/storely-features.mp4" poster="/videos/storely-features.jpg" label="مميزات Storely" lazy/>
+            <PhoneVideo src="/videos/storely-brand-ad.mp4" poster="/videos/storely-brand-ad.jpg" label="إعلان Storely" lazy controls/>
           </div>
         </div>
       </section>

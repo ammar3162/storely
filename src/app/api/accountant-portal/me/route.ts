@@ -6,6 +6,6 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 
 export async function GET(req: Request) {
   const me = await currentAccountant(sb(), req)
-  if (!me) return NextResponse.json({ error: 'سجّل دخولك' }, { status: 401 })
+  if (!me) return NextResponse.json({ error: 'سجّل الدخول' }, { status: 401 })
   return NextResponse.json({ success: true, accountant: me })
 }

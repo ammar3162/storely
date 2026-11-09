@@ -1,36 +1,42 @@
+import { storelyTokens } from '@/components/ui/design-tokens'
+
 // ═══════════════════════════════════════
 // Storely Design System — Single Source of Truth
 // ═══════════════════════════════════════
 
 export const colors = {
   // Brand — أخضر غامق
-  primary:      '#0f766e',
-  primaryDark:  '#115e59',
-  primaryLight: '#f0fdfa',
-  primaryBorder:'#b2e3df',
+  primary:      storelyTokens.color.navy,
+  primaryDark:  storelyTokens.color.navyHover,
+  primaryLight: storelyTokens.color.background,
+  primaryBorder:storelyTokens.color.border,
 
   // Semantic
   // موحّد مع صفحة الهبوط التسويقية (LandingPageClient.tsx) — نفس القيم بالضبط
-  danger:       '#dc2626',
-  dangerLight:  '#fef2f2',
-  dangerBorder: '#fecdca',
-  warning:      '#b54708',
-  warningLight: '#fffbeb',
-  warningBorder:'#fedf89',
-  info:         '#175cd3',
-  infoLight:    '#eff6ff',
-  infoBorder:   '#b2ddff',
+  danger:       storelyTokens.color.danger,
+  dangerLight:  storelyTokens.color.dangerBg,
+  dangerBorder: storelyTokens.color.dangerBorder,
+  warning:      storelyTokens.color.warning,
+  warningLight: storelyTokens.color.warningBg,
+  warningBorder:storelyTokens.color.warningBorder,
+  info:         storelyTokens.color.info,
+  infoLight:    storelyTokens.color.infoBg,
+  infoBorder:   storelyTokens.color.infoBorder,
 
   // Neutral — درجة رمادية دافئة مخصصة (مو رمادي Tailwind الافتراضي) — تناسب طابع "دفتر/سجل" لتطبيق مخزون وبيع
-  bg:           '#F6F7F9',
-  surface:      '#FFFFFF',
-  border:       '#E6E8EC',
-  border2:      '#D5D9DF',
-  text:         '#101828',
-  text2:        '#344054',
-  text3:        '#475569',   // أغمق من قبل — الكتابة الثانوية كانت باهتة
-  text4:        '#667085',
-  text5:        '#D0D5DD',
+  bg:           storelyTokens.color.background,
+  surface:      storelyTokens.color.surface,
+  border:       storelyTokens.color.border,
+  border2:      storelyTokens.color.border,
+  text:         storelyTokens.color.text,
+  text2:        storelyTokens.color.text,
+  text3:        storelyTokens.color.textMuted,
+  text4:        storelyTokens.color.textMuted,
+  text5:        storelyTokens.color.border,
+  secondary:    storelyTokens.color.textMuted,
+  sage:         storelyTokens.color.accent,
+  olive:        storelyTokens.color.textMuted,
+  taupe:        storelyTokens.color.accent,
 }
 
 // زوايا متدرجة حسب كثافة العنصر -- مو زاوية واحدة موحّدة على كل شي
@@ -44,11 +50,8 @@ export const radius = {
 }
 
 export const shadow = {
-  sm:  '0 1px 2px rgba(16,24,40,.05)',
-  md:  '0 1px 3px rgba(16,24,40,.08)',
-  card:'0 1px 2px rgba(16,24,40,.04)',
-  lg:  '0 12px 24px rgba(16,24,40,.10)',
-  green:'none',
+  sm: storelyTokens.shadow.surface, md: storelyTokens.shadow.surface,
+  card: storelyTokens.shadow.surface, lg: storelyTokens.shadow.panel, green:'none',
 }
 
 // أرقام مصفوفة بعرض ثابت -- مهم فعلياً بتطبيق مخزون/مبيعات (أعمدة كميات وأسعار تترصّ بدقة بالجداول والتقارير)، مو ديكور
@@ -82,7 +85,7 @@ export const card: React.CSSProperties = {
   background: colors.surface,
   borderRadius: '14px',
   border: `1px solid ${colors.border}`,
-  boxShadow: shadow.card,
+  boxShadow: storelyTokens.shadow.surface,
   overflow: 'hidden',
 }
 

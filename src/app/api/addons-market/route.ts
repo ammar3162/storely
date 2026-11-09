@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { INCLUDED_FROM_STANDARD } from '@/lib/changePlan'
+import { addonsForPlan } from '@/lib/planPricing'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
 import { syncStaffToLimit } from '@/lib/staffCapacity'
@@ -27,7 +27,7 @@ export async function DELETE(req: Request) {
     const existingSubId = (existingSub as any)?.id
     const existingQty = Math.max(1, (existingSub as any)?.quantity || 1)
 
-    if (!existingSubId) return NextResponse.json({ error: 'ما فيه اشتراك فعّال لإلغائه' }, { status: 404 })
+    if (!existingSubId) return NextResponse.json({ error: 'لا يوجد اشتراك فعّال لإلغائه' }, { status: 404 })
 
     const { error } = await supabase.from('org_addon_subscriptions')
       .update({ status: 'cancelled', cancelled_at: new Date().toISOString() } as any)
@@ -78,9 +78,7 @@ export async function GET(req: Request) {
     const subscribedIds = new Set((subs || []).map((s: any) => s.addon_id))
     const { data: allAddons } = await supabase.from('marketplace_addons').select('*').order('sort_order')
     const addonsRaw = (allAddons || []).filter((a: any) => a.is_active || subscribedIds.has(a.id))
-    const addons = orgPlan === 'basic'
-      ? addonsRaw
-      : addonsRaw.filter((a: any) => !INCLUDED_FROM_STANDARD.includes(a.slug))
+    const addons = addonsForPlan(orgPlan, addonsRaw as any[])
     const { data: branches } = await supabase.from('branches').select('id,name').eq('org_id', org_id).eq('is_active', true).order('created_at')
 
     const now = new Date()

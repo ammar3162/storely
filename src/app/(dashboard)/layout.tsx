@@ -1,5 +1,6 @@
 'use client'
 import AIAssistant from '@/components/AIAssistant'
+import AutoTranslate from '@/components/AutoTranslate'
 import { LanguageProvider } from '@/lib/i18n/LanguageContext'
 import { SHELL_CSS } from './_shell/shellCss'
 import { useDashboardShell } from './_shell/useDashboardShell'
@@ -11,19 +12,24 @@ import WaInviteModal from './_shell/WaInviteModal'
 import BranchPickerSheet from './_shell/BranchPickerSheet'
 import StopBranchConfirm from './_shell/StopBranchConfirm'
 import OnboardingModal from './_shell/OnboardingModal'
+import PricingSwitchModal from './_shell/PricingSwitchModal'
 import MoreMenuSheet from './_shell/MoreMenuSheet'
 import MobileShell from './_shell/MobileShell'
 import DesktopShell from './_shell/DesktopShell'
+import FeatureLock from './_shell/FeatureLock'
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const m = useDashboardShell()
   const banners = <Banners m={m}/>
+  // صفحة تحتاج ميزة مو مفعّلة (للفرع المختار): بطاقة قفل بدل الصفحة
+  const content = m.pageLock ? <FeatureLock feature={m.pageLock.feature} otherBranch={m.pageLock.otherBranch} owner={m.userRole !== 'manager'} /> : children
 
   if (m.showMaintenance) return <MaintenanceScreen m={m}/>
 
   return (
     <>
       <TermsConsentModal m={m}/>
+      <PricingSwitchModal m={m}/>
       <WhatsAppConsentModal m={m}/>
       <WaInviteModal m={m}/>
       <BranchPickerSheet m={m}/>
@@ -33,8 +39,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
       <div className="sh-root">
         <style>{SHELL_CSS}</style>
-        <MobileShell m={m} banners={banners}>{children}</MobileShell>
-        <DesktopShell m={m} banners={banners}>{children}</DesktopShell>
+        <MobileShell m={m} banners={banners}>{content}</MobileShell>
+        <DesktopShell m={m} banners={banners}>{content}</DesktopShell>
       </div>
       <AIAssistant/>
     </>
@@ -44,6 +50,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <LanguageProvider>
+      <AutoTranslate/>
       <DashboardLayoutInner>{children}</DashboardLayoutInner>
     </LanguageProvider>
   )

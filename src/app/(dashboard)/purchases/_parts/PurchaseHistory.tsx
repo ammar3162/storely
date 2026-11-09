@@ -1,98 +1,67 @@
 'use client'
-import { Pencil } from 'lucide-react'
-import { C, CAT_ICONS } from './constants'
+import { Paperclip, Pencil, ShoppingCart, Store } from 'lucide-react'
+import { StorelyCard, StorelyEmptyState, StorelyStatusBadge, StorelyTableAction } from '@/components/ui'
+import { C } from './constants'
 import type { PurchasesState } from './usePurchases'
+import { fileLink } from '@/lib/invoiceUrl'
+
+const PERIODS = [{v:'all',l:'الكل'},{v:'today',l:'اليوم'},{v:'week',l:'أسبوع'},{v:'month',l:'شهر'}]
+const CATS = [{v:'all',l:'كل الفئات'},{v:'مخزون',l:'مخزون'},{v:'مشتريات',l:'مشتريات'},{v:'أخرى',l:'أخرى'}]
 
 export default function PurchaseHistory({ m }: { m: PurchasesState }) {
   const { isOwner, setEditLog, deletingId, curr, filterCat, setFilterCat, filterPeriod, setFilterPeriod, filterSupplier, setFilterSupplier, filteredHistory, deletePurchase } = m
   return (
-    <>
-        {/* History */}
-        <div className="u" style={{background:'white',borderRadius:12,border:`1px solid ${C.border}`,overflow:'hidden',animationDelay:'.08s'}}>
-          {/* Filters */}
-          <div style={{padding:'12px 14px',borderBottom:`1px solid ${C.border}`}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
-              <span style={{fontSize:13,fontWeight:700,color:C.text}}>آخر المشتريات</span>
-              <span style={{fontSize:10,fontWeight:600,color:C.primary,background:C.primaryL,padding:'2px 8px',borderRadius:99,border:`1px solid ${C.primaryB}`}}>{filteredHistory.length} فاتورة</span>
-            </div>
-            <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-              {/* Period */}
-              <div style={{display:'flex',gap:3,background:C.bg,borderRadius:7,padding:3,border:`1px solid ${C.border}`}}>
-                {[{v:'all',l:'الكل'},{v:'today',l:'اليوم'},{v:'week',l:'أسبوع'},{v:'month',l:'شهر'}].map(p=>(
-                  <button key={p.v} onClick={()=>setFilterPeriod(p.v)}
-                    style={{padding:'4px 9px',borderRadius:5,border:'none',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit',background:filterPeriod===p.v?C.primary:'transparent',color:filterPeriod===p.v?'white':C.text3,transition:'all .15s'}}>
-                    {p.l}
-                  </button>
-                ))}
-              </div>
-              {/* Type */}
-              <div style={{display:'flex',gap:3,background:C.bg,borderRadius:7,padding:3,border:`1px solid ${C.border}`}}>
-                {[{v:'all',l:'الكل'},{v:'مخزون',l:'📦'},{v:'مشتريات',l:'🛒'},{v:'أخرى',l:'📋'}].map(c=>(
-                  <button key={c.v} onClick={()=>setFilterCat(c.v)}
-                    style={{padding:'4px 9px',borderRadius:5,border:'none',fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit',background:filterCat===c.v?C.primary:'transparent',color:filterCat===c.v?'white':C.text3,transition:'all .15s'}}>
-                    {c.l}
-                  </button>
-                ))}
-              </div>
-              {/* Supplier search */}
-              <input value={filterSupplier} onChange={e=>setFilterSupplier(e.target.value)} placeholder="بحث بالمورد..."
-                style={{flex:1,minWidth:80,padding:'5px 10px',border:`1px solid ${C.border2}`,borderRadius:7,fontSize:11,fontFamily:'inherit',outline:'none',background:'white',color:C.text}}/>
-            </div>
-          </div>
-
-          {/* List */}
-          <div style={{maxHeight:600,overflowY:'auto'}}>
-            {filteredHistory.length===0?(
-              <div style={{padding:'48px 20px',textAlign:'center'}}>
-                <div style={{fontSize:36,marginBottom:8}}>🛒</div>
-                <div style={{fontSize:13,fontWeight:600,color:C.text2,marginBottom:4}}>لا توجد مشتريات</div>
-                <div style={{fontSize:11,color:C.text4}}>سجّل أول فاتورة من النموذج</div>
-              </div>
-            ):filteredHistory.map((p,i)=>{
-              const cc=p.category==='مخزون'?{bg:C.primaryL,color:C.primary,border:C.primaryB}:p.category==='مشتريات'?{bg:C.infoL,color:C.info,border:C.infoB}:{bg:C.bg,color:C.text3,border:C.border2}
-              return(
-                <div key={p.id} className="rh" style={{padding:'12px 14px',borderBottom:i<filteredHistory.length-1?`1px solid ${C.border}`:'none'}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:5,flexWrap:'wrap'}}>
-                        <span style={{background:cc.bg,color:cc.color,border:`1px solid ${cc.border}`,padding:'2px 8px',borderRadius:99,fontSize:10,fontWeight:600}}>
-                          {CAT_ICONS[p.category]} {p.category}
-                        </span>
-                        {p.invoice_image&&(
-                          <a href={p.invoice_image} target="_blank" rel="noreferrer"
-                            style={{color:C.info,fontSize:10,fontWeight:600,textDecoration:'none',background:C.infoL,padding:'2px 8px',borderRadius:99,border:`1px solid ${C.infoB}`}}>
-                            📎 فاتورة
-                          </a>
-                        )}
-                        {p.edited_at&&(()=>{ const acc=p.edited_source==='accountant'
-                          return <button onClick={()=>isOwner&&setEditLog(p)} title={`عدّله ${p.edited_by||''}${isOwner?' — اضغط تشوف السجل':''}`}
-                            style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:10,fontWeight:800,color:acc?'#7c3aed':C.warning,background:acc?'#f5f3ff':C.warningL,border:'none',borderRadius:99,padding:'2px 8px',cursor:isOwner?'pointer':'default',fontFamily:'inherit'}}>
-                            <Pencil size={10} strokeWidth={2.5}/> {acc?'معدّل من المحاسب':'معدّل'}</button> })()}
-                      </div>
-                      <div style={{fontSize:13,fontWeight:600,color:C.text,marginBottom:2}}>{p.name}</div>
-                      {p.qty&&<div style={{fontSize:11,color:C.text4,marginBottom:1}}>{p.qty} {p.unit}</div>}
-                      <div style={{fontSize:10,color:C.text4,display:'flex',gap:8,flexWrap:'wrap'}}>
-                        {p.supplier&&<span>🏪 {p.supplier}</span>}
-                        <span>{new Date(p.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',day:'numeric',month:'short'})}</span>
-                      </div>
-                    </div>
-                    <div style={{textAlign:'left',flexShrink:0,display:'flex',flexDirection:'column' as const,alignItems:'flex-end',gap:6}}>
-                      <div>
-                        <div style={{fontSize:15,fontWeight:700,color:C.primary,fontVariantNumeric:'tabular-nums'}}>{Number(p.total_amount||0).toFixed(0)}</div>
-                        <div style={{fontSize:10,color:C.text4}}>{curr}</div>
-                        {Number(p.vat_amount||0)>0&&<div style={{fontSize:10,color:C.warning,marginTop:1}}>+{Number(p.vat_amount||0).toFixed(0)} ض</div>}
-                      </div>
-                      <button onClick={()=>deletePurchase(p)} disabled={deletingId===p.id}
-                        style={{padding:'3px 9px',borderRadius:6,border:`1px solid ${C.dangerB}`,background:C.dangerL,color:C.danger,fontSize:10,fontWeight:700,cursor:deletingId===p.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:deletingId===p.id?.6:1}}>
-                        {deletingId===p.id?'...':'🗑️ حذف'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+    <StorelyCard title="آخر المشتريات" actions={<StorelyStatusBadge status="info">{filteredHistory.length} فاتورة</StorelyStatusBadge>}>
+      <div className="storely-toolbar">
+        <div className="storely-segmented" role="tablist" aria-label="الفترة">
+          {PERIODS.map(p=><button key={p.v} type="button" className={filterPeriod===p.v?'active':''} onClick={()=>setFilterPeriod(p.v)}>{p.l}</button>)}
         </div>
-    </>
+        <select className="storely-select" style={{maxWidth:170}} value={filterCat} onChange={e=>setFilterCat(e.target.value)} aria-label="الفئة">
+          {CATS.map(c=><option key={c.v} value={c.v}>{c.l}</option>)}
+        </select>
+        <input className="storely-input" style={{flex:'1 1 180px',maxWidth:320}} value={filterSupplier} onChange={e=>setFilterSupplier(e.target.value)} placeholder="ابحث باسم المورد" aria-label="بحث بالمورد"/>
+      </div>
+
+      {/* على الجوال: القائمة تمشي مع الصفحة بدل تمرير داخلي */}
+      <style>{'@media(max-width:767px){.ph-scroll{max-height:none!important;overflow:visible!important}}'}</style>
+      <div className="ph-scroll" style={{maxHeight:640,overflowY:'auto'}}>
+        {filteredHistory.length===0 ? (
+          <StorelyEmptyState icon={<ShoppingCart size={20}/>} title="لا توجد مشتريات" description="سجّل أول فاتورة من النموذج أو من قارئ الفواتير" />
+        ) : filteredHistory.map((p,i)=>{
+          const status = p.category==='مخزون' ? 'success' : p.category==='مشتريات' ? 'info' : 'warning'
+          return (
+            <div key={p.id} style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12,padding:'16px 24px',borderBottom:i<filteredHistory.length-1?`1px solid ${C.border}`:'none'}}>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6,flexWrap:'wrap'}}>
+                  <StorelyStatusBadge status={status}>{p.category}</StorelyStatusBadge>
+                  {p.invoice_image&&(
+                    <a href={fileLink(p.invoice_image)} target="_blank" rel="noreferrer" className="storely-badge" data-status="info" style={{gap:4,textDecoration:'none'}}>
+                      <Paperclip size={12}/> الفاتورة
+                    </a>
+                  )}
+                  {p.edited_at&&(()=>{ const acc=p.edited_source==='accountant'
+                    return <button type="button" onClick={()=>isOwner&&setEditLog(p)} title={`عدّله ${p.edited_by||''}${isOwner?' — اضغط لعرض السجل':''}`}
+                      className="storely-badge" data-status="warning" style={{gap:4,cursor:isOwner?'pointer':'default',fontFamily:'inherit'}}>
+                      <Pencil size={11}/> {acc?'معدّل من المحاسب':'معدّل'}</button> })()}
+                </div>
+                <div style={{fontSize:14,fontWeight:600,color:C.text,marginBottom:2,overflowWrap:'anywhere'}}>{p.name}</div>
+                {p.qty&&<div style={{fontSize:13,color:C.text3,marginBottom:2}}>{p.qty} {p.unit}</div>}
+                <div style={{fontSize:12,color:C.text3,display:'flex',gap:10,flexWrap:'wrap',alignItems:'center'}}>
+                  {p.supplier&&<span style={{display:'inline-flex',alignItems:'center',gap:4}}><Store size={12}/>{p.supplier}</span>}
+                  <span>{new Date(p.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',day:'numeric',month:'short'})}</span>
+                </div>
+              </div>
+              <div style={{textAlign:'left',flexShrink:0,display:'flex',flexDirection:'column',alignItems:'flex-end',gap:8}}>
+                <div>
+                  <div style={{fontSize:16,fontWeight:600,color:C.text,fontVariantNumeric:'tabular-nums'}}>{Number(p.total_amount||0).toLocaleString('en-US',{maximumFractionDigits:0})} <span style={{fontSize:12,color:C.text3,fontWeight:400}}>{curr}</span></div>
+                  {Number(p.vat_amount||0)>0&&<div style={{fontSize:12,color:C.warning,marginTop:2}}>منها ضريبة {Number(p.vat_amount||0).toFixed(0)}</div>}
+                </div>
+                <StorelyTableAction action="delete" disabled={deletingId===p.id} onClick={()=>deletePurchase(p)} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </StorelyCard>
   )
 }

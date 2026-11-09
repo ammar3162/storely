@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
     const limited = await guard([limit('aiScanOrg', org_id)])
     if (limited) return limited
-    const r = await readInvoice(image, type)
+    const r = await readInvoice(image, type, { orgId: org_id, feature: 'invoice_scan' })
     if (!r.ok) return NextResponse.json({ error: r.error, ...(r.unavailable ? { unavailable: true } : {}) }, { status: r.status })
     return NextResponse.json({ success: true, data: r.data })
   } catch (err: any) {

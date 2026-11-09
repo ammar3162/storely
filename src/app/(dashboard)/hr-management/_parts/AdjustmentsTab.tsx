@@ -24,7 +24,7 @@ export default function AdjustmentsTab({ m, s, c }: { m: HrPage; s: any; c: Card
                                   <div key={a.id} style={{background:colors.warningLight,border:`1.5px solid ${colors.warningBorder}`,borderRadius:radius.md,padding:'12px 14px'}}>
                                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
                                       <span style={{fontSize:15,fontWeight:800,color:colors.warning}}>{a.amount} {curr}</span>
-                                      <span style={{fontSize:10,color:colors.text4}}>{new Date(a.created_at).toLocaleDateString('ar-SA',{numberingSystem:'latn'})}</span>
+                                      <span style={{fontSize:10,color:colors.text4}}>{new Date(a.created_at).toLocaleDateString('ar-SA-u-ca-gregory',{numberingSystem:'latn'})}</span>
                                     </div>
                                     {a.reason && <div style={{fontSize:12,color:colors.text3,marginBottom:10}}>{a.reason}</div>}
                                     <div style={{display:'flex',gap:8}}>

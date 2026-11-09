@@ -8,13 +8,14 @@ import OwnerStory from './_parts/OwnerStory'
 import HowItWorks from './_parts/HowItWorks'
 import SuppliersSection from './_parts/SuppliersSection'
 import FeaturesSection from './_parts/FeaturesSection'
-import PricingSection from './_parts/PricingSection'
+import PricingTeaser from './_parts/PricingTeaser'
 import DemoRequestSection from './_parts/DemoRequestSection'
 import FaqSection from './_parts/FaqSection'
 import FinalCta from './_parts/FinalCta'
 import SiteFooter from './_parts/SiteFooter'
 import WhatsAppFloat from './_parts/WhatsAppFloat'
 
+// ترتيب مثل صفحات الشركات (فودكس، قيود، رواء): العنوان بزرين ← المزايا ← كيف يشتغل ← الموردين ← قصة عميل ← الأسعار (صفحة مستقلة) ← طلب عرض ← الأسئلة
 export default function LandingPage({ initialMarquee }: { initialMarquee?: string[] } = {}) {
   const m = useLanding(initialMarquee)
   const { rootRef } = m
@@ -29,15 +30,17 @@ export default function LandingPage({ initialMarquee }: { initialMarquee?: strin
 
       <Hero m={m}/>
 
-      <OwnerStory m={m}/>
+
+      <FeaturesSection m={m}/>
 
       <HowItWorks m={m}/>
 
       <SuppliersSection m={m}/>
 
-      <FeaturesSection m={m}/>
+      <OwnerStory m={m}/>
 
-      <PricingSection m={m}/>
+
+      <PricingTeaser m={m}/>
 
       <DemoRequestSection m={m}/>
 

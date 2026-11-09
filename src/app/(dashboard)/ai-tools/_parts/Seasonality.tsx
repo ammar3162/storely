@@ -1,4 +1,5 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 import { C } from './config'
 import type { AiToolsPage } from './useAiTools'
 
@@ -11,7 +12,7 @@ export default function Seasonality({ m }: { m: AiToolsPage }) {
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
           <div>
             <div style={{fontSize:14,fontWeight:800,color:C.text}}>متى زحمتك؟</div>
-            <div style={{fontSize:11,color:C.text3,marginTop:2}}>أكثر الأيام والأوقات صرفاً خلال آخر 90 يوم — عشان تجهّز مخزونك وموظفينك قبلها</div>
+            <div style={{fontSize:11,color:C.text3,marginTop:2}}>أكثر الأيام والأوقات صرفاً خلال آخر 90 يوماً — لتجهيز مخزونك وموظفيك مسبقاً</div>
           </div>
           <button onClick={async()=>{
             const orgId=sessionStorage.getItem('s_org_id')
@@ -30,7 +31,7 @@ export default function Seasonality({ m }: { m: AiToolsPage }) {
           <div style={{marginTop:12}}>
             {/* أيام الذروة */}
             <div style={{marginBottom:16}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.text3,marginBottom:10}}>📅 الصرف حسب اليوم</div>
+              <div style={{fontSize:12,fontWeight:700,color:C.text3,marginBottom:10}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><FeatureIcon name="📅" size={15} /></span> الصرف حسب اليوم</div>
               <div style={{display:'flex',flexDirection:'column',gap:6}}>
                 {(seasonality.byDay||[]).map((d:any,i:number)=>(
                   <div key={i} style={{display:'flex',alignItems:'center',gap:10}}>
@@ -65,7 +66,7 @@ export default function Seasonality({ m }: { m: AiToolsPage }) {
             {/* توصية */}
             {seasonality.peakDay && (
               <div style={{background:'#f5f3ff',borderRadius:10,padding:'12px 14px',border:'1px solid #ddd6fe'}}>
-                <div style={{fontSize:12,fontWeight:700,color:'#7c3aed',marginBottom:4}}>💡 توصية</div>
+                <div style={{fontSize:12,fontWeight:700,color:'#7c3aed',marginBottom:4}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><FeatureIcon name="💡" size={15} /></span> توصية</div>
                 <div style={{fontSize:12,color:'#4c1d95',lineHeight:1.6}}>
                   يوم <b>{seasonality.peakDay.day}</b> هو أكثر أيامك صرفاً — تأكد من توفر مخزون كافٍ قبله
                   {seasonality.peakHour && <span> · وأكثر الأوقات نشاطاً هي <b>{seasonality.peakHour.label}</b></span>}

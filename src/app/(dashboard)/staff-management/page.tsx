@@ -1,6 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import PageIcon from '@/components/PageIcon'
+import { StorelyButton, StorelyMetricStrip, StorelyPageHeader } from '@/components/ui'
 import { colors, radius, shadow, font, card, btnPrimary, pageTitle, pageSub } from '@/lib/ds'
 import { UserPlus, Users, UserCheck, PauseCircle, AlertTriangle } from 'lucide-react'
 import { useStaffManagement } from './_parts/useStaffManagement'
@@ -48,51 +48,25 @@ export default function StaffManagementPage() {
         .act-btn:hover{transform:scale(1.05)}
       `}</style>
 
-      {/* Header */}
-      <div style={{marginBottom:20,display:'flex',justifyContent:'space-between',alignItems:'flex-start'}} className="su">
-        <div style={{display:'flex',alignItems:'center',gap:12}}>
-          <div style={{width:44,height:44,borderRadius:radius.md,background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-            <Users size={20} color={colors.primary} strokeWidth={1.75}/>
-          </div>
-          <div>
-            <h1 style={pageTitle}><PageIcon/>الموظفون</h1>
-            <p style={pageSub}>أضف موظفين بصلاحيات صرف فقط — يدخلون برقم جوالهم ورمز PIN</p>
-          </div>
-        </div>
-        <button onClick={()=>setShowAdd(true)} style={{...btnPrimary,padding:'10px 18px',fontSize:font.sm,display:'flex',alignItems:'center',gap:6}}>
-          <UserPlus size={16} strokeWidth={2.25}/>
-          موظف جديد
-        </button>
-      </div>
+      <StorelyPageHeader title="الموظفون" description="أضف موظفين بصلاحيات صرف فقط، ويدخلون برقم جوالهم ورمز PIN"
+        actions={<StorelyButton variant="primary" icon={<UserPlus size={16}/>} onClick={()=>setShowAdd(true)}>موظف جديد</StorelyButton>} />
 
       {hasCashier && !orgNotifyClosingWA && staff.some((s:any)=>s.role==='cashier') && (
         <div style={{background:colors.warningLight,border:`1.5px solid ${colors.warningBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16,fontSize:font.sm,color:colors.warning,display:'flex',alignItems:'center',gap:10}}>
           <AlertTriangle size={18} strokeWidth={2} style={{flexShrink:0}}/>
           <div>
-            <b>تقارير إقفال الكاشير عبر واتساب موقّفة من الإعدادات العامة.</b> الخيارات تحت لكل موظف (مفعّل/موقّف) ما راح تشتغل حتى تفعّلها من <a href="/settings" style={{color:colors.warning,textDecoration:'underline',fontWeight:700}}>الإعدادات ← الإشعارات</a>.
+            <b>تقارير إقفال الكاشير عبر واتساب موقوفة من الإعدادات العامة.</b> لن تعمل الخيارات أدناه لكل موظف (مفعّل/موقوف) حتى تفعّلها من <a href="/settings" style={{color:colors.warning,textDecoration:'underline',fontWeight:700}}>الإعدادات ← الإشعارات</a>.
           </div>
         </div>
       )}
 
       <UnassignedProducts m={m}/>
 
-      {/* Stats */}
-      <div className="su" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:20,animationDelay:'.05s'}}>
-        {[
-          {label:'إجمالي الموظفين',value:visibleStaff.length,      color:colors.info,    bg:colors.infoLight,    border:colors.infoBorder,    Icon:Users},
-          {label:'موظفون نشطون',   value:activeCount,         color:colors.primary, bg:colors.primaryLight, border:colors.primaryBorder, Icon:UserCheck},
-          {label:'موقوفون',        value:inactiveCount,       color:colors.danger,  bg:colors.dangerLight,  border:colors.dangerBorder,  Icon:PauseCircle},
-        ].map((s,i)=>(
-          <div key={i} style={{background:s.bg,borderRadius:radius.lg,padding:'16px',border:`1.5px solid ${s.border}`}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
-              <div style={{fontSize:10,fontWeight:700,color:s.color,textTransform:'uppercase' as const,letterSpacing:'.06em'}}>{s.label}</div>
-              <s.Icon size={18} color={s.color} strokeWidth={1.75}/>
-            </div>
-            <div style={{fontSize:28,fontWeight:900,color:s.color}}>{s.value}</div>
-          </div>
-        ))}
-      </div>
-
+      <StorelyMetricStrip className="mb-5" metrics={[
+        { label: 'إجمالي الموظفين', value: visibleStaff.length },
+        { label: 'موظفون نشطون', value: activeCount, tone: 'success' },
+        { label: 'موقوفون', value: inactiveCount, tone: inactiveCount ? 'danger' : 'neutral' },
+      ]} />
 
       <RevealedPinCard m={m}/>
 

@@ -58,7 +58,7 @@ export async function notifyLocked(db: SupabaseClient, staff: { org_id: string; 
     await db.from('notifications').insert({
       org_id: s.org_id, branch_id: s.branch_id || null, type: 'warning', read: false,
       title: `محاولات دخول خاطئة: ${s.name}`,
-      message: `انكتب رمز PIN غلط ${PER_ACCOUNT_MAX} مرات متتالية على حساب ${s.name}، وانقفل الدخول مؤقتاً. لو مو هو، غيّر رمزه من صفحة الموظفين.`,
+      message: `أُدخل رمز PIN خاطئ ${PER_ACCOUNT_MAX} مرات متتالية على حساب ${s.name}، وأُقفل الدخول مؤقتاً. إذا لم يكن هو، فغيّر رمزه من صفحة الموظفين.`,
     } as any)
   }
 }

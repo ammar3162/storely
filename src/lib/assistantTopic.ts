@@ -1,10 +1,14 @@
 import { fetchExternal } from '@/lib/fetchExternal'
+import { logAiUsage } from '@/lib/aiUsage'
 // فحص سريع قبل المساعد: السؤال عن المنشأة/النظام/الاشتراك؟ — الأسئلة الخارجية (العمر، أسئلة عامة…)
 // ترجع رد جاهز بدون ما نرسل بيانات المنشأة للنموذج، فما ينصرف توكن كامل (الفحص نفسه ~100 توكن)
 export type Topic = 'business' | 'greeting' | 'other'
 
-export const OFF_TOPIC_REPLY = 'أنا مساعد منشأتك في ستورلي، أجاوب بس عن بيانات منشأتك وطريقة استخدام النظام واشتراكك.\n\nجرّب تسألني مثلاً: «وش الأصناف اللي بتخلص هالأسبوع؟» أو «مين تأخر اليوم؟» أو «متى ينتهي اشتراكي؟»'
-export const GREETING_REPLY = 'هلا والله! أنا مساعد منشأتك في ستورلي.\n\nأقدر أساعدك في المخزون والطلبات، والموظفين والحضور، وإقفالات الكاشير، والأرباح، واشتراكك، وطريقة استخدام النظام. وش تبي تعرف؟'
+export const OFF_TOPIC_REPLY = 'أنا مساعد منشأتك في ستورلي، وأجيب فقط عن بيانات منشأتك وطريقة استخدام النظام واشتراكك.\n\nيمكنك أن تسألني مثلاً: «ما الأصناف التي ستنفد هذا الأسبوع؟» أو «من تأخر اليوم؟» أو «متى ينتهي اشتراكي؟»'
+export const GREETING_REPLY = 'مرحباً بك، أنا مساعد منشأتك في ستورلي.\n\nيمكنني مساعدتك في المخزون والطلبات، والموظفين والحضور، وإقفالات الكاشير، والأرباح، واشتراكك، وطريقة استخدام النظام. بماذا يمكنني مساعدتك؟'
+// نفس الردود للواجهة الإنجليزية
+export const OFF_TOPIC_REPLY_EN = 'I\'m your business assistant in Storely, and I only answer about your business data, how to use the system and your subscription.\n\nFor example, you can ask me: "Which items will run out this week?", "Who was late today?" or "When does my subscription end?"'
+export const GREETING_REPLY_EN = 'Welcome, I\'m your business assistant in Storely.\n\nI can help with inventory and orders, staff and attendance, cashier closings, profits, your subscription and how to use the system. How can I help you?'
 
 const PROMPT = `صنّف رسالة مستخدم نظام إدارة منشأة (مطعم/كوفي/محل) إلى كلمة وحدة:
 business = أي سؤال عن منشأته أو بياناتها: المخزون، الأصناف، الصرف، المشتريات، الموردين، الطلبات، الموظفين، الحضور، الدوام، الرواتب، الكاشير، المبيعات، الأرباح، المصاريف، الفروع، التقارير، الاشتراك، الباقات، الفاتورة، الإضافات، أو طريقة استخدام النظام.
@@ -14,7 +18,7 @@ other = أي شي ثاني: أسئلة عامة أو شخصية أو معلوم�
 رد بكلمة وحدة فقط: business أو greeting أو other.`
 
 /** يرجع business لو الفحص فشل (ما نمنع المستخدم بسبب عطل) */
-export async function classifyTopic(message: string, lastAssistantReply?: string): Promise<Topic> {
+export async function classifyTopic(message: string, lastAssistantReply?: string, orgId?: string | null): Promise<Topic> {
   try {
     const res = await fetchExternal('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -23,6 +27,7 @@ export async function classifyTopic(message: string, lastAssistantReply?: string
     })
     if (!res.ok) return 'business'
     const j = await res.json() as any
+    await logAiUsage({ orgId, feature: 'assistant_topic', model: 'claude-haiku-4-5-20251001', usage: j.usage })
     const t = String(j.content?.[0]?.text || '').trim().toLowerCase()
     return t.startsWith('other') ? 'other' : t.startsWith('greeting') ? 'greeting' : 'business'
   } catch {

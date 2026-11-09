@@ -98,19 +98,19 @@ export async function PATCH(req: Request) {
         const { data: last } = await db.from('staff_attendance').select('type,recorded_at').eq('staff_id', id).eq('org_id', org_id)
           .order('recorded_at', { ascending: false }).limit(1).maybeSingle()
         if ((last as any)?.type === 'check_in' && Date.now() - Date.parse((last as any).recorded_at) < 20 * 3600e3) {
-          return NextResponse.json({ error: 'الموظف داخل دوامه الحين — انقله بعد ما يسجّل انصرافه' }, { status: 409 })
+          return NextResponse.json({ error: 'الموظف في دوامه الآن — انقله بعد تسجيل انصرافه' }, { status: 409 })
         }
         // حد الموظفين للمنشأة كلها — النقل بين الفروع ما يغيّر العدد، فما يحتاج فحص حد
         update.branch_id = targetId
         // الشفت الخاص بالفرع القديم ينفك، والمنتجات المخصصة له (منتجات الفرع القديم) تنمسح
         if (staff.shift_id) {
           const { data: sh } = await db.from('shifts').select('branch_id').eq('id', staff.shift_id).maybeSingle()
-          if ((sh as any)?.branch_id && (sh as any).branch_id !== targetId) { update.shift_id = null; moveNotes.push('انفك عن شفته القديم — حدد له شفت بالفرع الجديد') }
+          if ((sh as any)?.branch_id && (sh as any).branch_id !== targetId) { update.shift_id = null; moveNotes.push('فُك ارتباطه بورديته السابقة — حدّد له وردية في الفرع الجديد') }
         }
         // شفتات الأيام والتواريخ من شفتات الفرع القديم
         if (Object.keys(staff.weekday_shifts || {}).length || Object.keys(staff.date_shifts || {}).length) {
           update.weekday_shifts = {}; update.date_shifts = {}
-          moveNotes.push('انمسحت شفتاته حسب الأيام (كانت من الفرع القديم)')
+          moveNotes.push('حُذفت ورديات الأيام الخاصة به (كانت من الفرع السابق)')
         }
         if (Array.isArray(staff.assigned_products) && staff.assigned_products.length) { update.assigned_products = []; moveNotes.push('انمسحت المنتجات المخصصة له (كانت من الفرع القديم)') }
       }
@@ -125,7 +125,7 @@ export async function PATCH(req: Request) {
           // مرتبط بإضافة "موظف إضافي" — لازم تكون سارية
           const { data: sub } = await db.from('org_addon_subscriptions').select('status,expires_at').eq('id', staff.addon_subscription_id).maybeSingle()
           const active = !!sub && (sub as any).status === 'active' && new Date((sub as any).expires_at) > new Date()
-          if (!active) return NextResponse.json({ error: 'هذا الموظف مرتبط بإضافة "موظف إضافي" ملغاة — جدّد الاشتراك من صفحة الإضافات أول عشان تقدر تفعّله من جديد' }, { status: 403 })
+          if (!active) return NextResponse.json({ error: 'هذا الموظف مرتبط بإضافة "موظف إضافي" ملغاة — جدّد الاشتراك من صفحة الإضافات أولاً لتتمكن من تفعيله مجدداً' }, { status: 403 })
         } else {
           // إعادة التفعيل تخضع لنفس حد الباقة مثل الإضافة
           const capacity = await checkStaffCapacity(db, org_id, staff.branch_id)

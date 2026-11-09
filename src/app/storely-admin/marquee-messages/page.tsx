@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Pencil, Trash2, Eye, EyeOff, Plus } from 'lucide-react'
+import { Pencil, Trash2, Eye, EyeOff, Plus, Megaphone } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
-import { A, Badge, Btn, Card, Empty, Field, Loading, Notice, PageHeader, adminFetch, inputStyle } from '../_admin/kit'
+import { A, Badge, Btn, Card, Empty, Field, Loading, Notice, PageHeader, Row, adminFetch, inputStyle } from '../_admin/kit'
 
 export default function MarqueeMessagesPage() {
   const [messages, setMessages] = useState<any[]>([])
@@ -24,7 +24,7 @@ export default function MarqueeMessagesPage() {
 
   async function addMessages() {
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
-    if (lines.length === 0) { setMsg({ ok: false, t: 'اكتب رسالة وحدة على الأقل' }); return }
+    if (lines.length === 0) { setMsg({ ok: false, t: 'اكتب رسالة واحدة على الأقل' }); return }
     setSaving(true); setMsg(null)
     const d = await adminFetch('/api/admin/marquee-messages', { method: 'POST', body: { messages: lines } })
     if (d.success) { setText(''); setMsg({ ok: true, t: `تمت إضافة ${d.count} رسالة` }); load() }
@@ -47,19 +47,27 @@ export default function MarqueeMessagesPage() {
   }
 
   async function deleteMessage(id: string) {
-    if (!(await confirmDialog({ title: 'حذف الرسالة', message: 'حذف هذي الرسالة من الشريط؟' }))) return
+    if (!(await confirmDialog({ title: 'حذف الرسالة', message: 'حذف هذه الرسالة من الشريط؟' }))) return
     await adminFetch('/api/admin/marquee-messages', { method: 'DELETE', body: { id } })
     load()
   }
 
   const activeCount = messages.filter(m => m.is_active).length
+  const active = messages.filter(m => m.is_active)
 
   return (
     <>
-      <PageHeader title="الشريط الإخباري" subtitle="رسائل الشريط المتحرك أعلى الصفحة الرئيسية لموقع ستورلي — تتناوب فيما بينها" />
+      <PageHeader title="الشريط الإخباري" subtitle="رسائل الشريط المتحرك أعلى الصفحة الرئيسية لموقع Storely، وتتناوب فيما بينها" />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 820 }}>
-        <Card title="إضافة رسالة أو أكثر" subtitle="كل رسالة بسطر لحالها — تنضاف كلها دفعة وحدة">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 880 }}>
+        <Card title="معاينة الشريط" subtitle="كما يظهر للزوار الآن">
+          <div style={{ borderRadius: 12, background:'#203640', color: 'white', padding: '9px 16px', overflow: 'hidden', whiteSpace: 'nowrap', display: 'flex', gap: 28, fontSize: 13.5, fontWeight: 500 }}>
+            {active.length ? active.map(m => <span key={m.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}><span style={{ width: 5, height: 5, borderRadius: 99, background:'#5eead4' }} />{m.message}</span>)
+              : <span style={{ opacity: .6 }}>لا توجد رسائل مفعّلة، ولن يظهر الشريط في الموقع</span>}
+          </div>
+        </Card>
+
+        <Card title="إضافة رسالة أو أكثر" subtitle="اكتب كل رسالة في سطر مستقل، وستُضاف جميعها دفعة واحدة">
           <Field label="الرسائل">
             <textarea placeholder={'رسالة 1\nرسالة 2\nرسالة 3'} value={text} onChange={e => setText(e.target.value)} rows={4}
               style={{ ...inputStyle, resize: 'vertical', fontSize: 14 }} />
@@ -71,8 +79,8 @@ export default function MarqueeMessagesPage() {
         </Card>
 
         <Card title="الرسائل الحالية" subtitle={`${messages.length} رسالة · ${activeCount} مفعّلة`} pad={0}>
-          {loading ? <Loading /> : messages.length === 0 ? <Empty title="لا توجد رسائل مضافة بعد" /> : messages.map((m: any) => (
-            <div key={m.id} style={{ padding: '12px 20px', borderBottom: `1px solid ${A.border}` }}>
+          {loading ? <Loading /> : messages.length === 0 ? <Empty icon={Megaphone} title="لا توجد رسائل مضافة بعد" /> : messages.map((m: any) => (
+            <Row key={m.id} style={{ display: 'block' }}>
               {editingId === m.id ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <input value={editText} onChange={e => setEditText(e.target.value)} autoFocus style={{ ...inputStyle, flex: 1, minWidth: 200, fontSize: 14 }} />
@@ -81,18 +89,18 @@ export default function MarqueeMessagesPage() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <span style={{ flex: 1, minWidth: 200, fontSize: 14, fontWeight: 600, color: m.is_active ? A.text : A.text3 }}>{m.message}</span>
-                  <Badge tone={m.is_active ? 'primary' : 'neutral'}>{m.is_active ? 'مفعّلة' : 'موقفة'}</Badge>
-                  <Btn small onClick={() => { setEditingId(m.id); setEditText(m.message) }}><Pencil size={13} /> تعديل</Btn>
-                  <Btn small onClick={() => toggleActive(m.id, m.is_active)}>{m.is_active ? <><EyeOff size={13} /> إيقاف</> : <><Eye size={13} /> تفعيل</>}</Btn>
-                  <Btn small kind="danger" onClick={() => deleteMessage(m.id)}><Trash2 size={13} /> حذف</Btn>
+                  <span style={{ flex: 1, minWidth: 200, fontSize: 14, fontWeight: 500, color: m.is_active ? A.text : A.text3 }}>{m.message}</span>
+                  <Badge tone={m.is_active ? 'primary' : 'neutral'}>{m.is_active ? 'مفعّلة' : 'موقوفة'}</Badge>
+                  <Btn small kind="ghost" onClick={() => { setEditingId(m.id); setEditText(m.message) }} title="تعديل"><Pencil size={14} /></Btn>
+                  <Btn small kind="ghost" onClick={() => toggleActive(m.id, m.is_active)} title={m.is_active ? 'إيقاف' : 'تفعيل'}>{m.is_active ? <EyeOff size={14} /> : <Eye size={14} />}</Btn>
+                  <Btn small kind="ghost" onClick={() => deleteMessage(m.id)} title="حذف"><Trash2 size={14} /></Btn>
                 </div>
               )}
-            </div>
+            </Row>
           ))}
         </Card>
 
-        {messages.length > 0 && activeCount === 0 && <Notice tone="warning">ولا رسالة مفعّلة — الشريط ما بيظهر بالصفحة الرئيسية.</Notice>}
+        {messages.length > 0 && activeCount === 0 && <Notice tone="warning">لا توجد رسالة مفعّلة، ولن يظهر الشريط في الصفحة الرئيسية.</Notice>}
       </div>
     </>
   )

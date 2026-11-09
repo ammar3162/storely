@@ -31,7 +31,7 @@ export function payrollLedger(p: Pay): LedgerRow[] {
   if (p.allowances.housing) rows.push({ section: 'earning', label: 'بدل سكن', date: null, detail: '', amount: p.allowances.housing })
   if (p.allowances.transport) rows.push({ section: 'earning', label: 'بدل مواصلات', date: null, detail: '', amount: p.allowances.transport })
   if (p.allowances.food) rows.push({ section: 'earning', label: 'بدل طعام', date: null, detail: '', amount: p.allowances.food })
-  for (const d of p.overtime.days) rows.push({ section: 'earning', label: 'أوفر تايم', date: d.date, detail: `${fmtDuration(d.minutes)} × ${p.overtime.hourRate} للساعة`, amount: d.pay })
+  for (const d of p.overtime.days) rows.push({ section: 'earning', label: 'عمل إضافي', date: d.date, detail: `${fmtDuration(d.minutes)} × ${p.overtime.hourRate} للساعة`, amount: d.pay })
   for (const b of p.bonuses || []) {
     const m = /^تعويض يوم إضافي (\d{4}-\d{2}-\d{2})$/.exec(b.reason || '')
     rows.push({ section: 'earning', label: m ? 'تعويض يوم إضافي' : 'مكافأة', date: m ? m[1] : isoDay(b.date), detail: m ? '' : (b.reason || ''), amount: b.amount })

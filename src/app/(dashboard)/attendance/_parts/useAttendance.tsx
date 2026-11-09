@@ -9,6 +9,7 @@ import { confirmDialog } from '@/components/ConfirmDialog'
 import { type OffPatch } from '@/components/StaffDaysOffEditor'
 import { type SchedulePatch } from '@/components/StaffDayShiftsEditor'
 import { saudiToday, fmtTime, fmtMinutes } from './format'
+import { planIncludes } from '@/lib/planFeatures'
 
 /** حالة صفحة الحضور ودوالها — منقولة كما هي من page.tsx */
 export function useAttendance() {
@@ -51,7 +52,7 @@ export function useAttendance() {
   const [late, setLate] = useState<{ grace: string; perHour: string } | null>(null)
   const [savingLate, setSavingLate] = useState(false)
 
-  // إعدادات — الأوفر تايم
+  // إعدادات — العمل الإضافي
   const [ot, setOt] = useState<{mode:'auto'|'fixed'|'off'; multiplier:string; fixedRate:string; minMinutes:string}|null>(null)
   const [savingOt, setSavingOt] = useState(false)
 
@@ -72,7 +73,7 @@ export function useAttendance() {
     setOrgName(orgName)
     setIsOwner(me.role === 'owner')
     // نفس قرار الخادم (/api/me features): الباقة، أو إضافة «إدارة الموظفين»، أو التجربة المجانية
-    if (orgPlan === 'basic' && !me.org?.features?.hr) setLocked(true)  // ما نوقف التحميل -- نخلي المالك يشوف سجلاته القديمة، السيرفر أصلاً يرفض أي تسجيل جديد بدون اشتراك
+    if (!planIncludes(orgPlan, 'hr') && !me.org?.features?.hr) setLocked(true)  // ما نوقف التحميل -- نخلي المالك يشوف سجلاته القديمة، السيرفر أصلاً يرفض أي تسجيل جديد بدون اشتراك
     const bid = sessionStorage.getItem('s_branch_id')
     setBranchId(bid)
     load(oid, date)
@@ -132,7 +133,7 @@ export function useAttendance() {
             { header: 'الانصراف', key: 'check_out', align: 'center' },
             { header: 'الساعات', key: 'hours_worked', align: 'center' },
             { header: 'التأخير (دقيقة)', key: 'late_minutes', align: 'center' },
-            { header: 'الأوفر تايم', key: 'overtime', align: 'center' },
+            { header: 'العمل الإضافي', key: 'overtime', align: 'center' },
           ],
           rows: days,
           totalsRow: {
@@ -157,8 +158,8 @@ export function useAttendance() {
           { header: 'أيام إضافية', key: 'extra_days', align: 'center' },
           { header: 'إجمالي دقائق التأخير', key: 'total_late_minutes', align: 'center' },
           { header: 'إجمالي الخصومات (⃁)', key: 'total_penalty', align: 'center' },
-          { header: 'دقائق الأوفر تايم', key: 'total_overtime_minutes', align: 'center' },
-          { header: 'مبلغ الأوفر تايم (⃁)', key: 'total_overtime_pay', align: 'center' },
+          { header: 'دقائق العمل الإضافي', key: 'total_overtime_minutes', align: 'center' },
+          { header: 'مبلغ العمل الإضافي (⃁)', key: 'total_overtime_pay', align: 'center' },
         ],
         rows: rangeRows,
         totalsRow: {
@@ -196,7 +197,7 @@ export function useAttendance() {
     const j = await api.post('/api/attendance-penalty', { org_id: orgId, attendance_id: attendanceId, waived })
     setWaiving(null)
     if (!j.success) { toast(j.error || 'تعذر التعديل', 'error'); return }
-    toast(waived ? 'تم إلغاء الغرامة — ما تنخصم من الراتب' : 'تم إرجاع الغرامة')
+    toast(waived ? 'تم إلغاء الغرامة — لن تُخصم من الراتب' : 'تم إرجاع الغرامة')
     if (periodMode === 'day') load(orgId, date); else loadRange(orgId, rangeFrom, rangeTo)
   }
 
@@ -224,7 +225,7 @@ export function useAttendance() {
       <span style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: c.fg, background: c.bg, border: `1px solid ${c.bd}`, borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{txt}</span>
     if (!r.check_out && r.check_in && r.attendance_id && isOwner) {
       return (
-        <button onClick={() => openManualCheckout(r, name)} title="الموظف طلع بدون ما يسجّل انصرافه — سجّله عنه"
+        <button onClick={() => openManualCheckout(r, name)} title="غادر الموظف دون تسجيل انصرافه — سجّله نيابةً عنه"
           style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text2, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
           تسجيل انصراف
         </button>
@@ -242,7 +243,7 @@ export function useAttendance() {
   function penaltyCell(r: any) {
     const amount = r.penalty_original ?? r.penalty_amount
     if (!amount) return <span style={{ color: colors.text4 }}>—</span>
-    if (r.penalty_legacy) return <span style={{ color: colors.text4, whiteSpace: 'nowrap' as const }} title="غرامة قبل تفعيل الخصم التلقائي — ما تنخصم">{amount} ⃁ · <span style={{ fontSize: 10, fontWeight: 700 }}>ما انخصمت</span></span>
+    if (r.penalty_legacy) return <span style={{ color: colors.text4, whiteSpace: 'nowrap' as const }} title="غرامة سابقة لتفعيل الخصم التلقائي — لا تُخصم">{amount} ⃁ · <span style={{ fontSize: 10, fontWeight: 700 }}>لم تُخصم</span></span>
     const canToggle = isOwner && r.attendance_id && !r.penalty_locked
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' as const }}>
@@ -291,7 +292,7 @@ export function useAttendance() {
     })
     setSavingOt(false)
     if (!j.success) { toast(j.error || 'فشل الحفظ', 'error'); return }
-    toast('✅ تم حفظ إعدادات الأوفر تايم')
+    toast('تم حفظ إعدادات العمل الإضافي')
   }
 
   // إعداد إجازة الموظف — ينحفظ على طول مع كل تغيير، ويرجع لو فشل
@@ -306,13 +307,13 @@ export function useAttendance() {
   }
 
   async function addShift() {
-    if (!newShiftName.trim() || !branchId) { toast('أدخل اسم الشفت — وتأكد إنك حدّدت فرع نشط', 'warning'); return }
+    if (!newShiftName.trim() || !branchId) { toast('أدخل اسم الوردية، وتأكد من تحديد فرع نشط', 'warning'); return }
     setSavingShift(true)
     const j = await api.post('/api/shifts', { org_id: orgId, branch_id: branchId, name: newShiftName.trim(), start_time: newShiftStart, end_time: newShiftEnd, is_24h: newShift24h })
     setSavingShift(false)
     if (!j.success) { toast(j.error || 'فشل الإضافة', 'error'); return }
     setNewShiftName(''); setNewShift24h(false)
-    toast('✅ تم إضافة الشفت')
+    toast('تمت إضافة الوردية')
     loadShifts(orgId, branchId)
   }
 
@@ -326,21 +327,21 @@ export function useAttendance() {
 
   async function saveEditShift() {
     if (!editShift) return
-    if (!editShift.name.trim()) { toast('أدخل اسم الشفت', 'warning'); return }
+    if (!editShift.name.trim()) { toast('أدخل اسم الوردية', 'warning'); return }
     setSavingEditShift(true)
     const j = await api.patch('/api/shifts', { id: editShift.id, name: editShift.name.trim(), start_time: editShift.start, end_time: editShift.end, is_24h: editShift.is24h })
     setSavingEditShift(false)
     if (!j.success) { toast(j.error || 'فشل الحفظ', 'error'); return }
     setEditShift(null)
-    toast('تم تعديل الشفت')
+    toast('تم تعديل الوردية')
     loadShifts(orgId, branchId)
   }
 
   async function deleteShift(id: string) {
-    if (!(await confirmDialog({ title: 'حذف الشفت', message: 'حذف هذا الشفت؟ الموظفين المرتبطين فيه راح يفكّون منه تلقائياً' }))) return
+    if (!(await confirmDialog({ title: 'حذف الوردية', message: 'هل تريد حذف هذه الوردية؟ سيُفك ارتباط الموظفين المرتبطين بها تلقائياً' }))) return
     const j = await api.del('/api/shifts', { id })
     if (!j.success) { toast(j.error || 'فشل الحذف', 'error'); return }
-    toast('🗑️ تم الحذف')
+    toast('تم الحذف')
     loadShifts(orgId, branchId)
     loadStaff(orgId, branchId)
   }
@@ -348,7 +349,7 @@ export function useAttendance() {
   async function assignShift(staffId: string, shiftId: string) {
     const j = await api.patch('/api/staff-shifts', { org_id: orgId, staff_id: staffId, shift_id: shiftId || null })
     if (!j.success) { toast(j.error || 'فشل الربط', 'error'); return }
-    toast('✅ تم تحديد الشفت — لو الموظف داخل دوامه الحين يكمله على شفته القديم، والجديد يبدأ من دوامه الجاي')
+    toast('تم تحديد الوردية — إذا كان الموظف في دوامه الآن فسيكمله على ورديته السابقة، وتبدأ الجديدة من دوامه التالي')
     setStaffList(prev => prev.map(s => s.id === staffId ? { ...s, shift_id: shiftId || null } : s))
   }
 
@@ -361,7 +362,7 @@ export function useAttendance() {
     const j = await api.patch('/api/org-settings', { org_id: orgId, late_grace_minutes: grace, late_penalty_per_hour: late.perHour === '' ? null : Number(late.perHour) })
     setSavingLate(false)
     if (!j.success) { toast(j.error || 'فشل الحفظ', 'error'); return }
-    toast('✅ تم حفظ إعدادات التأخير — تتطبّق من الحضور الجاي')
+    toast('تم حفظ إعدادات التأخير — تُطبَّق من الحضور القادم')
   }
 
   const presentCount = rows.filter(r => r.check_in).length

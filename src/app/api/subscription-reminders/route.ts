@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { PLAN_PRICING } from '@/lib/planPricing'
+import { trialEndingMessage } from '@/lib/trialReminder'
 import { createClient } from '@supabase/supabase-js'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
 import { pickOwnerWhatsapp } from '@/lib/ownerContact'
@@ -58,8 +58,8 @@ export async function POST(req: Request) {
       const daysLeft = Math.ceil((endsAt.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
       const isTrial = p.subscription_type === 'trial'
       const text = isTrial
-        ? `مرحباً ${p.full_name || ''}\n\nتجربتك المجانية بـ Storely تنتهي خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'}، وجربت فيها كل المميزات.\n\nاختر باقتك:\n• ${PLAN_PRICING.basic.label} ${PLAN_PRICING.basic.monthly} ريال — المخزون والمشتريات، وتضيف اللي تحتاجه (الكاشير، الموظفين، الربحية، الذكاء الاصطناعي)\n• ${PLAN_PRICING.pro.label} ${PLAN_PRICING.pro.monthly} ريال — كل المميزات و3 فروع\n• ${PLAN_PRICING.advanced.label} ${PLAN_PRICING.advanced.monthly} ريال — كل المميزات و6 فروع\n\nرد علينا باسم الباقة ونفعّلها لك، أو اشترك من:\nstorely.dev`
-        : `مرحباً ${p.full_name || ''}\n\nاشتراكك بـ Storely ينتهي خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'}.\n\nجدّد اشتراكك الحين وكمّل إدارة مخزونك وفريقك بدون انقطاع:\nstorely.dev`
+        ? trialEndingMessage(p.full_name, daysLeft)
+        : `مرحباً ${p.full_name || ''}\n\nينتهي اشتراكك في Storely خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'}.\n\nجدّد اشتراكك الآن لمتابعة إدارة مخزونك وفريقك دون انقطاع:\nstorely.dev`
       const res = await sendWhatsAppMessage(to, text)
       if (res.ok) {
         await db.from('profiles').update({ trial_reminder_sent: true } as any).eq('id', p.id)
@@ -72,8 +72,8 @@ export async function POST(req: Request) {
     if (endsAt <= now && now.getTime() - endsAt.getTime() <= REMIND_FOR && now.getTime() - last >= REMIND_EVERY) {
       const days = Math.max(1, Math.floor((now.getTime() - endsAt.getTime()) / DAY))
       const text = days <= 1
-        ? `مرحباً ${p.full_name || ''}،\n\nانتهى اشتراكك بـ Storely، وتوقفت تنبيهات المخزون وطلبات الموردين التلقائية.\n\nجدّد اشتراكك الحين وترجع كل بياناتك وتنبيهاتك مثل ما كانت:\nstorely.dev/login`
-        : `مرحباً ${p.full_name || ''}،\n\nاشتراكك بـ Storely منتهي من ${days} يوم، وبياناتك محفوظة بانتظارك.\n\nجدّد الحين وترجع تنبيهات المخزون وطلبات الموردين على طول:\nstorely.dev/login`
+        ? `مرحباً ${p.full_name || ''}،\n\nانتهى اشتراكك في Storely، وتوقفت تنبيهات المخزون وطلبات الموردين التلقائية.\n\nجدّد اشتراكك الآن لتعود جميع بياناتك وتنبيهاتك كما كانت:\nstorely.dev/login`
+        : `مرحباً ${p.full_name || ''}،\n\nانتهى اشتراكك في Storely منذ ${days} يوماً، وبياناتك محفوظة بانتظارك.\n\nجدّد الآن لتعود تنبيهات المخزون وطلبات الموردين فوراً:\nstorely.dev/login`
       const res = await sendWhatsAppMessage(to, text)
       if (res.ok) {
         await db.from('profiles').update({ renewal_reminder_at: now.toISOString(), expiry_notice_sent: true } as any).eq('id', p.id)

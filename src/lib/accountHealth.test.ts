@@ -6,8 +6,8 @@ const iso = (daysAgo: number) => new Date(NOW - daysAgo * DAY).toISOString()
 const base = (o: Partial<OrgSignals> = {}): OrgSignals => ({
   now: NOW, createdAt: iso(60), subscriptionType: 'paid', endsAt: iso(-30), lastLogin: iso(0), ops7: 40, lastOp: iso(0),
   products: 30, staff: 4, closingDays7: 7, attendance7: 25, waSent7: 10, waFailed7: 0,
-  usage30: { cashier: 28, hr: 100, ai: 5, profitability: 2 }, paidAddons: [],
-  features: { cashier: true, hr: true, ai: true, profitability: true }, ...o,
+  usage30: { inventory: 1, purchases: 1, cashier: 28, hr: 100, ai: 5, profitability: 2 }, paidAddons: [],
+  features: { inventory: true, purchases: true, cashier: true, hr: true, ai: true, profitability: true }, ...o,
 })
 
 describe('assessHealth', () => {
@@ -26,12 +26,12 @@ describe('assessHealth', () => {
     expect(assessHealth(base({ createdAt: iso(1), lastLogin: null, ops7: 0, lastOp: null, products: 0 })).status).toBe('active')
   })
   it('flags a paid add-on that is not used', () => {
-    const h = assessHealth(base({ paidAddons: ['hr'], usage30: { cashier: 28, hr: 0, ai: 5, profitability: 2 }, attendance7: 0 }))
+    const h = assessHealth(base({ paidAddons: ['hr'], usage30: { inventory: 1, purchases: 1, cashier: 28, hr: 0, ai: 5, profitability: 2 }, attendance7: 0 }))
     expect(h.status).toBe('attention'); expect(h.unusedPaid).toEqual(['hr'])
-    expect(h.reasons.some(r => r.text.includes('يدفع على «إدارة الموظفين»'))).toBe(true)
+    expect(h.reasons.some(r => r.text.includes('يدفع على «الحضور والرواتب»'))).toBe(true)
   })
   it('included-but-unused features are info only, not a problem', () => {
-    const h = assessHealth(base({ usage30: { cashier: 28, hr: 100, ai: 0, profitability: 0 } }))
+    const h = assessHealth(base({ usage30: { inventory: 1, purchases: 1, cashier: 28, hr: 100, ai: 0, profitability: 0 } }))
     expect(h.status).toBe('active'); expect(h.unusedIncluded).toEqual(['ai', 'profitability'])
   })
   it('missing cashier closings and failing WhatsApp need attention', () => {
@@ -40,7 +40,7 @@ describe('assessHealth', () => {
     expect(h.reasons.map(r => r.text).join(' | ')).toMatch(/2 أيام بس.*واتساب فشلت/)
   })
   it('cashier closings are not judged when the owner never used or paid for them', () => {
-    expect(assessHealth(base({ closingDays7: 0, usage30: { cashier: 0, hr: 100, ai: 5, profitability: 2 } })).status).toBe('active')
+    expect(assessHealth(base({ closingDays7: 0, usage30: { inventory: 1, purchases: 1, cashier: 0, hr: 100, ai: 5, profitability: 2 } })).status).toBe('active')
   })
   it('trial ending soon is a warning', () => {
     const h = assessHealth(base({ subscriptionType: 'trial', endsAt: iso(-2) }))

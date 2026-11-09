@@ -1,4 +1,5 @@
 'use client'
+import { Wallet } from 'lucide-react'
 import { C } from './constants'
 import type { PurchasesState } from './usePurchases'
 
@@ -17,10 +18,10 @@ export default function PayablesPanel({ m }: { m: PurchasesState }) {
             <div className="u" style={{background:'white',borderRadius:12,border:`1px solid ${overdueCount>0?C.dangerB:C.border}`,overflow:'hidden',marginBottom:14,animationDelay:'.06s'}}>
               <button onClick={()=>setShowPayables(v=>!v)} style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 14px',background:overdueCount>0?C.dangerL:C.bg,border:'none',cursor:'pointer',fontFamily:'inherit'}}>
                 <div style={{display:'flex',alignItems:'center',gap:8}}>
-                  <span style={{fontSize:16}}>💰</span>
+                  <Wallet size={16} color={C.text3}/>
                   <div style={{textAlign:'right'}}>
-                    <div style={{fontSize:13,fontWeight:800,color:overdueCount>0?C.danger:C.text}}>{payables.length} فاتورة غير مدفوعة — {totalOwed.toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0})} {curr}</div>
-                    {overdueCount>0 && <div style={{fontSize:11,color:C.danger,fontWeight:700,marginTop:2}}>⚠️ {overdueCount} متأخرة عن موعد الاستحقاق</div>}
+                    <div style={{fontSize:13,fontWeight:800,color:overdueCount>0?C.danger:C.text}}>{payables.length} فاتورة غير مدفوعة — {totalOwed.toLocaleString('ar-SA-u-ca-gregory', {numberingSystem:'latn',maximumFractionDigits:0})} {curr}</div>
+                    {overdueCount>0 && <div style={{fontSize:11,color:C.danger,fontWeight:700,marginTop:2}}>{overdueCount} متأخرة عن موعد الاستحقاق</div>}
                   </div>
                 </div>
                 <span style={{fontSize:12,color:C.text3,transform:showPayables?'rotate(180deg)':'none',transition:'transform .2s'}}>▾</span>
@@ -33,7 +34,7 @@ export default function PayablesPanel({ m }: { m: PurchasesState }) {
                       <div key={supplierName} style={{border:`1px solid ${C.border}`,borderRadius:10,overflow:'hidden'}}>
                         <div style={{display:'flex',justifyContent:'space-between',padding:'8px 12px',background:C.bg,fontSize:12,fontWeight:700,color:C.text}}>
                           <span>{supplierName}</span>
-                          <span>{subtotal.toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0})} {curr}</span>
+                          <span>{subtotal.toLocaleString('ar-SA-u-ca-gregory', {numberingSystem:'latn',maximumFractionDigits:0})} {curr}</span>
                         </div>
                         {items.map((p:any)=>{
                           const isOverdue = p.due_date && p.due_date < todayStr
@@ -44,15 +45,15 @@ export default function PayablesPanel({ m }: { m: PurchasesState }) {
                                 <div style={{color:C.text2,fontWeight:600}}>{p.name||'—'}</div>
                                 {p.due_date && (
                                   <div style={{color:isOverdue?C.danger:isSoon?C.warning:C.text4,fontWeight:isOverdue||isSoon?700:500,marginTop:2}}>
-                                    {isOverdue?'⚠️ متأخرة — ':''}استحقاق: {p.due_date}
+                                    {isOverdue?'متأخرة — ':''}استحقاق: {p.due_date}
                                   </div>
                                 )}
                               </div>
                               <div style={{display:'flex',alignItems:'center',gap:8}}>
-                                <span style={{fontWeight:700,color:C.text}}>{(p.total_amount||0).toLocaleString('ar-SA', {numberingSystem:'latn',maximumFractionDigits:0})} {curr}</span>
+                                <span style={{fontWeight:700,color:C.text}}>{(p.total_amount||0).toLocaleString('ar-SA-u-ca-gregory', {numberingSystem:'latn',maximumFractionDigits:0})} {curr}</span>
                                 <button onClick={()=>markPaid(p.id)} disabled={payingId===p.id}
                                   style={{padding:'4px 10px',borderRadius:7,border:`1px solid ${C.primaryB}`,background:C.primaryL,color:C.primary,fontSize:10,fontWeight:700,cursor:payingId===p.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:payingId===p.id?.6:1}}>
-                                  {payingId===p.id?'...':'✓ دُفعت'}
+                                  {payingId===p.id?'...':'دُفعت'}
                                 </button>
                               </div>
                             </div>

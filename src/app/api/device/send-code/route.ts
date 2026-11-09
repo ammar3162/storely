@@ -48,7 +48,7 @@ export async function POST() {
     }
 
     const email = profile.email || u?.email || ''
-    if (!email) return reply({ error: 'ما فيه بريد إلكتروني على الحساب — تواصل مع فريق ستورلي' }, 400)
+    if (!email) return reply({ error: 'لا يوجد بريد إلكتروني مسجّل في الحساب — تواصل مع فريق ستورلي' }, 400)
 
     // إعادة الإرسال بعد دقيقة، وحد يومي
     const dayAgo = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
@@ -59,7 +59,7 @@ export async function POST() {
       return reply({ success: true, sent: false, email: maskEmail(email), wait: Math.ceil((RESEND_AFTER_MS - (Date.now() - last)) / 1000) })
     }
     if ((recent?.length || 0) >= MAX_CODES_PER_DAY) {
-      return reply({ error: 'وصلت الحد اليومي لإرسال الرموز — حاول بكرة أو تواصل مع فريق ستورلي' }, 429)
+      return reply({ error: 'وصلت إلى الحد اليومي لإرسال الرموز — حاول غداً أو تواصل مع فريق ستورلي' }, 429)
     }
 
     const code = newCode()
@@ -77,12 +77,12 @@ export async function POST() {
     if (!sent?.success) {
       // الرمز ما وصل: نشيله عشان ما يمنع إعادة الإرسال
       await db.from('login_codes').delete().eq('id', (row as { id: string }).id)
-      return reply({ error: 'تعذّر إرسال الرمز — حاول مرة ثانية' }, 502)
+      return reply({ error: 'تعذّر إرسال الرمز — حاول مرة أخرى' }, 502)
     }
 
     return reply({ success: true, sent: true, email: maskEmail(email), wait: RESEND_AFTER_MS / 1000 })
   } catch (e) {
     console.error('device send-code failed:', e)
-    return NextResponse.json({ error: 'حدث خطأ — حاول مرة ثانية' }, { status: 500 })
+    return NextResponse.json({ error: 'حدث خطأ — حاول مرة أخرى' }, { status: 500 })
   }
 }

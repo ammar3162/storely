@@ -2,7 +2,7 @@
 export type PayslipLang = 'ar' | 'en' | 'ur' | 'hi' | 'tl' | 'bn' | 'fr'
 
 export const PAYSLIP_LANGS: { code: PayslipLang; label: string; locale: string; rtl: boolean }[] = [
-  { code: 'ar', label: 'العربية', locale: 'ar-SA', rtl: true },
+  { code: 'ar', label: 'العربية', locale: 'ar-SA-u-ca-gregory', rtl: true },
   { code: 'en', label: 'English', locale: 'en-GB', rtl: false },
   { code: 'ur', label: 'اردو', locale: 'ur-PK', rtl: true },
   { code: 'hi', label: 'हिन्दी', locale: 'hi-IN', rtl: false },
@@ -19,16 +19,16 @@ const ar: Dict = {
   title: 'كشف الراتب', back: 'رجوع', prev: 'الشهر السابق', next: 'الشهر التالي', current: 'الشهر الحالي',
   netSoFar: 'صافي الراتب حتى الآن', net: 'صافي الراتب',
   earnings: 'المستحقات', basic: 'الراتب الأساسي', housing: 'بدل سكن', transport: 'بدل مواصلات', food: 'بدل طعام',
-  overtime: 'الأوفر تايم', perHour: 'للساعة', totalEarnings: 'إجمالي المستحقات',
+  overtime: 'العمل الإضافي', perHour: 'للساعة', totalEarnings: 'إجمالي المستحقات',
   deductions: 'الخصومات', late: 'غرامة تأخير', lateBy: 'تأخير {m}', manual: 'خصم من الإدارة', deficit: 'عجز إقفال الكاشير',
-  lateBundle: 'غرامات تأخير', advance: 'سلفة', reason: 'السبب', totalDeductions: 'إجمالي الخصومات', noDeductions: 'ما عليك أي خصومات هذا الشهر',
-  pending: 'بانتظار قرار الإدارة — ما انخصمت', pendingAdvance: 'طلب سلفة', pendingDeficit: 'عجز إقفال الكاشير',
-  daysPresent: 'يوم حضور', lateStat: 'تأخير', times: 'مرة', overtimeStat: 'أوفر تايم', overtimeDays: 'أيام الأوفر تايم',
-  noteOff: 'الأوفر تايم غير مفعّل في منشأتك.',
-  noteFixed: 'الأوفر تايم يُحسب من وقت انصرافك بعد نهاية شفتك، بمبلغ {rate} لكل ساعة.',
-  noteAuto: 'الأوفر تايم يُحسب من وقت انصرافك بعد نهاية شفتك: الراتب الأساسي ÷ 30 ÷ ساعات الشفت × المضاعف = {rate} للساعة.',
+  lateBundle: 'غرامات تأخير', advance: 'سلفة', reason: 'السبب', totalDeductions: 'إجمالي الخصومات', noDeductions: 'لا توجد عليك أي خصومات هذا الشهر',
+  pending: 'بانتظار قرار الإدارة — لم تُخصم', pendingAdvance: 'طلب سلفة', pendingDeficit: 'عجز إقفال الكاشير',
+  daysPresent: 'يوم حضور', lateStat: 'تأخير', times: 'مرة', overtimeStat: 'عمل إضافي', overtimeDays: 'أيام العمل الإضافي',
+  noteOff: 'العمل الإضافي غير مفعّل في منشأتك.',
+  noteFixed: 'يُحتسب العمل الإضافي من وقت انصرافك بعد نهاية ورديتك، بمبلغ {rate} لكل ساعة.',
+  noteAuto: 'يُحتسب العمل الإضافي من وقت انصرافك بعد نهاية ورديتك: الراتب الأساسي ÷ 30 ÷ ساعات الوردية × المضاعف = {rate} للساعة.',
   noteCurrent: 'أرقام الشهر الحالي تتحدّث مع كل حضور وانصراف.',
-  disabled: 'كشف الراتب غير مفعّل من الإدارة', loadError: 'تعذّر تحميل كشف الراتب', network: 'خطأ بالاتصال، حاول مرة ثانية',
+  disabled: 'كشف الراتب غير مفعّل من الإدارة', loadError: 'تعذّر تحميل كشف الراتب', network: 'خطأ في الاتصال، حاول مرة أخرى',
   h: 'س', m: 'د', hour: 'ساعة', minute: 'دقيقة', language: 'اللغة',
 }
 

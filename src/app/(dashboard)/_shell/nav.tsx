@@ -55,7 +55,7 @@ export const NAV_GROUPS = [
   {
     label: 'أدوات متقدمة', labelKey: 'nav.groupAdvancedTools',
     items: [
-      { href:'/ai-tools',   label:'أدوات الذكاء', labelKey:'nav.aiTools', icon:'M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z' },
+      { href:'/ai-tools',   label:'أدوات الذكاء', labelKey:'nav.aiTools', icon:'M4 5h16M4 12h16M4 19h16M9 3v4M15 10v4M8 17v4' },
       { href:'/profitability', label:'الربحية', labelKey:'nav.profitability', icon:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
     ]
   },

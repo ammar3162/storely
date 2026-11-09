@@ -8,7 +8,7 @@ import { ListSkeleton } from '@/components/PageSkeleton'
 // طلبات المحاسب على منشأة: إنشاء طلب (على فاتورة أو عام) + متابعة الردود
 export type RequestTarget = { invoice_group?: string | null; purchase_id?: string | null; label?: string }
 const STATUS: Record<string, { t: string; bg: string; c: string }> = {
-  open: { t: '🟡 بانتظار الرد', bg: '#fffbeb', c: '#b45309' }, answered: { t: '💬 ردّت المنشأة', bg: '#eff6ff', c: '#1d4ed8' }, resolved: { t: '✅ انحل', bg: '#ecfdf5', c: '#047857' },
+  open: { t: 'بانتظار الرد', bg: '#fffbeb', c: '#b45309' }, answered: { t: 'ردّت المنشأة', bg: '#eff6ff', c: '#1d4ed8' }, resolved: { t: 'تم الحل', bg: '#ecfdf5', c: '#047857' },
 }
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -40,12 +40,12 @@ export function RequestDialog({ orgId, target, onClose, onSent }: { orgId: strin
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 10 }}>
           {kinds.map(k => <button key={k} onClick={() => setKind(k)} style={chip(kind === k)}>{REQUEST_KINDS[k]}</button>)}
         </div>
-        <textarea value={msg} onChange={e => setMsg(e.target.value)} maxLength={500} placeholder={kind === 'document' ? 'مثلاً: كشف حساب البنك لشهر سبتمبر' : 'ملاحظتك (اختياري)'}
+        <textarea value={msg} onChange={e => setMsg(e.target.value)} maxLength={500} placeholder={kind === 'document' ? 'مثال: كشف حساب البنك لشهر سبتمبر' : 'ملاحظتك (اختياري)'}
           style={{ width: '100%', minHeight: 80, padding: 10, borderRadius: 10, border: `1px solid ${colors.border}`, fontFamily: font.family, fontSize: 13.5, boxSizing: 'border-box' as const, resize: 'vertical' as const }} />
         {err && <div style={{ color: colors.danger, fontSize: 12.5, marginTop: 6 }}>{err}</div>}
         <button onClick={send} disabled={busy} style={{ width: '100%', marginTop: 10, padding: 12, borderRadius: 10, border: 'none', background: colors.primary, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: font.family, opacity: busy ? .6 : 1 }}>
           {busy ? 'جاري الإرسال...' : 'أرسل للمنشأة'}</button>
-        <div style={{ fontSize: 11.5, color: colors.text4, marginTop: 8 }}>يوصل المالك إشعار، ولما يرد يوصلك إيميل.</div>
+        <div style={{ fontSize: 11.5, color: colors.text4, marginTop: 8 }}>يصل إلى المالك إشعار، وعند رده يصلك بريد إلكتروني.</div>
       </div>
     </div>
   )
@@ -68,7 +68,7 @@ export default function AccountantRequestsPanel({ orgId, refreshKey, onNew }: { 
           <MessageSquarePlus size={14} /> طلب عام</button>
       </div>
       {!list ? <ListSkeleton/>
-        : !list.length ? <div style={{ fontSize: 12.5, color: colors.text4 }}>ما فيه طلبات. تقدر تطلب من جنب أي فاتورة ضريبية تحت، أو طلب عام.</div>
+        : !list.length ? <div style={{ fontSize: 12.5, color: colors.text4 }}>لا توجد طلبات. يمكنك الطلب من بجانب أي فاتورة ضريبية أدناه، أو إرسال طلب عام.</div>
         : list.map(r => (
           <div key={r.id} style={{ borderTop: `1px solid ${colors.border}`, padding: '10px 0' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
@@ -81,8 +81,8 @@ export default function AccountantRequestsPanel({ orgId, refreshKey, onNew }: { 
             {r.owner_reply && <div style={{ fontSize: 13, marginTop: 6, background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 9, padding: '7px 10px', whiteSpace: 'pre-line' as const }}><b>رد المنشأة:</b> {r.owner_reply}</div>}
             <div style={{ marginTop: 6 }}>
               {r.status !== 'resolved'
-                ? <button onClick={() => setStatus(r.id, 'resolved')} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, color: '#047857', background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, padding: 0 }}><CheckCircle2 size={14} /> انحل — اقفل الطلب</button>
-                : <button onClick={() => setStatus(r.id, 'open')} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, color: colors.text3, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, padding: 0 }}><RotateCcw size={13} /> افتحه مرة ثانية</button>}
+                ? <button onClick={() => setStatus(r.id, 'resolved')} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, color: '#047857', background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, padding: 0 }}><CheckCircle2 size={14} /> تم الحل — أغلق الطلب</button>
+                : <button onClick={() => setStatus(r.id, 'open')} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, color: colors.text3, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, padding: 0 }}><RotateCcw size={13} /> إعادة فتحه</button>}
             </div>
           </div>
         ))}

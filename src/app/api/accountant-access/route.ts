@@ -17,7 +17,7 @@ async function ownerOnly(org_id: unknown) {
   if (typeof org_id !== 'string' || !UUID_RE.test(org_id)) return { error: NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 }) }
   const access = await verifyOrgAccess(org_id)
   if (!access.authorized) return { error: NextResponse.json({ error: access.error }, { status: access.status }) }
-  if (access.role !== 'owner') return { error: NextResponse.json({ error: 'بوابة المحاسب يديرها مالك الحساب بس' }, { status: 403 }) }
+  if (access.role !== 'owner') return { error: NextResponse.json({ error: 'يدير بوابة المحاسب مالك الحساب فقط' }, { status: 403 }) }
   return { ok: true as const }
 }
 function cleanSections(v: unknown) {
@@ -62,26 +62,26 @@ export async function POST(req: Request) {
       const db = sb()
       const { data: row } = await db.from('accountant_access').select(FIELDS).eq('id', b.id).eq('org_id', b.org_id).maybeSingle()
       if (!row) return NextResponse.json({ error: 'الدعوة غير موجودة' }, { status: 404 })
-      if ((row as any).status === 'active') return NextResponse.json({ error: 'المحاسب قبل الدعوة من قبل' }, { status: 409 })
+      if ((row as any).status === 'active') return NextResponse.json({ error: 'قبل المحاسب الدعوة مسبقاً' }, { status: 409 })
       // حد بسيط: مرة كل ٥ دقايق (ما نغرق إيميل المحاسب)
-      if (Date.now() - Date.parse((row as any).invited_at) < 5 * 60e3) return NextResponse.json({ error: 'أرسلنا الدعوة قبل شوي — انتظر كم دقيقة' }, { status: 429 })
+      if (Date.now() - Date.parse((row as any).invited_at) < 5 * 60e3) return NextResponse.json({ error: 'أُرسلت الدعوة قبل قليل — انتظر بضع دقائق' }, { status: 429 })
       await db.from('accountant_access').update({ invited_at: new Date().toISOString() } as any).eq('id', b.id).eq('org_id', b.org_id)
       const mail = await sendInviteEmail(db, { ...(row as any), org_id: b.org_id })
       return NextResponse.json({ success: true, email_sent: mail.success })
     }
     const email = normalizeEmail(b.email)
-    if (!isEmail(email)) return NextResponse.json({ error: 'اكتب إيميل المحاسب صحيح' }, { status: 400 })
+    if (!isEmail(email)) return NextResponse.json({ error: 'اكتب بريداً إلكترونياً صحيحاً للمحاسب' }, { status: 400 })
     const name = String(b.name || '').trim().slice(0, 80) || null
     const sections = cleanSections(b.sections)
-    if (!sections.length) return NextResponse.json({ error: 'اختر وش يشوف المحاسب' }, { status: 400 })
+    if (!sections.length) return NextResponse.json({ error: 'اختر الأقسام المتاحة للمحاسب' }, { status: 400 })
     const exp = cleanExpiry(b.expires_on)
-    if (!exp.ok) return NextResponse.json({ error: 'تاريخ نهاية الإذن لازم يكون اليوم أو بعده' }, { status: 400 })
+    if (!exp.ok) return NextResponse.json({ error: 'يجب أن يكون تاريخ نهاية الإذن اليوم أو بعده' }, { status: 400 })
     const db = sb()
     const br = await checkBranch(db, b.org_id, b.branch_id)
     if (!br.ok) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
 
     const { data: existing } = await db.from('accountant_access').select('id').eq('org_id', b.org_id).eq('email', email).maybeSingle()
-    if (existing) return NextResponse.json({ error: 'هذا المحاسب مدعو من قبل' }, { status: 409 })
+    if (existing) return NextResponse.json({ error: 'هذا المحاسب مدعو مسبقاً' }, { status: 409 })
     const { count } = await db.from('accountant_access').select('id', { count: 'exact', head: true }).eq('org_id', b.org_id)
     if ((count || 0) >= MAX_PER_ORG) return NextResponse.json({ error: `الحد ${MAX_PER_ORG} محاسبين لكل منشأة` }, { status: 400 })
 
@@ -104,9 +104,9 @@ export async function PATCH(req: Request) {
     const g = await ownerOnly(b.org_id); if (g.error) return g.error
     if (!UUID_RE.test(String(b.id || ''))) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const upd: Record<string, unknown> = {}
-    if ('sections' in b) { const s = cleanSections(b.sections); if (!s.length) return NextResponse.json({ error: 'اختر قسم واحد على الأقل' }, { status: 400 }); upd.sections = s }
+    if ('sections' in b) { const s = cleanSections(b.sections); if (!s.length) return NextResponse.json({ error: 'اختر قسماً واحداً على الأقل' }, { status: 400 }); upd.sections = s }
     if ('vat_registered' in b) upd.vat_registered = b.vat_registered !== false
-    if ('expires_on' in b) { const e = cleanExpiry(b.expires_on); if (!e.ok) return NextResponse.json({ error: 'تاريخ نهاية الإذن لازم يكون اليوم أو بعده' }, { status: 400 }); upd.expires_on = e.value }
+    if ('expires_on' in b) { const e = cleanExpiry(b.expires_on); if (!e.ok) return NextResponse.json({ error: 'يجب أن يكون تاريخ نهاية الإذن اليوم أو بعده' }, { status: 400 }); upd.expires_on = e.value }
     const db = sb()
     if ('branch_id' in b) { const br = await checkBranch(db, b.org_id, b.branch_id); if (!br.ok) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 }); upd.branch_id = br.id }
     if (!Object.keys(upd).length) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })

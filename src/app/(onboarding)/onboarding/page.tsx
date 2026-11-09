@@ -4,11 +4,15 @@ import { useState, useEffect } from 'react'
 import NumberInput from '@/components/NumberInput'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api-client'
-import { colors, radius, shadow, font, btnPrimary, btnSecondary, inp } from '@/lib/ds'
+import { colors, btnPrimary, btnSecondary, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { SIGNUP_BUSINESS_TYPES } from '@/lib/businessTypes'
+import { getMe } from '@/lib/session'
+import { UtensilsCrossed, Coffee, Store, Package, Users, Check, Bell, KeyRound, Plus, X, ArrowLeft, ArrowRight, Minus } from 'lucide-react'
 
-const BUSINESS_TYPES = SIGNUP_BUSINESS_TYPES.map(b=>({ id:b.v, icon:b.icon, desc:b.desc }))
+// أيقونة لكل نشاط (بدل الإيموجي)
+const BIZ_ICON: Record<string, typeof Store> = { 'مطعم': UtensilsCrossed, 'كوفي': Coffee }
+const BUSINESS_TYPES = SIGNUP_BUSINESS_TYPES.map(b=>({ id:b.v, Icon: BIZ_ICON[b.v] || Store, desc:b.desc }))
 
 const TEMPLATES: Record<string, { category:string; products:{name:string;unit:string;reorder:number}[] }[]> = {
   'مطعم': [
@@ -79,7 +83,7 @@ export default function OnboardingPage() {
   async function enablePushOnboarding() {
     setPushLoading(true)
     try {
-      if (typeof Notification === 'undefined') { alert('⚠️ متصفحك لا يدعم الإشعارات إطلاقاً'); setPushLoading(false); return }
+      if (typeof Notification === 'undefined') { alert('متصفحك لا يدعم الإشعارات'); setPushLoading(false); return }
       const perm = await Notification.requestPermission()
       if (perm !== 'granted') { setPushLoading(false); return }
       await navigator.serviceWorker.register('/sw.js')
@@ -108,9 +112,15 @@ export default function OnboardingPage() {
   const [progress, setProgress]       = useState(0)
   const [visible, setVisible]         = useState(false)
   const router = useRouter()
+  // خطوة المنتجات بس لو باقته فيها المخزون (مثلاً «ابنِ باقتك» بالإقفال لحاله ما تحتاجها)
+  const [hasInventory, setHasInventory] = useState(true)
+  const flow: Step[] = hasInventory ? ['business','setup','products','staff','done'] : ['business','setup','staff','done']
 
-  useEffect(()=>{ loadOrg(); setTimeout(()=>setVisible(true),50) },[])
-  useEffect(()=>{ const s:Step[]=['business','setup','products','staff','done']; setProgress((s.indexOf(step)/4)*100) },[step])
+  useEffect(()=>{
+    loadOrg(); setTimeout(()=>setVisible(true),50)
+    getMe().then(me => { const o: any = me?.org; if (o && (o.features?.inventory === false || (o.trial_locked || []).includes('inventory'))) setHasInventory(false) }).catch(()=>{})
+  },[])
+  useEffect(()=>{ setProgress((flow.indexOf(step)/(flow.length-1))*100) },[step, hasInventory])   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(()=>{
     if(businessType && TEMPLATES[businessType]){
       const prods:SelectedProduct[]=[]
@@ -137,7 +147,7 @@ export default function OnboardingPage() {
     const r=await api.patch('/api/onboarding',{org_id:orgId,name:orgName.trim(),whatsapp_number:whatsapp.trim(),business_type:businessType})
     setSaving(false)
     if(!r.success){toast('حدث خطأ أثناء الحفظ — حاول مرة أخرى','error');return}
-    setStep('products')
+    setStep(hasInventory ? 'products' : 'staff')
   }
 
   async function saveProducts() {
@@ -177,246 +187,233 @@ export default function OnboardingPage() {
 
   const selectedCount=selectedProducts.filter(p=>p.selected).length
   const categories=Array.from(new Set(selectedProducts.map(p=>p.category)))
-  const stepNum={business:1,setup:2,products:3,staff:4,done:5}[step]
+  const STEP_LABEL: Record<Step,string> = { business:'نشاطك', setup:'منشأتك', products:'المنتجات', staff:'الموظفين', done:'جاهز' }
+  const visibleSteps = flow.filter(x => x !== 'done')
+  const stepIdx = flow.indexOf(step)
+  const head = (Icon: typeof Store, title: string, sub: React.ReactNode) => (
+    <div style={{marginBottom:28}}>
+      <span style={{width:48,height:48,borderRadius:14,background:'#eceef1',color:'#4b5565',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:16}}><Icon size={22} strokeWidth={1.75}/></span>
+      <h1 style={{fontSize:24,fontWeight:600,lineHeight:'34px',color:'var(--storely-text)',marginBottom:6}}>{title}</h1>
+      <p style={{fontSize:15,color:'#4b5565',lineHeight:1.7}}>{sub}</p>
+    </div>
+  )
+  const lbl: React.CSSProperties = { fontSize:14, fontWeight:500, color:'var(--storely-text)', display:'block', marginBottom:8 }
+  const back = (to: Step) => <button onClick={()=>setStep(to)} style={{...btnSecondary,flex:1,padding:'13px',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><ArrowRight size={16} strokeWidth={1.75}/>السابق</button>
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',minHeight:'100vh',background:'#f8fafc',opacity:visible?1:0,transition:'opacity .4s ease'}}>
+    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',minHeight:'100vh',background:'#f4f5f6',opacity:visible?1:0,transition:'opacity .3s ease'}}>
       <style>{`
-        @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
-        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-        .su{animation:slideUp .4s ease both}
-        input:focus,select:focus{border-color:${colors.primary}!important;box-shadow:0 0 0 3px ${colors.primaryLight}!important;outline:none!important}
-        .biz-card{border-radius:16px;padding:16px 12px;cursor:pointer;transition:all .2s;border:2px solid #e2e8f0;background:white;font-family:inherit;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
-        .biz-card:hover{border-color:${colors.primary};transform:translateY(-2px);box-shadow:0 8px 20px ${colors.primary}22}
-        .biz-card.active{border-color:${colors.primary};background:${colors.primaryLight};box-shadow:0 8px 20px ${colors.primary}33}
-        .prod-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;border:1.5px solid #e2e8f0;background:white;transition:all .2s;margin-bottom:8px}
-        .prod-item.selected{border-color:${colors.primary};background:${colors.primaryLight}}
-        .check{width:22px;height:22px;border-radius:6px;border:2px solid #e2e8f0;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;cursor:pointer}
+        @keyframes su{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+        .su{animation:su .3s cubic-bezier(.22,1,.36,1) both}
+        @media (prefers-reduced-motion:reduce){.su{animation:none}}
+        input:focus,select:focus{border-color:${colors.primary}!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)!important;outline:none!important}
+        .biz-card{border-radius:14px;padding:18px 12px;cursor:pointer;transition:border-color .15s,background-color .15s;border:1.5px solid var(--storely-border);background:white;font-family:inherit;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--storely-text)}
+        @media(hover:hover){.biz-card:hover{border-color:#9ca3af}}
+        .biz-card.active{border-color:${colors.primary};background:#f3faf8}
+        .prod-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:white;transition:background-color .15s}
+        .prod-item+.prod-item{border-top:1px solid var(--storely-border)}
+        .check{width:22px;height:22px;border-radius:6px;border:1.5px solid #c9cdd3;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;color:white}
         .check.on{background:${colors.primary};border-color:${colors.primary}}
-        @media(max-width:480px){.biz-grid{gap:8px!important}}
       `}</style>
 
-      {/* Header */}
-      <div style={{background:'white',borderBottom:'1px solid #e2e8f0',padding:'16px 24px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100,boxShadow:'0 1px 8px rgba(0,0,0,.06)'}}>
-        <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <div style={{width:32,height:32,borderRadius:8,background:`linear-gradient(135deg,${colors.primary},#0f766e)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:900,color:'white'}}>S</div>
-          <span style={{fontSize:16,fontWeight:800,color:colors.text}}>إعداد Storely</span>
-        </div>
-        <div style={{display:'flex',alignItems:'center',gap:16}}>
-          <div style={{display:'flex',gap:6}}>
-            {[1,2,3,4].map(n=>(
-              <div key={n} style={{width:28,height:28,borderRadius:'50%',background:n<stepNum?colors.primary:n===stepNum?colors.primaryLight:'#f1f5f9',border:`2px solid ${n<=stepNum?colors.primary:'#e2e8f0'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:n<stepNum?'white':n===stepNum?colors.primary:'#94a3b8',transition:'all .3s'}}>
-                {n<stepNum?'✓':n}
-              </div>
-            ))}
+      {/* الرأس: الشعار والخطوات */}
+      <div style={{background:'white',borderBottom:'1px solid var(--storely-border)',position:'sticky',top:0,zIndex:100}}>
+        <div style={{maxWidth:640,margin:'0 auto',padding:'12px 20px',display:'flex',justifyContent:'space-between',alignItems:'center',gap:12}}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <img src="/storely-logo.png" alt="Storely" style={{width:36,height:36,borderRadius:10,border:'1px solid var(--storely-border)',background:'white',padding:3,objectFit:'contain'}}/>
+            <span style={{fontSize:16,fontWeight:600,color:'var(--storely-text)'}}>Storely</span>
           </div>
-          {step!=='done'&&<button onClick={skipToDashboard} style={{fontSize:12,color:'#94a3b8',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontWeight:600}}>تخطي ←</button>}
+          {step!=='done'&&<button onClick={skipToDashboard} style={{fontSize:14,color:'#4b5565',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>تخطي الإعداد<ArrowLeft size={15} strokeWidth={1.75}/></button>}
         </div>
+        {step!=='done' && (
+          <div style={{maxWidth:640,margin:'0 auto',padding:'0 20px 12px',display:'flex',alignItems:'center',gap:8}}>
+            {visibleSteps.map((st,i)=>{
+              const done = i < stepIdx, on = i === stepIdx
+              return (
+                <div key={st} style={{display:'flex',alignItems:'center',gap:8,flex:i<visibleSteps.length-1?1:'unset',minWidth:0}}>
+                  <span style={{display:'flex',alignItems:'center',gap:6,fontSize:13,fontWeight:on?600:400,color:on?'#111827':'#6b7487',whiteSpace:'nowrap'}}>
+                    <span style={{width:22,height:22,borderRadius:11,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:12,flexShrink:0,background:on?'#111827':'#eceef1',color:on?'white':done?colors.primary:'#4b5565'}}>
+                      {done ? <Check size={13} strokeWidth={2.25}/> : i+1}
+                    </span>
+                    {STEP_LABEL[st]}
+                  </span>
+                  {i<visibleSteps.length-1 && <span style={{flex:1,height:1,minWidth:8,background:'#e5e7eb'}}/>}
+                </div>
+              )
+            })}
+          </div>
+        )}
+        <div style={{height:2,background:'#eceef1'}}><div style={{height:'100%',width:progress+'%',background:colors.primary,transition:'width .4s cubic-bezier(.22,1,.36,1)'}}/></div>
       </div>
 
-      {/* Progress bar */}
-      <div style={{height:3,background:'#e2e8f0'}}>
-        <div style={{height:'100%',width:progress+'%',background:`linear-gradient(90deg,${colors.primary},#2dd4bf)`,transition:'width .5s ease',borderRadius:99}}/>
-      </div>
+      <div style={{maxWidth:640,margin:'0 auto',padding:'32px 20px 48px'}}>
 
-      <div style={{maxWidth:640,margin:'0 auto',padding:'32px 20px'}}>
-
-        {/* Step 1 */}
+        {/* 1: النشاط */}
         {step==='business'&&(
           <div className="su">
-            <div style={{textAlign:'center',marginBottom:32}}>
-              <div style={{fontSize:48,marginBottom:12}}>👋</div>
-              <h1 style={{fontSize:26,fontWeight:900,color:colors.text,marginBottom:8}}>أهلاً بك في Storely!</h1>
-              <p style={{fontSize:15,color:'#64748b',lineHeight:1.7}}>ما هو نشاطك التجاري؟ سنجهّز لك المخزون بناءً على اختيارك</p>
+            <div style={{marginBottom:28}}>
+              <img src="/storely-logo.png" alt="" style={{width:56,height:56,borderRadius:14,border:'1px solid var(--storely-border)',background:'white',padding:5,objectFit:'contain',marginBottom:16}}/>
+              <h1 style={{fontSize:26,fontWeight:600,lineHeight:'36px',color:'var(--storely-text)',marginBottom:6}}>أهلاً بك في Storely</h1>
+              <p style={{fontSize:15,color:'#4b5565',lineHeight:1.7}}>دقيقتين ونجهّز حسابك. وش نوع نشاطك؟</p>
             </div>
-            <div className="biz-grid" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:32}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:10,marginBottom:28}}>
               {BUSINESS_TYPES.map(b=>(
                 <button key={b.id} className={`biz-card${businessType===b.id?' active':''}`} onClick={()=>setBusinessType(b.id)}>
-                  <span style={{fontSize:28}}>{b.icon}</span>
-                  <span style={{fontSize:12,fontWeight:700,color:businessType===b.id?colors.primary:colors.text}}>{b.id}</span>
-                  <span style={{fontSize:10,color:'#94a3b8',lineHeight:1.3}}>{b.desc}</span>
+                  <span style={{width:44,height:44,borderRadius:12,background:businessType===b.id?'white':'#f4f5f6',color:businessType===b.id?colors.primary:'#4b5565',display:'flex',alignItems:'center',justifyContent:'center'}}><b.Icon size={22} strokeWidth={1.75}/></span>
+                  <span style={{fontSize:15,fontWeight:600}}>{b.id}</span>
+                  <span style={{fontSize:12,color:'#6b7487',lineHeight:1.4}}>{b.desc}</span>
                 </button>
               ))}
             </div>
             <button disabled={!businessType} onClick={()=>setStep('setup')}
-              style={{...btnPrimary,width:'100%',padding:'15px',fontSize:16,opacity:!businessType?.5:1,cursor:!businessType?'not-allowed':'pointer'}}>
-              التالي ← بيانات المنشأة
+              style={{...btnPrimary,width:'100%',padding:'14px',fontSize:16,opacity:!businessType?.5:1,cursor:!businessType?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+              التالي<ArrowLeft size={17} strokeWidth={1.75}/>
             </button>
           </div>
         )}
 
-        {/* Step 2 */}
+        {/* 2: بيانات المنشأة */}
         {step==='setup'&&(
           <div className="su">
-            <div style={{textAlign:'center',marginBottom:32}}>
-              <div style={{fontSize:40,marginBottom:10}}>{BUSINESS_TYPES.find(b=>b.id===businessType)?.icon||'🏢'}</div>
-              <h1 style={{fontSize:24,fontWeight:900,color:colors.text,marginBottom:8}}>بيانات منشأتك</h1>
-              <p style={{fontSize:14,color:'#64748b'}}>أدخل اسم منشأتك ورقم الواتساب للتنبيهات</p>
-            </div>
-            <div style={{display:'flex',flexDirection:'column' as const,gap:16,marginBottom:28}}>
+            {head(Store, 'بيانات منشأتك', 'اسم منشأتك ورقم الواتساب اللي توصله التنبيهات')}
+            <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:20,display:'flex',flexDirection:'column' as const,gap:18,marginBottom:24}}>
               <div>
-                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>اسم المنشأة *</label>
-                <input value={orgName} onChange={e=>setOrgName(e.target.value)} style={{...inp(),fontSize:16}} placeholder={`مثال: ${businessType} الأصيل`}/>
+                <label style={lbl}>اسم المنشأة</label>
+                <input value={orgName} onChange={e=>setOrgName(e.target.value)} style={{...inp(),fontSize:16}} placeholder={`مثال: ${businessType || 'مطعم'} الأصيل`}/>
               </div>
               <div>
-                <label style={{fontSize:12,fontWeight:700,color:'#374151',display:'block',marginBottom:6,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>رقم واتساب التنبيهات</label>
-                <input value={whatsapp} onChange={e=>setWhatsapp(e.target.value)} style={{...inp(),direction:'ltr' as const}} placeholder="+966500000000"/>
-                <div style={{fontSize:11,color:'#94a3b8',marginTop:5}}>ستصلك تنبيهات عند نقص المخزون</div>
+                <label style={lbl}>رقم واتساب التنبيهات</label>
+                <input value={whatsapp} onChange={e=>setWhatsapp(e.target.value)} style={{...inp(),direction:'ltr' as const,fontSize:16}} placeholder="+966500000000"/>
+                <div style={{fontSize:13,color:'#6b7487',marginTop:6}}>يوصلك عليه تنبيه نقص المخزون وتقرير الصباح</div>
               </div>
             </div>
             <div style={{display:'flex',gap:10}}>
-              <button onClick={()=>setStep('business')} style={{...btnSecondary,flex:1,padding:'14px'}}>← السابق</button>
+              {back('business')}
               <button onClick={saveSetup} disabled={saving||!orgName.trim()}
-                style={{...btnPrimary,flex:2,padding:'14px',fontSize:15,opacity:saving||!orgName.trim()?.5:1,cursor:saving||!orgName.trim()?'not-allowed':'pointer'}}>
-                {saving?'جاري الحفظ...':'التالي ← إعداد المخزون'}
+                style={{...btnPrimary,flex:2,padding:'13px',fontSize:16,opacity:saving||!orgName.trim()?.5:1,cursor:saving||!orgName.trim()?'not-allowed':'pointer'}}>
+                {saving?'جاري الحفظ...':'التالي'}
               </button>
             </div>
           </div>
         )}
 
-        {/* Step 3 */}
+        {/* 3: المنتجات */}
         {step==='products'&&(
           <div className="su">
-            <div style={{textAlign:'center',marginBottom:20}}>
-              <div style={{fontSize:36,marginBottom:8}}>📦</div>
-              <h1 style={{fontSize:22,fontWeight:900,color:colors.text,marginBottom:6}}>اختر منتجاتك الابتدائية</h1>
-              <p style={{fontSize:13,color:'#64748b'}}>منتجات شائعة لـ <b style={{color:colors.primary}}>{businessType}</b> — عدّل الكميات أو أضف لاحقاً</p>
-            </div>
-            <div style={{background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`,borderRadius:12,padding:'10px 16px',marginBottom:16,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <span style={{fontSize:13,color:colors.primary,fontWeight:700}}>✅ {selectedCount} منتج مختار</span>
-              <div style={{display:'flex',gap:12}}>
-                <button onClick={()=>setSelectedProducts(p=>p.map(x=>({...x,selected:true})))} style={{fontSize:11,color:colors.primary,background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontWeight:700}}>تحديد الكل</button>
-                <button onClick={()=>setSelectedProducts(p=>p.map(x=>({...x,selected:false})))} style={{fontSize:11,color:'#94a3b8',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontWeight:600}}>إلغاء الكل</button>
+            {head(Package, 'منتجاتك الأساسية', <>جهّزنا منتجات شائعة لـ<b style={{color:'var(--storely-text)',fontWeight:600}}> {businessType}</b>. اختر اللي عندك واكتب الكمية، وتقدر تضيف الباقي بعدين</>)}
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+              <span style={{fontSize:14,color:'var(--storely-text)',fontWeight:500}}>{selectedCount} منتج مختار</span>
+              <div style={{display:'flex',gap:14}}>
+                <button onClick={()=>setSelectedProducts(p=>p.map(x=>({...x,selected:true})))} style={{fontSize:13,color:colors.primary,background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontWeight:500}}>تحديد الكل</button>
+                <button onClick={()=>setSelectedProducts(p=>p.map(x=>({...x,selected:false})))} style={{fontSize:13,color:'#4b5565',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>إلغاء الكل</button>
               </div>
             </div>
-            <div style={{maxHeight:400,overflowY:'auto',marginBottom:16,paddingLeft:2}}>
+            <div style={{maxHeight:420,overflowY:'auto',marginBottom:20}}>
               {categories.map(cat=>(
-                <div key={cat} style={{marginBottom:18}}>
-                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-                    <div style={{height:1,background:'#e2e8f0',flex:1}}/>
-                    <span style={{background:'#f1f5f9',padding:'4px 12px',borderRadius:20,fontSize:12,color:'#475569',fontWeight:700}}>{cat}</span>
-                    <div style={{height:1,background:'#e2e8f0',flex:1}}/>
-                  </div>
+                <div key={cat} style={{marginBottom:16}}>
+                  <div style={{fontSize:13,fontWeight:500,color:'#4b5565',margin:'0 4px 8px'}}>{cat}</div>
+                  <div style={{border:'1px solid var(--storely-border)',borderRadius:14,overflow:'hidden'}}>
                   {selectedProducts.filter(p=>p.category===cat).map((p,i)=>{
                     const idx=selectedProducts.findIndex(x=>x.name===p.name&&x.category===p.category)
                     return (
-                      <div key={i} className={`prod-item${p.selected?' selected':''}`}>
+                      <div key={i} className="prod-item">
                         <div className={`check${p.selected?' on':''}`} onClick={()=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,selected:!x.selected}:x))}>
-                          {p.selected&&<svg width="12" height="12" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>}
+                          {p.selected&&<Check size={14} strokeWidth={3}/>}
                         </div>
                         <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:14,fontWeight:700,color:colors.text}}>{p.name}</div>
-                          <div style={{fontSize:11,color:'#94a3b8'}}>{p.unit} · حد أدنى: {p.reorder}</div>
+                          <div style={{fontSize:15,fontWeight:500,color:'var(--storely-text)'}}>{p.name}</div>
+                          <div style={{fontSize:12,color:'#6b7487'}}>{p.unit} · ننبهك تحت {p.reorder}</div>
                         </div>
                         {p.selected&&(
                           <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
-                            <button onClick={()=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:Math.max(0,x.qty-1)}:x))} style={{width:26,height:26,borderRadius:8,border:`1px solid ${colors.border}`,background:'white',cursor:'pointer',fontSize:16,fontWeight:700,color:colors.text,display:'flex',alignItems:'center',justifyContent:'center'}}>−</button>
+                            <button onClick={()=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:Math.max(0,x.qty-1)}:x))} aria-label="نقص" style={{width:30,height:30,borderRadius:8,border:'none',background:'#eceef1',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--storely-text)'}}><Minus size={14}/></button>
                             <NumberInput min="0" value={p.qty||''} onChange={e=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:Number(e.target.value)||0}:x))}
-                              style={{width:50,textAlign:'center',border:`1.5px solid ${colors.border}`,borderRadius:8,padding:'4px',fontSize:14,fontWeight:700,color:colors.text,fontFamily:'inherit',outline:'none'}} placeholder="0"/>
-                            <button onClick={()=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:x.qty+1}:x))} style={{width:26,height:26,borderRadius:8,border:`1px solid ${colors.primary}`,background:colors.primaryLight,cursor:'pointer',fontSize:16,fontWeight:700,color:colors.primary,display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
-                            <span style={{fontSize:11,color:'#94a3b8'}}>{p.unit}</span>
+                              style={{width:52,textAlign:'center',border:'1px solid var(--storely-border)',borderRadius:8,padding:'5px',fontSize:16,fontWeight:500,color:'var(--storely-text)',fontFamily:'inherit',outline:'none'}} placeholder="0"/>
+                            <button onClick={()=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:x.qty+1}:x))} aria-label="زيادة" style={{width:30,height:30,borderRadius:8,border:'none',background:'#eceef1',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--storely-text)'}}><Plus size={14}/></button>
                           </div>
                         )}
                       </div>
                     )
                   })}
+                  </div>
                 </div>
               ))}
             </div>
             <div style={{display:'flex',gap:10}}>
-              <button onClick={()=>setStep('setup')} style={{...btnSecondary,flex:1,padding:'13px'}}>← السابق</button>
+              {back('setup')}
               <button onClick={saveProducts} disabled={saving}
-                style={{...btnPrimary,flex:2,padding:'13px',fontSize:15,opacity:saving?.7:1,cursor:saving?'not-allowed':'pointer'}}>
-                {saving?'⏳ جاري الحفظ...':'التالي ← إضافة الموظفين'}
+                style={{...btnPrimary,flex:2,padding:'13px',fontSize:16,opacity:saving?.7:1,cursor:saving?'not-allowed':'pointer'}}>
+                {saving?'جاري الحفظ...':'التالي'}
               </button>
             </div>
           </div>
         )}
 
-        {/* Step 4 */}
+        {/* 4: الموظفين */}
         {step==='staff'&&(
           <div className="su">
-            <div style={{textAlign:'center',marginBottom:28}}>
-              <div style={{fontSize:40,marginBottom:10}}>👥</div>
-              <h1 style={{fontSize:22,fontWeight:900,color:colors.text,marginBottom:6}}>أضف موظفيك</h1>
-              <p style={{fontSize:14,color:'#64748b'}}>اختياري — يمكنك إضافتهم لاحقاً من صفحة الموظفين</p>
-            </div>
-            <div style={{display:'flex',flexDirection:'column' as const,gap:10,marginBottom:20}}>
+            {head(Users, 'أضف موظفيك', 'كل موظف يدخل من جواله برقمه ورمز سري نعطيك إياه. هذي الخطوة اختيارية')}
+            <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:16,display:'flex',flexDirection:'column' as const,gap:10,marginBottom:20}}>
               {staffList.map((s,i)=>(
-                <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 1fr auto',gap:8,alignItems:'center'}}>
-                  <input value={s.name} onChange={e=>setStaffList(prev=>prev.map((x,j)=>j===i?{...x,name:e.target.value}:x))} style={inp()} placeholder="اسم الموظف"/>
-                  <input value={s.phone} onChange={e=>setStaffList(prev=>prev.map((x,j)=>j===i?{...x,phone:e.target.value}:x))} style={{...inp(),direction:'ltr' as const}} placeholder="05xxxxxxxx"/>
-                  {staffList.length>1&&<button onClick={()=>setStaffList(prev=>prev.filter((_,j)=>j!==i))} style={{width:32,height:32,borderRadius:8,background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>}
+                <div key={i} style={{display:'grid',gridTemplateColumns:staffList.length>1?'1fr 1fr 36px':'1fr 1fr',gap:8,alignItems:'center'}}>
+                  <input value={s.name} onChange={e=>setStaffList(prev=>prev.map((x,j)=>j===i?{...x,name:e.target.value}:x))} style={{...inp(),fontSize:16}} placeholder="اسم الموظف"/>
+                  <input value={s.phone} onChange={e=>setStaffList(prev=>prev.map((x,j)=>j===i?{...x,phone:e.target.value}:x))} style={{...inp(),direction:'ltr' as const,fontSize:16}} placeholder="05xxxxxxxx"/>
+                  {staffList.length>1&&<button onClick={()=>setStaffList(prev=>prev.filter((_,j)=>j!==i))} aria-label="حذف" style={{width:36,height:36,borderRadius:8,background:'transparent',color:'#6b7487',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><X size={16} strokeWidth={1.75}/></button>}
                 </div>
               ))}
-              <button onClick={()=>setStaffList(prev=>[...prev,{name:'',phone:''}])} style={{...btnSecondary,padding:'10px',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-                + إضافة موظف آخر
+              <button onClick={()=>setStaffList(prev=>[...prev,{name:'',phone:''}])} style={{height:44,borderRadius:10,border:'1px dashed #9ca3af',background:'transparent',color:'var(--storely-text)',fontSize:15,fontWeight:500,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                <Plus size={16} strokeWidth={1.75}/>موظف آخر
               </button>
             </div>
             <div style={{display:'flex',gap:10}}>
-              <button onClick={()=>setStep('products')} style={{...btnSecondary,flex:1,padding:'13px'}}>← السابق</button>
+              {back(hasInventory ? 'products' : 'setup')}
               <button onClick={saveStaff} disabled={saving}
-                style={{...btnPrimary,flex:2,padding:'13px',fontSize:15,opacity:saving?.7:1,cursor:saving?'not-allowed':'pointer'}}>
-                {saving?'⏳ جاري الحفظ...':'إنهاء الإعداد 🎉'}
+                style={{...btnPrimary,flex:2,padding:'13px',fontSize:16,opacity:saving?.7:1,cursor:saving?'not-allowed':'pointer'}}>
+                {saving?'جاري الحفظ...':'إنهاء الإعداد'}
               </button>
             </div>
           </div>
         )}
 
-        {/* Step 5 */}
+        {/* 5: جاهز */}
         {step==='done'&&(
-          <div className="su" style={{textAlign:'center',paddingTop:40}}>
-            <div style={{fontSize:72,marginBottom:16}}>🎉</div>
-            <h1 style={{fontSize:30,fontWeight:900,color:colors.text,marginBottom:10}}>منشأتك جاهزة!</h1>
-            <p style={{fontSize:15,color:'#64748b',marginBottom:36,lineHeight:1.8}}>تم إعداد مخزونك بنجاح. يمكنك الآن البدء بإدارة مخزونك باحترافية.</p>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:36}}>
-              {[
-                {icon:'📦',label:'منتج أُضيف',value:selectedCount},
-                {icon:'👥',label:'موظف أُضيف',value:createdStaff.length},
-                {icon:'✅',label:'الإعداد مكتمل',value:'100%'},
-              ].map((s,i)=>(
-                <div key={i} style={{background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`,borderRadius:16,padding:'20px 12px'}}>
-                  <div style={{fontSize:28,marginBottom:8}}>{s.icon}</div>
-                  <div style={{fontSize:24,fontWeight:900,color:colors.primary}}>{s.value}</div>
-                  <div style={{fontSize:11,color:'#64748b',marginTop:4}}>{s.label}</div>
-                </div>
-              ))}
+          <div className="su">
+            <div style={{marginBottom:24}}>
+              <span style={{width:56,height:56,borderRadius:16,background:'#f3faf8',color:colors.primary,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:16,border:'1px solid #cfe8e4'}}><Check size={28} strokeWidth={2}/></span>
+              <h1 style={{fontSize:26,fontWeight:600,lineHeight:'36px',color:'var(--storely-text)',marginBottom:6}}>منشأتك جاهزة</h1>
+              <p style={{fontSize:15,color:'#4b5565',lineHeight:1.7}}>كل شي جاهز تبدأ فيه. تقدر تعدّل أي شي بعدين من الإعدادات</p>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:hasInventory?'1fr 1fr':'1fr',background:'white',border:'1px solid var(--storely-border)',borderRadius:14,marginBottom:16}}>
+              {hasInventory && <div style={{padding:16}}><div style={{fontSize:26,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{selectedCount}</div><div style={{fontSize:13,color:'#6b7487'}}>منتج أضفناه</div></div>}
+              <div style={{padding:16,borderInlineStart:hasInventory?'1px solid #e5e7eb':'none'}}><div style={{fontSize:26,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{createdStaff.length}</div><div style={{fontSize:13,color:'#6b7487'}}>موظف أضفناه</div></div>
             </div>
             {createdStaff.length>0&&(
-              <div style={{background:'#fffbeb',border:'1.5px solid #fcd34d',borderRadius:16,padding:18,marginBottom:16,textAlign:'right' as const}}>
-                <div style={{fontSize:15,fontWeight:800,color:colors.text,marginBottom:6}}>🔑 رموز دخول الموظفين</div>
-                <p style={{fontSize:12,color:'#64748b',lineHeight:1.7,marginBottom:10}}>احفظها وأرسلها لكل موظف — يدخل برقم جواله وهذا الرمز. تقدر تغيّرها لاحقاً من صفحة الموظفين.</p>
+              <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:16,marginBottom:16}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}><KeyRound size={16} strokeWidth={1.75}/>رموز دخول الموظفين</div>
+                <p style={{fontSize:13,color:'#4b5565',lineHeight:1.7,marginBottom:10}}>احفظها وأرسلها لكل موظف. يدخل برقم جواله وهذا الرمز، وتقدر تغيّرها من صفحة الموظفين</p>
                 {createdStaff.map((c,i)=>(
-                  <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderTop:i?'1px solid #fde68a':'none',fontSize:14}}>
-                    <span style={{fontWeight:700,color:colors.text}}>{c.name}</span>
-                    <span style={{fontFamily:'monospace',fontWeight:800,fontSize:16,letterSpacing:2,color:colors.primary}}>{c.pin}</span>
+                  <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'10px 0',borderTop:'1px solid var(--storely-border)',fontSize:15}}>
+                    <span style={{color:'var(--storely-text)'}}>{c.name}</span>
+                    <span style={{fontFamily:"'IBM Plex Mono',ui-monospace,monospace",fontWeight:500,fontSize:17,letterSpacing:2,color:'var(--storely-text)',direction:'ltr'}}>{c.pin}</span>
                   </div>
                 ))}
               </div>
             )}
             {!pushEnabled ? (
-              <div style={{background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`,borderRadius:16,padding:20,marginBottom:16,textAlign:'right' as const}}>
-                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
-                  <span style={{fontSize:24}}>🔔</span>
-                  <div style={{fontSize:15,fontWeight:800,color:colors.text}}>فعّل الإشعارات الفورية</div>
-                </div>
-                <p style={{fontSize:13,color:'#64748b',lineHeight:1.8,marginBottom:14}}>
-                  توصلك تنبيهات نقص المخزون وإقفال الكاشير وتوريدات الموردين فوراً — حتى لو التطبيق مقفول بالكامل.
-                </p>
+              <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:16,marginBottom:20}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}><Bell size={16} strokeWidth={1.75}/>فعّل الإشعارات</div>
+                <p style={{fontSize:13,color:'#4b5565',lineHeight:1.7,marginBottom:12}}>يوصلك تنبيه نقص المخزون وإقفال الكاشير وتوريد الموردين أول بأول، حتى لو التطبيق مقفول</p>
                 <button onClick={enablePushOnboarding} disabled={pushLoading}
-                  style={{...btnPrimary,width:'100%',padding:'13px',fontSize:14}}>
-                  {pushLoading?'⏳ جاري التفعيل...':'🔔 فعّل الإشعارات الآن'}
+                  style={{...btnSecondary,width:'100%',padding:'12px',fontSize:15}}>
+                  {pushLoading?'جاري التفعيل...':'تفعيل الإشعارات'}
                 </button>
               </div>
             ) : (
-              <div style={{background:'#f0fdfa',border:'1.5px solid #99f6e4',borderRadius:16,padding:14,marginBottom:16,display:'flex',alignItems:'center',gap:8,justifyContent:'center'}}>
-                <span style={{fontSize:16}}>✅</span>
-                <span style={{fontSize:13,fontWeight:700,color:'#029FA2'}}>تم تفعيل الإشعارات بنجاح</span>
-              </div>
+              <div style={{display:'flex',alignItems:'center',gap:8,fontSize:14,color:'#15803d',marginBottom:20}}><Check size={16} strokeWidth={2}/>تم تفعيل الإشعارات</div>
             )}
             <button onClick={()=>router.push('/dashboard')}
-              style={{...btnPrimary,width:'100%',padding:'16px',fontSize:17,boxShadow:`0 8px 24px ${colors.primary}33`}}>
-              ابدأ استخدام Storely ←
+              style={{...btnPrimary,width:'100%',padding:'15px',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+              ادخل لوحة التحكم<ArrowLeft size={17} strokeWidth={1.75}/>
             </button>
           </div>
         )}

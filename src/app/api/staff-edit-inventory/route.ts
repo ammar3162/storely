@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
+import { staffFeatureError } from '@/lib/featureRoutes'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,6 +12,9 @@ export async function POST(req: Request) {
   try {
     const auth = await verifyStaffToken(extractStaffToken(req))
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
+    // «ابنِ باقتك»: الميزة لازم تكون لفرع الموظف
+    const featureLocked = await staffFeatureError(auth.data as any, 'inventory')
+    if (featureLocked) return NextResponse.json({ error: featureLocked }, { status: 403 })
     const { org_id: orgId, staff_id: staffId } = auth.data!
 
     const { productId, newQty, staffName } = await req.json()
@@ -23,7 +27,7 @@ export async function POST(req: Request) {
     // تحقق إن الموظف عنده صلاحية "المخزون" فعلاً — مو بس صلاحية الصرف
     const { data: staffRow } = await supabase.from('staff_members').select('permissions').eq('id', staffId).single()
     if (!(staffRow as any)?.permissions?.inventory) {
-      return NextResponse.json({ error: 'ما عندك صلاحية تعديل المخزون' }, { status: 403 })
+      return NextResponse.json({ error: 'ليست لديك صلاحية تعديل المخزون' }, { status: 403 })
     }
 
     const { data: product } = await supabase.from('products').select('id,qty,name,unit,org_id').eq('id', productId).single()

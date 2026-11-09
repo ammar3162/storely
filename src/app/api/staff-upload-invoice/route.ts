@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { INVOICE_TYPES, INVOICE_MAX_BYTES, invoiceType, invoiceExt } from '@/lib/invoiceFile'
+import { staffFeatureError } from '@/lib/featureRoutes'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,15 +13,18 @@ export async function POST(req: Request) {
   try {
     const auth = await verifyStaffToken(extractStaffToken(req))
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
+    // «ابنِ باقتك»: الميزة لازم تكون لفرع الموظف
+    const featureLocked = await staffFeatureError(auth.data as any, 'purchases')
+    if (featureLocked) return NextResponse.json({ error: featureLocked }, { status: 403 })
     const { org_id: orgId } = auth.data!
 
     const formData = await req.formData()
     const file = formData.get('file') as File | null
-    if (!file) return NextResponse.json({ error: 'ما فيه ملف' }, { status: 400 })
+    if (!file) return NextResponse.json({ error: 'لا يوجد ملف' }, { status: 400 })
 
     // صور أو PDF فقط — ما نخلي أحد يرفع صفحات HTML على رابط عام
     const type = invoiceType(file)
-    if (!(INVOICE_TYPES as readonly string[]).includes(type)) return NextResponse.json({ error: 'الملف لازم يكون صورة أو PDF' }, { status: 400 })
+    if (!(INVOICE_TYPES as readonly string[]).includes(type)) return NextResponse.json({ error: 'يجب أن يكون الملف صورة أو PDF' }, { status: 400 })
     if (file.size > INVOICE_MAX_BYTES) return NextResponse.json({ error: 'الملف أكبر من ٤ ميجا' }, { status: 400 })
     const path = `invoices/${orgId}-${Date.now()}.${invoiceExt(type)}`
     const arrayBuffer = await file.arrayBuffer()

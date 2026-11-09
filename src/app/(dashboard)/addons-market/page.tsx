@@ -1,4 +1,5 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
 import { cache } from '@/lib/cache'
@@ -10,7 +11,8 @@ import { getMe } from '@/lib/session'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { colors, font, card, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
-import { billLines, planKeyOf, addonPeriodEnd, proratedCharge, unitPrice, branchPriceFor, PLAN_PRICING } from '@/lib/planPricing'
+import { billLines, planKeyOf, addonPeriodEnd, proratedCharge, unitPrice, branchPriceFor, PLAN_PRICING, isNewPlan, nextPlanOf, planPriceFor, customModuleAmount, isCustomPlan, NEW_PLANS, CUSTOM_MODULES, signupAddonsMonthly, CUSTOM_STAFF_STEP, PLAN_CAPS } from '@/lib/planPricing'
+import { Check, Trash2 } from 'lucide-react'
 import { isInApp } from '@/lib/inApp'
 import { ListSkeleton } from '@/components/PageSkeleton'
 
@@ -21,7 +23,7 @@ export default function AddonsMarketPage() {
   const [orgName, setOrgName] = useState('')
   const [orgId, setOrgId] = useState('')
   const [cancelling, setCancelling] = useState<string|null>(null)
-  const [plan, setPlan] = useState<{ key: string; cycle: 'monthly'|'yearly'; maxBranches: number; locked?: number | null; discount?: any } | null>(null)
+  const [plan, setPlan] = useState<{ key: string; cycle: 'monthly'|'yearly'; maxBranches: number; planBranches: number; staffIncluded?: number | null; locked?: number | null; discount?: any } | null>(null)
   const [subEndsAt, setSubEndsAt] = useState<string | null>(null)
   const [inApp, setInApp] = useState(false)
   useEffect(() => { setInApp(isInApp()) }, [])
@@ -38,7 +40,7 @@ export default function AddonsMarketPage() {
     if (!me) return
     setOrgId(me.org_id)
     setOrgName(me.org?.name || '')
-    setPlan({ key: me.org?.plan || '', cycle: me.org?.billing_cycle || 'monthly', maxBranches: me.org?.max_branches || 1, locked: me.org?.locked_plan_monthly ?? null, discount: me.org })
+    setPlan({ key: me.org?.plan || '', cycle: me.org?.billing_cycle || 'monthly', maxBranches: me.org?.max_branches || 1, planBranches: me.org?.plan_branches || 1, staffIncluded: me.org?.staff_included ?? null, locked: me.org?.locked_plan_monthly ?? null, discount: me.org })
     setSubEndsAt(me.subscription_ends_at || null)
     if (!cachedOid) await load(me.org_id)
     setLoading(false)
@@ -46,6 +48,8 @@ export default function AddonsMarketPage() {
 
   const [qtyMap, setQtyMap] = useState<Record<string, number>>({})
   const [staffBranchMap, setStaffBranchMap] = useState<Record<string, string>>({})
+  // إضافة لكل فرع (الكاشير/الحضور بالباقات الجديدة): الفروع اللي اختارها العميل
+  const [branchPick, setBranchPick] = useState<Record<string, string[]>>({})
 
   async function load(oid: string) {
     // آخر نسخة محفوظة تطلع على طول، وبعدها تتحدث من الخادم
@@ -67,14 +71,17 @@ export default function AddonsMarketPage() {
     // الوحدات الزايدة على اشتراك ساري بسعره المثبّت، والجديدة بالسعر الحالي
     const live = addon.subscription?.isValid ? addon.subscription : null
     const pr = proratedCharge(unitPrice(addon.monthly_price, live), qty, end)
-    return { ...pr, endStr: end.toLocaleDateString('ar-SA', { numberingSystem: 'latn', month: 'long', day: 'numeric' }) }
+    return { ...pr, endStr: end.toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', month: 'long', day: 'numeric' }) }
   }
 
-  function DueNote({ addon, qty }: { addon: any; qty: number }) {
-    const d = dueNow(addon, qty)
+  function DueNote({ addon, qty, monthlyDelta }: { addon: any; qty: number; monthlyDelta?: number }) {
+    // «ابنِ باقتك»: الفرق الشهري (الفرع الأول + الإضافي) بالتناسب
+    const d = monthlyDelta != null
+      ? (() => { const end = addonPeriodEnd(subEndsAt); return { ...proratedCharge(monthlyDelta, 1, end), endStr: end.toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', month: 'long', day: 'numeric' }) } })()
+      : dueNow(addon, qty)
     return (
       <div style={{ fontSize: 11, color: colors.text3, lineHeight: 1.7, marginBottom: 12 }}>
-        تدفع الحين <b style={{ color: colors.text }}>{d.amount} ⃁</b> عن {d.days} يوم لين تجديد باقتك ({d.endStr})، وبعدها تتجدد مع الباقة.
+        تدفع الآن <b style={{ color: colors.text }}>{d.amount} ⃁</b> عن {d.days} يوماً حتى تجديد باقتك ({d.endStr})، ثم تتجدد مع الباقة.
       </div>
     )
   }
@@ -95,7 +102,7 @@ export default function AddonsMarketPage() {
     const j = await api.post('/api/addons-market/requests', { org_id: orgId, addon_id: addon.id, quantity, branch_ids: branchIds })
     setSending(null)
     if (!j.success) { toast(j.error || 'فشل إرسال الطلب', 'error'); return }
-    toast('وصلنا طلبك — نراجعه ونفعّل الإضافة ويوصلك إشعار')
+    toast('تم استلام طلبك — سنراجعه ونفعّل الإضافة، وسيصلك إشعار بذلك')
     loadRequests(orgId)
   }
   async function cancelRequest(r: any) {
@@ -128,7 +135,7 @@ export default function AddonsMarketPage() {
   async function cancelAddon(addon: any, branchId?: string) {
     if (!(await confirmDialog({
       title: 'إلغاء الاشتراك',
-      message: `متأكد إنك تبي تلغي اشتراكك بميزة "${addon.name}"${branchId ? ` لفرع "${branches.find(b=>b.id===branchId)?.name||''}"` : ''}؟ راح تفقد الوصول لها فوراً — بما في ذلك صفحة المنتجات العامة وكل بياناتها المعروضة، بدون استرجاع.`,
+      message: `هل أنت متأكد من إلغاء اشتراكك في ميزة "${addon.name}"${branchId ? ` لفرع "${branches.find(b=>b.id===branchId)?.name||''}"` : ''}؟ ستفقد الوصول إليها فوراً — بما في ذلك صفحة المنتجات العامة وكل بياناتها المعروضة، بدون استرجاع.`,
     }))) return
 
     setCancelling(addon.id + (branchId||''))
@@ -156,7 +163,21 @@ export default function AddonsMarketPage() {
       </div>
 
       {plan && (() => {
-        const bill = billLines(planKeyOf(plan.key, plan.maxBranches), plan.cycle, addons, plan.locked, plan.discount)
+        const pk = planKeyOf(plan.key, plan.maxBranches)
+        const bill = billLines(pk, plan.cycle, addons, plan.locked, plan.discount, plan.planBranches, plan.staffIncluded)
+        // الباقات الجديدة: لو فاتورته وصلت سعر الباقة الأعلى (لنفس الفروع) نقترحها
+        let up = isNewPlan(pk) ? nextPlanOf(pk) : null
+        let upPrice = up ? planPriceFor(up, null, plan.planBranches).monthly : 0
+        // «ابنِ باقتك»: باقة جاهزة تغطي مزاياه الحالية بسعر أقل؟
+        if (isCustomPlan(pk) && !plan.locked) {
+          const mods = addons.filter((a: any) => a.subscription?.isValid && CUSTOM_MODULES[a.slug]).map((a: any) => a.slug as string)
+          const n = plan.planBranches
+          const extraStaff = Math.max(0, (plan.staffIncluded ?? PLAN_CAPS.custom.staff * n) - PLAN_CAPS.custom.staff * n) * CUSTOM_STAFF_STEP
+          const best = mods.length ? NEW_PLANS.map(k => ({ k, total: planPriceFor(k, null, n).monthly + signupAddonsMonthly(k, mods, n) + extraStaff }))
+            .sort((x, y) => x.total - y.total || NEW_PLANS.indexOf(y.k) - NEW_PLANS.indexOf(x.k))[0] : null
+          up = best && best.total < bill.total ? best.k : null
+          upPrice = best?.total || 0
+        }
         return (
           <div style={{ ...card, padding: 18, marginBottom: 20 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10 }}>فاتورتك الحالية</div>
@@ -168,7 +189,12 @@ export default function AddonsMarketPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${colors.border}`, marginTop: 8, paddingTop: 10, fontSize: 14, fontWeight: 900, color: colors.primary }}>
               <span>الإجمالي</span><span>{bill.total} ⃁</span>
             </div>
-            {planKeyOf(plan.key, plan.maxBranches) === 'basic' && plan.cycle === 'monthly' && bill.total >= PLAN_PRICING.pro.monthly && (
+            {up && plan.cycle === 'monthly' && bill.total >= upPrice && (
+              <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, fontSize: 12, color: colors.text, lineHeight: 1.8 }}>
+                <b style={{ color: colors.primary }}>باقة «{PLAN_PRICING[up].label}» أوفر لك:</b> {upPrice} ⃁ شهرياً{plan.maxBranches > 1 ? ` لـ ${plan.maxBranches} فروع` : ''}، وفيها {up === 'essential' ? 'المخزون والمشتريات لكل الفروع' : up === 'ops' ? 'المخزون والمشتريات وإقفال الكاشير لكل الفروع' : 'كل المميزات لكل الفروع'}. <a href="/settings" style={{ color: colors.primary, fontWeight: 800 }}>اطلب الترقية</a>
+              </div>
+            )}
+            {pk === 'basic' && plan.cycle === 'monthly' && bill.total >= PLAN_PRICING.pro.monthly && (
               <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, fontSize: 12, color: colors.text, lineHeight: 1.8 }}>
                 <b style={{ color: colors.primary }}>الشاملة أوفر لك:</b> {PLAN_PRICING.pro.monthly} ⃁ شهرياً وفيها كل المميزات و3 فروع و15 موظف. <a href="/settings" style={{ color: colors.primary, fontWeight: 800 }}>اطلب الترقية</a>
               </div>
@@ -178,7 +204,7 @@ export default function AddonsMarketPage() {
       })()}
 
       {addons.length === 0 ? (
-        <div style={{ ...card, padding: 40, textAlign: 'center' as const, color: colors.text4 }}>ما فيه إضافات متاحة حالياً</div>
+        <div style={{ ...card, padding: 40, textAlign: 'center' as const, color: colors.text4 }}>لا توجد إضافات متاحة حالياً</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 16 }}>
           {addons.map((a: any) => {
@@ -189,7 +215,7 @@ export default function AddonsMarketPage() {
               const qty = qtyMap[a.id] || 1
               return (
                 <div key={a.id} style={{ ...card, padding: 20 }}>
-                  <div style={{ fontSize: 32, marginBottom: 10 }}>{a.icon}</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--storely-background)', border: '1px solid var(--storely-border)', color: 'var(--storely-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}><FeatureIcon name={a.icon || ''} size={22} /></div>
                   <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
                   <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14 }}>{a.description}</div>
                   <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 14 }}>
@@ -203,7 +229,7 @@ export default function AddonsMarketPage() {
                         return (
                           <div key={s.branch_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}` }}>
                             <div style={{ flex: 1, fontSize: 11, color: colors.text }}>
-                              {branchName} — مفعّلة لـ{s.quantity} حتى {new Date(s.expires_at).toLocaleDateString('ar-SA', { numberingSystem: 'latn' })}
+                              {branchName} — مفعّلة لـ{s.quantity} حتى {new Date(s.expires_at).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn' })}
                             </div>
                             <button onClick={() => cancelAddon(a, s.branch_id)} disabled={cancelling === a.id + s.branch_id}
                               style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -230,23 +256,82 @@ export default function AddonsMarketPage() {
                       <RequestBtn addon={a} quantity={qty} branchIds={selectedBranch ? [selectedBranch] : undefined} label={`اطلب الإضافة (${qty * a.monthly_price} ⃁)`} />
                     </>
                   ) : (
-                    <div style={{ fontSize: 11, color: colors.text4, textAlign: 'center' as const }}>ما فيه فروع نشطة حالياً</div>
+                    <div style={{ fontSize: 11, color: colors.text4, textAlign: 'center' as const }}>لا توجد فروع نشطة حالياً</div>
                   )}
                 </div>
               )
             }
 
             const active = a.subscription?.isValid
+            // إضافة لكل فرع: يختار الفروع، والسعر × عددها
+            if (a.per_branch) {
+              const subBranches: string[] = (active && a.subscription?.branch_ids) || branches.map((b: any) => b.id)
+              const chosen: string[] = branchPick[a.id] || subBranches
+              const changed = active && (chosen.length !== subBranches.length || chosen.some(id => !subBranches.includes(id)))
+              const added = active ? chosen.filter(id => !subBranches.includes(id)).length : chosen.length
+              // «ابنِ باقتك»: الفرع الأول بسعر والباقي بسعر الفرع الإضافي
+              const isMod = a.extra_price != null
+              const monthlyFor = (n: number) => n <= 0 ? 0 : isMod ? customModuleAmount(a.slug, n, a.subscription?.locked_price) : n * a.monthly_price
+              const delta = monthlyFor(chosen.length) - (active ? monthlyFor(subBranches.length) : 0)
+              return (
+                <div key={a.id} style={{ ...card, padding: 20, border: active ? `1.5px solid ${colors.primaryBorder}` : undefined, background: active ? colors.primaryLight : undefined }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
+                  <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14, minHeight: 40 }}>{a.description}</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 12 }}>
+                    {a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text3 }}>{isMod && a.extra_price !== a.monthly_price ? `⃁ للفرع الأول، و${a.extra_price} ⃁ لكل فرع إضافي` : '⃁ / فرع / شهر'}</span>
+                  </div>
+                  {active && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 10 }}>
+                      <Check size={15} /> مفعّلة لـ {subBranches.length} {subBranches.length === 1 ? 'فرع' : 'فروع'} حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn' })}
+                    </div>
+                  )}
+                  {branches.length > 1 && (
+                    <>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: colors.text, marginBottom: 6 }}>الفروع المطلوبة:</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+                        {branches.map((b: any) => {
+                          const sel = chosen.includes(b.id)
+                          return (
+                            <button key={b.id} type="button" onClick={() => setBranchPick(p => ({ ...p, [a.id]: sel ? chosen.filter(x => x !== b.id) : [...chosen, b.id] }))}
+                              style={{ padding: '6px 12px', borderRadius: 99, fontSize: 12, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+                                border: `1px solid ${sel ? colors.primary : colors.border2}`, background: sel ? colors.primary : 'white', color: sel ? 'white' : colors.text }}>
+                              {b.name}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </>
+                  )}
+                  {(!active || changed) && chosen.length > 0 && (
+                    <>
+                      <div style={{ fontSize: 12, color: colors.text, marginBottom: 8 }}>
+                        الشهري: <b>{monthlyFor(chosen.length)} ⃁</b> ({chosen.length} {chosen.length === 1 ? 'فرع' : 'فروع'})
+                        {active && chosen.length < subBranches.length && <span style={{ display: 'block', color: colors.text3, fontSize: 11 }}>الفروع التي تُزيلها تتوقف عند تجديد باقتك القادم.</span>}
+                      </div>
+                      {added > 0 && (isMod ? delta > 0 && <DueNote addon={a} qty={added} monthlyDelta={delta} /> : <DueNote addon={a} qty={added} />)}
+                      <RequestBtn addon={a} quantity={chosen.length} branchIds={chosen} label={active ? 'اطلب تعديل الفروع' : 'اطلب الإضافة'} />
+                    </>
+                  )}
+                  {chosen.length === 0 && <div style={{ fontSize: 12, color: colors.danger }}>اختر فرع واحد على الأقل</div>}
+                  {active && !changed && (
+                    <button onClick={() => cancelAddon(a)} disabled={cancelling === a.id}
+                      style={{ marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 6, border: 'none', background: 'none', color: colors.danger, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      <Trash2 size={14} /> {cancelling === a.id ? 'جاري الإلغاء…' : 'إلغاء الإضافة'}
+                    </button>
+                  )}
+                </div>
+              )
+            }
             return (
               <div key={a.id} style={{ ...card, padding: 20, position: 'relative' as const, border: active ? `1.5px solid ${colors.primaryBorder}` : undefined, background: active ? colors.primaryLight : undefined }}>
                 {active && (
                   <button onClick={() => cancelAddon(a)} disabled={cancelling === a.id}
                     title="إلغاء الاشتراك"
                     style={{ position: 'absolute' as const, top: 12, left: 12, width: 26, height: 26, borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>
-                    {cancelling === a.id ? '…' : '🗑️'}
+                    {cancelling === a.id ? '…' : <Trash2 size={14} />}
                   </button>
                 )}
-                <div style={{ fontSize: 32, marginBottom: 10 }}>{a.icon}</div>
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--storely-background)', border: '1px solid var(--storely-border)', color: 'var(--storely-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}><FeatureIcon name={a.icon || ''} size={22} /></div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
                 <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14, minHeight: 40 }}>{a.description}</div>
                 {a.slug === 'extra_branch' ? (
@@ -265,8 +350,8 @@ export default function AddonsMarketPage() {
 
                 {active ? (
                   <div style={{ textAlign: 'center' as const }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 4 }}>✅ مفعّلة{(a.slug==='extra_suppliers'||a.slug==='extra_branch') ? ` (${a.subscription?.quantity||1})` : ''}</div>
-                    <div style={{ fontSize: 10, color: colors.text4 }}>حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA', { numberingSystem: 'latn' })}</div>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 4 }}><Check size={15} /> مفعّلة{(a.slug==='extra_suppliers'||a.slug==='extra_branch') ? ` (${a.subscription?.quantity||1})` : ''}</div>
+                    <div style={{ fontSize: 10, color: colors.text4 }}>حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn' })}</div>
                     {a.slug === 'extra_branch' && (
                       <a href="/branches" style={{ display: 'block', marginTop: 8, fontSize: 12, fontWeight: 700, color: colors.primary, textDecoration: 'none' }}>تحتاج فرع زيادة؟ اطلبه من صفحة الفروع</a>
                     )}

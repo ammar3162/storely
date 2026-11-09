@@ -8,7 +8,7 @@ import { ListSkeleton } from '@/components/PageSkeleton'
 import { pdfOrgInfo, reportData, getRange, formatRange, BackBtn, PeriodBadge } from './shared'
 import type { FilterPeriod } from './shared'
 
-export default function InventoryDetail({ period, from, to, onBack }: { period:FilterPeriod; from:string; to:string; onBack:()=>void }) {
+export default function InventoryDetail({ period, from, to, onBack, filterBar }: { period:FilterPeriod; from:string; to:string; onBack:()=>void; filterBar?: React.ReactNode }) {
   const [products, setProducts] = useState<any[]>([])
   const [movements, setMovements] = useState<any[]>([])
   const [purchases, setPurchases] = useState<any[]>([])
@@ -66,7 +66,7 @@ export default function InventoryDetail({ period, from, to, onBack }: { period:F
           status: p.qty===0 ? 'نفد' : p.qty<=p.reorder_point ? 'ناقص' : 'كافٍ',
         })),
         summaryStats: [
-          { label: 'إجمالي الأصناف', value: String(products.length), color: '#7c3aed' },
+          { label: 'إجمالي الأصناف', value: String(products.length), color:'#7c3aed' },
           { label: 'مخزون ناقص', value: String(lowCount), color: colors.warning },
           { label: 'نفد المخزون', value: String(outCount), color: colors.danger },
         ],
@@ -104,6 +104,7 @@ export default function InventoryDetail({ period, from, to, onBack }: { period:F
   return (
     <div>
       <BackBtn onClick={onBack}/>
+      {filterBar}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap' as const,gap:8}}>
         <PeriodBadge period={period} from={from} to={to}/>
         <button onClick={handleExportPdf} disabled={exportingPdf || filtered.length===0}
@@ -142,7 +143,7 @@ export default function InventoryDetail({ period, from, to, onBack }: { period:F
         ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><ClipboardList size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
         ):(
           <div style={{overflowX:'auto'}}>
-            <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
+            <table className="m-cards" style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
                   {['الصنف','الفئة','مصروف','مشترى','المتبقي','الحالة'].map((h,i)=>(
@@ -160,11 +161,11 @@ export default function InventoryDetail({ period, from, to, onBack }: { period:F
                   return (
                     <tr key={p.id} style={{borderBottom:`1px solid ${colors.border}`,background:isOut?colors.dangerLight:isLow?colors.warningLight:i%2===0?colors.surface:colors.bg}}>
                       <td style={{padding:'11px 14px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{p.name}</td>
-                      <td style={{padding:'11px 14px',fontSize:font.xs,color:colors.text3}}>{p.category||'—'}</td>
-                      <td style={{padding:'11px 14px'}}>{dispensed>0?<span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder)}}>▼ {dispensed}</span>:<span style={{color:colors.text4}}>—</span>}</td>
-                      <td style={{padding:'11px 14px'}}>{purchased>0?<span style={{...tag(colors.primary,colors.primaryLight,colors.primaryBorder)}}>▲ {purchased}</span>:<span style={{color:colors.text4}}>—</span>}</td>
-                      <td style={{padding:'11px 14px',fontWeight:900,fontSize:18,color:statusColor}}>{p.qty} <span style={{fontSize:font.xs,fontWeight:400,color:colors.text4}}>{p.unit}</span></td>
-                      <td style={{padding:'11px 14px'}}><span style={{...tag(statusColor,isOut?colors.dangerLight:isLow?colors.warningLight:colors.primaryLight,isOut?colors.dangerBorder:isLow?colors.warningBorder:colors.primaryBorder)}}>{statusLabel}</span></td>
+                      <td data-label="الفئة" style={{padding:'11px 14px',fontSize:font.xs,color:colors.text3}}>{p.category||'—'}</td>
+                      <td data-label="مصروف" style={{padding:'11px 14px'}}>{dispensed>0?<span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder)}}>▼ {dispensed}</span>:<span style={{color:colors.text4}}>—</span>}</td>
+                      <td data-label="مشترى" style={{padding:'11px 14px'}}>{purchased>0?<span style={{...tag(colors.primary,colors.primaryLight,colors.primaryBorder)}}>▲ {purchased}</span>:<span style={{color:colors.text4}}>—</span>}</td>
+                      <td data-label="المتبقي" style={{padding:'11px 14px',fontWeight:900,fontSize:18,color:statusColor}}>{p.qty} <span style={{fontSize:font.xs,fontWeight:400,color:colors.text4}}>{p.unit}</span></td>
+                      <td data-label="الحالة" style={{padding:'11px 14px'}}><span style={{...tag(statusColor,isOut?colors.dangerLight:isLow?colors.warningLight:colors.primaryLight,isOut?colors.dangerBorder:isLow?colors.warningBorder:colors.primaryBorder)}}>{statusLabel}</span></td>
                     </tr>
                   )
                 })}

@@ -68,8 +68,8 @@ export const ASSISTANT_TOOLS: Tool[] = [
   },
   {
     name: 'supplier_prices',
-    description: 'مقارنة أسعار الموردين: مين الأرخص لصنف معيّن (متوسط سعر الوحدة من فواتير آخر 6 شهور).',
-    input_schema: { type: 'object', properties: { product: { type: 'string', description: 'اسم الصنف (جزء منه) — بدونه يرجع الأصناف اللي لها أكثر من مورد' } } },
+    description: 'مقارنة أسعار الموردين: من الأرخص لصنف معيّن (متوسط سعر الوحدة من فواتير آخر 6 شهور).',
+    input_schema: { type: 'object', properties: { product: { type: 'string', description: 'اسم الصنف (جزء منه) — بدونه تُرجَع الأصناف التي لها أكثر من مورد' } } },
     allowed: (f, a) => data(f) && managerMay(a, 'purchases', 'suppliers', 'reports'),
     run: async (ctx, i) => {
       let q = ctx.db.from('purchases').select('name,supplier,qty,total_amount,unit,created_at').eq('org_id', ctx.orgId).is('deleted_at', null)
@@ -88,12 +88,12 @@ export const ASSISTANT_TOOLS: Tool[] = [
         product: name,
         suppliers: Object.entries(sups).map(([supplier, d]) => ({ supplier, unit_price_with_vat: r2(d.total / d.qty), unit: d.unit, last_purchase: saudiDay(Date.parse(d.last)) })).sort((a, b) => a.unit_price_with_vat - b.unit_price_with_vat),
       })).filter(x => i?.product || x.suppliers.length > 1).slice(0, 20)
-      return { items, note: items.length ? 'الأول بكل صنف هو الأرخص' : 'ما فيه مشتريات كافية للمقارنة' }
+      return { items, note: items.length ? 'الأول بكل صنف هو الأرخص' : 'لا توجد مشتريات كافية للمقارنة' }
     },
   },
   {
     name: 'dispense',
-    description: 'الصرف من المخزون: حسب الموظف (مين أكثر واحد صرف) أو حسب الصنف (وش أكثر صنف انصرف)، مع الهدر والتالف.',
+    description: 'الصرف من المخزون: حسب الموظف (من أكثر موظف صرفاً) أو حسب الصنف (ما أكثر صنف صُرف)، مع الهدر والتالف.',
     input_schema: { type: 'object', properties: { ...range, by: { type: 'string', enum: ['staff', 'product'], description: 'التجميع: staff أو product' }, product: { type: 'string' }, staff: { type: 'string', description: 'اسم الموظف (جزء منه)' } } },
     allowed: (f, a) => data(f) && managerMay(a, 'dispense', 'inventory', 'reports'),
     run: async (ctx, i) => {
@@ -118,8 +118,8 @@ export const ASSISTANT_TOOLS: Tool[] = [
   },
   {
     name: 'inventory',
-    description: 'المخزون الحالي والتوقعات: كمية صنف، الأصناف الناقصة، ومتى يخلص كل صنف (حسب صرف آخر 30 يوم).',
-    input_schema: { type: 'object', properties: { product: { type: 'string', description: 'اسم الصنف (جزء منه)' }, only_low: { type: 'boolean', description: 'الناقصة والقريبة من النفاد بس' } } },
+    description: 'المخزون الحالي والتوقعات: كمية صنف، الأصناف الناقصة، وموعد نفاد كل صنف (حسب صرف آخر 30 يوماً).',
+    input_schema: { type: 'object', properties: { product: { type: 'string', description: 'اسم الصنف (جزء منه)' }, only_low: { type: 'boolean', description: 'الناقصة والقريبة من النفاد فقط' } } },
     allowed: (f, a) => data(f) && managerMay(a, 'inventory', 'dispense', 'ai_tools'),
     run: async (ctx, i) => {
       let pq = ctx.db.from('products').select('id,name,qty,unit,reorder_point,category,branch_id').eq('org_id', ctx.orgId).eq('is_active', true).limit(500)
@@ -143,7 +143,7 @@ export const ASSISTANT_TOOLS: Tool[] = [
   },
   {
     name: 'vat',
-    description: 'ضريبة القيمة المضافة لفترة: ضريبة المبيعات والمشتريات والصافي المستحق وآخر موعد للإقرار (نفس الإقرار الضريبي بالنظام).',
+    description: 'ضريبة القيمة المضافة لفترة: ضريبة المبيعات والمشتريات والصافي المستحق وآخر موعد للإقرار (مطابق للإقرار الضريبي في النظام).',
     input_schema: { type: 'object', properties: { month: { type: 'string', description: 'الشهر YYYY-MM (افتراضي: الشهر الحالي)' }, ...range } },
     allowed: (f, a) => data(f) && managerMay(a, 'reports'),
     run: async (ctx, i) => {
@@ -161,7 +161,7 @@ export const ASSISTANT_TOOLS: Tool[] = [
         sales: { net: box(1)?.amount ?? 0, vat: box(1)?.vat ?? 0 }, purchases: { net: box(7)?.amount ?? 0, vat: box(7)?.vat ?? 0 },
         net_due: v.netDue, deadline: v.deadline,
         incomplete_invoices: { count: v.review.count, vat: v.review.vat }, purchases_without_vat: v.nonVat.count,
-        note: 'المبيعات من إقفالات الكاشير. الصافي الموجب = عليك تدفعه، السالب = مسترد. فواتير الشراء الناقصة (بدون رقم ضريبي للمورد) ما تنحسب ضريبتها لين تكتمل',
+        note: 'المبيعات من إقفالات الكاشير. الصافي الموجب = مستحق الدفع، والسالب = مسترد. ولا تُحتسب ضريبة فواتير الشراء الناقصة (دون رقم ضريبي للمورد) حتى تكتمل',
       }
     },
   },
@@ -228,6 +228,6 @@ export function allowedTools(f: Features, a: Access) {
 
 export async function runTool(name: string, input: unknown, ctx: ToolCtx, f: Features, a: Access): Promise<unknown> {
   const t = ASSISTANT_TOOLS.find(x => x.name === name)
-  if (!t || !t.allowed(f, a)) return { error: 'هذي البيانات مو متاحة لهالمستخدم' }
+  if (!t || !t.allowed(f, a)) return { error: 'هذه البيانات غير متاحة لهذا المستخدم' }
   try { return await t.run(ctx, input || {}) } catch { return { error: 'تعذر جلب البيانات' } }
 }

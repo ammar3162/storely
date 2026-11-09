@@ -8,7 +8,7 @@ import { ListSkeleton } from '@/components/PageSkeleton'
 import { pdfOrgInfo, reportData, getRange, formatRange, BackBtn, PeriodBadge } from './shared'
 import type { FilterPeriod } from './shared'
 
-export default function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:string; to:string; onBack:()=>void }) {
+export default function WasteDetail({ period, from, to, onBack, filterBar }: { period:FilterPeriod; from:string; to:string; onBack:()=>void; filterBar?: React.ReactNode }) {
   const [movements, setMovements] = useState<any[]>([])
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
@@ -49,7 +49,7 @@ export default function WasteDetail({ period, from, to, onBack }: { period:Filte
           { header: 'الموظف', key: 'staff' },
         ],
         rows: filtered.map((m:any) => ({
-          date: new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn'}),
+          date: new Date(m.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn'}),
           product: (m.products as any)?.name || '—',
           qty: Math.abs(m.qty_change) + ' ' + ((m.products as any)?.unit || ''),
           reason: (m as any).waste_reason || '—',
@@ -58,7 +58,7 @@ export default function WasteDetail({ period, from, to, onBack }: { period:Filte
         summaryStats: [
           { label: 'كميات مهدورة', value: String(totalQty), color: colors.danger },
           { label: 'عمليات الهدر', value: String(filtered.length), color: colors.info },
-          { label: 'أصناف مختلفة', value: String(Object.keys(productMap).length), color: '#7c3aed' },
+          { label: 'أصناف مختلفة', value: String(Object.keys(productMap).length), color:'#7c3aed' },
         ],
         fileName: `تقرير-الهدر-${new Date().toISOString().slice(0,10)}.pdf`,
       })
@@ -76,6 +76,7 @@ export default function WasteDetail({ period, from, to, onBack }: { period:Filte
   return (
     <div>
       <BackBtn onClick={onBack}/>
+      {filterBar}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap' as const,gap:8}}>
         <PeriodBadge period={period} from={from} to={to}/>
         <button onClick={handleExportPdf} disabled={exportingPdf || filtered.length===0}
@@ -133,7 +134,7 @@ export default function WasteDetail({ period, from, to, onBack }: { period:Filte
         ):(
           <>
           <div style={{overflowX:'auto'}}>
-            <table style={{width:'100%',borderCollapse:'collapse' as const,minWidth:400}}>
+            <table className="m-cards" style={{width:'100%',borderCollapse:'collapse' as const,minWidth:400}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
                   {['التاريخ','المنتج','الكمية','السبب','الموظف','الملاحظة'].map((h,i)=>(
@@ -144,16 +145,16 @@ export default function WasteDetail({ period, from, to, onBack }: { period:Filte
               <tbody>
                 {filtered.map((m,i)=>(
                   <tr key={m.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}>
-                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
-                    <td style={{padding:'11px 16px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td>
-                    <td style={{padding:'11px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:900}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
-                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#fffbeb',color:'#b45309',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #fde68a'}}>
+                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
+                    <td data-label="المنتج" style={{padding:'11px 16px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td>
+                    <td data-label="الكمية" style={{padding:'11px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:900}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
+                    <td data-label="السبب" style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#fffbeb',color:'#b45309',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #fde68a'}}>
 {(m as any).waste_reason||'—'}
 </span></td>
-                    <td style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'#f0fdfa',color:'#029FA2',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid #99f6e4'}}>
+                    <td data-label="الموظف" style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'var(--storely-background)',color:'#203640',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid var(--storely-border)'}}>
 {(m.profiles as any)?.full_name||(m.staff_members as any)?.name||(m.note?.match(/بواسطة[^:]*:\s*(.+)/)?.[1])||'—'}
 </span></td>
-                    <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text4}}>
+                    <td data-label="الملاحظة" style={{padding:'11px 16px',fontSize:font.xs,color:colors.text4}}>
                       {m.note?.replace(/هدر: .+/, '').trim() || m.note || '—'}
                     </td>
                   </tr>

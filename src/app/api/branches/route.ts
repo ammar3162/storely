@@ -68,7 +68,7 @@ export async function POST(req: Request) {
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
+    if (access.role !== 'owner') return NextResponse.json({ error: 'هذه الصلاحية للمالك فقط' }, { status: 403 })
 
     const db = sb()
     const [max, active] = await Promise.all([maxBranchesFor(db, org_id), activeCount(db, org_id)])
@@ -111,7 +111,7 @@ export async function PATCH(req: Request) {
       const acc = Number(body.accuracy_m)
       update.location_accuracy_m = Number.isFinite(acc) && acc > 0 ? Math.min(Math.round(acc), 300) : null
     } else {
-      if (access.role !== 'owner') return NextResponse.json({ error: 'هذي الصلاحية للمالك فقط' }, { status: 403 })
+      if (access.role !== 'owner') return NextResponse.json({ error: 'هذه الصلاحية للمالك فقط' }, { status: 403 })
 
       if ('name' in body) {
         const name = String(body.name || '').trim()

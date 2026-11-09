@@ -8,9 +8,9 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 async function guard(req: Request, orgId: unknown) {
   const db = sb()
   const me = await currentAccountant(db, req)
-  if (!me) return { error: NextResponse.json({ error: 'سجّل دخولك' }, { status: 401 }) }
+  if (!me) return { error: NextResponse.json({ error: 'سجّل الدخول' }, { status: 401 }) }
   const access = await accessFor(db, me.id, String(orgId || ''))
-  if (!access) return { error: NextResponse.json({ error: 'ما عندك صلاحية على هالمنشأة' }, { status: 403 }) }
+  if (!access) return { error: NextResponse.json({ error: 'ليست لديك صلاحية على هذه المنشأة' }, { status: 403 }) }
   return { db, me, access }
 }
 
@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     if (searchParams.get('all') === '1') {
       const db = sb()
       const me = await currentAccountant(db, req)
-      if (!me) return NextResponse.json({ error: 'سجّل دخولك' }, { status: 401 })
+      if (!me) return NextResponse.json({ error: 'سجّل الدخول' }, { status: 401 })
       const months = closedMonths(6)
       const { data: acc } = await db.from('accountant_access').select('org_id,branch_id,expires_on,organizations(name,logo_url)').eq('accountant_id', me.id).eq('status', 'active')
       const orgs = ((acc || []) as any[]).filter(a => !accessExpired(a.expires_on))
@@ -46,9 +46,9 @@ export async function POST(req: Request) {
     const b = await req.json()
     const g = await guard(req, b.org_id); if (g.error) return g.error
     // الشهر يقفل المنشأة كاملة — فلازم يكون إذن المحاسب على المنشأة كاملة، مو فرع واحد
-    if (g.access.branch_id) return NextResponse.json({ error: 'إقفال الشهر لمحاسب المنشأة كاملة — إذنك على فرع واحد' }, { status: 403 })
+    if (g.access.branch_id) return NextResponse.json({ error: 'إقفال الشهر من صلاحية محاسب المنشأة كاملة — إذنك على فرع واحد' }, { status: 403 })
     const month = String(b.month || '')
-    if (!isClosedMonth(month)) return NextResponse.json({ error: 'تقدر تقفل الشهور اللي خلصت بس' }, { status: 400 })
+    if (!isClosedMonth(month)) return NextResponse.json({ error: 'يمكنك إقفال الأشهر المنتهية فقط' }, { status: 400 })
     if (!['lock', 'unlock'].includes(b.action)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const by = g.me.name || g.me.email, label = monthName(month), org = g.access.org_id
     if (b.action === 'lock') {
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
       g.db.from('period_lock_log').insert({ org_id: org, month, action: b.action, by_name: by } as any),
       g.db.from('notifications').insert({ org_id: org, type: 'info', read: false,
         title: b.action === 'lock' ? `🔒 محاسبك أقفل شهر ${label}` : `🔓 محاسبك فتح شهر ${label}`,
-        message: b.action === 'lock' ? `${by} راجع شهر ${label} وأقفله — ما ينقدر يتعدّل فيه مشتريات ولا إقفالات كاشير.` : `${by} فتح شهر ${label} — صار ينقدر يتعدّل.` } as any),
+        message: b.action === 'lock' ? `${by} راجع شهر ${label} وأقفله — لا يمكن تعديل المشتريات أو إقفالات الكاشير فيه.` : `${by} فتح شهر ${label} — أصبح قابلاً للتعديل.` } as any),
     ])
     return NextResponse.json({ success: true })
   } catch {

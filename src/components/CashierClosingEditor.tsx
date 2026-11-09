@@ -53,14 +53,14 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
   async function save() {
     setErr('')
     if (!calc) return setErr('تأكد من المبالغ')
-    if (calc.status === 'deficit' && f.deficit_reason.trim().length < 3) return setErr('فيه عجز — اكتب سببه')
+    if (calc.status === 'deficit' && f.deficit_reason.trim().length < 3) return setErr('يوجد عجز — اكتب سببه')
     if (!byAccountant && !password) return setErr('اكتب كلمة مرور حسابك')
     setBusy(true)
     const payload = { ...f, purchases: f.purchases.filter(p => Number(p.amount) > 0), delivery: deliveryList }
     const j = byAccountant ? await submit!(payload) : await api.patch('/api/cashier-closing', { org_id: orgId, id: closing.id, password, ...payload })
     setBusy(false)
     if (!j.success) return setErr(j.error || 'تعذر حفظ التعديل')
-    toast(byAccountant ? 'تم التعديل — يطلع للمنشأة «معدّل من المحاسب»' : '✅ تم تعديل الإقفال — التقارير والأرباح وتقرير المحاسب تحدّثت')
+    toast(byAccountant ? 'تم التعديل — يظهر للمنشأة «معدّل من المحاسب»' : 'تم تعديل الإقفال — وتم تحديث التقارير والأرباح وتقرير المحاسب')
     onSaved(j.closing)
   }
 
@@ -74,7 +74,7 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
           <span style={{ width: 36, height: 36, borderRadius: 10, background: colors.primaryLight, color: colors.primary, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Pencil size={17} /></span>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 16, fontWeight: 800 }}>تعديل إقفال الكاشير</div>
-            <div style={{ fontSize: 12, color: colors.text3 }}>{closing.staff_name}{byAccountant ? ` · ${closing.closing_date} · يوصل المنشأة إشعار بالتعديل` : ' · التعديل يتسجل في سجل التعديلات'}</div>
+            <div style={{ fontSize: 12, color: colors.text3 }}>{closing.staff_name}{byAccountant ? ` · ${closing.closing_date} · يصل إلى المنشأة إشعار بالتعديل` : ' · يُسجَّل التعديل في سجل التعديلات'}</div>
           </div>
           <button onClick={() => !busy && onClose()} aria-label="إغلاق" style={{ background: colors.bg, border: 'none', borderRadius: 9, padding: 7, cursor: 'pointer', display: 'inline-flex' }}><X size={18} /></button>
         </div>
@@ -98,7 +98,7 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
           </div>
           {apps.length > 0 && (
             <div>
-              <label style={lbl}>تطبيقات التوصيل (اللي ما فيها مبلغ اتركها فاضية)</label>
+              <label style={lbl}>تطبيقات التوصيل (اترك الحقل فارغاً إذا لم يكن هناك مبلغ)</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 8 }}>
                 {apps.map(name => (
                   <div key={name}><div style={{ fontSize: 11, color: colors.text4, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
@@ -139,7 +139,7 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
             </div>
           )}
           {calc && calc.status !== 'deficit' && closing.status === 'deficit' && closing.deficit_decision === 'approved' && (
-            <div style={{ fontSize: 12, color: colors.info, background: colors.infoLight, borderRadius: 10, padding: '8px 10px' }}>العجز راح — الخصم اللي انخصم من راتب الكاشير بينشال.</div>
+            <div style={{ fontSize: 12, color: colors.info, background: colors.infoLight, borderRadius: 10, padding: '8px 10px' }}>زال العجز — وسيُلغى الخصم المسجّل على راتب الكاشير.</div>
           )}
 
           {!byAccountant && <PasswordBox value={password} onChange={setPassword} onEnter={save} />}
@@ -148,7 +148,7 @@ export default function CashierClosingEditor({ orgId, closing, curr, onClose, on
             <button onClick={() => !busy && onClose()} style={{ flex: 1, padding: 12, background: colors.bg, color: colors.text3, border: 'none', borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>إلغاء</button>
             <button onClick={save} disabled={busy || (!byAccountant && !password)} style={{ flex: 2, padding: 12, background: busy || (!byAccountant && !password) ? colors.border2 : colors.primary, color: '#fff', border: 'none', borderRadius: 11, fontSize: 14, fontWeight: 800, cursor: busy || (!byAccountant && !password) ? 'default' : 'pointer', fontFamily: font.family }}>{busy ? 'جاري الحفظ...' : 'حفظ التعديل'}</button>
           </div>
-          <div style={{ fontSize: 11, color: colors.text4, textAlign: 'center' }}>{curr} · الإقفالات في شهر مقفل من المحاسب أو في الأرباح ما تتعدّل</div>
+          <div style={{ fontSize: 11, color: colors.text4, textAlign: 'center' }}>{curr} · الإقفالات في شهر مقفل من المحاسب أو في الأرباح لا يمكن تعديلها</div>
         </div>
       </div>
     </div>

@@ -1,0 +1,35 @@
+'use client'
+import { ArrowLeft } from 'lucide-react'
+import { STARTING_PRICE as CUSTOM_MIN_MONTHLY, CUSTOM_MODULES } from '@/lib/planPricing'
+import type { LandingState } from './useLanding'
+
+// شريط الأسعار في الرئيسية — التفاصيل في صفحة /pricing
+export default function PricingTeaser({ m }: { m: LandingState }) {
+  const { lang } = m
+  const ar = lang === 'ar'
+  return (
+    <section id="pricing" className="lp-section" style={{paddingTop:24,paddingBottom:24}}>
+      <div className="lp-wrap">
+        <div className="lp-pt rv">
+          <div>
+            <div className="lp-pt-k">{ar ? 'الأسعار' : 'Pricing'}</div>
+            <div className="lp-pt-h">{ar ? <>ادفع مقابل المزايا التي تحتاجها، ابتداءً من <b>{CUSTOM_MIN_MONTHLY} ⃁</b> شهرياً</> : <>Pay only for the features you need, from <b>{CUSTOM_MIN_MONTHLY} SAR</b> a month</>}</div>
+            <div className="lp-pt-s">{ar
+              ? `لكل ميزة سعرها لكل فرع: إقفال الكاشير ${CUSTOM_MODULES.cashier_closing.first} ⃁، والمخزون ${CUSTOM_MODULES.mod_inventory.first} ⃁، والحضور والرواتب ${CUSTOM_MODULES.hr_full.first} ⃁. جرّب كل شيء مجاناً لمدة 14 يوماً.`
+              : `Each feature has one price per branch: cashier closing ${CUSTOM_MODULES.cashier_closing.first} SAR, inventory ${CUSTOM_MODULES.mod_inventory.first} SAR, attendance & payroll ${CUSTOM_MODULES.hr_full.first} SAR. Try everything free for 14 days.`}</div>
+          </div>
+          <a className="lp-btn lp-btn-dark lp-btn-lg" href="/pricing">{ar ? 'عرض الأسعار' : 'See pricing'} <ArrowLeft size={18}/></a>
+        </div>
+      </div>
+      <style>{`
+.lp-pt{display:flex;align-items:center;justify-content:space-between;gap:24px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:28px 32px}
+.lp-pt a.lp-btn-dark{color:#fff;white-space:nowrap}
+.lp-pt-k{font-size:13px;font-weight:600;color:var(--teal2);margin-bottom:6px}
+.lp-pt-h{font-size:24px;font-weight:700;color:var(--ink)}
+.lp-pt-h b{color:var(--teal2)}
+.lp-pt-s{font-size:15px;color:var(--ink2);margin-top:6px;line-height:1.6;max-width:560px}
+@media(max-width:720px){.lp-pt{flex-direction:column;align-items:stretch;padding:22px 20px}.lp-pt-h{font-size:20px}}
+`}</style>
+    </section>
+  )
+}

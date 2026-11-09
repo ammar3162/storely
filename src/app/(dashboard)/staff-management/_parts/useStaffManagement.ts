@@ -8,6 +8,7 @@ import { currencySymbol } from '@/lib/currencySymbol'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { cache } from '@/lib/cache'
 import { generatePin } from './helpers'
+import { permAvailable } from '@/lib/managerPerms'
 
 /** كل حالة ودوال صفحة الموظفين — منقولة كما هي من page.tsx */
 export function useStaffManagement() {
@@ -37,7 +38,10 @@ export function useStaffManagement() {
   const [newBranch, setNewBranch]   = useState(typeof window!=='undefined' ? (sessionStorage.getItem('s_branch_id')||'') : '')
   const [newRole, setNewRole]       = useState<'staff'|'cashier'>('staff')
   // الكاشير متاح بالشاملة/المتقدمة أو بإضافة «إقفال الكاشير» — من نفس مصدر الخادم (/api/me)
-  const [hasCashier, setHasCashier] = useState(orgPlan!=='basic')
+  const [hasCashier, setHasCashier] = useState(['ops','full','pro','advanced'].includes(orgPlan))
+  // «ابنِ باقتك»: ميزات المنشأة — نخفي صلاحيات الصرف/المخزون/المشتريات لو ما هي باشتراكه
+  const [orgFeat, setOrgFeat] = useState<Record<string, boolean | undefined>>({})
+  const permOk = (key: string) => permAvailable(key, orgFeat)
   const [newSendClosingWA, setNewSendClosingWA] = useState(true)
   const [revealedPin, setRevealedPin] = useState<{name:string,phone:string,pin:string}|null>(null)
   const [visiblePins, setVisiblePins] = useState<Record<string,boolean>>({})
@@ -54,7 +58,7 @@ export function useStaffManagement() {
     setSavingStaffPhone(false)
     if (!r.success) { toast(r.error || 'فشل التحديث', 'error'); return }
     setEditingStaffPhoneId(null)
-    toast('✅ تم تحديث رقم الموظف')
+    toast('تم تحديث رقم الموظف')
     loadStaff(orgId)
   }
   const [visible, setVisible]       = useState(false)
@@ -93,7 +97,7 @@ export function useStaffManagement() {
       oid = await getOrgId(); if(!oid) return
     }
     setOrgId(oid)
-    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setIsOwnerSM(me?.role==='owner'); if(me?.org?.features) setHasCashier(!!me.org.features.cashier) })
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setIsOwnerSM(me?.role==='owner'); if(me?.org?.features){ setHasCashier(!!me.org.features.cashier); setOrgFeat(me.org.features) } })
     const settingsRes = await api.get('/api/org-settings', { org_id: oid })
     const orgLimits = settingsRes.settings
     const h = Number((orgLimits as any)?.business_day_start_hour ?? 4)
@@ -128,7 +132,7 @@ export function useStaffManagement() {
     const bid = sessionStorage.getItem('s_branch_id')
     const bname = sessionStorage.getItem('s_branch_name') || 'الفرع الحالي'
     if (!bid) { toast('اختر الفرع من القائمة فوق أول','warning'); return }
-    if(!(await confirmDialog({ title:`نقل ${s.name}`, message:`ينتقل ${s.name} إلى «${bname}» ويبقى موقوف — تقدر تفعّله بعدها من زر «تفعيل».`, confirmText:'نقل', type:'warning' }))) return
+    if(!(await confirmDialog({ title:`نقل ${s.name}`, message:`ينتقل ${s.name} إلى «${bname}» ويبقى موقوفاً — يمكنك تفعيله بعد ذلك من زر «تفعيل».`, confirmText:'نقل', type:'warning' }))) return
     const r = await api.patch('/api/staff-members', { org_id: orgId, id: s.id, branch_id: bid })
     if (!r.success) { toast(r.error || 'تعذر النقل','error'); return }
     toast(`تم نقل ${s.name} إلى ${bname}`); loadStaff(orgId)
@@ -180,7 +184,7 @@ export function useStaffManagement() {
     const r = await api.post('/api/staff-members/assign', { org_id: orgId, staff_id: staffId, add_product_id: productId })
     setAssigning(false)
     if(!r.success){ toast(r.error || 'فشل التخصيص — حاول مرة أخرى','error'); return }
-    toast(`✅ تم تخصيص المنتج لـ${target.name}`)
+    toast(`تم تخصيص المنتج لـ${target.name}`)
     setPickerFor(null)
     loadStaff(orgId)
   }
@@ -235,7 +239,7 @@ export function useStaffManagement() {
   async function savePermissions(id:string) {
     const r = await api.patch('/api/staff-members', { org_id: orgId, id, permissions: editPerms })
     if (!r.success) { toast(r.error || 'فشل الحفظ', 'error'); return }
-    toast('✅ تم حفظ الصلاحيات')
+    toast('تم حفظ الصلاحيات')
     setEditingPerms(null)
     loadStaff(orgId)
   }
@@ -245,7 +249,7 @@ export function useStaffManagement() {
     setSavingName(true)
     const r = await api.patch('/api/staff-members', { org_id: orgId, id: editingNameId, name: editNameValue.trim() })
     if (!r.success) { toast(r.error || 'فشل التحديث', 'error'); setSavingName(false); return }
-    toast('✅ تم تحديث اسم الموظف')
+    toast('تم تحديث اسم الموظف')
     setEditingNameId(null)
     setSavingName(false)
     loadStaff(orgId)
@@ -256,7 +260,7 @@ export function useStaffManagement() {
     const r = await api.patch('/api/org-settings', {org_id:orgId, business_day_start_hour:dayStartHour})
     if (!r.success) { toast(r.error || 'فشل الحفظ', 'error'); setSavingHours(false); return }
     setDayStartLoaded(dayStartHour)
-    toast('✅ تم حفظ بداية يوم العمل')
+    toast('تم حفظ بداية يوم العمل')
     setSavingHours(false)
     setShowHoursModal(false)
   }
@@ -285,7 +289,7 @@ export function useStaffManagement() {
     const r = await api.patch('/api/staff-members', { org_id: orgId, id, send_closing_whatsapp: !current })
     if (!r.success) { toast(r.error || 'حدث خطأ', 'error'); return }
     setStaff(prev=>prev.map((s:any)=>s.id===id?{...s,send_closing_whatsapp:!current}:s))
-    toast(!current?'✅ راح توصل تفاصيل الإقفال كاملة عبر واتساب':'✅ راح يوصل بس إشعار بسيط بدون تفاصيل')
+    toast(!current?'ستصل تفاصيل الإقفال كاملة عبر واتساب':'سيصل إشعار مختصر فقط دون تفاصيل')
   }
 
   // أيقونة العين: الرمز المشفّر ينطلب من الخادم وقت الضغط، ويختفي تلقائياً بعد 20 ثانية
@@ -293,7 +297,7 @@ export function useStaffManagement() {
     if (visiblePins[s.id]) { setVisiblePins(v=>({...v,[s.id]:false})); return }
     if (String(s.pin||'').startsWith('$2') && !revealedPins[s.id]) {
       const r = await api.post('/api/staff-members/reveal-pin', { org_id: orgId, id: s.id })
-      if (!r.success) { toast(r.error || 'ما نقدر نعرض هذا الرمز — ولّد رمز جديد', 'error'); return }
+      if (!r.success) { toast(r.error || 'لا يمكن عرض هذا الرمز — أنشئ رمزاً جديداً', 'error'); return }
       setRevealedPins(v=>({...v,[s.id]:r.pin}))
     }
     setVisiblePins(v=>({...v,[s.id]:true}))
@@ -313,7 +317,7 @@ export function useStaffManagement() {
   const activeCount   = visibleStaff.filter(s=>s.is_active).length
   const inactiveCount = visibleStaff.filter(s=>!s.is_active).length
 
-  return { showUnassigned, setShowUnassigned, pickerFor, setPickerFor, assigning, setAssigning, staff, setStaff, branches, setBranches, isOwnerSM, setIsOwnerSM, moveFor, setMoveFor, moveTo, setMoveTo, moving, setMoving, orgId, setOrgId, curr, setCurr, orgNotifyClosingWA, setOrgNotifyClosingWA, loading, setLoading, showAdd, setShowAdd, newPermissions, setNewPermissions, editingPerms, setEditingPerms, editingRole, setEditingRole, reportMode, setReportMode, editPerms, setEditPerms, newName, setNewName, newPhone, setNewPhone, staffCountry, setStaffCountry, newBranch, setNewBranch, newRole, setNewRole, hasCashier, setHasCashier, newSendClosingWA, setNewSendClosingWA, revealedPin, setRevealedPin, visiblePins, setVisiblePins, revealedPins, setRevealedPins, expandedId, setExpandedId, editingStaffPhoneId, setEditingStaffPhoneId, editStaffPhoneVal, setEditStaffPhoneVal, savingStaffPhone, setSavingStaffPhone, visible, setVisible, maxStaff, setMaxStaff, products, setProducts, assigningId, setAssigningId, editingNameId, setEditingNameId, editNameValue, setEditNameValue, savingName, setSavingName, reportStaff, setReportStaff, staffReport, setStaffReport, staffClosings, setStaffClosings, reportLoading, setReportLoading, selectedProds, setSelectedProds, assignSearch, setAssignSearch, sharedProducts, setSharedProducts, dayStartHour, setDayStartHour, dayStartLoaded, setDayStartLoaded, showHoursModal, setShowHoursModal, savingHours, setSavingHours, orphans, setOrphans, orgPlan, visibleStaff, activeCount, inactiveCount, saveStaffPhone, init, loadStaff, moveOrphanHere, loadProducts, openReport, openAssign, saveAssigned, quickAssignProduct, confirmMove, loadBranches, addStaff, savePermissions, saveName, saveShopHours, toggleActive, deleteStaff, toggleSendClosingWA, togglePin, regeneratePin }
+  return { orgFeat, permOk, showUnassigned, setShowUnassigned, pickerFor, setPickerFor, assigning, setAssigning, staff, setStaff, branches, setBranches, isOwnerSM, setIsOwnerSM, moveFor, setMoveFor, moveTo, setMoveTo, moving, setMoving, orgId, setOrgId, curr, setCurr, orgNotifyClosingWA, setOrgNotifyClosingWA, loading, setLoading, showAdd, setShowAdd, newPermissions, setNewPermissions, editingPerms, setEditingPerms, editingRole, setEditingRole, reportMode, setReportMode, editPerms, setEditPerms, newName, setNewName, newPhone, setNewPhone, staffCountry, setStaffCountry, newBranch, setNewBranch, newRole, setNewRole, hasCashier, setHasCashier, newSendClosingWA, setNewSendClosingWA, revealedPin, setRevealedPin, visiblePins, setVisiblePins, revealedPins, setRevealedPins, expandedId, setExpandedId, editingStaffPhoneId, setEditingStaffPhoneId, editStaffPhoneVal, setEditStaffPhoneVal, savingStaffPhone, setSavingStaffPhone, visible, setVisible, maxStaff, setMaxStaff, products, setProducts, assigningId, setAssigningId, editingNameId, setEditingNameId, editNameValue, setEditNameValue, savingName, setSavingName, reportStaff, setReportStaff, staffReport, setStaffReport, staffClosings, setStaffClosings, reportLoading, setReportLoading, selectedProds, setSelectedProds, assignSearch, setAssignSearch, sharedProducts, setSharedProducts, dayStartHour, setDayStartHour, dayStartLoaded, setDayStartLoaded, showHoursModal, setShowHoursModal, savingHours, setSavingHours, orphans, setOrphans, orgPlan, visibleStaff, activeCount, inactiveCount, saveStaffPhone, init, loadStaff, moveOrphanHere, loadProducts, openReport, openAssign, saveAssigned, quickAssignProduct, confirmMove, loadBranches, addStaff, savePermissions, saveName, saveShopHours, toggleActive, deleteStaff, toggleSendClosingWA, togglePin, regeneratePin }
 }
 
 export type StaffPage = ReturnType<typeof useStaffManagement>

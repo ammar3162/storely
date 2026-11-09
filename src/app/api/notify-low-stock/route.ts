@@ -18,7 +18,7 @@ async function sendForOrg(supabase: any, org: any) {
     supabase.from('branches').select('id,name,whatsapp_number').eq('org_id', org.id).eq('is_active', true).order('created_at'),
     supabase.from('profiles').select('branch_id,report_whatsapp,whatsapp_consent,permissions,status').eq('org_id', org.id).eq('role', 'manager').not('report_whatsapp', 'is', null),
   ])
-  if (!(branches || []).length) return { sent: 0, message: 'ما فيه فروع' }
+  if (!(branches || []).length) return { sent: 0, message: 'لا توجد فروع' }
 
   const features = await orgFeatures(supabase, org.id)
   const reports = await buildBranchReports(supabase, org.id, branches as any[], features)
@@ -51,7 +51,7 @@ async function sendForOrg(supabase: any, org: any) {
       add(m.report_whatsapp, mt ? reportMessage(org.name, [{ name: r.branchName, text: mt }], multi) : null)
     }
   }
-  if (!outbox.size) return { sent: 0, message: 'ما فيه شي يستاهل يتبلّغ اليوم' }
+  if (!outbox.size) return { sent: 0, message: 'لا يوجد ما يستدعي التنبيه اليوم' }
 
   let totalSent = 0
   const details: any[] = []

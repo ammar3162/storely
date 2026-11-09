@@ -1,7 +1,7 @@
 'use client'
-import PageIcon from '@/components/PageIcon'
-import { font, pageTitle, pageSub, btnPrimary, btnSecondary } from '@/lib/ds'
-import { Truck } from 'lucide-react'
+import { font } from '@/lib/ds'
+import { Truck, BarChart3, Plus } from 'lucide-react'
+import { StorelyButton, StorelyEmptyState, StorelyPageHeader, StorelyStatusBadge } from '@/components/ui'
 import { ListSkeleton } from '@/components/PageSkeleton'
 import { useSuppliersPage } from './_parts/useSuppliersPage'
 import SupplierCard from './_parts/SupplierCard'
@@ -23,21 +23,18 @@ export default function SuppliersPage() {
     <div style={{ fontFamily:font.family, direction:'rtl' }}>
       <style>{`@media(max-width:640px){.add-grid{grid-template-columns:1fr!important}}`}</style>
       
-      <div style={{ marginBottom:22, display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-        <div>
-          <h1 style={pageTitle}><PageIcon/>الموردين</h1>
-          <p style={pageSub}>اربط منتجاتك بموردين وحدد توقيت الإشعار لكل مورد</p>
-        </div>
-        <div style={{display:'flex',gap:8}}>
+      <StorelyPageHeader
+        title="الموردون"
+        description="اربط منتجاتك بالموردين، وحدد توقيت إشعار الطلب لكل مورد"
+        actions={<>
           {priceComparisons.length>0&&(
-            <button onClick={()=>setShowPriceComparison(true)} style={{ ...btnSecondary, padding:'10px 18px', fontSize:font.sm, display:'flex', alignItems:'center', gap:6 }}>
-              📊 مقارنة الأسعار
-              <span style={{background:'#dc2626',color:'white',fontSize:10,fontWeight:800,padding:'1px 6px',borderRadius:99}}>{priceComparisons.length}</span>
-            </button>
+            <StorelyButton variant="secondary" icon={<BarChart3 size={16}/>} onClick={()=>setShowPriceComparison(true)}>
+              مقارنة الأسعار <StorelyStatusBadge status="danger">{priceComparisons.length}</StorelyStatusBadge>
+            </StorelyButton>
           )}
-          <button onClick={()=>setShowAdd(true)} style={{ ...btnPrimary, padding:'10px 18px', fontSize:font.sm }}>+ مورد جديد</button>
-        </div>
-      </div>
+          <StorelyButton variant="primary" icon={<Plus size={16}/>} onClick={()=>setShowAdd(true)}>مورد جديد</StorelyButton>
+        </>}
+      />
 
       <SupplierStats m={m} unlinkedProducts={unlinkedProducts}/>
 
@@ -49,11 +46,8 @@ export default function SuppliersPage() {
 
       {/* قائمة الموردين */}
       {suppliers.length === 0 ? (
-        <div style={{ background:'white', border:'1.5px solid #e2e8f0', borderRadius:16, padding:48, textAlign:'center' }}>
-          <div style={{ display:'flex', justifyContent:'center', marginBottom:12 }}><Truck size={44} color="#94a3b8" strokeWidth={1.5}/></div>
-          <div style={{ fontSize:15, fontWeight:700, color:'#475569', marginBottom:6 }}>لا يوجد موردين بعد</div>
-          <div style={{ fontSize:13, color:'#94a3b8' }}>أضف أول مورد وابدأ بتتبع طلبات التوريد تلقائياً</div>
-        </div>
+        <StorelyEmptyState icon={<Truck size={20}/>} title="لا يوجد موردون بعد" description="أضف أول مورد وابدأ بتتبع طلبات التوريد تلقائياً"
+          action={<StorelyButton variant="primary" icon={<Plus size={16}/>} onClick={()=>setShowAdd(true)}>مورد جديد</StorelyButton>} />
       ) : (
         <div style={{ display:'flex', flexDirection:'column' as const, gap:12 }}>
           {suppliers.map(s => (

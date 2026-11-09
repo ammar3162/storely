@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { branchFeatureDenied } from '@/lib/featureRoutes'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -27,7 +28,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const { org_id, counts } = await req.json()
-    if (!org_id || !Array.isArray(counts) || !counts.length) return NextResponse.json({ error: 'ما فيه أصناف للجرد' }, { status: 400 })
+    if (!org_id || !Array.isArray(counts) || !counts.length) return NextResponse.json({ error: 'لا توجد أصناف للجرد' }, { status: 400 })
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
@@ -42,6 +43,10 @@ export async function POST(req: Request) {
     if ((prods || []).length !== clean.size) return NextResponse.json({ error: 'صنف غير موجود' }, { status: 404 })
     const mine = enforcedBranchId(access)
     if (mine && (prods as any[]).some(p => p.branch_id !== mine)) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
+    for (const b of new Set((prods as any[]).map(p => p.branch_id as string | null))) {
+      const denied = await branchFeatureDenied(org_id, ['inventory'], b, db)
+      if (denied) return NextResponse.json({ error: denied }, { status: 403 })
+    }
 
     const { data: me } = await db.from('profiles').select('full_name').eq('id', access.userId).maybeSingle()
     const now = new Date().toISOString()
@@ -58,7 +63,7 @@ export async function POST(req: Request) {
     }))
     if (adjustments.length) {
       const { error: mErr } = await db.from('stock_movements').insert(adjustments as any)
-      if (mErr) return NextResponse.json({ error: 'انحفظ الجرد لكن فشلت تسوية الرصيد' }, { status: 500 })
+      if (mErr) return NextResponse.json({ error: 'تم حفظ الجرد لكن فشلت تسوية الرصيد' }, { status: 500 })
     }
     return NextResponse.json({ success: true, counted: rows.length, adjusted: adjustments.length })
   } catch {

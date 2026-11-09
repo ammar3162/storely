@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Download, Search, X } from 'lucide-react'
-import { A, Btn, Card, Empty, Field, Loading, Notice, PageHeader, Table, adminFetch, fmtDate, inputStyle, td, useAdmin } from '../_admin/kit'
+import { Download, FileCheck } from 'lucide-react'
+import { A, Avatar, Badge, Btn, Card, Empty, Field, Loading, NoAccess, Notice, PageHeader, SearchBox, Stack, Table, Toolbar, adminFetch, fmtDate, inputStyle, td, useAdmin } from '../_admin/kit'
 
 export default function ConsentLogsPage() {
   const { can } = useAdmin()
@@ -27,7 +27,7 @@ export default function ConsentLogsPage() {
     setVersionSaving(true); setVersionMsg(null)
     const d = await adminFetch('/api/terms-version', { method: 'POST', body: { version: newVersion.trim() } })
     if (!d.ok) setVersionMsg({ ok: false, t: d.error || 'تعذّر التحديث' })
-    else { setCurrentVersion(d.version); setVersionMsg({ ok: true, t: 'تم التحديث — كل المالكين بيشوفون نافذة الموافقة بأول دخول لهم' }) }
+    else { setCurrentVersion(d.version); setVersionMsg({ ok: true, t: 'تم التحديث، وستظهر نافذة الموافقة لجميع المالكين عند أول دخول لهم' }) }
     setVersionSaving(false)
   }
 
@@ -51,19 +51,19 @@ export default function ConsentLogsPage() {
     a.click(); URL.revokeObjectURL(url)
   }
 
-  if (!allowed) return <Card><Empty title="ما عندك صلاحية على هالصفحة" /></Card>
+  if (!allowed) return <NoAccess />
   const versionUnchanged = versionSaving || !newVersion.trim() || newVersion === currentVersion
 
   return (
     <>
-      <PageHeader title="سجلات الموافقة" subtitle="توثيق قانوني لموافقة كل عميل على الشروط: الوقت، نسخة الشروط، IP، الجهاز"
+      <PageHeader title="سجلات الموافقة" subtitle="توثيق قانوني لموافقة كل عميل على الشروط: الوقت ونسخة الشروط وعنوان IP والجهاز"
         actions={<Btn onClick={exportCSV} disabled={logs.length === 0}><Download size={14} /> تصدير CSV</Btn>} />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <Stack>
         <Card title="نسخة الشروط" subtitle={`الحالية: ${currentVersion || '...'}`}>
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 220 }}>
-              <Field label="رقم النسخة الجديد" hint="تحديث النسخة يطلب من كل المالكين الموافقة من جديد بأول دخول — بعد نشر التعديل في صفحة /terms">
+              <Field label="رقم النسخة الجديد" hint="تحديث النسخة يطلب من جميع المالكين الموافقة من جديد عند أول دخول، فحدّثها بعد نشر التعديل في صفحة /terms">
                 <input value={newVersion} onChange={e => setNewVersion(e.target.value)} placeholder="مثلاً 2026-11" style={inputStyle} />
               </Field>
             </div>
@@ -72,33 +72,29 @@ export default function ConsentLogsPage() {
           {versionMsg && <div style={{ marginTop: 10 }}><Notice tone={versionMsg.ok ? 'primary' : 'danger'}>{versionMsg.t}</Notice></div>}
         </Card>
 
-        <form onSubmit={e => { e.preventDefault(); load(search) }} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="ابحث بالاسم، الجوال، أو اسم المنشأة" style={{ ...inputStyle, flex: 1, minWidth: 220 }} />
-          <Btn kind="primary" type="submit" loading={loading}><Search size={14} /> بحث</Btn>
-          {search && <Btn onClick={() => { setSearch(''); load('') }}><X size={14} /> مسح</Btn>}
-        </form>
-
         {error && <Notice tone="danger">{error}</Notice>}
 
-        {loading ? <Loading /> : (
-          <Card pad={0}>
-            {logs.length === 0 ? <Empty title={search ? 'ما فيه نتائج مطابقة' : 'ما فيه سجلات موافقة بعد'} /> : (
+        <Card pad={0} title="سجل الموافقات" subtitle={loading ? undefined : `${logs.length} موافقة`}>
+            <Toolbar>
+              <SearchBox value={search} onChange={setSearch} onSubmit={() => load(search)} placeholder="ابحث بالاسم أو الجوال أو اسم المنشأة" />
+              <Btn kind="primary" loading={loading} onClick={() => load(search)}>بحث</Btn>
+            </Toolbar>
+            {loading ? <Loading /> : logs.length === 0 ? <Empty icon={FileCheck} title={search ? 'لا توجد نتائج مطابقة' : 'لا توجد سجلات موافقة بعد'} /> : (
               <Table head={['التاريخ والوقت', 'المنشأة', 'الاسم', 'الجوال', 'نسخة الشروط', 'IP']}>
                 {logs.map(l => (
                   <tr key={l.id}>
                     <td style={{ ...td, color: A.text2, whiteSpace: 'nowrap' }}>{fmtDate(l.accepted_at, true)}</td>
-                    <td style={{ ...td, fontWeight: 700 }}>{l.org_name}</td>
+                    <td style={td}><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Avatar name={l.org_name} size={30} /><span style={{ fontWeight: 600 }}>{l.org_name}</span></div></td>
                     <td style={td}>{l.profile_name}</td>
                     <td style={{ ...td, direction: 'ltr', textAlign: 'right' }}>{l.profile_phone}</td>
-                    <td style={td}>{l.terms_version}</td>
+                    <td style={td}><Badge tone={l.terms_version === currentVersion ? 'primary' : 'neutral'}>{l.terms_version}</Badge></td>
                     <td style={{ ...td, color: A.text3, fontSize: 12, direction: 'ltr', textAlign: 'right' }}>{l.ip_address || '—'}</td>
                   </tr>
                 ))}
               </Table>
             )}
-          </Card>
-        )}
-      </div>
+        </Card>
+      </Stack>
     </>
   )
 }

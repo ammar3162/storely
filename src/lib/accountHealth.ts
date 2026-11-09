@@ -55,7 +55,7 @@ export function assessHealth(s: OrgSignals): { status: HealthStatus; reasons: He
   if (dormant) reasons.push({ tone: 'danger', text: login === null ? 'ما دخل النظام أبداً' : `ما دخل من ${login} يوم، وما فيه أي عملية هالأسبوع` })
   else if (s.ops7 === 0 && age >= 3) reasons.push({ tone: 'warning', text: `يدخل بس ما سجّل أي عملية هالأسبوع${op !== null ? ` (آخر عملية ${ago(op)})` : ''}` })
   else if (login !== null && login >= 4) reasons.push({ tone: 'warning', text: `آخر دخول ${ago(login)}` })
-  if (s.products === 0 && age >= 2) reasons.push({ tone: 'warning', text: 'ما أضاف أصناف للمخزون' })
+  if (s.features.inventory && s.products === 0 && age >= 2) reasons.push({ tone: 'warning', text: 'ما أضاف أصناف للمخزون' })
   // الإقفال: نحاسبه بس لو الميزة عنده ويستخدمها أو يدفع عليها
   if (s.features.cashier && (s.usage30.cashier > 0 || s.paidAddons.includes('cashier')) && s.closingDays7 < 5)
     reasons.push({ tone: s.closingDays7 <= 2 ? 'danger' : 'warning', text: s.closingDays7 === 0 ? 'ما سجّل أي إقفال كاشير هالأسبوع' : `إقفال الكاشير: ${s.closingDays7} ${s.closingDays7 === 1 ? 'يوم' : 'أيام'} بس من آخر 7` })
@@ -142,7 +142,8 @@ async function signalsFor(db: SupabaseClient, orgId: string, now: number) {
     attendance7: att7,
     waSent7: waRows.filter(r => r.status === 'sent').length,
     waFailed7: waRows.filter(r => r.status !== 'sent').length,
-    usage30: { cashier: closings30, hr: att30, ai: assistant30 + drafts30, profitability: profitClose + delivery + monthly } as Record<Feature, number>,
+    // المخزون والمشتريات: حركات/فواتير آخر أسبوع (ونحسب وجود أصناف للمخزون)
+    usage30: { inventory: mov7 + (products > 0 ? 1 : 0), purchases: pur7, cashier: closings30, hr: att30, ai: assistant30 + drafts30, profitability: profitClose + delivery + monthly } as Record<Feature, number>,
   }
 }
 

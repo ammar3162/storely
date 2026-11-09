@@ -33,7 +33,7 @@ describe('owner password check', () => {
     let r: any = await verifyOwnerPassword(fakeDb(st), 'o1', 'u1', 'nope')
     expect(r.status).toBe(403); expect(st.owner_pin_failed).toBe(4)
     r = await verifyOwnerPassword(fakeDb(st), 'o1', 'u1', 'nope')
-    expect(r.error).toContain('انقفل'); expect(st.owner_pin_locked_until).toBeTruthy()
+    expect(r.error).toContain('تم القفل'); expect(st.owner_pin_locked_until).toBeTruthy()
     r = await verifyOwnerPassword(fakeDb(st), 'o1', 'u1', 'secret')
     expect(r.status).toBe(429)
   })

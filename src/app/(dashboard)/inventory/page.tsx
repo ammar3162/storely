@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 import { Suspense, lazy } from 'react'
 import { X, AlertTriangle, Package } from 'lucide-react'
 import Pagination from '@/components/pagination'
+import { StorelyButton, StorelyEmptyState, StorelyMetricStrip, type StorelyMetric } from '@/components/ui'
 import { C, STARTER_PRODUCTS } from './_parts/constants'
 import { IV_CSS } from './_parts/styles'
 import { useInventory } from './_parts/useInventory'
@@ -30,8 +31,8 @@ export default function InventoryPage() {
         <div className="sk" style={{height:24,width:100,background:C.border2,borderRadius:6}}/>
         <div className="sk" style={{height:34,width:80,background:C.border,borderRadius:8}}/>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginBottom:14}}>
-        {[1,2,3,4].map(i=><div key={i} className="sk" style={{height:72,borderRadius:10,background:C.border}}/>)}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:1,marginBottom:16,borderRadius:12,overflow:'hidden'}}>
+        {[1,2,3,4].map(i=><div key={i} className="sk" style={{height:96,background:C.border}}/>)}
       </div>
       <div className="sk" style={{height:400,borderRadius:12,background:C.border}}/>
     </div>
@@ -44,7 +45,7 @@ export default function InventoryPage() {
         @keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
         @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
         .u{animation:up .3s ease both}
-        input:focus,select:focus{border-color:${C.primary}!important;outline:none!important;box-shadow:0 0 0 3px ${C.primaryL}!important}
+        input:focus,select:focus{border-color:${C.primary}!important;outline:none!important;box-shadow:0 0 0 3px rgba(32,54,64,.14)!important}
         .chip{padding:5px 12px;border-radius:99px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;border:1px solid;transition:all .15s;font-family:inherit}
         .rh{transition:background .1s}
         .rh:hover{background:#f9f9f8}
@@ -91,15 +92,22 @@ export default function InventoryPage() {
 
       <InventoryFilters m={m}/>
 
+      <StorelyMetricStrip className="mb-4" metrics={([
+        { label: 'إجمالي المنتجات', value: products.length.toLocaleString('en-US'), helper: `${filtered.length.toLocaleString('en-US')} ضمن الفلاتر` },
+        { label: 'منخفض المخزون', value: m.lowCount.toLocaleString('en-US'), tone: m.lowCount ? 'warning' : 'neutral' },
+        { label: 'نافد المخزون', value: products.filter(p=>p.qty===0).length.toLocaleString('en-US'), tone: products.some(p=>p.qty===0) ? 'danger' : 'neutral' },
+        { label: 'إجمالي الكمية', value: m.totalQty.toLocaleString('en-US'), helper: 'وحدة مسجّلة' },
+      ]) as StorelyMetric[]} />
+
       {filtered.length===0 && !search && catFilter==='all' && STARTER_PRODUCTS[businessType] && !templateDismissed ? (
         <StarterProducts m={m}/>
       ) : filtered.length===0?(
-        <div className="u" style={{background:'white',borderRadius:12,padding:'48px 24px',textAlign:'center',border:`1px solid ${C.border}`}}>
-          <div style={{marginBottom:8,display:'flex',justifyContent:'center',color:C.text4}}><Package size={32} strokeWidth={1.5}/></div>
-          <div style={{fontSize:14,fontWeight:600,color:C.text2,marginBottom:4}}>{search||catFilter!=='all'?'لا توجد نتائج':'المخزون فارغ'}</div>
-          <div style={{fontSize:11,color:C.text4,marginBottom:12}}>{search||catFilter!=='all'?'جرب كلمة أو فئة أخرى':'ابدأ بإضافة أول منتج'}</div>
-          {(search||catFilter!=='all')&&<button onClick={()=>{setSearch('');setCatFilter('all');setStatusFilter('all')}} style={{padding:'7px 16px',background:C.bg,color:C.text2,border:`1px solid ${C.border2}`,borderRadius:7,fontSize:11,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إزالة الفلاتر</button>}
-        </div>
+        <StorelyEmptyState
+          icon={<Package size={20}/>}
+          title={search||catFilter!=='all'?'لا توجد نتائج':'المخزون فارغ'}
+          description={search||catFilter!=='all'?'جرّب كلمة أو فئة أخرى':'ابدأ بإضافة أول منتج'}
+          action={(search||catFilter!=='all') ? <StorelyButton variant="secondary" onClick={()=>{setSearch('');setCatFilter('all');setStatusFilter('all')}}>إزالة الفلاتر</StorelyButton> : undefined}
+        />
       ):(
         <>
           <MobileList m={m}/>

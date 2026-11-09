@@ -83,7 +83,7 @@ async function checkStalePendingUsers(supabase: any): Promise<Issue | null> {
 
   if (!count || count === 0) return null
   return {
-    type: 'مستخدمين معلّقين أكثر من أسبوع',
+    type: 'مستخدمون معلّقون منذ أكثر من أسبوع',
     severity: 'warning',
     detail: `${count} مستخدم بانتظار الموافقة منذ أكثر من 7 أيام: ${(data || []).map((u: any) => u.full_name).join('، ')}`,
     count,
@@ -120,7 +120,7 @@ function buildAlertMessage(issues: Issue[]) {
   if (warning.length) {
     msg += `🟡 *تحتاج مراجعة:*\n` + warning.map(i => `• ${i.type}: ${i.detail}`).join('\n') + '\n\n'
   }
-  msg += `🔗 راجع التفاصيل: storely.dev/storely-admin\n_فحص تلقائي ${new Date().toLocaleString('ar-SA', {numberingSystem:'latn', timeZone: 'Asia/Riyadh' })}_`
+  msg += `🔗 راجع التفاصيل: storely.dev/storely-admin\n_فحص تلقائي ${new Date().toLocaleString('ar-SA-u-ca-gregory', {numberingSystem:'latn', timeZone: 'Asia/Riyadh' })}_`
   return msg
 }
 

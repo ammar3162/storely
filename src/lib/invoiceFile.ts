@@ -26,7 +26,7 @@ export type PreparedInvoice = { blob: Blob; type: string; ext: string; ocrType: 
 // يرجّع الملف جاهز أو رسالة خطأ واضحة
 export async function prepareInvoiceFile(file: File): Promise<PreparedInvoice | { error: string }> {
   const type = invoiceType(file)
-  if (!(INVOICE_TYPES as readonly string[]).includes(type)) return { error: 'الملف لازم يكون صورة أو PDF' }
+  if (!(INVOICE_TYPES as readonly string[]).includes(type)) return { error: 'يجب أن يكون الملف صورة أو PDF' }
   if (type === 'application/pdf') {
     if (file.size > INVOICE_MAX_BYTES) return { error: 'ملف الـ PDF أكبر من ٤ ميجا — صوّر الفاتورة بدالها' }
     return { blob: file, type, ext: 'pdf', ocrType: type, isPdf: true }

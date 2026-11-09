@@ -4,28 +4,35 @@ import { useEffect, useState } from 'react'
 import { api } from '@/lib/api-client'
 import { colors, font, radius } from '@/lib/ds'
 import { toast } from '@/components/toast'
-import { PLAN_CAPS, PLAN_PRICING, planKeyOf, type PlanKey } from '@/lib/planPricing'
+import { PLAN_CAPS, PLAN_PRICING, CUSTOM_MODULES, CUSTOM_MODULE_ORDER, planKeyOf, planPriceFor, missingFeatures, isNewPlan, isCustomPlan, type PlanKey } from '@/lib/planPricing'
+import { FEATURE_NAMES } from '@/lib/featurePresets'
 
-const ORDER: PlanKey[] = ['basic', 'pro', 'advanced']
+const NEW_DESC: Record<string, string> = { essential: 'المخزون والموردين والمشتريات والفواتير', ops: 'كل الأساسية + إقفال الكاشير لكل الفروع', full: 'كل المميزات: الكاشير والحضور والرواتب والذكاء' }
 const desc = (k: PlanKey) => {
   const c = PLAN_CAPS[k]
+  if (isNewPlan(k)) return `${NEW_DESC[k] || ''} · ${c.staff} موظفين و${c.suppliers} مورد لكل فرع`
   return `${k === 'basic' ? 'المميزات بالإضافات' : 'كل المميزات'} · ${c.branches === 1 ? 'فرع واحد' : c.branches + ' فروع'} · ${c.staff} موظف · ${c.suppliers} مورد`
 }
 
-export default function PlanUpgrade({ orgId, plan, maxBranches }: { orgId: string; plan: string; maxBranches: number }) {
+export default function PlanUpgrade({ orgId, plan, maxBranches, activeSlugs = [] }: { orgId: string; plan: string; maxBranches: number; activeSlugs?: string[] }) {
   const current = planKeyOf(plan, maxBranches)
   const [pending, setPending] = useState<any>(null)
   const [sending, setSending] = useState<string | null>(null)
 
+  const [switchInfo, setSwitchInfo] = useState<{ show: boolean; chosen: { modules: string[]; outcome: string; applied: boolean } | null } | null>(null)
   const load = () => api.get('/api/plan-requests', { org_id: orgId }).then(j => setPending((j.requests || []).find((r: any) => r.status === 'pending') || null)).catch(() => {})
   useEffect(() => { if (orgId) load() }, [orgId])   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!orgId || isCustomPlan(plan)) return
+    api.get<{ show?: boolean; chosen?: { modules: string[]; outcome: string; applied: boolean } | null }>('/api/pricing-switch', { org_id: orgId }).then(j => { if (j.success) setSwitchInfo({ show: !!j.show, chosen: j.chosen || null }) }).catch(() => {})
+  }, [orgId, plan])
 
   async function request(k: PlanKey) {
     setSending(k)
     const j = await api.post('/api/plan-requests', { org_id: orgId, target_plan: k })
     setSending(null)
-    if (!j.success) { toast(j.error || 'فشل إرسال الطلب', 'error'); return }
-    toast('وصل طلب الترقية — بنفعّلها لك بأقرب وقت')
+    if (!j.success) { toast(j.error || 'تعذّر إرسال الطلب', 'error'); return }
+    toast('وصل طلب الترقية، وسنفعّلها لك في أقرب وقت')
     load()
   }
   async function cancel() {
@@ -33,8 +40,61 @@ export default function PlanUpgrade({ orgId, plan, maxBranches }: { orgId: strin
     if (j.success) setPending(null)
   }
 
-  const higher = ORDER.slice(ORDER.indexOf(current) + 1)
-  if (!higher.length) return null
+  // «اختيار المزايا»: ما فيه ترقية لباقة — يضيف الميزة الناقصة من سوق الإضافات
+  if (isCustomPlan(plan)) {
+    const missing = missingFeatures(activeSlugs)
+    if (!missing.length) return null
+    return (
+      <div className="hide-in-app" style={{ marginTop: 16, display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+        <div style={{ fontSize: font.sm, fontWeight: 700, color: colors.text }}>أضف ميزة</div>
+        {missing.map(slug => {
+          const m = CUSTOM_MODULES[slug]
+          return (
+            <div key={slug} style={{ padding: '12px 14px', borderRadius: radius.md, border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ flex: 1, fontSize: font.sm, fontWeight: 700, color: colors.text }}>{FEATURE_NAMES[slug]?.ar || slug}</div>
+              <div style={{ fontSize: font.sm, color: colors.text2, whiteSpace: 'nowrap' as const }}>{m.first} ريال {m.perBranch ? 'لكل فرع' : 'للمنشأة'}</div>
+              <a href="/addons-market" style={{ padding: '8px 14px', borderRadius: 8, background: colors.primary, color: 'white', fontSize: 12, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' as const }}>أضف</a>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+  // باقة ثابتة (قديمة أو جاهزة): الأسعار الجديدة = اختيار المزايا، ويُطبَّق مع التجديد (lib/pricingSwitch)
+  if (switchInfo) {
+    if (switchInfo.chosen) return (
+      <div className="hide-in-app" style={{ marginTop: 16, padding: '12px 14px', borderRadius: radius.md, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, fontSize: font.sm, color: colors.text, lineHeight: 1.7 }}>
+        {switchInfo.chosen.outcome !== 'switch'
+          ? 'راجعنا اختيارك للمزايا بالأسعار الجديدة، وباقتك الحالية أوفر لك، فتبقى عليها بسعرها الحالي.'
+          : switchInfo.chosen.applied ? 'انتقلت إلى الأسعار الجديدة بالمزايا التي اخترتها.'
+          : <>اخترت مزاياك بالأسعار الجديدة: <b>{switchInfo.chosen.modules.map(sl => FEATURE_NAMES[sl]?.ar || sl).join('، ')}</b>، ويُطبَّق اختيارك مع التجديد القادم.</>}
+      </div>
+    )
+    if (switchInfo.show) return (
+      <div className="hide-in-app" style={{ marginTop: 16, padding: '14px', borderRadius: radius.md, border: `1px solid ${colors.border}`, display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+        <div style={{ fontSize: font.sm, fontWeight: 700, color: colors.text }}>الأسعار الجديدة: ادفع فقط للمزايا التي تحتاجها</div>
+        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
+          {CUSTOM_MODULE_ORDER.map(slug => {
+            const mod = CUSTOM_MODULES[slug]
+            return (
+              <div key={slug} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: font.sm, color: colors.text }}>
+                <span style={{ flex: 1 }}>{FEATURE_NAMES[slug]?.ar || slug}{activeSlugs.includes(slug) ? <span style={{ color: colors.text3, fontSize: 12 }}> · مفعّلة لديك</span> : null}</span>
+                <span style={{ color: colors.text2, whiteSpace: 'nowrap' as const }}>{mod.first} ريال {mod.perBranch ? 'لكل فرع' : 'للمنشأة'}</span>
+              </div>
+            )
+          })}
+        </div>
+        <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7 }}>خصم 20% على كل فرع من الفرع الثالث، و6 موظفين مشمولين لكل فرع. لن تدفع أكثر من فاتورتك الحالية.</div>
+        <button type="button" onClick={() => window.dispatchEvent(new Event('pricing-switch-open'))}
+          style={{ alignSelf: 'flex-start', padding: '9px 16px', borderRadius: 8, border: 'none', background: colors.primary, color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
+          اختر مزاياك بالأسعار الجديدة
+        </button>
+      </div>
+    )
+  }
+  // الترقية لباقة ثابتة توقّفت مع الأسعار الجديدة — نعرض فقط طلب ترقية معلّق قديم إن وُجد
+  const higher: PlanKey[] = []
+  if (!pending) return null
   return (
     <div className="hide-in-app" style={{ marginTop: 16, display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
       {pending ? (
@@ -45,7 +105,7 @@ export default function PlanUpgrade({ orgId, plan, maxBranches }: { orgId: strin
       ) : higher.map(k => (
         <div key={k} style={{ padding: '12px 14px', borderRadius: radius.md, border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: font.sm, fontWeight: 800, color: colors.text }}>{PLAN_PRICING[k].label} — {PLAN_PRICING[k].monthly} ريال شهرياً</div>
+            <div style={{ fontSize: font.sm, fontWeight: 800, color: colors.text }}>{PLAN_PRICING[k].label} — {planPriceFor(k, null, isNewPlan(k) ? maxBranches : 1).monthly} ريال شهرياً{isNewPlan(k) && maxBranches > 1 ? ` لـ ${maxBranches} فروع` : ''}</div>
             <div style={{ fontSize: 11, color: colors.text3, marginTop: 2 }}>{desc(k)}</div>
           </div>
           <button type="button" onClick={() => request(k)} disabled={!!sending}

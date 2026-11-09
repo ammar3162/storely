@@ -10,7 +10,7 @@ export type ExtraDay = {
   status: 'pending' | 'paid' | 'comp' | 'rejected'; amount?: number | null; comp_date?: string | null
 }
 
-const dayLabel = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long', calendar: 'gregory', numberingSystem: 'latn', timeZone: 'UTC' })
+const dayLabel = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('ar-SA-u-ca-gregory', { weekday: 'long', day: 'numeric', month: 'long', calendar: 'gregory', numberingSystem: 'latn', timeZone: 'UTC' })
 const plusDays = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 86400e3).toISOString().slice(0, 10)
 
 // قرار المالك على يوم إضافي: تعويض مالي (مبلغ يحدده) أو يوم إجازة بديل أو رفض
@@ -28,12 +28,12 @@ export default function ExtraDayDecision({ item, orgId, canDecide = true, onDone
     setBusy(false)
     if (!r.success) { toast(r.error || 'تعذر حفظ القرار', 'error'); return }
     setStatus(decision)
-    toast(decision === 'paid' ? `تم — ينضاف ${amount} ⃁ لراتب الموظف` : decision === 'comp' ? `تم — إجازته البديلة ${dayLabel(compDate)}` : 'تم رفض التعويض')
+    toast(decision === 'paid' ? `تم — يُضاف ${amount} ⃁ إلى راتب الموظف` : decision === 'comp' ? `تم — إجازته البديلة ${dayLabel(compDate)}` : 'تم رفض التعويض')
     onDone?.(decision)
   }
 
   if (status !== 'pending') {
-    const txt = status === 'paid' ? `✓ تعويض مالي${item.amount ? ` ${item.amount} ⃁` : ''}` : status === 'comp' ? `✓ يوم بديل${item.comp_date ? `: ${dayLabel(item.comp_date)}` : ''}` : 'تم رفض التعويض'
+    const txt = status === 'paid' ? `تعويض مالي${item.amount ? ` ${item.amount} ⃁` : ''}` : status === 'comp' ? `يوم بديل${item.comp_date ? `: ${dayLabel(item.comp_date)}` : ''}` : 'تم رفض التعويض'
     return <div style={{ fontSize: 12, fontWeight: 700, color: status === 'rejected' ? colors.text3 : colors.primary, margin: '4px 0' }}>{txt}</div>
   }
   if (!canDecide) return <div style={{ fontSize: 11.5, color: colors.text4, margin: '4px 0' }}>بانتظار قرار المالك</div>
@@ -49,7 +49,7 @@ export default function ExtraDayDecision({ item, orgId, canDecide = true, onDone
       {mode === 'paid' && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' as const }}>
           <div style={{ position: 'relative' as const }}>
-            <NumberInput min="1" step="0.5" value={amount} onChange={e => setAmount(e.target.value)} style={{ ...inp(), width: 150, paddingInlineEnd: 44 }} />
+            <NumberInput min="1" step="0.5" value={amount} onChange={e => setAmount(e.target.value)} style={{ ...inp(), width: 150, paddingInline: 44, textAlign: 'center' }} />
             <span style={{ position: 'absolute' as const, insetInlineEnd: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>⃁</span>
           </div>
           <button onClick={() => decide('paid')} disabled={busy || !(Number(amount) > 0)} style={{ padding: '9px 14px', borderRadius: 8, border: 'none', background: colors.primary, color: 'white', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, opacity: busy || !(Number(amount) > 0) ? .6 : 1 }}>اعتماد المبلغ</button>
@@ -60,7 +60,7 @@ export default function ExtraDayDecision({ item, orgId, canDecide = true, onDone
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' as const }}>
           <input type="date" value={compDate} onChange={e => setCompDate(e.target.value)} style={{ ...inp(), width: 170 }} />
           <button onClick={() => decide('comp')} disabled={busy || !compDate} style={{ padding: '9px 14px', borderRadius: 8, border: 'none', background: colors.primary, color: 'white', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, opacity: busy ? .6 : 1 }}>اعتماد اليوم البديل</button>
-          <span style={{ fontSize: 11, color: colors.text4 }}>بذاك اليوم ما ينحسب عليه غياب</span>
+          <span style={{ fontSize: 11, color: colors.text4 }}>ولا يُحتسب عليه غياب في ذلك اليوم</span>
         </div>
       )}
     </div>

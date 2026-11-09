@@ -20,8 +20,8 @@ export function manualCheckoutAt(checkInIso: string, hhmm: string): number | nul
 /** سبب الرفض (أو null لو الوقت مقبول): بعد الحضور، مو بالمستقبل، وخلال مدة الدوام القصوى */
 export function manualCheckoutError(checkInIso: string, atMs: number, nowMs = Date.now()): string | null {
   const checkIn = Date.parse(checkInIso)
-  if (atMs <= checkIn) return 'وقت الانصراف لازم يكون بعد وقت الحضور'
-  if (atMs > nowMs) return 'وقت الانصراف ما يصير بالمستقبل'
+  if (atMs <= checkIn) return 'يجب أن يكون وقت الانصراف بعد وقت الحضور'
+  if (atMs > nowMs) return 'لا يمكن أن يكون وقت الانصراف في المستقبل'
   if (atMs - checkIn > MAX_SESSION_HOURS * 3600e3) return `مدة الدوام أطول من ${MAX_SESSION_HOURS} ساعة — اختر وقت أقرب`
   return null
 }

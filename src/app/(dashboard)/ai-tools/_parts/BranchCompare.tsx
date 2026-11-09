@@ -3,11 +3,11 @@ import { C } from './config'
 import type { AiToolsPage } from './useAiTools'
 
 export default function BranchCompare({ m }: { m: AiToolsPage }) {
-  const { branchComp, setBranchComp, branchLoading, setBranchLoading, isOwner, plan, hasAiAddon } = m
+  const { branchComp, setBranchComp, branchLoading, setBranchLoading, isOwner, hasAiAddon } = m
   return (
     <>
       {/* مقارنة الفروع — الباقة الشاملة أو المتقدمة */}
-      {(plan!=='basic'||hasAiAddon) && isOwner && (
+      {hasAiAddon && isOwner && (
       <div className="fu" style={{marginTop:16,background:C.surface,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
           <div>
@@ -34,15 +34,12 @@ export default function BranchCompare({ m }: { m: AiToolsPage }) {
             ) : (
               <div style={{display:'flex',flexDirection:'column',gap:10}}>
                 {branchComp.map((b:any,i:number)=>(
-                  <div key={b.id} style={{padding:'14px',borderRadius:12,background:i===0?'#f0fdfa':'#f8fafc',border:`1.5px solid ${i===0?'#029FA2':'#e2e8f0'}`}}>
+                  <div key={b.id} style={{padding:'14px',borderRadius:12,background:i===0?'#f0fdfa':'#f8fafc',border:`1.5px solid ${i===0?'#203640':'var(--storely-border)'}`}}>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
                       <div style={{display:'flex',alignItems:'center',gap:8}}>
-                        {i===0&&<span style={{fontSize:16}}>🥇</span>}
-                        {i===1&&<span style={{fontSize:16}}>🥈</span>}
-                        {i===2&&<span style={{fontSize:16}}>🥉</span>}
-                        <span style={{fontSize:14,fontWeight:800,color:C.text}}>{b.name}</span>
+                                                                                                <span style={{fontSize:14,fontWeight:800,color:C.text}}>{b.name}</span>
                       </div>
-                      <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:99,background:i===0?'#029FA2':'#e2e8f0',color:i===0?'white':C.text3}}>
+                      <span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:99,background:i===0?'#203640':'#e2e8f0',color:i===0?'white':C.text3}}>
                         {b.ops} عملية صرف
                       </span>
                     </div>
@@ -52,7 +49,7 @@ export default function BranchCompare({ m }: { m: AiToolsPage }) {
                         <div style={{fontSize:9,color:C.text4}}>وحدات صُرفت</div>
                       </div>
                       <div style={{background:'white',borderRadius:8,padding:'8px'}}>
-                        <div style={{fontSize:16,fontWeight:900,color:'#029FA2'}}>{b.added}</div>
+                        <div style={{fontSize:16,fontWeight:900,color:'#203640'}}>{b.added}</div>
                         <div style={{fontSize:9,color:C.text4}}>وحدات أُضيفت</div>
                       </div>
                       <div style={{background:'white',borderRadius:8,padding:'8px'}}>

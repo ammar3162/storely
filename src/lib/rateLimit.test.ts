@@ -46,6 +46,6 @@ describe('rateLimit', () => {
     expect(r.headers.get('Retry-After')).toBe('120')
     const j = await r.json()
     expect(j.rate_limited).toBe(true)
-    expect(j.error).toContain('حاول مرة ثانية بعد دقيقتين')
+    expect(j.error).toContain('حاول مرة أخرى بعد دقيقتين')
   })
 })

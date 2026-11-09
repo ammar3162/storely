@@ -13,26 +13,26 @@ export function daysAr(n: number): string {
 
 /** متى يخلص الصنف */
 export function runOutText(daysLeft: number | null | undefined): string {
-  if (daysLeft == null || !Number.isFinite(daysLeft)) return 'ما يخلص قريب'
-  if (daysLeft <= 0) return 'يخلص اليوم'
-  if (Math.round(daysLeft) === 1) return 'يخلص بكرة'
-  return `يخلص بعد ${daysAr(daysLeft)}`
+  if (daysLeft == null || !Number.isFinite(daysLeft)) return 'لن ينفد قريباً'
+  if (daysLeft <= 0) return 'ينفد اليوم'
+  if (Math.round(daysLeft) === 1) return 'ينفد غداً'
+  return `ينفد بعد ${daysAr(daysLeft)}`
 }
 
 /** متى تطلب (السالب = متأخر) */
 export function orderWhenText(days: number | null | undefined): string {
-  if (days == null || !Number.isFinite(days)) return 'ما يحتاج طلب الحين'
+  if (days == null || !Number.isFinite(days)) return 'لا يحتاج إلى طلب الآن'
   if (days <= -1) return `متأخر ${daysAr(days)} — اطلب اليوم`
   if (days < 1) return 'اطلب اليوم'
-  if (Math.round(days) === 1) return 'اطلب بكرة'
+  if (Math.round(days) === 1) return 'اطلب غداً'
   return `اطلب بعد ${daysAr(days)}`
 }
 
 /** سطر «ليش»: معدل الصرف وكم باقي */
 export function usageReason(dailyRate: number, unit: string, currentQty?: number | null): string {
   const rate = r1(Number(dailyRate) || 0)
-  const left = currentQty == null ? '' : `، وباقي ${r1(Number(currentQty))} ${unit}`
-  return rate > 0 ? `لأنك تصرف تقريباً ${rate} ${unit} يومياً${left}` : `ما فيه صرف كافي لحساب المعدل${left}`
+  const left = currentQty == null ? '' : `، والمتبقي ${r1(Number(currentQty))} ${unit}`
+  return rate > 0 ? `لأنك تصرف نحو ${rate} ${unit} يومياً${left}` : `لا يوجد صرف كافٍ لحساب المعدل${left}`
 }
 
 /** سطر «ليش» لتوقيت الطلب: مدة التوريد مقابل الصرف */

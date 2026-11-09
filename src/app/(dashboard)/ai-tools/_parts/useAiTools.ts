@@ -53,12 +53,12 @@ export function useAiTools() {
   }
 
   async function deleteRecipe(id:string) {
-    if(!(await confirmDialog({ title: 'حذف الوصفة', message: 'حذف هذي الوصفة؟ هذا الإجراء لا يمكن التراجع عنه.' }))) return
+    if(!(await confirmDialog({ title: 'حذف الوصفة', message: 'هل تريد حذف هذه الوصفة؟ لا يمكن التراجع عن هذا الإجراء.' }))) return
     setDeletingRecipeId(id)
     const r=await api.del('/api/recipes',{org_id:sessionStorage.getItem('s_org_id'),id})
     setDeletingRecipeId(null)
     if(!r.success){toast('فشل حذف الوصفة — حاول مرة أخرى','error');return}
-    toast('✅ تم حذف الوصفة')
+    toast('تم حذف الوصفة')
     setRecipesList(prev=>prev.filter(r=>r.id!==id))
   }
 

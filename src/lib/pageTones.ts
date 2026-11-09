@@ -1,20 +1,21 @@
+import { storelyTokens as t } from '@/components/ui/design-tokens'
 import {
   Home, BarChart3, Bell, Package, Send, ShoppingCart, ArrowLeftRight, Users, UserCog, Clock,
-  UserRound, Store, Puzzle, Building2, GitCompare, Truck, Handshake, Sparkles, TrendingUp, Settings,
+  UserRound, Store, Puzzle, Building2, GitCompare, Truck, Handshake, SlidersHorizontal, TrendingUp, Settings,
   type LucideIcon,
 } from 'lucide-react'
 
 // ألوان هادئة — fg للنص والأيقونة، bg خلفية فاتحة، soft للخطوط والأعمدة غير المختارة
 export const TONES = {
-  teal:    { fg:'#0f766e', bg:'#ecfdf8', soft:'#99e0d6' },
-  rose:    { fg:'#e11d48', bg:'#fff1f3', soft:'#fecdd6' },
-  indigo:  { fg:'#4f46e5', bg:'#eef2ff', soft:'#c7d2fe' },
-  amber:   { fg:'#c2410c', bg:'#fff7ed', soft:'#fed7aa' },
-  violet:  { fg:'#7c3aed', bg:'#f5f3ff', soft:'#ddd6fe' },
-  sky:     { fg:'#0369a1', bg:'#f0f9ff', soft:'#bae6fd' },
-  emerald: { fg:'#047857', bg:'#ecfdf5', soft:'#a7f3d0' },
-  pink:    { fg:'#be185d', bg:'#fdf2f8', soft:'#fbcfe8' },
-  slate:   { fg:'#475569', bg:'#f1f5f9', soft:'#cbd5e1' },
+  teal:    { fg:t.color.text, bg:t.color.background, soft:t.color.border },
+  rose:    { fg:t.color.text, bg:t.color.background, soft:t.color.border },
+  indigo:  { fg:t.color.text, bg:t.color.background, soft:t.color.border },
+  amber:   { fg:t.color.text, bg:t.color.background, soft:t.color.border },
+  violet:  { fg:t.color.text, bg:t.color.background, soft:t.color.border },
+  sky:     { fg:t.color.text, bg:t.color.background, soft:t.color.border },
+  emerald: { fg:t.color.text, bg:t.color.background, soft:t.color.border },
+  pink:    { fg:t.color.text, bg:t.color.background, soft:t.color.border },
+  slate:   { fg:t.color.text, bg:t.color.background, soft:t.color.border },
 } as const
 
 export type Tone = (typeof TONES)[keyof typeof TONES]
@@ -37,7 +38,7 @@ export const PAGE_TONES: Record<string, { tone: Tone; Icon: LucideIcon }> = {
   '/branch-compare':   { tone: TONES.sky,     Icon: GitCompare },
   '/suppliers':        { tone: TONES.emerald, Icon: Truck },
   '/marketplace':      { tone: TONES.emerald, Icon: Handshake },
-  '/ai-tools':         { tone: TONES.violet,  Icon: Sparkles },
+  '/ai-tools':         { tone: TONES.violet,  Icon: SlidersHorizontal },
   '/profitability':    { tone: TONES.emerald, Icon: TrendingUp },
   '/settings':         { tone: TONES.slate,   Icon: Settings },
 }

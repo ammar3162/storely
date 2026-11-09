@@ -50,10 +50,10 @@ export async function POST(req: Request) {
 
     // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
     await (db as any).from('notifications').insert({
-      org_id, branch_id, title: `🗑️ تسجيل هدر: ${staff_name}`, message: `${product_name} — ${qty} ${unit} — السبب: ${waste_reason}`, type: 'warning', read: false
+      org_id, branch_id, title: `تسجيل هدر: ${staff_name}`, message: `${product_name} — ${qty} ${unit} — السبب: ${waste_reason}`, type: 'warning', read: false
     })
     // إشعار فوري بالمتصفح/الجوال — لا يعتمد على واتساب إطلاقاً
-    sendPushToOrg(org_id, `🗑️ تسجيل هدر: ${staff_name}`, `${product_name} — ${qty} ${unit} — السبب: ${waste_reason}`, '/reports').catch(()=>{})
+    sendPushToOrg(org_id, `تسجيل هدر: ${staff_name}`, `${product_name} — ${qty} ${unit} — السبب: ${waste_reason}`, '/reports').catch(()=>{})
 
     const { data: allBranches } = await db.from('branches').select('id,name,whatsapp_number').eq('org_id', org_id).eq('is_active', true)
     const isMultiBranch = (allBranches || []).length > 1
@@ -67,8 +67,8 @@ export async function POST(req: Request) {
     if ((ownerProfile as any)?.whatsapp_consent !== true) return NextResponse.json({ success: false, message: 'لا يوجد موافقة واتساب' })
 
     const now = new Date()
-    const timeStr = now.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Riyadh'})
-    const dateStr = now.toLocaleDateString('ar-SA', {numberingSystem:'latn',weekday:'long',day:'numeric',month:'long',timeZone:'Asia/Riyadh'})
+    const timeStr = now.toLocaleTimeString('ar-SA-u-ca-gregory',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Riyadh'})
+    const dateStr = now.toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',weekday:'long',day:'numeric',month:'long',timeZone:'Asia/Riyadh'})
     const msg = `🟠 *Storely — تنبيه هدر*\n\nمرحباً ${(org as any).name}،\n${branchLine}\n👤 *${staff_name}* سجّل هدر:\n• ${product_name} — *${qty} ${unit}*\n📋 السبب: *${waste_reason}*\n\n🕐 ${timeStr} · ${dateStr}`
 
     await fetchExternal('https://www.wasenderapi.com/api/send-message', {

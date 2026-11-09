@@ -14,9 +14,9 @@ export const TOOLS = [
     icon:'📸',
     title:'مسح الفواتير بالذكاء الاصطناعي',
     desc:'صوّر فاتورة الشراء، ودع الذكاء الاصطناعي يستخرج المورد والأصناف والمبلغ تلقائياً',
-    color:'#f97316',
-    bg:'#fff7ed',
-    border:'#fed7aa',
+    color:'#203640',
+    bg:'#F7F9FA',
+    border:'#E2E7EA',
     features:['استخراج تلقائي للبيانات','دعم فواتير متعددة الأصناف','تحديث المخزون فوراً'],
     minPlan:'basic',
   },
@@ -25,9 +25,9 @@ export const TOOLS = [
     icon:'🛒',
     title:'اقتراح الشراء الذكي',
     desc:'يحسب الكمية المثلى لكل صنف بناءً على معدل الصرف الفعلي ويرسلها للمورد عبر واتساب',
-    color:'#029FA2',
-    bg:'#f0fdfa',
-    border:'#99f6e4',
+    color:'#203640',
+    bg:'#F7F9FA',
+    border:'#E2E7EA',
     features:['حساب الكمية المثلى','إرسال للمورد واتساب','بناءً على 90 يوم صرف'],
     minPlan:'pro',
   },
@@ -36,17 +36,16 @@ export const TOOLS = [
     icon:'📊',
     title:'مقارنة الفروع',
     desc:'قارن أداء كل فرع من حيث الصرف والمشتريات والأصناف الناقصة',
-    color:'#3b82f6',
-    bg:'#eff6ff',
-    border:'#bfdbfe',
+    color:'#203640',
+    bg:'#F7F9FA',
+    border:'#E2E7EA',
     features:['مقارنة الصرف','أفضل الأصناف لكل فرع','تحليل أسبوعي وشهري'],
     minPlan:'pro',
   },
 ]
 
-export function planAllows(userPlan:string, minPlan:string, hasAiAddon:boolean){
-  if (userPlan === 'basic' && hasAiAddon) return true // عميل الأساسية اللي اشترى إضافة الذكاء الاصطناعي
-  const order = ['basic','pro','advanced']
-  return order.indexOf(userPlan) >= order.indexOf(minPlan)
+// الأدوات المتقدمة تفتح بميزة الذكاء (features.ai من /api/me: الباقة أو الإضافة) — مو باسم الباقة
+export function planAllows(_userPlan:string, minPlan:string, hasAi:boolean){
+  return minPlan === 'basic' || hasAi
 }
 

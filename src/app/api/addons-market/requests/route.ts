@@ -44,7 +44,7 @@ export async function POST(req: Request) {
       branchIds = wanted as string[]
     }
     const row = {
-      org_id, addon_id, quantity: Math.max(1, Math.min(20, Number(quantity) || 1)), branch_ids: branchIds,
+      org_id, addon_id, quantity: branchIds ? branchIds.length : Math.max(1, Math.min(20, Number(quantity) || 1)), branch_ids: branchIds,
       note: typeof note === 'string' ? note.trim().slice(0, 300) || null : null, status: 'pending', requested_by: access.userId,
     }
     // طلب معلّق لنفس الإضافة يتحدّث بدل ما يتكرر
@@ -69,6 +69,6 @@ export async function DELETE(req: Request) {
   if (access.role === 'manager') return NextResponse.json({ error: 'طلب الإضافات لمالك المنشأة' }, { status: 403 })
   const { data, error } = await sb().from('addon_requests').update({ status: 'cancelled', decided_at: new Date().toISOString() } as any)
     .eq('id', id).eq('org_id', org_id).eq('status', 'pending').select('id')
-  if (error || !data?.length) return NextResponse.json({ error: 'ما فيه طلب معلّق' }, { status: 404 })
+  if (error || !data?.length) return NextResponse.json({ error: 'لا يوجد طلب معلّق' }, { status: 404 })
   return NextResponse.json({ success: true })
 }

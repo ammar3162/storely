@@ -4,7 +4,9 @@ import { canCloseCashier } from '@/lib/staffRoles'
 import { useEffect, useState } from 'react'
 import NumberInput from '@/components/NumberInput'
 import { useRouter } from 'next/navigation'
-import { Bell, MapPin, Package, Store, ClipboardList, Send, Wallet, Plane, UserCheck, Boxes, ShoppingCart, Clock, LogOut } from 'lucide-react'
+import { Bell, MapPin, PackageMinus, Receipt, ListChecks, FileText, Wallet, Plane, UserCheck, Boxes, ShoppingCart, Clock, LogOut, Check, ChevronLeft } from 'lucide-react'
+import { C, card, btnPrimary, btnSecondary, sectionLabel, iconBox, num } from '../_ui/theme'
+import { staffHeaderBtn } from '@/components/StaffHeader'
 import { getStaffOrg } from '@/lib/session'
 import { canCheckOutAt } from '@/lib/attendanceState'
 import { useStaffLang } from '@/lib/staffLang'
@@ -36,6 +38,9 @@ export default function ChoosePage() {
   const [salaryVisible, setSalaryVisible] = useState(false)
   const [hasHrFeature, setHasHrFeature] = useState(false) // مخفي افتراضياً لحد ما يتأكد الفحص — يمنع ظهور الأزرار للحظة ثم اختفائها
   const [hasCashierFeature, setHasCashierFeature] = useState(false) // نفس المبدأ — مخفي لحد ما يتأكد الفحص
+  // المخزون والمشتريات مفتوحة لكل الباقات — تنقفل بس لـ «ابنِ باقتك» لو ما اختارها
+  const [hasInvFeature, setHasInvFeature] = useState(true)
+  const [hasPurFeature, setHasPurFeature] = useState(true)
   const [showRequests, setShowRequests] = useState(false)
   const [requestHistory, setRequestHistory] = useState<any[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
@@ -80,6 +85,8 @@ export default function ChoosePage() {
         // السيرفر يحدد الميزات (الباقة أو الإضافات المشتراة)
         setHasHrFeature(!!org?.hr_feature)
         setHasCashierFeature(!!org?.cashier_feature)
+        setHasInvFeature(org?.inventory_feature !== false)
+        setHasPurFeature(org?.purchases_feature !== false)
       })
     const interval = setInterval(loadNotifications, 30000) // احتياط — الإشعارات توصل فوراً عبر useLiveRefresh
     // تحديث دوري لحالة الحضور وطلب الاستئذان -- بدونه الموظف يفضل يشوف "قيد الانتظار" حتى لو انوافق عليه فعلياً، لين يسوي رفرش يدوي
@@ -268,125 +275,126 @@ export default function ChoosePage() {
   const todayLabel = new Date().toLocaleDateString(locale, { numberingSystem:'latn', weekday:'long', day:'numeric', month:'long', calendar:'gregory', timeZone:'Asia/Riyadh' })
   const offToday = !!dayOff && !isCheckedIn && !lastCheckOut
   const statusTxt = isCheckedIn ? t('checkedIn') : lastCheckOut ? t('checkedOutToday') : offToday ? t(dayOff === 'leave' ? 'dayOffLeave' : dayOff === 'comp' ? 'dayOffComp' : 'dayOff') : t('notCheckedIn')
-  const statusClr = isCheckedIn ? { c:'#0f766e', bg:'#ecfdf5', dot:'#10b981' } : lastCheckOut ? { c:'#475569', bg:'#f1f5f9', dot:'#94a3b8' } : offToday ? { c:'#1d4ed8', bg:'#eff6ff', dot:'#3b82f6' } : { c:'#b45309', bg:'#fffbeb', dot:'#f59e0b' }
+  const statusClr = isCheckedIn ? { c:C.accentInk, bg:C.accentSoft, dot:'#15803d' } : lastCheckOut ? { c:'#4b5565', bg:'#eceef1', dot:'#6b7487' } : offToday ? { c:C.t2, bg:C.raised, dot:'#2563eb' } : { c:C.t2, bg:C.raised, dot:'#d97706' }
 
-  // أزرار العمل — نفس الشكل للكل، اللون بس بالأيقونة
+  // أقسام العمل — صفوف قائمة بأيقونة رمادية (تصميم «كاونتر»)
   const workActions = [
-    canDispense && { key:'d', icon:<Package size={20} strokeWidth={2}/>, title:t('dispense'), sub:t('dispenseSub'), c:'#0f766e', bg:'#f0fdfa', go:()=>router.push('/staff/dispense') },
-    isCashier && hasCashierFeature && { key:'c', icon:<Store size={20} strokeWidth={2}/>, title:t('cashierClosing'), sub:t('cashierSub'), c:'#334155', bg:'#f1f5f9', go:()=>router.push('/staff/cashier-closing') },
-    canInventory && { key:'i', icon:<Boxes size={20} strokeWidth={2}/>, title:t('inventory'), sub:t('inventorySub'), c:'#6d28d9', bg:'#f5f3ff', go:()=>router.push('/staff/inventory') },
-    canPurchases && { key:'p', icon:<ShoppingCart size={20} strokeWidth={2}/>, title:t('purchases'), sub:t('purchasesSub'), c:'#1d4ed8', bg:'#eff6ff', go:()=>router.push('/staff/purchases') },
-    !canDispense && !(isCashier && hasCashierFeature) && { key:'e', icon:<Package size={20} strokeWidth={2}/>, title:t('enterSystem'), sub:t('dispenseSub'), c:'#0f766e', bg:'#f0fdfa', go:()=>router.push('/staff/dispense') },
+    canDispense && hasInvFeature && { key:'d', icon:<PackageMinus size={18} strokeWidth={1.75}/>, title:t('dispense'), sub:t('dispenseSub'), c:'#203640', bg:'#e7f3f1', go:()=>router.push('/staff/dispense') },
+    isCashier && hasCashierFeature && { key:'c', icon:<Receipt size={18} strokeWidth={1.75}/>, title:t('cashierClosing'), sub:t('cashierSub'), c:'#1f2937', bg:'#eceef1', go:()=>router.push('/staff/cashier-closing') },
+    canInventory && hasInvFeature && { key:'i', icon:<Boxes size={18} strokeWidth={1.75}/>, title:t('inventory'), sub:t('inventorySub'), c:C.t2, bg:C.raised, go:()=>router.push('/staff/inventory') },
+    canPurchases && hasPurFeature && { key:'p', icon:<ShoppingCart size={18} strokeWidth={1.75}/>, title:t('purchases'), sub:t('purchasesSub'), c:C.t2, bg:C.raised, go:()=>router.push('/staff/purchases') },
+    !(canDispense && hasInvFeature) && !(isCashier && hasCashierFeature) && hasInvFeature && { key:'e', icon:<PackageMinus size={18} strokeWidth={1.75}/>, title:t('enterSystem'), sub:t('dispenseSub'), c:'#203640', bg:'#e7f3f1', go:()=>router.push('/staff/dispense') },
   ].filter(Boolean) as { key:string; icon:any; title:string; sub:string; c:string; bg:string; go:()=>void }[]
 
   const sectionTitle = (txt: string) => (
-    <div style={{fontSize:12,fontWeight:700,color:'#64748b',margin:'22px 4px 10px',textAlign:isAr?'right':'left'}}>{txt}</div>
+    <div style={{...sectionLabel,textAlign:isAr?'right':'left'}}>{txt}</div>
   )
-  const cardBase: React.CSSProperties = { background:'white', border:'1px solid #e8ecf1', borderRadius:16, boxShadow:'0 1px 2px rgba(16,24,40,.04)' }
-  const Chevron = () => <span style={{color:'#cbd5e1',fontSize:18,lineHeight:1,transform:isAr?'none':'scaleX(-1)'}}>‹</span>
+  const cardBase: React.CSSProperties = { ...card, overflow:'hidden' }
+  const Chevron = () => <ChevronLeft size={16} strokeWidth={1.75} color={C.t3} style={{flexShrink:0,transform:isAr?'none':'scaleX(-1)'}}/>
+  const listRow = (i: number, n: number): React.CSSProperties => ({ width:'100%',minHeight:60,background:'white',border:'none',borderTop:i>0?`1px solid ${C.line}`:'none',padding:'10px 16px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12,textAlign:isAr?'right':'left' })
 
   return (
-    <div style={{minHeight:'100vh',background:'#f4f6f8',display:'flex',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:isAr?'rtl':'ltr'}}>
+    <div style={{minHeight:'100vh',background:'#f4f5f6',display:'flex',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:isAr?'rtl':'ltr'}}>
       <div style={{maxWidth:480,width:'100%',minHeight:'100vh',boxSizing:'border-box' as const,padding:'0 0 32px'}}>
 
         {/* الهيدر */}
-        <div style={{background:'linear-gradient(160deg,#0b3b3a 0%,#0f766e 100%)',padding:'18px 20px 64px',borderRadius:'0 0 28px 28px',color:'white'}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-            <div style={{display:'flex',alignItems:'center',gap:12}}>
-              <div style={{width:46,height:46,borderRadius:14,background:orgLogo?'white':'rgba(255,255,255,.14)',border:'1px solid rgba(255,255,255,.18)',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden' as const,flexShrink:0}}>
-                {orgLogo ? <img src={orgLogo} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span style={{fontSize:19,fontWeight:800}}>{name?.trim()?.[0] || '👤'}</span>}
-              </div>
-              <div style={{textAlign:isAr?'right':'left'}}>
-                <div style={{fontSize:12,opacity:.75,fontWeight:500}}>{t('welcome')} 👋</div>
-                <div style={{fontSize:18,fontWeight:800,letterSpacing:'-.2px'}}>{name}</div>
+        {/* فاتح مثل لوحة المالك */}
+        <div style={{background:'#ffffff',padding:'12px 16px',borderBottom:`1px solid ${C.line}`,color:C.t1,position:'sticky' as const,top:0,zIndex:50}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12}}>
+            <div style={{display:'flex',alignItems:'center',gap:12,minWidth:0}}>
+              {orgLogo && (
+                <div style={{width:36,height:36,borderRadius:10,background:'white',border:`1px solid ${C.line}`,overflow:'hidden' as const,flexShrink:0}}>
+                  <img src={orgLogo} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                </div>
+              )}
+              <div style={{textAlign:isAr?'right':'left',minWidth:0}}>
+                <div style={{fontSize:17,fontWeight:600,lineHeight:'24px'}}>{todayLabel}</div>
+                <div style={{fontSize:13,color:C.t2,lineHeight:'20px',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{name}</div>
               </div>
             </div>
             <div style={{display:'flex',gap:8}}>
-              <StaffLangButton/>
               <button onClick={()=>{ setShowNotifications(true); markNotificationsRead() }} aria-label={t('notifications')}
-                style={{position:'relative' as const,width:38,height:38,background:'rgba(255,255,255,.12)',border:'1px solid rgba(255,255,255,.18)',borderRadius:12,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'white'}}>
-                <Bell size={17} strokeWidth={2.25}/>
+                style={{...staffHeaderBtn,position:'relative' as const,padding:0}}>
+                <Bell size={16} strokeWidth={1.75}/>
                 {notifications.some((n:any)=>!n.is_read) && (
-                  <span style={{position:'absolute' as const,top:7,insetInlineEnd:8,width:8,height:8,borderRadius:'50%',background:'#f87171',border:'2px solid #0f766e'}}/>
+                  <span style={{position:'absolute' as const,top:7,insetInlineEnd:8,width:8,height:8,borderRadius:'50%',background:C.neg,border:'2px solid #eceef1'}}/>
                 )}
               </button>
+              <StaffLangButton/>
             </div>
           </div>
         </div>
 
-        <div style={{padding:'0 16px',marginTop:-44}}>
+        <div style={{padding:'16px 16px 0'}}>
 
           {/* دوام اليوم */}
           {!loadingToday && !attendanceLocked && (
-            <div style={{...cardBase,padding:18,textAlign:isAr?'right':'left',boxShadow:'0 8px 24px rgba(15,23,42,.08)'}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:10,marginBottom:14}}>
-                <div>
-                  <div style={{fontSize:15,fontWeight:800,color:'#0f172a'}}>{t('todayShift')}</div>
-                  <div style={{fontSize:11.5,color:'#94a3b8',marginTop:2}}>{todayLabel}</div>
-                </div>
-                <span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:11.5,fontWeight:700,color:statusClr.c,background:statusClr.bg,padding:'5px 10px',borderRadius:99,whiteSpace:'nowrap' as const}}>
-                  <span style={{width:7,height:7,borderRadius:'50%',background:statusClr.dot,boxShadow:isCheckedIn?'0 0 0 3px rgba(16,185,129,.2)':'none'}}/>{statusTxt}
+            <div style={{...card,padding:16,textAlign:isAr?'right':'left'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:10,marginBottom:16}}>
+                <div style={{fontSize:15,fontWeight:600,color:C.t1}}>{t('todayShift')}</div>
+                <span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:13,color:C.t2,whiteSpace:'nowrap' as const}}>
+                  <span style={{width:6,height:6,borderRadius:3,background:statusClr.dot}}/>{statusTxt}
                 </span>
               </div>
 
-              <div style={{display:'grid',gridTemplateColumns:shift && !shift.is_24h && shift.start_time ? '1fr 1fr 1fr' : '1fr 1fr',gap:8,marginBottom:16}}>
+              <div style={{display:'grid',gridTemplateColumns:shift && !shift.is_24h && shift.start_time ? '1fr 1fr 1fr' : '1fr 1fr',border:`1px solid ${C.line}`,borderRadius:10,marginBottom:16,overflow:'hidden'}}>
                 {shift && !shift.is_24h && shift.start_time && (
-                  <div style={{background:'#f8fafc',borderRadius:12,padding:'10px 12px'}}>
-                    <div style={{fontSize:10.5,color:'#94a3b8',fontWeight:600,marginBottom:3}}>{t('shift')}</div>
-                    <div style={{fontSize:13,fontWeight:800,color:'#334155',direction:'ltr',textAlign:isAr?'right':'left'}}>{String(shift.start_time).slice(0,5)}–{String(shift.end_time||'').slice(0,5)}</div>
+                  <div style={{padding:12,borderInlineStart:`1px solid ${C.line}`,marginInlineStart:-1}}>
+                    <div style={{fontSize:12,color:C.t3,marginBottom:4}}>{t('shift')}</div>
+                    <div style={{...num,fontSize:15,fontWeight:500,color:C.t1,textAlign:isAr?'right':'left'}}>{String(shift.start_time).slice(0,5)}–{String(shift.end_time||'').slice(0,5)}</div>
                   </div>
                 )}
-                <div style={{background:'#f8fafc',borderRadius:12,padding:'10px 12px'}}>
-                  <div style={{fontSize:10.5,color:'#94a3b8',fontWeight:600,marginBottom:3}}>{t('checkInTime')}</div>
-                  <div style={{fontSize:15,fontWeight:800,color:lastCheckIn?'#0f172a':'#cbd5e1'}}>{lastCheckIn ? fmtClock(lastCheckIn.recorded_at) : '--:--'}</div>
+                <div style={{padding:12,borderInlineStart:`1px solid ${C.line}`,marginInlineStart:-1}}>
+                  <div style={{fontSize:12,color:C.t3,marginBottom:4}}>{t('checkInTime')}</div>
+                  <div style={{...num,fontSize:22,fontWeight:500,color:lastCheckIn?C.t1:C.t3,textAlign:isAr?'right':'left'}}>{lastCheckIn ? fmtClock(lastCheckIn.recorded_at) : '--:--'}</div>
                 </div>
-                <div style={{background:'#f8fafc',borderRadius:12,padding:'10px 12px'}}>
-                  <div style={{fontSize:10.5,color:'#94a3b8',fontWeight:600,marginBottom:3}}>{t('checkOutTime')}</div>
-                  <div style={{fontSize:15,fontWeight:800,color:lastCheckOut?'#0f172a':'#cbd5e1'}}>{lastCheckOut ? fmtClock(lastCheckOut.recorded_at) : '--:--'}</div>
+                <div style={{padding:12,borderInlineStart:`1px solid ${C.line}`,marginInlineStart:-1}}>
+                  <div style={{fontSize:12,color:C.t3,marginBottom:4}}>{t('checkOutTime')}</div>
+                  <div style={{...num,fontSize:22,fontWeight:500,color:lastCheckOut?C.t1:C.t3,textAlign:isAr?'right':'left'}}>{lastCheckOut ? fmtClock(lastCheckOut.recorded_at) : '--:--'}</div>
                 </div>
               </div>
 
               {offToday && (
-                <div style={{background:'#eff6ff',border:'1px solid #bfdbfe',borderRadius:12,padding:'12px 14px',marginBottom:10}}>
-                  <div style={{fontSize:14,fontWeight:800,color:'#1e3a8a'}}>{t(dayOff === 'leave' ? 'offLeaveTitle' : dayOff === 'comp' ? 'offCompTitle' : dayOff === 'monthly' ? 'offMonthlyTitle' : 'offTitle')}</div>
-                  <div style={{fontSize:12,color:'#1e40af',marginTop:3,lineHeight:1.6}}>{t('offNote')}</div>
+                <div style={{background:'#f4f5f6',borderRadius:10,padding:'12px 14px',marginBottom:12}}>
+                  <div style={{fontSize:14,fontWeight:600,color:'var(--storely-text)'}}>{t(dayOff === 'leave' ? 'offLeaveTitle' : dayOff === 'comp' ? 'offCompTitle' : dayOff === 'monthly' ? 'offMonthlyTitle' : 'offTitle')}</div>
+                  <div style={{fontSize:13,color:'#4b5565',marginTop:4,lineHeight:1.6}}>{t('offNote')}</div>
                 </div>
               )}
               {!lastCheckOut && (
                 !isCheckedIn ? (
                   <button onClick={()=>markAttendance('check_in')} disabled={marking!==null}
                     style={offToday
-                      ? {width:'100%',height:48,background:'white',color:'#0f766e',border:'1.5px solid #99d5cf',borderRadius:14,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,opacity:marking?0.8:1}
-                      : {width:'100%',height:52,background:'#0f766e',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:'0 6px 14px rgba(15,118,110,.25)',opacity:marking?0.8:1}}>
-                    <MapPin size={17} strokeWidth={2.25}/>
+                      ? {...btnSecondary,color:C.accentInk,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,opacity:marking?0.8:1}
+                      : {...btnPrimary,opacity:marking?0.8:1}}>
+                    <MapPin size={18} strokeWidth={1.75}/>
                     {marking==='check_in' ? t('markingLocation') : offToday ? t('checkInExtra') : t('checkIn')}
                   </button>
                 ) : (
                   <>
                     <button onClick={()=>markAttendance('check_out')} disabled={marking!==null || !canCheckOut}
-                      style={{width:'100%',height:52,background:canCheckOut?'#dc2626':'#f1f5f9',color:canCheckOut?'white':'#94a3b8',border:canCheckOut?'none':'1px dashed #cbd5e1',borderRadius:14,fontSize:canCheckOut?15:13.5,fontWeight:canCheckOut?800:700,cursor:canCheckOut?'pointer':'not-allowed',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:canCheckOut?'0 6px 14px rgba(220,38,38,.22)':'none'}}>
-                      {canCheckOut ? <MapPin size={17} strokeWidth={2.25}/> : <Clock size={16} strokeWidth={2.25}/>}
+                      style={{width:'100%',height:48,background:canCheckOut?C.t1:C.raised,color:canCheckOut?'white':C.t2,border:'none',borderRadius:10,fontSize:canCheckOut?16:14,fontWeight:canCheckOut?600:500,cursor:canCheckOut?'pointer':'not-allowed',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:canCheckOut?'0 6px 14px rgba(220,38,38,.22)':'none'}}>
+                      {canCheckOut ? <MapPin size={18} strokeWidth={1.75}/> : <Clock size={16} strokeWidth={1.75}/>}
                       {marking==='check_out' ? t('markingLocation') : canCheckOut ? t('checkOut') : (checkOutHint || t('checkOut'))}
                     </button>
                     {!canCheckOut && (
                       permReq?.status === 'pending' ? (
-                        <div style={{textAlign:'center' as const,fontSize:12,color:'#b45309',fontWeight:700,marginTop:10,background:'#fffbeb',borderRadius:10,padding:'9px 10px'}}>{t('excuseWaiting')}</div>
+                        <div style={{textAlign:'center' as const,fontSize:12,color:'#b45309',fontWeight:600,marginTop:10,background:'#fffbeb',borderRadius:10,padding:'9px 10px'}}>{t('excuseWaiting')}</div>
                       ) : permReq?.status === 'rejected' ? (
-                        <div style={{textAlign:'center' as const,fontSize:12,color:'#dc2626',fontWeight:700,marginTop:10,background:'#fef2f2',borderRadius:10,padding:'9px 10px'}}>{t('excuseRejected')}</div>
+                        <div style={{textAlign:'center' as const,fontSize:12,color:'#dc2626',fontWeight:600,marginTop:10,background:'#fef2f2',borderRadius:10,padding:'9px 10px'}}>{t('excuseRejected')}</div>
                       ) : showPermForm ? (
                         <div style={{marginTop:10}}>
                           <textarea value={permReason} onChange={e=>setPermReason(e.target.value)} placeholder={t('excuseReasonPh')} rows={2}
-                            style={{width:'100%',padding:'10px 12px',border:'1px solid #e2e8f0',borderRadius:12,fontSize:13,fontFamily:'inherit',resize:'vertical' as const,marginBottom:8,boxSizing:'border-box' as const}}/>
+                            style={{width:'100%',padding:'10px 12px',border:'1px solid var(--storely-border)',borderRadius:12,fontSize:13,fontFamily:'inherit',resize:'vertical' as const,marginBottom:8,boxSizing:'border-box' as const}}/>
                           <div style={{display:'flex',gap:8}}>
                             <button onClick={submitPermissionRequest} disabled={submittingPerm}
-                              style={{flex:1,height:42,background:'#0f766e',color:'white',border:'none',borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                              style={{flex:1,height:42,background:'#203640',color:'white',border:'none',borderRadius:12,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                               {submittingPerm ? t('sending') : t('sendRequest')}
                             </button>
-                            <button onClick={()=>setShowPermForm(false)} style={{height:42,padding:'0 16px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:12,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{t('cancel')}</button>
+                            <button onClick={()=>setShowPermForm(false)} style={{height:42,padding:'0 16px',background:'#eceef1',color:'#4b5565',border:'none',borderRadius:12,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{t('cancel')}</button>
                           </div>
                         </div>
                       ) : (
-                        <button onClick={()=>setShowPermForm(true)} style={{width:'100%',marginTop:10,height:40,background:'none',color:'#b45309',border:'none',fontSize:12.5,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                        <button onClick={()=>setShowPermForm(true)} style={{width:'100%',marginTop:10,height:40,background:'none',color:'#b45309',border:'none',fontSize:12.5,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                           <UserCheck size={14} strokeWidth={2.25}/> {t('askExcuse')}
                         </button>
                       )
@@ -395,27 +403,29 @@ export default function ChoosePage() {
                 )
               )}
               {lastCheckOut && (
-                <div style={{textAlign:'center' as const,fontSize:12.5,color:'#0f766e',fontWeight:700,background:'#f0fdfa',borderRadius:12,padding:'11px 0'}}>✓ {t('dayDone')}</div>
+                <div style={{textAlign:'center' as const,fontSize:12.5,color:'#203640',fontWeight:600,background:'#e7f3f1',borderRadius:12,padding:'11px 0',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Check size={15}/>{t('dayDone')}</div>
               )}
-              {locatingHint && <div style={{fontSize:11.5,color:'#64748b',marginTop:10,textAlign:'center' as const}}>📍 {locatingHint}</div>}
+              {locatingHint && <div style={{fontSize:11.5,color:'#4b5565',marginTop:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:4}}><MapPin size={13}/>{locatingHint}</div>}
               {attError && <div style={{fontSize:12,color:'#dc2626',marginTop:10,lineHeight:1.6,textAlign:'center' as const,background:'#fef2f2',borderRadius:10,padding:'8px 10px'}}>{attError}</div>}
             </div>
           )}
 
           {/* العمل */}
           {workActions.length > 0 && sectionTitle(t('work'))}
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-            {workActions.map((a, i) => (
-              <button key={a.key} onClick={a.go}
-                style={{...cardBase,gridColumn: workActions.length % 2 === 1 && i === workActions.length - 1 ? '1 / -1' : undefined,padding:'16px 14px',cursor:'pointer',fontFamily:'inherit',textAlign:isAr?'right':'left',display:'flex',flexDirection:'column' as const,alignItems:'flex-start',gap:12,minHeight:118}}>
-                <span style={{width:42,height:42,borderRadius:12,background:a.bg,color:a.c,display:'flex',alignItems:'center',justifyContent:'center'}}>{a.icon}</span>
-                <span>
-                  <span style={{display:'block',fontSize:14.5,fontWeight:800,color:'#0f172a'}}>{a.title}</span>
-                  <span style={{display:'block',fontSize:11.5,color:'#94a3b8',marginTop:3,lineHeight:1.5}}>{a.sub}</span>
-                </span>
-              </button>
-            ))}
-          </div>
+          {workActions.length > 0 && (
+            <div style={cardBase}>
+              {workActions.map((a, i) => (
+                <button key={a.key} onClick={a.go} style={listRow(i, workActions.length)}>
+                  <span style={iconBox}>{a.icon}</span>
+                  <span style={{flex:1,minWidth:0}}>
+                    <span style={{display:'block',fontSize:15,fontWeight:500,color:C.t1,lineHeight:'22px'}}>{a.title}</span>
+                    <span style={{display:'block',fontSize:13,color:C.t3,lineHeight:'18px'}}>{a.sub}</span>
+                  </span>
+                  <Chevron/>
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* شؤوني */}
           {hasHrFeature && (
@@ -423,18 +433,17 @@ export default function ChoosePage() {
               {sectionTitle(t('myStuff'))}
               <div style={{...cardBase,overflow:'hidden'}}>
                 {[
-                  { key:'t', icon:<ClipboardList size={18} strokeWidth={2}/>, c:'#0f766e', bg:'#f0fdfa', title:t('myTasksLabel'), sub:t('myTasksSub'), badge:taskCount, go:()=>router.push('/staff/tasks') },
-                  { key:'r', icon:<Send size={18} strokeWidth={2}/>, c:'#2563eb', bg:'#eff6ff', title:t('myRequests'), sub:t('myRequestsSub'), badge:0, go:()=>{setShowRequests(true);loadRequestHistory()} },
-                  ...(salaryVisible ? [{ key:'s', icon:<Wallet size={18} strokeWidth={2}/>, c:'#b45309', bg:'#fffbeb', title:t('payslip'), sub:t('payslipSub'), badge:0, go:()=>router.push('/staff/salary') }] : []),
+                  { key:'t', icon:<ListChecks size={18} strokeWidth={1.75}/>, c:C.t2, bg:C.raised, title:t('myTasksLabel'), sub:t('myTasksSub'), badge:taskCount, go:()=>router.push('/staff/tasks') },
+                  { key:'r', icon:<FileText size={18} strokeWidth={1.75}/>, c:C.t2, bg:C.raised, title:t('myRequests'), sub:t('myRequestsSub'), badge:0, go:()=>{setShowRequests(true);loadRequestHistory()} },
+                  ...(salaryVisible ? [{ key:'s', icon:<Wallet size={18} strokeWidth={1.75}/>, c:C.t2, bg:C.raised, title:t('payslip'), sub:t('payslipSub'), badge:0, go:()=>router.push('/staff/salary') }] : []),
                 ].map((row, i, arr) => (
-                  <button key={row.key} onClick={row.go}
-                    style={{width:'100%',background:'white',border:'none',borderBottom:i<arr.length-1?'1px solid #f1f5f9':'none',padding:'14px 16px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12,textAlign:isAr?'right':'left'}}>
-                    <span style={{width:38,height:38,borderRadius:11,background:row.bg,color:row.c,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{row.icon}</span>
+                  <button key={row.key} onClick={row.go} style={listRow(i, arr.length)}>
+                    <span style={iconBox}>{row.icon}</span>
                     <span style={{flex:1,minWidth:0}}>
-                      <span style={{display:'block',fontSize:14,fontWeight:700,color:'#0f172a'}}>{row.title}</span>
-                      <span style={{display:'block',fontSize:11.5,color:'#94a3b8',marginTop:2}}>{row.sub}</span>
+                      <span style={{display:'block',fontSize:15,fontWeight:500,color:C.t1,lineHeight:'22px'}}>{row.title}</span>
+                      <span style={{display:'block',fontSize:13,color:C.t3,lineHeight:'18px'}}>{row.sub}</span>
                     </span>
-                    {row.badge > 0 && <span style={{background:'#dc2626',color:'white',fontSize:11,fontWeight:800,minWidth:20,height:20,borderRadius:99,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 6px'}}>{row.badge}</span>}
+                    {row.badge > 0 && <span style={{...num,background:C.t1,color:'white',fontSize:12,fontWeight:500,minWidth:22,height:22,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',padding:'0 6px'}}>{row.badge}</span>}
                     <Chevron/>
                   </button>
                 ))}
@@ -443,8 +452,8 @@ export default function ChoosePage() {
           )}
 
           <button onClick={()=>{localStorage.removeItem('staff_session');router.replace('/staff')}}
-            style={{width:'100%',marginTop:22,height:46,background:'white',border:'1px solid #e8ecf1',borderRadius:14,color:'#64748b',fontSize:13.5,fontWeight:700,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-            <LogOut size={16} strokeWidth={2}/> {t('logout')}
+            style={{...btnSecondary,marginTop:24,height:44,color:C.t2,fontSize:14}}>
+            <LogOut size={16} strokeWidth={1.75}/> {t('logout')}
           </button>
         </div>
       </div>
@@ -453,29 +462,29 @@ export default function ChoosePage() {
       {showRequests && !showAdvanceForm && (
         <div onClick={()=>setShowRequests(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:200,display:'flex',alignItems:'flex-end',justifyContent:'center',padding:0}}>
           <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:'24px 24px 0 0',padding:'24px 20px 32px',width:'100%',maxWidth:420,textAlign:'start' as const}}>
-            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>{t('myRequests')}</div>
+            <div style={{fontSize:16,fontWeight:600,color:'var(--storely-text)',marginBottom:16}}>{t('myRequests')}</div>
             <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
               <button onClick={()=>setShowAdvanceForm(true)}
-                style={{width:'100%',padding:'16px',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:14,fontSize:14,fontWeight:700,color:'#1c1c1a',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
+                style={{width:'100%',padding:'16px',background:'#f4f5f6',border:'1.5px solid var(--storely-border)',borderRadius:14,fontSize:14,fontWeight:600,color:'var(--storely-text)',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
                 <Wallet size={18} strokeWidth={2}/> {t('requestAdvance')}
               </button>
               <button onClick={()=>{setShowRequests(false);router.push('/staff/leave')}}
-                style={{width:'100%',padding:'16px',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:14,fontSize:14,fontWeight:700,color:'#1c1c1a',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
+                style={{width:'100%',padding:'16px',background:'#f4f5f6',border:'1.5px solid var(--storely-border)',borderRadius:14,fontSize:14,fontWeight:600,color:'var(--storely-text)',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
                 <Plane size={18} strokeWidth={2}/> {t('requestLeave')}
               </button>
               <button onClick={()=>{setShowRequests(false);setShowPermRequestModal(true)}}
-                style={{width:'100%',padding:'16px',background:'#f8fafc',border:'1.5px solid #e2e8f0',borderRadius:14,fontSize:14,fontWeight:700,color:'#1c1c1a',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
+                style={{width:'100%',padding:'16px',background:'#f4f5f6',border:'1.5px solid var(--storely-border)',borderRadius:14,fontSize:14,fontWeight:600,color:'var(--storely-text)',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
                 <UserCheck size={18} strokeWidth={2}/> {t('requestExcuse')}
               </button>
             </div>
 
             {/* سجل الطلبات السابقة -- كل الأنواع الثلاثة مع حالتها */}
-            <div style={{marginTop:18,paddingTop:16,borderTop:'1px solid #f1f5f9'}}>
-              <div style={{fontSize:12,fontWeight:700,color:'#64748b',marginBottom:10}}>{t('history')}</div>
+            <div style={{marginTop:18,paddingTop:16,borderTop:'1px solid #eceef1'}}>
+              <div style={{fontSize:12,fontWeight:600,color:'#4b5565',marginBottom:10}}>{t('history')}</div>
               {loadingHistory ? (
-                <div style={{fontSize:12,color:'#94a3b8',textAlign:'center' as const,padding:'12px 0'}}>{t('loading')}</div>
+                <div style={{fontSize:12,color:'#4b5565',textAlign:'center' as const,padding:'12px 0'}}>{t('loading')}</div>
               ) : requestHistory.length===0 ? (
-                <div style={{fontSize:12,color:'#94a3b8',textAlign:'center' as const,padding:'12px 0'}}>{t('noHistory')}</div>
+                <div style={{fontSize:12,color:'#4b5565',textAlign:'center' as const,padding:'12px 0'}}>{t('noHistory')}</div>
               ) : (
                 <div style={{display:'flex',flexDirection:'column' as const,gap:6,maxHeight:220,overflowY:'auto' as const}}>
                   {requestHistory.map((r:any)=>{
@@ -483,12 +492,12 @@ export default function ChoosePage() {
                       : r.status==='rejected'||r.status==='reject' ? {bg:'#fef2f2',color:'#dc2626',label:t('rejected')}
                       : {bg:'#fffbeb',color:'#d97706',label:t('pending')}
                     return (
-                      <div key={r.kind+r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 10px',background:'#f8fafc',borderRadius:10}}>
+                      <div key={r.kind+r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 10px',background:'#f4f5f6',borderRadius:10}}>
                         <div>
-                          <div style={{fontSize:12,fontWeight:600,color:'#1c1c1a'}}>{r.label}</div>
-                          <div style={{fontSize:10,color:'#94a3b8',marginTop:1}}>{new Date(r.date).toLocaleDateString(locale,{numberingSystem:'latn',day:'numeric',month:'short'})}</div>
+                          <div style={{fontSize:12,fontWeight:600,color:'var(--storely-text)'}}>{r.label}</div>
+                          <div style={{fontSize:10,color:'#4b5565',marginTop:1}}>{new Date(r.date).toLocaleDateString(locale,{numberingSystem:'latn',day:'numeric',month:'short'})}</div>
                         </div>
-                        <span style={{fontSize:10,fontWeight:700,color:statusStyle.color,background:statusStyle.bg,padding:'3px 9px',borderRadius:99}}>{statusStyle.label}</span>
+                        <span style={{fontSize:12,fontWeight:500,color:statusStyle.color,background:statusStyle.bg,padding:'2px 8px',borderRadius:6}}>{statusStyle.label}</span>
                       </div>
                     )
                   })}
@@ -496,7 +505,7 @@ export default function ChoosePage() {
               )}
             </div>
 
-            <button onClick={()=>setShowRequests(false)} style={{width:'100%',padding:'12px',marginTop:14,background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('cancel')}</button>
+            <button onClick={()=>setShowRequests(false)} style={{width:'100%',padding:'12px',marginTop:14,background:'none',border:'none',color:'#4b5565',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('cancel')}</button>
           </div>
         </div>
       )}
@@ -504,20 +513,20 @@ export default function ChoosePage() {
       {/* نموذج طلب السلفة */}
       {showAdvanceForm && (
         <div onClick={()=>{setShowAdvanceForm(false);setShowRequests(false)}} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:210,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:360,textAlign:'start' as const}}>
-            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>{t('advanceTitle')}</div>
-            <label style={{fontSize:12,color:'#64748b',display:'block',marginBottom:6}}>{t('amount')}</label>
+          <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:360,textAlign:'start' as const}}>
+            <div style={{fontSize:16,fontWeight:600,color:'var(--storely-text)',marginBottom:16}}>{t('advanceTitle')}</div>
+            <label style={{fontSize:12,color:'#4b5565',display:'block',marginBottom:6}}>{t('amount')}</label>
             <NumberInput value={advanceAmount} onChange={e=>setAdvanceAmount(e.target.value)} placeholder="0"
-              style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:16,fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:12}}/>
-            <label style={{fontSize:12,color:'#64748b',display:'block',marginBottom:6}}>{t('reasonOptional')}</label>
+              style={{width:'100%',padding:'12px',border:'1.5px solid var(--storely-border)',borderRadius:10,fontSize:16,fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:12}}/>
+            <label style={{fontSize:12,color:'#4b5565',display:'block',marginBottom:6}}>{t('reasonOptional')}</label>
             <textarea value={advanceReason} onChange={e=>setAdvanceReason(e.target.value)} placeholder={t('advanceReasonPh')}
-              style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const,minHeight:60,resize:'none' as const,marginBottom:12}}/>
+              style={{width:'100%',padding:'12px',border:'1.5px solid var(--storely-border)',borderRadius:10,fontSize:13,fontFamily:'inherit',boxSizing:'border-box' as const,minHeight:60,resize:'none' as const,marginBottom:12}}/>
             {advanceMsg && <div style={{fontSize:12,color:'#dc2626',marginBottom:10}}>{advanceMsg}</div>}
             <button onClick={submitAdvanceRequest} disabled={submittingAdvance||!advanceAmount}
-              style={{width:'100%',padding:'12px',background:(submittingAdvance||!advanceAmount)?'#94a3b8':'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:(submittingAdvance||!advanceAmount)?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
+              style={{width:'100%',padding:'12px',background:(submittingAdvance||!advanceAmount)?'#6b7487':'#203640',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:(submittingAdvance||!advanceAmount)?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
               {submittingAdvance?t('sending'):t('sendRequest')}
             </button>
-            <button onClick={()=>setShowAdvanceForm(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
+            <button onClick={()=>setShowAdvanceForm(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#4b5565',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
           </div>
         </div>
       )}
@@ -525,23 +534,23 @@ export default function ChoosePage() {
       {/* نموذج طلب استئذان مستقل (يشتغل بأي حالة، مو بس أثناء الحضور) */}
       {showPermRequestModal && (
         <div onClick={()=>setShowPermRequestModal(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:210,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:360,textAlign:'start' as const}}>
-            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:4}}>{t('excuseTitle')}</div>
-            <p style={{fontSize:12,color:'#64748b',marginBottom:16}}>{t('excuseDesc')}</p>
+          <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:360,textAlign:'start' as const}}>
+            <div style={{fontSize:16,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}>{t('excuseTitle')}</div>
+            <p style={{fontSize:12,color:'#4b5565',marginBottom:16}}>{t('excuseDesc')}</p>
             {permReq?.status === 'pending' ? (
-              <div style={{textAlign:'center' as const,fontSize:13,color:'#d97706',fontWeight:700,background:'#fffbeb',border:'1px solid #fde68a',borderRadius:10,padding:'12px'}}>{t('excusePending')}</div>
+              <div style={{textAlign:'center' as const,fontSize:13,color:'#d97706',fontWeight:600,background:'#fffbeb',border:'1px solid #fde68a',borderRadius:10,padding:'12px'}}>{t('excusePending')}</div>
             ) : (
               <>
                 <textarea value={permReason} onChange={e=>setPermReason(e.target.value)} placeholder={t('excuseReasonPh')} rows={3}
-                  style={{width:'100%',padding:'12px',border:'1.5px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'inherit',resize:'none' as const,marginBottom:12,boxSizing:'border-box' as const}}/>
+                  style={{width:'100%',padding:'12px',border:'1.5px solid var(--storely-border)',borderRadius:10,fontSize:13,fontFamily:'inherit',resize:'none' as const,marginBottom:12,boxSizing:'border-box' as const}}/>
                 {attError && <div style={{fontSize:12,color:'#dc2626',marginBottom:10}}>{attError}</div>}
                 <button onClick={async ()=>{ await submitPermissionRequest(); setShowPermRequestModal(false) }} disabled={submittingPerm}
-                  style={{width:'100%',padding:'12px',background:submittingPerm?'#94a3b8':'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:submittingPerm?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
+                  style={{width:'100%',padding:'12px',background:submittingPerm?'#6b7487':'#203640',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:submittingPerm?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
                   {submittingPerm?t('sending'):t('sendRequest')}
                 </button>
               </>
             )}
-            <button onClick={()=>setShowPermRequestModal(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#94a3b8',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
+            <button onClick={()=>setShowPermRequestModal(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#4b5565',fontSize:13,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
           </div>
         </div>
       )}
@@ -550,24 +559,24 @@ export default function ChoosePage() {
       {showNotifications && (
         <div onClick={()=>setShowNotifications(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:220,display:'flex',alignItems:'flex-end',justifyContent:'center',padding:0}}>
           <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:'24px 24px 0 0',padding:'24px 20px 32px',width:'100%',maxWidth:420,maxHeight:'75vh',overflowY:'auto' as const,textAlign:'start' as const}}>
-            <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:16}}>{t('notifications')}</div>
+            <div style={{fontSize:16,fontWeight:600,color:'var(--storely-text)',marginBottom:16}}>{t('notifications')}</div>
             {notifications.length===0 ? (
-              <div style={{textAlign:'center' as const,padding:'30px 0',fontSize:13,color:'#94a3b8'}}>{t('noNotifications')}</div>
+              <div style={{textAlign:'center' as const,padding:'30px 0',fontSize:13,color:'#4b5565'}}>{t('noNotifications')}</div>
             ) : (
               <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
                 {notifications.map((n:any)=>{
-                  const bg = n.type==='success'?'#f0fdfa':n.type==='danger'?'#fef2f2':n.type==='warning'?'#fffbeb':'#f8fafc'
-                  const border = n.type==='success'?'#99f6e4':n.type==='danger'?'#fecaca':n.type==='warning'?'#fde68a':'#e2e8f0'
+                  const bg = n.type==='success'?'#e7f3f1':n.type==='danger'?'#fef2f2':n.type==='warning'?'#fffbeb':'#f4f5f6'
+                  const border = n.type==='success'?'#b9dcd7':n.type==='danger'?'#fecaca':n.type==='warning'?'#fde68a':'#e5e7eb'
                   return (
                     <div key={n.id} style={{background:bg,border:`1px solid ${border}`,borderRadius:14,padding:'12px 14px'}}>
-                      <div style={{fontSize:13,fontWeight:800,color:'#0f172a',marginBottom:4}}>{n.title}</div>
-                      <div style={{fontSize:12,color:'#475569',lineHeight:1.6}}>{n.message}</div>
+                      <div style={{fontSize:13,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}>{n.title}</div>
+                      <div style={{fontSize:12,color:'#4b5565',lineHeight:1.6}}>{n.message}</div>
                     </div>
                   )
                 })}
               </div>
             )}
-            <button onClick={()=>setShowNotifications(false)} style={{width:'100%',padding:'12px',marginTop:16,background:'#f1f5f9',color:'#334155',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
+            <button onClick={()=>setShowNotifications(false)} style={{width:'100%',padding:'12px',marginTop:16,background:'#eceef1',color:'#1f2937',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
           </div>
         </div>
       )}

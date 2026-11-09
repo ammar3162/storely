@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { supplierBase } from '@/lib/planPricing'
+import { isNewPlan, supplierBase } from '@/lib/planPricing'
 import { getBranchLimit } from '@/lib/branchLimit'
 
 // حد الموردين للمنشأة كلها: حد الباقة + موردين كل فرع إضافي (lib/planPricing).
@@ -10,7 +10,7 @@ export async function checkSupplierCapacity(db: SupabaseClient, org_id: string):
     db.from('organizations').select('plan,max_suppliers').eq('id', org_id).single(),
     getBranchLimit(db, org_id),
   ])
-  const baseLimit = supplierBase((org as any)?.plan, (org as any)?.max_suppliers, branchLimit.extra)
+  const baseLimit = supplierBase((org as any)?.plan, (org as any)?.max_suppliers, branchLimit.extra, branchLimit.base)
 
   const { count: baseUsed } = await db.from('suppliers').select('id', { count: 'exact', head: true })
     .eq('org_id', org_id).eq('is_active', true).is('addon_subscription_id', null)
@@ -26,6 +26,8 @@ export async function checkSupplierCapacity(db: SupabaseClient, org_id: string):
     .maybeSingle()
 
   if (!extraSupSub) {
+    // الباقات الجديدة: الموردين مجاناً لين 15 لكل فرع — الزيادة من الأدمن
+    if (isNewPlan((org as any)?.plan)) return { ok: false, error: `وصلت حد الموردين (${baseLimit} مورد — 15 لكل فرع). تحتاج أكثر؟ تواصل معنا ونرفع الحد لك` }
     return { ok: false, error: `وصلت حد موردين باقتك (${baseLimit} مورد) — أضف "مورد إضافي" من صفحة الإضافات أو رقّ باقتك` }
   }
 

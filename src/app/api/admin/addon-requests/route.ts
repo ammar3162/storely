@@ -57,7 +57,7 @@ export async function POST(req: Request) {
   if (action === 'reject') {
     const why = typeof reason === 'string' ? reason.trim().slice(0, 300) : ''
     await db.from('addon_requests').update({ status: 'rejected', reason: why || null, decided_at: now, decided_by_name: admin.full_name } as any).eq('id', id).eq('status', 'pending')
-    await db.from('notifications').insert({ org_id: req0.org_id, title: `طلب «${addonName}»`, message: why ? `ما تمت الموافقة على الطلب: ${why}` : 'ما تمت الموافقة على الطلب — تواصل معنا لو عندك استفسار', type: 'warning', read: false } as any)
+    await db.from('notifications').insert({ org_id: req0.org_id, title: `طلب «${addonName}»`, message: why ? `لم تتم الموافقة على الطلب: ${why}` : 'لم تتم الموافقة على الطلب — تواصل معنا إذا كان لديك استفسار', type: 'warning', read: false } as any)
     sendPushToOrg(req0.org_id, `طلب «${addonName}»`, why ? `ما تمت الموافقة: ${why}` : 'ما تمت الموافقة على الطلب', '/addons-market').catch(() => {})
     await logAdminAction(admin, 'reject_addon_request', req0.org_id, orgName, { request_id: id, addon_name: addonName, reason: why })
     return NextResponse.json({ success: true })
@@ -69,8 +69,8 @@ export async function POST(req: Request) {
   const res = await activateAddon(db, { orgId: req0.org_id, addonId: req0.addon_id, quantity: t.quantity, branchIds: t.branchIds })
   if (!res.ok) return NextResponse.json({ error: res.error }, { status: res.status })
   await db.from('addon_requests').update({ status: 'approved', decided_at: now, decided_by_name: admin.full_name, prorated_amount: res.proratedAmount } as any).eq('id', id)
-  await db.from('notifications').insert({ org_id: req0.org_id, title: `تم تفعيل «${addonName}»`, message: res.proratedAmount > 0 ? `تفعّلت الإضافة — المستحق ${res.proratedAmount} ⃁ عن الأيام الباقية لين تجديد باقتك` : 'تفعّلت الإضافة وتقدر تستخدمها الحين', type: 'success', read: false } as any)
-  sendPushToOrg(req0.org_id, `تم تفعيل «${addonName}»`, 'تفعّلت الإضافة وتقدر تستخدمها الحين', '/addons-market').catch(() => {})
+  await db.from('notifications').insert({ org_id: req0.org_id, title: `تم تفعيل «${addonName}»`, message: res.proratedAmount > 0 ? `تم تفعيل الإضافة — المستحق ${res.proratedAmount} ⃁ عن الأيام المتبقية حتى تجديد باقتك` : 'تم تفعيل الإضافة ويمكنك استخدامها الآن', type: 'success', read: false } as any)
+  sendPushToOrg(req0.org_id, `تم تفعيل «${addonName}»`, 'تم تفعيل الإضافة ويمكنك استخدامها الآن', '/addons-market').catch(() => {})
   await logAdminAction(admin, 'approve_addon_request', req0.org_id, orgName, { request_id: id, addon_name: addonName, quantity: res.quantity, prorated_amount: res.proratedAmount })
   return NextResponse.json({ success: true, proratedAmount: res.proratedAmount, proratedDays: res.proratedDays, quantity: res.quantity })
 }

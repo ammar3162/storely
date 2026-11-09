@@ -8,6 +8,8 @@ import { captureUtm, type Utm } from '@/lib/signupSource'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
 import { DEVICE_UNVERIFIED_REASON, VERIFY_DEVICE_PATH } from '@/lib/deviceMessages'
 import { PHONE_RULES } from './constants'
+import { CUSTOM_MODULES, PLAN_MODULES } from '@/lib/planPricing'
+import { DEFAULT_PRESET } from '@/lib/featurePresets'
 
 /** حالة صفحة الدخول والتسجيل ودوالها — منقولة كما هي من page.tsx */
 export function useLogin() {
@@ -35,12 +37,36 @@ export function useLogin() {
   const [phone, setPhone]             = useState('')
   const [countryCode, setCountryCode] = useState('+966')
   const [businessType, setBusinessType] = useState('')
-  const [branchCount, setBranchCount] = useState<number|null>(() => {
+  // 2026-11-08: ما فيه باقات ثابتة للمشتركين الجدد — التسجيل دايم «اختيار المزايا» (custom).
+  // روابط قديمة (?plan=essential|ops|full) تتحول لمزايا نفس الباقة.
+  const [planChoice, setPlanChoice] = useState<'essential'|'ops'|'full'|'custom'|null>('custom')
+  // جا من صفحة الأسعار ومعه اختياره؟ نعرض ملخص بدل ما نسأله مرة ثانية (يقدر يغيّر)
+  const [planFromLink] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    const q = new URLSearchParams(window.location.search)
+    const p = q.get('plan')
+    return (p === 'essential' || p === 'ops' || p === 'full' || p === 'basic') || (p === 'custom' && !!q.get('modules'))
+  })
+  const [editPlan, setEditPlan] = useState(false)
+  // المزايا المختارة (أسماء CUSTOM_MODULES)
+  const [signupAddons, setSignupAddons] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
-      const b = new URLSearchParams(window.location.search).get('branches')
-      if (b && [1,3,6].includes(Number(b))) return Number(b)
+      const q = new URLSearchParams(window.location.search)
+      const p = q.get('plan')
+      const legacy = p === 'basic' ? 'essential' : p
+      const fromPlan = legacy === 'essential' || legacy === 'ops' || legacy === 'full' ? PLAN_MODULES[legacy] : []
+      const fromList = (q.get('modules') || '').split(',').filter(x => x in CUSTOM_MODULES)
+      const all = [...new Set([...fromPlan, ...fromList])]
+      if (all.length) return all
     }
-    return null
+    return [...DEFAULT_PRESET.mods]
+  })
+  const [branchCount, setBranchCount] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const b = Math.round(Number(new URLSearchParams(window.location.search).get('branches')))
+      if (b >= 1 && b <= 10) return b
+    }
+    return 1
   })
   const [billing, setBilling] = useState<'monthly'|'yearly'>(() => {
     if (typeof window !== 'undefined') {
@@ -51,7 +77,7 @@ export function useLogin() {
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState(() =>
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('error') === 'google'
-      ? 'تعذّر الدخول بحساب Google — حاول مرة ثانية' : '')
+      ? 'تعذّر الدخول بحساب Google — حاول مرة أخرى' : '')
   const [accountStatus, setAccountStatus] = useState<'suspended'|'deleted'|null>(() => {
     if (typeof window !== 'undefined') {
       const reason = new URLSearchParams(window.location.search).get('reason')
@@ -92,7 +118,7 @@ export function useLogin() {
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
-    if (error) { setError('تعذّر الدخول بحساب Google — حاول مرة ثانية'); setLoading(false) }
+    if (error) { setError('تعذّر الدخول بحساب Google — حاول مرة أخرى'); setLoading(false) }
   }
 
   async function leaveOauth() {
@@ -114,7 +140,7 @@ export function useLogin() {
     if (error) {
       // رسالة واحدة موحّدة بغض النظر عن السبب الفعلي — نتجنب كشف
       // أي إيميل مسجّل عندنا كعميل ولّا لأ (ثغرة "تعداد الإيميلات")
-      setError('البريد الإلكتروني أو كلمة المرور غير صحيحة — تقدر تستخدم "نسيت كلمة المرور؟"')
+      setError('البريد الإلكتروني أو كلمة المرور غير صحيحة — يمكنك استخدام "نسيت كلمة المرور؟"')
       setLoading(false); return
     }
     if (data.session) {
@@ -167,7 +193,7 @@ export function useLogin() {
     if (oauth) { setStep(2); return }
     const pwErr = validatePassword(password)
     if (pwErr) { setError(pwErr); return }
-    if (password.length < 6) { setError('كلمة المرور 6 أحرف على الأقل'); return }
+    if (password.length < 6) { setError('يجب أن تتكون كلمة المرور من 6 أحرف على الأقل'); return }
     setStep(2)
   }
 
@@ -219,7 +245,8 @@ export function useLogin() {
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
     // تم تعطيل إجبارية تحقق الـOTP مؤقتاً (2026-07-24) لحين حل مشكلة توصيل واتساب — راجع notification_logs
-    if (!branchCount) { setError('اختر الباقة المناسبة'); return }
+    if (!planChoice) { setError('اختر الباقة المناسبة'); return }
+    if (planChoice === 'custom' && !signupAddons.length) { setError('اختر ميزة واحدة على الأقل'); return }
     if (!agreedTerms) { setError('يجب الموافقة على الشروط والأحكام للمتابعة'); return }
     setLoading(true); setError('')
     if (oauth) {
@@ -228,7 +255,7 @@ export function useLogin() {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
-          orgName: orgName.trim(), fullPhone, businessType: businessType||'مطعم', branchCount, billing,
+          orgName: orgName.trim(), fullPhone, businessType: businessType||'مطعم', plan: planChoice, addons: signupAddons, staff: 6 * branchCount, branchCount, billing,
           phone: phone.trim(), countryCode,
           trialEnds: new Date(Date.now() + 14*24*60*60*1000).toISOString(),
           termsAcceptedAt: new Date().toISOString(),
@@ -264,6 +291,9 @@ export function useLogin() {
           orgName: orgName.trim(),
           fullPhone,
           businessType: businessType||'مطعم',
+          plan: planChoice,
+          addons: signupAddons,
+          staff: 6 * branchCount,
           branchCount,
           billing,
           phone: phone.trim(),
@@ -303,7 +333,7 @@ export function useLogin() {
   const phoneRule = PHONE_RULES[countryCode] || { length:10, prefix:'', placeholder:'xxxxxxxxxx' }
   const phonePlaceholder = phoneRule.placeholder
 
-  return { t, lang, forgotMethod, setForgotMethod, forgotPhone, setForgotPhone, oauth, setOauth, mode, setMode, step, setStep, otpSent, setOtpSent, otp, setOtp, otpVerified, setOtpVerified, sendingOtp, setSendingOtp, email, setEmail, password, setPassword, orgName, setOrgName, phone, setPhone, countryCode, setCountryCode, businessType, setBusinessType, branchCount, setBranchCount, billing, setBilling, loading, setLoading, error, setError, accountStatus, setAccountStatus, agreedTerms, setAgreedTerms, agentCode, setAgentCode, showPassword, setShowPassword, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, utm, setUtm, supabase, phoneRule, phonePlaceholder, handleGoogle, leaveOauth, handleLogin, handleForgot, handleForgotWhatsapp, nextStep, validatePassword, sendOtp, verifyOtp, handleRegister }
+  return { planFromLink, editPlan, setEditPlan, t, lang, forgotMethod, setForgotMethod, forgotPhone, setForgotPhone, oauth, setOauth, mode, setMode, step, setStep, otpSent, setOtpSent, otp, setOtp, otpVerified, setOtpVerified, sendingOtp, setSendingOtp, email, setEmail, password, setPassword, orgName, setOrgName, phone, setPhone, countryCode, setCountryCode, businessType, setBusinessType, planChoice, setPlanChoice, signupAddons, setSignupAddons, branchCount, setBranchCount, billing, setBilling, loading, setLoading, error, setError, accountStatus, setAccountStatus, agreedTerms, setAgreedTerms, agentCode, setAgentCode, showPassword, setShowPassword, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail, utm, setUtm, supabase, phoneRule, phonePlaceholder, handleGoogle, leaveOauth, handleLogin, handleForgot, handleForgotWhatsapp, nextStep, validatePassword, sendOtp, verifyOtp, handleRegister }
 }
 
 export type LoginState = ReturnType<typeof useLogin>

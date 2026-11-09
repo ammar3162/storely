@@ -43,6 +43,7 @@ export function usePurchases() {
   function todayRiyadh() {
     return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())
   }
+  const [invOn, setInvOn] = useState(true)
   const [form, setForm] = useState({
     category:'مخزون', name:'', sku:'', qty:'', unit:'قطعة',
     reorder_point:'5', total_amount:'', supplier:'',
@@ -59,7 +60,7 @@ export function usePurchases() {
     if(!z) return
     setForm(f=>({...f, hasVat:'yes', supplier: f.supplier || z.inv.sellerName, supplier_vat_number: z.inv.vatNumber,
       invoice_date: zatcaDate(z.inv), total_amount: f.total_amount || String(z.inv.total)}))
-    if(!silent) toast('✅ قرأنا باركود الفاتورة — البيانات موثقة')
+    if(!silent) toast('قرأنا باركود الفاتورة — البيانات موثقة')
   }
   // اختيار مورد محفوظ رقمه الضريبي → يتعبى تلقائياً
   function setSupplierName(name:string){
@@ -84,7 +85,12 @@ export function usePurchases() {
       oid=me.org_id
     }
     setOrgId(oid)
-    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setBizType(me?.org?.business_type??null); setIsOwner(me?.role==='owner') })
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setBizType(me?.org?.business_type??null); setIsOwner(me?.role==='owner')
+      // «ابنِ باقتك»: الفرع بدون المخزون — الفاتورة تنحفظ مشتريات (مصروف) والخيار «مخزون» ينخفي
+      const bid = typeof window!=='undefined' ? sessionStorage.getItem('s_branch_id') : null
+      const inv = ((bid && me?.org?.branch_features?.[bid]) || me?.org?.features)?.inventory !== false
+      setInvOn(inv)
+      if(!inv) setForm(f=>f.category==='مخزون'?{...f,category:'مشتريات'}:f) })
     loadProducts(oid);loadHistory(oid);loadPayables(oid)
     api.get('/api/suppliers',{org_id:oid}).then(j=>{ if(j.success) setSuppliers((j.suppliers||[]).map((x:any)=>({name:x.name,vat_number:x.vat_number||null}))) }).catch(()=>{})
   }
@@ -124,7 +130,7 @@ export function usePurchases() {
     const r=await api.patch('/api/purchases',{org_id:orgId,id,mark_paid:true})
     setPayingId(null)
     if(!r.success){toast('فشل تحديث الحالة — حاول مرة أخرى','error');return}
-    toast('✅ تم تسجيل الدفع')
+    toast('تم تسجيل الدفع')
     setPayables(prev=>prev.filter((p:any)=>p.id!==id))
   }
 
@@ -139,7 +145,7 @@ export function usePurchases() {
     const r=await api.del('/api/purchases',{org_id:orgId,id:purchase.id})
     setDeletingId(null)
     if(!r.success){toast('فشل حذف الفاتورة — حاول مرة أخرى','error');return}
-    toast('🗑️ تم حذف الفاتورة')
+    toast('تم حذف الفاتورة')
     setHistory(prev=>prev.filter((p:any)=>p.id!==purchase.id))
     cache.invalidate('purchases:');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
   }
@@ -149,14 +155,14 @@ export function usePurchases() {
     if('error' in prep){toast(prep.error,'warning');return}
     setUploading(true)
     // باركود الهيئة من الصورة نفسها (على الجهاز) — بالتوازي مع الرفع
-    if(!prep.isPdf) zatcaFromImage(file).then(z=>{ if(z&&!zatcaRef.current){ setZatca(z,true); toast('✅ لقينا باركود الهيئة بالفاتورة — البيانات موثقة') } })
+    if(!prep.isPdf) zatcaFromImage(file).then(z=>{ if(z&&!zatcaRef.current){ setZatca(z,true); toast('لقينا باركود الهيئة بالفاتورة — البيانات موثقة') } })
     try {
       const path = orgId+'/invoice-'+Date.now()+'.'+prep.ext   // مجلد المنشأة (سياسة التخزين تسمح بمجلدها بس)
       const{error}=await sb.storage.from('invoices').upload(path, prep.blob, { contentType: prep.type })
       if(error){toast('فشل رفع الفاتورة','error');setUploading(false);return}
       const{data:{publicUrl}}=sb.storage.from('invoices').getPublicUrl(path)
       setForm(f=>({...f,invoice_image:publicUrl}));setPreviewUrl(publicUrl)
-      toast(prep.isPdf?'تم إرفاق ملف الفاتورة ✓':'تم رفع الفاتورة ✓')
+      toast(prep.isPdf?'تم إرفاق ملف الفاتورة ':'تم رفع الفاتورة ')
 
     } catch { toast('فشل رفع الصورة','error') }
     setUploading(false)
@@ -169,7 +175,7 @@ export function usePurchases() {
     try {
       const res = await fetch('/api/supplier-delivery-thanks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:orgId,product_id:productId,product_name:productName,supplier_name:supplierName})})
       const data = await res.json()
-      if (data.sent) toast(`✅ تم إرسال رسالة شكر لـ${data.supplier}`)
+      if (data.sent) toast(`تم إرسال رسالة شكر لـ${data.supplier}`)
       else toast('تعذر إرسال رسالة الشكر (تحقق من ربط المورد أو موافقة واتساب)', 'warning')
     } catch { toast('حدث خطأ أثناء الإرسال', 'error') }
   }
@@ -185,12 +191,12 @@ export function usePurchases() {
     if(!orgId||submitting.current)return
     if(form.category==='مخزون'&&!form.name.trim()){toast('اكتب اسم الصنف','warning');return}
     if(!(Number(form.total_amount)>0)){toast('اكتب المبلغ الإجمالي','warning');return}
-    if(form.qty&&!(Number.isInteger(Number(form.qty))&&Number(form.qty)>=0)){toast('الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)','warning');return}
+    if(form.qty&&!(Number.isInteger(Number(form.qty))&&Number(form.qty)>=0)){toast('يجب أن تكون الكمية رقماً صحيحاً — إذا كانت فيها كسور فاستخدم وحدة أصغر (مثل الغرام بدل الكيلو)','warning');return}
     submitting.current=true
     if(!form.hasVat){toast('حدد هل الفاتورة تشمل الضريبة','warning');submitting.current=false;return}
-    if(form.hasVat==='yes'&&!form.invoice_image){toast('الفاتورة الضريبية لازم ترفق صورتها أو ملفها','warning');submitting.current=false;return}
+    if(form.hasVat==='yes'&&!form.invoice_image){toast('يجب إرفاق صورة الفاتورة الضريبية أو ملفها','warning');submitting.current=false;return}
     if(!form.supplier.trim()){toast('يرجى إدخال اسم المورد','warning');submitting.current=false;return}
-    if(form.hasVat==='yes'&&form.supplier_vat_number.trim()&&!isValidVat(normalizeVat(form.supplier_vat_number))){toast('الرقم الضريبي للمورد غير صحيح — ١٥ رقم يبدأ وينتهي بـ 3','warning');submitting.current=false;return}
+    if(form.hasVat==='yes'&&form.supplier_vat_number.trim()&&!isValidVat(normalizeVat(form.supplier_vat_number))){toast('الرقم الضريبي للمورد غير صحيح — يتكون من 15 رقماً ويبدأ وينتهي بالرقم 3','warning');submitting.current=false;return}
     setLoading(true)
     // حفظ الفاتورة + الإشعار + تحديث المخزون ومتوسط التكلفة كلها على الخادم
     const body:any={
@@ -207,20 +213,20 @@ export function usePurchases() {
       res=await api.post('/api/purchases',{...body,allow_duplicate:true})
     if(!res.success){if(!res.duplicate)toast(res.error||'حدث خطأ','error');setLoading(false);submitting.current=false;return}
 
-    if(res.product_action==='updated') toast(`✅ تم تحديث المخزون (+${res.qty})`,'success')
+    if(res.product_action==='updated') toast(`تم تحديث المخزون (+${res.qty})`,'success')
     else if(res.product_action==='created'){
-      toast(`✅ تم إضافة "${form.name}" للمخزون`)
+      toast(`تم إضافة "${form.name}" للمخزون`)
       api.post('/api/sync-product-to-staff',{org_id:orgId,product_id:res.product_id})
     }
-    else toast('✅ تم تسجيل الشراء')
-    if(form.invoice_date&&form.invoice_date!==todayRiyadh()) toast(`📅 انحفظت بتاريخ الفاتورة ${form.invoice_date} — تلقاها في التقارير بهالتاريخ`)
+    else toast('تم تسجيل الشراء')
+    if(form.invoice_date&&form.invoice_date!==todayRiyadh()) toast(`حُفظت بتاريخ الفاتورة ${form.invoice_date} — ستجدها في التقارير بهذا التاريخ`)
 
     // تأكيد يدوي قبل إرسال رسالة الشكر — يظهر فقط لو المورد مسجّل فعلياً بالنظام والمنتج مرتبط فيه تحديداً
     if (res.thanks_candidate && res.product_id) {
       setPendingThanks({ productId: res.product_id, productName: form.name, supplierName: form.supplier.trim() })
     }
 
-    setForm({category:'مخزون',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:'',invoice_number:'',supplier_vat_number:''});setZatca(null);setVatFromSupplier(false)
+    setForm({category:invOn?'مخزون':'مشتريات',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:'',invoice_number:'',supplier_vat_number:''});setZatca(null);setVatFromSupplier(false)
     setPreviewUrl(null);setLoading(false);submitting.current=false
     cache.invalidate('purchases:');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
     loadHistory(orgId);loadPayables(orgId)
@@ -246,7 +252,7 @@ export function usePurchases() {
   const totalVat=filteredHistory.reduce((s,p)=>s+Number(p.vat_amount||0),0)
   const totalNet=filteredHistory.reduce((s,p)=>s+Number(p.amount||0),0)
 
-  return { history, setHistory, isOwner, setIsOwner, editLog, setEditLog, payables, setPayables, showPayables, setShowPayables, payingId, setPayingId, deletingId, setDeletingId, products, setProducts, isExisting, setIsExisting, orgId, setOrgId, curr, setCurr, loading, setLoading, uploading, setUploading, showManual, setShowManual, bizType, setBizType, showScan, setShowScan, previewUrl, setPreviewUrl, pendingThanks, setPendingThanks, filterCat, setFilterCat, filterPeriod, setFilterPeriod, filterSupplier, setFilterSupplier, form, setForm, suppliers, setSuppliers, vatFromSupplier, setVatFromSupplier, zatca, setZatcaState, submitting, zatcaRef, sb, inputTotal, displayAmount, displayVat, filteredHistory, totalSpent, totalVat, totalNet, todayRiyadh, setZatca, setSupplierName, init, loadProducts, loadHistory, loadPayables, markPaid, deletePurchase, handleImage, confirmSupplierThanks, pickOcrItem, handleSubmit }
+  return { invOn, history, setHistory, isOwner, setIsOwner, editLog, setEditLog, payables, setPayables, showPayables, setShowPayables, payingId, setPayingId, deletingId, setDeletingId, products, setProducts, isExisting, setIsExisting, orgId, setOrgId, curr, setCurr, loading, setLoading, uploading, setUploading, showManual, setShowManual, bizType, setBizType, showScan, setShowScan, previewUrl, setPreviewUrl, pendingThanks, setPendingThanks, filterCat, setFilterCat, filterPeriod, setFilterPeriod, filterSupplier, setFilterSupplier, form, setForm, suppliers, setSuppliers, vatFromSupplier, setVatFromSupplier, zatca, setZatcaState, submitting, zatcaRef, sb, inputTotal, displayAmount, displayVat, filteredHistory, totalSpent, totalVat, totalNet, todayRiyadh, setZatca, setSupplierName, init, loadProducts, loadHistory, loadPayables, markPaid, deletePurchase, handleImage, confirmSupplierThanks, pickOcrItem, handleSubmit }
 }
 
 export type PurchasesState = ReturnType<typeof usePurchases>

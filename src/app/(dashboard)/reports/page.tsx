@@ -23,7 +23,10 @@ const StaffMonthlyDetail = lazy(() => import('@/components/reports/StaffMonthlyR
 export default function ReportsPage() {
   const orgPlan = typeof window!=='undefined' ? (sessionStorage.getItem('s_plan')||'basic') : 'basic'
   // تبويب الكاشير: الشاملة/المتقدمة أو إضافة «إقفال الكاشير»
-  const [hasCashier, setHasCashier] = useState(orgPlan!=='basic')
+  const [hasCashier, setHasCashier] = useState(['ops','full','pro','advanced'].includes(orgPlan))
+  // كل تقرير يطلع بس لو ميزته باشتراك الفرع («ابنِ باقتك» أو إضافة لفروع معيّنة) — الافتراضي ظاهر
+  const [feat, setFeat]           = useState<{ inventory?: boolean; purchases?: boolean; hr?: boolean }>({})
+  const hasInv = feat.inventory !== false, hasPur = feat.purchases !== false, hasHr = feat.hr !== false
   const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'|'cashier'|'waste'|'attendance'|'staffMonthly'>('home')
   const [period, setPeriod]       = useState<FilterPeriod>('today')
   const [from, setFrom]           = useState('')
@@ -48,7 +51,10 @@ export default function ReportsPage() {
   async function loadStats() {
     setSL(true)
     const orgId=sessionStorage.getItem('s_org_id'); if(!orgId){setSL(false);return}
-    getMe().then(me=>{ if(me?.org?.currency) setHomeCurr(currencySymbol(me.org.currency)); if(me?.org?.features) setHasCashier(!!me.org.features.cashier) })
+    getMe().then(me=>{ if(me?.org?.currency) setHomeCurr(currencySymbol(me.org.currency))
+      const bid = sessionStorage.getItem('s_branch_id')
+      const f = (bid && me?.org?.branch_features?.[bid]) || me?.org?.features
+      if(f){ setHasCashier(!!f.cashier); setFeat({ inventory: f.inventory, purchases: f.purchases, hr: f.hr }) } })
     const{start,end}=getRange(period,from,to)
     const sum=await reportData('summary',start,end)
     if(!sum.success){setSL(false);return}
@@ -77,11 +83,15 @@ export default function ReportsPage() {
     setTimeout(()=>setVisible(true),50)
   }
 
+  // نفس شريط الفترات داخل كل تقرير (الفترة مشتركة مع الرئيسية)
+  const bar = <FilterBar period={period} setPeriod={setPeriod} from={from} setFrom={setFrom} to={to} setTo={setTo}/>
+  // تقرير ميزته مو مفعّلة: نرجع للرئيسية
+  if (((view==='dispense'||view==='inventory'||view==='waste') && !hasInv) || (view==='purchase' && !hasPur) || ((view==='attendance'||view==='staffMonthly') && !hasHr)) { setView('home'); return null }
   if (view==='inventory') return (
     <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} .spin-icon{animation:spin .8s linear infinite}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير الجرد اليومي</h1>
-      <InventoryDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
+      <InventoryDetail period={period} from={from} to={to} filterBar={bar} onBack={()=>setView('home')}/>
     </div>
   )
 
@@ -89,7 +99,7 @@ export default function ReportsPage() {
     <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير الصرف</h1>
-      <DispenseDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
+      <DispenseDetail period={period} from={from} to={to} filterBar={bar} onBack={()=>setView('home')}/>
     </div>
   )
 
@@ -97,7 +107,7 @@ export default function ReportsPage() {
     <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير المشتريات</h1>
-      <PurchaseDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
+      <PurchaseDetail period={period} from={from} to={to} filterBar={bar} onBack={()=>setView('home')}/>
     </div>
   )
 
@@ -119,7 +129,7 @@ export default function ReportsPage() {
     <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>إقفال الكاشير اليومي</h1>
-      <CashierClosingDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
+      <CashierClosingDetail period={period} from={from} to={to} filterBar={bar} onBack={()=>setView('home')}/>
     </div>
   )
 
@@ -127,7 +137,7 @@ export default function ReportsPage() {
     <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير الهدر</h1>
-      <WasteDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
+      <WasteDetail period={period} from={from} to={to} filterBar={bar} onBack={()=>setView('home')}/>
     </div>
   )
 
@@ -150,133 +160,119 @@ export default function ReportsPage() {
       </div>
 
       <div style={{display:'flex',flexDirection:'column' as const,gap:14}}>
-        <div className="su" style={{animationDelay:'.1s'}}>
+        {hasInv && <div className="su" style={{animationDelay:'.1s'}}>
           <ReportCard
             title="تقرير الصرف"
             subtitle="عمليات الصرف من المخزون"
             icon={<Upload size={20} strokeWidth={1.75}/>}
-            color={colors.danger}
-            bg={colors.dangerLight}
-            border={colors.dangerBorder}
+            color={colors.primary}
             loading={statsLoading}
             chartData={weeklyD}
             stats={[
-              {label:'عمليات الصرف',value:dispenseStats.ops,color:colors.danger,highlight:true},
-              {label:'وحدات مصروفة',value:dispenseStats.qty,color:colors.danger},
-              {label:'أصناف مختلفة',value:dispenseStats.items,color:colors.danger},
+              {label:'عمليات الصرف',value:dispenseStats.ops,color:colors.text,highlight:true},
+              {label:'وحدات مصروفة',value:dispenseStats.qty,color:colors.text},
+              {label:'أصناف مختلفة',value:dispenseStats.items,color:colors.text},
             ]}
             onClick={()=>setView('dispense')}
           />
-        </div>
-        <div className="su" style={{animationDelay:'.15s'}}>
+        </div>}
+        {hasPur && <div className="su" style={{animationDelay:'.15s'}}>
           <ReportCard
             title="تقرير المشتريات"
             subtitle="فواتير المشتريات مع الضريبة 15%"
             icon={<Receipt size={20} strokeWidth={1.75}/>}
             color={colors.primary}
-            bg={colors.primaryLight}
-            border={colors.primaryBorder}
             loading={statsLoading}
             chartData={weeklyP}
             stats={[
-              {label:'عدد الفواتير',value:purchaseStats.invoices,color:colors.primary,highlight:true},
-              {label:'إجمالي شامل',value:purchaseStats.total.toFixed(0)+' '+homeCurr,color:colors.primary},
+              {label:'عدد الفواتير',value:purchaseStats.invoices,color:colors.text,highlight:true},
+              {label:'إجمالي شامل',value:purchaseStats.total.toFixed(0)+' '+homeCurr,color:colors.text},
               {label:'ضريبة القيمة',value:purchaseStats.vat.toFixed(0)+' '+homeCurr,color:colors.warning},
             ]}
             onClick={()=>setView('purchase')}
           />
-        </div>
-        <div className="su" style={{animationDelay:'.2s'}}>
+        </div>}
+        {hasInv && <div className="su" style={{animationDelay:'.2s'}}>
           <ReportCard
             title="تقرير الجرد اليومي"
             subtitle="ملخص المخزون الحالي والأصناف الناقصة"
             icon={<ClipboardList size={20} strokeWidth={1.75}/>}
-            color={'#7c3aed'}
-            bg={'#f5f3ff'}
-            border={'#ddd6fe'}
+            color={colors.primary}
             loading={statsLoading}
             chartData={[]}
             stats={[
-              {label:'إجمالي الأصناف',value:inventoryStats.total,color:'#7c3aed',highlight:true},
+              {label:'إجمالي الأصناف',value:inventoryStats.total,color:colors.text,highlight:true},
               {label:'مخزون ناقص',value:inventoryStats.low,color:colors.warning},
               {label:'نفد المخزون',value:inventoryStats.out,color:colors.danger},
             ]}
             onClick={()=>setView('inventory')}
           />
-        </div>
+        </div>}
         {hasCashier && (
         <div className="su" style={{animationDelay:'.25s'}}>
           <ReportCard
             title="إقفال الكاشير اليومي"
             subtitle="تقارير إقفال الكاشير والفروقات"
             icon={<Wallet size={20} strokeWidth={1.75}/>}
-            color={'#0891b2'}
-            bg={'#ecfeff'}
-            border={'#a5f3fc'}
+            color={colors.primary}
             loading={statsLoading}
             chartData={[]}
             stats={[
-              {label:'عدد التقارير',value:cashierStats.count,color:'#0891b2',highlight:true},
+              {label:'عدد التقارير',value:cashierStats.count,color:colors.text,highlight:true},
               {label:'حالات عجز',value:cashierStats.deficit,color:colors.danger},
-              {label:'حالات زيادة',value:cashierStats.surplus,color:colors.info},
+              {label:'حالات زيادة',value:cashierStats.surplus,color:colors.text},
             ]}
             onClick={()=>setView('cashier')}
           />
         </div>
         )}
-        <div className="su" style={{animationDelay:'.28s'}}>
+        {hasHr && <div className="su" style={{animationDelay:'.28s'}}>
           <ReportCard
             title="الحضور والانصراف"
-            subtitle="الحضور والتأخير والأوفر تايم لكل موظف"
+            subtitle="الحضور والتأخير والعمل الإضافي لكل موظف"
             icon={<CalendarDays size={20} strokeWidth={1.75}/>}
-            color={'#0f766e'}
-            bg={'#f0fdfa'}
-            border={'#99f6e4'}
+            color={colors.primary}
             loading={false}
             chartData={[]}
             stats={[]}
             onClick={()=>setView('attendance')}
           />
-        </div>
-        <div className="su" style={{animationDelay:'.29s'}}>
+        </div>}
+        {hasHr && <div className="su" style={{animationDelay:'.29s'}}>
           <ReportCard
             title="تقرير الموظف الشهري"
-            subtitle="الرواتب والأوفر تايم والتأخير والخصومات والسلف"
+            subtitle="الرواتب والعمل الإضافي والتأخير والخصومات والسلف"
             icon={<Wallet size={20} strokeWidth={1.75}/>}
-            color={'#b45309'}
-            bg={'#fffbeb'}
-            border={'#fde68a'}
+            color={colors.primary}
             loading={false}
             chartData={[]}
             stats={[]}
             onClick={()=>setView('staffMonthly')}
           />
-        </div>
-        <div className="su" style={{animationDelay:'.3s'}}>
+        </div>}
+        {hasInv && <div className="su" style={{animationDelay:'.3s'}}>
           <ReportCard
             title="تقرير الهدر"
             subtitle="الأصناف المهدورة وأسبابها"
             icon={<Trash2 size={20} strokeWidth={1.75}/>}
-            color={colors.danger}
-            bg={colors.dangerLight}
-            border={colors.dangerBorder}
+            color={colors.primary}
             loading={statsLoading}
             chartData={[]}
             stats={[
-              {label:'عمليات الهدر',value:wasteStats.ops,color:colors.danger,highlight:true},
-              {label:'وحدات مهدورة',value:wasteStats.qty,color:colors.danger},
-              {label:'أصناف مختلفة',value:wasteStats.items,color:colors.danger},
+              {label:'عمليات الهدر',value:wasteStats.ops,color:colors.text,highlight:true},
+              {label:'وحدات مهدورة',value:wasteStats.qty,color:colors.text},
+              {label:'أصناف مختلفة',value:wasteStats.items,color:colors.text},
             ]}
             onClick={()=>setView('waste')}
           />
-        </div>
+        </div>}
       </div>
 
       {/* أكثر المنتجات صرفاً */}
 
 
-      {/* أكثر المنتجات صرفاً ومقارنة الأشهر */}
-      {(()=>{
+      {/* أكثر المنتجات صرفاً ومقارنة الأشهر — من المخزون */}
+      {hasInv && (()=>{
         const productMap: Record<string,{name:string,qty:number,unit:string}> = {}
         topMovements.filter((m:any)=>m.type==='out').forEach((m:any)=>{
           const name = (m.products as any)?.name||'—'
@@ -288,8 +284,8 @@ export default function ReportsPage() {
         const maxVal = Math.max(...top.map(p=>p.qty),1)
         if(top.length===0) return null
         return (
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20}}>
-            <div style={{...card,padding:'20px 24px'}}>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,300px),1fr))',gap:14,marginTop:14,marginBottom:14}}>
+            <div style={{...card,padding:'16px'}}>
               <div style={{fontSize:font.md,fontWeight:900,color:colors.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><Flame size={17} strokeWidth={2.25}/> أكثر المنتجات صرفاً</div>
               <div style={{fontSize:font.xs,color:colors.text3,marginBottom:16}}>الفترة المحددة</div>
               <div style={{display:'flex',flexDirection:'column',gap:10}}>
@@ -303,13 +299,13 @@ export default function ReportsPage() {
                       <span style={{fontSize:12,fontWeight:800,color:colors.primary}}>{p.qty} {p.unit}</span>
                     </div>
                     <div style={{height:6,background:colors.border,borderRadius:99,overflow:'hidden'}}>
-                      <div style={{height:'100%',width:`${(p.qty/maxVal)*100}%`,background:i===0?colors.primary:i===1?'#2563eb':i===2?'#7c3aed':colors.border2,borderRadius:99}}/>
+                      <div style={{height:'100%',width:`${(p.qty/maxVal)*100}%`,background:i===0?colors.primary:i<3?`${colors.primary}99`:`${colors.primary}44`,borderRadius:99}}/>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-            <div style={{...card,padding:'20px 24px'}}>
+            <div style={{...card,padding:'16px'}}>
               <div style={{fontSize:font.md,fontWeight:900,color:colors.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><BarChart3 size={17} strokeWidth={2.25}/> الصرف الشهري</div>
               <div style={{fontSize:font.xs,color:colors.text3,marginBottom:16}}>توزيع الكميات</div>
               <div style={{display:'flex',alignItems:'flex-end',gap:6,height:120}}>
@@ -324,7 +320,7 @@ export default function ReportsPage() {
                   const maxM=Math.max(...months.map(m=>m[1]),1)
                   return months.map(([key,val],i)=>{
                     const [y,m]=key.split('-')
-                    const mn=new Date(Number(y),Number(m)-1).toLocaleDateString('ar-SA', {numberingSystem:'latn',month:'short'})
+                    const mn=new Date(Number(y),Number(m)-1).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',month:'short'})
                     return (
                       <div key={key} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
                         <span style={{fontSize:9,color:colors.text4,fontWeight:700}}>{val}</span>
@@ -343,7 +339,7 @@ export default function ReportsPage() {
       })()}
 
       {/* آخر العمليات — 3 أقسام */}
-      <RecentOpsSection recentOps={recentOps} colors={colors}/>
+      {hasInv && <RecentOpsSection recentOps={recentOps} colors={colors}/>}
     </div>
   )
 }

@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     const db = sb()
     const { data: rep } = await db.from('accountant_reports').select('id,org_id,link_id,period_start,period_end,expires_at,opened_at').eq('token_hash', hashToken(token)).maybeSingle()
     if (!rep) return NextResponse.json({ error: 'الرابط غير صحيح' }, { status: 404 })
-    if (Date.parse((rep as any).expires_at) < Date.now()) return NextResponse.json({ error: 'انتهت صلاحية الرابط — اطلب من المنشأة ترسل التقرير من جديد', expired: true }, { status: 410 })
+    if (Date.parse((rep as any).expires_at) < Date.now()) return NextResponse.json({ error: 'انتهت صلاحية الرابط — اطلب من المنشأة إعادة إرسال التقرير', expired: true }, { status: 410 })
     const { data: link } = await db.from('accountant_links').select('branch_id,sections,vat_registered,is_active').eq('id', (rep as any).link_id).maybeSingle()
     // المالك شال الربط = الرابط يوقف
     if (!link || !(link as any).is_active) return NextResponse.json({ error: 'أوقفت المنشأة الربط مع المحاسب' }, { status: 410 })
@@ -37,6 +37,6 @@ export async function GET(req: Request) {
     }
     return NextResponse.json({ success: true, report, totals: summarize(report) }, { headers })
   } catch {
-    return NextResponse.json({ error: 'تعذر فتح التقرير، حاول مرة ثانية' }, { status: 500 })
+    return NextResponse.json({ error: 'تعذر فتح التقرير، حاول مرة أخرى' }, { status: 500 })
   }
 }

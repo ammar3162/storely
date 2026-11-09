@@ -13,10 +13,10 @@ export async function GET(req: Request) {
   try {
     const db = sb()
     const me = await currentAccountant(db, req)
-    if (!me) return NextResponse.json({ error: 'سجّل دخولك' }, { status: 401 })
+    if (!me) return NextResponse.json({ error: 'سجّل الدخول' }, { status: 401 })
     const { searchParams } = new URL(req.url)
     const access = await accessFor(db, me.id, searchParams.get('org_id') || '')
-    if (!access) return NextResponse.json({ error: 'ما عندك صلاحية على هالمنشأة' }, { status: 403 })
+    if (!access) return NextResponse.json({ error: 'ليست لديك صلاحية على هذه المنشأة' }, { status: 403 })
     if (!(await isSubscriptionActive(db, access.org_id))) return NextResponse.json({ error: 'اشتراك المنشأة متوقف حالياً' }, { status: 403 })
     const today = saudiToday()
     const p = customPeriod(searchParams.get('from') || `${today.slice(0, 8)}01`, searchParams.get('to') || today, today)
@@ -41,6 +41,6 @@ export async function GET(req: Request) {
     const { data: org } = await db.from('organizations').select('logo_url').eq('id', access.org_id).maybeSingle()
     return NextResponse.json({ success: true, report, totals: summarize(report), logo_url: (org as any)?.logo_url || null }, { headers })
   } catch {
-    return NextResponse.json({ error: 'تعذر تحميل التقرير، حاول مرة ثانية' }, { status: 500 })
+    return NextResponse.json({ error: 'تعذر تحميل التقرير، حاول مرة أخرى' }, { status: 500 })
   }
 }

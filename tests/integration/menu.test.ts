@@ -150,11 +150,11 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
       await db.from('branches').update({ is_active: false, plan_locked_at: null } as any).eq('org_id', orgId).neq('id', branchA)
       await db.from('organizations').update({ plan: 'basic', max_branches: 1, max_staff: 3, max_suppliers: 5 } as any).eq('id', orgId)
       await db.from('profiles').update({ subscription_type: 'trial', subscription_ends_at: new Date(Date.now() + 5 * 864e5).toISOString() } as any).eq('id', userId)
-      expect(await orgFeatures(db as any, orgId)).toEqual({ cashier: true, hr: true, ai: true, profitability: true })
+      expect(await orgFeatures(db as any, orgId)).toEqual({ inventory: true, purchases: true, cashier: true, hr: true, ai: true, profitability: true })
       for (let i = 0; i < 3; i++) await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: `تجربة ${i}`, phone: uniqPhone(), pin: 'x', is_active: true, role: 'staff' } as any)
       expect((await checkStaffCapacity(db as any, orgId, branchA)).ok).toBe(false)   // العدد حسب الأساسية
       await db.from('profiles').update({ subscription_type: 'paid' } as any).eq('id', userId)
-      expect(await orgFeatures(db as any, orgId)).toEqual({ cashier: false, hr: false, ai: false, profitability: false })
+      expect(await orgFeatures(db as any, orgId)).toEqual({ inventory: true, purchases: true, cashier: false, hr: false, ai: false, profitability: false })
       await db.from('staff_members').delete().eq('org_id', orgId).like('name', 'تجربة %')
       await db.from('organizations').update({ plan: 'pro', max_branches: 1, max_staff: 1 } as any).eq('id', orgId)
     }, 120_000)
@@ -171,10 +171,10 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
       // الأساسية بدون إضافات: الاشتراك والدليل بس
       let c = await buildAssistantContext(db as any, orgId, null, { role: 'owner' })
       expect(names(c)).toEqual([])
-      expect(c.prompt).toContain('باقي 9 يوم')
+      expect(c.prompt).toContain('المتبقي 9 يوم')
       expect(c.prompt).toContain('دليل استخدام النظام')
       expect(c.prompt).toContain('يحتاج إضافة «الذكاء الاصطناعي»')
-      expect(c.prompt).toContain('قل له وين يلقاها بنفسه في النظام')   // بدون الذكاء: يعلّمه وين يلقى بياناته بدل الأرقام
+      expect(c.prompt).toContain('وضّح له أين يجدها بنفسه في النظام')   // بدون الذكاء: يعلّمه وين يلقى بياناته بدل الأرقام
 
       // إضافة الذكاء: أدوات البيانات (بدون الكاشير والحضور لأن إضافاتهم مو مفعّلة)
       const { data: ads } = await db.from('marketplace_addons').select('id,slug').in('slug', ['ai_tools', 'hr_full'])
@@ -210,7 +210,7 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
       // مدير فرع عنده المخزون بس: أداة المخزون بس، والمشتريات مقفلة
       const m = await buildAssistantContext(db as any, orgId, branchA, { role: 'manager', permissions: { inventory: true } })
       expect(names(m)).toEqual(['dispense', 'inventory'])
-      expect(m.prompt).not.toContain('باقي 9 يوم')   // الاشتراك للمالك
+      expect(m.prompt).not.toContain('المتبقي 9 يوم')   // الاشتراك للمالك
       expect(await runTool('purchases', {}, m.toolCtx, m.features, { role: 'manager', permissions: { inventory: true } })).toMatchObject({ error: expect.any(String) })
 
       await db.from('purchases').delete().eq('org_id', orgId).eq('name', tag)
@@ -228,17 +228,17 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
       await db.from('products').insert({ org_id: orgId, branch_id: branchA, name: 'صنف التقرير', unit: 'حبة', reorder_point: 5, is_active: true } as any)
       await db.from('cashier_closings').insert({ org_id: orgId, branch_id: branchA, staff_name: 'كاشير', closing_date: yesterday, total_sales: 1000, cash_amount: 400, network_amount: 600, difference: -20 } as any).then(r => { if (r.error) throw r.error })
 
-      const all = { ai: true, cashier: true, hr: true, profitability: true }
+      const all = { inventory: true, purchases: true, ai: true, cashier: true, hr: true, profitability: true }
       const [rep] = await buildBranchReports(db as any, orgId, [{ id: branchA, name: 'الفرع الرئيسي' }], all, now)
       expect(rep.sales).toEqual(['عجز — راجع التفاصيل في صفحة الإقفال'])   // الحالة بس — بدون أرقام
       expect(rep.staff!.join(' ')).toContain('غائب التقرير')
       expect(rep.staffNotable).toBe(true)
       expect(rep.stockOut).toContain('صنف التقرير')   // كميته صفر → «خلصت»، وما يتكرر في «المطلوب اليوم»
       expect((rep.decisions || []).join(' ')).not.toContain('صنف التقرير')
-      const basic = await buildBranchReports(db as any, orgId, [{ id: branchA, name: 'الفرع الرئيسي' }], { ai: false, cashier: false, hr: false, profitability: false }, now)
+      const basic = await buildBranchReports(db as any, orgId, [{ id: branchA, name: 'الفرع الرئيسي' }], { inventory: true, purchases: true, ai: false, cashier: false, hr: false, profitability: false }, now)
       expect(basic[0].sales).toBeNull()
       expect(basic[0].staff).toBeNull()
-      expect(branchBlock(basic[0], fullView({ ai: false, cashier: false, hr: false, profitability: false }))).toContain('صنف التقرير')
+      expect(branchBlock(basic[0], fullView({ inventory: true, purchases: true, ai: false, cashier: false, hr: false, profitability: false }))).toContain('صنف التقرير')
 
       await db.from('cashier_closings').delete().eq('org_id', orgId).eq('closing_date', yesterday).eq('staff_name', 'كاشير')
       await db.from('staff_members').delete().eq('org_id', orgId).eq('name', 'غائب التقرير')

@@ -61,7 +61,7 @@ export function useSupplierCard({ s, products, orgId, onRefresh, allSuppliers, r
     setSavingPhone(false)
     if(!r.success){toast('فشل تحديث رقم المورد','error');return}
     setEditingPhone(false)
-    toast('✅ تم تحديث رقم المورد')
+    toast('تم تحديث رقم المورد')
     onRefresh()
   }
 
@@ -72,7 +72,7 @@ export function useSupplierCard({ s, products, orgId, onRefresh, allSuppliers, r
     setSavingPhone(false)
     if(!r.success){toast(r.error||'فشل حفظ الرقم الضريبي','error');return}
     setEditingVat(false)
-    toast('✅ تم حفظ الرقم الضريبي')
+    toast('تم حفظ الرقم الضريبي')
     onRefresh()
   }
 
@@ -85,7 +85,7 @@ export function useSupplierCard({ s, products, orgId, onRefresh, allSuppliers, r
     setSaving(false)
     if(!r.success){toast('فشل حفظ الإعدادات','error');return}
     setSettingsOpen(false)
-    toast('✅ تم حفظ إعدادات المورد')
+    toast('تم حفظ إعدادات المورد')
     onRefresh()
   }
 
@@ -93,9 +93,9 @@ export function useSupplierCard({ s, products, orgId, onRefresh, allSuppliers, r
     setSending(true)
     const data = await api.post('/api/notify-supplier', { org_id: orgId, supplier_id: s.id, manual: true })
     setSending(false)
-    if (data.sent > 0 && data.failed > 0) toast(`⚠️ تم إرسال ${data.sent} صنف، وفشل إرسال ${data.failed} — تحقق من رقم واتساب المورد وحاول مرة أخرى`, 'warning')
-    else if (data.sent > 0) toast(`✅ تم إرسال طلب توريد للمورد ${s.name}`)
-    else if (data.failed > 0) toast(`❌ فشل إرسال طلب التوريد للمورد ${s.name} — تحقق من رقم واتساب المورد وحاول مرة أخرى`, 'error')
+    if (data.sent > 0 && data.failed > 0) toast(`تم إرسال ${data.sent} صنف، وفشل إرسال ${data.failed} — تحقق من رقم واتساب المورد وحاول مرة أخرى`, 'warning')
+    else if (data.sent > 0) toast(`تم إرسال طلب توريد للمورد ${s.name}`)
+    else if (data.failed > 0) toast(`فشل إرسال طلب التوريد للمورد ${s.name} — تحقق من رقم واتساب المورد وحاول مرة أخرى`, 'error')
     else toast('لا توجد منتجات تحتاج طلب توريد الآن', 'warning')
   }
 

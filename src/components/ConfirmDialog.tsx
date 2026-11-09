@@ -1,5 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { CircleAlert, CircleCheck, Trash2 } from 'lucide-react'
+import { StorelyButton } from '@/components/ui/button'
+import { storelyTokens } from '@/components/ui/design-tokens'
 
 interface Props {
   title: string
@@ -13,31 +16,21 @@ interface Props {
 
 export default function ConfirmDialog({ title, message, confirmText='تأكيد', cancelText='إلغاء', type='danger', onConfirm, onCancel }: Props) {
   const colors = {
-    danger:  { bg:'#fef2f2', border:'#fecaca', icon:'🗑️', btn:'#ef4444', btnHover:'#dc2626' },
-    warning: { bg:'#fffbeb', border:'#fcd34d', icon:'⚠️', btn:'#f59e0b', btnHover:'#d97706' },
-    success: { bg:'#f0fdfa', border:'#5eead4', icon:'✅', btn:'#14b8a6', btnHover:'#029FA2' },
+    danger: { icon: <Trash2 size={24}/>, color: storelyTokens.color.danger },
+    warning: { icon: <CircleAlert size={24}/>, color: storelyTokens.color.warning },
+    success: { icon: <CircleCheck size={24}/>, color: storelyTokens.color.success },
   }
   const c = colors[type]
 
   return (
-    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:20,direction:'rtl',fontFamily:"'Segoe UI',system-ui,sans-serif"}}>
-      <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:380,boxShadow:'0 25px 60px rgba(0,0,0,0.2)'}}>
-        <div style={{textAlign:'center',marginBottom:20}}>
-          <div style={{width:56,height:56,background:c.bg,border:'1.5px solid '+c.border,borderRadius:14,display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,margin:'0 auto 14px'}}>
-            {c.icon}
-          </div>
-          <div style={{fontSize:16,fontWeight:800,color:'#0f172a',marginBottom:6}}>{title}</div>
-          <div style={{fontSize:13,color:'#64748b',lineHeight:1.6}}>{message}</div>
-        </div>
-        <div style={{display:'flex',gap:10}}>
-          <button onClick={onCancel}
-            style={{flex:1,padding:'11px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
-            {cancelText}
-          </button>
-          <button onClick={onConfirm}
-            style={{flex:1,padding:'11px',background:c.btn,color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
-            {confirmText}
-          </button>
+    <div className="storely-overlay">
+      <div className="storely-dialog">
+        <div style={{color:c.color,marginBottom:storelyTokens.spacing[4]}}>{c.icon}</div>
+        <div className="storely-dialog-title">{title}</div>
+        <div className="storely-dialog-message">{message}</div>
+        <div className="storely-dialog-actions">
+          <StorelyButton onClick={onCancel}>{cancelText}</StorelyButton>
+          <StorelyButton onClick={onConfirm} variant={type==='danger'?'danger':'primary'}>{confirmText}</StorelyButton>
         </div>
       </div>
     </div>

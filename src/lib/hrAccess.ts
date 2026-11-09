@@ -2,8 +2,9 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { orgHasFeature } from '@/lib/planFeatures'
 
 // ميزة "إدارة الموظفين": الباقة الشاملة/المتقدمة، أو إضافة hr_full سارية على الباقة الأساسية
-export async function orgHasHrFeature(db: SupabaseClient, orgId: string, plan?: string | null) {
-  return orgHasFeature(db, orgId, 'hr', plan)
+// branchId = لفرع معيّن (إضافة الحضور ممكن تكون لفروع معيّنة بالباقات الجديدة)
+export async function orgHasHrFeature(db: SupabaseClient, orgId: string, plan?: string | null, branchId?: string | null) {
+  return orgHasFeature(db, orgId, 'hr', plan, branchId)
 }
 
 // إضافة سارية من متجر الإضافات (مثل cashier_closing) — للباقة الأساسية

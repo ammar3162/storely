@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     // ما نسمح بأكثر من طلب معلّق بنفس الوقت لنفس الموظف
     const { data: pending } = await supabase.from('attendance_permission_requests')
       .select('id').eq('staff_id', staff_id).eq('status', 'pending').maybeSingle()
-    if (pending) return NextResponse.json({ error: 'عندك طلب استئذان قيد الانتظار بالفعل' }, { status: 400 })
+    if (pending) return NextResponse.json({ error: 'لديك بالفعل طلب استئذان قيد الانتظار' }, { status: 400 })
 
     const token = randomBytes(16).toString('hex')
     const { data: inserted, error } = await supabase.from('attendance_permission_requests').insert({
@@ -44,14 +44,14 @@ export async function POST(req: Request) {
     await supabase.from('notifications').insert({
       org_id, branch_id, type: 'info',
       title: 'طلب استئذان جديد',
-      message: `${name} يطلب الانصراف قبل نهاية شفته${reason ? ` — السبب: ${reason}` : ''}`,
+      message: `${name} يطلب الانصراف قبل نهاية ورديته${reason ? ` — السبب: ${reason}` : ''}`,
       ref_type: 'excuse_request', ref_id: (inserted as any)?.id,
     } as any)
 
     const ownerWa = await ownerWhatsapp(supabase, org_id)   // رقم واتساب المنشأة اللي حدده المالك
     if (ownerWa) {
       await sendWhatsAppMessage(ownerWa!,
-        `🚪 *طلب استئذان جديد*\n\n${name} يطلب الانصراف قبل نهاية شفته${reason ? `\nالسبب: ${reason}` : ''}\n\nراجع الطلب من لوحة "إدارة الموظفين" بحساب Storely.`
+        `🚪 *طلب استئذان جديد*\n\n${name} يطلب الانصراف قبل نهاية ورديته${reason ? `\nالسبب: ${reason}` : ''}\n\nراجع الطلب من لوحة "إدارة الموظفين" بحساب Storely.`
       )
     }
 
@@ -77,7 +77,7 @@ export async function PUT(req: Request) {
     } else {
       const access = await verifyOrgAccess(org_id)
       if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-      if (!managerMay(access as any, 'hr', 'attendance')) return NextResponse.json({ error: 'ما عندك صلاحية على هالقسم — كلّم مالك المنشأة' }, { status: 403 })
+      if (!managerMay(access as any, 'hr', 'attendance')) return NextResponse.json({ error: 'ليست لديك صلاحية على هذا القسم — تواصل مع مالك المنشأة' }, { status: 403 })
       const { data } = await supabase.from('attendance_permission_requests').select('id,status,org_id,staff_id,branch_id').eq('id', id).eq('org_id', org_id).maybeSingle()
       // مدير الفرع يرد على طلبات فرعه بس
       const forced = enforcedBranchId(access)
@@ -98,7 +98,7 @@ export async function PUT(req: Request) {
     const { data: staffRow } = await supabase.from('staff_members').select('preferred_lang').eq('id', (reqRow as any).staff_id).maybeSingle()
     const prefLang = (staffRow as any)?.preferred_lang === 'en' ? 'en' : 'ar'
     const titleMap = { ar: action==='approve'?'تمت الموافقة على طلب الاستئذان':'تم رفض طلب الاستئذان', en: action==='approve'?'Early Leave Request Approved':'Early Leave Request Rejected' }
-    const messageMap = { ar: action==='approve'?'تقدر تنصرف الآن قبل نهاية شفتك':'طلبك مرفوض — لازم تكمل شفتك المحددة', en: action==='approve'?'You may leave now before your shift ends':'Your request was rejected — please complete your scheduled shift' }
+    const messageMap = { ar: action==='approve'?'يمكنك الانصراف الآن قبل نهاية ورديتك':'طلبك مرفوض — يجب إكمال ورديتك المحددة', en: action==='approve'?'You may leave now before your shift ends':'Your request was rejected — please complete your scheduled shift' }
     await supabase.from('staff_notifications').insert({
       org_id: (reqRow as any).org_id, staff_id: (reqRow as any).staff_id,
       type: action==='approve' ? 'success' : 'danger',
@@ -122,7 +122,7 @@ export async function GET(req: Request) {
     if (org_id) {
       const access = await verifyOrgAccess(org_id)
       if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-      if (!managerMay(access as any, 'hr', 'attendance')) return NextResponse.json({ error: 'ما عندك صلاحية على هالقسم — كلّم مالك المنشأة' }, { status: 403 })
+      if (!managerMay(access as any, 'hr', 'attendance')) return NextResponse.json({ error: 'ليست لديك صلاحية على هذا القسم — تواصل مع مالك المنشأة' }, { status: 403 })
       let q = supabase.from('attendance_permission_requests')
         .select('id,org_id,branch_id,staff_id,staff_name,reason,status,requested_at,resolved_at').eq('org_id', org_id)
       const forced = enforcedBranchId(access)

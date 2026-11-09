@@ -29,7 +29,7 @@ export default function StaffDaysOffEditor({ staff, onPatch }: { staff: any; onP
 
   function toggleDay(di: number) {
     const next = days.includes(di) ? days.filter(d => d !== di) : [...days, di].sort((a, b) => a - b)
-    if (next.length > 6) { toast('لازم يبقى يوم دوام واحد على الأقل', 'warning'); return }
+    if (next.length > 6) { toast('يجب أن يبقى يوم دوام واحد على الأقل', 'warning'); return }
     onPatch({ weekly_off_days: next })
   }
   function toggleDate(d: string) {
@@ -78,7 +78,7 @@ export default function StaffDaysOffEditor({ staff, onPatch }: { staff: any; onP
             <NumberInput min={0} max={15} defaultValue={staff.monthly_off_days ?? 0} key={staff.monthly_off_days ?? 0}
               onBlur={e => { const n = Math.max(0, Math.min(15, Math.round(Number(e.target.value) || 0))); if (n !== Number(staff.monthly_off_days || 0)) onPatch({ monthly_off_days: n }) }}
               style={{ ...inp(), width: 70, padding: '5px 10px', fontSize: 12 }} />
-            <span style={{ fontSize: 11.5, color: colors.text3 }}>أيام بالشهر — أي يوم ما يداوم فيه ينحسب إجازة لين يخلص رصيده، وبعدها غياب</span>
+            <span style={{ fontSize: 11.5, color: colors.text3 }}>أيام في الشهر — يُحتسب أي يوم لا يحضر فيه إجازةً حتى ينتهي رصيده، ثم يُحتسب غياباً</span>
           </>
         )}
       </div>
@@ -87,10 +87,10 @@ export default function StaffDaysOffEditor({ staff, onPatch }: { staff: any; onP
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const }}>
           <span style={{ fontSize: 11.5, color: colors.text3 }}>أول إجازة:</span>
           <button onClick={() => onPatch({ biweekly_anchor: thisWeek })} aria-pressed={anchorIsThis} style={chip(anchorIsThis)}>
-            هالأسبوع ({dayLabel(addDays(thisWeek, firstDay))})
+            هذا الأسبوع ({dayLabel(addDays(thisWeek, firstDay))})
           </button>
           <button onClick={() => onPatch({ biweekly_anchor: nextWeek })} aria-pressed={!anchorIsThis} style={chip(!anchorIsThis)}>
-            الأسبوع الجاي ({dayLabel(addDays(nextWeek, firstDay))})
+            الأسبوع القادم ({dayLabel(addDays(nextWeek, firstDay))})
           </button>
           <span style={{ fontSize: 11.5, color: colors.text4 }}>وبعدها أسبوع دوام وأسبوع إجازة</span>
         </div>
@@ -104,7 +104,7 @@ export default function StaffDaysOffEditor({ staff, onPatch }: { staff: any; onP
               {MONTHS[Number(calMonth.slice(5)) - 1]} {calMonth.slice(0, 4)}
               <span style={{ fontWeight: 600, color: colors.text4 }}> · {calCount ? `${calCount} أيام إجازة` : 'بدون إجازة'}</span>
             </span>
-            <button onClick={() => setCalMonth(shiftMonth(calMonth, 1))} aria-label="الشهر الجاي" style={{ ...chip(false), padding: '3px 10px' }}>←</button>
+            <button onClick={() => setCalMonth(shiftMonth(calMonth, 1))} aria-label="الشهر القادم" style={{ ...chip(false), padding: '3px 10px' }}>←</button>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, textAlign: 'center' as const }}>
             {SHORT.map(s => <div key={s} style={{ fontSize: 10, fontWeight: 700, color: colors.text4 }}>{s}</div>)}
@@ -121,15 +121,15 @@ export default function StaffDaysOffEditor({ staff, onPatch }: { staff: any; onP
               )
             })}
           </div>
-          <div style={{ fontSize: 11, color: colors.text4, marginTop: 6 }}>اضغط على اليوم عشان تخليه إجازة، واضغط مرة ثانية تلغيه.</div>
+          <div style={{ fontSize: 11, color: colors.text4, marginTop: 6 }}>اضغط على اليوم لجعله إجازة، واضغط مرة أخرى لإلغائه.</div>
         </div>
       )}
 
       {preview && (
         <div style={{ fontSize: 11.5, color: preview.length ? colors.text3 : colors.text4 }}>
           {preview.length
-            ? <>إجازاته هالشهر ({preview.length === 1 ? 'يوم واحد' : preview.length === 2 ? 'يومين' : `${preview.length} أيام`}): <b style={{ color: colors.text2 }}>{preview.map(dayLabel).join('، ')}</b></>
-            : mode === 'dates' ? 'ما حددت له إجازة هالشهر' : mode === 'biweekly' ? 'اختر يوم الإجازة' : 'بدون إجازة أسبوعية'}
+            ? <>إجازاته هذا الشهر ({preview.length === 1 ? 'يوم واحد' : preview.length === 2 ? 'يومين' : `${preview.length} أيام`}): <b style={{ color: colors.text2 }}>{preview.map(dayLabel).join('، ')}</b></>
+            : mode === 'dates' ? 'لم تحدد له إجازة هذا الشهر' : mode === 'biweekly' ? 'اختر يوم الإجازة' : 'بدون إجازة أسبوعية'}
         </div>
       )}
     </div>

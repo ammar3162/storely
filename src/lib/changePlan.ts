@@ -2,15 +2,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
 import { syncStaffToLimit } from '@/lib/staffCapacity'
-import { PLAN_PRICING, PLAN_CAPS, planKeyOf, planPriceFor } from '@/lib/planPricing'
+import { clearFeatureCache } from '@/lib/featureRoutes'
+import { PLAN_CAPS, addonIncludedIn, planKeyOf, planPriceFor } from '@/lib/planPricing'
 
 export { PLAN_CAPS }
 
-// إضافات مضمّنة بالشاملة والمتقدمة
-export const INCLUDED_FROM_STANDARD = ['hr_full', 'profitability', 'ai_tools', 'cashier_closing']
+// إضافات ممكن تكون مضمّنة بالباقة (حسب addonIncludedIn)
+export const INCLUDED_FROM_STANDARD = ['hr_full', 'profitability', 'ai_tools', 'cashier_closing', 'mod_inventory', 'mod_purchases']
 
 /** lockedMonthly = سعر شهري خاص (باقة المؤسسات) — يتثبّت للمنشأة */
-export async function changeOrgPlan(db: SupabaseClient, orgId: string, input: { planName: string; maxBranches: number; maxStaff?: number; maxSuppliers?: number; billingCycle?: string; lockedMonthly?: number | null }) {
+/** staffIncluded = عدد موظفين «ابنِ باقتك» (يأثر على الفاتورة والحد) */
+export async function changeOrgPlan(db: SupabaseClient, orgId: string, input: { planName: string; maxBranches: number; maxStaff?: number; maxSuppliers?: number; billingCycle?: string; lockedMonthly?: number | null; staffIncluded?: number | null }) {
   const { planName, maxBranches, maxStaff, maxSuppliers, billingCycle } = input
   const { data: oldOrg } = await db.from('organizations').select('max_branches,max_staff,max_suppliers,plan,locked_plan_monthly').eq('id', orgId).maybeSingle()
   const samePlan = (oldOrg as any)?.plan === planName
@@ -30,6 +32,7 @@ export async function changeOrgPlan(db: SupabaseClient, orgId: string, input: { 
   // باقة مختلفة = سعرها الحالي؛ نفس الباقة = يبقى سعره المثبّت
   if (!samePlan) updatePayload.locked_plan_monthly = null
   if (Number(input.lockedMonthly) > 0) updatePayload.locked_plan_monthly = Number(input.lockedMonthly)
+  if (input.staffIncluded !== undefined) updatePayload.staff_included = Number(input.staffIncluded) > 0 ? Math.min(500, Math.round(Number(input.staffIncluded))) : null
 
   // الفروع المشتراة اللي صارت داخل الباقة الجديدة (ترقية) ما تنحسب عليه بعد — نخلي بس اللي فوق فروع الباقة
   const { data: branchSub } = await db.from('org_addon_subscriptions')
@@ -44,24 +47,26 @@ export async function changeOrgPlan(db: SupabaseClient, orgId: string, input: { 
 
   const { error } = await db.from('organizations').update(updatePayload).eq('id', orgId)
   if (error) return { ok: false as const, error: error.message }
+  clearFeatureCache(orgId)
 
   // تخفيض: الفروع الزايدة تتوقف مؤقتاً (مع موظفينها). ترقية: ترجع تلقائياً
   const branchSync = await syncBranchesToLimit(db, orgId)
   const staffSync = await syncStaffToLimit(db, orgId)
 
-  // الشاملة فما فوق فيها الكاشير والموظفين والذكاء والربحية — نلغي إضافاتها عشان ما تنحسب عليه
-  // ولا تبقى مفتوحة بدون دفع لو رجع للأساسية لاحقاً
-  if (planKeyOf(planName, maxBranches) !== 'basic') {
-    const { data: inc } = await db.from('marketplace_addons').select('id').in('slug', INCLUDED_FROM_STANDARD)
+  // الإضافات اللي صارت داخل الباقة الجديدة (مثلاً الكاشير بالتشغيل) نلغيها عشان ما تنحسب عليه
+  // ولا تبقى مفتوحة بدون دفع لو رجع لباقة أقل لاحقاً
+  const included = INCLUDED_FROM_STANDARD.filter(slug => addonIncludedIn(planKeyOf(planName, maxBranches), slug))
+  if (included.length) {
+    const { data: inc } = await db.from('marketplace_addons').select('id').in('slug', included)
     const ids = ((inc || []) as any[]).map(a => a.id)
     if (ids.length) await db.from('org_addon_subscriptions').update({ status: 'cancelled', cancelled_at: new Date().toISOString() } as any)
       .eq('org_id', orgId).eq('status', 'active').in('addon_id', ids)
   }
 
-  if (maxBranches !== oldBranches) {
-    const newAmount = PLAN_PRICING[planKeyOf(planName, maxBranches)].monthly
-    const oldAmount = planPriceFor(planKeyOf((oldOrg as any)?.plan, oldBranches), (oldOrg as any)?.locked_plan_monthly).monthly
-    try {
+  if (maxBranches !== oldBranches || !samePlan) {
+    const newAmount = planPriceFor(planKeyOf(planName, maxBranches), updatePayload.locked_plan_monthly, maxBranches).monthly
+    const oldAmount = planPriceFor(planKeyOf((oldOrg as any)?.plan, oldBranches), (oldOrg as any)?.locked_plan_monthly, oldBranches).monthly
+    if (newAmount !== oldAmount) try {
       await (db as any).from('subscription_events').insert({ org_id: orgId, event_type: newAmount > oldAmount ? 'upgraded' : 'downgraded', plan: planName, amount: newAmount })
     } catch {}
   }

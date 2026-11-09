@@ -1,7 +1,7 @@
 'use client'
 import { useLiveRefresh, liveStaffOrg } from '@/lib/useLiveRefresh'
 import { useStaffLang, isRtlLang } from '@/lib/staffLang'
-import { Globe } from 'lucide-react'
+import { Globe, ClipboardList, Camera, Check } from 'lucide-react'
 import StaffHeader, { staffHeaderBtn } from '@/components/StaffHeader'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -22,7 +22,7 @@ const UI_STRINGS: Record<string, Record<string,string>> = {
   myTasks:        { ar:'مهامي', en:'My Tasks', ur:'میرے کام', hi:'मेरे कार्य', tl:'Aking mga Gawain', bn:'আমার কাজ', fr:'Mes tâches' },
   back:           { ar:'رجوع', en:'Back', ur:'واپس', hi:'वापस', tl:'Bumalik', bn:'ফিরে যান', fr:'Retour' },
   loading:        { ar:'جاري التحميل...', en:'Loading...', ur:'لوڈ ہو رہا ہے...', hi:'लोड हो रहा है...', tl:'Naglo-load...', bn:'লোড হচ্ছে...', fr:'Chargement...' },
-  noTasks:        { ar:'ما فيه مهام لك حالياً', en:'No tasks for you right now', ur:'فی الحال آپ کے لیے کوئی کام نہیں', hi:'फिलहाल आपके लिए कोई कार्य नहीं', tl:'Walang gawain sa ngayon', bn:'এই মুহূর্তে আপনার জন্য কোন কাজ নেই', fr:"Aucune tâche pour l'instant" },
+  noTasks:        { ar:'لا توجد مهام لك حالياً', en:'No tasks for you right now', ur:'فی الحال آپ کے لیے کوئی کام نہیں', hi:'फिलहाल आपके लिए कोई कार्य नहीं', tl:'Walang gawain sa ngayon', bn:'এই মুহূর্তে আপনার জন্য কোন কাজ নেই', fr:"Aucune tâche pour l'instant" },
   pendingTasks:   { ar:'مهام بانتظارك', en:'Tasks waiting for you', ur:'آپ کے منتظر کام', hi:'आपका इंतज़ार कर रहे कार्य', tl:'Mga gawaing naghihintay sa iyo', bn:'আপনার জন্য অপেক্ষমান কাজ', fr:'Tâches en attente' },
   pastTasks:      { ar:'مهام سابقة', en:'Past tasks', ur:'گزشتہ کام', hi:'पिछले कार्य', tl:'Nakaraang mga gawain', bn:'পূর্ববর্তী কাজ', fr:'Tâches précédentes' },
   completeWithPhoto: { ar:'التقط صورة وأكمل المهمة', en:'Take a photo and complete task', ur:'تصویر لیں اور کام مکمل کریں', hi:'फोटो लें और कार्य पूरा करें', tl:'Kumuha ng larawan at kumpletuhin', bn:'ছবি তুলুন এবং কাজ সম্পন্ন করুন', fr:'Prenez une photo et terminez' },
@@ -31,15 +31,15 @@ const UI_STRINGS: Record<string, Record<string,string>> = {
   confirming:     { ar:'جاري التأكيد...', en:'Confirming...', ur:'تصدیق ہو رہی ہے...', hi:'पुष्टि हो रही है...', tl:'Kinukumpirma...', bn:'নিশ্চিত করা হচ্ছে...', fr:'Confirmation...' },
   statusPending:   { ar:'بانتظارك', en:'Waiting for you', ur:'آپ کا منتظر', hi:'आपका इंतज़ार', tl:'Naghihintay sa iyo', bn:'আপনার অপেক্ষায়', fr:'En attente' },
   statusCompleted: { ar:'بانتظار تأكيد المدير', en:"Waiting for manager's confirmation", ur:'مینیجر کی تصدیق کا منتظر', hi:'प्रबंधक की पुष्टि का इंतज़ार', tl:'Naghihintay ng kumpirmasyon ng manager', bn:'ম্যানেজারের নিশ্চিতকরণের অপেক্ষায়', fr:'En attente de confirmation' },
-  statusConfirmed: { ar:'مؤكدة ✓', en:'Confirmed ✓', ur:'تصدیق شدہ ✓', hi:'पुष्टि की गई ✓', tl:'Nakumpirma na ✓', bn:'নিশ্চিত হয়েছে ✓', fr:'Confirmé ✓' },
+  statusConfirmed: { ar:'مؤكدة', en:'Confirmed', ur:'تصدیق شدہ', hi:'पुष्टि की गई', tl:'Nakumpirma na', bn:'নিশ্চিত হয়েছে', fr:'Confirmé' },
   statusRejected:  { ar:'مرفوضة', en:'Rejected', ur:'مسترد', hi:'अस्वीकृत', tl:'Tinanggihan', bn:'প্রত্যাখ্যাত', fr:'Rejeté' },
 }
 
 const STATUS_KEYS: Record<string, {key:string; color:string; bg:string}> = {
-  pending:   { key: 'statusPending',   color: '#d97706', bg: '#fffbeb' },
-  completed: { key: 'statusCompleted', color: '#2563eb', bg: '#eff6ff' },
-  confirmed: { key: 'statusConfirmed', color: '#029FA2', bg: '#f0fdfa' },
-  rejected:  { key: 'statusRejected',  color: '#dc2626', bg: '#fef2f2' },
+  pending:   { key: 'statusPending',   color:'#d97706', bg: '#fffbeb' },
+  completed: { key: 'statusCompleted', color:'#2563eb', bg: '#eff6ff' },
+  confirmed: { key: 'statusConfirmed', color:'#203640', bg: '#e7f3f1' },
+  rejected:  { key: 'statusRejected',  color:'#dc2626', bg: '#fef2f2' },
 }
 
 export default function StaffTasksPage() {
@@ -140,14 +140,14 @@ export default function StaffTasksPage() {
   const otherTasks = tasks.filter((t:any)=>t.status!=='pending' && t.status!=='confirmed')
 
   if (!session) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f5f4',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
-      <div style={{width:32,height:32,border:'3px solid #e5e5e2',borderTopColor:'#029FA2',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f4f5f6',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
+      <div style={{width:32,height:32,border:'3px solid var(--storely-border)',borderTopColor:'#203640',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 
   return (
-    <div style={{minHeight:'100vh',background:'#f7f7f5',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:isRtlLang(lang as any)?'rtl':'ltr',paddingBottom:40}}>
+    <div style={{minHeight:'100vh',background:'#f4f5f6',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:isRtlLang(lang as any)?'rtl':'ltr',paddingBottom:40}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       <StaffHeader title={t('myTasks')} subtitle={session.name} rtl={isRtlLang(lang as any)} end={
@@ -157,12 +157,12 @@ export default function StaffTasksPage() {
             <Globe size={14} strokeWidth={2.25}/> {LANGUAGES.find(l=>l.code===lang)?.label || 'العربية'}
           </button>
           {showLangMenu && (
-            <div style={{position:'absolute' as const,top:'100%',insetInlineEnd:0,marginTop:6,background:'white',border:'1px solid #ece8e2',borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.15)',overflow:'hidden',minWidth:140,zIndex:50}}>
+            <div style={{position:'absolute' as const,top:'100%',insetInlineEnd:0,marginTop:6,background:'white',border:'1px solid #eceef1',borderRadius:10,boxShadow:'0 8px 24px rgba(0,0,0,.15)',overflow:'hidden',minWidth:140,zIndex:50}}>
               {LANGUAGES.map(l=>(
                 <button key={l.code}
                   onClick={()=>{setLang(l.code as any);setShowLangMenu(false)}}
-                  style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#f0fdfa':'white',color:lang===l.code?'#029FA2':'#1c1c1a',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
-                  {lang===l.code?'✓ ':''}{l.label}
+                  style={{width:'100%',padding:'10px 14px',border:'none',background:lang===l.code?'#e7f3f1':'white',color:lang===l.code?'#203640':'#111827',fontSize:13,fontWeight:lang===l.code?700:500,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const,display:'block'}}>
+                  {l.label}
                 </button>
               ))}
             </div>
@@ -172,27 +172,27 @@ export default function StaffTasksPage() {
 
       <div style={{maxWidth:520,margin:'0 auto',padding:'20px 16px'}}>
         {loading ? (
-          <div style={{textAlign:'center' as const,padding:40,fontSize:13,color:'#888780'}}>{t('loading')}</div>
+          <div style={{textAlign:'center' as const,padding:40,fontSize:13,color:'#4b5565'}}>{t('loading')}</div>
         ) : (
           <>
             {pendingTasks.length===0 ? (
               <div style={{textAlign:'center' as const,padding:'60px 20px'}}>
-                <div style={{fontSize:44,marginBottom:12,opacity:0.5}}>📋</div>
-                <div style={{fontSize:14,color:'#888780'}}>{t('noTasks')}</div>
+                <div style={{display:'flex',justifyContent:'center',marginBottom:12,color:'#6b7487'}}><ClipboardList size={44}/></div>
+                <div style={{fontSize:14,color:'#4b5565'}}>{t('noTasks')}</div>
               </div>
             ) : (
               <div style={{marginBottom:24}}>
-                <div style={{fontSize:12,fontWeight:700,color:'#d97706',marginBottom:10}}>{t('pendingTasks')} ({pendingTasks.length})</div>
+                <div style={{fontSize:12,fontWeight:600,color:'#d97706',marginBottom:10}}>{t('pendingTasks')} ({pendingTasks.length})</div>
                 <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
                   {pendingTasks.map((tk:any)=>(
                     <div key={tk.id} style={{background:'white',border:'1.5px solid #fde68a',borderRadius:14,padding:'16px'}}>
-                      <div style={{fontSize:15,fontWeight:800,color:'#1c1c1a',marginBottom:6}}>{lang!=='ar'&&taskTranslations[tk.id]?.title || tk.title}</div>
-                      {(lang!=='ar'&&taskTranslations[tk.id]?.description || tk.description) && <div style={{fontSize:13,color:'#6b7280',marginBottom:12,lineHeight:1.6}}>{lang!=='ar'&&taskTranslations[tk.id]?.description || tk.description}</div>}
+                      <div style={{fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:6}}>{lang!=='ar'&&taskTranslations[tk.id]?.title || tk.title}</div>
+                      {(lang!=='ar'&&taskTranslations[tk.id]?.description || tk.description) && <div style={{fontSize:13,color:'#6b7487',marginBottom:12,lineHeight:1.6}}>{lang!=='ar'&&taskTranslations[tk.id]?.description || tk.description}</div>}
                       <input id={`photo-input-${tk.id}`} type="file" accept="image/*" capture="environment" style={{display:'none'}}
                         onChange={e=>{ const f=e.target.files?.[0]; if(f) handlePhotoSelected(tk.id, f) }}/>
                       <button onClick={()=>completeTask(tk.id, tk.requires_photo)} disabled={completingId===tk.id||uploadingId===tk.id}
-                        style={{width:'100%',padding:'12px',background:'#029FA2',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:(completingId===tk.id||uploadingId===tk.id)?0.6:1}}>
-                        {uploadingId===tk.id ? t('uploadingPhoto') : completingId===tk.id ? t('confirming') : tk.requires_photo ? `📷 ${t('completeWithPhoto')}` : `✓ ${t('completeTask')}`}
+                        style={{width:'100%',padding:'12px',background:'#203640',color:'white',border:'none',borderRadius:10,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',opacity:(completingId===tk.id||uploadingId===tk.id)?0.6:1}}>
+                        {uploadingId===tk.id ? t('uploadingPhoto') : completingId===tk.id ? t('confirming') : tk.requires_photo ? <span style={{display:'inline-flex',alignItems:'center',gap:6}}><Camera size={16}/>{t('completeWithPhoto')}</span> : <span style={{display:'inline-flex',alignItems:'center',gap:6}}><Check size={16}/>{t('completeTask')}</span>}
                       </button>
                     </div>
                   ))}
@@ -202,15 +202,15 @@ export default function StaffTasksPage() {
 
             {otherTasks.length>0 && (
               <div>
-                <div style={{fontSize:12,fontWeight:700,color:'#888780',marginBottom:10}}>{t('pastTasks')}</div>
+                <div style={{fontSize:12,fontWeight:600,color:'#4b5565',marginBottom:10}}>{t('pastTasks')}</div>
                 <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
                   {otherTasks.map((tk:any)=>{
                     const st = STATUS_KEYS[tk.status] || STATUS_KEYS.pending
                     return (
-                      <div key={tk.id} style={{background:st.bg,border:'1px solid #ece8e2',borderRadius:12,padding:'12px 14px'}}>
+                      <div key={tk.id} style={{background:st.bg,border:'1px solid #eceef1',borderRadius:12,padding:'12px 14px'}}>
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-                          <span style={{fontSize:13,fontWeight:700,color:'#1c1c1a'}}>{lang!=='ar'&&taskTranslations[tk.id]?.title || tk.title}</span>
-                          <span style={{fontSize:10,fontWeight:700,color:st.color}}>{t(st.key)}</span>
+                          <span style={{fontSize:13,fontWeight:600,color:'var(--storely-text)'}}>{lang!=='ar'&&taskTranslations[tk.id]?.title || tk.title}</span>
+                          <span style={{fontSize:10,fontWeight:600,color:st.color}}>{t(st.key)}</span>
                         </div>
                       </div>
                     )

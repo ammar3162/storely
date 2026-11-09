@@ -174,14 +174,14 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
       await admin({ orgId, planName: 'pro', maxBranches: 3, maxStaff: 10, maxSuppliers: 10 })
       const { data: br2 } = await db.from('branches').insert({ org_id: orgId, name: 'فرع ترقية', is_active: true } as any).select('id').single()
       const before = await counts()
-      expect(await orgFeatures(db as any, orgId)).toEqual({ cashier: true, hr: true, ai: true, profitability: true })
+      expect(await orgFeatures(db as any, orgId)).toEqual({ inventory: true, purchases: true, cashier: true, hr: true, ai: true, profitability: true })
 
       // تخفيض للأساسية: الفرع الزايد يتوقف مؤقتاً، والبيانات كلها باقية
       const down = await admin({ orgId, planName: 'basic', maxBranches: 1, maxStaff: 3, maxSuppliers: 3 })
       expect(down.status).toBe(200)
       expect(await counts()).toEqual(before)
       expect((await db.from('branches').select('is_active').eq('id', (br2 as any).id).single()).data).toMatchObject({ is_active: false })
-      expect(await orgFeatures(db as any, orgId)).toEqual({ cashier: false, hr: false, ai: false, profitability: false })
+      expect(await orgFeatures(db as any, orgId)).toEqual({ inventory: true, purchases: true, cashier: false, hr: false, ai: false, profitability: false })
 
       // إضافة «موظف إضافي» منتهية ما تعطي رصيد
       const { data: es } = await db.from('marketplace_addons').select('id').eq('slug', 'extra_staff').single()
@@ -325,5 +325,222 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         await deleteOrgCompletely(oid, u.user!.id).catch(() => {})
       }
     })
+  })
+  describe('new plans (2026-11): per-branch add-ons, bill, upgrade within the family', () => {
+    it('essential + cashier on one branch only; upgrading to ops keeps the branches and drops the add-on', async () => {
+      const { activateAddon } = await import('@/lib/addonActivation')
+      const { orgHasFeature } = await import('@/lib/planFeatures')
+      const { monthlyBill } = await import('@/lib/orgBill')
+      const reqs = await import('@/app/api/plan-requests/route')
+      const adminReqs = await import('@/app/api/admin/plan-requests/route')
+      const approve = async (id: string) => (await adminReqs.POST(new Request('http://test/api/admin/plan-requests', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify({ id, action: 'approve' }) }))).status
+
+      const { data: b2 } = await db.from('branches').insert({ org_id: orgId, name: 'الفرع الثاني', is_active: true } as any).select('id').single()
+      const branchB = (b2 as any).id
+      const end = new Date(Date.now() + 20 * 864e5).toISOString()
+      await db.from('profiles').update({ subscription_type: 'paid', subscription_ends_at: end } as any).eq('id', userId)
+      await db.from('organizations').update({ plan: 'essential', max_branches: 2, max_staff: 12, max_suppliers: 30, billing_cycle: 'monthly', locked_plan_monthly: null } as any).eq('id', orgId)
+      const { data: ca } = await db.from('marketplace_addons').select('id').eq('slug', 'cashier_closing').single()
+      const cashierId = (ca as any).id
+      try {
+        expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential', branchA)).toBe(false)
+        expect(await orgHasFeature(db as any, orgId, 'profitability', 'essential')).toBe(true)
+
+        // الكاشير لفرع واحد بس — فرع من منشأة ثانية ينشال، والسعر الجديد يتثبّت
+        const r = await activateAddon(db as any, { orgId, addonId: cashierId, branchIds: [branchA, '00000000-0000-0000-0000-000000000000'] })
+        expect(r).toMatchObject({ ok: true, quantity: 1, branchIds: [branchA] })
+        const sub = (await db.from('org_addon_subscriptions').select('locked_price,branch_ids').eq('org_id', orgId).eq('addon_id', cashierId).single()).data as any
+        expect(Number(sub.locked_price)).toBe(49)
+        expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential', branchA)).toBe(true)
+        expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential', branchB)).toBe(false)
+        expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential')).toBe(true)
+        // الفاتورة: 94 + فرع 94 (كل فرع بسعر كامل) + كاشير فرع واحد 49
+        expect(await monthlyBill(db as any, orgId)).toBe(237)
+
+        // الترقية من نفس العائلة بس
+        expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'pro' })).status).toBe(400)
+        expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'ops' })).status).toBe(200)
+        const mine = (await call(reqs.GET, 'GET', `/api/plan-requests?org_id=${orgId}`)).json.requests[0]
+        expect(await approve(mine.id)).toBe(200)
+        const { data: org } = await db.from('organizations').select('plan,max_branches').eq('id', orgId).single()
+        expect(org).toMatchObject({ plan: 'ops', max_branches: 2 })
+        const st = (await db.from('org_addon_subscriptions').select('status').eq('org_id', orgId).eq('addon_id', cashierId).single()).data as any
+        expect(st.status).toBe('cancelled')
+        expect(await orgHasFeature(db as any, orgId, 'cashier', 'ops', branchB)).toBe(true)
+        expect(await monthlyBill(db as any, orgId)).toBe(286)
+      } finally {
+        await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).eq('addon_id', cashierId)
+        await db.from('plan_requests').delete().eq('org_id', orgId)
+        await db.from('branches').delete().eq('id', branchB)
+        await db.from('organizations').update({ plan: 'pro', max_branches: 1, max_staff: 1, max_suppliers: 20 } as any).eq('id', orgId)
+      }
+    }, 180_000)
+  })
+  describe('signup on a new plan with add-ons', () => {
+    it('creates the org on the chosen plan and branches and activates the chosen add-ons for all branches (included ones are dropped)', async () => {
+      const s2 = newStamp()
+      const { data: u } = await db.auth.admin.createUser({ email: `it-sig-${s2}@storely.test`, password: `It-${s2}-x!`, email_confirm: true })
+      const uid = u.user!.id
+      vi.resetModules()
+      vi.doMock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: uid, email: `it-sig-${s2}@storely.test` } } }) } }) }))
+      const reg = await import('@/app/api/register-org/route')
+      let oid = ''
+      try {
+        const res = await reg.POST(new Request('http://test/api/register-org', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+          orgName: `__it_sig_${s2}`, fullPhone: '966500000000', phone: uniqPhone(), countryCode: '+966', businessType: 'كوفي', billing: 'monthly',
+          plan: 'ops', branchCount: 3, addons: ['cashier_closing', 'hr_full', 'bogus'], trialEnds: new Date(Date.now() + 14 * 864e5).toISOString(),
+        }) }))
+        const j = await res.json() as any
+        expect(res.status).toBe(200)
+        oid = j.org_id
+        const { data: org } = await db.from('organizations').select('plan,max_branches,max_staff,max_suppliers').eq('id', oid).single()
+        expect(org).toMatchObject({ plan: 'ops', max_branches: 3, max_staff: 18, max_suppliers: 45 })
+        // التشغيل فيها الكاشير أصلاً → يتفعّل الحضور بس، لكل الفروع (حتى اللي تنضاف بعدين) بكمية 3 وسعر الفرع الأول 69
+        const { data: subs } = await db.from('org_addon_subscriptions').select('quantity,status,branch_ids,locked_price,marketplace_addons(slug)').eq('org_id', oid)
+        expect((subs as any[]).map(r => [r.marketplace_addons.slug, r.quantity, r.status, r.branch_ids, Number(r.locked_price)])).toEqual([['hr_full', 3, 'active', null, 69]])
+        const { monthlyBill } = await import('@/lib/orgBill')
+        // الفرع الثالث بخصم 20%: التشغيل 143+143+114 + الحضور 69+69+55 — والمجموع + الذكاء 15 = الكاملة لـ3 فروع
+        expect(await monthlyBill(db as any, oid)).toBe(400 + 193)
+      } finally {
+        vi.doUnmock('@/lib/supabase/server')
+        if (oid) {
+          const { deleteOrgCompletely } = await import('@/lib/deleteOrg')
+          await deleteOrgCompletely(oid, uid).catch(() => {})
+          await db.from('organizations').delete().eq('id', oid)
+        }
+        await db.auth.admin.deleteUser(uid).catch(() => {})
+      }
+    }, 180_000)
+  })
+  describe('«ابنِ باقتك» (custom plan)', () => {
+    it('cashier only, 1 branch, 3 staff: only the cashier opens, inventory/purchase writes are locked, bill = cashier 49 (no minimum, staff at least 6)', async () => {
+      const s3 = newStamp()
+      const { data: u } = await db.auth.admin.createUser({ email: `it-cus-${s3}@storely.test`, password: `It-${s3}-x!`, email_confirm: true })
+      const uid = u.user!.id
+      vi.resetModules()
+      vi.doMock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: uid, email: `it-cus-${s3}@storely.test` } } }) } }) }))
+      const reg = await import('@/app/api/register-org/route')
+      let oid = ''
+      try {
+        const res = await reg.POST(new Request('http://test/api/register-org', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+          orgName: `__it_cus_${s3}`, fullPhone: '966500000000', phone: uniqPhone(), countryCode: '+966', businessType: 'كوفي', billing: 'monthly',
+          plan: 'custom', branchCount: 1, staff: 3, addons: ['cashier_closing', 'bogus'], trialEnds: new Date(Date.now() + 14 * 864e5).toISOString(),
+        }) }))
+        expect(res.status).toBe(200)
+        oid = ((await res.json()) as any).org_id
+        const { data: org } = await db.from('organizations').select('plan,max_branches,staff_included').eq('id', oid).single()
+        expect(org).toMatchObject({ plan: 'custom', max_branches: 1, staff_included: 6 })
+        // بعد التجربة (مدفوع): الكاشير بس
+        await db.from('profiles').update({ subscription_type: 'paid' } as any).eq('id', uid)
+        const { orgFeatures } = await import('@/lib/planFeatures')
+        expect(await orgFeatures(db as any, oid)).toMatchObject({ cashier: true, inventory: false, purchases: false, hr: false, profitability: true })
+        const { routeFeatureError, clearFeatureCache } = await import('@/lib/featureRoutes')
+        clearFeatureCache(oid)
+        expect(await routeFeatureError(oid, '/api/products', 'POST', db as any)).toMatch(/المخزون/)
+        expect(await routeFeatureError(oid, '/api/purchases', 'POST', db as any)).toMatch(/المشتريات/)
+        expect(await routeFeatureError(oid, '/api/products', 'GET', db as any)).toBeNull()
+        expect(await routeFeatureError(oid, '/api/cashier-closing', 'POST', db as any)).toBeNull()
+        const { monthlyBill } = await import('@/lib/orgBill')
+        expect(await monthlyBill(db as any, oid)).toBe(49)
+        const { staffLimitFor } = await import('@/lib/staffCapacity')
+        expect(await staffLimitFor(db as any, oid)).toBe(6)
+      } finally {
+        vi.doUnmock('@/lib/supabase/server')
+        if (oid) {
+          const { deleteOrgCompletely } = await import('@/lib/deleteOrg')
+          await deleteOrgCompletely(oid, uid).catch(() => {})
+          await db.from('organizations').delete().eq('id', oid)
+        }
+        await db.auth.admin.deleteUser(uid).catch(() => {})
+      }
+    }, 180_000)
+  })
+  describe('«ابنِ باقتك»: purchases without inventory, inventory on one branch only', () => {
+    it('an inventory purchase is saved as an expense with no stock; inventory writes are locked per branch', async () => {
+      const purchases = await import('@/app/api/purchases/route')
+      const { activateAddon } = await import('@/lib/addonActivation')
+      const { branchFeatureDenied, clearFeatureCache } = await import('@/lib/featureRoutes')
+      const { data: b2 } = await db.from('branches').insert({ org_id: orgId, name: 'فرع ب', is_active: true } as any).select('id').single()
+      const branchB = (b2 as any).id
+      const { data: ads } = await db.from('marketplace_addons').select('id,slug').in('slug', ['mod_purchases', 'mod_inventory'])
+      const idOf = (sl: string) => (ads as any[]).find(a => a.slug === sl).id
+      await db.from('profiles').update({ subscription_type: 'paid', subscription_ends_at: new Date(Date.now() + 20 * 864e5).toISOString() } as any).eq('id', userId)
+      await db.from('organizations').update({ plan: 'custom', max_branches: 2, staff_included: 12 } as any).eq('id', orgId)
+      try {
+        expect((await activateAddon(db as any, { orgId, addonId: idOf('mod_purchases') })).ok).toBe(true)
+        clearFeatureCache(orgId)
+        const tag = `مصروف-${stamp}`
+        const res = await call(purchases.POST, 'POST', '/api/purchases', { org_id: orgId, branch_id: branchA, category: 'مخزون', name: tag, qty: 3, unit: 'كيلو',
+          total_amount: 90, supplier: 'مورد اختبار', has_vat: false, invoice_date: today })
+        expect(res.status).toBe(200)
+        const { data: row } = await db.from('purchases').select('category').eq('org_id', orgId).eq('name', tag).single()
+        expect((row as any).category).toBe('مشتريات')
+        expect((await db.from('products').select('id').eq('org_id', orgId).eq('name', tag)).data).toEqual([])
+
+        // المخزون لفرع أ بس
+        expect((await activateAddon(db as any, { orgId, addonId: idOf('mod_inventory'), branchIds: [branchA] })).ok).toBe(true)
+        clearFeatureCache(orgId)
+        expect(await branchFeatureDenied(orgId, ['inventory'], branchA, db as any)).toBeNull()
+        expect(await branchFeatureDenied(orgId, ['inventory'], branchB, db as any)).toMatch(/لهذا الفرع/)
+        await db.from('purchases').delete().eq('org_id', orgId).eq('name', tag)
+      } finally {
+        await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).in('addon_id', [idOf('mod_purchases'), idOf('mod_inventory')])
+        await db.from('branches').delete().eq('id', branchB)
+        await db.from('organizations').update({ plan: 'pro', max_branches: 1, max_staff: 1, staff_included: null } as any).eq('id', orgId)
+        clearFeatureCache(orgId)
+      }
+    }, 180_000)
+  })
+
+  describe('existing subscribers choose features at the new prices (applied at renewal)', () => {
+    it('pro owner sees the offer, picks two features, nothing changes until the admin renews, then the org moves to «ابنِ باقتك» at the cheaper bill', async () => {
+      const sw = await import('@/app/api/pricing-switch/route')
+      const adminSw = await import('@/app/api/admin/pricing-switches/route')
+      const adminRow = async () => ((await (await adminSw.GET(new Request('http://test/api/admin/pricing-switches', { headers: { 'x-admin-key': 'it-admin' } }))).json() as any).rows || []).find((r: any) => r.org_id === orgId)
+      const activate = await import('@/app/api/admin/activate-user/route')
+      const { monthlyBill } = await import('@/lib/orgBill')
+      const { clearFeatureCache } = await import('@/lib/featureRoutes')
+      const ends = new Date(Date.now() + 5 * 864e5).toISOString()
+      await db.from('organizations').update({ plan: 'pro', max_branches: 3, locked_plan_monthly: null, billing_cycle: 'monthly' } as any).eq('id', orgId)
+      await db.from('profiles').update({ subscription_type: 'paid', subscription_ends_at: ends } as any).eq('id', userId)
+      const { count: n } = await db.from('branches').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('is_active', true)
+      const br = Math.max(1, n || 1)
+      try {
+        expect(await adminRow()).toMatchObject({ status: 'pending', bill_now: 249 })
+        const g = await call(sw.GET, 'GET', `/api/pricing-switch?org_id=${orgId}`)
+        expect(g.json).toMatchObject({ success: true, show: true, current: 249, branches: br })
+        expect(g.json.selected).toEqual(['mod_inventory', 'mod_purchases', 'cashier_closing', 'hr_full', 'ai_tools'])
+
+        const pick = ['mod_inventory', 'cashier_closing']
+        const pv = await call(sw.POST, 'POST', '/api/pricing-switch', { org_id: orgId, modules: pick, preview: true })
+        expect(pv.json).toMatchObject({ success: true, current: 249, projected: (59 + 49) * br, outcome: 'switch' })
+        expect((await db.from('pricing_switches').select('org_id').eq('org_id', orgId)).data).toEqual([])   // المعاينة ما تحفظ
+
+        const save = await call(sw.POST, 'POST', '/api/pricing-switch', { org_id: orgId, modules: pick })
+        expect(save.json).toMatchObject({ success: true, outcome: 'switch' })
+        expect((await call(sw.GET, 'GET', `/api/pricing-switch?org_id=${orgId}`)).json.show).toBe(false)
+        expect((await call(sw.POST, 'POST', '/api/pricing-switch', { org_id: orgId, modules: pick })).status).toBe(409)
+        expect(await adminRow()).toMatchObject({ status: 'will_switch', current_monthly: 249, new_monthly: (59 + 49) * br, modules: pick })
+        // قبل التجديد: باقته وفاتورته كما هي
+        expect((await db.from('organizations').select('plan').eq('id', orgId).single()).data).toMatchObject({ plan: 'pro' })
+
+        const newEnds = new Date(Date.now() + 35 * 864e5).toISOString()
+        const res = await activate.POST(new Request('http://test/api/admin/activate-user', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify({ userId, type: 'paid', ends: newEnds }) }))
+        expect(res.status).toBe(200)
+        expect((await res.json() as any).pricingSwitch).toMatchObject({ applied: true, monthly: (59 + 49) * br })
+        clearFeatureCache(orgId)
+        expect((await db.from('organizations').select('plan,max_branches').eq('id', orgId).single()).data).toMatchObject({ plan: 'custom', max_branches: br })
+        const { data: subs } = await db.from('org_addon_subscriptions').select('status,quantity,marketplace_addons(slug)').eq('org_id', orgId).eq('status', 'active')
+        expect(((subs || []) as any[]).map(r => r.marketplace_addons.slug).sort()).toEqual(['cashier_closing', 'mod_inventory'])
+        expect(await monthlyBill(db as any, orgId)).toBe((59 + 49) * br)
+        expect((await db.from('pricing_switches').select('applied_at').eq('org_id', orgId).single()).data?.applied_at).toBeTruthy()
+        expect(await adminRow()).toMatchObject({ status: 'applied' })
+      } finally {
+        await db.from('pricing_switches').delete().eq('org_id', orgId)
+        await db.from('org_addon_subscriptions').delete().eq('org_id', orgId)
+        await db.from('organizations').update({ plan: 'pro', max_branches: 1, max_staff: 1, max_suppliers: 20 } as any).eq('id', orgId)
+        clearFeatureCache(orgId)
+      }
+    }, 180_000)
   })
 })

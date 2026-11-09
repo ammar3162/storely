@@ -16,7 +16,7 @@ export async function GET(req: Request) {
   try {
     const db = sb()
     const me = await currentAccountant(db, req)
-    if (!me) return NextResponse.json({ error: 'سجّل دخولك' }, { status: 401 })
+    if (!me) return NextResponse.json({ error: 'سجّل الدخول' }, { status: 401 })
     const { searchParams } = new URL(req.url)
     const today = saudiToday()
     const p = customPeriod(searchParams.get('from') || `${today.slice(0, 8)}01`, searchParams.get('to') || today, today)
@@ -56,6 +56,6 @@ export async function GET(req: Request) {
     const invites = ((inv || []) as any[]).map(i => ({ id: i.id, org: i.organizations?.name || 'منشأة', logo_url: i.organizations?.logo_url || null, branch: i.branches?.name || null, sections: sectionLabels(i.sections || []) }))
     return NextResponse.json({ success: true, accountant: me, period: p, clients, invites })
   } catch {
-    return NextResponse.json({ error: 'تعذر تحميل العملاء، حاول مرة ثانية' }, { status: 500 })
+    return NextResponse.json({ error: 'تعذر تحميل العملاء، حاول مرة أخرى' }, { status: 500 })
   }
 }

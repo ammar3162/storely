@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
 import { getAddonsMarket } from '@/lib/addonsCache'
 import { getMe } from '@/lib/session'
-import { planKeyOf, billLines, planPriceFor, planLabel as planLabelFor } from '@/lib/planPricing'
+import { planKeyOf, billLines, planPriceFor, planLabel as planLabelFor, isCustomPlan } from '@/lib/planPricing'
 import { DAYS, TABS, parsePhone } from './constants'
 
 /** حالة صفحة الإعدادات ودوالها — منقولة كما هي من page.tsx */
@@ -81,6 +81,8 @@ export function useSettings() {
   const [subEndsAt, setSubEndsAt]       = useState<string|null>(null)
   const [planKey, setPlanKey]           = useState<string>('')
   const [lockedPlan, setLockedPlan]     = useState<number|null>(null)  // سعر مثبّت لمشترك قبل تغيير الأسعار
+  const [planBranches, setPlanBranches] = useState(1)                 // فروع الباقة (بدون «فرع إضافي»)
+  const [staffIncluded, setStaffIncluded] = useState<number|null>(null) // «ابنِ باقتك»
   const [billAddons, setBillAddons]     = useState<any[]>([])
   const [discount, setDiscount]         = useState<any>(null)  // خصم خاص من لوحة الإدارة
   const [form, setForm] = useState({
@@ -117,7 +119,7 @@ export function useSettings() {
     const { error } = await sb2.auth.updateUser({ password: pwForm.newPw })
     setPwSaving(false)
     if (error) { setPwMsg({ok:false,text:'حدث خطأ في تغيير كلمة المرور'}); return }
-    setPwMsg({ok:true,text:'تم تغيير كلمة المرور بنجاح ✅'})
+    setPwMsg({ok:true,text:'تم تغيير كلمة المرور بنجاح '})
     setPwForm({current:'',newPw:'',confirm:''})
   }
 
@@ -152,6 +154,8 @@ export function useSettings() {
       setPlanName(planLabelFor(org.plan, me.org?.max_branches||org.max_branches))
       setPlanKey(org.plan||'')
       setLockedPlan(org.locked_plan_monthly ?? null)
+      setPlanBranches(me.org?.plan_branches || org.max_branches || 1)
+      setStaffIncluded(me.org?.staff_included ?? null)
       setDiscount(me.org || null)
       setBillingCycle(org.billing_cycle==='yearly'?'yearly':'monthly')
       setSubEndsAt(org.subscription_ends_at||null)
@@ -180,9 +184,9 @@ export function useSettings() {
     setLogoUploading(true)
     const ext = file.name.split('.').pop()
     const path = `${orgId}/logo-${Date.now()}.${ext}`   // مجلد المنشأة (سياسة التخزين تسمح بمجلدها بس)
-    const { error: upErr } = await sb.storage.from('invoices').upload(path, file, { upsert: true })
+    const { error: upErr } = await sb.storage.from('org-logos').upload(path, file, { upsert: true })   // الشعار بمجلد عام (الفواتير خاصة)
     if (upErr) { alert('فشل رفع الصورة: ' + upErr.message); setLogoUploading(false); return }
-    const { data: pub } = sb.storage.from('invoices').getPublicUrl(path)
+    const { data: pub } = sb.storage.from('org-logos').getPublicUrl(path)
     const updRes = await api.patch('/api/org-settings', { org_id: orgId, logo_url: pub.publicUrl })
     if (!updRes.success) { alert('فشل حفظ رابط الصورة: ' + (updRes.error||'')); setLogoUploading(false); return }
     setLogoUrl(pub.publicUrl)
@@ -266,9 +270,11 @@ export function useSettings() {
   }
 
   const pk = planKeyOf(planKey, maxBranches)
-  const planPrice = planPriceFor(pk, lockedPlan)
-  const planLabel = `الباقة ${planPrice.label} — ${billingCycle==='yearly' ? `${planPrice.yearly} ⃁/سنة` : `${planPrice.monthly} ⃁/شهر`}`
-  const bill = billLines(pk, billingCycle, billAddons, lockedPlan, discount)
+  const planPrice = planPriceFor(pk, lockedPlan, planBranches)
+  const bill = billLines(pk, billingCycle, billAddons, lockedPlan, discount, planBranches, staffIncluded)
+  // «ابنِ باقتك» ما لها سعر باقة — نعرض مجموع مزاياها
+  const shownPrice = isCustomPlan(pk) && !lockedPlan ? { monthly: bill.total, yearly: bill.total } : planPrice
+  const planLabel = `الباقة ${planPrice.label} — ${billingCycle==='yearly' ? `${shownPrice.yearly} ⃁/سنة` : `${shownPrice.monthly} ⃁/شهر`}`
 
   return { loading, setLoading, showDelete, setShowDelete, deleteConfirm, setDeleteConfirm, deleting, setDeleting, deleteMsg, setDeleteMsg, saving, setSaving, sending, setSending, saveOk, setSaveOk, sendMsg, setSendMsg, orgId, setOrgId, isOwner, setIsOwner, lastSent, setLastSent, lastBackup, setLastBackup, backups, setBackups, backupLoading, setBackupLoading, backupMsg, setBackupMsg, branches, setBranches, inactiveBranches, setInactiveBranches, reactivatingId, setReactivatingId, maxBranches, setMaxBranches, newBranch, setNewBranch, editingPhoneId, setEditingPhoneId, editPhoneValue, setEditPhoneValue, savingPhone, setSavingPhone, branchSaving, setBranchSaving, pwForm, setPwForm, pwSaving, setPwSaving, pwMsg, setPwMsg, activeTab, setActiveTab, visible, setVisible, countryCode, setCountryCode, logoUrl, setLogoUrl, logoUploading, setLogoUploading, planName, setPlanName, billingCycle, setBillingCycle, userEmail, setUserEmail, userPhone, setUserPhone, userFullName, setUserFullName, userId, setUserId, savingPersonal, setSavingPersonal, personalSaveOk, setPersonalSaveOk, subEndsAt, setSubEndsAt, planKey, setPlanKey, lockedPlan, setLockedPlan, billAddons, setBillAddons, discount, setDiscount, form, setForm, sb, pk, planPrice, planLabel, bill, loadInactiveBranches, reactivateBranch, saveBranchPhone, savePersonalInfo, changePassword, load, handleSave, uploadLogo, sendNow, loadBackups, runBackup, addBranch, deleteBranch, toggleDay, scheduleLabel, deleteAccount }
 }

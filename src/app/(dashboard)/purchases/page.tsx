@@ -1,6 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import PageIcon from '@/components/PageIcon'
+import { StorelyPageHeader } from '@/components/ui'
 import InvoiceAgentPanel from '@/components/InvoiceAgentPanel'
 import { Suspense, lazy } from 'react'
 import EditHistoryDialog from '@/components/EditHistoryDialog'
@@ -25,7 +25,7 @@ export default function PurchasesPage() {
       <style>{`
         @keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
         .u{animation:up .3s ease both}
-        input:focus,select:focus,textarea:focus{border-color:${C.primary}!important;outline:none!important;box-shadow:0 0 0 3px ${C.primaryL}!important}
+        input:focus,select:focus,textarea:focus{border-color:${C.primary}!important;outline:none!important;box-shadow:0 0 0 3px rgba(32,54,64,.14)!important}
         .rh:hover{background:#f9f9f8}
         .tap{transition:all .12s;cursor:pointer}
         .tap:active{transform:scale(.97)}
@@ -35,10 +35,7 @@ export default function PurchasesPage() {
       {showScan&&<Suspense fallback={null}><BarcodeScanner onScan={(code:string)=>{setShowScan(false);setForm(f=>({...f,sku:code}))}} onClose={()=>setShowScan(false)}/></Suspense>}
 
       {/* Header */}
-      <div className="u" style={{marginBottom:16}}>
-        <h1 style={{fontSize:20,fontWeight:700,color:C.text,margin:0,letterSpacing:'-0.3px',display:'flex',alignItems:'center',gap:12}}><PageIcon/>المشتريات</h1>
-        <p style={{fontSize:11,color:C.text4,margin:'3px 0 0'}}>فئة <b style={{color:C.primary}}>مخزون</b> تُضيف المنتج للمخزون تلقائياً</p>
-      </div>
+      <StorelyPageHeader title="المشتريات" description={<>فواتير الشراء والمصروفات. الفاتورة من فئة <b>مخزون</b> تضيف المنتج إلى المخزون تلقائياً</>} />
 
       {/* الوكيل الذكي: يقرأ الفاتورة ويطابقها مع المخزون ويسأل عن اللي مو واضح */}
       {orgId && <InvoiceAgentPanel manualOpen={showManual} onManual={()=>{ setShowManual(true); setTimeout(()=>document.querySelector('form')?.scrollIntoView({behavior:'smooth',block:'start'}),50) }} orgId={orgId} branchId={typeof window!=='undefined'?sessionStorage.getItem('s_branch_id'):null} products={products} curr={curr}
@@ -47,7 +44,7 @@ export default function PurchasesPage() {
       <PurchaseStats m={m}/>
 
       {/* Main grid */}
-      <div className="pgrid" style={{display:'grid',gridTemplateColumns:(showManual||payables.length>0)?'1fr 1.1fr':'1fr',gap:14,alignItems:'start'}}>
+      <div className="pgrid" style={{display:'grid',gridTemplateColumns:(showManual||payables.length>0)?'1fr 1.1fr':'1fr',gap:20,alignItems:'start'}}>
 
         <ManualPurchaseForm m={m}/>
 

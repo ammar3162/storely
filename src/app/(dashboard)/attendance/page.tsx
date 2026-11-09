@@ -1,4 +1,6 @@
 'use client'
+import { StorelyMetricStrip } from '@/components/ui'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 export const dynamic = 'force-dynamic'
 import PageIcon from '@/components/PageIcon'
 import { colors, font, card, pageTitle, pageSub } from '@/lib/ds'
@@ -20,33 +22,24 @@ export default function AttendancePage() {
 
       {locked && (
         <div style={{...card,padding:14,marginBottom:18,background:colors.warningLight,border:`1px solid ${colors.warningBorder}`,display:'flex',alignItems:'center',gap:10}}>
-          <span style={{fontSize:20}}>🔒</span>
+          <FeatureIcon name="🔒" size={20} />
           <div>
-            <div style={{fontSize:13,fontWeight:800,color:colors.text}}>وضع قراءة فقط — انتهى اشتراك ميزة "إدارة الموظفين الكاملة"</div>
-            <div style={{fontSize:12,color:colors.text3}}>سجلاتك القديمة محفوظة وتقدر تشوفها، بس ما تقدر تسجّل حضور جديد أو تعدّل الشفتات إلا بعد تجديد الاشتراك</div>
+            <div style={{fontSize:13,fontWeight:800,color:colors.text}}>وضع قراءة فقط — ميزة «الحضور والرواتب» غير مفعّلة</div>
+            <div style={{fontSize:12,color:colors.text3}}>سجلاتك السابقة محفوظة ويمكنك الاطلاع عليها، لكن لا يمكنك تسجيل حضور جديد أو تعديل الورديات إلا بعد تجديد الاشتراك</div>
           </div>
         </div>
       )}
 
       {monthStats && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 18 }}>
-          <div style={{ ...card, padding: '14px', textAlign: 'center' as const }}>
-            <div style={{ fontSize: 10, color: colors.text4, fontWeight: 600, marginBottom: 4 }}>معدّل الحضور — هذا الشهر</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: colors.text }}>{monthStats.attendanceRate !== null ? `${monthStats.attendanceRate}%` : '—'}</div>
-          </div>
-          <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: monthStats.totalPenalty>0?colors.dangerLight:undefined, border: monthStats.totalPenalty>0?`1px solid ${colors.dangerBorder}`:undefined }}>
-            <div style={{ fontSize: 10, color: monthStats.totalPenalty>0?colors.danger:colors.text4, fontWeight: 600, marginBottom: 4 }}>إجمالي الخصومات — هذا الشهر</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: monthStats.totalPenalty>0?colors.danger:colors.text }}>{monthStats.totalPenalty>0?`${monthStats.totalPenalty} ⃁`:'—'}</div>
-          </div>
-          <div style={{ ...card, padding: '14px', textAlign: 'center' as const, background: monthStats.mostLate?colors.warningLight:undefined, border: monthStats.mostLate?`1px solid ${colors.warningBorder}`:undefined }}>
-            <div style={{ fontSize: 10, color: monthStats.mostLate?colors.warning:colors.text4, fontWeight: 600, marginBottom: 4 }}>الأكثر تأخيراً — هذا الشهر</div>
-            <div style={{ fontSize: monthStats.mostLate?15:22, fontWeight: 900, color: monthStats.mostLate?colors.warning:colors.text }}>{monthStats.mostLate ? `${monthStats.mostLate.name} (${monthStats.mostLate.minutes} د)` : '—'}</div>
-          </div>
-        </div>
+        <StorelyMetricStrip className="mb-4" metrics={[
+          { label: 'معدّل الحضور', value: monthStats.attendanceRate !== null ? `${monthStats.attendanceRate}%` : '—', helper: 'هذا الشهر' },
+          { label: 'إجمالي الخصومات', value: monthStats.totalPenalty > 0 ? `${monthStats.totalPenalty} ⃁` : '—', helper: 'هذا الشهر', tone: monthStats.totalPenalty > 0 ? 'danger' : 'neutral' },
+          { label: 'الأكثر تأخيراً', value: monthStats.mostLate ? monthStats.mostLate.name : '—', helper: monthStats.mostLate ? `${monthStats.mostLate.minutes} دقيقة هذا الشهر` : 'هذا الشهر', tone: monthStats.mostLate ? 'warning' : 'neutral' },
+        ]} />
       )}
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        {[{ id: 'report', label: '📋 التقرير' }, { id: 'settings', label: '⚙️ الشفتات والغرامات' }].map(t => (
+        {[{ id: 'report', label: 'التقرير' }, { id: 'settings', label: 'الورديات والغرامات' }].map(t => (
           <button key={t.id} onClick={() => setTab(t.id as any)}
             style={{ padding: '9px 16px', borderRadius: 99, border: `1.5px solid ${tab === t.id ? colors.primary : colors.border2}`, background: tab === t.id ? colors.primaryLight : colors.surface, color: tab === t.id ? colors.primary : colors.text3, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
             {t.label}

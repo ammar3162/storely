@@ -16,9 +16,9 @@ const money = (v: number) => Math.round(v).toLocaleString('en-US')
 /** «خلال يوم / يومين / 3 أيام / 11 يوم» */
 const inDays = (d: number) => d <= 1 ? 'خلال يوم' : d === 2 ? 'خلال يومين' : d <= 10 ? `خلال ${d} أيام` : `خلال ${d} يوم`
 /** «فاتورة وحدة / فاتورتين / 5 فواتير / 13 فاتورة» */
-export const invoicesAr = (n: number) => n === 1 ? 'فاتورة وحدة' : n === 2 ? 'فاتورتين' : n <= 10 ? `${n} فواتير` : `${n} فاتورة`
+export const invoicesAr = (n: number) => n === 1 ? 'فاتورة واحدة' : n === 2 ? 'فاتورتين' : n <= 10 ? `${n} فواتير` : `${n} فاتورة`
 const MAX_OUT = 10, MAX_LOW = 8
-const moreItems = (n: number) => `و ${n} ${n === 1 ? 'صنف ثاني' : n === 2 ? 'صنفين ثانيين' : n <= 10 ? 'أصناف ثانية' : 'صنف ثاني'}`
+const moreItems = (n: number) => `و ${n} ${n === 1 ? 'صنف آخر' : n === 2 ? 'صنفان آخران' : n <= 10 ? 'أصناف أخرى' : 'صنفاً آخر'}`
 
 /** محتوى فرع واحد — كل قسم نص جاهز أو null (ما ينذكر) */
 export type BranchReport = {
@@ -29,7 +29,8 @@ export type BranchReport = {
 /** وش يشوف المستلم: المالك ورقم الفرع كل الأقسام المفعّلة، والمدير حسب صلاحياته */
 export type ReportView = { decisions: boolean; sales: boolean; staff: boolean; stock: boolean; purchases: boolean }
 
-export const fullView = (f: Features): ReportView => ({ decisions: f.ai, sales: f.cashier, staff: f.hr, stock: true, purchases: true })
+// المخزون والمشتريات: كل الباقات فيها — تنشال بس لـ «ابنِ باقتك» لو ما اختارها
+export const fullView = (f: Features): ReportView => ({ decisions: f.ai, sales: f.cashier, staff: f.hr, stock: f.inventory !== false, purchases: f.purchases !== false })
 
 export async function buildBranchReports(db: SupabaseClient, orgId: string, branches: { id: string; name: string }[], f: Features, nowMs = Date.now()): Promise<BranchReport[]> {
   const today = saudiDate(nowMs), yesterday = saudiDate(nowMs - DAY)
@@ -67,13 +68,13 @@ export async function buildBranchReports(db: SupabaseClient, orgId: string, bran
       }
       const soon = prods.filter(p => Number(p.qty) > 0).map(p => { const d = (out30.get(p.id) || 0) / 30; return { p, left: d > 0 ? Number(p.qty) / d : null } })
         .filter(x => x.left != null && x.left <= 3).sort((a, z) => a.left! - z.left!).slice(0, 4)
-        .map(x => { decided.add(x.p.id); return x.left! < 1 ? `اطلب ${x.p.name} اليوم (يخلص اليوم)` : `اطلب ${x.p.name} (يخلص ${inDays(Math.round(x.left!))})` })
+        .map(x => { decided.add(x.p.id); return x.left! < 1 ? `اطلب ${x.p.name} اليوم (ينفد اليوم)` : `اطلب ${x.p.name} (ينفد ${inDays(Math.round(x.left!))})` })
       const avg = byDow.reduce((t, v) => t + v, 0) / 7
       const peak = byDow.indexOf(Math.max(...byDow))
       const dowToday = saudiDow(today)
       if (avg > 0 && byDow[peak] >= avg * 1.15) {
-        if (peak === dowToday) soon.push(`اليوم أكثر يوم زحمة عندك — تأكد إن الأصناف الأساسية جاهزة`)
-        else if (peak === (dowToday + 1) % 7) soon.push(`بكرة (${DAYS[peak]}) أكثر يوم زحمة — جهّز مخزونك من اليوم`)
+        if (peak === dowToday) soon.push(`اليوم هو الأكثر ازدحاماً لديك — تأكد من جاهزية الأصناف الأساسية`)
+        else if (peak === (dowToday + 1) % 7) soon.push(`غداً (${DAYS[peak]}) هو الأكثر ازدحاماً — جهّز مخزونك من اليوم`)
       }
       decisions = soon.length ? soon : null
     }
@@ -120,8 +121,8 @@ export async function buildBranchReports(db: SupabaseClient, orgId: string, bran
     const low = prods.filter(p => Number(p.qty) > 0 && Number(p.qty) <= Number(p.reorder_point) && !decided.has(p.id))
       .sort((a, z) => Number(a.qty) / (Number(a.reorder_point) || 1) - Number(z.qty) / (Number(z.reorder_point) || 1))
     const stockLow = low.length ? [
-      ...low.slice(0, MAX_LOW).map(p => `${p.name} (باقي ${n2(p.qty)} من ${n2(p.reorder_point)}${p.unit ? ' ' + p.unit : ''})`),
-      ...(low.length > MAX_LOW ? [`${moreItems(low.length - MAX_LOW)} تحت الحد — تفاصيلها في صفحة المخزون`] : []),
+      ...low.slice(0, MAX_LOW).map(p => `${p.name} (المتبقي ${n2(p.qty)} من ${n2(p.reorder_point)}${p.unit ? ' ' + p.unit : ''})`),
+      ...(low.length > MAX_LOW ? [`${moreItems(low.length - MAX_LOW)} تحت الحد الأدنى — التفاصيل في صفحة المخزون`] : []),
     ] : null
 
     // مشتريات أمس
@@ -138,10 +139,10 @@ export function branchBlock(r: BranchReport, v: ReportView): string | null {
   const list = (items: string[]) => items.map(x => `• ${x}`).join('\n')
   const parts = [
     v.sales && r.sales ? `*إقفال الكاشير (أمس)*\n${list(r.sales)}` : null,
-    v.stock && r.stockOut ? `*خلصت — اطلبها اليوم*\n• ${r.stockOut}` : null,
+    v.stock && r.stockOut ? `*نفدت — اطلبها اليوم*\n• ${r.stockOut}` : null,
     v.decisions && r.decisions ? `*المطلوب اليوم*\n${list(r.decisions)}` : null,
-    v.staff && r.staff && r.staffNotable ? `*الموظفين*\n${list(r.staff)}` : null,
-    v.stock && r.stockLow ? `*قربت تخلص*\n${list(r.stockLow)}` : null,
+    v.staff && r.staff && r.staffNotable ? `*الموظفون*\n${list(r.staff)}` : null,
+    v.stock && r.stockLow ? `*قاربت على النفاد*\n${list(r.stockLow)}` : null,
     v.purchases && r.purchases ? `*المشتريات (أمس)*\n• ${r.purchases}` : null,
   ].filter(Boolean)
   return parts.length ? parts.join('\n\n') : null
@@ -150,7 +151,7 @@ export function branchBlock(r: BranchReport, v: ReportView): string | null {
 /** الرسالة كاملة: عنوان + فرع أو أكثر */
 export function reportMessage(orgName: string, blocks: { name: string; text: string }[], multiBranch: boolean, nowMs = Date.now()): string | null {
   if (!blocks.length) return null
-  const date = new Date(nowMs).toLocaleDateString('ar-SA', { numberingSystem: 'latn', timeZone: 'Asia/Riyadh', weekday: 'long', day: 'numeric', month: 'long' })
+  const date = new Date(nowMs).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', timeZone: 'Asia/Riyadh', weekday: 'long', day: 'numeric', month: 'long' })
   const body = blocks.map(b => (multiBranch ? `▬▬ *${b.name}* ▬▬\n\n` : '') + b.text).join('\n\n\n')
   return `*التقرير الصباحي*\n${orgName} | ${date}\n\n${body}\n\n_ستورلي · storely.dev_`
 }

@@ -7,6 +7,7 @@ import { resolvePurchaseTax, notifyQrMismatch } from '@/lib/taxInvoice'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { currencySymbol } from '@/lib/currencySymbol'
+import { branchFeatureDenied } from '@/lib/featureRoutes'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -78,7 +79,7 @@ export async function POST(req: Request) {
     const { org_id } = body
     const total = Number(body.total_amount)
     const supplier = String(body.supplier || '').trim()
-    const category = String(body.category || '')
+    let category = String(body.category || '')
     const name = String(body.name || '')
     if (!org_id || !(total > 0) || !supplier || !category) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     if (!DATE_RE.test(String(body.invoice_date || ''))) return NextResponse.json({ error: 'تاريخ غير صالح' }, { status: 400 })
@@ -89,16 +90,20 @@ export async function POST(req: Request) {
     const db = sb()
     const purchaseBranch = await resolveBranch(db, access, org_id, body.branch_id || null, false)
     if (purchaseBranch === undefined) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
+    const denied = await branchFeatureDenied(org_id, ['purchases'], purchaseBranch, db)
+    if (denied) return NextResponse.json({ error: denied }, { status: 403 })
+    // الفرع بدون المخزون («ابنِ باقتك»): الفاتورة تنحفظ مشتريات (مصروف) بدون ما تدخل المخزون
+    if (category === 'مخزون' && await branchFeatureDenied(org_id, ['inventory'], purchaseBranch, db)) category = 'مشتريات'
 
     // has_vat: الفاتورة شاملة ضريبة 15% ← المبلغ قبل الضريبة = الإجمالي ÷ 1.15؛ بدون ضريبة ← المبلغ = الإجمالي
     // (vat_amount و total_amount تحسبها قاعدة البيانات من amount و has_vat)
     const hasVat = body.has_vat !== false
     if (body.invoice_image && !isStoredInvoiceUrl(body.invoice_image)) return NextResponse.json({ error: 'رابط الفاتورة غير صالح — ارفع الصورة من جديد' }, { status: 400 })
-    if (hasVat && !body.invoice_image) return NextResponse.json({ error: 'الفاتورة الضريبية لازم ترفق صورتها أو ملفها' }, { status: 400 })
+    if (hasVat && !body.invoice_image) return NextResponse.json({ error: 'يجب إرفاق صورة الفاتورة الضريبية أو ملفها' }, { status: 400 })
     const amount = netFromTotal(total, hasVat)
     const invoiceTs = invoiceTimestamp(body.invoice_date)   // اليوم = الوقت الفعلي، تاريخ سابق = 12 الظهر
     const qty = body.qty ? Number(body.qty) : 0
-    if (!(Number.isInteger(qty) && qty >= 0)) return NextResponse.json({ error: 'الكمية لازم رقم صحيح — لو فيها كسور استخدم وحدة أصغر (غرام بدل كيلو مثلاً)' }, { status: 400 })
+    if (!(Number.isInteger(qty) && qty >= 0)) return NextResponse.json({ error: 'يجب أن تكون الكمية رقماً صحيحاً — إذا كانت فيها كسور فاستخدم وحدة أصغر (مثل الغرام بدل الكيلو)' }, { status: 400 })
     const locked = await lockedFor(db, org_id, [body.invoice_date])
     if (locked) return NextResponse.json({ error: locked }, { status: 423 })
     const tax = await resolvePurchaseTax(db, org_id, supplier, body, hasVat, total)

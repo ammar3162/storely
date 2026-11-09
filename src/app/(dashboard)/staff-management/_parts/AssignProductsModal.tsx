@@ -1,6 +1,6 @@
 'use client'
 import { colors, radius, font, btnPrimary, btnSecondary, inp } from '@/lib/ds'
-import { User, Save, Search } from 'lucide-react'
+import { User, Save, Search, Check } from 'lucide-react'
 import type { StaffPage } from './useStaffManagement'
 
 export default function AssignProductsModal({ m }: { m: StaffPage }) {
@@ -14,7 +14,7 @@ export default function AssignProductsModal({ m }: { m: StaffPage }) {
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
               <div>
                 <div style={{fontSize:font.md,fontWeight:800,color:colors.text}}>تخصيص المنتجات</div>
-                <div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>اختر المنتجات اللي يشوفها هالموظف — المنتج ممكن يكون عند أكثر من موظف. لو ما اخترت شي يشوف كل منتجات الفرع</div>
+                <div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>اختر المنتجات التي يطّلع عليها هذا الموظف — يمكن أن يُسند المنتج لأكثر من موظف. وإذا لم تختر شيئاً فسيطّلع على جميع منتجات الفرع</div>
               </div>
               <button onClick={()=>setAssigningId(null)} style={{width:32,height:32,borderRadius:radius.sm,border:`1.5px solid ${colors.border2}`,background:colors.bg,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',color:colors.text3}}>×</button>
             </div>
@@ -44,14 +44,14 @@ export default function AssignProductsModal({ m }: { m: StaffPage }) {
             {/* قائمة المنتجات */}
             <div style={{overflowY:'auto',flex:1,display:'flex',flexDirection:'column' as const,gap:6,marginBottom:16}}>
               {products.filter((p:any)=>!assignSearch.trim()||p.name.includes(assignSearch.trim())).length===0 ? (
-                <div style={{padding:'20px',textAlign:'center' as const,fontSize:12,color:colors.text4}}>ما فيه منتجات مطابقة</div>
+                <div style={{padding:'20px',textAlign:'center' as const,fontSize:12,color:colors.text4}}>لا توجد منتجات مطابقة</div>
               ) : products.filter((p:any)=>!assignSearch.trim()||p.name.includes(assignSearch.trim())).map((p:any)=>{
                 const selected = selectedProds.includes(p.id)
                 return (
                   <div key={p.id} onClick={()=>setSelectedProds(prev=>selected?prev.filter(id=>id!==p.id):[...prev,p.id])}
                     style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${selected?colors.primary:colors.border}`,background:selected?colors.primaryLight:colors.bg,cursor:'pointer',transition:'all .15s'}}>
                     <div style={{width:20,height:20,borderRadius:6,border:`2px solid ${selected?colors.primary:colors.border2}`,background:selected?colors.primary:'white',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'all .15s'}}>
-                      {selected&&<span style={{color:'white',fontSize:12,fontWeight:900}}>✓</span>}
+                      {selected&&<Check size={13} color="white" strokeWidth={3}/>}
                     </div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{p.name}</div>

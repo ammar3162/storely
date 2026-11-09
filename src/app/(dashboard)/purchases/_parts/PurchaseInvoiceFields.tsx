@@ -80,11 +80,11 @@ export default function PurchaseInvoiceFields({ m }: { m: PurchasesState }) {
             {form.hasVat==='yes' && (
               <div style={{marginBottom:12,borderRadius:10,padding:'12px 12px',border:`1.5px ${form.invoice_image?'solid':'dashed'} ${form.invoice_image?C.primaryB:C.danger}`,background:form.invoice_image?C.primaryL:C.dangerL}}>
                 {form.invoice_image
-                  ? <div style={{fontSize:12.5,fontWeight:700,color:C.primary}}>✅ الفاتورة مرفقة</div>
-                  : <><div style={{fontSize:12.5,fontWeight:700,color:C.danger,marginBottom:8}}>📎 الفاتورة ضريبية — أرفق صورتها أو ملفها (مطلوب)</div>
+                  ? <div style={{fontSize:12.5,fontWeight:700,color:C.primary}}>الفاتورة مرفقة</div>
+                  : <><div style={{fontSize:12.5,fontWeight:700,color:C.danger,marginBottom:8}}>الفاتورة ضريبية — أرفق صورتها أو ملفها (مطلوب)</div>
                     <InvoicePickButtons onFile={handleImage} disabled={uploading} primary={C.primary} primaryL={'white'}
-                      labels={{camera:'📷 تصوير',gallery:'🖼️ من الصور',file:'📄 ملف PDF'}}/>
-                    {uploading&&<div style={{fontSize:11.5,color:C.text3,marginTop:6}}>⏳ جاري الرفع...</div>}</>}
+                      labels={{camera:'تصوير',gallery:'من الصور',file:'ملف PDF'}}/>
+                    {uploading&&<div style={{fontSize:11.5,color:C.text3,marginTop:6}}>جاري الرفع...</div>}</>}
               </div>
             )}
             {form.hasVat==='yes' && (

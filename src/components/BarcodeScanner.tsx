@@ -1,5 +1,8 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 import { useEffect, useRef, useState } from 'react'
+import { StorelyButton } from '@/components/ui/button'
+import { storelyTokens as t } from '@/components/ui/design-tokens'
 
 interface Props {
   onScan: (code: string) => void
@@ -66,28 +69,28 @@ export default function BarcodeScanner({ onScan, onClose }: Props) {
   }
 
   return (
-    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.95)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',direction:'rtl',fontFamily:"'Segoe UI',system-ui,sans-serif",padding:16}}>
-      <div style={{background:'white',borderRadius:16,padding:20,width:'100%',maxWidth:420}}>
+    <div className="storely-overlay">
+      <div className="storely-dialog" style={{maxWidth:420}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-          <div style={{fontSize:15,fontWeight:700,color:'#0f172a'}}>📷 مسح الباركود</div>
-          <button type="button" onClick={handleClose} style={{width:32,height:32,borderRadius:8,border:'1px solid #e2e8f0',background:'#f8fafc',cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+          <div style={{fontSize:t.typography.section,fontWeight:600,color:t.color.text}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><FeatureIcon name="📷" size={15} /></span> مسح الباركود</div>
+          <StorelyButton type="button" onClick={handleClose} size="sm"></StorelyButton>
         </div>
         {error ? (
-          <div style={{background:'#fef2f2',border:'1.5px solid #fecaca',borderRadius:9,padding:'12px',fontSize:13,color:'#dc2626',fontWeight:600,textAlign:'center',marginBottom:12}}>⚠️ {error}</div>
+          <div style={{background:t.color.dangerBg,border:`1px solid ${t.color.dangerBorder}`,borderRadius:t.radius.control,padding:12,fontSize:t.typography.body,color:t.color.danger,fontWeight:600,textAlign:'center',marginBottom:12}}>{error}</div>
         ) : (
-          <div style={{background:'#f0fdfa',border:'1px solid #5eead4',borderRadius:8,padding:'8px 12px',marginBottom:12,fontSize:12,color:'#115e59',fontWeight:600,textAlign:'center'}}>
-            {ready ? '🎯 وجّه الكاميرا نحو الباركود' : '⏳ جاري تشغيل الكاميرا...'}
+          <div style={{background:t.color.background,border:`1px solid ${t.color.border}`,borderRadius:t.radius.control,padding:'8px 12px',marginBottom:12,fontSize:t.typography.body,color:t.color.text,fontWeight:600,textAlign:'center'}}>
+            {ready ? 'وجّه الكاميرا نحو الباركود' : '⏳ جاري تشغيل الكاميرا...'}
           </div>
         )}
         <div style={{borderRadius:12,overflow:'hidden',background:'#000',position:'relative'}}>
           <video ref={videoRef} style={{width:'100%',display:'block'}} autoPlay playsInline muted/>
           {ready && (
             <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'none'}}>
-              <div style={{width:'70%',height:80,border:'2.5px solid #2dd4bf',borderRadius:10,boxShadow:'0 0 0 1000px rgba(0,0,0,0.4)'}}/>
+              <div style={{width:'70%',height:80,border:'2px solid white',borderRadius:t.radius.control,boxShadow:'0 0 0 1000px rgba(0,0,0,0.4)'}}/>
             </div>
           )}
         </div>
-        <button type="button" onClick={handleClose} style={{width:'100%',marginTop:14,padding:'11px',background:'#f1f5f9',color:'#64748b',border:'none',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+        <StorelyButton type="button" onClick={handleClose} style={{width:'100%',marginTop:16}}>إلغاء</StorelyButton>
       </div>
     </div>
   )

@@ -15,6 +15,15 @@ export const MANAGER_PERMS: ManagerPerm[] = [
   { key: 'ai_tools', label: 'أدوات الذكاء', hint: 'التوقعات واقتراحات الطلب', group: 'أخرى', pages: ['/ai-tools'] },
 ]
 export const MANAGER_PERM_KEYS = MANAGER_PERMS.map(p => p.key)
+/** كل صلاحية ← الميزة اللي تحتاجها (يكفي وحدة) — الصلاحية تنخفي لو الميزة مو باشتراكه */
+export const PERM_FEATURES: Record<string, ('inventory' | 'purchases' | 'cashier' | 'hr' | 'ai' | 'profitability')[]> = {
+  inventory: ['inventory'], dispense: ['inventory'], purchases: ['purchases'], suppliers: ['inventory', 'purchases'],
+  marketplace: ['inventory', 'purchases'], attendance: ['hr'], hr: ['hr'], profitability: ['profitability'], ai_tools: ['ai'],
+  cashier: ['cashier'],
+}
+/** الصلاحية متاحة حسب ميزات المنشأة (الميزة غير معروفة = متاحة) */
+export const permAvailable = (key: string, f: Partial<Record<string, boolean>> | null | undefined) =>
+  !PERM_FEATURES[key] || PERM_FEATURES[key].some(x => f?.[x] !== false)
 
 // صفحات المالك فقط — مدير الفرع ما يشوفها أبداً
 export const OWNER_ONLY_PAGES = ['/settings', '/branches', '/branch-compare', '/branch-managers', '/transfer-stock', '/addons-market']
@@ -59,12 +68,14 @@ export const API_GUARDS: Record<string, { read?: Rule; write?: Rule }> = {
   '/api/branch-transfer': { read: OWNER, write: OWNER },
   '/api/delete-branch': { read: OWNER, write: OWNER },
   '/api/delete-account': { read: OWNER, write: OWNER },
+  '/api/setup-progress': { read: OWNER, write: OWNER },
   '/api/branch-managers': { read: OWNER, write: OWNER },
   '/api/branches/copy-products': { read: OWNER, write: OWNER },
   '/api/branches/extra': { read: OWNER, write: OWNER },
   '/api/notify-low-stock': { write: OWNER },
   '/api/addons-market': { write: OWNER },
   '/api/plan-requests': { write: OWNER },
+  '/api/pricing-switch': { read: OWNER, write: OWNER },
   // المخزون والصرف
   '/api/products': { write: ['inventory', 'ai_tools'] },
   '/api/products/import': { read: ['inventory'], write: ['inventory'] },
@@ -154,4 +165,5 @@ export function managerApiAllowed(path: string, method: string, perms: Record<st
 export const API_OPEN = [
   '/api/ai-assistant', '/api/branches', '/api/dashboard-summary', '/api/month-comparison', '/api/nav-counts',
   '/api/notifications', '/api/onboarding', '/api/org-settings', '/api/push-subscribe', '/api/smart-reorder-timing', '/api/vat-status',
+  '/api/file',   // صور الفواتير — تتحقق بنفسها إن الملف من منشأة المستخدم
 ]

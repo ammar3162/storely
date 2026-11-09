@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
-import { planPriceFor, planKeyOf, PRICE_UPDATE_ON_RENEWAL } from '@/lib/planPricing'
+import { planPriceFor, planKeyOf, PRICE_UPDATE_ON_RENEWAL, isNewPlan } from '@/lib/planPricing'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
 import { awardAgentCommission } from '@/lib/agentReferral'
+import { applyPricingSwitch } from '@/lib/pricingSwitch'
 
 export async function POST(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
@@ -30,6 +31,11 @@ export async function POST(req: Request) {
     : await updateQuery.eq('id', userId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  // اختيار المزايا بالأسعار الجديدة (المشتركين الحاليين): يُطبَّق مع هذا التجديد — قبل تجديد الإضافات عشان تتمدّد معها
+  let pricingSwitch: Awaited<ReturnType<typeof applyPricingSwitch>> | null = null
+  if (orgIdForUpdate && ends && type === 'paid') {
+    try { pricingSwitch = await applyPricingSwitch(supabase, orgIdForUpdate, ends) } catch (e) { console.error('PRICING_SWITCH_APPLY_FAILED', e) }
+  }
 
   // تجديد الباقة يجدد كل الإضافات المفعّلة لنفس التاريخ — تاريخ تجديد وفاتورة وحدة
   let addonsRenewed = 0
@@ -41,7 +47,9 @@ export async function POST(req: Request) {
     // إضافات تغيّر سعرها: من التجديد تنحسب بالسعر الجديد (يفك السعر المثبّت القديم)
     const { data: repriced } = await supabase.from('marketplace_addons').select('id').in('slug', PRICE_UPDATE_ON_RENEWAL)
     const repricedIds = ((repriced || []) as any[]).map(a => a.id)
-    if (repricedIds.length) await supabase.from('org_addon_subscriptions').update({ locked_price: null } as any)
+    // للباقات القديمة بس — الجديدة أسعارها من جدولها (lib/planPricing)
+    const { data: orgPlanRow } = await supabase.from('organizations').select('plan').eq('id', orgIdForUpdate).maybeSingle()
+    if (repricedIds.length && !isNewPlan((orgPlanRow as any)?.plan)) await supabase.from('org_addon_subscriptions').update({ locked_price: null } as any)
       .eq('org_id', orgIdForUpdate).eq('status', 'active').in('addon_id', repricedIds)
     await syncBranchesToLimit(supabase, orgIdForUpdate)
     // ما نوقف موظفين وقت التجديد — لو المنشأة فوق حدها يبان للأدمن تنبيه بملف العميل ويقرر
@@ -53,8 +61,8 @@ export async function POST(req: Request) {
   try {
     const orgId = (profile as any)?.org_id
     const maxBranches = (profile as any)?.organizations?.max_branches || 1
-    const planName = maxBranches === 1 ? 'basic' : maxBranches <= 3 ? 'pro' : 'advanced'
-    const amount = planPriceFor(planKeyOf((profile as any)?.organizations?.plan, maxBranches), (profile as any)?.organizations?.locked_plan_monthly).monthly
+    const planName = planKeyOf((profile as any)?.organizations?.plan, maxBranches)
+    const amount = planPriceFor(planName, (profile as any)?.organizations?.locked_plan_monthly, maxBranches).monthly
     if (orgId) {
       await (supabase as any).from('subscription_events').insert({
         org_id: orgId,
@@ -71,5 +79,5 @@ export async function POST(req: Request) {
     try { agentReward = await awardAgentCommission(supabase, orgIdForUpdate) } catch (e) { console.error('AGENT_COMMISSION_FAILED', e) }
   }
 
-  return NextResponse.json({ success: true, addonsRenewed, agentReward })
+  return NextResponse.json({ success: true, addonsRenewed, agentReward, pricingSwitch })
 }

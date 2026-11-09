@@ -1,4 +1,5 @@
 'use client'
+import { FeatureIcon } from '@/components/ui/feature-icon'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 
@@ -43,40 +44,40 @@ export default function PermissionPage() {
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f7fa',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',padding:20}}>
       <div style={{width:'100%',maxWidth:420,background:'white',borderRadius:20,padding:'32px 28px',boxShadow:'0 4px 24px rgba(0,0,0,.08)',textAlign:'center' as const}}>
         {loading ? (
-          <div style={{color:'#94a3b8',fontSize:13}}>جاري التحميل...</div>
+          <div style={{color:'var(--storely-subtle)',fontSize:13}}>جاري التحميل...</div>
         ) : error ? (
-          <div><div style={{fontSize:40,marginBottom:12}}>⚠️</div><div style={{color:'#dc2626',fontSize:14,fontWeight:700}}>{error}</div></div>
+          <div><div style={{display:'flex',justifyContent:'center',marginBottom:12,color:'var(--storely-muted)'}}><FeatureIcon name="⚠️" size={40} /></div><div style={{color:'#dc2626',fontSize:14,fontWeight:700}}>{error}</div></div>
         ) : result ? (
           <div>
-            <div style={{fontSize:48,marginBottom:14}}>{result === 'approved' ? '✅' : '🚫'}</div>
-            <div style={{fontSize:17,fontWeight:800,color:'#0f172a',marginBottom:6}}>
+            <div style={{fontSize:48,marginBottom:14}}>{result === 'approved' ? '' : ''}</div>
+            <div style={{fontSize:17,fontWeight:800,color:'var(--storely-text)',marginBottom:6}}>
               {result === 'approved' ? 'تمت الموافقة على الاستئذان' : 'تم رفض الاستئذان'}
             </div>
-            <div style={{fontSize:12,color:'#64748b'}}>{req?.staff_name} تم إبلاغه بالنتيجة</div>
+            <div style={{fontSize:12,color:'var(--storely-muted)'}}>{req?.staff_name} تم إبلاغه بالنتيجة</div>
           </div>
         ) : (
           <div>
-            <div style={{fontSize:40,marginBottom:12}}>🙋</div>
-            <div style={{fontSize:17,fontWeight:800,color:'#0f172a',marginBottom:4}}>طلب استئذان</div>
-            <div style={{fontSize:14,fontWeight:700,color:'#029FA2',marginBottom:10}}>{req?.staff_name}</div>
+            <div style={{display:'flex',justifyContent:'center',marginBottom:12,color:'var(--storely-muted)'}}><FeatureIcon name="🙋" size={40} /></div>
+            <div style={{fontSize:17,fontWeight:800,color:'var(--storely-text)',marginBottom:4}}>طلب استئذان</div>
+            <div style={{fontSize:14,fontWeight:700,color:'#203640',marginBottom:10}}>{req?.staff_name}</div>
             {req?.reason && (
-              <div style={{background:'#f8fafc',borderRadius:12,padding:'12px 14px',fontSize:13,color:'#334155',marginBottom:20,lineHeight:1.7,textAlign:'right' as const}}>
+              <div style={{background:'var(--storely-background)',borderRadius:12,padding:'12px 14px',fontSize:13,color:'var(--storely-text)',marginBottom:20,lineHeight:1.7,textAlign:'right' as const}}>
                 {req.reason}
               </div>
             )}
             <div style={{display:'flex',gap:10}}>
               <button onClick={() => respond('approve')} disabled={resolving}
-                style={{flex:1,padding:'13px',background:'#029FA2',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
-                {resolving ? '...' : '✅ موافقة'}
+                style={{flex:1,padding:'13px',background:'#203640',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+                {resolving ? '...' : 'موافقة'}
               </button>
               <button onClick={() => respond('reject')} disabled={resolving}
                 style={{flex:1,padding:'13px',background:'#fef2f2',color:'#dc2626',border:'1.5px solid #fecaca',borderRadius:12,fontSize:14,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
-                {resolving ? '...' : '🚫 رفض'}
+                {resolving ? '...' : 'رفض'}
               </button>
             </div>
           </div>
         )}
-        <p style={{fontSize:11,color:'#9ca3af',marginTop:24}}>Storely · storely.dev</p>
+        <p style={{fontSize:11,color:'var(--storely-subtle)',marginTop:24}}>Storely · storely.dev</p>
       </div>
     </div>
   )

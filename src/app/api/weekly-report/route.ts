@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 import { isCronRequest } from '@/lib/cronAuth'
 import { isSubscriptionActive } from '@/lib/subscription'
+import { PLAN_PRICING } from '@/lib/planPricing'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -13,7 +14,7 @@ export async function GET(req: Request) {
 
   const { data: orgs } = await db.from('organizations')
     .select('id,name,whatsapp_number,plan')
-    .in('plan', ['basic','pro','advanced'])
+    .in('plan', Object.keys(PLAN_PRICING))   // كل الباقات (القديمة والجديدة)
 
   if (!orgs?.length) return NextResponse.json({ sent: 0 })
 
@@ -69,7 +70,7 @@ export async function GET(req: Request) {
         .filter(p => p.daysLeft !== null && p.daysLeft <= 7)
         .sort((a,b) => (a.daysLeft||99) - (b.daysLeft||99))
 
-      const day = new Date().toLocaleDateString('ar-SA', {numberingSystem:'latn', weekday:'long', day:'numeric', month:'long' })
+      const day = new Date().toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn', weekday:'long', day:'numeric', month:'long' })
 
       let report = `📊 *التقرير الأسبوعي الذكي*\n`
       report += `🏪 ${org.name}\n`
@@ -83,7 +84,7 @@ export async function GET(req: Request) {
 
       if (urgentList.length > 0) {
         report += `⚡ *تنبيه عاجل — ستنفد خلال أسبوع:*\n`
-        urgentList.slice(0,5).forEach(p => { report += `• ${p.name}: باقي ${p.daysLeft} يوم\n` })
+        urgentList.slice(0,5).forEach(p => { report += `• ${p.name}: المتبقي ${p.daysLeft} يوم\n` })
         report += '\n'
       }
 

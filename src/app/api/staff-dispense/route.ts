@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
+import { staffFeatureError } from '@/lib/featureRoutes'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,6 +12,9 @@ export async function POST(req: Request) {
   try {
     const auth = await verifyStaffToken(extractStaffToken(req))
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
+    // «ابنِ باقتك»: الميزة لازم تكون لفرع الموظف
+    const featureLocked = await staffFeatureError(auth.data as any, 'inventory')
+    if (featureLocked) return NextResponse.json({ error: featureLocked }, { status: 403 })
     const { org_id: orgId, staff_id: staffId } = auth.data!
 
     const { productId, qty } = await req.json()
@@ -24,8 +28,8 @@ export async function POST(req: Request) {
     const { data: product } = await supabase.from('products').select('id,qty,branch_id').eq('id', productId).eq('org_id', orgId).maybeSingle()
     if (!product) return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 })
     const assigned: string[] = (me as any).assigned_products || []
-    if ((me as any).branch_id && (product as any).branch_id && (product as any).branch_id !== (me as any).branch_id) return NextResponse.json({ error: 'المنتج من فرع ثاني' }, { status: 403 })
-    if (assigned.length && !assigned.includes(productId)) return NextResponse.json({ error: 'المنتج مو مخصص لك' }, { status: 403 })
+    if ((me as any).branch_id && (product as any).branch_id && (product as any).branch_id !== (me as any).branch_id) return NextResponse.json({ error: 'المنتج من فرع آخر' }, { status: 403 })
+    if (assigned.length && !assigned.includes(productId)) return NextResponse.json({ error: 'المنتج غير مخصص لك' }, { status: 403 })
     if (Number((product as any).qty) < n) return NextResponse.json({ error: 'الكمية تتجاوز المتاح' }, { status: 400 })
 
     // الكمية تنخصم من الحركة نفسها (trigger يجمع الحركات) — ما نكتب qty مباشرة،

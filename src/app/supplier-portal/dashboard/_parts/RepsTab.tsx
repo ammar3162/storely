@@ -18,7 +18,7 @@ export default function RepsTab({ m }: { m: SupplierDashboard }) {
             </section>
             <section className="sd-panel">
               <h2>مناديبك <small>{reps.length}</small></h2>
-              {reps.length===0 ? <div className="sd-empty"><Bike size={28}/><b>ما فيه مناديب</b><span>أضف مندوب عشان تسند له الطلبات وقت التوريد.</span></div> : (
+              {reps.length===0 ? <div className="sd-empty"><Bike size={28}/><b>لا يوجد مناديب</b><span>أضف مندوباً لإسناد الطلبات إليه وقت التوريد.</span></div> : (
                 <div className="sd-list">
                   {reps.map((rep:any)=>(
                     <div key={rep.id} className="sd-item">

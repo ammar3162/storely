@@ -6,14 +6,14 @@ describe('aiPhrases', () => {
     expect(daysAr(1)).toBe('يوم'); expect(daysAr(2)).toBe('يومين'); expect(daysAr(5)).toBe('5 أيام'); expect(daysAr(-5)).toBe('5 أيام'); expect(daysAr(14)).toBe('14 يوم')
   })
   it('run-out text', () => {
-    expect(runOutText(0)).toBe('يخلص اليوم'); expect(runOutText(1)).toBe('يخلص بكرة'); expect(runOutText(6)).toBe('يخلص بعد 6 أيام'); expect(runOutText(null)).toBe('ما يخلص قريب')
+    expect(runOutText(0)).toBe('ينفد اليوم'); expect(runOutText(1)).toBe('ينفد غداً'); expect(runOutText(6)).toBe('ينفد بعد 6 أيام'); expect(runOutText(null)).toBe('لن ينفد قريباً')
   })
   it('order-when text (negative = late)', () => {
     expect(orderWhenText(-5)).toBe('متأخر 5 أيام — اطلب اليوم'); expect(orderWhenText(-4.8)).toBe('متأخر 5 أيام — اطلب اليوم')
-    expect(orderWhenText(0)).toBe('اطلب اليوم'); expect(orderWhenText(1)).toBe('اطلب بكرة'); expect(orderWhenText(3)).toBe('اطلب بعد 3 أيام')
+    expect(orderWhenText(0)).toBe('اطلب اليوم'); expect(orderWhenText(1)).toBe('اطلب غداً'); expect(orderWhenText(3)).toBe('اطلب بعد 3 أيام')
   })
   it('reasons', () => {
-    expect(usageReason(3.33, 'كيس', 4)).toBe('لأنك تصرف تقريباً 3.3 كيس يومياً، وباقي 4 كيس')
+    expect(usageReason(3.33, 'كيس', 4)).toBe('لأنك تصرف نحو 3.3 كيس يومياً، والمتبقي 4 كيس')
     expect(leadReason(0.5, 'كرتون', 3)).toBe('المورد يحتاج 3 أيام عادةً، وأنت تصرف 0.5 كرتون يومياً')
   })
   it('riyal', () => {

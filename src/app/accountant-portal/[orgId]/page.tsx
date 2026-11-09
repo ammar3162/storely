@@ -47,27 +47,27 @@ export default function PortalClientPage() {
 
   const name = data?.report?.orgName || ''
   const xlsx = range ? `/api/accountant-portal/report?org_id=${orgId}&from=${range.from}&to=${range.to}&format=xlsx` : '#'
-  const TABS: { k: Tab; l: string; icon: any }[] = [{ k: 'report', l: 'التقرير', icon: BarChart3 }, { k: 'requests', l: 'الطلبات', icon: MessageSquareText }, { k: 'locks', l: 'إقفال الشهور', icon: Lock }]
+  const TABS: { k: Tab; l: string; icon: any }[] = [{ k: 'report', l: 'التقرير', icon: BarChart3 }, { k: 'requests', l: 'الطلبات', icon: MessageSquareText }, { k: 'locks', l: 'إقفال الأشهر', icon: Lock }]
 
   // طلب واحد لكل فاتورة ناقصة (الرقم الضريبي أو رقم الفاتورة) — المنشأة يوصلها إشعار واحد وتعبّيها من «طلبات المحاسب»
   async function requestMissing(invs: any[]) {
-    if (!invs.length || !window.confirm(`نرسل للمنشأة طلب تكمّل الرقم الضريبي أو رقم الفاتورة لـ ${invs.length === 1 ? 'فاتورة وحدة' : `${invs.length} فواتير`}؟`)) return
+    if (!invs.length || !window.confirm(`سنرسل إلى المنشأة طلباً لإكمال الرقم الضريبي أو رقم الفاتورة لـ ${invs.length === 1 ? 'فاتورة واحدة' : `${invs.length} فواتير`}؟`)) return
     const j = await fetch('/api/accountant-portal/requests', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ org_id: orgId, targets: invs.map(i => ({ invoice_group: i.group || null, purchase_id: i.firstId || null })) }) })
       .then(r => r.json()).catch(() => ({ error: 'تأكد من الإنترنت' }))
     if (j.error) { window.alert(j.error); return }
-    if (!j.created) { window.alert('كل الفواتير الناقصة عليها طلبات مفتوحة من قبل — تابعها من «الطلبات»'); setTab('requests'); return }
-    window.alert(`انرسل للمنشأة ${j.created === 1 ? 'طلب واحد' : `${j.created} طلبات`}${j.skipped ? ` (${j.skipped} عليها طلب من قبل)` : ''} ✓`)
+    if (!j.created) { window.alert('جميع الفواتير الناقصة عليها طلبات مفتوحة مسبقاً — تابعها من «الطلبات»'); setTab('requests'); return }
+    window.alert(`أُرسل إلى المنشأة ${j.created === 1 ? 'طلب واحد' : `${j.created} طلبات`}${j.skipped ? ` (${j.skipped} عليها طلب مسبقاً)` : ''} `)
     setReqKey(k => k + 1); setTab('requests')
   }
 
   return (
     <PortalShell title={name || 'المنشأة'} subtitle={data ? `${data.report.branchName || 'كل الفروع'} · ${data.report.label}` : undefined}
       orgLogo={name ? { name, url: data?.logo_url || null } : undefined}
-      actions={data ? <a href={xlsx} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 11, background: colors.primary, color: '#fff', fontSize: 13, fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap' as const }}>
+      actions={data ? <a href={xlsx} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 11, background: colors.primary, color:'#fff', fontSize: 13, fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap' as const }}>
         <FileSpreadsheet size={16} /> تحميل إكسل</a> : undefined}>
 
-      <div style={{ display: 'flex', gap: 4, background: '#fff', border: `1px solid ${colors.border}`, borderRadius: 14, padding: 4, marginBottom: 16, width: 'fit-content', maxWidth: '100%', overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: 4, background:'#fff', border: `1px solid ${colors.border}`, borderRadius: 14, padding: 4, marginBottom: 16, width: 'fit-content', maxWidth: '100%', overflowX: 'auto' }}>
         {TABS.map(t => {
           const on = tab === t.k, Icon = t.icon
           return <button key={t.k} onClick={() => setTab(t.k)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: font.family,
