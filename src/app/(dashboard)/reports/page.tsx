@@ -51,6 +51,8 @@ export default function ReportsPage() {
   // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
   useLiveRefresh(typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null, ['stock_movements','purchases','cashier_closings','products'], ()=>loadStats())
   useEffect(()=>{ loadStats() },[period,from,to])
+  // رابط مباشر لتقرير (مثلاً من صفحة النقل: /reports?view=transfers)
+  useEffect(()=>{ try { if(new URLSearchParams(window.location.search).get('view')==='transfers') setView('transfers') } catch {} },[])
 
   async function loadStats() {
     setSL(true)

@@ -3956,5 +3956,8 @@
 "ابحث بالصنف أو الفرع أو الموظف...": "Search by item, branch or employee...",
 "تصدير Excel": "Export Excel",
 "لا توجد تحويلات في هذه الفترة": "No transfers in this period",
-"تقرير التحويلات بين الفروع": "Branch transfers report"
+"تقرير التحويلات بين الفروع": "Branch transfers report",
+"آخر التحويلات": "Recent transfers",
+"عرض التقرير الكامل": "View full report",
+"لا توجد تحويلات بعد": "No transfers yet"
 }

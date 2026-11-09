@@ -8,7 +8,7 @@ import { storelyTokens as T } from '@/components/ui/design-tokens'
 import { ArrowRightLeft, ArrowLeftRight } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api-client'
-import { getMe, getOrgId } from '@/lib/session'
+import { getOrgId } from '@/lib/session'
 import { colors } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
@@ -35,15 +35,9 @@ export default function TransferStockPage() {
   const [saving, setSaving] = useState(false)
   const [history, setHistory] = useState<any[]>([])
   const [loadingHistory, setLoadingHistory] = useState(true)
-  const [filterFrom, setFilterFrom] = useState('')
-  const [filterTo, setFilterTo] = useState('')
-  const [filterBranch, setFilterBranch] = useState('')
-  const [filterProduct, setFilterProduct] = useState('')
-  const [exportingPdf, setExportingPdf] = useState(false)
 
   useEffect(()=>{ init() },[])
   useEffect(()=>{ if(orgId && fromBranch) loadProducts() },[orgId, fromBranch])
-  useEffect(()=>{ if(orgId) loadHistory(orgId) },[filterFrom, filterTo])
   useEffect(()=>{ setCart([]) },[fromBranch, toBranch])
 
   async function init() {
@@ -76,14 +70,13 @@ export default function TransferStockPage() {
   }
 
   async function loadHistory(oid:string) {
-    const cacheKey = 'transfer-history:'+oid+':'+(filterFrom||'')+':'+(filterTo||'')
+    // آخر التحويلات بس (للتأكد إن النقل انسجل) — التقرير الكامل بصفحة التقارير
+    const cacheKey = 'transfer-history:'+oid
     const cached = cache.get(cacheKey)
     if (cached) { setHistory(cached); setLoadingHistory(false) }
     else setLoadingHistory(true)
     try {
       const params = new URLSearchParams({ org_id: oid })
-      if(filterFrom) params.set('from', filterFrom)
-      if(filterTo) params.set('to', filterTo)
       const res = await fetch(`/api/branch-transfer?${params.toString()}`)
       const j = await res.json()
       if(j.success) { setHistory(j.transfers||[]); cache.set(cacheKey, j.transfers||[]) }
@@ -160,65 +153,7 @@ export default function TransferStockPage() {
     return (note||'').replace('نقل إلى فرع ', '').trim() || '—'
   }
 
-  function exportCSV() {
-    const csv = '\ufeff' + [
-      ['التاريخ','المنتج','من فرع','إلى فرع','الكمية','الوحدة'],
-      ...filteredHistory.map((h:any)=>[
-        new Date(h.created_at).toLocaleDateString('en-GB'),
-        (h.products as any)?.name || '',
-        branchName(h.branch_id),
-        destBranchFromNote(h.note),
-        Math.abs(h.qty_change),
-        (h.products as any)?.unit || '',
-      ])
-    ].map(r=>r.map(c=>'"'+c+'"').join(',')).join('\n')
-    Object.assign(document.createElement('a'), {
-      href: URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })),
-      download: 'تقرير_نقل_المخزون.csv',
-    }).click()
-  }
-
-  async function handleExportPdf() {
-    setExportingPdf(true)
-    try {
-      const org = (await getMe())?.org
-      const { exportReportPdf } = await import('@/lib/pdfExport')
-      await exportReportPdf({
-        title: 'تقرير نقل المخزون بين الفروع',
-        subtitle: filterFrom || filterTo ? `${filterFrom||'البداية'} — ${filterTo||'اليوم'}` : 'كل الفترات',
-        orgName: (org as any)?.name || 'Storely',
-        logoUrl: '/storely-logo.png',
-        columns: [
-          { header: 'التاريخ', key: 'date' },
-          { header: 'المنتج', key: 'product' },
-          { header: 'من فرع', key: 'from' },
-          { header: 'إلى فرع', key: 'to' },
-          { header: 'الكمية', key: 'qty', align: 'left' },
-        ],
-        rows: filteredHistory.map((h:any) => ({
-          date: new Date(h.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn'}),
-          product: (h.products as any)?.name || '—',
-          from: branchName(h.branch_id),
-          to: destBranchFromNote(h.note),
-          qty: Math.abs(h.qty_change) + ' ' + ((h.products as any)?.unit || ''),
-        })),
-        summaryStats: [
-          { label: 'عمليات النقل', value: String(totalOps), color: colors.primary },
-          { label: 'إجمالي الكمية', value: String(totalQty), color: colors.info },
-        ],
-        fileName: `تقرير-نقل-المخزون-${new Date().toISOString().slice(0,10)}.pdf`,
-      })
-    } catch { toast('تعذر تصدير التقرير','error') }
-    setExportingPdf(false)
-  }
-
-  const filteredHistory = history.filter((h:any)=>{
-    if(filterBranch && h.branch_id!==filterBranch) return false
-    if(filterProduct && !((h.products as any)?.name||'').includes(filterProduct.trim())) return false
-    return true
-  })
-  const totalOps = filteredHistory.length
-  const totalQty = filteredHistory.reduce((s:number,h:any)=>s+Math.abs(h.qty_change),0)
+  const recent = history.slice(0, 5)
   const cartTotalQty = cart.reduce((s,c)=>s+c.qty,0)
 
   return (
@@ -393,58 +328,26 @@ export default function TransferStockPage() {
 
       <StorelyCard className="ts-workspace ts-report">
         <div className="ts-report-header">
-          <div className="ts-section-title">تقرير التحويلات</div>
-          <div className="ts-export-actions">
-            <StorelyButton className="ts-button" onClick={exportCSV} disabled={filteredHistory.length===0} >تصدير CSV</StorelyButton>
-            <StorelyButton className="ts-button" onClick={handleExportPdf} disabled={exportingPdf||filteredHistory.length===0} >
-              {exportingPdf?'جاري التصدير...':'تصدير PDF'}
-            </StorelyButton>
-          </div>
-        </div>
-
-        <div className="ts-filters">
-          <StorelyFormField label={<>من تاريخ</>} htmlFor="transfer-field-5">
-            <input id="transfer-field-5" className="ts-control" type="date" value={filterFrom} onChange={e=>setFilterFrom(e.target.value)} />
-          </StorelyFormField>
-          <StorelyFormField label={<>إلى تاريخ</>} htmlFor="transfer-field-6">
-            <input id="transfer-field-6" className="ts-control" type="date" value={filterTo} onChange={e=>setFilterTo(e.target.value)} />
-          </StorelyFormField>
-          <StorelyFormField label={<>الفرع المصدر</>} htmlFor="transfer-field-7">
-            <select id="transfer-field-7" className="ts-control" value={filterBranch} onChange={e=>setFilterBranch(e.target.value)}>
-              <option value="">الكل</option>
-              {branches.map((b:any)=>(<option key={b.id} value={b.id}>{b.name}</option>))}
-            </select>
-          </StorelyFormField>
-          <StorelyFormField label={<>بحث بالصنف</>} htmlFor="transfer-field-8">
-            <input id="transfer-field-8" className="ts-control" value={filterProduct} onChange={e=>setFilterProduct(e.target.value)} placeholder="اسم الصنف" />
-          </StorelyFormField>
-        </div>
-
-        <div className="ts-report-summary">
-          <div className="ts-summary-item">
-            <div className="ts-summary-value">{totalOps}</div>
-            <div className="ts-supporting">عدد عمليات النقل</div>
-          </div>
-          <div className="ts-summary-item">
-            <div className="ts-summary-value">{totalQty.toLocaleString('ar-SA-u-ca-gregory', {numberingSystem:'latn'})}</div>
-            <div className="ts-supporting">إجمالي الكمية المنقولة</div>
-          </div>
+          <div className="ts-section-title">آخر التحويلات</div>
+          <a href="/reports?view=transfers" className="ts-button" style={{display:'inline-flex',alignItems:'center',gap:6,textDecoration:'none',fontWeight:600}}>
+            عرض التقرير الكامل
+          </a>
         </div>
 
         {loadingHistory ? (
           <ListSkeleton/>
-        ) : filteredHistory.length===0 ? (
-          <StorelyEmptyState className="ts-history-empty" icon={<ArrowRightLeft size={20}/>} title="لا توجد عمليات نقل مطابقة"/>
+        ) : recent.length===0 ? (
+          <StorelyEmptyState className="ts-history-empty" icon={<ArrowRightLeft size={20}/>} title="لا توجد تحويلات بعد"/>
         ) : (
           <div className="ts-list">
-            {filteredHistory.map((h:any)=>(
+            {recent.map((h:any)=>(
               <div className="ts-history-row" key={h.id} >
                 <div>
                   <span className="ts-record-name">{(h.products as any)?.name}</span>
                   <span className="ts-supporting">{branchName(h.branch_id)} ← {destBranchFromNote(h.note)}</span>
                 </div>
                 <div className="ts-inline">
-                  <span className="ts-history-quantity">-{Math.abs(h.qty_change)} {(h.products as any)?.unit}</span>
+                  <span className="ts-history-quantity">{Math.abs(h.qty_change)} {(h.products as any)?.unit}</span>
                   <span className="ts-supporting">{new Date(h.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn'})}</span>
                 </div>
               </div>
