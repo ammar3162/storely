@@ -461,7 +461,7 @@ export default function ChoosePage() {
       {/* نافذة طلباتي */}
       {showRequests && !showAdvanceForm && (
         <div onClick={()=>setShowRequests(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:200,display:'flex',alignItems:'flex-end',justifyContent:'center',padding:0}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:'24px 24px 0 0',padding:'24px 20px 32px',width:'100%',maxWidth:420,textAlign:'start' as const}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:'24px 24px 0 0',padding:'24px 20px 32px',width:'100%',maxWidth:420,maxHeight:'85dvh',overflowY:'auto' as const,textAlign:'start' as const}}>
             <div style={{fontSize:16,fontWeight:600,color:'var(--storely-text)',marginBottom:16}}>{t('myRequests')}</div>
             <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
               <button onClick={()=>setShowAdvanceForm(true)}
