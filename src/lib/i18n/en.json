@@ -3925,8 +3925,15 @@
 "مخزون منخفض": "Low stock",
 "صباح النور": "Good morning",
 "نشكر لكم ثقتكم بـ Storely، فأنتم من أوائل المنشآت التي اعتمدت عليه، ونعتز بشراكتكم ونتطلع إلى مواصلة النمو معكم.": "Thank you for trusting Storely. You are among the first businesses to rely on it, we value our partnership, and we look forward to growing together.",
-"حدّثنا نظام الأسعار، فلم تعد هناك باقات ثابتة. تختارون المزايا التي تحتاجونها فقط، ويُحتسب سعر كل ميزة لكل فرع.": "We have updated our pricing: there are no fixed plans anymore. You choose only the features you need, and each feature is priced per branch.",
 "تظهر لكم قيمة الفاتورة الجديدة قبل تأكيد اختياركم.": "You will see the new bill amount before you confirm your choice.",
 "إذا كانت الفاتورة الجديدة أقل من فاتورتكم الحالية، يُطبَّق اختياركم ابتداءً من تجديد اشتراككم القادم.": "If the new bill is lower than your current bill, your choice takes effect from your next subscription renewal.",
-"إذا كانت أعلى من فاتورتكم الحالية، وقد يحدث ذلك للمنشآت ذات الفروع المتعددة، تبقون على باقتكم الحالية بسعرها دون أي زيادة.": "If it is higher than your current bill, which can happen for businesses with several branches, you stay on your current plan at its price with no increase."
+"إذا كانت أعلى من فاتورتكم الحالية، وقد يحدث ذلك للمنشآت ذات الفروع المتعددة، تبقون على باقتكم الحالية بسعرها دون أي زيادة.": "If it is higher than your current bill, which can happen for businesses with several branches, you stay on your current plan at its price with no increase.",
+"حدّثنا نظام الأسعار، فلم تعد هناك باقات ثابتة. تختارون الخدمات التي تحتاجونها فقط، ويُحتسب سعر كل خدمة لكل فرع.": "We have updated our pricing: there are no fixed plans anymore. You choose only the services you need, and each service is priced per branch.",
+"اختاروا الخدمات التي تحتاجونها": "Choose the services you need",
+"يمكنكم تحديد الفروع التي تحتاج كل خدمة، ويُحتسب سعرها على هذه الفروع فقط، على أن يكون لكل فرع خدمة واحدة على الأقل.": "You can choose the branches that need each service; it is priced on those branches only, and every branch needs at least one service.",
+"اختاروا خدمة واحدة على الأقل": "Choose at least one service",
+"اختاروا خدمة لكل فرع": "Choose a service for every branch",
+"سعركم الحالي أقل من سعر هذه الخدمات، لذا ستبقون على باقتكم الحالية بسعرها.": "Your current price is lower than these services, so you will stay on your current plan at its price.",
+"* بدون خدمات. اختر له خدمة واحدة على الأقل، أو أغلق الفرع من صفحة الفروع.": "* has no services. Choose at least one service for it, or close the branch from the Branches page.",
+"هذه الفروع بدون خدمات: *. اختر لكل فرع خدمة واحدة على الأقل، أو أغلقه من صفحة الفروع.": "These branches have no services: *. Choose at least one service for each branch, or close it from the Branches page."
 }

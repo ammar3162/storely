@@ -604,6 +604,10 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         // المخزون للفرعين 59+59 + الكاشير لفرع واحد 49 = 167 < 249
         const pv = await call(sw.POST, 'POST', '/api/pricing-switch', { ...body, preview: true })
         expect(pv.json).toMatchObject({ success: true, current: 249, projected: 167, outcome: 'switch' })
+        // فرع بدون أي خدمة يُرفض (ما فيه فرع مجاني)
+        const bad = await call(sw.POST, 'POST', '/api/pricing-switch', { org_id: orgId, modules: ['mod_inventory', 'ai_tools'], branch_map: { mod_inventory: [b1] } })
+        expect(bad.status).toBe(400)
+        expect(bad.json).toMatchObject({ code: 'branch_without_service' })
         expect((await call(sw.POST, 'POST', '/api/pricing-switch', body)).json).toMatchObject({ success: true, projected: 167 })
         expect((await db.from('pricing_switches').select('branch_map').eq('org_id', orgId).single()).data).toMatchObject({ branch_map: { cashier_closing: [b2] } })
         const r = await adminSw.POST(new Request('http://test/api/admin/pricing-switches', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify({ org_id: orgId }) }))

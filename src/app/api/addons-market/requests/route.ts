@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js'
 import { requestExtraBranch } from '@/lib/extraBranch'
 import { EXTRA_BRANCH_SLUG } from '@/lib/branchLimit'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { CUSTOM_MODULES, isCustomPlan } from '@/lib/planPricing'
+import { uncoveredBranches, uncoveredMessage } from '@/lib/branchCoverage'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 const SELECT = 'id,addon_id,quantity,branch_ids,note,status,reason,created_at,decided_at,marketplace_addons(name,slug)'
@@ -42,6 +44,24 @@ export async function POST(req: Request) {
       const { data: owned } = await db.from('branches').select('id').eq('org_id', org_id).eq('is_active', true).in('id', wanted)
       if ((owned || []).length !== wanted.length) return NextResponse.json({ error: 'فرع غير صحيح' }, { status: 400 })
       branchIds = wanted as string[]
+    }
+    // «ابنِ باقتك»: تعديل فروع خدمة ما يخلي فرع نشط بدون أي خدمة
+    if (branchIds && CUSTOM_MODULES[(addon as any).slug]?.perBranch) {
+      const { data: org } = await db.from('organizations').select('plan').eq('id', org_id).maybeSingle()
+      if (isCustomPlan((org as any)?.plan)) {
+        const [{ data: br }, { data: subs }] = await Promise.all([
+          db.from('branches').select('id,name').eq('org_id', org_id).eq('is_active', true),
+          db.from('org_addon_subscriptions').select('addon_id,branch_ids,expires_at,marketplace_addons!inner(slug)').eq('org_id', org_id).eq('status', 'active'),
+        ])
+        const now = Date.now()
+        const services = ((subs || []) as any[])
+          .filter(x => (!x.expires_at || new Date(x.expires_at).getTime() > now) && x.addon_id !== addon_id)
+          .map(x => ({ slug: x.marketplace_addons?.slug, branchIds: x.branch_ids && x.branch_ids.length ? x.branch_ids : null }))
+        services.push({ slug: (addon as any).slug, branchIds })
+        const branches = (br || []) as { id: string; name: string | null }[]
+        const missing = uncoveredBranches(branches.map(b => b.id), services)
+        if (missing.length) return NextResponse.json({ error: uncoveredMessage(missing.map(id => branches.find(b => b.id === id)?.name || 'فرع')), code: 'branch_without_service' }, { status: 400 })
+      }
     }
     const row = {
       org_id, addon_id, quantity: branchIds ? branchIds.length : Math.max(1, Math.min(20, Number(quantity) || 1)), branch_ids: branchIds,
