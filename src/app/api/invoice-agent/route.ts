@@ -106,7 +106,20 @@ export async function PATCH(req: Request) {
     if (typeof body.has_vat === 'boolean') update.has_vat = body.has_vat
 
     let items: AgentItem[] = Array.isArray(dr.items) ? dr.items : []
-    if (Number.isInteger(body.index)) {
+    // نوع الفاتورة كاملة: «مشتريات» = كل الأصناف بدون مخزون (صيانة، تنظيف...)، «مخزون» = يرجع يصنّف كل صنف من جديد
+    if (body.invoice_type === 'expense') {
+      items = items.map(it => it.status === 'skip' ? it : applyAnswer(it, { action: 'expense' }))
+      update.items = items
+    } else if (body.invoice_type === 'stock') {
+      const [products, { data: al }] = await Promise.all([
+        branchProducts(db, org_id, dr.branch_id || null),
+        db.from('product_aliases').select('alias_norm,product_id').eq('org_id', org_id),
+      ])
+      const aliases = Object.fromEntries(((al || []) as any[]).map(a => [a.alias_norm, a.product_id]))
+      const units = await loadUnitMap(db, org_id, products.map((p: any) => p.id))
+      items = classifyItems(items.filter(it => it.status !== 'skip').map(it => ({ name: it.name, qty: it.qty, unit: it.unit, total: it.total })), products, aliases, units)
+      update.items = items
+    } else if (Number.isInteger(body.index)) {
       const i = body.index as number
       if (i < 0 || i >= items.length || !['match', 'new', 'expense', 'skip', 'set'].includes(body.action)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
       let productName: string | null = null, stockUnit: string | null = null, knownFactor: number | null = null

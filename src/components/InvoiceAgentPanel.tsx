@@ -134,6 +134,27 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
               <button onClick={() => patch(d, { has_vat: !d.has_vat })} style={{ ...opt, background: d.has_vat ? colors.primaryLight : 'white', color: d.has_vat ? colors.primary : colors.text3 }}>
                 {d.has_vat ? 'شاملة ضريبة 15%' : 'بدون ضريبة'}
               </button>
+            </div>
+            {/* نوع الفاتورة: كل الأصناف مخزون/حسب الصنف، أو كلها مشتريات بدون مخزون (صيانة، تنظيف، غاز...) */}
+            {(() => {
+              const live = d.items.filter(x => x.status !== 'skip')
+              const allExpense = live.length > 0 && live.every(x => x.status === 'expense')
+              const seg = (on: boolean): React.CSSProperties => ({ flex: 1, padding: '9px 8px', borderRadius: 8, border: 'none', cursor: on ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
+                background: on ? 'white' : 'transparent', color: on ? colors.text : colors.text3, boxShadow: on ? '0 1px 3px rgba(0,0,0,.08)' : 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 })
+              return (
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.text2, marginBottom: 6 }}>نوع الفاتورة</div>
+                  <div style={{ display: 'flex', gap: 4, background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: 10, padding: 4 }}>
+                    <button onClick={() => allExpense && patch(d, { invoice_type: 'stock' })} disabled={busy === d.id} aria-pressed={!allExpense} style={seg(!allExpense)}><PackageCheck size={15} /> أصناف للمخزون</button>
+                    <button onClick={() => !allExpense && patch(d, { invoice_type: 'expense' })} disabled={busy === d.id} aria-pressed={allExpense} style={seg(allExpense)}><Receipt size={15} /> مشتريات بدون مخزون</button>
+                  </div>
+                  <div style={{ fontSize: 11.5, color: colors.text3, marginTop: 5 }}>
+                    {allExpense ? 'كل الأصناف مصروفات (صيانة، تنظيف، غاز…) ولا تُضاف إلى المخزون.' : 'كل صنف يُضاف إلى مخزونك، وتقدر تحوّل أي صنف منها إلى مشتريات من سطره.'}
+                  </div>
+                </div>
+              )
+            })()}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
               <span style={asks ? pill('#fffbeb', '#b45309') : pill(colors.primaryLight, colors.primary)}>
                 {asks ? <><HelpCircle size={12} /> {asks} {asks === 1 ? 'سؤال' : 'أسئلة'}</> : <><Check size={12} /> جاهزة للحفظ</>}
               </span>

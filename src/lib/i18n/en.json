@@ -3987,5 +3987,9 @@
 "«*» يبدو مصروفاً وليس صنف مخزون — لن يُصرف أو يُجرد.": "«*» looks like an expense, not a stock item — it won't be dispensed or counted.",
 "فهمت": "Got it",
 "= أصناف تُصرف وتُجرد (سكر، أكواب، حليب…).": "= items you dispense and count (sugar, cups, milk…).",
-"= مصاريف لا تُخزّن (تنظيف، صيانة، غاز…). غيّر أي صنف قبل الحفظ.": "= expenses that aren't stored (cleaning, maintenance, gas…). Change any item before saving."
+"= مصاريف لا تُخزّن (تنظيف، صيانة، غاز…). غيّر أي صنف قبل الحفظ.": "= expenses that aren't stored (cleaning, maintenance, gas…). Change any item before saving.",
+"نوع الفاتورة": "Invoice type",
+"أصناف للمخزون": "Stock items",
+"كل الأصناف مصروفات (صيانة، تنظيف، غاز…) ولا تُضاف إلى المخزون.": "All items are expenses (maintenance, cleaning, gas…) and are not added to stock.",
+"كل صنف يُضاف إلى مخزونك، وتقدر تحوّل أي صنف منها إلى مشتريات من سطره.": "Each item is added to your stock; you can turn any of them into a purchase from its line."
 }

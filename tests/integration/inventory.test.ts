@@ -307,6 +307,11 @@ describe.skipIf(!enabled)('integration (staging) — inventory', async () => {
         let d = (await call(agent.POST, 'POST', '/api/invoice-agent', { org_id: orgId, branch_id: branchA, image: 'x', mediaType: 'image/jpeg', invoice_image: image })).json.draft
         // ما يوقف الحفظ — جاهز، والعميل يقدر يصحّح «يدخل المخزون»
         expect(d.items[0]).toMatchObject({ status: 'matched', unit: 'كرتون', stock_unit: 'كيس', factor: null })
+        // نوع الفاتورة: كلها مشتريات بدون مخزون، ثم ترجع أصناف مخزون (تُصنَّف من جديد)
+        d = (await call(agent.PATCH, 'PATCH', '/api/invoice-agent', { org_id: orgId, id: d.id, invoice_type: 'expense' })).json.draft
+        expect(d.items.map((x: any) => x.status)).toEqual(['expense'])
+        d = (await call(agent.PATCH, 'PATCH', '/api/invoice-agent', { org_id: orgId, id: d.id, invoice_type: 'stock' })).json.draft
+        expect(d.items[0]).toMatchObject({ status: 'matched', product_id: sugar.id })
         d = (await call(agent.PATCH, 'PATCH', '/api/invoice-agent', { org_id: orgId, id: d.id, index: 0, action: 'set', stock_qty: 24 })).json.draft
         expect(d.items[0]).toMatchObject({ status: 'matched', factor: 12 })
         expect((await call(confirm.POST, 'POST', '/api/invoice-agent/confirm', { org_id: orgId, id: d.id })).status).toBe(200)
