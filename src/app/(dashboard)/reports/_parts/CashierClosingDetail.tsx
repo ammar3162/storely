@@ -16,7 +16,7 @@ const CashierClosingEditor = lazy(() => import('@/components/CashierClosingEdito
 const EditHistoryDialog = lazy(() => import('@/components/EditHistoryDialog'))
 const PasswordBox = lazy(() => import('@/components/CashierClosingEditor').then(m => ({ default: m.PasswordBox })))
 
-export default function CashierClosingDetail({ period, from, to, onBack }: { period:FilterPeriod; from:string; to:string; onBack:()=>void }) {
+export default function CashierClosingDetail({ period, from, to, onBack, filterBar }: { period:FilterPeriod; from:string; to:string; onBack:()=>void; filterBar?: React.ReactNode }) {
   const [closings, setClosings] = useState<any[]>([])
   const [expandedReasons, setExpandedReasons] = useState<Record<string,boolean>>({})
   const [loading, setLoading]   = useState(true)
@@ -150,6 +150,7 @@ export default function CashierClosingDetail({ period, from, to, onBack }: { per
   return (
     <div>
       <BackBtn onClick={onBack}/>
+      {filterBar}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap' as const,gap:8}}>
         <PeriodBadge period={period} from={from} to={to}/>
         <button onClick={handleExportPdf} disabled={exportingPdf || closings.length===0}

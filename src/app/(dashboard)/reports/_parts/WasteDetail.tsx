@@ -8,7 +8,7 @@ import { ListSkeleton } from '@/components/PageSkeleton'
 import { pdfOrgInfo, reportData, getRange, formatRange, BackBtn, PeriodBadge } from './shared'
 import type { FilterPeriod } from './shared'
 
-export default function WasteDetail({ period, from, to, onBack }: { period:FilterPeriod; from:string; to:string; onBack:()=>void }) {
+export default function WasteDetail({ period, from, to, onBack, filterBar }: { period:FilterPeriod; from:string; to:string; onBack:()=>void; filterBar?: React.ReactNode }) {
   const [movements, setMovements] = useState<any[]>([])
   const [loading, setLoading]     = useState(true)
   const [search, setSearch]       = useState('')
@@ -76,6 +76,7 @@ export default function WasteDetail({ period, from, to, onBack }: { period:Filte
   return (
     <div>
       <BackBtn onClick={onBack}/>
+      {filterBar}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap' as const,gap:8}}>
         <PeriodBadge period={period} from={from} to={to}/>
         <button onClick={handleExportPdf} disabled={exportingPdf || filtered.length===0}

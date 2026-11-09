@@ -83,13 +83,15 @@ export default function ReportsPage() {
     setTimeout(()=>setVisible(true),50)
   }
 
+  // نفس شريط الفترات داخل كل تقرير (الفترة مشتركة مع الرئيسية)
+  const bar = <FilterBar period={period} setPeriod={setPeriod} from={from} setFrom={setFrom} to={to} setTo={setTo}/>
   // تقرير ميزته مو مفعّلة: نرجع للرئيسية
   if (((view==='dispense'||view==='inventory'||view==='waste') && !hasInv) || (view==='purchase' && !hasPur) || ((view==='attendance'||view==='staffMonthly') && !hasHr)) { setView('home'); return null }
   if (view==='inventory') return (
     <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} .spin-icon{animation:spin .8s linear infinite}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير الجرد اليومي</h1>
-      <InventoryDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
+      <InventoryDetail period={period} from={from} to={to} filterBar={bar} onBack={()=>setView('home')}/>
     </div>
   )
 
@@ -97,7 +99,7 @@ export default function ReportsPage() {
     <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير الصرف</h1>
-      <DispenseDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
+      <DispenseDetail period={period} from={from} to={to} filterBar={bar} onBack={()=>setView('home')}/>
     </div>
   )
 
@@ -105,7 +107,7 @@ export default function ReportsPage() {
     <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير المشتريات</h1>
-      <PurchaseDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
+      <PurchaseDetail period={period} from={from} to={to} filterBar={bar} onBack={()=>setView('home')}/>
     </div>
   )
 
@@ -127,7 +129,7 @@ export default function ReportsPage() {
     <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>إقفال الكاشير اليومي</h1>
-      <CashierClosingDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
+      <CashierClosingDetail period={period} from={from} to={to} filterBar={bar} onBack={()=>setView('home')}/>
     </div>
   )
 
@@ -135,7 +137,7 @@ export default function ReportsPage() {
     <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>تقرير الهدر</h1>
-      <WasteDetail period={period} from={from} to={to} onBack={()=>setView('home')}/>
+      <WasteDetail period={period} from={from} to={to} filterBar={bar} onBack={()=>setView('home')}/>
     </div>
   )
 
