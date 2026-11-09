@@ -5,6 +5,7 @@ import NumberInput from '@/components/NumberInput'
 import { X, Camera, Ruler, Trash2 } from 'lucide-react'
 import { C } from './constants'
 import type { InventoryState } from './useInventory'
+import PurchaseUnitsBox from './PurchaseUnitsBox'
 
 export default function ProductSheet({ m }: { m: InventoryState }) {
   const { showAdd, setShowAdd, saving, editItem, setEditItem, addQty, setAddQty, setConfirm, form, setForm, setShowScan, businessType, lbl, inp, handleSave } = m
@@ -56,6 +57,9 @@ export default function ProductSheet({ m }: { m: InventoryState }) {
                     <input type="date" value={form.expiry_date} onChange={e=>setForm({...form,expiry_date:e.target.value})} style={inp()}/>
                   </div>
 
+                  {/* وحدات الشراء: الفاتورة بالكرتون → المخزون بوحدة الصنف */}
+                  <PurchaseUnitsBox productId={editItem?.id || null} stockUnit={form.unit} inp={inp} lbl={lbl}/>
+
                   {/* تحويل الوحدة الدقيقة — لدقة استخدام هذا المنتج بالوصفات */}
                   <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:12}}>
                     <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
@@ -65,7 +69,7 @@ export default function ProductSheet({ m }: { m: InventoryState }) {
                         <span style={{fontSize:12,fontWeight:600,color:C.primary,marginRight:'auto'}}>محدد</span>
                       )}
                     </div>
-                    <div style={{fontSize:12,color:C.text3,marginBottom:8,lineHeight:1.6}}>مفيد إذا كنت تستخدم هذا المنتج في الوصفات — مثال: كم غراماً في الكيس، وكم علبة في الكرتون</div>
+                    <div style={{fontSize:12,color:C.text3,marginBottom:8,lineHeight:1.6}}>للوصفات فقط — مثال: كم غراماً في الكيس</div>
                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                       <div>
                         <label style={lbl}>الوحدة الدقيقة</label>

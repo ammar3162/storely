@@ -3,19 +3,22 @@ import { netFromTotal } from '@/lib/vat'
 import { bestMatch } from '@/lib/productMatch'
 import type { PurchaseTax } from '@/lib/taxInvoice'
 import { branchFeatureDenied } from '@/lib/featureRoutes'
+import { conversionFactor, loadUnitMap, saveProductUnit, sameUnit, normalizeUnit } from '@/lib/productUnits'
 
 // حفظ أصناف فاتورة وحدة (بعد قراءة الصورة): كل صنف سطر مشتريات، والمخزون:
 //   صنف موجود (اختاره المستخدم أو تطابق قوي بالاسم) → تزيد كميته ويتحدّث متوسط التكلفة
 //   «صنف جديد» أو ما فيه تطابق → ينضاف للمخزون
-export type InvoiceItem = { name: string; qty: number; unit: string; total: number; product_id?: string | null }   // product_id: 'new' = صنف جديد، 'expense' = مشتريات بدون مخزون
-export type ItemResult = { name: string; product: string; action: 'added' | 'created' | 'no_stock' | 'expense' | 'failed'; productId?: string }
+// product_id: 'new' = صنف جديد، 'expense' = مشتريات بدون مخزون — factor: كم وحدة مخزون في وحدة الفاتورة (من إجابة العميل)
+export type InvoiceItem = { name: string; qty: number; unit: string; total: number; product_id?: string | null; factor?: number | null }
+export type ItemResult = { name: string; product: string; action: 'added' | 'created' | 'no_stock' | 'expense' | 'failed'; productId?: string; stockQty?: number; stockUnit?: string }
 
 const AUTO_MATCH = 0.85   // بدون اختيار من المستخدم نطابق بس لو التشابه قوي جداً
 
 export function cleanItems(raw: unknown): InvoiceItem[] {
   return (Array.isArray(raw) ? raw : []).slice(0, 100).map((it: any) => ({
-    name: String(it?.name || '').trim().slice(0, 120), qty: Math.max(0, Number(it?.qty) || 0), unit: String(it?.unit || 'قطعة').slice(0, 30),
+    name: String(it?.name || '').trim().slice(0, 120), qty: Math.max(0, Number(it?.qty) || 0), unit: normalizeUnit(it?.unit) || 'حبة',
     total: Math.max(0, Number(it?.total) || 0), product_id: typeof it?.product_id === 'string' ? it.product_id : null,
+    factor: Number(it?.factor) > 0 && Number(it?.factor) <= 100000 ? Number(it.factor) : null,
   })).filter(it => it.name && it.total > 0)
 }
 
@@ -30,6 +33,8 @@ export async function saveInvoiceItems(db: SupabaseClient, o: {
   const { data: prods } = await pq.limit(2000)
   const stock = ((prods || []) as any[])
   const byId = new Map(stock.map(p => [p.id, p]))
+  // وحدات الشراء المحفوظة (كرتون = 12 كيس...) للأصناف المختارة في الفاتورة
+  const unitMap = await loadUnitMap(db, o.orgId, o.items.map(it => it.product_id || '').filter(id => byId.has(id)))
   const by = o.staffName ? ` بواسطة: ${o.staffName}` : ''
   const results: ItemResult[] = []
 
@@ -50,6 +55,17 @@ export async function saveInvoiceItems(db: SupabaseClient, o: {
     else if (!it.product_id) target = bestMatch(it.name, stock, AUTO_MATCH)
     const name = target?.name || it.name
     const amount = netFromTotal(it.total, o.hasVat)
+    // تحويل وحدة الفاتورة لوحدة المخزون: إجابة العميل، ثم المحفوظ للصنف، ثم الثابت (كيلو=1000 غرام)، وإلا 1 (السلوك القديم)
+    let factor = 1
+    if (target && !sameUnit(it.unit, target.unit)) {
+      const known = conversionFactor(target.unit, it.unit, unitMap.get(target.id))
+      factor = it.factor || known || 1
+      if (it.factor && it.factor !== known) {
+        await saveProductUnit(db, o.orgId, target.id, target.unit, it.unit, it.factor)
+        unitMap.set(target.id, { ...(unitMap.get(target.id) || {}), [normalizeUnit(it.unit)]: it.factor })
+      }
+    }
+    const stockQty = Math.round(it.qty * factor * 10000) / 10000
 
     const { error } = await db.from('purchases').insert({
       org_id: o.orgId, branch_id: o.branchId, profile_id: o.profileId ?? null, category: 'مخزون', name, qty: it.qty || null, unit: target?.unit || it.unit,
@@ -59,15 +75,17 @@ export async function saveInvoiceItems(db: SupabaseClient, o: {
     if (error) { results.push({ name: it.name, product: name, action: 'failed' }); continue }
     if (!(it.qty > 0)) { results.push({ name: it.name, product: name, action: 'no_stock' }); continue }
 
-    const unitCost = amount / it.qty
+    // التكلفة لكل وحدة مخزون (الكرتون بـ 240 وفيه 24 كيس → الكيس بـ 10)
+    const unitCost = amount / stockQty
     if (target) {
-      await db.from('stock_movements').insert({ product_id: target.id, org_id: o.orgId, profile_id: o.profileId ?? null, type: 'in', qty_change: it.qty,
-        note: `شراء من: ${o.supplier}${by}`, ...(o.createdAt ? { created_at: o.createdAt } : {}) } as any)
+      const conv = factor !== 1 ? ` (${it.qty} ${it.unit} × ${factor} ${target.unit})` : ''
+      await db.from('stock_movements').insert({ product_id: target.id, org_id: o.orgId, profile_id: o.profileId ?? null, type: 'in', qty_change: stockQty,
+        note: `شراء من: ${o.supplier}${conv}${by}`, ...(o.createdAt ? { created_at: o.createdAt } : {}) } as any)
       const oldQty = Number(target.qty) || 0, oldAvg = Number(target.avg_cost) || 0
-      const newAvg = oldQty + it.qty > 0 ? (Math.max(0, oldQty) * oldAvg + it.qty * unitCost) / (Math.max(0, oldQty) + it.qty) : unitCost
+      const newAvg = oldQty + stockQty > 0 ? (Math.max(0, oldQty) * oldAvg + stockQty * unitCost) / (Math.max(0, oldQty) + stockQty) : unitCost
       await db.from('products').update({ avg_cost: newAvg } as any).eq('id', target.id).eq('org_id', o.orgId)
-      target.qty = oldQty + it.qty; target.avg_cost = newAvg
-      results.push({ name: it.name, product: target.name, action: 'added', productId: target.id })
+      target.qty = oldQty + stockQty; target.avg_cost = newAvg
+      results.push({ name: it.name, product: target.name, action: 'added', productId: target.id, stockQty, stockUnit: target.unit })
     } else {
       const { data: np } = await db.from('products').insert({ org_id: o.orgId, branch_id: o.branchId, name: it.name, unit: it.unit, qty: 0, reorder_point: 5,
         is_active: true, avg_cost: unitCost, ...(o.staffCreatesHidden ? { requires_staff_assignment: true } : {}) } as any).select('id,name,unit,qty,avg_cost').single()

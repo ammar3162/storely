@@ -3959,5 +3959,11 @@
 "تقرير التحويلات بين الفروع": "Branch transfers report",
 "آخر التحويلات": "Recent transfers",
 "عرض التقرير الكامل": "View full report",
-"لا توجد تحويلات بعد": "No transfers yet"
+"لا توجد تحويلات بعد": "No transfers yet",
+"وحدات الشراء (اختياري)": "Purchase units (optional)",
+"وحدة الشراء": "Purchase unit",
+"تُضاف بعد حفظ المنتج.": "Added after saving the product.",
+"نحفظها لهذا الصنف، وتُحوَّل تلقائياً في الفواتير القادمة.": "We save it for this item and convert future invoices automatically.",
+"للوصفات فقط — مثال: كم غراماً في الكيس": "For recipes only — e.g. how many grams in a bag",
+"وحدة الشراء هي نفس وحدة المخزون": "The purchase unit is the same as the stock unit"
 }

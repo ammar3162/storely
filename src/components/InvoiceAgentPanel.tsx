@@ -15,7 +15,7 @@ import NumberInput from '@/components/NumberInput'
 import { colors } from '@/lib/ds'
 
 type Cand = { id: string; name: string; unit?: string | null; score: number }
-type Item = { name: string; qty: number | null; unit: string | null; total: number | null; status: 'matched' | 'new' | 'expense' | 'skip' | 'ask'; product_id: string | null; product_name?: string | null; candidates: Cand[]; question?: string | null; learned?: boolean }
+type Item = { name: string; qty: number | null; unit: string | null; total: number | null; status: 'matched' | 'new' | 'expense' | 'skip' | 'ask'; product_id: string | null; product_name?: string | null; candidates: Cand[]; question?: string | null; learned?: boolean; stock_unit?: string | null; factor?: number | null }
 type Draft = { id: string; supplier: string | null; invoice_date: string | null; has_vat: boolean; total: number | null; items: Item[]; status: 'needs_review' | 'ready'; invoice_image: string | null; created_at: string }
 
 const fmt = (n: number | null | undefined) => (Number(n) || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })
@@ -141,6 +141,9 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                       </div>
                     </div>
                     {it.status === 'matched' && <span style={pill(colors.primaryLight, colors.primary)}><Check size={12} /> مخزون: {it.product_name}{it.learned ? ' (تعلّمها)' : ''}</span>}
+                    {it.status === 'matched' && it.qty && it.factor && it.factor !== 1 && it.stock_unit && (
+                      <span style={pill('#f1f5f9', colors.text2)}>يُضاف {Math.round(it.qty * it.factor * 1000) / 1000} {it.stock_unit} ({it.qty} {it.unit} × {it.factor})</span>
+                    )}
                     {it.status === 'new' && <span style={pill('#eff6ff', '#1d4ed8')}><Plus size={12} /> مخزون: صنف جديد</span>}
                     {it.status === 'expense' && <span style={pill('#faf5ff', '#7e22ce')}><Receipt size={12} /> مشتريات — لا تُضاف إلى المخزون</span>}
                     {(it.status === 'new' || it.status === 'expense') && (
@@ -176,6 +179,20 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                         <button onClick={() => patch(d, { index: i, action: 'expense' })} disabled={busy === d.id} style={{ ...opt, color: '#7e22ce', borderColor: '#e9d5ff', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}><Receipt size={12} /> مشتريات (بدون مخزون)</button>
                         <button onClick={() => patch(d, { index: i, action: 'skip' })} disabled={busy === d.id} style={{ ...opt, color: colors.text3 }}>لا تسجّله</button>
                       </div>
+                    </div>
+                  )}
+                  {it.status === 'ask' && it.question === 'unit_factor' && (
+                    <div style={{ marginTop: 10 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#92400e', marginBottom: 6 }}>
+                        «{it.product_name}» مخزّن بـ{it.stock_unit}، والفاتورة بـ{it.unit}. كم {it.stock_unit} في {it.unit} الواحد؟
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 12.5, color: colors.text2 }}>1 {it.unit} =</span>
+                        <NumberInput placeholder="مثال: 12" style={{ width: 90, padding: '7px 9px', borderRadius: 8, border: `1px solid ${colors.border}`, fontSize: 13 }}
+                          onBlur={(e: any) => { const v = Number(e.target.value); if (v > 0) patch(d, { index: i, action: 'set', factor: v }) }} />
+                        <span style={{ fontSize: 12.5, color: colors.text2 }}>{it.stock_unit}</span>
+                      </div>
+                      <div style={{ fontSize: 11.5, color: colors.text3, marginTop: 6 }}>نحفظها لهذا الصنف، وتُحوَّل تلقائياً في الفواتير القادمة.</div>
                     </div>
                   )}
                   {it.status === 'ask' && (it.question === 'missing_price' || it.question === 'missing_qty') && (

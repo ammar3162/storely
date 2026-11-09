@@ -8,6 +8,7 @@ import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { branchFeatureDenied } from '@/lib/featureRoutes'
+import { conversionFactor, loadUnitMap, saveProductUnit, sameUnit } from '@/lib/productUnits'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -135,12 +136,12 @@ export async function POST(req: Request) {
     if (category === 'مخزون' && name) {
       const unitCost = qty > 0 ? (amount || 0) / qty : 0
       let existing: any = null
-      let byName = db.from('products').select('id,qty,sku,avg_cost').eq('org_id', org_id).eq('name', name)
+      let byName = db.from('products').select('id,qty,sku,avg_cost,unit').eq('org_id', org_id).eq('name', name)
       if (purchaseBranch) byName = byName.eq('branch_id', purchaseBranch)
       const { data: byNameArr } = await byName.order('created_at', { ascending: false }).limit(1)
       if (byNameArr?.length) existing = byNameArr[0]
       else if (body.sku) {
-        let bySku = db.from('products').select('id,qty,sku,name,avg_cost').eq('org_id', org_id).eq('sku', body.sku)
+        let bySku = db.from('products').select('id,qty,sku,name,avg_cost,unit').eq('org_id', org_id).eq('sku', body.sku)
         if (purchaseBranch) bySku = bySku.eq('branch_id', purchaseBranch)
         const { data: bySkuArr } = await bySku.order('created_at', { ascending: false }).limit(1)
         if (bySkuArr?.length) existing = bySkuArr[0]
@@ -148,13 +149,23 @@ export async function POST(req: Request) {
 
       if (existing) {
         if (body.sku && !existing.sku) await db.from('products').update({ sku: body.sku } as any).eq('id', existing.id)
-        if (qty > 0) {
-          await db.from('stock_movements').insert({ product_id: existing.id, org_id, profile_id: access.userId, type: 'in', qty_change: qty, note: `شراء من: ${supplier}`, created_at: invoiceTs } as any)
+        // وحدة الفاتورة غير وحدة المخزون (كرتون والصنف بالكيس): المعامل المرسل، ثم المحفوظ للصنف، وإلا 1
+        let factor = 1
+        if (body.unit && !sameUnit(body.unit, existing.unit)) {
+          const sent = Number(body.unit_factor) > 0 && Number(body.unit_factor) <= 100000 ? Number(body.unit_factor) : 0
+          factor = sent || conversionFactor(existing.unit, body.unit, (await loadUnitMap(db, org_id, [existing.id])).get(existing.id)) || 1
+          if (sent) await saveProductUnit(db, org_id, existing.id, existing.unit, body.unit, sent)
         }
-        // متوسط التكلفة المرجّح — الكمية القديمة من قبل الإضافة
+        const stockQty = qty * factor
+        const stockCost = stockQty > 0 ? (amount || 0) / stockQty : 0
+        if (stockQty > 0) {
+          await db.from('stock_movements').insert({ product_id: existing.id, org_id, profile_id: access.userId, type: 'in', qty_change: stockQty,
+            note: `شراء من: ${supplier}${factor !== 1 ? ` (${qty} ${body.unit} × ${factor} ${existing.unit})` : ''}`, created_at: invoiceTs } as any)
+        }
+        // متوسط التكلفة المرجّح — الكمية القديمة من قبل الإضافة (لكل وحدة مخزون)
         const oldQty = Number(existing.qty) || 0
         const oldAvg = Number(existing.avg_cost) || 0
-        const newAvg = (oldQty + qty) > 0 ? ((oldQty * oldAvg) + (qty * unitCost)) / (oldQty + qty) : 0
+        const newAvg = (oldQty + stockQty) > 0 ? ((oldQty * oldAvg) + (stockQty * stockCost)) / (oldQty + stockQty) : 0
         await db.from('products').update({ avg_cost: newAvg } as any).eq('id', existing.id)
         productId = existing.id
         productAction = 'updated'
