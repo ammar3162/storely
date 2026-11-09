@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { eligibleForSwitch, currentModules, projectSwitch } from './pricingSwitch'
+import { eligibleForSwitch, currentModules, projectSwitch, resolveBranchMap, compactBranchMap } from './pricingSwitch'
 import { PLAN_PRICING } from './planPricing'
 
 const addons = [
@@ -33,11 +33,12 @@ describe('pricing switch for existing subscribers', () => {
     expect(p.projected).toBe(227)
     expect(p.outcome).toBe('switch')
   })
-  it('never pays more: 3 active branches with every feature stays on the current plan', () => {
+  it('the choice always switches at renewal, even when the new bill is higher (owner decision 2026-11-09)', () => {
     const org = { id: 'o1', plan: 'pro', max_branches: 3, billing_cycle: 'monthly' }
     const p = projectSwitch({ org, addons, subs: [], modules: ALL, branches: 3, activeStaff: 10 })
     expect(p.projected).toBeGreaterThan(p.current)
-    expect(p.outcome).toBe('keep')
+    expect(p.outcome).toBe('switch')
+    expect(projectSwitch({ org, addons, subs: [], modules: [], branches: 3, activeStaff: 10 }).outcome).toBe('keep')
   })
   it('dropping features lowers the bill and switches', () => {
     const org = { id: 'o1', plan: 'pro', max_branches: 3, billing_cycle: 'monthly' }
@@ -45,11 +46,16 @@ describe('pricing switch for existing subscribers', () => {
     expect(p.projected).toBe((59 + 49) * 2)
     expect(p.outcome).toBe('switch')
   })
-  it('counts active staff above 6 per branch as extra staff, minus units already bought', () => {
+  it('extra staff = only the active staff above 6 per branch; extra staff bought on the old plan is not carried over', () => {
     const org = { id: 'o1', plan: 'pro', max_branches: 3, billing_cycle: 'monthly' }
     const p = projectSwitch({ org, addons, subs: [sub('a-st', 1)], modules: ['mod_inventory'], branches: 1, activeStaff: 9 })
-    expect(p.extraStaffNeeded).toBe(2)
+    expect(p.extraStaff).toBe(3)
     expect(p.projected).toBe(59 + 3 * 10)
+    // حالة هطبة: أساسية قديمة (3 موظفين مشمولين) + 3 إضافيين، و6 نشطين → بـ«ابنِ باقتك» الستة مشمولين
+    const basic = { id: 'o1', plan: 'basic', max_branches: 1, billing_cycle: 'monthly' }
+    const h = projectSwitch({ org: basic, addons, subs: [sub('a-csh'), sub('a-hr'), sub('a-st', 3)], modules: ['mod_inventory', 'mod_purchases', 'cashier_closing', 'hr_full'], branches: 1, activeStaff: 6 })
+    expect(h.extraStaff).toBe(0)
+    expect(h.projected).toBe(59 + 35 + 49 + 69)
   })
   it('cancelled add-ons are not part of the current bill', () => {
     const org = { id: 'o1', plan: 'basic', max_branches: 1, billing_cycle: 'monthly' }
@@ -63,5 +69,24 @@ describe('pricing switch for existing subscribers', () => {
     const p = projectSwitch({ org, addons, subs: [], modules: ['mod_inventory'], branches: 1, activeStaff: 4 })
     expect(p.current).toBe(Math.round(PLAN_PRICING.pro.yearly / 12))
     expect(p.projected).toBe(Math.round(Math.round(59 * 12 * 0.8) / 12))
+  })
+})
+
+describe('each feature on chosen branches (multi-branch owners)', () => {
+  const ids = ['b1', 'b2', 'b3']
+  it('resolves the map: unknown/closed branches dropped, missing or empty = all branches, per-org features ignored', () => {
+    const m = resolveBranchMap({ cashier_closing: ['b2', 'bX'], hr_full: [], ai_tools: ['b1'] }, ['mod_inventory', 'cashier_closing', 'hr_full', 'ai_tools'], ids)
+    expect(m).toEqual({ mod_inventory: ids, cashier_closing: ['b2'], hr_full: ids })
+    expect(resolveBranchMap('bad', ['cashier_closing'], ids)).toEqual({ cashier_closing: ids })
+    expect(compactBranchMap(m, ids)).toEqual({ cashier_closing: ['b2'] })
+    expect(compactBranchMap({ mod_inventory: ids }, ids)).toBeNull()
+  })
+  it('prices each feature on its branch count: 3 branches, inventory on all, cashier on 1, HR on 1', () => {
+    const org = { id: 'o1', plan: 'pro', max_branches: 3, billing_cycle: 'monthly' }
+    const all3 = projectSwitch({ org, addons, subs: [], modules: ['mod_inventory', 'cashier_closing', 'hr_full'], branches: 3, activeStaff: 10 })
+    const some = projectSwitch({ org, addons, subs: [], modules: ['mod_inventory', 'cashier_closing', 'hr_full'], branches: 3, activeStaff: 10, counts: { mod_inventory: 3, cashier_closing: 1, hr_full: 1 } })
+    // المخزون 59+59+47 + الكاشير 49 + الحضور 69 = 283 (بدل 482 لكل الفروع)
+    expect(all3.projected).toBe(165 + 137 + 193)
+    expect(some.projected).toBe(165 + 49 + 69)
   })
 })

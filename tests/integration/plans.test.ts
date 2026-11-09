@@ -543,7 +543,7 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
       }
     }, 180_000)
 
-    it('a choice that was more expensive (2 branches) is re-checked: after a branch is closed, «apply now» from the admin switches it', async () => {
+    it('the choice is re-priced at apply time: picked with 2 branches (439), a branch is closed, «apply now» switches at 227', async () => {
       const sw = await import('@/app/api/pricing-switch/route')
       const adminSw = await import('@/app/api/admin/pricing-switches/route')
       const { monthlyBill } = await import('@/lib/orgBill')
@@ -558,9 +558,9 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
       const { data: extra } = await db.from('branches').insert({ org_id: orgId, name: 'فرع مؤقت', is_active: true } as any).select('id').single()
       const all = ['mod_inventory', 'mod_purchases', 'cashier_closing', 'hr_full', 'ai_tools']
       try {
-        // فرعين: كل المزايا = (59+35+49+69)×2 + 15 = 439 > 249 → يبقى على باقته
+        // فرعين: كل الخدمات = (59+35+49+69)×2 + 15 = 439 — أعلى من 249، ومع ذلك تُفعَّل عند التطبيق (قرار المالك)
         const save = await call(sw.POST, 'POST', '/api/pricing-switch', { org_id: orgId, modules: all })
-        expect(save.json).toMatchObject({ success: true, outcome: 'keep', current: 249, projected: 439 })
+        expect(save.json).toMatchObject({ success: true, outcome: 'switch', current: 249, projected: 439 })
         // الفرع الثاني انقفل → فرع واحد = 212 + 15 = 227 < 249
         await db.from('branches').update({ is_active: false } as any).eq('id', (extra as any).id)
         const r = await adminSw.POST(new Request('http://test/api/admin/pricing-switches', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify({ org_id: orgId }) }))
@@ -575,6 +575,54 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         expect(((subs || []) as any[]).every(x => new Date(x.expires_at).getTime() === new Date(ends).getTime())).toBe(true)
       } finally {
         await db.from('branches').delete().eq('id', (extra as any).id)
+        if (keepIds.length > 1) await db.from('branches').update({ is_active: true } as any).in('id', keepIds.slice(1))
+        await db.from('pricing_switches').delete().eq('org_id', orgId)
+        await db.from('org_addon_subscriptions').delete().eq('org_id', orgId)
+        await db.from('organizations').update({ plan: 'pro', max_branches: 1, max_staff: 1, max_suppliers: 20 } as any).eq('id', orgId)
+        clearFeatureCache(orgId)
+      }
+    }, 180_000)
+
+    it('multi-branch owner picks branches per feature: cashier on one branch only is priced and opened on that branch only', async () => {
+      const sw = await import('@/app/api/pricing-switch/route')
+      const adminSw = await import('@/app/api/admin/pricing-switches/route')
+      const { monthlyBill } = await import('@/lib/orgBill')
+      const { orgHasFeature } = await import('@/lib/planFeatures')
+      const { clearFeatureCache } = await import('@/lib/featureRoutes')
+      const ends = new Date(Date.now() + 20 * 864e5).toISOString()
+      await db.from('organizations').update({ plan: 'pro', max_branches: 3, locked_plan_monthly: null, billing_cycle: 'monthly' } as any).eq('id', orgId)
+      await db.from('profiles').update({ subscription_type: 'paid', subscription_ends_at: ends } as any).eq('id', userId)
+      const { data: active } = await db.from('branches').select('id').eq('org_id', orgId).eq('is_active', true).order('created_at')
+      const keepIds = ((active || []) as any[]).map(b => b.id)
+      if (keepIds.length > 1) await db.from('branches').update({ is_active: false } as any).in('id', keepIds.slice(1))
+      const { data: extra } = await db.from('branches').insert({ org_id: orgId, name: 'فرع مؤقت ٢', is_active: true } as any).select('id').single()
+      const b1 = keepIds[0], b2 = (extra as any).id
+      try {
+        const g = await call(sw.GET, 'GET', `/api/pricing-switch?org_id=${orgId}`)
+        expect(g.json.branchList.map((b: any) => b.id).sort()).toEqual([b1, b2].sort())
+        const body = { org_id: orgId, modules: ['mod_inventory', 'cashier_closing'], branch_map: { cashier_closing: [b2], mod_inventory: [b1, b2, 'not-mine'] } }
+        // المخزون للفرعين 59+59 + الكاشير لفرع واحد 49 = 167 < 249
+        const pv = await call(sw.POST, 'POST', '/api/pricing-switch', { ...body, preview: true })
+        expect(pv.json).toMatchObject({ success: true, current: 249, projected: 167, outcome: 'switch' })
+        // فرع بدون أي خدمة يُرفض (ما فيه فرع مجاني)
+        const bad = await call(sw.POST, 'POST', '/api/pricing-switch', { org_id: orgId, modules: ['mod_inventory', 'ai_tools'], branch_map: { mod_inventory: [b1] } })
+        expect(bad.status).toBe(400)
+        expect(bad.json).toMatchObject({ code: 'branch_without_service' })
+        expect((await call(sw.POST, 'POST', '/api/pricing-switch', body)).json).toMatchObject({ success: true, projected: 167 })
+        expect((await db.from('pricing_switches').select('branch_map').eq('org_id', orgId).single()).data).toMatchObject({ branch_map: { cashier_closing: [b2] } })
+        const r = await adminSw.POST(new Request('http://test/api/admin/pricing-switches', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify({ org_id: orgId }) }))
+        expect(await r.json()).toMatchObject({ success: true, applied: true, monthly: 167 })
+        clearFeatureCache(orgId)
+        expect(await monthlyBill(db as any, orgId)).toBe(167)
+        const { data: subs } = await db.from('org_addon_subscriptions').select('quantity,branch_ids,marketplace_addons(slug)').eq('org_id', orgId).eq('status', 'active')
+        const bySlug = Object.fromEntries(((subs || []) as any[]).map(x => [x.marketplace_addons.slug, x]))
+        expect(bySlug.cashier_closing).toMatchObject({ quantity: 1, branch_ids: [b2] })
+        expect(bySlug.mod_inventory).toMatchObject({ quantity: 2, branch_ids: null })
+        expect(await orgHasFeature(db as any, orgId, 'cashier', 'custom', b2)).toBe(true)
+        expect(await orgHasFeature(db as any, orgId, 'cashier', 'custom', b1)).toBe(false)
+        expect(await orgHasFeature(db as any, orgId, 'inventory', 'custom', b1)).toBe(true)
+      } finally {
+        await db.from('branches').delete().eq('id', b2)
         if (keepIds.length > 1) await db.from('branches').update({ is_active: true } as any).in('id', keepIds.slice(1))
         await db.from('pricing_switches').delete().eq('org_id', orgId)
         await db.from('org_addon_subscriptions').delete().eq('org_id', orgId)

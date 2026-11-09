@@ -23,6 +23,8 @@ export default function TransferStockPage() {
   const [orgId, setOrgId] = useState('')
   const [branches, setBranches] = useState<any[]>([])
   const [fromBranch, setFromBranch] = useState('')
+  // مدير الفرع: «من» مثبّت على فرعه
+  const [lockedFrom, setLockedFrom] = useState(false)
   const [toBranch, setToBranch] = useState('')
   const [products, setProducts] = useState<any[]>([])
   const [productId, setProductId] = useState('')
@@ -48,15 +50,17 @@ export default function TransferStockPage() {
     const oid = await getOrgId()
     if(!oid) return
     setOrgId(oid)
-    const bj = await api.get('/api/branches', { org_id: oid })
-    setBranches(bj.branches||[])
+    // الفروع من مسار النقل (كل فروع المنشأة — المدير يشوف فرعه بس بصفحة الفروع)
+    const tj = await api.get<{ branches: any[]; myBranch: string | null }>('/api/branch-transfer', { org_id: oid })
+    setBranches(tj.branches||[])
+    if (tj.myBranch) { setFromBranch(tj.myBranch); setLockedFrom(true) }
     loadHistory(oid)
   }
 
   useLiveRefresh(orgId || null, ['stock_movements', 'branches'], () => {
     if (!orgId) return
     loadHistory(orgId)
-    api.get('/api/branches', { org_id: orgId }).then(bj => { if (bj.branches) setBranches(bj.branches) })
+    api.get<{ branches: any[] }>('/api/branch-transfer', { org_id: orgId }).then(tj => { if (tj.branches) setBranches(tj.branches) })
   })
 
   async function loadProducts() {
@@ -308,12 +312,12 @@ export default function TransferStockPage() {
         {/* Branches */}
         <div className="ts-branches">
           <StorelyFormField label={<>من فرع</>} htmlFor="transfer-field-1">
-            <select id="transfer-field-1" className="ts-control" value={fromBranch} onChange={e=>setFromBranch(e.target.value)}>
+            <select id="transfer-field-1" className="ts-control" value={fromBranch} onChange={e=>setFromBranch(e.target.value)} disabled={lockedFrom}>
               <option value="">اختر الفرع المصدر</option>
               {branches.filter((b:any)=>b.id!==toBranch).map((b:any)=>(<option key={b.id} value={b.id}>{b.name}</option>))}
             </select>
           </StorelyFormField>
-          <StorelyButton className="ts-button ts-swap" type="button" onClick={swapBranches} disabled={!fromBranch&&!toBranch}
+          <StorelyButton className="ts-button ts-swap" type="button" onClick={swapBranches} disabled={lockedFrom || (!fromBranch&&!toBranch)}
             title="بدّل الفرعين" aria-label="بدّل الفرعين">
             <ArrowLeftRight size={18}/>
           </StorelyButton>

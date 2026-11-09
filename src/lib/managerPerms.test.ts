@@ -14,8 +14,16 @@ describe('branch manager permissions', () => {
     expect(managerPageAllowed('/notifications', {})).toBe(true)
   })
   it('owner-only pages are always closed, including sub-pages', () => {
-    for (const path of ['/settings', '/branches', '/branch-managers', '/addons-market', '/transfer-stock', '/settings/billing'])
+    for (const path of ['/settings', '/branches', '/branch-managers', '/addons-market', '/settings/billing'])
       expect(managerPageAllowed(path, Object.fromEntries(MANAGER_PERM_KEYS.map(k => [k, true])))).toBe(false)
+  })
+  it('stock transfer between branches: owner, or a manager only with the transfer permission', () => {
+    expect(managerPageAllowed('/transfer-stock', {})).toBe(false)
+    expect(managerPageAllowed('/transfer-stock', { inventory: true, dispense: true })).toBe(false)
+    expect(managerPageAllowed('/transfer-stock', { transfer: true })).toBe(true)
+    expect(managerApiAllowed('/api/branch-transfer', 'POST', { inventory: true })).toBe(false)
+    expect(managerApiAllowed('/api/branch-transfer', 'POST', { transfer: true })).toBe(true)
+    expect(managerApiAllowed('/api/branch-transfer', 'GET', {})).toBe(false)
   })
   it('does not confuse prefixes (/reports vs /reportsx)', () => {
     expect(managerPageAllowed('/reports/x', { reports: true })).toBe(true)
