@@ -3965,5 +3965,12 @@
 "تُضاف بعد حفظ المنتج.": "Added after saving the product.",
 "نحفظها لهذا الصنف، وتُحوَّل تلقائياً في الفواتير القادمة.": "We save it for this item and convert future invoices automatically.",
 "للوصفات فقط — مثال: كم غراماً في الكيس": "For recipes only — e.g. how many grams in a bag",
-"وحدة الشراء هي نفس وحدة المخزون": "The purchase unit is the same as the stock unit"
+"وحدة الشراء هي نفس وحدة المخزون": "The purchase unit is the same as the stock unit",
+"الوحدات والوصفات": "Units and recipes",
+"يُشترى بـ": "Bought by",
+"يُحفظ من صفحة المشتريات عند تسجيل فاتورة بهذه الوحدة.": "Saved from the Purchases page when an invoice uses this unit.",
+"الوحدة الدقيقة للوصفات": "Recipe unit",
+"تستخدمه في وصفات؟ أضف كم غراماً فيه": "Used in recipes? Add how many grams it has",
+"محفوظ لهذا الصنف.": "Saved for this item.",
+"نحفظها لهذا الصنف للفواتير القادمة.": "We save it for this item for future invoices."
 }

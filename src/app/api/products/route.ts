@@ -60,8 +60,8 @@ export async function GET(req: Request) {
     const { data, error } = await q.order(sort, { ascending: true })
 
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
-    // صفحة المخزون (full): وحدات الشراء لكل صنف — لعرض «30 كيس (2 كرتون و6 كيس)»
-    if (full && data?.length) {
+    // وحدات الشراء لكل صنف — المخزون يعرض «30 كيس (2 كرتون و6 كيس)»، والمشتريات اليدوية تعرف «الكرتون = 12»
+    if (view !== 'suppliers' && data?.length) {
       const units = await loadUnitMap(sb(), org_id, (data as any[]).map(p => p.id))
       const list = (data as any[]).map(p => ({ ...p, purchase_units: Object.entries(units.get(p.id) || {}).map(([unit, factor]) => ({ unit, factor })) }))
       return NextResponse.json({ success: true, products: list })
