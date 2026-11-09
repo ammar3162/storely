@@ -71,11 +71,13 @@ export function settle(it: AgentItem): AgentItem {
 
 /** يطبّق إجابة العميل على صنف */
 export function applyAnswer(it: AgentItem, a: { action: 'match' | 'new' | 'expense' | 'skip' | 'set'; product_id?: string; product_name?: string | null; qty?: number; total?: number
-  factor?: number; stock_unit?: string | null; known_factor?: number | null }): AgentItem {
+  factor?: number; stock_unit?: string | null; known_factor?: number | null; unit?: string }): AgentItem {
   const next: AgentItem = { ...it }
   if (a.action === 'set') {
     if (Number(a.qty) > 0) next.qty = Number(a.qty)
     if (Number(a.total) > 0) next.total = Number(a.total)
+    // تغيير وحدة سطر الفاتورة (الفاتورة كاتبة «حبة» وهي كرتون): التحويل يُعاد من المحفوظ، وإلا يُسأل
+    if (typeof a.unit === 'string' && normalizeUnit(a.unit)) { next.unit = normalizeUnit(a.unit); next.factor = a.known_factor ?? null }
     if (Number(a.factor) > 0 && Number(a.factor) <= 100000) next.factor = Number(a.factor)
     if (next.status === 'skip') return next
   } else if (a.action === 'match' && a.product_id) {

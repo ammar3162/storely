@@ -136,8 +136,17 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, minWidth: 160 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{it.name}</div>
-                      <div style={{ fontSize: 11.5, color: colors.text3, marginTop: 2 }}>
-                        {it.qty ? `${it.qty} ${it.unit || ''} · ` : it.status === 'expense' ? '' : 'الكمية ناقصة · '}{it.total ? `${fmt(it.total)} ${curr}` : 'السعر ناقص'}
+                      <div style={{ fontSize: 11.5, color: colors.text3, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                        {it.qty ? <>{it.qty}{' '}
+                          {/* وحدة السطر قابلة للتغيير (الفاتورة كاتبة «حبة» وهي كرتون) — لصنف مربوط بالمخزون */}
+                          {it.product_id && (it.status === 'matched' || it.question === 'unit_factor') ? (
+                            <select value={it.unit || ''} disabled={busy === d.id} aria-label="وحدة الشراء في الفاتورة"
+                              onChange={e => patch(d, { index: i, action: 'set', unit: e.target.value })}
+                              style={{ fontSize: 11.5, padding: '1px 4px', borderRadius: 6, border: `1px solid ${colors.border}`, background: 'white', color: colors.text, fontFamily: 'inherit' }}>
+                              {Array.from(new Set([it.unit, it.stock_unit, 'كرتون', 'كيس', 'شدة', 'صندوق', 'علبة', 'باكيت', 'درزن', 'ربطة'].filter(Boolean) as string[])).map(u => <option key={u} value={u}>{u}</option>)}
+                            </select>
+                          ) : <span>{it.unit || ''}</span>}
+                          {' · '}</> : it.status === 'expense' ? '' : 'الكمية ناقصة · '}{it.total ? `${fmt(it.total)} ${curr}` : 'السعر ناقص'}
                       </div>
                     </div>
                     {it.status === 'matched' && <span style={pill(colors.primaryLight, colors.primary)}><Check size={12} /> مخزون: {it.product_name}{it.learned ? ' (تعلّمها)' : ''}</span>}

@@ -63,6 +63,13 @@ describe('invoice unit differs from the stock unit', () => {
     const answered = applyAnswer(it1, { action: 'set', factor: 12 })
     expect(answered).toMatchObject({ status: 'matched', factor: 12 })
   })
+  it('changing the line unit (invoice says «حبة» but it is a carton) asks for the conversion, or uses a saved one', () => {
+    const [it0] = classifyItems([{ name: 'سكر أبيض', qty: 2, unit: 'كيس', total: 240 }], products, {})
+    expect(it0).toMatchObject({ status: 'matched' })
+    const asked = applyAnswer(it0, { action: 'set', unit: 'كرتون', known_factor: null })
+    expect(asked).toMatchObject({ unit: 'كرتون', status: 'ask', question: 'unit_factor' })
+    expect(applyAnswer(it0, { action: 'set', unit: 'كرتون', known_factor: 12 })).toMatchObject({ unit: 'كرتون', status: 'matched', factor: 12 })
+  })
   it('a saved conversion needs no question; same unit needs none', () => {
     const units = new Map([['p1', { 'كرتون': 12 }]])
     const [a] = classifyItems([{ name: 'سكر أبيض', qty: 2, unit: 'cartoon', total: 240 }], products, {}, units)

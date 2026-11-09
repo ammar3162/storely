@@ -3972,5 +3972,6 @@
 "الوحدة الدقيقة للوصفات": "Recipe unit",
 "تستخدمه في وصفات؟ أضف كم غراماً فيه": "Used in recipes? Add how many grams it has",
 "محفوظ لهذا الصنف.": "Saved for this item.",
-"نحفظها لهذا الصنف للفواتير القادمة.": "We save it for this item for future invoices."
+"نحفظها لهذا الصنف للفواتير القادمة.": "We save it for this item for future invoices.",
+"وحدة الشراء في الفاتورة": "Purchase unit on the invoice"
 }
