@@ -8,6 +8,7 @@ import InvoicePickButtons from '@/components/InvoicePickButtons'
 import { C, CATS, CAT_ICONS, lbl, inp } from './constants'
 import type { PurchasesState } from './usePurchases'
 import { conversionFactor, normalizeUnit, sameUnit } from '@/lib/productUnits'
+import { looksLikeExpense } from '@/lib/expenseHint'
 
 export default function PurchaseItemFields({ m }: { m: PurchasesState }) {
   const { invOn, products, isExisting, setIsExisting, uploading, bizType, setShowScan, previewUrl, form, setForm, handleImage } = m
@@ -88,6 +89,14 @@ export default function PurchaseItemFields({ m }: { m: PurchasesState }) {
                   placeholder={form.category==='مخزون'?'مثال: اسم الصنف':form.category==='مشتريات'?'مثال: أدوات ومستلزمات':'مثال: مصاريف تشغيلية'}/>
               )}
             </div>
+
+            {form.category==='مخزون' && looksLikeExpense(form.name) && (
+              <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',fontSize:13,fontWeight:600,color:'#92400e',background:'#fffbeb',border:'1.5px solid #f59e0b',borderRadius:8,padding:'9px 11px',marginBottom:10}}>
+                «{form.name}» يبدو مصروفاً وليس صنف مخزون — لن يُصرف أو يُجرد.
+                <button type="button" onClick={()=>setForm({...form,category:'مشتريات'})}
+                  style={{marginInlineStart:'auto',padding:'5px 10px',borderRadius:7,border:'1px solid #f59e0b',background:'white',color:'#92400e',fontSize:12.5,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>اجعله مشتريات</button>
+              </div>
+            )}
 
             {/* Barcode + qty */}
             {form.category==='مخزون'&&(

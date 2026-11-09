@@ -2,7 +2,7 @@
 // وكيل الفواتير: يرفع العميل الفاتورة، الوكيل يقرأها ويطابق أصنافها مع المخزون،
 // يسجّل الواضح ويسأل عن الباقي — وبعد ما يجاوب، ضغطة «حفظ» وتنسجّل مشتريات.
 import { useEffect, useState } from 'react'
-import { Sparkles, Check, HelpCircle, Plus, Loader2, Trash2, PackageCheck, Receipt } from 'lucide-react'
+import { Sparkles, Check, HelpCircle, Plus, Loader2, Trash2, PackageCheck, Receipt, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
 import { toast } from '@/components/toast'
@@ -14,6 +14,7 @@ import InvoicePickButtons from '@/components/InvoicePickButtons'
 import NumberInput from '@/components/NumberInput'
 import { colors } from '@/lib/ds'
 import { normalizeUnit } from '@/lib/productUnits'
+import { looksLikeExpense } from '@/lib/expenseHint'
 
 type Cand = { id: string; name: string; unit?: string | null; score: number }
 type Item = { name: string; qty: number | null; unit: string | null; total: number | null; status: 'matched' | 'new' | 'expense' | 'skip' | 'ask'; product_id: string | null; product_name?: string | null; candidates: Cand[]; question?: string | null; learned?: boolean; stock_unit?: string | null; factor?: number | null }
@@ -22,11 +23,16 @@ type Draft = { id: string; supplier: string | null; invoice_date: string | null;
 const fmt = (n: number | null | undefined) => (Number(n) || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })
 
 const normUnit = (u?: string | null) => normalizeUnit(u)
+const TIP_KEY = 'invoice_stock_tip_seen'
 
 export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onSaved, onManual, manualOpen }: {
   orgId: string; branchId: string | null; products: { id: string; name: string; unit?: string | null }[]; curr: string; onSaved: () => void
   onManual?: () => void; manualOpen?: boolean   // «ما عندك صورة؟» يفتح التسجيل اليدوي
 }) {
+  // شرح «مخزون أو مشتريات» لأول فواتير العميل — يختفي لما يضغط «فهمت»
+  const [tip, setTip] = useState(false)
+  useEffect(() => { try { setTip(!localStorage.getItem(TIP_KEY)) } catch {} }, [])
+  const hideTip = () => { setTip(false); try { localStorage.setItem(TIP_KEY, '1') } catch {} }
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [reading, setReading] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
@@ -133,6 +139,15 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
               </span>
             </div>
 
+            {tip && (
+              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: 10, padding: '10px 12px', marginBottom: 10, fontSize: 13, lineHeight: 1.9, color: colors.text }}>
+                <span style={{ flex: 1 }}>
+                  <b style={{ color: colors.text }}>مخزون</b> = أصناف تُصرف وتُجرد (سكر، أكواب، حليب…).<br />
+                  <b style={{ color: colors.text }}>مشتريات</b> = مصاريف لا تُخزّن (تنظيف، صيانة، غاز…). غيّر أي صنف قبل الحفظ.
+                </span>
+                <button onClick={hideTip} style={{ ...opt, whiteSpace: 'nowrap' }}>فهمت</button>
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {d.items.map((it, i) => (
                 <div key={i} style={{ background: it.status === 'ask' ? '#fffbeb' : it.status === 'skip' ? '#f8fafc' : 'white', border: `1px solid ${it.status === 'ask' ? '#fde68a' : colors.border}`, borderRadius: 10, padding: '10px 12px', opacity: it.status === 'skip' ? .6 : 1 }}>
@@ -144,6 +159,13 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                       </div>
                     </div>
                     {it.status === 'matched' && <span style={pill(colors.primaryLight, colors.primary)}><Check size={12} /> مخزون: {it.product_name}{it.learned ? ' (تعلّمها)' : ''}</span>}
+                    {(it.status === 'matched' || it.status === 'new') && looksLikeExpense(it.name) && (
+                      <span style={{ flexBasis: '100%', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 13, fontWeight: 600, color: '#92400e', background: '#fffbeb', border: '1.5px solid #f59e0b', borderRadius: 8, padding: '8px 10px' }}>
+                        <AlertTriangle size={16} /> «{it.name}» يبدو مصروفاً وليس صنف مخزون — لن يُصرف أو يُجرد.
+                        <button onClick={() => patch(d, { index: i, action: 'expense' })} disabled={busy === d.id}
+                          style={{ marginInlineStart: 'auto', padding: '5px 10px', borderRadius: 7, border: '1px solid #f59e0b', background: 'white', color: '#92400e', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>اجعله مشتريات</button>
+                      </span>
+                    )}
                     {it.status === 'new' && <span style={pill('#eff6ff', '#1d4ed8')}><Plus size={12} /> مخزون: صنف جديد</span>}
                     {it.status === 'expense' && <span style={pill('#faf5ff', '#7e22ce')}><Receipt size={12} /> مشتريات — لا تُضاف إلى المخزون</span>}
                     {(it.status === 'new' || it.status === 'expense') && (
@@ -207,6 +229,37 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                 </div>
               ))}
             </div>
+
+            {/* ملخص قبل الحفظ: وش يدخل المخزون ووش مشتريات بدون مخزون — واضح، كل صنف بسطره */}
+            {(() => {
+              const stock = d.items.filter(i => i.status === 'matched' || i.status === 'new')
+              const exp = d.items.filter(i => i.status === 'expense')
+              if (!stock.length && !exp.length) return null
+              const qtyOf = (i: Item) => i.status === 'matched' && i.stock_unit ? `${Math.round((i.qty || 0) * (i.factor || 1))} ${i.stock_unit}` : i.qty ? `${i.qty} ${i.unit || ''}` : ''
+              const box = (title: string, Icon: any, list: Item[], tone: { bg: string; border: string; text: string }, right: (i: Item) => string) => (
+                <div style={{ flex: '1 1 220px', background: tone.bg, border: `1.5px solid ${tone.border}`, borderRadius: 10, padding: '10px 12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 800, color: tone.text, marginBottom: 6 }}>
+                    <Icon size={16} /> {title} <span style={{ fontWeight: 600 }}>({list.length})</span>
+                  </div>
+                  {list.map((i, n) => (
+                    <div key={n} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 13, padding: '4px 0', borderTop: n ? `1px solid ${tone.border}` : 'none' }}>
+                      <span style={{ color: colors.text, fontWeight: 600 }}>{i.status === 'matched' ? (i.product_name || i.name) : i.name}</span>
+                      <span style={{ color: colors.text2, whiteSpace: 'nowrap' }}>{right(i)}</span>
+                    </div>
+                  ))}
+                </div>
+              )
+              return (
+                <div style={{ marginTop: 14 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: colors.text, marginBottom: 8 }}>قبل الحفظ، تأكد من التوزيع:</div>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    {stock.length > 0 && box('يدخل المخزون', PackageCheck, stock, { bg: colors.primaryLight, border: '#b8c7ce', text: colors.primary }, qtyOf)}
+                    {exp.length > 0 && box('مشتريات بدون مخزون', Receipt, exp, { bg: '#faf5ff', border: '#e9d5ff', text: '#7e22ce' }, i => i.total ? `${fmt(Number(i.total))} ${curr}` : '')}
+                  </div>
+                  <div style={{ fontSize: 12, color: colors.text3, marginTop: 6 }}>صنف في المكان الخطأ؟ غيّره من سطره فوق قبل الحفظ.</div>
+                </div>
+              )
+            })()}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
               <div style={{ flex: 1, fontSize: 12, color: colors.text3 }}>
