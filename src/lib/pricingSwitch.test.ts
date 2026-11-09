@@ -46,11 +46,16 @@ describe('pricing switch for existing subscribers', () => {
     expect(p.projected).toBe((59 + 49) * 2)
     expect(p.outcome).toBe('switch')
   })
-  it('counts active staff above 6 per branch as extra staff, minus units already bought', () => {
+  it('extra staff = only the active staff above 6 per branch; extra staff bought on the old plan is not carried over', () => {
     const org = { id: 'o1', plan: 'pro', max_branches: 3, billing_cycle: 'monthly' }
     const p = projectSwitch({ org, addons, subs: [sub('a-st', 1)], modules: ['mod_inventory'], branches: 1, activeStaff: 9 })
-    expect(p.extraStaffNeeded).toBe(2)
+    expect(p.extraStaff).toBe(3)
     expect(p.projected).toBe(59 + 3 * 10)
+    // حالة هطبة: أساسية قديمة (3 موظفين مشمولين) + 3 إضافيين، و6 نشطين → بـ«ابنِ باقتك» الستة مشمولين
+    const basic = { id: 'o1', plan: 'basic', max_branches: 1, billing_cycle: 'monthly' }
+    const h = projectSwitch({ org: basic, addons, subs: [sub('a-csh'), sub('a-hr'), sub('a-st', 3)], modules: ['mod_inventory', 'mod_purchases', 'cashier_closing', 'hr_full'], branches: 1, activeStaff: 6 })
+    expect(h.extraStaff).toBe(0)
+    expect(h.projected).toBe(59 + 35 + 49 + 69)
   })
   it('cancelled add-ons are not part of the current bill', () => {
     const org = { id: 'o1', plan: 'basic', max_branches: 1, billing_cycle: 'monthly' }

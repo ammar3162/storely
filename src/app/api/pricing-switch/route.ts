@@ -20,7 +20,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ success: true, show: false, chosen })
   }
   const selected = currentModules(ctx.org.plan, ctx.addons, ctx.subs)
-  const p = projectSwitch({ org: ctx.org, addons: ctx.addons, subs: ctx.subs, modules: selected, branches: ctx.branches, activeStaff: ctx.activeStaff })
+  const p = projectSwitch({ org: ctx.org, addons: ctx.addons, subs: ctx.subs, modules: selected, branches: ctx.branches, activeStaff: ctx.activeStaff, activeSuppliers: ctx.activeSuppliers })
   return NextResponse.json({
     success: true, show: true,
     orgName: ctx.org.name || '', branches: p.branches, renewsAt: ctx.owner.subscription_ends_at || null,
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
   const activeIds = ctx.branchList.map(b => b.id)
   const map = resolveBranchMap(body.branch_map, modules, activeIds)
   const counts = Object.fromEntries(Object.entries(map).map(([k, v]) => [k, v.length]))
-  const p = projectSwitch({ org: ctx.org, addons: ctx.addons, subs: ctx.subs, modules, branches: ctx.branches, activeStaff: ctx.activeStaff, counts })
+  const p = projectSwitch({ org: ctx.org, addons: ctx.addons, subs: ctx.subs, modules, branches: ctx.branches, activeStaff: ctx.activeStaff, activeSuppliers: ctx.activeSuppliers, counts })
   if (body.preview) return NextResponse.json({ success: true, current: p.current, projected: p.projected, outcome: p.outcome })
   // كل فرع نشط لازم يكون عليه خدمة واحدة على الأقل (ما فيه فرع مجاني)
   const missing = uncoveredBranches(activeIds, modules.map(slug => ({ slug, branchIds: map[slug] && map[slug].length < activeIds.length ? map[slug] : null })))
