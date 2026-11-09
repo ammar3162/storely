@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense, lazy } from 'react'
 import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import PageIcon from '@/components/PageIcon'
 import { currencySymbol } from '@/lib/currencySymbol'
-import { CalendarDays, Trash2, BarChart3, Upload, Receipt, ClipboardList, Wallet, Flame } from 'lucide-react'
+import { CalendarDays, Trash2, BarChart3, Upload, Receipt, ClipboardList, Wallet, Flame, ArrowLeftRight } from 'lucide-react'
 import { getMe } from '@/lib/session'
 import { colors, font, card, pageTitle, pageSub } from '@/lib/ds'
 import { ListSkeleton } from '@/components/PageSkeleton'
@@ -17,6 +17,8 @@ import InventoryDetail from './_parts/InventoryDetail'
 import RecentOpsSection from './_parts/RecentOpsSection'
 import AttendanceDetail from './_parts/AttendanceDetail'
 import CashierClosingDetail from './_parts/CashierClosingDetail'
+import TransferDetail from './_parts/TransferDetail'
+import { api } from '@/lib/api-client'
 
 const StaffMonthlyDetail = lazy(() => import('@/components/reports/StaffMonthlyReport'))
 
@@ -27,7 +29,7 @@ export default function ReportsPage() {
   // كل تقرير يطلع بس لو ميزته باشتراك الفرع («ابنِ باقتك» أو إضافة لفروع معيّنة) — الافتراضي ظاهر
   const [feat, setFeat]           = useState<{ inventory?: boolean; purchases?: boolean; hr?: boolean }>({})
   const hasInv = feat.inventory !== false, hasPur = feat.purchases !== false, hasHr = feat.hr !== false
-  const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'|'cashier'|'waste'|'attendance'|'staffMonthly'>('home')
+  const [view, setView]           = useState<'home'|'dispense'|'purchase'|'inventory'|'cashier'|'waste'|'attendance'|'staffMonthly'|'transfers'>('home')
   const [period, setPeriod]       = useState<FilterPeriod>('today')
   const [from, setFrom]           = useState('')
   const [to, setTo]               = useState('')
@@ -43,6 +45,8 @@ export default function ReportsPage() {
   const [recentOps, setRecentOps] = useState<any[]>([])
   const [cashierStats, setCS]     = useState({count:0,deficit:0,surplus:0})
   const [topMovements, setTopMovements] = useState<any[]>([])
+  // التحويلات بين الفروع (تظهر للمنشأة بأكثر من فرع)
+  const [transferStats, setTS]    = useState({count:0,items:0,branches:0})
 
   // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
   useLiveRefresh(typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null, ['stock_movements','purchases','cashier_closings','products'], ()=>loadStats())
@@ -56,6 +60,10 @@ export default function ReportsPage() {
       const f = (bid && me?.org?.branch_features?.[bid]) || me?.org?.features
       if(f){ setHasCashier(!!f.cashier); setFeat({ inventory: f.inventory, purchases: f.purchases, hr: f.hr }) } })
     const{start,end}=getRange(period,from,to)
+    const ymd=(d:Date)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+    api.get<{transfers:any[];branches:any[]}>('/api/branch-transfer',{org_id:orgId,from:ymd(start),to:ymd(end)}).then(t=>{
+      if(t.success) setTS({count:(t.transfers||[]).length,items:new Set((t.transfers||[]).map((x:any)=>x.products?.name)).size,branches:(t.branches||[]).length})
+    }).catch(()=>{})
     const sum=await reportData('summary',start,end)
     if(!sum.success){setSL(false);return}
     const mv=sum.dispense, pu=sum.purchases, wv=sum.waste
@@ -86,7 +94,7 @@ export default function ReportsPage() {
   // نفس شريط الفترات داخل كل تقرير (الفترة مشتركة مع الرئيسية)
   const bar = <FilterBar period={period} setPeriod={setPeriod} from={from} setFrom={setFrom} to={to} setTo={setTo}/>
   // تقرير ميزته مو مفعّلة: نرجع للرئيسية
-  if (((view==='dispense'||view==='inventory'||view==='waste') && !hasInv) || (view==='purchase' && !hasPur) || ((view==='attendance'||view==='staffMonthly') && !hasHr)) { setView('home'); return null }
+  if (((view==='dispense'||view==='inventory'||view==='waste'||view==='transfers') && !hasInv) || (view==='purchase' && !hasPur) || ((view==='attendance'||view==='staffMonthly') && !hasHr)) { setView('home'); return null }
   if (view==='inventory') return (
     <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}} .spin-icon{animation:spin .8s linear infinite}`}</style>
@@ -130,6 +138,14 @@ export default function ReportsPage() {
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>إقفال الكاشير اليومي</h1>
       <CashierClosingDetail period={period} from={from} to={to} filterBar={bar} onBack={()=>setView('home')}/>
+    </div>
+  )
+
+  if (view==='transfers') return (
+    <div style={{fontFamily:font.family,direction:'rtl'}}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}} .spin-icon{animation:spin .8s linear infinite}`}</style>
+      <h1 style={{...pageTitle,marginBottom:16}}><PageIcon/>التحويلات بين الفروع</h1>
+      <TransferDetail period={period} from={from} to={to} filterBar={bar} onBack={()=>setView('home')}/>
     </div>
   )
 
@@ -264,6 +280,21 @@ export default function ReportsPage() {
               {label:'أصناف مختلفة',value:wasteStats.items,color:colors.text},
             ]}
             onClick={()=>setView('waste')}
+          />
+        </div>}
+        {hasInv && transferStats.branches > 1 && <div className="su" style={{animationDelay:'.32s'}}>
+          <ReportCard
+            title="التحويلات بين الفروع"
+            subtitle="ما أرسله واستلمه كل فرع من المخزون"
+            icon={<ArrowLeftRight size={20} strokeWidth={1.75}/>}
+            color={colors.primary}
+            loading={statsLoading}
+            chartData={[]}
+            stats={[
+              {label:'عدد التحويلات',value:transferStats.count,color:colors.text,highlight:true},
+              {label:'أصناف مختلفة',value:transferStats.items,color:colors.text},
+            ]}
+            onClick={()=>setView('transfers')}
           />
         </div>}
       </div>

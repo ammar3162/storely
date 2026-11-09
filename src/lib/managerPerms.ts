@@ -67,7 +67,7 @@ export const API_GUARDS: Record<string, { read?: Rule; write?: Rule }> = {
   '/api/period-locks': { read: OWNER, write: OWNER },
   '/api/backup': { read: OWNER, write: OWNER },
   '/api/branch-comparison': { read: OWNER, write: OWNER },
-  '/api/branch-transfer': { read: ['transfer'], write: ['transfer'] },
+  '/api/branch-transfer': { read: ['transfer', 'reports'], write: ['transfer'] },
   '/api/delete-branch': { read: OWNER, write: OWNER },
   '/api/delete-account': { read: OWNER, write: OWNER },
   '/api/setup-progress': { read: OWNER, write: OWNER },

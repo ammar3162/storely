@@ -24,7 +24,7 @@ export async function GET(req: Request) {
   const myName = myBranch ? ((branchRows || []) as any[]).find(b => b.id === myBranch)?.name || '' : ''
   let q = db
     .from('stock_movements')
-    .select('id,type,qty_change,note,created_at,branch_id,products!inner(name,unit,org_id)')
+    .select('id,type,qty_change,note,created_at,branch_id,profile_id,products!inner(name,unit,org_id)')
     .eq('products.org_id', org_id)
     .eq('type', 'transfer_out')
     .order('created_at', { ascending: false })
@@ -35,7 +35,12 @@ export async function GET(req: Request) {
 
   if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   // المدير يشوف التحويلات من فرعه وإليه بس
-  const transfers = myBranch ? ((data || []) as any[]).filter(t => t.branch_id === myBranch || (myName && t.note === `نقل إلى فرع ${myName}`)) : (data || [])
+  const rows = myBranch ? ((data || []) as any[]).filter(t => t.branch_id === myBranch || (myName && t.note === `نقل إلى فرع ${myName}`)) : ((data || []) as any[])
+  // مين سوّى التحويل (لتقرير التحويلات)
+  const pids = Array.from(new Set(rows.map(t => t.profile_id).filter(Boolean)))
+  const { data: people } = pids.length ? await db.from('profiles').select('id,full_name').eq('org_id', org_id).in('id', pids) : { data: [] as any[] }
+  const nameOf = new Map(((people || []) as any[]).map(p => [p.id, p.full_name]))
+  const transfers = rows.map(({ profile_id, ...t }) => ({ ...t, by: nameOf.get(profile_id) || null }))
   return NextResponse.json({ success: true, transfers, branches: branchRows || [], myBranch })
 }
 
