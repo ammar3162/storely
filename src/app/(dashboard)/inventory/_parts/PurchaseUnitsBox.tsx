@@ -12,7 +12,7 @@ import { C } from './constants'
 
 const PURCHASE_UNITS = ['كرتون', 'كيس', 'شدة', 'صندوق', 'علبة', 'باكيت', 'درزن', 'جالون', 'ربطة']
 
-export default function PurchaseUnitsBox({ productId, stockUnit, inp, lbl }: { productId: string | null; stockUnit: string; inp: () => React.CSSProperties; lbl: React.CSSProperties }) {
+export default function PurchaseUnitsBox({ productId, stockUnit, inp, lbl, onChange }: { productId: string | null; stockUnit: string; inp: () => React.CSSProperties; lbl: React.CSSProperties; onChange?: () => void }) {
   const [units, setUnits] = useState<{ unit: string; factor: number }[]>([])
   const [unit, setUnit] = useState('كرتون')
   const [factor, setFactor] = useState('')
@@ -40,12 +40,13 @@ export default function PurchaseUnitsBox({ productId, stockUnit, inp, lbl }: { p
     setUnits(list => [...list.filter(x => x.unit !== u), { unit: u, factor: f }].sort((a, b) => a.factor - b.factor))
     setFactor('')
     toast(`حُفظ: 1 ${u} = ${f} ${stockUnit}`)
+    onChange?.()
   }
   async function remove(u: string) {
     setBusy(true)
     const r = await api.del('/api/product-units', undefined, { org_id: await getOrgId(), product_id: productId, unit: u })
     setBusy(false)
-    if (r.success) setUnits(list => list.filter(x => x.unit !== u))
+    if (r.success) { setUnits(list => list.filter(x => x.unit !== u)); onChange?.() }
   }
 
   return (

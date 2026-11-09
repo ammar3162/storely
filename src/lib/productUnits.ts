@@ -63,13 +63,17 @@ export function conversionFactor(stockUnit: string | null | undefined, purchaseU
   return null
 }
 
+/** «2 كرتون و6 كيس» — الكمية بأكبر وحدة شراء (فاضي لو أقل من وحدة شراء وحدة أو ما فيه وحدات) */
+export function breakdownQty(qty: number, stockUnit: string, units: { unit: string; factor: number }[] | null | undefined): string {
+  const big = [...(units || [])].filter(u => u.factor > 1).sort((a, b) => b.factor - a.factor)[0]
+  if (!big || !(qty >= big.factor)) return ''
+  const whole = Math.floor(qty / big.factor), rest = round(qty - whole * big.factor)
+  return `${whole} ${big.unit}${rest > 0 ? ` و${rest} ${stockUnit}` : ''}`
+}
 /** «30 كيس (2 كرتون و6 كيس)» — عرض المخزون بأكبر وحدة شراء */
 export function describeQty(qty: number, stockUnit: string, units: { unit: string; factor: number }[]): string {
-  const base = `${round(qty)} ${stockUnit}`
-  const big = [...units].filter(u => u.factor > 1).sort((a, b) => b.factor - a.factor)[0]
-  if (!big || qty < big.factor) return base
-  const whole = Math.floor(qty / big.factor), rest = round(qty - whole * big.factor)
-  return `${base} (${whole} ${big.unit}${rest > 0 ? ` و${rest} ${stockUnit}` : ''})`
+  const b = breakdownQty(qty, stockUnit, units)
+  return `${round(qty)} ${stockUnit}${b ? ` (${b})` : ''}`
 }
 const round = (n: number) => Math.round(n * 1000) / 1000
 

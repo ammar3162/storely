@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { branchFeatureDenied } from '@/lib/featureRoutes'
+import { loadUnitMap } from '@/lib/productUnits'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -59,6 +60,12 @@ export async function GET(req: Request) {
     const { data, error } = await q.order(sort, { ascending: true })
 
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+    // صفحة المخزون (full): وحدات الشراء لكل صنف — لعرض «30 كيس (2 كرتون و6 كيس)»
+    if (full && data?.length) {
+      const units = await loadUnitMap(sb(), org_id, (data as any[]).map(p => p.id))
+      const list = (data as any[]).map(p => ({ ...p, purchase_units: Object.entries(units.get(p.id) || {}).map(([unit, factor]) => ({ unit, factor })) }))
+      return NextResponse.json({ success: true, products: list })
+    }
     return NextResponse.json({ success: true, products: data || [] })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })

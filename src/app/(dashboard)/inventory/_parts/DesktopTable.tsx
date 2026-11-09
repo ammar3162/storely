@@ -1,5 +1,6 @@
 'use client'
 import { StorelyStatusBadge, StorelyTableAction, StorelyTableActionGroup } from '@/components/ui'
+import { breakdownQty } from '@/lib/productUnits'
 import { C } from './constants'
 import type { InventoryState } from './useInventory'
 
@@ -26,7 +27,8 @@ export default function DesktopTable({ m }: { m: InventoryState }) {
                     </div>
                   </td>
                   <td style={{color:C.text3}}>{p.category||'—'}</td>
-                  <td style={{whiteSpace:'nowrap'}}><span className="iv-qty" style={{color:isOut?C.danger:isLow?C.warning:C.text}}>{p.qty}</span> <span className="iv-unit">{p.unit}</span></td>
+                  <td style={{whiteSpace:'nowrap'}}><span className="iv-qty" style={{color:isOut?C.danger:isLow?C.warning:C.text}}>{p.qty}</span> <span className="iv-unit">{p.unit}</span>
+                    {breakdownQty(Number(p.qty)||0, p.unit, p.purchase_units) && <div style={{fontSize:12,color:C.text3,marginTop:2}}>{breakdownQty(Number(p.qty)||0, p.unit, p.purchase_units)}</div>}</td>
                   <td style={{color:C.text3,whiteSpace:'nowrap'}}>{p.reorder_point} {p.unit}</td>
                   <td>{isOut ? <StorelyStatusBadge status="danger">نافد</StorelyStatusBadge> : isLow ? <StorelyStatusBadge status="warning">منخفض</StorelyStatusBadge> : <StorelyStatusBadge status="success">كافٍ</StorelyStatusBadge>}</td>
                   <td style={{textAlign:'left',width:120}} onClick={e=>e.stopPropagation()}>

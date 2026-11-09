@@ -8,7 +8,7 @@ import type { InventoryState } from './useInventory'
 import PurchaseUnitsBox from './PurchaseUnitsBox'
 
 export default function ProductSheet({ m }: { m: InventoryState }) {
-  const { showAdd, setShowAdd, saving, editItem, setEditItem, addQty, setAddQty, setConfirm, form, setForm, setShowScan, businessType, lbl, inp, handleSave } = m
+  const { showAdd, setShowAdd, saving, editItem, setEditItem, addQty, setAddQty, setConfirm, form, setForm, setShowScan, businessType, lbl, inp, handleSave, load } = m
   return (
     <>
       {/* Add/Edit Sheet */}
@@ -58,7 +58,7 @@ export default function ProductSheet({ m }: { m: InventoryState }) {
                   </div>
 
                   {/* وحدات الشراء: الفاتورة بالكرتون → المخزون بوحدة الصنف */}
-                  <PurchaseUnitsBox productId={editItem?.id || null} stockUnit={form.unit} inp={inp} lbl={lbl}/>
+                  <PurchaseUnitsBox productId={editItem?.id || null} stockUnit={form.unit} inp={inp} lbl={lbl} onChange={()=>load(true)}/>
 
                   {/* تحويل الوحدة الدقيقة — لدقة استخدام هذا المنتج بالوصفات */}
                   <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:12}}>
