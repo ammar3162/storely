@@ -5,6 +5,7 @@ import { unitsFor, catsFor } from '@/lib/businessTypes'
 import { T } from './strings'
 import { apLbl, apInp } from './styles'
 import type { StaffDispense } from './useStaffDispense'
+import SheetTop, { sheetStyle } from './SheetTop'
 
 export default function AddProductModal({ m }: { m: StaffDispense }) {
   const { lang, bizType, showAddProduct, setShowAddProduct, newProduct, setNewProduct, savingProduct, addProduct, addMode, setAddMode, pickSearch, setPickSearch, picked, setPicked, products } = m
@@ -20,8 +21,8 @@ export default function AddProductModal({ m }: { m: StaffDispense }) {
       {/* Add product modal */}
       {showAddProduct && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:200,backdropFilter:'blur(4px)'}} onClick={()=>setShowAddProduct(false)}>
-          <div style={{background:'white',borderRadius:'24px 24px 0 0',padding:28,width:'100%',maxWidth:480,animation:'slideUp .3s ease'}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:18,fontWeight:600,color:'var(--storely-text)',marginBottom:14}}>{T('addToStock',lang)}</div>
+          <div style={sheetStyle} onClick={e=>e.stopPropagation()}>
+            <SheetTop lang={lang} onBack={()=>setShowAddProduct(false)} title={T('addToStock',lang)}/>
             {/* منتج موجود (بحث + كمية) أو منتج جديد */}
             <div style={{display:'flex',gap:4,background:'#f4f5f6',padding:4,borderRadius:12,marginBottom:16}}>
               <button type="button" onClick={()=>setAddMode('existing')} style={tabBtn(existing)}>{T('existingProd',lang)}</button>

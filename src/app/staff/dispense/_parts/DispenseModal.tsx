@@ -1,6 +1,7 @@
 'use client'
 import { T, WASTE_KEYS } from './strings'
 import type { StaffDispense } from './useStaffDispense'
+import SheetTop, { sheetStyle } from './SheetTop'
 
 export default function DispenseModal({ m }: { m: StaffDispense }) {
   const { lang, selected, setSelected, dispenseQty, setDispenseQty, wasteMode, setWasteMode, wasteReason, setWasteReason, wasteNote, setWasteNote, submitting, WASTE_REASONS, tx, handleDispense, handleWaste } = m
@@ -9,15 +10,11 @@ export default function DispenseModal({ m }: { m: StaffDispense }) {
       {/* Dispense modal */}
       {selected && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:200,backdropFilter:'blur(4px)'}} onClick={()=>{setSelected(null);setDispenseQty('');setWasteMode(false);setWasteReason('');setWasteNote('')}}>
-          <div style={{background:'white',borderRadius:'24px 24px 0 0',padding:28,width:'100%',maxWidth:480,animation:'slideUp .3s ease'}} onClick={e=>e.stopPropagation()}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:20}}>
-              <div>
-                <div style={{fontSize:20,fontWeight:600,color:'var(--storely-text)'}}>{tx(selected.name)}</div>
-                {lang!=='ar'&&<div style={{fontSize:12,color:'#4b5565',marginTop:2}}>{selected.name}</div>}
-                <div style={{fontSize:13,color:'#4b5565',marginTop:4}}>{T('available',lang)}: <b style={{color:selected.qty<=selected.reorder_point?'#dc2626':'#203640'}}>{selected.qty} {selected.unit}</b></div>
-              </div>
-              <button onClick={()=>{setSelected(null);setDispenseQty('');setWasteMode(false);setWasteReason('');setWasteNote('')}} style={{background:'#eceef1',border:'none',borderRadius:'50%',width:36,height:36,color:'#4b5565',fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
-            </div>
+          <div style={sheetStyle} onClick={e=>e.stopPropagation()}>
+            <SheetTop lang={lang} onBack={()=>{setSelected(null);setDispenseQty('');setWasteMode(false);setWasteReason('');setWasteNote('')}} title={tx(selected.name)}>
+              {lang!=='ar'&&<div style={{fontSize:12,color:'#4b5565',marginTop:2}}>{selected.name}</div>}
+              <div style={{fontSize:13,color:'#4b5565',marginTop:4}}>{T('available',lang)}: <b style={{color:selected.qty<=selected.reorder_point?'#dc2626':'#203640'}}>{selected.qty} {selected.unit}</b></div>
+            </SheetTop>
             <div style={{display:'flex',gap:8,marginBottom:20,background:'#eceef1',borderRadius:12,padding:4}}>
               <button onClick={()=>setWasteMode(false)} style={{flex:1,padding:'10px',borderRadius:9,border:'none',background:!wasteMode?'white':'transparent',color:!wasteMode?'#203640':'#6b7487',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',boxShadow:!wasteMode?'0 1px 3px rgba(0,0,0,.1)':'none'}}>
                 {T('normalOut',lang)}
