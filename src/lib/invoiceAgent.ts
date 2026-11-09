@@ -1,7 +1,7 @@
 // وكيل الفواتير: يقرر لكل صنف بالفاتورة — واضح (يتسجل على صنف المخزون) ولا يحتاج سؤال العميل.
 // يعتمد على اللي تعلّمه من إجابات العميل السابقة (product_aliases) ثم تشابه الأسماء.
 import { normalizeName, nameScore } from '@/lib/productMatch'
-import { conversionFactor, normalizeUnit, sameUnit } from '@/lib/productUnits'
+import { conversionFactor, normalizeUnit } from '@/lib/productUnits'
 
 export type AgentProduct = { id: string; name: string; unit?: string | null }
 export type Candidate = { id: string; name: string; unit?: string | null; score: number }
@@ -63,21 +63,17 @@ export function settle(it: AgentItem): AgentItem {
   if (!it.total) return { ...it, status: 'ask', question: 'missing_price' }
   // المخزون يحتاج كمية، المشتريات (مصروف) يكفيها السعر
   if (!it.qty && chosen !== 'expense') return { ...it, status: 'ask', question: 'missing_qty' }
-  // صنف موجود ووحدة الفاتورة غيرها (كرتون والمخزون بالكيس) وما نعرف كم فيه → نسأل مرة وحدة وننحفظ للصنف
-  if (chosen === 'matched' && it.unit && it.stock_unit && !sameUnit(it.unit, it.stock_unit) && !(Number(it.factor) > 0))
-    return { ...it, status: 'ask', question: 'unit_factor' }
   return { ...it, status: chosen, question: null }
 }
 
 /** يطبّق إجابة العميل على صنف */
 export function applyAnswer(it: AgentItem, a: { action: 'match' | 'new' | 'expense' | 'skip' | 'set'; product_id?: string; product_name?: string | null; qty?: number; total?: number
-  factor?: number; stock_unit?: string | null; known_factor?: number | null; unit?: string }): AgentItem {
+  factor?: number; stock_unit?: string | null; known_factor?: number | null }): AgentItem {
   const next: AgentItem = { ...it }
   if (a.action === 'set') {
     if (Number(a.qty) > 0) next.qty = Number(a.qty)
     if (Number(a.total) > 0) next.total = Number(a.total)
-    // تغيير وحدة سطر الفاتورة (الفاتورة كاتبة «حبة» وهي كرتون): التحويل يُعاد من المحفوظ، وإلا يُسأل
-    if (typeof a.unit === 'string' && normalizeUnit(a.unit)) { next.unit = normalizeUnit(a.unit); next.factor = a.known_factor ?? null }
+    // «كم يدخل المخزون؟» — العميل يكتب الكمية بوحدة المخزون، ومنها المعامل (24 كيس ÷ 2 كرتون = 12)
     if (Number(a.factor) > 0 && Number(a.factor) <= 100000) next.factor = Number(a.factor)
     if (next.status === 'skip') return next
   } else if (a.action === 'match' && a.product_id) {

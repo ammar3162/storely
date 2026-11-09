@@ -55,26 +55,19 @@ describe('invoice agent', () => {
   })
 })
 
-describe('invoice unit differs from the stock unit', () => {
+describe('«كم يدخل المخزون؟» (invoice unit vs stock unit)', () => {
   const products = [{ id: 'p1', name: 'سكر أبيض', unit: 'كيس' }]
-  it('asks «how many bags in a carton?» once, then converts', () => {
+  it('never blocks: a different unit with no saved conversion stays matched (1:1 until the owner corrects it)', () => {
     const [it1] = classifyItems([{ name: 'سكر أبيض', qty: 2, unit: 'كرتون', total: 240 }], products, {})
-    expect(it1).toMatchObject({ status: 'ask', question: 'unit_factor', stock_unit: 'كيس', unit: 'كرتون' })
-    const answered = applyAnswer(it1, { action: 'set', factor: 12 })
-    expect(answered).toMatchObject({ status: 'matched', factor: 12 })
+    expect(it1).toMatchObject({ status: 'matched', stock_unit: 'كيس', unit: 'كرتون', factor: null })
+    expect(applyAnswer(it1, { action: 'set', factor: 12 })).toMatchObject({ status: 'matched', factor: 12 })
   })
-  it('changing the line unit (invoice says «حبة» but it is a carton) asks for the conversion, or uses a saved one', () => {
-    const [it0] = classifyItems([{ name: 'سكر أبيض', qty: 2, unit: 'كيس', total: 240 }], products, {})
-    expect(it0).toMatchObject({ status: 'matched' })
-    const asked = applyAnswer(it0, { action: 'set', unit: 'كرتون', known_factor: null })
-    expect(asked).toMatchObject({ unit: 'كرتون', status: 'ask', question: 'unit_factor' })
-    expect(applyAnswer(it0, { action: 'set', unit: 'كرتون', known_factor: 12 })).toMatchObject({ unit: 'كرتون', status: 'matched', factor: 12 })
-  })
-  it('a saved conversion needs no question; same unit needs none', () => {
-    const units = new Map([['p1', { 'كرتون': 12 }]])
-    const [a] = classifyItems([{ name: 'سكر أبيض', qty: 2, unit: 'cartoon', total: 240 }], products, {}, units)
+  it('a saved conversion fills itself — even when the invoice writes the stock unit («حبة» that is really 50)', () => {
+    const [a] = classifyItems([{ name: 'سكر أبيض', qty: 2, unit: 'cartoon', total: 240 }], products, {}, new Map([['p1', { 'كرتون': 12 }]]))
     expect(a).toMatchObject({ status: 'matched', factor: 12, unit: 'كرتون' })
     const [b] = classifyItems([{ name: 'سكر أبيض', qty: 3, unit: 'أكياس', total: 30 }], products, {})
     expect(b).toMatchObject({ status: 'matched', factor: 1 })
+    const [c] = classifyItems([{ name: 'سكر أبيض', qty: 1, unit: 'كيس', total: 30 }], products, {}, new Map([['p1', { 'كيس': 50 }]]))
+    expect(c).toMatchObject({ factor: 50 })
   })
 })

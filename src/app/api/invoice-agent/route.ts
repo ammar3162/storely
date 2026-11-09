@@ -122,14 +122,14 @@ export async function PATCH(req: Request) {
         // يتعلم: المرة الجاية نفس الاسم ينربط بدون سؤال
         await db.from('product_aliases').upsert({ org_id, product_id: (p as any).id, alias_norm: aliasKey(items[i].name) } as any, { onConflict: 'org_id,alias_norm' })
       }
-      // تغيير وحدة السطر: نشوف لو التحويل محفوظ للصنف (وإلا يُسأل «كم … في …؟»)
-      if (body.action === 'set' && typeof body.unit === 'string' && items[i].product_id)
-        knownFactor = conversionFactor(items[i].stock_unit, body.unit, (await loadUnitMap(db, org_id, [items[i].product_id!])).get(items[i].product_id!))
-      // جواب «كم كيس في الكرتون؟» ينحفظ للصنف — الفواتير الجاية تتحول بدون سؤال
-      if (body.action === 'set' && Number(body.factor) > 0 && items[i].product_id && items[i].unit)
-        await saveProductUnit(db, org_id, items[i].product_id!, items[i].stock_unit, items[i].unit!, Number(body.factor))
+      // «كم يدخل المخزون؟»: الكمية بوحدة المخزون ÷ كمية الفاتورة = المعامل، وينحفظ للصنف (الفاتورة الجاية تتعبّى لحالها)
+      let factor: number | undefined
+      if (body.action === 'set' && Number(body.stock_qty) > 0 && Number(items[i].qty) > 0 && items[i].product_id) {
+        factor = Math.round(Number(body.stock_qty) / Number(items[i].qty) * 10000) / 10000
+        if (items[i].unit) await saveProductUnit(db, org_id, items[i].product_id!, items[i].stock_unit, items[i].unit!, factor)
+      }
       items = items.map((it, j) => j === i ? applyAnswer(it, { action: body.action, product_id: body.product_id, product_name: productName, qty: body.qty, total: body.total,
-        factor: body.factor, stock_unit: stockUnit, known_factor: knownFactor, unit: typeof body.unit === 'string' ? body.unit.slice(0, 30) : undefined }) : it)
+        factor, stock_unit: stockUnit, known_factor: knownFactor }) : it)
       update.items = items
     }
     update.status = draftStatus(items)

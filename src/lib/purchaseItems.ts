@@ -3,7 +3,7 @@ import { netFromTotal } from '@/lib/vat'
 import { bestMatch } from '@/lib/productMatch'
 import type { PurchaseTax } from '@/lib/taxInvoice'
 import { branchFeatureDenied } from '@/lib/featureRoutes'
-import { conversionFactor, loadUnitMap, saveProductUnit, sameUnit, normalizeUnit } from '@/lib/productUnits'
+import { conversionFactor, loadUnitMap, saveProductUnit, normalizeUnit } from '@/lib/productUnits'
 
 // حفظ أصناف فاتورة وحدة (بعد قراءة الصورة): كل صنف سطر مشتريات، والمخزون:
 //   صنف موجود (اختاره المستخدم أو تطابق قوي بالاسم) → تزيد كميته ويتحدّث متوسط التكلفة
@@ -57,7 +57,7 @@ export async function saveInvoiceItems(db: SupabaseClient, o: {
     const amount = netFromTotal(it.total, o.hasVat)
     // تحويل وحدة الفاتورة لوحدة المخزون: إجابة العميل، ثم المحفوظ للصنف، ثم الثابت (كيلو=1000 غرام)، وإلا 1 (السلوك القديم)
     let factor = 1
-    if (target && !sameUnit(it.unit, target.unit)) {
+    if (target) {
       const known = conversionFactor(target.unit, it.unit, unitMap.get(target.id))
       factor = it.factor || known || 1
       if (it.factor && it.factor !== known) {
@@ -65,7 +65,8 @@ export async function saveInvoiceItems(db: SupabaseClient, o: {
         unitMap.set(target.id, { ...(unitMap.get(target.id) || {}), [normalizeUnit(it.unit)]: it.factor })
       }
     }
-    const stockQty = Math.round(it.qty * factor * 10000) / 10000
+    // المخزون بأعداد صحيحة (عمود qty عدد صحيح) — التحويل يُقرَّب لأقرب وحدة مخزون (بدون صفر)
+    const stockQty = factor === 1 ? it.qty : Math.max(1, Math.round(it.qty * factor))
 
     const { error } = await db.from('purchases').insert({
       org_id: o.orgId, branch_id: o.branchId, profile_id: o.profileId ?? null, category: 'مخزون', name, qty: it.qty || null, unit: target?.unit || it.unit,
@@ -78,7 +79,7 @@ export async function saveInvoiceItems(db: SupabaseClient, o: {
     // التكلفة لكل وحدة مخزون (الكرتون بـ 240 وفيه 24 كيس → الكيس بـ 10)
     const unitCost = amount / stockQty
     if (target) {
-      const conv = factor !== 1 ? ` (${it.qty} ${it.unit} × ${factor} ${target.unit})` : ''
+      const conv = factor !== 1 ? ` (${it.qty} ${it.unit} = ${stockQty} ${target.unit})` : ''
       await db.from('stock_movements').insert({ product_id: target.id, org_id: o.orgId, profile_id: o.profileId ?? null, type: 'in', qty_change: stockQty,
         note: `شراء من: ${o.supplier}${conv}${by}`, ...(o.createdAt ? { created_at: o.createdAt } : {}) } as any)
       const oldQty = Number(target.qty) || 0, oldAvg = Number(target.avg_cost) || 0

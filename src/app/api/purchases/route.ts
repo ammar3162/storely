@@ -8,7 +8,7 @@ import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { currencySymbol } from '@/lib/currencySymbol'
 import { branchFeatureDenied } from '@/lib/featureRoutes'
-import { conversionFactor, loadUnitMap, saveProductUnit, sameUnit } from '@/lib/productUnits'
+import { conversionFactor, loadUnitMap, saveProductUnit } from '@/lib/productUnits'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -150,13 +150,11 @@ export async function POST(req: Request) {
       if (existing) {
         if (body.sku && !existing.sku) await db.from('products').update({ sku: body.sku } as any).eq('id', existing.id)
         // وحدة الفاتورة غير وحدة المخزون (كرتون والصنف بالكيس): المعامل المرسل، ثم المحفوظ للصنف، وإلا 1
-        let factor = 1
-        if (body.unit && !sameUnit(body.unit, existing.unit)) {
-          const sent = Number(body.unit_factor) > 0 && Number(body.unit_factor) <= 100000 ? Number(body.unit_factor) : 0
-          factor = sent || conversionFactor(existing.unit, body.unit, (await loadUnitMap(db, org_id, [existing.id])).get(existing.id)) || 1
-          if (sent) await saveProductUnit(db, org_id, existing.id, existing.unit, body.unit, sent)
-        }
-        const stockQty = qty * factor
+        // «كم يدخل المخزون؟» من النموذج (unit_factor = المخزون ÷ الكمية)، وإلا المحفوظ للصنف، وإلا 1
+        const sent = Number(body.unit_factor) > 0 && Number(body.unit_factor) <= 100000 ? Number(body.unit_factor) : 0
+        const factor = sent || conversionFactor(existing.unit, body.unit || existing.unit, (await loadUnitMap(db, org_id, [existing.id])).get(existing.id)) || 1
+        if (sent) await saveProductUnit(db, org_id, existing.id, existing.unit, body.unit || existing.unit, sent)
+        const stockQty = factor === 1 ? qty : Math.max(qty > 0 ? 1 : 0, Math.round(qty * factor))   // المخزون أعداد صحيحة
         const stockCost = stockQty > 0 ? (amount || 0) / stockQty : 0
         if (stockQty > 0) {
           await db.from('stock_movements').insert({ product_id: existing.id, org_id, profile_id: access.userId, type: 'in', qty_change: stockQty,

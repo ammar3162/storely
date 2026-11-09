@@ -8,7 +8,7 @@ import type { InventoryState } from './useInventory'
 import UnitsSection from './UnitsSection'
 
 export default function ProductSheet({ m }: { m: InventoryState }) {
-  const { showAdd, setShowAdd, saving, editItem, setEditItem, addQty, setAddQty, setConfirm, form, setForm, setShowScan, businessType, lbl, inp, handleSave, load } = m
+  const { showAdd, setShowAdd, saving, editItem, setEditItem, addQty, setAddQty, setConfirm, form, setForm, setShowScan, businessType, lbl, inp, handleSave } = m
   return (
     <>
       {/* Add/Edit Sheet */}
@@ -57,8 +57,8 @@ export default function ProductSheet({ m }: { m: InventoryState }) {
                     <input type="date" value={form.expiry_date} onChange={e=>setForm({...form,expiry_date:e.target.value})} style={inp()}/>
                   </div>
 
-                  {/* تحويل الوحدات (مطوي): الشراء بالكرتون + الوحدة الدقيقة للوصفات */}
-                  <UnitsSection productId={editItem?.id || null} form={form} setForm={setForm} inp={inp} lbl={lbl} onChange={()=>load(true)}/>
+                  {/* الوحدة الدقيقة للوصفات (مطوي) — تحويل الشراء يُتعلّم من «كم يدخل المخزون» بالفاتورة */}
+                  <UnitsSection form={form} setForm={setForm} inp={inp} lbl={lbl}/>
 
                   {editItem?(
                     <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:12}}>

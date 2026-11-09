@@ -294,11 +294,10 @@ describe.skipIf(!enabled)('integration (staging) — inventory', async () => {
     }, 180_000)
   })
 
-  describe('purchase units (invoice in cartons, stock in bags)', () => {
-    it('asks «how many bags in a carton?» once, adds 24 bags for 2 cartons at the bag cost, then converts on its own', async () => {
+  describe('«كم يدخل المخزون؟» (invoice in cartons, stock in bags)', () => {
+    it('owner types 24 bags for 2 cartons once → 24 in stock at the bag cost; the next invoice fills 12 per carton on its own', async () => {
       const agent = await import('@/app/api/invoice-agent/route')
       const confirm = await import('@/app/api/invoice-agent/confirm/route')
-      const units = await import('@/app/api/product-units/route')
       const { data: bag } = await db.from('products').insert({ org_id: orgId, branch_id: branchA, name: `سكر أكياس ${stamp}`, unit: 'كيس', qty: 0, is_active: true } as any).select('id,name').single()
       const sugar = bag as any
       const image = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/invoices/${orgId}/units-${stamp}.jpg`
@@ -306,29 +305,21 @@ describe.skipIf(!enabled)('integration (staging) — inventory', async () => {
       try {
         ocrFixture.current = { ok: true, data: { supplier: 'مورد الوحدات', invoice_date: today, has_vat: false, total_amount: 240, items: [{ name: sugar.name, qty: 2, unit: 'cartoon', total: 240 }] } }
         let d = (await call(agent.POST, 'POST', '/api/invoice-agent', { org_id: orgId, branch_id: branchA, image: 'x', mediaType: 'image/jpeg', invoice_image: image })).json.draft
-        expect(d.items[0]).toMatchObject({ status: 'ask', question: 'unit_factor', unit: 'كرتون', stock_unit: 'كيس' })
-        d = (await call(agent.PATCH, 'PATCH', '/api/invoice-agent', { org_id: orgId, id: d.id, index: 0, action: 'set', factor: 12 })).json.draft
+        // ما يوقف الحفظ — جاهز، والعميل يقدر يصحّح «يدخل المخزون»
+        expect(d.items[0]).toMatchObject({ status: 'matched', unit: 'كرتون', stock_unit: 'كيس', factor: null })
+        d = (await call(agent.PATCH, 'PATCH', '/api/invoice-agent', { org_id: orgId, id: d.id, index: 0, action: 'set', stock_qty: 24 })).json.draft
         expect(d.items[0]).toMatchObject({ status: 'matched', factor: 12 })
-        expect(d.status).toBe('ready')
         expect((await call(confirm.POST, 'POST', '/api/invoice-agent/confirm', { org_id: orgId, id: d.id })).status).toBe(200)
         const p1 = (await db.from('products').select('qty,avg_cost').eq('id', sugar.id).single()).data as any
         expect(Number(p1.qty)).toBe(24)
         expect(Number(p1.avg_cost)).toBeCloseTo(10, 4)
-        // انحفظ للصنف — يظهر بشاشة الصنف
-        expect((await call(units.GET, 'GET', `/api/product-units?org_id=${orgId}&product_id=${sugar.id}`)).json.units).toEqual([{ unit: 'كرتون', factor: 12 }])
 
-        // الفاتورة الجاية: بدون سؤال
+        // الفاتورة الجاية: يتعبّى لحاله (1 كرتون = 12 كيس)
         ocrFixture.current = { ok: true, data: { supplier: 'مورد الوحدات', invoice_date: today, has_vat: false, total_amount: 120, invoice_number: 'U2', items: [{ name: sugar.name, qty: 1, unit: 'كرتونة', total: 120 }] } }
         const d2 = (await call(agent.POST, 'POST', '/api/invoice-agent', { org_id: orgId, branch_id: branchA, image: 'x', mediaType: 'image/jpeg', invoice_image: image })).json.draft
         expect(d2.items[0]).toMatchObject({ status: 'matched', factor: 12 })
-        expect(d2.status).toBe('ready')
         expect((await call(confirm.POST, 'POST', '/api/invoice-agent/confirm', { org_id: orgId, id: d2.id, allow_duplicate: true })).status).toBe(200)
         expect(Number(((await db.from('products').select('qty').eq('id', sugar.id).single()).data as any).qty)).toBe(36)
-
-        // شاشة الصنف: نفس وحدة المخزون مرفوضة، وحذف الوحدة يرجّع السؤال
-        expect((await call(units.POST, 'POST', '/api/product-units', { org_id: orgId, product_id: sugar.id, unit: 'أكياس', factor: 2 })).status).toBe(400)
-        expect((await call(units.DELETE, 'DELETE', '/api/product-units', { org_id: orgId, product_id: sugar.id, unit: 'كرتون' })).status).toBe(200)
-        expect((await call(units.GET, 'GET', `/api/product-units?org_id=${orgId}&product_id=${sugar.id}`)).json.units).toEqual([])
       } finally {
         await db.from('purchases').delete().eq('org_id', orgId).eq('supplier', 'مورد الوحدات')
         await db.from('invoice_drafts').delete().eq('org_id', orgId)

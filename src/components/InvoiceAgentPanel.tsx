@@ -13,12 +13,15 @@ import { blobToBase64 } from '@/lib/zatcaScan'
 import InvoicePickButtons from '@/components/InvoicePickButtons'
 import NumberInput from '@/components/NumberInput'
 import { colors } from '@/lib/ds'
+import { normalizeUnit } from '@/lib/productUnits'
 
 type Cand = { id: string; name: string; unit?: string | null; score: number }
 type Item = { name: string; qty: number | null; unit: string | null; total: number | null; status: 'matched' | 'new' | 'expense' | 'skip' | 'ask'; product_id: string | null; product_name?: string | null; candidates: Cand[]; question?: string | null; learned?: boolean; stock_unit?: string | null; factor?: number | null }
 type Draft = { id: string; supplier: string | null; invoice_date: string | null; has_vat: boolean; total: number | null; items: Item[]; status: 'needs_review' | 'ready'; invoice_image: string | null; created_at: string }
 
 const fmt = (n: number | null | undefined) => (Number(n) || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })
+
+const normUnit = (u?: string | null) => normalizeUnit(u)
 
 export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onSaved, onManual, manualOpen }: {
   orgId: string; branchId: string | null; products: { id: string; name: string; unit?: string | null }[]; curr: string; onSaved: () => void
@@ -136,23 +139,11 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, minWidth: 160 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{it.name}</div>
-                      <div style={{ fontSize: 11.5, color: colors.text3, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                        {it.qty ? <>{it.qty}{' '}
-                          {/* وحدة السطر قابلة للتغيير (الفاتورة كاتبة «حبة» وهي كرتون) — لصنف مربوط بالمخزون */}
-                          {it.product_id && (it.status === 'matched' || it.question === 'unit_factor') ? (
-                            <select value={it.unit || ''} disabled={busy === d.id} aria-label="وحدة الشراء في الفاتورة"
-                              onChange={e => patch(d, { index: i, action: 'set', unit: e.target.value })}
-                              style={{ fontSize: 11.5, padding: '1px 4px', borderRadius: 6, border: `1px solid ${colors.border}`, background: 'white', color: colors.text, fontFamily: 'inherit' }}>
-                              {Array.from(new Set([it.unit, it.stock_unit, 'كرتون', 'كيس', 'شدة', 'صندوق', 'علبة', 'باكيت', 'درزن', 'ربطة'].filter(Boolean) as string[])).map(u => <option key={u} value={u}>{u}</option>)}
-                            </select>
-                          ) : <span>{it.unit || ''}</span>}
-                          {' · '}</> : it.status === 'expense' ? '' : 'الكمية ناقصة · '}{it.total ? `${fmt(it.total)} ${curr}` : 'السعر ناقص'}
+                      <div style={{ fontSize: 11.5, color: colors.text3, marginTop: 2 }}>
+                        {it.qty ? `${it.qty} ${it.unit || ''} · ` : it.status === 'expense' ? '' : 'الكمية ناقصة · '}{it.total ? `${fmt(it.total)} ${curr}` : 'السعر ناقص'}
                       </div>
                     </div>
                     {it.status === 'matched' && <span style={pill(colors.primaryLight, colors.primary)}><Check size={12} /> مخزون: {it.product_name}{it.learned ? ' (تعلّمها)' : ''}</span>}
-                    {it.status === 'matched' && it.qty && it.factor && it.factor !== 1 && it.stock_unit && (
-                      <span style={pill('#f1f5f9', colors.text2)}>يُضاف {Math.round(it.qty * it.factor * 1000) / 1000} {it.stock_unit} ({it.qty} {it.unit} × {it.factor})</span>
-                    )}
                     {it.status === 'new' && <span style={pill('#eff6ff', '#1d4ed8')}><Plus size={12} /> مخزون: صنف جديد</span>}
                     {it.status === 'expense' && <span style={pill('#faf5ff', '#7e22ce')}><Receipt size={12} /> مشتريات — لا تُضاف إلى المخزون</span>}
                     {(it.status === 'new' || it.status === 'expense') && (
@@ -190,20 +181,22 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                       </div>
                     </div>
                   )}
-                  {it.status === 'ask' && it.question === 'unit_factor' && (
-                    <div style={{ marginTop: 10 }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#92400e', marginBottom: 6 }}>
-                        «{it.product_name}» مخزّن بـ{it.stock_unit}، والفاتورة بـ{it.unit}. كم {it.stock_unit} في {it.unit} الواحد؟
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 12.5, color: colors.text2 }}>1 {it.unit} =</span>
-                        <NumberInput placeholder="مثال: 12" style={{ width: 90, padding: '7px 9px', borderRadius: 8, border: `1px solid ${colors.border}`, fontSize: 13 }}
-                          onBlur={(e: any) => { const v = Number(e.target.value); if (v > 0) patch(d, { index: i, action: 'set', factor: v }) }} />
+                  {/* «كم يدخل المخزون؟» — بوحدة الصنف. افتراضياً نفس كمية الفاتورة (أو المحفوظ من فاتورة سابقة)، والعميل يعدّله لو الكرتون فيه أكثر */}
+                  {it.status === 'matched' && it.qty && it.stock_unit && (() => {
+                    const stockQty = Math.round(it.qty * (it.factor || 1))
+                    const unclear = !it.factor && !!it.unit && normUnit(it.unit) !== normUnit(it.stock_unit)
+                    return (
+                      <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 12.5, fontWeight: 600, color: colors.text }}>يدخل المخزون:</span>
+                        <NumberInput key={`${d.id}-${i}-${stockQty}`} defaultValue={String(stockQty)} disabled={busy === d.id} aria-label="الكمية التي تدخل المخزون"
+                          style={{ width: 90, padding: '6px 9px', borderRadius: 8, border: `1px solid ${unclear ? '#f59e0b' : colors.border}`, fontSize: 13 }}
+                          onBlur={(e: any) => { const v = Math.round(Number(e.target.value)); if (v > 0 && v !== stockQty) patch(d, { index: i, action: 'set', stock_qty: v }) }} />
                         <span style={{ fontSize: 12.5, color: colors.text2 }}>{it.stock_unit}</span>
+                        {it.factor && it.factor !== 1 && <span style={{ fontSize: 11.5, color: colors.text3 }}>(محفوظ من فاتورة سابقة)</span>}
+                        {unclear && <span style={{ fontSize: 11.5, color: '#b45309', flexBasis: '100%' }}>الفاتورة بـ{it.unit} والمخزون بـ{it.stock_unit} — اكتب كم {it.stock_unit} دخل فعلاً.</span>}
                       </div>
-                      <div style={{ fontSize: 11.5, color: colors.text3, marginTop: 6 }}>نحفظها لهذا الصنف، وتُحوَّل تلقائياً في الفواتير القادمة.</div>
-                    </div>
-                  )}
+                    )
+                  })()}
                   {it.status === 'ask' && (it.question === 'missing_price' || it.question === 'missing_qty') && (
                     <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <span style={{ fontSize: 12.5, fontWeight: 700, color: '#92400e' }}>{it.question === 'missing_price' ? 'كم سعره شامل الضريبة؟' : 'كم الكمية؟'}</span>

@@ -14,7 +14,6 @@ import { getMe } from '@/lib/session'
 import { toast } from '@/components/toast'
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh'
 import { confirmDialog } from '@/components/ConfirmDialog'
-import { conversionFactor, normalizeUnit, sameUnit } from '@/lib/productUnits'
 
 /** حالة صفحة المشتريات ودوالها — منقولة كما هي من page.tsx */
 export function usePurchases() {
@@ -192,11 +191,6 @@ export function usePurchases() {
     if(!orgId||submitting.current)return
     if(form.category==='مخزون'&&!form.name.trim()){toast('اكتب اسم الصنف','warning');return}
     if(!(Number(form.total_amount)>0)){toast('اكتب المبلغ الإجمالي','warning');return}
-    // صنف موجود بوحدة غير وحدته (كرتون والصنف بالقطعة) بدون تحويل معروف → لازم نعرف كم فيها قبل الحفظ
-    { const p=(form.category==='مخزون'&&isExisting)?products.find((x:any)=>x.name===form.name):null
-      if(p&&form.unit&&!sameUnit(form.unit,p.unit)&&!(Number(form.unit_factor)>0)
-        &&!conversionFactor(p.unit,form.unit,Object.fromEntries(((p.purchase_units||[]) as {unit:string;factor:number}[]).map(u=>[normalizeUnit(u.unit),u.factor])))){
-        toast(`حدد كم ${p.unit} في ${form.unit} الواحد`,'warning');return } }
     if(form.qty&&!(Number.isInteger(Number(form.qty))&&Number(form.qty)>=0)){toast('يجب أن تكون الكمية رقماً صحيحاً — إذا كانت فيها كسور فاستخدم وحدة أصغر (مثل الغرام بدل الكيلو)','warning');return}
     submitting.current=true
     if(!form.hasVat){toast('حدد هل الفاتورة تشمل الضريبة','warning');submitting.current=false;return}

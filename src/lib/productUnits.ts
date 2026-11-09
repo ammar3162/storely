@@ -53,9 +53,10 @@ const BUILTIN: [string, string, number][] = [
  */
 export function conversionFactor(stockUnit: string | null | undefined, purchaseUnit: string | null | undefined, saved?: Record<string, number> | null): number | null {
   const s = normalizeUnit(stockUnit), p = normalizeUnit(purchaseUnit)
-  if (!p || !s || p === s) return 1
-  const f = Number(saved?.[p])
+  // المحفوظ للصنف أول — حتى لو بنفس الاسم (الفاتورة تكتب «حبة» وهي كرتون فيه 50): العميل علّمنا «كم يدخل المخزون»
+  const f = p ? Number(saved?.[p]) : 0
   if (f > 0) return f
+  if (!p || !s || p === s) return 1
   for (const [from, to, n] of BUILTIN) {
     if (p === from && s === to) return n
     if (p === to && s === from) return 1 / n
@@ -65,7 +66,7 @@ export function conversionFactor(stockUnit: string | null | undefined, purchaseU
 
 /** «2 كرتون و6 كيس» — الكمية بأكبر وحدة شراء (فاضي لو أقل من وحدة شراء وحدة أو ما فيه وحدات) */
 export function breakdownQty(qty: number, stockUnit: string, units: { unit: string; factor: number }[] | null | undefined): string {
-  const big = [...(units || [])].filter(u => u.factor > 1).sort((a, b) => b.factor - a.factor)[0]
+  const big = [...(units || [])].filter(u => u.factor > 1 && !sameUnit(u.unit, stockUnit)).sort((a, b) => b.factor - a.factor)[0]
   if (!big || !(qty >= big.factor)) return ''
   const whole = Math.floor(qty / big.factor), rest = round(qty - whole * big.factor)
   return `${whole} ${big.unit}${rest > 0 ? ` و${rest} ${stockUnit}` : ''}`
@@ -98,7 +99,8 @@ export async function loadUnitMap(db: SupabaseClient, orgId: string, productIds:
 /** يحفظ (أو يحدّث) وحدة شراء لصنف — يتجاهل نفس وحدة المخزون والمعامل غير الصالح */
 export async function saveProductUnit(db: SupabaseClient, orgId: string, productId: string, stockUnit: string | null | undefined, unit: string, factor: number) {
   const u = normalizeUnit(unit)
-  if (!u || sameUnit(u, stockUnit) || !(factor > 0) || factor > 100000) return false
+  // نفس اسم وحدة المخزون ينحفظ بس لو المعامل غير 1 (الفاتورة تكتب «حبة» والمخزون يزيد 50)
+  if (!u || !(factor > 0) || factor > 100000 || (sameUnit(u, stockUnit) && factor === 1)) return false
   const { error } = await db.from('product_units').upsert({ org_id: orgId, product_id: productId, unit: u, factor: Math.round(factor * 10000) / 10000 } as any, { onConflict: 'product_id,unit' })
   return !error
 }

@@ -7,7 +7,7 @@ import { staffHasPermission, NO_PURCHASES } from '@/lib/staffPermission'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { staffFeatureError, branchFeatureDenied } from '@/lib/featureRoutes'
-import { conversionFactor, loadUnitMap, sameUnit } from '@/lib/productUnits'
+import { conversionFactor, loadUnitMap } from '@/lib/productUnits'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -84,8 +84,8 @@ export async function POST(req: Request) {
       if (existing && existing.length > 0) {
         // وحدة الشراء المحفوظة للصنف (كرتون = 12 كيس) — الموظف يكتب بالكرتون والمخزون يزيد بالكيس
         const ex = existing[0] as any
-        const factor = unit && !sameUnit(unit, ex.unit) ? (conversionFactor(ex.unit, unit, (await loadUnitMap(supabase, org_id, [ex.id])).get(ex.id)) || 1) : 1
-        const purchasedQty = Number(qty) * factor
+        const factor = conversionFactor(ex.unit, unit || ex.unit, (await loadUnitMap(supabase, org_id, [ex.id])).get(ex.id)) || 1
+        const purchasedQty = factor === 1 ? Number(qty) : Math.max(1, Math.round(Number(qty) * factor))   // المخزون أعداد صحيحة
         const unitCost = purchasedQty > 0 ? (Number(amount) || 0) / purchasedQty : 0
         const oldQty = Number(existing[0].qty) || 0
         const oldAvgCost = Number((existing[0] as any).avg_cost) || 0
