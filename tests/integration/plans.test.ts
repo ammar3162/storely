@@ -543,7 +543,7 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
       }
     }, 180_000)
 
-    it('a choice that was more expensive (2 branches) is re-checked: after a branch is closed, «apply now» from the admin switches it', async () => {
+    it('the choice is re-priced at apply time: picked with 2 branches (439), a branch is closed, «apply now» switches at 227', async () => {
       const sw = await import('@/app/api/pricing-switch/route')
       const adminSw = await import('@/app/api/admin/pricing-switches/route')
       const { monthlyBill } = await import('@/lib/orgBill')
@@ -558,9 +558,9 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
       const { data: extra } = await db.from('branches').insert({ org_id: orgId, name: 'فرع مؤقت', is_active: true } as any).select('id').single()
       const all = ['mod_inventory', 'mod_purchases', 'cashier_closing', 'hr_full', 'ai_tools']
       try {
-        // فرعين: كل المزايا = (59+35+49+69)×2 + 15 = 439 > 249 → يبقى على باقته
+        // فرعين: كل الخدمات = (59+35+49+69)×2 + 15 = 439 — أعلى من 249، ومع ذلك تُفعَّل عند التطبيق (قرار المالك)
         const save = await call(sw.POST, 'POST', '/api/pricing-switch', { org_id: orgId, modules: all })
-        expect(save.json).toMatchObject({ success: true, outcome: 'keep', current: 249, projected: 439 })
+        expect(save.json).toMatchObject({ success: true, outcome: 'switch', current: 249, projected: 439 })
         // الفرع الثاني انقفل → فرع واحد = 212 + 15 = 227 < 249
         await db.from('branches').update({ is_active: false } as any).eq('id', (extra as any).id)
         const r = await adminSw.POST(new Request('http://test/api/admin/pricing-switches', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify({ org_id: orgId }) }))

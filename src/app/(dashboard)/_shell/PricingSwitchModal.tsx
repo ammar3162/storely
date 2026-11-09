@@ -108,9 +108,7 @@ export default function PricingSwitchModal({ m }: { m: DashboardShell }) {
           <div style={{ padding: '0 22px 22px' }}>
             <div style={{ fontSize: 15, color: C.text, lineHeight: 1.9, marginBottom: 14 }}>
               شكراً لثقتكم، تم تسجيل اختياركم.
-              {done.outcome === 'switch'
-                ? <> تصبح فاتورتكم <b>{fmt(done.projected)} ⃁ شهرياً</b> بدلاً من {fmt(done.current)} ⃁، ابتداءً من تجديد اشتراككم القادم{renew ? ` في ${renew}` : ''}، وتبقى فاتورتكم الحالية كما هي حتى ذلك التاريخ.</>
-                : <> سعركم الحالي ({fmt(done.current)} ⃁ شهرياً) أقل من سعر هذه الخدمات، لذا ستبقون على باقتكم الحالية بسعرها دون أي تغيير.</>}
+              {' '}تُفعَّل خدماتكم الجديدة بفاتورة <b>{fmt(done.projected)} ⃁ شهرياً</b> ابتداءً من تجديد اشتراككم القادم{renew ? ` في ${renew}` : ''}، وتبقى فاتورتكم الحالية ({fmt(done.current)} ⃁) كما هي حتى ذلك التاريخ.
             </div>
             <button className="sh-btn sh-btn-primary" style={{ width: '100%' }} onClick={() => setData(null)}>متابعة</button>
           </div>
@@ -121,8 +119,7 @@ export default function PricingSwitchModal({ m }: { m: DashboardShell }) {
               <p style={{ margin: '0 0 8px' }}>حدّثنا نظام الأسعار، فلم تعد هناك باقات ثابتة. تختارون الخدمات التي تحتاجونها فقط، ويُحتسب سعر كل خدمة لكل فرع.</p>
               <ul style={{ margin: '0 0 14px', paddingInlineStart: 20, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <li>تظهر لكم قيمة الفاتورة الجديدة قبل تأكيد اختياركم.</li>
-                <li>إذا كانت الفاتورة الجديدة أقل من فاتورتكم الحالية، يُطبَّق اختياركم ابتداءً من تجديد اشتراككم القادم.</li>
-                <li>إذا كانت أعلى من فاتورتكم الحالية، وقد يحدث ذلك للمنشآت ذات الفروع المتعددة، تبقون على باقتكم الحالية بسعرها دون أي زيادة.</li>
+                <li>تُفعَّل الخدمات التي تختارونها تلقائياً عند تجديد اشتراككم القادم، وتبقى فاتورتكم الحالية كما هي حتى ذلك التاريخ.</li>
               </ul>
             </div>
 
@@ -176,13 +173,12 @@ export default function PricingSwitchModal({ m }: { m: DashboardShell }) {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700, color: C.text }}>
                 <span>بعد اختياركم</span>
-                <span style={{ fontVariantNumeric: 'tabular-nums' }}>{!picked.length ? '—' : preview ? `${fmt(preview.outcome === 'switch' ? preview.projected : preview.current)} ⃁ شهرياً` : '…'}</span>
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>{!picked.length ? '—' : preview ? `${fmt(preview.projected)} ⃁ شهرياً` : '…'}</span>
               </div>
               {preview && picked.length > 0 && (
                 <div style={{ fontSize: 12.5, color: C.text3, marginTop: 8, lineHeight: 1.7 }}>
-                  {preview.outcome === 'switch'
-                    ? `يُطبَّق من تجديد اشتراككم القادم${renew ? ` في ${renew}` : ''}، وتبقى فاتورتكم الحالية حتى ذلك التاريخ.`
-                    : 'سعركم الحالي أقل من سعر هذه الخدمات، لذا ستبقون على باقتكم الحالية بسعرها.'}
+                  {`تُفعَّل من تجديد اشتراككم القادم${renew ? ` في ${renew}` : ''}، وتبقى فاتورتكم الحالية حتى ذلك التاريخ.`}
+                  {preview.projected > data.current && ` الفاتورة الجديدة أعلى من الحالية بـ ${fmt(preview.projected - data.current)} ⃁.`}
                 </div>
               )}
             </div>

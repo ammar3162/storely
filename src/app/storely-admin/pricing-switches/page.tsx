@@ -34,7 +34,7 @@ export default function PricingSwitchesPage() {
   const [busy, setBusy] = useState<string | null>(null)
   const [msg, setMsg] = useState<{ id: string; text: string; ok: boolean } | null>(null)
   const applyNow = async (r: Row) => {
-    if (!confirm(`تطبيق اختيار «${r.name}» الآن؟ تُعاد الحسبة بحالة المنشأة الحالية، ويُلغى ما لم يختره إذا كانت فاتورته الجديدة أقل.`)) return
+    if (!confirm(`تطبيق اختيار «${r.name}» الآن (قبل التجديد)؟ ينتقل فوراً إلى الخدمات التي اختارها بسعرها الجديد، ويُلغى ما لم يختره. التاريخ يبقى كما هو.`)) return
     setBusy(r.org_id); setMsg(null)
     try {
       const j = await fetch('/api/admin/pricing-switches', { method: 'POST', headers: { 'x-admin-key': adminKey(), 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: r.org_id }) }).then(x => x.json())
@@ -53,7 +53,7 @@ export default function PricingSwitchesPage() {
   return (
     <>
       <PageHeader title="اختيارات الأسعار الجديدة"
-        subtitle="يختار المشتركون الحاليون على الباقات الثابتة مزاياهم بالأسعار الجديدة، ويُطبَّق الاختيار تلقائياً عند تجديد اشتراكهم من «العملاء» (أو فوراً بزر «طبّق الآن»). تُعاد الحسبة بحالة المنشأة وقت التطبيق، ولا يدفع أي مشترك أكثر من فاتورته الحالية" />
+        subtitle="يختار المشتركون الحاليون على الباقات الثابتة خدماتهم بالأسعار الجديدة، وتُفعَّل تلقائياً عند تجديد اشتراكهم من «العملاء» (أو فوراً بزر «طبّق الآن») بسعرها الجديد، وتُعاد الحسبة بحالة المنشأة وقت التطبيق" />
 
       {loading ? <Loading /> : error ? <Card><Empty title={error} /></Card> : (
         <Stack>

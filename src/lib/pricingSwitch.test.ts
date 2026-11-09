@@ -33,11 +33,12 @@ describe('pricing switch for existing subscribers', () => {
     expect(p.projected).toBe(227)
     expect(p.outcome).toBe('switch')
   })
-  it('never pays more: 3 active branches with every feature stays on the current plan', () => {
+  it('the choice always switches at renewal, even when the new bill is higher (owner decision 2026-11-09)', () => {
     const org = { id: 'o1', plan: 'pro', max_branches: 3, billing_cycle: 'monthly' }
     const p = projectSwitch({ org, addons, subs: [], modules: ALL, branches: 3, activeStaff: 10 })
     expect(p.projected).toBeGreaterThan(p.current)
-    expect(p.outcome).toBe('keep')
+    expect(p.outcome).toBe('switch')
+    expect(projectSwitch({ org, addons, subs: [], modules: [], branches: 3, activeStaff: 10 }).outcome).toBe('keep')
   })
   it('dropping features lowers the bill and switches', () => {
     const org = { id: 'o1', plan: 'pro', max_branches: 3, billing_cycle: 'monthly' }

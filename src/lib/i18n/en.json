@@ -3940,5 +3940,8 @@
 "مصروف — غير مفعّل": "Dispensed — not enabled",
 "مضاف — غير مفعّل": "Added — not enabled",
 "المشتريات غير مفعّلة": "Purchases not enabled",
-"عمليات الصرف — غير مفعّل": "Dispense operations — not enabled"
+"عمليات الصرف — غير مفعّل": "Dispense operations — not enabled",
+"تُفعَّل الخدمات التي تختارونها تلقائياً عند تجديد اشتراككم القادم، وتبقى فاتورتكم الحالية كما هي حتى ذلك التاريخ.": "The services you choose are activated automatically at your next subscription renewal; your current bill stays the same until then.",
+"تُفعَّل من تجديد اشتراككم القادم في *، وتبقى فاتورتكم الحالية حتى ذلك التاريخ.": "Takes effect from your next renewal on *; your current bill stays until then.",
+"الفاتورة الجديدة أعلى من الحالية بـ # ⃁.": "The new bill is # SAR higher than the current one."
 }

@@ -28,7 +28,8 @@ export async function GET(req: Request) {
   // الظاهرين: اللي اختاروا (حتى لو انتقلوا) + المشتركين المدفوعين اللي باقي على باقة ثابتة
   const rows = orgList.filter(o => sw.has(o.id) || (ownerBy.has(o.id) && !isCustomPlan(o.plan))).map(o => {
     const s = sw.get(o.id), ow = ownerBy.get(o.id) || {}
-    const status = !s ? 'pending' : s.applied_at ? (s.outcome === 'switch' ? 'applied' : 'kept') : s.outcome === 'switch' ? 'will_switch' : 'will_keep'
+    // من اختار ينتقل تلقائياً عند التجديد (قرار المالك 2026-11-09) — «بقي على باقته» للسجلات القديمة فقط
+    const status = !s ? 'pending' : s.applied_at ? (s.outcome === 'switch' ? 'applied' : 'kept') : 'will_switch'
     return {
       org_id: o.id, name: o.name, plan: adminPlanLabel(o.plan, o.max_branches), owner: ow.full_name || null, phone: ow.phone || null,
       renews_at: ow.subscription_ends_at || null, bill_now: bills[o.id] ?? null,

@@ -1,6 +1,6 @@
 // انتقال المشتركين الحاليين للأسعار الجديدة (2026-11-08، قرار المالك):
 // أول ما يدخل المالك (اشتراك مدفوع على باقة قديمة أو جاهزة) تطلع له رسالة شكر ويختار المزايا اللي يحتاجها.
-// الاختيار يُطبَّق مع تجديد اشتراكه القادم (activate-user) — والقاعدة: ما يدفع أكثر من فاتورته الحالية أبداً.
+// الاختيار يُطبَّق مع تجديد اشتراكه القادم (activate-user) بسعره الجديد، حتى لو أعلى (قرار المالك 2026-11-09).
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { CUSTOM_MODULES, CUSTOM_MODULE_ORDER, PLAN_CAPS, addonIncludedIn, isCustomPlan } from '@/lib/planPricing'
 import { computeOrgRevenue } from '@/lib/orgBill'
@@ -72,8 +72,8 @@ export function projectSwitch(input: { org: Org; addons: Addon[]; subs: Sub[]; m
   const projectedAddons = [...addons, ...CUSTOM_MODULE_ORDER.filter(s => !addons.some(a => a.slug === s)).map(s => ({ id: s, name: s, slug: s, monthly_price: 0 }))]
   const projectedOrg: Org = { ...org, plan: 'custom', max_branches: branches, locked_plan_monthly: null, staff_included: null }
   const projected = modules.length ? computeOrgRevenue([projectedOrg], projectedAddons, projectedSubs, now)[org.id].total : current
-  // القاعدة: ما يدفع أكثر — لو الجديد مو أرخص يبقى على باقته وسعره
-  const outcome: 'switch' | 'keep' = modules.length && projected < current ? 'switch' : 'keep'
+  // 2026-11-09 (قرار المالك): من يختار خدماته تتفعّل له تلقائياً عند التجديد بسعرها الجديد، حتى لو أعلى من فاتورته الحالية
+  const outcome: 'switch' | 'keep' = modules.length ? 'switch' : 'keep'
   return { current, projected, outcome, branches, modules, extraStaffNeeded }
 }
 
@@ -107,7 +107,7 @@ export async function applyPricingSwitch(db: SupabaseClient, orgId: string, ends
   const ctx = await loadSwitchContext(db, orgId)
   if (!ctx?.chosen || ctx.chosen.applied_at || !ctx.chosen.modules?.length || isCustomPlan(ctx.org.plan)) return { applied: false as const }
   // نعيد الحساب وقت التجديد بحالة المنشأة الحين (الفروع النشطة والإضافات) — مهما كانت النتيجة وقت الاختيار:
-  // مثلاً اختار وعنده فرعين (فطلع أغلى = keep)، وبعدين ألغى الفرع الإضافي قبل التجديد → صار أرخص فينتقل
+  // (الفروع النشطة الحين، وفروع كل خدمة) — والانتقال يصير دايماً ما دام اختار خدمة
   const activeIds = ctx.branchList.map(b => b.id)
   const map = resolveBranchMap(ctx.chosen.branch_map, ctx.chosen.modules, activeIds)
   const counts = Object.fromEntries(Object.entries(map).map(([k, v]) => [k, v.length]))
