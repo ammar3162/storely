@@ -112,21 +112,25 @@ export default function BranchComparePage() {
           { header: 'نفد', key: 'invOut', align: 'left' },
           { header: 'الأكثر استهلاكاً', key: 'topProduct', align: 'right' },
         ],
-        rows: comparison.map((b: any) => ({
-          name: b.name,
-          dispensed: b.dispensed,
-          added: b.added,
-          purchases: Number(b.purchases || 0).toFixed(0) + ' ' + curr,
-          efficiency: b.efficiency + '%',
-          invTotal: b.inventory?.total || 0,
-          invLow: b.inventory?.low || 0,
-          invOut: b.inventory?.out || 0,
-          topProduct: b.topProducts?.[0] ? `${b.topProducts[0].name} (${b.topProducts[0].qty} ${b.topProducts[0].unit})` : '—',
-        })),
+        // خدمة غير مفعّلة للفرع = «—» بدل صفر، وما تدخل في الإجماليات
+        rows: comparison.map((b: any) => {
+          const inv = b.features?.inventory !== false, pur = b.features?.purchases !== false
+          return {
+            name: b.name,
+            dispensed: inv ? b.dispensed : '—',
+            added: inv ? b.added : '—',
+            purchases: pur ? Number(b.purchases || 0).toFixed(0) + ' ' + curr : '—',
+            efficiency: inv ? b.efficiency + '%' : '—',
+            invTotal: inv ? (b.inventory?.total || 0) : '—',
+            invLow: inv ? (b.inventory?.low || 0) : '—',
+            invOut: inv ? (b.inventory?.out || 0) : '—',
+            topProduct: inv && b.topProducts?.[0] ? `${b.topProducts[0].name} (${b.topProducts[0].qty} ${b.topProducts[0].unit})` : '—',
+          }
+        }),
         summaryStats: [
           { label: 'عدد الفروع', value: String(comparison.length), color:'#717553' },
-          { label: 'إجمالي الصرف', value: String(comparison.reduce((s, b) => s + b.dispensed, 0)), color: colors.danger },
-          { label: 'إجمالي المشتريات', value: comparison.reduce((s, b) => s + Number(b.purchases || 0), 0).toFixed(0) + ' ' + curr, color: colors.primary },
+          { label: 'إجمالي الصرف', value: String(comparison.filter(b => b.features?.inventory !== false).reduce((s, b) => s + b.dispensed, 0)), color: colors.danger },
+          { label: 'إجمالي المشتريات', value: comparison.filter(b => b.features?.purchases !== false).reduce((s, b) => s + Number(b.purchases || 0), 0).toFixed(0) + ' ' + curr, color: colors.primary },
         ],
         fileName: `مقارنة-الفروع-${new Date().toISOString().slice(0, 10)}.pdf`,
       })
@@ -167,6 +171,14 @@ export default function BranchComparePage() {
             const c = barColors[i % barColors.length]
             const inv = b.inventory || { total: 0, low: 0, out: 0 }
             const isOpen = !!expanded[b.id]
+            // خدمات الفرع: اللي مو مفعّلة تطلع «غير مفعّل» بدل أصفار وكفاءة 0% حمراء
+            const hasInv = b.features?.inventory !== false, hasPur = b.features?.purchases !== false
+            const off = (label: string) => (
+              <div className="bc-stat">
+                <div className="ui-value" style={{color:T.color.textMuted}}>—</div>
+                <div className="ui-supporting" style={{color:T.color.textMuted}}>{label}</div>
+              </div>
+            )
             return (
               <StorelyCard className="ui-workspace bc-branch" key={b.id}>
                 <div className="ui-between">
@@ -176,36 +188,38 @@ export default function BranchComparePage() {
                     </div>
                     <div className="ui-section-title" style={{color:T.color.text}}>{b.name}</div>
                   </div>
-                  <span className="ui-strong" style={{color:b.efficiency >= 80 ? T.color.navy : b.efficiency >= 50 ? T.color.warning : T.color.danger}}>
-                    كفاءة {b.efficiency}%
-                  </span>
+                  {hasInv
+                    ? <span className="ui-strong" style={{color:b.efficiency >= 80 ? T.color.navy : b.efficiency >= 50 ? T.color.warning : T.color.danger}}>كفاءة {b.efficiency}%</span>
+                    : <span className="ui-supporting" style={{color:T.color.textMuted}}>المخزون غير مفعّل لهذا الفرع</span>}
                 </div>
 
-                <div className="bc-bar-track">
-                  <div className="bc-bar-fill" style={{width:pct + '%'}} />
-                </div>
+                {hasInv && (
+                  <div className="bc-bar-track">
+                    <div className="bc-bar-fill" style={{width:pct + '%'}} />
+                  </div>
+                )}
 
                 <div className="bc-operations">
-                  <div className="bc-stat">
+                  {hasInv ? <div className="bc-stat">
                     <div className="ui-value" style={{color:T.color.danger}}>{b.dispensed}</div>
                     <div className="ui-supporting" style={{color:T.color.textMuted}}>مصروف</div>
-                  </div>
-                  <div className="bc-stat">
+                  </div> : off('مصروف — غير مفعّل')}
+                  {hasInv ? <div className="bc-stat">
                     <div className="ui-value" style={{color:T.color.navy}}>{b.added}</div>
                     <div className="ui-supporting" style={{color:T.color.textMuted}}>مضاف</div>
-                  </div>
-                  <div className="bc-stat">
+                  </div> : off('مضاف — غير مفعّل')}
+                  {hasPur ? <div className="bc-stat">
                     <div className="ui-value" style={{color:T.color.info}}>{Number(b.purchases || 0).toFixed(0)}</div>
                     <div className="ui-supporting" style={{color:T.color.textMuted}}>مشتريات ({curr})</div>
-                  </div>
-                  <div className="bc-stat">
+                  </div> : off('المشتريات غير مفعّلة')}
+                  {hasInv ? <div className="bc-stat">
                     <div className="ui-value" style={{color:T.color.navy}}>{b.ops}</div>
                     <div className="ui-supporting" style={{color:T.color.textMuted}}>عملية صرف</div>
-                  </div>
+                  </div> : off('عمليات الصرف — غير مفعّل')}
                 </div>
 
                 {/* حالة المخزون الحالية */}
-                <div className="bc-inventory">
+                {hasInv && <div className="bc-inventory">
                   <div className="bc-stat">
                     <div className="ui-value" style={{color:T.color.text}}>{inv.total}</div>
                     <div className="ui-supporting" style={{color:T.color.textMuted}}>إجمالي الأصناف</div>
@@ -218,10 +232,10 @@ export default function BranchComparePage() {
                     <div className="ui-value" style={{color:inv.out > 0 ? T.color.danger : T.color.textMuted}}>{inv.out}</div>
                     <div className="ui-supporting" style={{color:T.color.textMuted}}>نفدت</div>
                   </div>
-                </div>
+                </div>}
 
                 {/* أكثر المنتجات استهلاكاً */}
-                {b.topProducts && b.topProducts.length > 0 && (
+                {hasInv && b.topProducts && b.topProducts.length > 0 && (
                   <div>
                     <StorelyButton className="ui-button bc-expand" onClick={() => setExpanded(prev => ({ ...prev, [b.id]: !prev[b.id] }))}>
                       <span className="ui-strong" style={{color:T.color.text}}>الأكثر استهلاكاً</span>

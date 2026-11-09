@@ -3935,5 +3935,10 @@
 "اختاروا خدمة لكل فرع": "Choose a service for every branch",
 "سعركم الحالي أقل من سعر هذه الخدمات، لذا ستبقون على باقتكم الحالية بسعرها.": "Your current price is lower than these services, so you will stay on your current plan at its price.",
 "* بدون خدمات. اختر له خدمة واحدة على الأقل، أو أغلق الفرع من صفحة الفروع.": "* has no services. Choose at least one service for it, or close the branch from the Branches page.",
-"هذه الفروع بدون خدمات: *. اختر لكل فرع خدمة واحدة على الأقل، أو أغلقه من صفحة الفروع.": "These branches have no services: *. Choose at least one service for each branch, or close it from the Branches page."
+"هذه الفروع بدون خدمات: *. اختر لكل فرع خدمة واحدة على الأقل، أو أغلقه من صفحة الفروع.": "These branches have no services: *. Choose at least one service for each branch, or close it from the Branches page.",
+"المخزون غير مفعّل لهذا الفرع": "Inventory is not enabled for this branch",
+"مصروف — غير مفعّل": "Dispensed — not enabled",
+"مضاف — غير مفعّل": "Added — not enabled",
+"المشتريات غير مفعّلة": "Purchases not enabled",
+"عمليات الصرف — غير مفعّل": "Dispense operations — not enabled"
 }

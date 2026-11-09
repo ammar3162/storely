@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
+import { branchFeaturesMap } from '@/lib/planFeatures'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -64,6 +65,10 @@ export async function POST(req: Request) {
       }
     }
 
+    // خدمات كل فرع (اختيار الفروع لكل خدمة): الفرع اللي ما عنده المخزون/المشتريات ما ينقارن فيها
+    const { data: org } = await db.from('organizations').select('plan').eq('id', org_id).maybeSingle()
+    const feats = await branchFeaturesMap(db, org_id, (org as any)?.plan, (branches || []).map((b: any) => b.id))
+
     const comparison = Object.entries(branchMap)
       .map(([id,data])=>{
         const topList = Object.entries(topProductsMap[id]||{})
@@ -75,11 +80,13 @@ export async function POST(req: Request) {
           efficiency: data.added>0 ? Math.round((data.dispensed/data.added)*100) : 0,
           inventory: invMap[id] || {total:0,low:0,out:0},
           topProducts: topList,
+          features: { inventory: feats[id]?.inventory !== false, purchases: feats[id]?.purchases !== false },
         }
       })
-      .sort((a,b)=>b.dispensed-a.dispensed)
+      // اللي عندهم المخزون أولاً بالترتيب، وبعدهم الفروع بدونه
+      .sort((a,b)=>(Number(b.features.inventory)-Number(a.features.inventory)) || (b.dispensed-a.dispensed))
 
-    const maxDispensed = Math.max(...comparison.map(b=>b.dispensed),1)
+    const maxDispensed = Math.max(...comparison.filter(b=>b.features.inventory).map(b=>b.dispensed),1)
 
     return NextResponse.json({ comparison, maxDispensed })
   } catch(err:any) {
