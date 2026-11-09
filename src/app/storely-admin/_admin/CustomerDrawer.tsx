@@ -281,8 +281,9 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         </div>
       }>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {/* الباقات القديمة تنعرض بس لعميل عليها (المشتركين قبل 2026-11) — الجديد ما يرجع لها */}
-          {PLAN_KEYS.filter(k => isNewPlan(k) || !newPlan).map(k => {
+          {/* ما فيه باقات للجدد: «باقتك المخصصة» (يختار خدماته) أولاً، وباقته الحالية لو كان على باقة ثابتة
+              (قديمة أو جاهزة) تنعرض له بس — للمشتركين الحاليين فقط، وما ينحط عليها عميل جديد بالغلط */}
+          {(['custom', ...PLAN_KEYS.filter(k => k !== 'custom' && k === c.plan)] as typeof PLAN_KEYS).map(k => {
             const on = c.plan === k
             // باقته الحالية بسعره المثبّت (لو مشترك قبل تغيير الأسعار)، والباقي بالسعر الحالي — الجديدة لعدد فروعه
             const pp = planPriceFor(k, on ? c.locked_plan_monthly : null, planBranches)
@@ -293,7 +294,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
                   border: `1.5px solid ${on ? A.primary : A.border}`, background: on ? A.primarySoft : A.surface }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 600, color: on ? A.primary : A.text }}>{planLabel(k)} {on && '· الحالية'}</div>
-                  <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>{PLAN_LIMITS[k].desc}</div>
+                  <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>{PLAN_LIMITS[k].desc}{k !== 'custom' && ' · للمشتركين الحاليين فقط'}</div>
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: on ? A.primary : A.text2, whiteSpace: 'nowrap' }}>{price}</div>
               </button>
@@ -301,8 +302,8 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
           })}
           {c.plan === 'custom' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 10, border: `1px solid ${A.border}` }}>
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>عدد الموظفين <span style={{ fontSize: 11.5, fontWeight: 600, color: A.text3 }}>({6 * planBranches} مشمولين، يُخصم 10 ⃁ عن كل موظف أقل، والحد الأدنى {3 * planBranches})</span></span>
-              <Btn small disabled={!!busy || (c.staff_included ?? 6 * planBranches) <= 3 * planBranches} onClick={() => setStaffIncluded((c.staff_included ?? 6 * planBranches) - 1)}>−</Btn>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>عدد الموظفين <span style={{ fontSize: 11.5, fontWeight: 600, color: A.text3 }}>({6 * planBranches} مشمولين، 6 لكل فرع، وكل موظف إضافي 10 ⃁)</span></span>
+              <Btn small disabled={!!busy || (c.staff_included ?? 6 * planBranches) <= 6 * planBranches} onClick={() => setStaffIncluded((c.staff_included ?? 6 * planBranches) - 1)}>−</Btn>
               <b style={{ minWidth: 24, textAlign: 'center' }}>{c.staff_included ?? 6 * planBranches}</b>
               <Btn small disabled={!!busy} onClick={() => setStaffIncluded((c.staff_included ?? 6 * planBranches) + 1)}>+</Btn>
             </div>

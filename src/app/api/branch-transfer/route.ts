@@ -18,6 +18,10 @@ export async function GET(req: Request) {
   if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
 
   const db = sb()
+  // الفروع لاختيار الوجهة (كل فروع المنشأة النشطة)، ومدير الفرع: فرعه هو «من» دايماً
+  const { data: branchRows } = await db.from('branches').select('id,name').eq('org_id', org_id).eq('is_active', true).order('created_at')
+  const myBranch = access.role === 'manager' ? access.branchId || null : null
+  const myName = myBranch ? ((branchRows || []) as any[]).find(b => b.id === myBranch)?.name || '' : ''
   let q = db
     .from('stock_movements')
     .select('id,type,qty_change,note,created_at,branch_id,products!inner(name,unit,org_id)')
@@ -30,7 +34,9 @@ export async function GET(req: Request) {
   const { data, error } = await q
 
   if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
-  return NextResponse.json({ success: true, transfers: data || [] })
+  // المدير يشوف التحويلات من فرعه وإليه بس
+  const transfers = myBranch ? ((data || []) as any[]).filter(t => t.branch_id === myBranch || (myName && t.note === `نقل إلى فرع ${myName}`)) : (data || [])
+  return NextResponse.json({ success: true, transfers, branches: branchRows || [], myBranch })
 }
 
 export async function POST(req: Request) {
@@ -47,8 +53,9 @@ export async function POST(req: Request) {
 
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
-    if (access.role === 'manager') {
-      return NextResponse.json({ error: 'نقل المخزون بين الفروع متاح للمالك فقط' }, { status: 403 })
+    // المدير (بصلاحية «نقل المخزون بين الفروع» — يتحقق منها حارس الـ API) ينقل من فرعه هو فقط
+    if (access.role === 'manager' && (!access.branchId || from_branch_id !== access.branchId)) {
+      return NextResponse.json({ error: 'تقدر تنقل من فرعك فقط' }, { status: 403 })
     }
 
     const db = sb()

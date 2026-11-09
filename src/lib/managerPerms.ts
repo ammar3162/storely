@@ -5,6 +5,7 @@ export const MANAGER_PERMS: ManagerPerm[] = [
   { key: 'inventory', label: 'المخزون', hint: 'الأصناف والكميات وإضافة صنف', group: 'المخزون والمشتريات', pages: ['/inventory'] },
   { key: 'dispense', label: 'الصرف', hint: 'صرف وهدر من المخزون', group: 'المخزون والمشتريات', pages: ['/dispense'] },
   { key: 'purchases', label: 'المشتريات', hint: 'تسجيل فواتير الشراء', group: 'المخزون والمشتريات', pages: ['/purchases'] },
+  { key: 'transfer', label: 'نقل المخزون بين الفروع', hint: 'نقل أصناف من فرعه إلى فرع آخر', group: 'المخزون والمشتريات', pages: ['/transfer-stock'] },
   { key: 'suppliers', label: 'الموردين', hint: 'قائمة الموردين وطلباتهم', group: 'المخزون والمشتريات', pages: ['/suppliers'] },
   { key: 'marketplace', label: 'موردون معتمدون', hint: 'طلب تسعير من موردين ستورلي', group: 'المخزون والمشتريات', pages: ['/marketplace'] },
   { key: 'staff', label: 'الموظفون', hint: 'إضافة موظفي الفرع وصلاحياتهم', group: 'الفريق', pages: ['/staff-management'] },
@@ -17,7 +18,7 @@ export const MANAGER_PERMS: ManagerPerm[] = [
 export const MANAGER_PERM_KEYS = MANAGER_PERMS.map(p => p.key)
 /** كل صلاحية ← الميزة اللي تحتاجها (يكفي وحدة) — الصلاحية تنخفي لو الميزة مو باشتراكه */
 export const PERM_FEATURES: Record<string, ('inventory' | 'purchases' | 'cashier' | 'hr' | 'ai' | 'profitability')[]> = {
-  inventory: ['inventory'], dispense: ['inventory'], purchases: ['purchases'], suppliers: ['inventory', 'purchases'],
+  inventory: ['inventory'], dispense: ['inventory'], transfer: ['inventory'], purchases: ['purchases'], suppliers: ['inventory', 'purchases'],
   marketplace: ['inventory', 'purchases'], attendance: ['hr'], hr: ['hr'], profitability: ['profitability'], ai_tools: ['ai'],
   cashier: ['cashier'],
 }
@@ -26,7 +27,8 @@ export const permAvailable = (key: string, f: Partial<Record<string, boolean>> |
   !PERM_FEATURES[key] || PERM_FEATURES[key].some(x => f?.[x] !== false)
 
 // صفحات المالك فقط — مدير الفرع ما يشوفها أبداً
-export const OWNER_ONLY_PAGES = ['/settings', '/branches', '/branch-compare', '/branch-managers', '/transfer-stock', '/addons-market']
+// نقل المخزون بين الفروع: للمالك، وللمدير فقط إذا أعطاه المالك صلاحية «نقل المخزون بين الفروع» (من فرعه هو)
+export const OWNER_ONLY_PAGES = ['/settings', '/branches', '/branch-compare', '/branch-managers', '/addons-market']
 
 const under = (path: string, page: string) => path === page || path.startsWith(page + '/')
 
@@ -65,7 +67,7 @@ export const API_GUARDS: Record<string, { read?: Rule; write?: Rule }> = {
   '/api/period-locks': { read: OWNER, write: OWNER },
   '/api/backup': { read: OWNER, write: OWNER },
   '/api/branch-comparison': { read: OWNER, write: OWNER },
-  '/api/branch-transfer': { read: OWNER, write: OWNER },
+  '/api/branch-transfer': { read: ['transfer'], write: ['transfer'] },
   '/api/delete-branch': { read: OWNER, write: OWNER },
   '/api/delete-account': { read: OWNER, write: OWNER },
   '/api/setup-progress': { read: OWNER, write: OWNER },
