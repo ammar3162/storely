@@ -25,11 +25,26 @@ export default function PricingSwitchesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    fetch('/api/admin/pricing-switches', { headers: { 'x-admin-key': adminKey() } })
-      .then(r => r.json()).then(j => { if (j.success) setRows(j.rows || []); else setError(j.error || 'تعذر التحميل') })
-      .catch(() => setError('تعذر التحميل')).finally(() => setLoading(false))
-  }, [])
+  const load = () => fetch('/api/admin/pricing-switches', { headers: { 'x-admin-key': adminKey() } })
+    .then(r => r.json()).then(j => { if (j.success) setRows(j.rows || []); else setError(j.error || 'تعذر التحميل') })
+    .catch(() => setError('تعذر التحميل')).finally(() => setLoading(false))
+  useEffect(() => { load() }, [])
+
+  // «طبّق الآن»: يعيد الحساب بحالة المنشأة الحين ويطبّق الاختيار لو أرخص (بدون انتظار التجديد)
+  const [busy, setBusy] = useState<string | null>(null)
+  const [msg, setMsg] = useState<{ id: string; text: string; ok: boolean } | null>(null)
+  const applyNow = async (r: Row) => {
+    if (!confirm(`تطبيق اختيار «${r.name}» الآن؟ تُعاد الحسبة بحالة المنشأة الحالية، ويُلغى ما لم يختره إذا كانت فاتورته الجديدة أقل.`)) return
+    setBusy(r.org_id); setMsg(null)
+    try {
+      const j = await fetch('/api/admin/pricing-switches', { method: 'POST', headers: { 'x-admin-key': adminKey(), 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: r.org_id }) }).then(x => x.json())
+      if (!j.success) setMsg({ id: r.org_id, text: j.error || 'تعذر التطبيق', ok: false })
+      else if (j.applied) setMsg({ id: r.org_id, text: `تم: فاتورته الآن ${money(j.monthly)} شهرياً`, ok: true })
+      else setMsg({ id: r.org_id, text: j.kept ? `لم يُطبَّق: المزايا المختارة ${money(j.projected)} أعلى من فاتورته الحالية ${money(j.current)}` : 'لا يوجد اختيار لتطبيقه', ok: false })
+      await load()
+    } catch { setMsg({ id: r.org_id, text: 'تعذر الاتصال', ok: false }) }
+    setBusy(null)
+  }
 
   const count = (s: Row['status']) => rows.filter(r => r.status === s).length
   const switching = rows.filter(r => r.status === 'will_switch')
@@ -38,7 +53,7 @@ export default function PricingSwitchesPage() {
   return (
     <>
       <PageHeader title="اختيارات الأسعار الجديدة"
-        subtitle="يختار المشتركون الحاليون على الباقات الثابتة مزاياهم بالأسعار الجديدة، ويُطبَّق الاختيار تلقائياً عند تجديد اشتراكهم من «العملاء». لا يدفع أي مشترك أكثر من فاتورته الحالية" />
+        subtitle="يختار المشتركون الحاليون على الباقات الثابتة مزاياهم بالأسعار الجديدة، ويُطبَّق الاختيار تلقائياً عند تجديد اشتراكهم من «العملاء» (أو فوراً بزر «طبّق الآن»). تُعاد الحسبة بحالة المنشأة وقت التطبيق، ولا يدفع أي مشترك أكثر من فاتورته الحالية" />
 
       {loading ? <Loading /> : error ? <Card><Empty title={error} /></Card> : (
         <Stack>
@@ -66,7 +81,16 @@ export default function PricingSwitchesPage() {
                       </div>
                     </td>
                     <td style={td}>{r.plan}</td>
-                    <td style={td}><Badge tone={tone}>{label}</Badge>{r.chosen_at && <div style={{ fontSize: 11.5, color: A.text3, marginTop: 4 }}>اختار {fmtDate(r.chosen_at)}</div>}</td>
+                    <td style={td}>
+                      <Badge tone={tone}>{label}</Badge>{r.chosen_at && <div style={{ fontSize: 11.5, color: A.text3, marginTop: 4 }}>اختار {fmtDate(r.chosen_at)}</div>}
+                      {r.chosen_at && !r.applied_at && r.modules.length > 0 && (
+                        <button onClick={() => applyNow(r)} disabled={busy === r.org_id}
+                          style={{ marginTop: 6, height: 30, padding: '0 10px', borderRadius: 8, border: `1px solid ${A.border}`, background: 'white', color: A.text, fontSize: 12.5, fontWeight: 600, cursor: busy === r.org_id ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+                          {busy === r.org_id ? 'جارٍ التطبيق…' : 'طبّق الآن'}
+                        </button>
+                      )}
+                      {msg?.id === r.org_id && <div style={{ fontSize: 11.5, marginTop: 4, color: msg.ok ? A.primary : A.danger, maxWidth: 220 }}>{msg.text}</div>}
+                    </td>
                     <td style={{ ...td, maxWidth: 240 }}>
                       {r.modules.length ? r.modules.map(m => FEATURE_NAMES[m]?.ar || m).join('، ') : '—'}
                       {r.branches ? <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>{r.branches === 1 ? 'فرع واحد' : `${r.branches} فروع`}</div> : null}

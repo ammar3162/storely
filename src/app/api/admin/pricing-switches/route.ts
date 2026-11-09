@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { requirePermission } from '@/lib/adminAuth'
+import { requirePermission, logAdminAction } from '@/lib/adminAuth'
+import { applyPricingSwitch } from '@/lib/pricingSwitch'
 import { monthlyBills } from '@/lib/orgBill'
 import { adminPlanLabel, isCustomPlan } from '@/lib/planPricing'
 
@@ -38,4 +39,26 @@ export async function GET(req: Request) {
   const order: Record<string, number> = { will_switch: 0, will_keep: 1, pending: 2, applied: 3, kept: 4 }
   rows.sort((a, b) => (order[a.status] - order[b.status]) || String(a.renews_at || '').localeCompare(String(b.renews_at || '')))
   return NextResponse.json({ success: true, rows })
+}
+
+// «طبّق الآن»: يطبّق اختيار المشترك فوراً بدون انتظار التجديد (بنفس تاريخ انتهاء اشتراكه الحالي)،
+// بعد إعادة الحساب بحالة المنشأة الحين — لو مو أرخص له يبقى على باقته ويرجع السبب
+export async function POST(req: Request) {
+  const admin = await requirePermission(req.headers.get('x-admin-key'), 'manage_users')
+  if (!admin) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  const body = await req.json().catch(() => ({}))
+  const orgId = typeof body?.org_id === 'string' ? body.org_id : ''
+  if (!/^[0-9a-f-]{36}$/i.test(orgId)) return NextResponse.json({ error: 'org_id مطلوب' }, { status: 400 })
+  const db = sb()
+  const [{ data: owner }, { data: org }] = await Promise.all([
+    db.from('profiles').select('subscription_type,subscription_ends_at').eq('org_id', orgId).eq('role', 'owner').maybeSingle(),
+    db.from('organizations').select('name').eq('id', orgId).maybeSingle(),
+  ])
+  const ends = (owner as any)?.subscription_ends_at as string | null
+  if ((owner as any)?.subscription_type !== 'paid' || !ends || new Date(ends).getTime() <= Date.now())
+    return NextResponse.json({ error: 'الاشتراك غير مدفوع أو منتهٍ — يُطبَّق الاختيار مع التجديد من صفحة العملاء' }, { status: 400 })
+  const r = await applyPricingSwitch(db, orgId, ends)
+  await logAdminAction(admin, 'apply_pricing_switch', orgId, (org as any)?.name, { result: r })
+  if ('error' in r && r.error) return NextResponse.json({ error: r.error }, { status: 500 })
+  return NextResponse.json({ success: true, ...r })
 }

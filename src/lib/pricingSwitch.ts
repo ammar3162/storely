@@ -75,17 +75,20 @@ export async function loadSwitchContext(db: SupabaseClient, orgId: string) {
 
 /**
  * يطبّق الاختيار مع التجديد (يناديه activate-user بعد تمديد الاشتراك): ينقل المنشأة لـ «ابنِ باقتك»
- * بالمزايا المختارة لفروعها النشطة، ويلغي المزايا اللي ما اختارها. «keep» أو المطبّق قبل: ما يسوي شي.
+ * بالمزايا المختارة لفروعها النشطة، ويلغي المزايا اللي ما اختارها. المطبّق قبل: ما يسوي شي.
+ * يُنادى أيضاً من لوحة الأدمن («طبّق الآن») بتاريخ انتهاء الاشتراك الحالي بدون تجديد.
  */
 export async function applyPricingSwitch(db: SupabaseClient, orgId: string, endsAt: string) {
   const ctx = await loadSwitchContext(db, orgId)
-  if (!ctx?.chosen || ctx.chosen.applied_at || ctx.chosen.outcome !== 'switch' || isCustomPlan(ctx.org.plan)) return { applied: false as const }
-  // نعيد الحساب وقت التجديد — لو تغيّر شي وصار الجديد مو أرخص يبقى على باقته
+  if (!ctx?.chosen || ctx.chosen.applied_at || !ctx.chosen.modules?.length || isCustomPlan(ctx.org.plan)) return { applied: false as const }
+  // نعيد الحساب وقت التجديد بحالة المنشأة الحين (الفروع النشطة والإضافات) — مهما كانت النتيجة وقت الاختيار:
+  // مثلاً اختار وعنده فرعين (فطلع أغلى = keep)، وبعدين ألغى الفرع الإضافي قبل التجديد → صار أرخص فينتقل
   const p = projectSwitch({ org: ctx.org, addons: ctx.addons, subs: ctx.subs, modules: ctx.chosen.modules, branches: ctx.branches, activeStaff: ctx.activeStaff })
   const nowIso = new Date().toISOString()
   if (p.outcome !== 'switch') {
-    await db.from('pricing_switches').update({ outcome: 'keep', applied_at: nowIso } as any).eq('org_id', orgId)
-    return { applied: false as const, kept: true }
+    // يبقى على باقته؛ نحدّث الأرقام بس ونخلي الاختيار مفتوح للتجديد الجاي (ما نقفله)
+    await db.from('pricing_switches').update({ outcome: 'keep', current_monthly: p.current, new_monthly: p.projected, branches: p.branches } as any).eq('org_id', orgId)
+    return { applied: false as const, kept: true, current: p.current, projected: p.projected }
   }
   const br = p.branches
   const res = await changeOrgPlan(db, orgId, { planName: 'custom', maxBranches: br, maxStaff: PLAN_CAPS.custom.staff * br + p.extraStaffNeeded, maxSuppliers: PLAN_CAPS.custom.suppliers * br })
@@ -109,7 +112,7 @@ export async function applyPricingSwitch(db: SupabaseClient, orgId: string, ends
     if (ex) await db.from('org_addon_subscriptions').update({ quantity: (Number(ex.quantity) || 0) + p.extraStaffNeeded, expires_at: endsAt } as any).eq('org_id', orgId).eq('addon_id', id)
     else await db.from('org_addon_subscriptions').upsert({ org_id: orgId, addon_id: id, status: 'active', quantity: p.extraStaffNeeded, expires_at: endsAt, locked_price: null, cancelled_at: null } as any, { onConflict: 'org_id,addon_id' })
   }
-  await db.from('pricing_switches').update({ applied_at: nowIso, new_monthly: p.projected } as any).eq('org_id', orgId)
+  await db.from('pricing_switches').update({ outcome: 'switch', applied_at: nowIso, current_monthly: p.current, new_monthly: p.projected, branches: br } as any).eq('org_id', orgId)
   await db.from('notifications').insert({ org_id: orgId, type: 'success', read: false, title: 'تم تطبيق اختيارك للمزايا', message: `بدأت فاتورتك الجديدة: ${p.projected} ⃁ شهرياً للمزايا التي اخترتها.` } as any)
   return { applied: true as const, monthly: p.projected }
 }

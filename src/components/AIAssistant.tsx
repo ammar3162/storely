@@ -1,6 +1,7 @@
 'use client'
 import { FeatureIcon } from '@/components/ui/feature-icon'
 import React, { useState, useRef, useEffect } from 'react'
+import { Bot, ChevronDown, ChevronUp } from 'lucide-react'
 import { getMe } from '@/lib/session'
 import { storelyTokens as uiTokens } from '@/components/ui/design-tokens'
 
@@ -171,21 +172,21 @@ function MsgBubble({ msg }: { msg:Msg }) {
       {/* width:100% — عشان maxWidth 78% للفقاعة ينحسب من عرض الشات (كان ينحسب من محتوى ضيق فالكلام ينكسر كلمة كلمة) */}
       <div style={{display:'flex',alignItems:'flex-end',gap:8,flexDirection:isUser?'row':'row-reverse',width:'100%'}}>
         {!isUser && (
-          <div style={{width:30,height:30,borderRadius:uiTokens.radius.control,background:C.primary,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-            <FeatureIcon name="💬" />
+          <div style={{width:30,height:30,borderRadius:uiTokens.radius.control,background:C.primary,color:'white',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <Bot size={17} strokeWidth={2} />
           </div>
         )}
         <div style={{
           maxWidth:'78%', padding:'11px 14px',
-          background: isUser ? C.primaryL : C.surface,
-          color: isUser ? C.text : C.text,
+          background: isUser ? C.primary : C.surface,
+          color: isUser ? 'white' : C.text,
           borderRadius: uiTokens.radius.card,
           fontSize:uiTokens.typography.body, lineHeight:uiTokens.typography.lineHeight, wordBreak:'break-word',
-          boxShadow: uiTokens.shadow.surface,
-          border: `1px solid ${C.border}`,
+          boxShadow: isUser ? 'none' : uiTokens.shadow.surface,
+          border: isUser ? `1px solid ${C.primary}` : `1px solid ${C.border}`,
         }}>
           {/* رسالة العميل نص عادي أبيض (renderText يلوّن بالرمادي لردود المساعد) */}
-          {isUser ? <div style={{fontSize:13.5,fontWeight:600,color:'white',whiteSpace:'pre-wrap'}}>{msg.text}</div> : <>{renderText(msg.text)}</>}
+          {isUser ? <div style={{fontSize:uiTokens.typography.body,fontWeight:500,color:'white',whiteSpace:'pre-wrap'}}>{msg.text}</div> : <>{renderText(msg.text)}</>}
         </div>
       </div>
       <div style={{fontSize:uiTokens.typography.supporting,color:C.text4,marginRight:isUser?0:38,marginLeft:isUser?0:0,paddingRight:isUser?4:0,paddingLeft:isUser?0:4}}>{msg.time}</div>
@@ -299,6 +300,52 @@ export default function AIAssistant() {
 
   const unreadCount = 0
 
+  // زر المساعد: العميل يسحبه لأي مكان (يلتصق بأقرب طرف يمين/يسار) ويُحفظ مكانه بالجهاز
+  const FAB_KEY = 'storely_ai_fab'
+  const [fabPos, setFabPos] = useState<{ side:'left'|'right'; bottom:number }|null>(()=>{
+    if(typeof window==='undefined') return null
+    try { const v = JSON.parse(localStorage.getItem(FAB_KEY)||'null'); return v && (v.side==='left'||v.side==='right') && typeof v.bottom==='number' ? v : null } catch { return null }
+  })
+  const [drag, setDrag] = useState<{ x:number; y:number }|null>(null)
+  // مكان الزر محفوظ بالجهاز: نرسمه بعد التحميل عشان ما يختلف عن نسخة الخادم
+  const [mounted, setMounted] = useState(false)
+  useEffect(()=>{ setMounted(true) },[])
+  const dragRef = useRef<{ sx:number; sy:number; ox:number; oy:number; moved:boolean }|null>(null)
+  const fabLimits = () => {
+    const mobile = window.innerWidth < 768, size = mobile ? 46 : 50
+    return { size, edge: mobile ? 14 : 24, minBottom: mobile ? 76 : 16, maxBottom: window.innerHeight - size - (mobile ? 72 : 80) }
+  }
+  const onFabDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    dragRef.current = { sx:e.clientX, sy:e.clientY, ox:e.clientX - r.left, oy:e.clientY - r.top, moved:false }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+  const onFabMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const d = dragRef.current; if(!d) return
+    if(!d.moved && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 8) return
+    d.moved = true
+    const { size } = fabLimits()
+    setDrag({ x: Math.min(Math.max(0, e.clientX - d.ox), window.innerWidth - size), y: Math.min(Math.max(0, e.clientY - d.oy), window.innerHeight - size) })
+  }
+  const onFabUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const d = dragRef.current; dragRef.current = null
+    if(!d) return
+    if(!d.moved) { setOpen(true); return }
+    const { size, minBottom, maxBottom } = fabLimits()
+    const x = e.clientX - d.ox, y = e.clientY - d.oy
+    const pos = { side: (x + size/2 < window.innerWidth/2 ? 'left' : 'right') as 'left'|'right', bottom: Math.round(Math.min(Math.max(minBottom, window.innerHeight - y - size), Math.max(minBottom, maxBottom))) }
+    setFabPos(pos); setDrag(null)
+    try { localStorage.setItem(FAB_KEY, JSON.stringify(pos)) } catch {}
+  }
+  const fabStyle = (): React.CSSProperties => {
+    if(drag) return { left:drag.x, top:drag.y, transition:'none' }
+    if(typeof window==='undefined') return { left:14, bottom:84 }
+    const { edge, minBottom, maxBottom } = fabLimits()
+    const side = fabPos?.side || 'left'
+    const bottom = fabPos ? Math.min(Math.max(minBottom, fabPos.bottom), Math.max(minBottom, maxBottom)) : (window.innerWidth < 768 ? 84 : 24)
+    return { [side]: edge, bottom } as React.CSSProperties
+  }
+
   return (
     <>
       <style>{`
@@ -306,8 +353,8 @@ export default function AIAssistant() {
         @keyframes aiFadeUp{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
         @keyframes spin{to{transform:rotate(360deg)}}
         .ai-fab{display:flex;transition:transform .15s}
-        /* على الكمبيوتر: الزر والنافذة بالزاوية السفلية (ما فيه شريط سفلي مثل الجوال) */
-        @media(min-width:768px){.ai-fab{bottom:24px!important;left:24px!important;width:50px!important;height:50px!important}.ai-win{bottom:86px!important;left:24px!important;right:auto!important;width:400px;margin:0!important}}
+        /* على الكمبيوتر: النافذة بالزاوية السفلية بجهة زر المساعد (الزر مكانه يحدده العميل بالسحب) */
+        @media(min-width:768px){.ai-fab{width:50px!important;height:50px!important}.ai-win{bottom:86px!important;left:24px!important;right:auto!important;width:400px;margin:0!important}.ai-win.ai-win-r{left:auto!important;right:24px!important}}
         .ai-fab:active{transform:none}
         .ai-win button:focus-visible{outline:2px solid ${C.primary};outline-offset:2px}.ai-win{animation:aiFadeUp .2s ease}
         .ai-input:focus{border-color:${C.primary};box-shadow:${uiTokens.shadow.focus};outline:none}
@@ -318,17 +365,18 @@ export default function AIAssistant() {
       `}</style>
 
       {/* FAB Button */}
-      {!open && (
-        <button className="ai-fab" onClick={()=>setOpen(true)}
-          aria-label="المساعد" style={{position:'fixed',bottom:84,left:14,zIndex:999,width:46,height:46,borderRadius:'50%',background:C.surface,border:`1px solid ${C.border}`,boxShadow:uiTokens.shadow.surface,cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-          <FeatureIcon name="💬" />
+      {!open && mounted && (
+        <button className="ai-fab" onPointerDown={onFabDown} onPointerMove={onFabMove} onPointerUp={onFabUp} onPointerCancel={()=>{ dragRef.current=null; setDrag(null) }}
+          onKeyDown={e=>{ if(e.key==='Enter'||e.key===' ') { e.preventDefault(); setOpen(true) } }}
+          aria-label="المساعد" title="المساعد — اسحبه لتغيير مكانه" style={{position:'fixed',...fabStyle(),touchAction:'none',userSelect:'none' as const,zIndex:999,width:46,height:46,borderRadius:'50%',background:C.primary,color:'white',border:`1px solid ${C.primary}`,boxShadow:uiTokens.shadow.surface,cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <Bot size={22} strokeWidth={2} />
           {unreadCount>0&&<span style={{position:'absolute',top:-2,right:-2,width:16,height:16,borderRadius:'50%',background:uiTokens.color.danger,color:'white',fontSize:uiTokens.typography.supporting,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid white'}}>{unreadCount}</span>}
         </button>
       )}
 
       {/* Chat Window */}
       {open && (
-        <div className="ai-win" style={{
+        <div className={`ai-win${fabPos?.side==='right'?' ai-win-r':''}`} style={{
           position:'fixed',
           bottom: minimized ? 86 : 86,
           left: 12, right: 12,
@@ -350,8 +398,8 @@ export default function AIAssistant() {
 
           {/* Header */}
           <div style={{background:C.surface,borderBottom:`1px solid ${C.border}`,padding:'14px 16px',display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
-            <div style={{width:38,height:38,borderRadius:uiTokens.radius.control,background:C.primaryL,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:`1px solid ${C.border}`}}>
-              <FeatureIcon name="💬" />
+            <div style={{width:38,height:38,borderRadius:uiTokens.radius.control,background:C.primary,color:'white',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <Bot size={20} strokeWidth={2} />
             </div>
             <div style={{flex:1}}>
               <div style={{fontSize:14,fontWeight:600,color:C.text,letterSpacing:'-0.2px'}}>مساعد Storely الذكي</div>
@@ -362,7 +410,7 @@ export default function AIAssistant() {
             </div>
             <div style={{display:'flex',gap:6}}>
               <button onClick={()=>setMinimized(m=>!m)} style={{width:uiTokens.control.icon,height:uiTokens.control.icon,borderRadius:uiTokens.radius.control,background:C.surface,border:`1px solid ${C.border}`,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:C.text,fontSize:uiTokens.typography.body}}>
-                {minimized?'▲':'▼'}
+                {minimized?<ChevronUp size={16} strokeWidth={2}/>:<ChevronDown size={16} strokeWidth={2}/>}
               </button>
               <button onClick={()=>setShowCloseConfirm(true)} style={{width:uiTokens.control.icon,height:uiTokens.control.icon,borderRadius:uiTokens.radius.control,background:C.surface,border:`1px solid ${C.border}`,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:C.text,fontSize:14}}><FeatureIcon name="✕" size={14} /></button>
             </div>

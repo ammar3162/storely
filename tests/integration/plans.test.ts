@@ -542,5 +542,45 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         clearFeatureCache(orgId)
       }
     }, 180_000)
+
+    it('a choice that was more expensive (2 branches) is re-checked: after a branch is closed, «apply now» from the admin switches it', async () => {
+      const sw = await import('@/app/api/pricing-switch/route')
+      const adminSw = await import('@/app/api/admin/pricing-switches/route')
+      const { monthlyBill } = await import('@/lib/orgBill')
+      const { clearFeatureCache } = await import('@/lib/featureRoutes')
+      const ends = new Date(Date.now() + 20 * 864e5).toISOString()
+      await db.from('organizations').update({ plan: 'pro', max_branches: 3, locked_plan_monthly: null, billing_cycle: 'monthly' } as any).eq('id', orgId)
+      await db.from('profiles').update({ subscription_type: 'paid', subscription_ends_at: ends } as any).eq('id', userId)
+      const { data: active } = await db.from('branches').select('id').eq('org_id', orgId).eq('is_active', true)
+      const keepIds = ((active || []) as any[]).map(b => b.id)
+      // نخلي فرع واحد نشط بس، ونضيف فرع ثاني مؤقت
+      if (keepIds.length > 1) await db.from('branches').update({ is_active: false } as any).in('id', keepIds.slice(1))
+      const { data: extra } = await db.from('branches').insert({ org_id: orgId, name: 'فرع مؤقت', is_active: true } as any).select('id').single()
+      const all = ['mod_inventory', 'mod_purchases', 'cashier_closing', 'hr_full', 'ai_tools']
+      try {
+        // فرعين: كل المزايا = (59+35+49+69)×2 + 15 = 439 > 249 → يبقى على باقته
+        const save = await call(sw.POST, 'POST', '/api/pricing-switch', { org_id: orgId, modules: all })
+        expect(save.json).toMatchObject({ success: true, outcome: 'keep', current: 249, projected: 439 })
+        // الفرع الثاني انقفل → فرع واحد = 212 + 15 = 227 < 249
+        await db.from('branches').update({ is_active: false } as any).eq('id', (extra as any).id)
+        const r = await adminSw.POST(new Request('http://test/api/admin/pricing-switches', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify({ org_id: orgId }) }))
+        expect(r.status).toBe(200)
+        expect(await r.json()).toMatchObject({ success: true, applied: true, monthly: 227 })
+        clearFeatureCache(orgId)
+        expect((await db.from('organizations').select('plan,max_branches').eq('id', orgId).single()).data).toMatchObject({ plan: 'custom', max_branches: 1 })
+        expect(await monthlyBill(db as any, orgId)).toBe(227)
+        // نفس تاريخ الانتهاء — ما انجدد
+        const { data: subs } = await db.from('org_addon_subscriptions').select('expires_at,marketplace_addons(slug)').eq('org_id', orgId).eq('status', 'active')
+        expect(((subs || []) as any[]).map(x => x.marketplace_addons.slug).sort()).toEqual([...all].sort())
+        expect(((subs || []) as any[]).every(x => new Date(x.expires_at).getTime() === new Date(ends).getTime())).toBe(true)
+      } finally {
+        await db.from('branches').delete().eq('id', (extra as any).id)
+        if (keepIds.length > 1) await db.from('branches').update({ is_active: true } as any).in('id', keepIds.slice(1))
+        await db.from('pricing_switches').delete().eq('org_id', orgId)
+        await db.from('org_addon_subscriptions').delete().eq('org_id', orgId)
+        await db.from('organizations').update({ plan: 'pro', max_branches: 1, max_staff: 1, max_suppliers: 20 } as any).eq('id', orgId)
+        clearFeatureCache(orgId)
+      }
+    }, 180_000)
   })
 })
