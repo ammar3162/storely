@@ -350,12 +350,12 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         const r = await activateAddon(db as any, { orgId, addonId: cashierId, branchIds: [branchA, '00000000-0000-0000-0000-000000000000'] })
         expect(r).toMatchObject({ ok: true, quantity: 1, branchIds: [branchA] })
         const sub = (await db.from('org_addon_subscriptions').select('locked_price,branch_ids').eq('org_id', orgId).eq('addon_id', cashierId).single()).data as any
-        expect(Number(sub.locked_price)).toBe(39)
+        expect(Number(sub.locked_price)).toBe(49)
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential', branchA)).toBe(true)
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential', branchB)).toBe(false)
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'essential')).toBe(true)
-        // الفاتورة: 94 + فرع 94 (كل فرع بسعر كامل) + كاشير فرع واحد 39
-        expect(await monthlyBill(db as any, orgId)).toBe(227)
+        // الفاتورة: 94 + فرع 94 (كل فرع بسعر كامل) + كاشير فرع واحد 49
+        expect(await monthlyBill(db as any, orgId)).toBe(237)
 
         // الترقية من نفس العائلة بس
         expect((await call(reqs.POST, 'POST', '/api/plan-requests', { org_id: orgId, target_plan: 'pro' })).status).toBe(400)
@@ -367,7 +367,7 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         const st = (await db.from('org_addon_subscriptions').select('status').eq('org_id', orgId).eq('addon_id', cashierId).single()).data as any
         expect(st.status).toBe('cancelled')
         expect(await orgHasFeature(db as any, orgId, 'cashier', 'ops', branchB)).toBe(true)
-        expect(await monthlyBill(db as any, orgId)).toBe(266)
+        expect(await monthlyBill(db as any, orgId)).toBe(286)
       } finally {
         await db.from('org_addon_subscriptions').delete().eq('org_id', orgId).eq('addon_id', cashierId)
         await db.from('plan_requests').delete().eq('org_id', orgId)

@@ -26,11 +26,11 @@ describe('pricing switch for existing subscribers', () => {
     expect(currentModules('pro', addons, [])).toEqual(ALL)
     expect(currentModules('basic', addons, [sub('a-hr')])).toEqual(['mod_inventory', 'mod_purchases', 'hr_full'])
   })
-  it('switches when the new bill is cheaper (pro, one active branch, all features = 217 < 249)', () => {
+  it('switches when the new bill is cheaper (pro, one active branch, all features = 227 < 249)', () => {
     const org = { id: 'o1', plan: 'pro', max_branches: 3, billing_cycle: 'monthly' }
     const p = projectSwitch({ org, addons, subs: [], modules: ALL, branches: 1, activeStaff: 6 })
     expect(p.current).toBe(PLAN_PRICING.pro.monthly)
-    expect(p.projected).toBe(217)
+    expect(p.projected).toBe(227)
     expect(p.outcome).toBe('switch')
   })
   it('never pays more: 3 active branches with every feature stays on the current plan', () => {
@@ -42,7 +42,7 @@ describe('pricing switch for existing subscribers', () => {
   it('dropping features lowers the bill and switches', () => {
     const org = { id: 'o1', plan: 'pro', max_branches: 3, billing_cycle: 'monthly' }
     const p = projectSwitch({ org, addons, subs: [], modules: ['mod_inventory', 'cashier_closing'], branches: 2, activeStaff: 8 })
-    expect(p.projected).toBe((59 + 39) * 2)
+    expect(p.projected).toBe((59 + 49) * 2)
     expect(p.outcome).toBe('switch')
   })
   it('counts active staff above 6 per branch as extra staff, minus units already bought', () => {
