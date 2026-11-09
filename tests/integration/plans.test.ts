@@ -399,8 +399,8 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         const { data: subs } = await db.from('org_addon_subscriptions').select('quantity,status,branch_ids,locked_price,marketplace_addons(slug)').eq('org_id', oid)
         expect((subs as any[]).map(r => [r.marketplace_addons.slug, r.quantity, r.status, r.branch_ids, Number(r.locked_price)])).toEqual([['hr_full', 3, 'active', null, 69]])
         const { monthlyBill } = await import('@/lib/orgBill')
-        // الفرع الثالث بخصم 20%: التشغيل 133+133+106 + الحضور 69+69+55 — والمجموع + الذكاء 15 = الكاملة لـ3 فروع
-        expect(await monthlyBill(db as any, oid)).toBe(372 + 193)
+        // الفرع الثالث بخصم 20%: التشغيل 143+143+114 + الحضور 69+69+55 — والمجموع + الذكاء 15 = الكاملة لـ3 فروع
+        expect(await monthlyBill(db as any, oid)).toBe(400 + 193)
       } finally {
         vi.doUnmock('@/lib/supabase/server')
         if (oid) {
@@ -413,7 +413,7 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
     }, 180_000)
   })
   describe('«ابنِ باقتك» (custom plan)', () => {
-    it('cashier only, 1 branch, 3 staff: only the cashier opens, inventory/purchase writes are locked, bill = cashier 30 (no minimum, staff at least 6)', async () => {
+    it('cashier only, 1 branch, 3 staff: only the cashier opens, inventory/purchase writes are locked, bill = cashier 49 (no minimum, staff at least 6)', async () => {
       const s3 = newStamp()
       const { data: u } = await db.auth.admin.createUser({ email: `it-cus-${s3}@storely.test`, password: `It-${s3}-x!`, email_confirm: true })
       const uid = u.user!.id
@@ -441,7 +441,7 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
         expect(await routeFeatureError(oid, '/api/products', 'GET', db as any)).toBeNull()
         expect(await routeFeatureError(oid, '/api/cashier-closing', 'POST', db as any)).toBeNull()
         const { monthlyBill } = await import('@/lib/orgBill')
-        expect(await monthlyBill(db as any, oid)).toBe(39)
+        expect(await monthlyBill(db as any, oid)).toBe(49)
         const { staffLimitFor } = await import('@/lib/staffCapacity')
         expect(await staffLimitFor(db as any, oid)).toBe(6)
       } finally {
@@ -513,26 +513,26 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
 
         const pick = ['mod_inventory', 'cashier_closing']
         const pv = await call(sw.POST, 'POST', '/api/pricing-switch', { org_id: orgId, modules: pick, preview: true })
-        expect(pv.json).toMatchObject({ success: true, current: 249, projected: (59 + 39) * br, outcome: 'switch' })
+        expect(pv.json).toMatchObject({ success: true, current: 249, projected: (59 + 49) * br, outcome: 'switch' })
         expect((await db.from('pricing_switches').select('org_id').eq('org_id', orgId)).data).toEqual([])   // المعاينة ما تحفظ
 
         const save = await call(sw.POST, 'POST', '/api/pricing-switch', { org_id: orgId, modules: pick })
         expect(save.json).toMatchObject({ success: true, outcome: 'switch' })
         expect((await call(sw.GET, 'GET', `/api/pricing-switch?org_id=${orgId}`)).json.show).toBe(false)
         expect((await call(sw.POST, 'POST', '/api/pricing-switch', { org_id: orgId, modules: pick })).status).toBe(409)
-        expect(await adminRow()).toMatchObject({ status: 'will_switch', current_monthly: 249, new_monthly: (59 + 39) * br, modules: pick })
+        expect(await adminRow()).toMatchObject({ status: 'will_switch', current_monthly: 249, new_monthly: (59 + 49) * br, modules: pick })
         // قبل التجديد: باقته وفاتورته كما هي
         expect((await db.from('organizations').select('plan').eq('id', orgId).single()).data).toMatchObject({ plan: 'pro' })
 
         const newEnds = new Date(Date.now() + 35 * 864e5).toISOString()
         const res = await activate.POST(new Request('http://test/api/admin/activate-user', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify({ userId, type: 'paid', ends: newEnds }) }))
         expect(res.status).toBe(200)
-        expect((await res.json() as any).pricingSwitch).toMatchObject({ applied: true, monthly: (59 + 39) * br })
+        expect((await res.json() as any).pricingSwitch).toMatchObject({ applied: true, monthly: (59 + 49) * br })
         clearFeatureCache(orgId)
         expect((await db.from('organizations').select('plan,max_branches').eq('id', orgId).single()).data).toMatchObject({ plan: 'custom', max_branches: br })
         const { data: subs } = await db.from('org_addon_subscriptions').select('status,quantity,marketplace_addons(slug)').eq('org_id', orgId).eq('status', 'active')
         expect(((subs || []) as any[]).map(r => r.marketplace_addons.slug).sort()).toEqual(['cashier_closing', 'mod_inventory'])
-        expect(await monthlyBill(db as any, orgId)).toBe((59 + 39) * br)
+        expect(await monthlyBill(db as any, orgId)).toBe((59 + 49) * br)
         expect((await db.from('pricing_switches').select('applied_at').eq('org_id', orgId).single()).data?.applied_at).toBeTruthy()
         expect(await adminRow()).toMatchObject({ status: 'applied' })
       } finally {
