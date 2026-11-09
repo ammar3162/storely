@@ -2569,7 +2569,6 @@
 "عدد عمليات النقل": "Number of transfers",
 "عدد عمليات الهدر": "Number of waste entries",
 "عدد فواتير الشراء المسجّلة من هذا المورد": "Number of purchase invoices recorded from this supplier",
-"عدّلنا أسعارنا لتناسب كل منشأة: لم تعد هناك باقات ثابتة، بل تختارون المزايا التي تحتاجونها، وسعر كل ميزة لكل فرع. تظهر لكم الفاتورة الجديدة قبل التأكيد، فإذا كانت أقل من فاتورتكم الحالية تنتقلون إليها، وإذا كانت أعلى (كما قد يحدث مع أكثر من فرع) تبقون على باقتكم الحالية بسعرها دون أي زيادة.": "We have updated our pricing to fit every business: there are no fixed plans anymore. You choose the features you need, and each feature is priced per branch. You see the new bill before confirming: if it is lower than your current bill you move to it, and if it is higher (which can happen with more than one branch) you stay on your current plan at its price with no increase.",
 "عدّله * — *)}*": "Edited by * — *)}*",
 "عدّله **": "Edited by **",
 "عذراً، حدث خطأ": "Sorry, an error occurred",
@@ -2924,7 +2923,6 @@
 "كمية تضيفها": "Quantity to add",
 "كمية غير صحيحة — أرقام صحيحة بدون كسور": "Invalid quantity — whole numbers without fractions",
 "كناسة": "Broom",
-"كنتم البداية، ومعكم كبُر Storely. أنتم من أوائل المنشآت التي وثقت بنا، ونعتز بكم شركاءَ متميزين، ونتطلع إلى أن ننمو معاً.": "You were the beginning, and Storely grew with you. You're among the first businesses that trusted us, we value you as distinguished partners, and we look forward to growing together.",
 "كهرباء، صيانة... تُدخل يدوياً لكل شهر على حدة": "Electricity, maintenance... entered manually for each month",
 "كودك: *": "Your code: *",
 "كوفي": "Café",
@@ -3925,5 +3923,10 @@
 "تفعّلت الإضافة": "Add-on enabled",
 "المستحق * ⃁ عن الأيام الباقية لين تجديد باقتك": "* ⃁ due for the remaining days until your plan renews",
 "مخزون منخفض": "Low stock",
-"صباح النور": "Good morning"
+"صباح النور": "Good morning",
+"نشكر لكم ثقتكم بـ Storely، فأنتم من أوائل المنشآت التي اعتمدت عليه، ونعتز بشراكتكم ونتطلع إلى مواصلة النمو معكم.": "Thank you for trusting Storely. You are among the first businesses to rely on it, we value our partnership, and we look forward to growing together.",
+"حدّثنا نظام الأسعار، فلم تعد هناك باقات ثابتة. تختارون المزايا التي تحتاجونها فقط، ويُحتسب سعر كل ميزة لكل فرع.": "We have updated our pricing: there are no fixed plans anymore. You choose only the features you need, and each feature is priced per branch.",
+"تظهر لكم قيمة الفاتورة الجديدة قبل تأكيد اختياركم.": "You will see the new bill amount before you confirm your choice.",
+"إذا كانت الفاتورة الجديدة أقل من فاتورتكم الحالية، يُطبَّق اختياركم ابتداءً من تجديد اشتراككم القادم.": "If the new bill is lower than your current bill, your choice takes effect from your next subscription renewal.",
+"إذا كانت أعلى من فاتورتكم الحالية، وقد يحدث ذلك للمنشآت ذات الفروع المتعددة، تبقون على باقتكم الحالية بسعرها دون أي زيادة.": "If it is higher than your current bill, which can happen for businesses with several branches, you stay on your current plan at its price with no increase."
 }
