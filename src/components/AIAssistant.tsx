@@ -1,6 +1,7 @@
 'use client'
 import { FeatureIcon } from '@/components/ui/feature-icon'
 import React, { useState, useRef, useEffect } from 'react'
+import { Bot, ChevronDown, ChevronUp } from 'lucide-react'
 import { getMe } from '@/lib/session'
 import { storelyTokens as uiTokens } from '@/components/ui/design-tokens'
 
@@ -171,21 +172,21 @@ function MsgBubble({ msg }: { msg:Msg }) {
       {/* width:100% — عشان maxWidth 78% للفقاعة ينحسب من عرض الشات (كان ينحسب من محتوى ضيق فالكلام ينكسر كلمة كلمة) */}
       <div style={{display:'flex',alignItems:'flex-end',gap:8,flexDirection:isUser?'row':'row-reverse',width:'100%'}}>
         {!isUser && (
-          <div style={{width:30,height:30,borderRadius:uiTokens.radius.control,background:C.primary,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-            <FeatureIcon name="💬" />
+          <div style={{width:30,height:30,borderRadius:uiTokens.radius.control,background:C.primary,color:'white',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <Bot size={17} strokeWidth={2} />
           </div>
         )}
         <div style={{
           maxWidth:'78%', padding:'11px 14px',
-          background: isUser ? C.primaryL : C.surface,
-          color: isUser ? C.text : C.text,
+          background: isUser ? C.primary : C.surface,
+          color: isUser ? 'white' : C.text,
           borderRadius: uiTokens.radius.card,
           fontSize:uiTokens.typography.body, lineHeight:uiTokens.typography.lineHeight, wordBreak:'break-word',
-          boxShadow: uiTokens.shadow.surface,
-          border: `1px solid ${C.border}`,
+          boxShadow: isUser ? 'none' : uiTokens.shadow.surface,
+          border: isUser ? `1px solid ${C.primary}` : `1px solid ${C.border}`,
         }}>
           {/* رسالة العميل نص عادي أبيض (renderText يلوّن بالرمادي لردود المساعد) */}
-          {isUser ? <div style={{fontSize:13.5,fontWeight:600,color:'white',whiteSpace:'pre-wrap'}}>{msg.text}</div> : <>{renderText(msg.text)}</>}
+          {isUser ? <div style={{fontSize:uiTokens.typography.body,fontWeight:500,color:'white',whiteSpace:'pre-wrap'}}>{msg.text}</div> : <>{renderText(msg.text)}</>}
         </div>
       </div>
       <div style={{fontSize:uiTokens.typography.supporting,color:C.text4,marginRight:isUser?0:38,marginLeft:isUser?0:0,paddingRight:isUser?4:0,paddingLeft:isUser?0:4}}>{msg.time}</div>
@@ -320,8 +321,8 @@ export default function AIAssistant() {
       {/* FAB Button */}
       {!open && (
         <button className="ai-fab" onClick={()=>setOpen(true)}
-          aria-label="المساعد" style={{position:'fixed',bottom:84,left:14,zIndex:999,width:46,height:46,borderRadius:'50%',background:C.surface,border:`1px solid ${C.border}`,boxShadow:uiTokens.shadow.surface,cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-          <FeatureIcon name="💬" />
+          aria-label="المساعد" style={{position:'fixed',bottom:84,left:14,zIndex:999,width:46,height:46,borderRadius:'50%',background:C.primary,color:'white',border:`1px solid ${C.primary}`,boxShadow:uiTokens.shadow.surface,cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <Bot size={22} strokeWidth={2} />
           {unreadCount>0&&<span style={{position:'absolute',top:-2,right:-2,width:16,height:16,borderRadius:'50%',background:uiTokens.color.danger,color:'white',fontSize:uiTokens.typography.supporting,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid white'}}>{unreadCount}</span>}
         </button>
       )}
@@ -350,8 +351,8 @@ export default function AIAssistant() {
 
           {/* Header */}
           <div style={{background:C.surface,borderBottom:`1px solid ${C.border}`,padding:'14px 16px',display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
-            <div style={{width:38,height:38,borderRadius:uiTokens.radius.control,background:C.primaryL,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:`1px solid ${C.border}`}}>
-              <FeatureIcon name="💬" />
+            <div style={{width:38,height:38,borderRadius:uiTokens.radius.control,background:C.primary,color:'white',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <Bot size={20} strokeWidth={2} />
             </div>
             <div style={{flex:1}}>
               <div style={{fontSize:14,fontWeight:600,color:C.text,letterSpacing:'-0.2px'}}>مساعد Storely الذكي</div>
@@ -362,7 +363,7 @@ export default function AIAssistant() {
             </div>
             <div style={{display:'flex',gap:6}}>
               <button onClick={()=>setMinimized(m=>!m)} style={{width:uiTokens.control.icon,height:uiTokens.control.icon,borderRadius:uiTokens.radius.control,background:C.surface,border:`1px solid ${C.border}`,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:C.text,fontSize:uiTokens.typography.body}}>
-                {minimized?'▲':'▼'}
+                {minimized?<ChevronUp size={16} strokeWidth={2}/>:<ChevronDown size={16} strokeWidth={2}/>}
               </button>
               <button onClick={()=>setShowCloseConfirm(true)} style={{width:uiTokens.control.icon,height:uiTokens.control.icon,borderRadius:uiTokens.radius.control,background:C.surface,border:`1px solid ${C.border}`,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:C.text,fontSize:14}}><FeatureIcon name="✕" size={14} /></button>
             </div>
