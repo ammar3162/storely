@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { eligibleForSwitch, currentModules, projectSwitch } from './pricingSwitch'
+import { eligibleForSwitch, currentModules, projectSwitch, resolveBranchMap, compactBranchMap } from './pricingSwitch'
 import { PLAN_PRICING } from './planPricing'
 
 const addons = [
@@ -63,5 +63,24 @@ describe('pricing switch for existing subscribers', () => {
     const p = projectSwitch({ org, addons, subs: [], modules: ['mod_inventory'], branches: 1, activeStaff: 4 })
     expect(p.current).toBe(Math.round(PLAN_PRICING.pro.yearly / 12))
     expect(p.projected).toBe(Math.round(Math.round(59 * 12 * 0.8) / 12))
+  })
+})
+
+describe('each feature on chosen branches (multi-branch owners)', () => {
+  const ids = ['b1', 'b2', 'b3']
+  it('resolves the map: unknown/closed branches dropped, missing or empty = all branches, per-org features ignored', () => {
+    const m = resolveBranchMap({ cashier_closing: ['b2', 'bX'], hr_full: [], ai_tools: ['b1'] }, ['mod_inventory', 'cashier_closing', 'hr_full', 'ai_tools'], ids)
+    expect(m).toEqual({ mod_inventory: ids, cashier_closing: ['b2'], hr_full: ids })
+    expect(resolveBranchMap('bad', ['cashier_closing'], ids)).toEqual({ cashier_closing: ids })
+    expect(compactBranchMap(m, ids)).toEqual({ cashier_closing: ['b2'] })
+    expect(compactBranchMap({ mod_inventory: ids }, ids)).toBeNull()
+  })
+  it('prices each feature on its branch count: 3 branches, inventory on all, cashier on 1, HR on 1', () => {
+    const org = { id: 'o1', plan: 'pro', max_branches: 3, billing_cycle: 'monthly' }
+    const all3 = projectSwitch({ org, addons, subs: [], modules: ['mod_inventory', 'cashier_closing', 'hr_full'], branches: 3, activeStaff: 10 })
+    const some = projectSwitch({ org, addons, subs: [], modules: ['mod_inventory', 'cashier_closing', 'hr_full'], branches: 3, activeStaff: 10, counts: { mod_inventory: 3, cashier_closing: 1, hr_full: 1 } })
+    // المخزون 59+59+47 + الكاشير 49 + الحضور 69 = 283 (بدل 482 لكل الفروع)
+    expect(all3.projected).toBe(165 + 137 + 193)
+    expect(some.projected).toBe(165 + 49 + 69)
   })
 })

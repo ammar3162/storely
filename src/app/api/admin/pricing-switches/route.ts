@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   const db = sb()
   const [{ data: owners }, { data: switches }] = await Promise.all([
     db.from('profiles').select('org_id,full_name,phone,subscription_type,subscription_ends_at').eq('role', 'owner').eq('subscription_type', 'paid').not('org_id', 'is', null),
-    db.from('pricing_switches').select('org_id,modules,branches,current_monthly,new_monthly,outcome,chosen_at,applied_at'),
+    db.from('pricing_switches').select('org_id,modules,branch_map,branches,current_monthly,new_monthly,outcome,chosen_at,applied_at'),
   ])
   const sw = new Map(((switches || []) as any[]).map(s => [s.org_id, s]))
   const ownerRows = (owners || []) as any[]
@@ -32,7 +32,7 @@ export async function GET(req: Request) {
     return {
       org_id: o.id, name: o.name, plan: adminPlanLabel(o.plan, o.max_branches), owner: ow.full_name || null, phone: ow.phone || null,
       renews_at: ow.subscription_ends_at || null, bill_now: bills[o.id] ?? null,
-      modules: s?.modules || [], branches: s?.branches || null, current_monthly: s ? Number(s.current_monthly) : null, new_monthly: s ? Number(s.new_monthly) : null,
+      modules: s?.modules || [], branch_counts: s?.branch_map ? Object.fromEntries(Object.entries(s.branch_map as Record<string, string[]>).map(([k, v]) => [k, Array.isArray(v) ? v.length : 0])) : {}, branches: s?.branches || null, current_monthly: s ? Number(s.current_monthly) : null, new_monthly: s ? Number(s.new_monthly) : null,
       chosen_at: s?.chosen_at || null, applied_at: s?.applied_at || null, status,
     }
   })

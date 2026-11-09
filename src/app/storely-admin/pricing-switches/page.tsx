@@ -7,7 +7,7 @@ import { A, Avatar, Badge, Card, Empty, Loading, PageHeader, Stack, Stat, StatGr
 
 type Row = {
   org_id: string; name: string; plan: string; owner: string | null; phone: string | null; renews_at: string | null; bill_now: number | null
-  modules: string[]; branches: number | null; current_monthly: number | null; new_monthly: number | null
+  modules: string[]; branch_counts?: Record<string, number>; branches: number | null; current_monthly: number | null; new_monthly: number | null
   chosen_at: string | null; applied_at: string | null; status: 'pending' | 'will_switch' | 'will_keep' | 'applied' | 'kept'
 }
 
@@ -92,7 +92,7 @@ export default function PricingSwitchesPage() {
                       {msg?.id === r.org_id && <div style={{ fontSize: 11.5, marginTop: 4, color: msg.ok ? A.primary : A.danger, maxWidth: 220 }}>{msg.text}</div>}
                     </td>
                     <td style={{ ...td, maxWidth: 240 }}>
-                      {r.modules.length ? r.modules.map(m => FEATURE_NAMES[m]?.ar || m).join('، ') : '—'}
+                      {r.modules.length ? r.modules.map(m => { const n = r.branch_counts?.[m]; return (FEATURE_NAMES[m]?.ar || m) + (n ? ` (${n === 1 ? 'فرع واحد' : n === 2 ? 'فرعين' : `${n} فروع`})` : '') }).join('، ') : '—'}
                       {r.branches ? <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>{r.branches === 1 ? 'فرع واحد' : `${r.branches} فروع`}</div> : null}
                     </td>
                     <td style={{ ...td, fontVariantNumeric: 'tabular-nums' }}>{money(r.current_monthly ?? r.bill_now)}</td>

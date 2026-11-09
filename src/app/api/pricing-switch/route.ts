@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
-import { eligibleForSwitch, currentModules, projectSwitch, loadSwitchContext } from '@/lib/pricingSwitch'
+import { eligibleForSwitch, currentModules, projectSwitch, loadSwitchContext, resolveBranchMap, compactBranchMap } from '@/lib/pricingSwitch'
 import { CUSTOM_MODULE_ORDER, CUSTOM_MODULES, customModuleAmount } from '@/lib/planPricing'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -24,11 +24,14 @@ export async function GET(req: Request) {
     success: true, show: true,
     orgName: ctx.org.name || '', branches: p.branches, renewsAt: ctx.owner.subscription_ends_at || null,
     current: p.current, selected,
+    // منشأة بأكثر من فرع: يختار لكل ميزة فروعها
+    branchList: ctx.branchList.length > 1 ? ctx.branchList : [],
     features: CUSTOM_MODULE_ORDER.map(slug => ({ slug, perBranch: CUSTOM_MODULES[slug].perBranch, amount: customModuleAmount(slug, p.branches) })),
   })
 }
 
-// POST { org_id, modules, preview? } — preview يرجع الفاتورة المتوقعة بدون حفظ
+// POST { org_id, modules, branch_map?, preview? } — preview يرجع الفاتورة المتوقعة بدون حفظ
+// branch_map = { slug: [branch_id...] } لمزايا «لكل فرع» — بدونها = كل الفروع النشطة
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}))
   const org_id = typeof body.org_id === 'string' ? body.org_id : ''
@@ -41,10 +44,13 @@ export async function POST(req: Request) {
   const ctx = await loadSwitchContext(db, org_id)
   if (!ctx) return NextResponse.json({ error: 'المنشأة غير موجودة' }, { status: 404 })
   if (!eligibleForSwitch(ctx.org.plan, ctx.owner.subscription_type, !!ctx.chosen)) return NextResponse.json({ error: 'تم تسجيل اختيارك مسبقاً' }, { status: 409 })
-  const p = projectSwitch({ org: ctx.org, addons: ctx.addons, subs: ctx.subs, modules, branches: ctx.branches, activeStaff: ctx.activeStaff })
+  const activeIds = ctx.branchList.map(b => b.id)
+  const map = resolveBranchMap(body.branch_map, modules, activeIds)
+  const counts = Object.fromEntries(Object.entries(map).map(([k, v]) => [k, v.length]))
+  const p = projectSwitch({ org: ctx.org, addons: ctx.addons, subs: ctx.subs, modules, branches: ctx.branches, activeStaff: ctx.activeStaff, counts })
   if (body.preview) return NextResponse.json({ success: true, current: p.current, projected: p.projected, outcome: p.outcome })
   const { error } = await db.from('pricing_switches').insert({
-    org_id, modules: p.modules, branches: p.branches, current_monthly: p.current, new_monthly: p.projected, outcome: p.outcome, chosen_by: access.userId || null,
+    org_id, modules: p.modules, branch_map: compactBranchMap(map, activeIds), branches: p.branches, current_monthly: p.current, new_monthly: p.projected, outcome: p.outcome, chosen_by: access.userId || null,
   } as any)
   if (error) return NextResponse.json({ error: 'تعذر حفظ اختيارك، حاول مرة أخرى' }, { status: 500 })
   return NextResponse.json({ success: true, current: p.current, projected: p.projected, outcome: p.outcome, renewsAt: ctx.owner.subscription_ends_at || null })
