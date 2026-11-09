@@ -5,7 +5,7 @@ import { unitsFor, catsFor } from '@/lib/businessTypes'
 import { T } from './strings'
 import { apLbl, apInp } from './styles'
 import type { StaffDispense } from './useStaffDispense'
-import SheetTop, { sheetStyle } from './SheetTop'
+import SheetTop, { sheetStyle, SheetFoot } from './SheetTop'
 
 export default function AddProductModal({ m }: { m: StaffDispense }) {
   const { lang, bizType, showAddProduct, setShowAddProduct, newProduct, setNewProduct, savingProduct, addProduct, addMode, setAddMode, pickSearch, setPickSearch, picked, setPicked, products } = m
@@ -85,16 +85,18 @@ export default function AddProductModal({ m }: { m: StaffDispense }) {
               </div>
             </div>
             )}
+            <SheetFoot>
             <div style={{display:'flex',gap:8}}>
               <button onClick={addProduct} disabled={!canSave}
                 style={{flex:2,height:48,background:'#203640',color:'white',border:'none',borderRadius:10,fontSize:16,fontWeight:600,cursor:'pointer',fontFamily:'inherit',opacity:canSave?1:0.6}}>
                 {savingProduct?T('adding',lang):T('add',lang)}
               </button>
               <button onClick={()=>setShowAddProduct(false)}
-                style={{flex:1,padding:16,background:'#f4f5f6',color:'var(--storely-text)',border:'none',borderRadius:14,fontSize:15,cursor:'pointer',fontFamily:'inherit'}}>
+                style={{flex:1,height:48,background:'#f4f5f6',color:'var(--storely-text)',border:'none',borderRadius:10,fontSize:15,cursor:'pointer',fontFamily:'inherit'}}>
                 {T('cancel',lang)}
               </button>
             </div>
+            </SheetFoot>
           </div>
         </div>
       )}
