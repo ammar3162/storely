@@ -124,7 +124,9 @@ export async function sendCampaign(c: CampaignContent, recipients: Recipient[], 
         subject: personalize(c.subject, r),
         html: campaignHtml(c, r, unsub),
         text: `${personalize(c.title, r)}\n\n${personalize(c.body, r)}${c.button_url ? `\n\n${c.button_url}` : ''}\n\n—\nإلغاء الاشتراك بالإعلانات: ${unsub}\n${BRAND.site}`,
-        headers: { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
+        // زر «إلغاء الاشتراك» في Gmail/Outlook يرسل POST لهذا الرابط — لازم يكون مسار الـ API (الصفحة ما تلغي شي)،
+        // وإلا Gmail يعتبر المرسل ما يحترم إلغاء الاشتراك ويحطه بالسبام
+        headers: { 'List-Unsubscribe': `<${unsub.replace('/unsubscribe?', '/api/unsubscribe?')}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
         ...(process.env.MARKETING_REPLY_TO ? { replyTo: process.env.MARKETING_REPLY_TO } : {}),
       }
     })
