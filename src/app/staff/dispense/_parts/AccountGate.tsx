@@ -1,5 +1,5 @@
 'use client'
-import { Lock } from 'lucide-react'
+import { Lock, CalendarX2 } from 'lucide-react'
 import { T } from './strings'
 import type { StaffDispense, PageVals } from './useStaffDispense'
 
@@ -9,14 +9,14 @@ export default function AccountGate({ m, v }: { m: StaffDispense; v: PageVals })
   return (
     <>
       {subscriptionExpired && (
-        <div style={{position:'fixed',inset:0,zIndex:6000,background:'#0C213B',display:'flex',alignItems:'center',justifyContent:'center',padding:24,textAlign:'center' as const}}>
+        <div style={{position:'fixed',inset:0,zIndex:6000,background:'#203640',display:'flex',alignItems:'center',justifyContent:'center',padding:24,textAlign:'center' as const}}>
           <div>
-            <div style={{fontSize:56,marginBottom:16}}>⏰</div>
+            <div style={{width:64,height:64,borderRadius:18,background:'rgba(255,255,255,.1)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 18px'}}><CalendarX2 size={30}/></div>
             <div style={{fontSize:18,fontWeight:600,color:'white',marginBottom:8}}>{T('subExpired',lang)}</div>
             <div style={{fontSize:13,color:'rgba(255,255,255,.7)',lineHeight:1.8,maxWidth:320,marginLeft:'auto',marginRight:'auto',marginBottom:24}}>
               {T('subExpiredSub',lang)}
             </div>
-            <button onClick={logout} style={{padding:'12px 28px',background:'#203640',color:'white',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+            <button onClick={logout} style={{padding:'12px 28px',background:'#fff',color:'#203640',border:'none',borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
               {T('signOut',lang)}
             </button>
           </div>
