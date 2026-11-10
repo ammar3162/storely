@@ -192,6 +192,43 @@ export function deviceCodeEmail(o: { name?: string; code: string; device: string
   }
 }
 
+// ═══ الاشتراك: قبل الانتهاء بـ٣ أيام، ويوم الانتهاء ═══
+// للوصول إلى «الوارد»: عنوان واضح بدون رموز، رابط واحد على نفس النطاق، نسخة نصية، وبدون أزرار جانبية (minimal)
+const daysAr = (n: number) => n <= 1 ? 'يوم واحد' : n === 2 ? 'يومين' : `${n} أيام`
+export function subscriptionEndingEmail(o: { name?: string | null; daysLeft: number; endsAt: string; isTrial: boolean }) {
+  const what = o.isTrial ? 'تجربتك المجانية' : 'اشتراكك'
+  const subject = `${o.isTrial ? 'تنتهي تجربتك المجانية' : 'ينتهي اشتراكك'} في Storely خلال ${daysAr(o.daysLeft)}`
+  const url = `${BRAND.site}/login`
+  const paragraphs = [
+    `ينتهي ${what} في Storely يوم ${arDate(o.endsAt)}.`,
+    o.isTrial ? 'لمتابعة استخدام Storely بعد التجربة، اختر المزايا التي تحتاجها وفعّل اشتراكك من حسابك.' : 'جدّد اشتراكك قبل هذا التاريخ حتى تستمر تنبيهات المخزون وطلبات الموردين وتطبيق الموظفين دون انقطاع.',
+    'بياناتك محفوظة كما هي في جميع الأحوال.',
+  ]
+  return {
+    subject,
+    html: brandEmail({ title: subject, preheader: `ينتهي ${what} يوم ${arDate(o.endsAt)}`, greeting: o.name ? `مرحباً ${o.name}،` : 'مرحباً،',
+      paragraphs, button: { label: o.isTrial ? 'تفعيل الاشتراك' : 'تجديد الاشتراك', rawUrl: url }, minimal: true,
+      small: 'وصلك هذا البريد لأنك مالك حساب في Storely.' }),
+    text: [o.name ? `مرحباً ${o.name}،` : 'مرحباً،', '', ...paragraphs, '', `${o.isTrial ? 'تفعيل الاشتراك' : 'تجديد الاشتراك'}: ${url}`, '', 'فريق Storely'].join('\n'),
+  }
+}
+export function subscriptionEndedEmail(o: { name?: string | null; isTrial: boolean }) {
+  const subject = o.isTrial ? 'انتهت تجربتك المجانية في Storely' : 'انتهى اشتراكك في Storely'
+  const url = `${BRAND.site}/login`
+  const paragraphs = [
+    o.isTrial ? 'انتهت تجربتك المجانية في Storely اليوم.' : 'انتهى اشتراكك في Storely اليوم.',
+    'توقفت تنبيهات المخزون وطلبات الموردين التلقائية، ولا يستطيع موظفوك استخدام التطبيق حتى يُجدَّد الاشتراك.',
+    'بياناتك محفوظة كما هي، وتعود جميع المزايا فور التجديد.',
+  ]
+  return {
+    subject,
+    html: brandEmail({ title: subject, preheader: 'بياناتك محفوظة، وتعود المزايا فور التجديد', greeting: o.name ? `مرحباً ${o.name}،` : 'مرحباً،',
+      paragraphs, button: { label: 'تجديد الاشتراك', rawUrl: url }, minimal: true,
+      small: 'وصلك هذا البريد لأنك مالك حساب في Storely.' }),
+    text: [o.name ? `مرحباً ${o.name}،` : 'مرحباً،', '', ...paragraphs, '', `تجديد الاشتراك: ${url}`, '', 'فريق Storely'].join('\n'),
+  }
+}
+
 export function welcomeEmail(o: { name: string; trialEnds?: string | null }) {
   return {
     subject: 'أهلاً بك في Storely',

@@ -5,6 +5,8 @@ import { sendWhatsAppMessage } from '@/lib/whatsapp'
 import { pickOwnerWhatsapp } from '@/lib/ownerContact'
 import { isCronRequest } from '@/lib/cronAuth'
 import { syncBranchesToLimit, EXTRA_BRANCH_SLUG } from '@/lib/branchLimit'
+import { sendEmail } from '@/lib/email'
+import { subscriptionEndingEmail, subscriptionEndedEmail } from '@/lib/emailTemplates'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,19 +37,25 @@ export async function POST(req: Request) {
 
   const { data: profiles } = await db
     .from('profiles')
-    .select('id,full_name,phone,subscription_type,subscription_ends_at,trial_reminder_sent,renewal_reminder_at,organizations(whatsapp_number)')
+    .select('id,full_name,phone,subscription_type,subscription_ends_at,trial_reminder_sent,renewal_reminder_at,expiry_notice_sent,organizations(whatsapp_number,name)')
     .eq('role', 'owner')
     .eq('status', 'active')
     .not('subscription_ends_at', 'is', null)
 
   let remindersSent = 0
   let expirySent = 0
+  let emailsSent = 0
+  // بريد المالك من حسابه (نجيبه بس لما نحتاجه — أغلب المالكين ما عندهم تذكير اليوم)
+  const ownerEmail = async (id: string) => { try { return (await db.auth.admin.getUserById(id)).data?.user?.email || null } catch { return null } }
+  const mail = async (to: string | null, m: { subject: string; html: string; text: string }) => to ? (await sendEmail({ to, ...m })).success === true : false
 
   for (const p of (profiles || []) as any[]) {
     // رقم واتساب المنشأة اللي حدده العميل، أو جوال التسجيل — بصيغة دولية
+    // (لو ما عنده واتساب يوصله البريد على الأقل)
     const to = pickOwnerWhatsapp(p.organizations?.whatsapp_number, p.phone)
-    if (!to) continue
     const endsAt = new Date(p.subscription_ends_at)
+    const name = p.full_name || p.organizations?.name || null
+    const isTrial = p.subscription_type === 'trial'
 
     // تذكير قبل انتهاء الاشتراك بـ٣ أيام — للتجربة المجانية والاشتراك المدفوع معاً، مرة وحدة بس
     if (
@@ -56,12 +64,14 @@ export async function POST(req: Request) {
       endsAt <= in3Days
     ) {
       const daysLeft = Math.ceil((endsAt.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
-      const isTrial = p.subscription_type === 'trial'
       const text = isTrial
         ? trialEndingMessage(p.full_name, daysLeft)
         : `مرحباً ${p.full_name || ''}\n\nينتهي اشتراكك في Storely خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'}.\n\nجدّد اشتراكك الآن لمتابعة إدارة مخزونك وفريقك دون انقطاع:\nstorely.dev`
-      const res = await sendWhatsAppMessage(to, text)
-      if (res.ok) {
+      const waOk = to ? (await sendWhatsAppMessage(to, text)).ok : false
+      // نفس التذكير بالبريد (مرة وحدة مع الواتساب)
+      const mailOk = await mail(await ownerEmail(p.id), subscriptionEndingEmail({ name, daysLeft, endsAt: p.subscription_ends_at, isTrial }))
+      if (mailOk) emailsSent++
+      if (waOk || mailOk) {
         await db.from('profiles').update({ trial_reminder_sent: true } as any).eq('id', p.id)
         remindersSent++
       }
@@ -74,15 +84,18 @@ export async function POST(req: Request) {
       const text = days <= 1
         ? `مرحباً ${p.full_name || ''}،\n\nانتهى اشتراكك في Storely، وتوقفت تنبيهات المخزون وطلبات الموردين التلقائية.\n\nجدّد اشتراكك الآن لتعود جميع بياناتك وتنبيهاتك كما كانت:\nstorely.dev/login`
         : `مرحباً ${p.full_name || ''}،\n\nانتهى اشتراكك في Storely منذ ${days} يوماً، وبياناتك محفوظة بانتظارك.\n\nجدّد الآن لتعود تنبيهات المخزون وطلبات الموردين فوراً:\nstorely.dev/login`
-      const res = await sendWhatsAppMessage(to, text)
-      if (res.ok) {
+      const waOk = to ? (await sendWhatsAppMessage(to, text)).ok : false
+      // البريد مرة وحدة يوم الانتهاء (مو كل يومين — الإيميلات المتكررة تروح للرسائل المزعجة)
+      const mailOk = !p.expiry_notice_sent ? await mail(await ownerEmail(p.id), subscriptionEndedEmail({ name, isTrial })) : false
+      if (mailOk) emailsSent++
+      if (waOk || mailOk) {
         await db.from('profiles').update({ renewal_reminder_at: now.toISOString(), expiry_notice_sent: true } as any).eq('id', p.id)
         expirySent++
       }
     }
   }
 
-  return NextResponse.json({ success: true, remindersSent, expirySent, branchesLocked })
+  return NextResponse.json({ success: true, remindersSent, expirySent, emailsSent, branchesLocked })
 }
 
 // Vercel Cron يستدعي GET
