@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { planPriceFor, planKeyOf, PRICE_UPDATE_ON_RENEWAL, isNewPlan } from '@/lib/planPricing'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
+import { markRenewalPaid } from '@/lib/renewal'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
 import { awardAgentCommission } from '@/lib/agentReferral'
 import { applyPricingSwitch } from '@/lib/pricingSwitch'
@@ -29,6 +30,8 @@ export async function POST(req: Request) {
   const { error } = orgIdForUpdate
     ? await updateQuery.eq('org_id', orgIdForUpdate)
     : await updateQuery.eq('id', userId)
+  // طلب تجديد معلّق (زر «تجديد الاشتراك») → يصير «مدفوع» مع التفعيل
+  if (!error && orgIdForUpdate && type === 'paid') await markRenewalPaid(supabase as any, orgIdForUpdate, admin.full_name, 'manual').catch(() => {})
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   // اختيار المزايا بالأسعار الجديدة (المشتركين الحاليين): يُطبَّق مع هذا التجديد — قبل تجديد الإضافات عشان تتمدّد معها

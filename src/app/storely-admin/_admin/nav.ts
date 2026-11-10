@@ -1,6 +1,6 @@
 // قائمة لوحة الإدارة — مصدر واحد للقائمة الجانبية وأيقونة عنوان كل صفحة
 import type { ComponentType } from 'react'
-import { PlayCircle, Wallet, Mail, PackagePlus, Tags,
+import { RefreshCcw, PlayCircle, Wallet, Mail, PackagePlus, Tags,
   LayoutDashboard, Users, TrendingUp, Inbox, Truck, Handshake, Bell, Megaphone,
   Activity, MessageCircle, HardDrive, ScrollText, FileCheck, ShieldAlert,
   Package, UserCog, Settings, MessageCircleQuestion, HeartPulse, Sparkles,
@@ -18,6 +18,7 @@ export const NAV: { title: string; items: NavItem[] }[] = [
     { href: '/storely-admin/ai-usage', label: 'تكلفة الذكاء الاصطناعي', icon: Sparkles, perm: 'view_metrics' },
   ] },
   { title: 'المبيعات والشراكات', items: [
+    { href: '/storely-admin/renewals', label: 'طلبات التجديد', icon: RefreshCcw, perm: 'manage_users' },
     { href: '/storely-admin/addon-requests', label: 'طلبات الإضافات والترقية', icon: PackagePlus, perm: 'manage_users' },
     { href: '/storely-admin/pricing-switches', label: 'اختيارات الأسعار الجديدة', icon: Tags, perm: 'manage_users' },
     { href: '/storely-admin/demo-requests', label: 'طلبات العرض', icon: Inbox },

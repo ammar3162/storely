@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
+import { sendEmail } from '@/lib/email'
+import { subscriptionEndingEmail, subscriptionEndedEmail } from '@/lib/emailTemplates'
 import { SEGMENTS, type Segment, segmentRecipients, campaignHtml, validateContent, sendCampaign, unsubUrl, isSendableEmail } from '@/lib/marketing'
 
 export const maxDuration = 300
@@ -23,7 +25,7 @@ export async function GET(req: Request) {
   return NextResponse.json({ success: true, segments: SEGMENTS, counts, campaigns: campaigns || [], optouts: optouts || 0, adminEmail: admin.email })
 }
 
-// action: preview (معاينة) | test (تجربة لإيميل المشرف نفسه) | send (للفئة كاملة)
+// action: preview (معاينة) | test (تجربة لإيميل المشرف نفسه) | send (للفئة كاملة) | system_test (رسائل الاشتراك التلقائية لإيميل المشرف)
 export async function POST(req: Request) {
   const admin = await requirePermission(req.headers.get('x-admin-key'), PERM)
   if (!admin) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
@@ -38,6 +40,18 @@ export async function POST(req: Request) {
 
   if (action === 'preview') {
     return NextResponse.json({ success: true, html: campaignHtml({ ...content, title: content.title || 'العنوان الرئيسي', body: content.body || 'نص الإيميل' }, sample, unsubUrl(origin, admin.email)) })
+  }
+
+  // نسخة تجريبية من إيميلات الاشتراك التلقائية (قبل الانتهاء بـ٣ أيام + يوم الانتهاء) — للتأكد إنها توصل «الوارد»
+  if (action === 'system_test') {
+    const to = (admin.email || '').trim()
+    if (!isSendableEmail(to)) return NextResponse.json({ error: 'إيميل حسابك بلوحة الأدمن غير صالح للإرسال — عدّله من «المشرفين»' }, { status: 400 })
+    const name = admin.full_name || null
+    const ends = new Date(Date.now() + 3 * 86400e3).toISOString()
+    const r = await Promise.all([sendEmail({ to, ...subscriptionEndingEmail({ name, daysLeft: 3, endsAt: ends, isTrial: false }) }), sendEmail({ to, ...subscriptionEndedEmail({ name, isTrial: false }) })])
+    if (!r.every(x => x.success)) return NextResponse.json({ error: 'فشل إرسال إحدى الرسالتين' }, { status: 502 })
+    await logAdminAction(admin, 'email_system_test', null, null, { to })
+    return NextResponse.json({ success: true, to })
   }
 
   const invalid = validateContent(content)

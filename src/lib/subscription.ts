@@ -36,6 +36,9 @@ const SUB_TTL_MS = 30_000
 const subCache = new Map<string, { at: number; v: OrgSubState }>()
 
 /** حالة اشتراك المنشأة (من ملف المالك بمفتاح الخدمة) — محفوظة 30 ثانية. عند خطأ القراءة ما نقفل أحد */
+/** بعد التجديد: ننسى الحالة المحفوظة للمنشأة عشان تنفتح على طول (في نفس الخادم) */
+export function forgetOrgSubState(orgId: string) { subCache.delete(orgId) }
+
 export async function orgSubscriptionState(orgId: string, db?: any): Promise<OrgSubState> {
   const hit = subCache.get(orgId)
   if (hit && Date.now() - hit.at < SUB_TTL_MS) return hit.v

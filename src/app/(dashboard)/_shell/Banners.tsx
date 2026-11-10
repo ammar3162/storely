@@ -41,7 +41,7 @@ export default function Banners({ m }: { m: DashboardShell }) {
           <span style={{flex:1}}>
             {subDaysLeft===0?'ينتهي اشتراكك اليوم.':`ينتهي اشتراكك خلال ${subDaysLeft} ${subDaysLeft===1?'يوم':subDaysLeft===2?'يومين':'أيام'}.`} <span className="hide-in-app">جدّد اشتراكك لتجنّب توقف حسابك.</span>
           </span>
-          <button className="sh-btn sh-btn-sm hide-in-app" onClick={()=>router.push('/settings')}>تجديد</button>
+          <button className="sh-btn sh-btn-sm hide-in-app" onClick={()=>router.push('/renew')}>تجديد</button>
         </div>
       ))}
       {showEnableNotif && (
