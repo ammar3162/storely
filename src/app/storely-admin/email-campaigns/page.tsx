@@ -59,6 +59,14 @@ export default function EmailCampaignsPage() {
     setMsg(j.success ? { t: `أُرسلت رسالة تجريبية إلى ${j.to}، تحقق من صندوق الوارد ومجلد الرسائل غير المرغوبة` } : { t: j.error || 'تعذّر إرسال الرسالة التجريبية', bad: true })
   }
 
+  // رسائل الاشتراك التلقائية: نسخة تجريبية لبريد المشرف
+  async function systemTest() {
+    setBusy('sys'); setMsg(null)
+    const j = await adminFetch('/api/admin/email-campaigns', { method: 'POST', body: { action: 'system_test' } })
+    setBusy('')
+    setMsg(j.success ? { t: `أُرسلت رسالتان إلى ${j.to}: «ينتهي اشتراكك خلال 3 أيام» و«انتهى اشتراكك». تأكد أنهما في الوارد وليس في الرسائل غير المرغوبة` } : { t: j.error || 'تعذّر الإرسال', bad: true })
+  }
+
   async function send() {
     if (!count) return
     if (!(await confirmDialog({
@@ -81,6 +89,11 @@ export default function EmailCampaignsPage() {
       <PageHeader title="إعلانات الإيميل" subtitle="أرسل إعلاناً أو تحديثاً لعملاء Storely، ويتضمن كل بريد رابطاً لإلغاء الاشتراك في الإعلانات" />
       <Stack>
       {msg && <Notice tone={msg.bad ? 'danger' : 'primary'}>{msg.t}</Notice>}
+
+      <Card title="رسائل الاشتراك التلقائية" subtitle="تصل للمالك قبل انتهاء اشتراكه بـ3 أيام ويوم الانتهاء، مع الواتساب" actions={
+        <Btn small onClick={systemTest} disabled={busy === 'sys'}>{busy === 'sys' ? 'جاري الإرسال...' : 'أرسل لي نسخة تجريبية'}</Btn>}>
+        <div style={{ fontSize: 13, color: A.text3, lineHeight: 1.8 }}>تُرسل النسختان إلى بريد حسابك في لوحة الأدمن للتأكد من شكلهما ووصولهما إلى الوارد.</div>
+      </Card>
 
       {info && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,420px),1fr))', gap: 20, alignItems: 'start' }}>
