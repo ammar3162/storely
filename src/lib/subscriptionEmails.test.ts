@@ -15,10 +15,11 @@ describe('subscription emails (inbox-friendly)', () => {
     expect(subscriptionEndingEmail({ daysLeft: 1, endsAt: '2026-11-11', isTrial: true }).subject).toBe('تنتهي تجربتك المجانية في Storely خلال يوم واحد')
     expect(subscriptionEndingEmail({ daysLeft: 2, endsAt: '2026-11-12', isTrial: false }).subject).toContain('يومين')
   })
-  it('expired email says data is kept and staff are paused', () => {
+  it('expired email: positive renewal call, no mention of data', () => {
     const e = subscriptionEndedEmail({ name: null, isTrial: false })
     expect(e.subject).toBe('انتهى اشتراكك في Storely')
-    expect(e.text).toContain('بياناتك محفوظة')
-    expect(e.text).toContain('موظفوك')
+    expect(e.text).toContain('يُعاد تفعيل حسابك فوراً')
+    for (const m of [e, subscriptionEndingEmail({ daysLeft: 3, endsAt: '2026-11-13', isTrial: false }), subscriptionEndingEmail({ daysLeft: 3, endsAt: '2026-11-13', isTrial: true }), subscriptionEndedEmail({ isTrial: true })])
+      expect(m.text + m.html).not.toMatch(/بيانات/)
   })
 })
