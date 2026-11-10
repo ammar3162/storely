@@ -1,11 +1,12 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { Loader2, FileSpreadsheet, MessageSquarePlus } from 'lucide-react'
+import { Loader2, FileSpreadsheet, MessageSquarePlus, BookOpen } from 'lucide-react'
 import { colors } from '@/lib/ds'
 import { PortalShell, PeriodBar, presetRange } from '@/components/accountant/PortalShell'
 import AccountantReportView, { type ReportBlock } from '@/components/accountant/AccountantReportView'
 import ClientSummary from '@/components/accountant/ClientSummary'
+import JournalDialog from '@/components/accountant/JournalDialog'
 import AccountantRequestsPanel, { RequestDialog, type RequestTarget } from '@/components/accountant/AccountantRequests'
 import PortalLocks from '@/components/accountant/PortalLocks'
 import CashierClosingEditor from '@/components/CashierClosingEditor'
@@ -22,6 +23,7 @@ export default function PortalClientPage() {
   const [tab, setTabState] = useState<Tab>('summary')
   const [missingKey, setMissingKey] = useState(0)   // >0 = افتح المشتريات على الفواتير الناقصة
   const [reqCounts, setReqCounts] = useState({ open: 0, answered: 0 })
+  const [journal, setJournal] = useState(false)
   const [data, setData] = useState<any>(null)
   const [error, setError] = useState('')
   const [reqTarget, setReqTarget] = useState<RequestTarget | null | undefined>(undefined)   // undefined = مقفل، null = طلب عام
@@ -96,6 +98,7 @@ export default function PortalClientPage() {
       orgLogo={name ? { name, url: data?.logo_url || null } : undefined}
       actions={data ? <div style={{ display: 'flex', gap: 8 }}>
         <button onClick={() => setReqTarget(null)} className="ap-btn sec" title="طلب للمنشأة"><MessageSquarePlus size={16} /><span className="ap-lbl">طلب للمنشأة</span></button>
+        {['sales', 'purchases', 'expenses', 'cash_diff'].some(x => sec.includes(x)) && <button onClick={() => setJournal(true)} className="ap-btn sec" title="تصدير القيود"><BookOpen size={16} /><span className="ap-lbl">تصدير القيود</span></button>}
         <a href={xlsx} className="ap-btn pri" title="تحميل إكسل"><FileSpreadsheet size={16} /><span className="ap-lbl">تحميل إكسل</span></a>
       </div> : undefined}>
 
@@ -122,6 +125,7 @@ export default function PortalClientPage() {
       {tab === 'requests' && <AccountantRequestsPanel orgId={orgId} refreshKey={reqKey} onNew={() => setReqTarget(null)} />}
       {tab === 'locks' && <PortalLocks orgId={orgId} />}
 
+      {journal && range && <JournalDialog orgId={orgId} range={range} periodLabel={data?.report?.label || ''} onClose={() => setJournal(false)} />}
       {editClosing && <CashierClosingEditor orgId={orgId} closing={editClosing} curr={data?.report?.currency || '⃁'} onClose={() => setEditClosing(null)}
         onSaved={() => { setEditClosing(null); setReload(x => x + 1) }}
         submit={payload => sendEdit({ kind: 'closing', id: editClosing.id, total_sales: payload.total_sales, mada_amount: payload.mada_amount, visa_amount: payload.visa_amount,
