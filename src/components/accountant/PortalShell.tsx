@@ -24,8 +24,9 @@ export function OrgLogo({ name, url, size = 34 }: { name: string; url?: string |
   return <span style={{ width: size, height: size, borderRadius: size * .28, background: bg, color: '#fff', fontWeight: 800, fontSize: size * .42, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{name.trim()[0] || '؟'}</span>
 }
 
-export function PortalShell({ title, subtitle, actions, children, orgLogo }: {
+export function PortalShell({ title, subtitle, actions, children, orgLogo, subnav }: {
   title?: string; subtitle?: string; actions?: React.ReactNode; children: React.ReactNode; orgLogo?: { name: string; url: string | null }
+  subnav?: React.ReactNode   // تبويبات الصفحة — داخل الرأس الثابت فتبقى ظاهرة مع التمرير
 }) {
   const router = useRouter()
   const path = usePathname() || ''
@@ -135,9 +136,9 @@ export function PortalShell({ title, subtitle, actions, children, orgLogo }: {
         }
         .ap-mob{display:none}
         @media (max-width:760px){.ap-desk{display:none!important}.ap-mob{display:block}}
-        @media (max-width:600px){.ap-lbl{display:none}.ap-body{padding:16px 16px 40px!important}.ap-head{padding:12px 16px!important}}
+        @media (max-width:600px){.ap-lbl{display:none}.ap-body{padding:16px 16px 40px!important}.ap-head{padding:12px 16px!important}.ap-subnav{padding:0 12px!important}}
         .ap-row{cursor:pointer;transition:background .12s}.ap-row:hover{background:#F8FAFB}
-        .ap-tabs{display:flex;gap:4px;border-bottom:1px solid ${colors.border};margin-bottom:18px;overflow-x:auto;scrollbar-width:none}
+        .ap-tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin-bottom:-1px}
         .ap-tabs::-webkit-scrollbar{display:none}
         .ap-tab{position:relative;display:inline-flex;align-items:center;gap:6px;padding:10px 12px 12px;border:none;background:none;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:500;color:${colors.text3};white-space:nowrap}
         .ap-tab:hover{color:${colors.text}}
@@ -165,6 +166,7 @@ export function PortalShell({ title, subtitle, actions, children, orgLogo }: {
             </div>
             {actions}
           </div>
+          {subnav && <div className="ap-subnav" style={{ maxWidth: 1320, margin: '0 auto', padding: '0 24px' }}>{subnav}</div>}
         </header>
         <div className="ap-body" style={{ maxWidth: 1320, margin: '0 auto', padding: '20px 24px 48px' }}>{children}</div>
       </main>

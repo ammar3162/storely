@@ -89,7 +89,7 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
   const check = (on: boolean, onChange: () => void, label: string) => <input type="checkbox" checked={on} onChange={onChange} onClick={e => e.stopPropagation()} aria-label={label} style={{ width: 16, height: 16, accentColor: colors.primary, cursor: 'pointer' }} />
 
   return (<>
-    <style>{'.rv-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}@media(min-width:1100px){.rv-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.rv-wide{grid-column:1/-1}}'}</style>
+    <style>{'.rv-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}@media(min-width:1100px){.rv-grid:not(.rv-one){grid-template-columns:repeat(2,minmax(0,1fr))}.rv-wide{grid-column:1/-1}}'}</style>
     {!hideHeader && <header style={{ background: colors.primary, color: '#fff', borderRadius: radius.xl, padding: '20px 22px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
       <div>
         <div style={{ fontSize: 12, opacity: .85 }}>{kicker}</div>
@@ -102,7 +102,8 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
       </a>
     </header>}
 
-    <div className="rv-grid">
+    {/* داخل تبويبات البوابة: كل بطاقة بعرض الصفحة */}
+    <div className={only ? 'rv-grid rv-one' : 'rv-grid'}>
     {has('sales') && <Card wide title="المبيعات">
       <Lines rows={[['إجمالي المبيعات', t.sales, true], ['مدى', t.mada], ['فيزا', t.visa], ['ماستركارد', t.mastercard], ...(t.delivery > 0 ? [['تطبيقات التوصيل', t.delivery] as [string, number]] : []), ['الكاش', t.cash]]} />
       <Table head={['التاريخ', ...(multi ? ['الفرع'] : []), 'الكاشير', 'المبيعات', 'الشبكة', ...(t.delivery > 0 ? ['التوصيل'] : []), 'الكاش', ...(onEditClosing ? [''] : [])]}

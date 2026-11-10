@@ -100,15 +100,14 @@ export default function PortalClientPage() {
         <button onClick={() => setReqTarget(null)} className="ap-btn sec" title="طلب للمنشأة"><MessageSquarePlus size={16} /><span className="ap-lbl">طلب للمنشأة</span></button>
         {['sales', 'purchases', 'expenses', 'cash_diff'].some(x => sec.includes(x)) && <button onClick={() => setJournal(true)} className="ap-btn sec" title="تصدير القيود"><BookOpen size={16} /><span className="ap-lbl">تصدير القيود</span></button>}
         <a href={xlsx} className="ap-btn pri" title="تحميل إكسل"><FileSpreadsheet size={16} /><span className="ap-lbl">تحميل إكسل</span></a>
-      </div> : undefined}>
-
-      <nav className="ap-tabs" role="tablist">
-        {TABS.filter(t => t.show).map(t => (
-          <button key={t.k} role="tab" aria-selected={tab === t.k} onClick={() => setTab(t.k)} className={`ap-tab${tab === t.k ? ' on' : ''}`}>
-            {t.l}{t.count ? <span className={`ap-count${t.hot ? ' hot' : ''}`}>{t.count}</span> : null}
-          </button>
-        ))}
-      </nav>
+      </div> : undefined}
+      subnav={<nav className="ap-tabs" role="tablist">
+          {TABS.filter(t => t.show).map(t => (
+            <button key={t.k} role="tab" aria-selected={tab === t.k} onClick={() => setTab(t.k)} className={`ap-tab${tab === t.k ? ' on' : ''}`}>
+              {t.l}{t.count ? <span className={`ap-count${t.hot ? ' hot' : ''}`}>{t.count}</span> : null}
+            </button>
+          ))}
+        </nav>}>
 
       {dataTab && <>
         {range && <PeriodBar from={range.from} to={range.to} onChange={setRange} />}
