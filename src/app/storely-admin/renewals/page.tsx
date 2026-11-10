@@ -10,9 +10,10 @@ const wa = (phone: string | null, org: string) => phone ? `https://wa.me/${phone
 
 export default function RenewalsPage() {
   const [rows, setRows] = useState<any[] | null>(null)
+  const [expired, setExpired] = useState<any[]>([])
   const [msg, setMsg] = useState<{ t: string; bad?: boolean } | null>(null)
   const [busy, setBusy] = useState('')
-  const load = () => adminFetch('/api/admin/renewals').then(j => setRows(j.renewals || [])).catch(() => setRows([]))
+  const load = () => adminFetch('/api/admin/renewals').then(j => { setRows(j.renewals || []); setExpired(j.expired || []) }).catch(() => setRows([]))
   useEffect(() => { load() }, [])
 
   async function act(r: any, action: 'paid' | 'cancel') {
@@ -27,6 +28,18 @@ export default function RenewalsPage() {
     load(); window.dispatchEvent(new Event('admin-counts-refresh'))
   }
 
+  // رسالة التجديد (واتساب + إيميل) لمنشأة اشتراكها منتهي
+  async function notify(e: any) {
+    const ok = await confirmDialog({ title: `إرسال رسالة التجديد إلى ${e.org_name}؟`,
+      message: `يصل إلى ${e.owner_name || 'المالك'} واتساب وإيميل: «${e.sub_type === 'trial' ? 'انتهت تجربتك المجانية' : 'انتهى اشتراكك'} في Storely… جدّد اشتراكك الآن ليُعاد تفعيل حسابك فوراً»، مع رابط التجديد.`, confirmText: 'إرسال', type: 'success' })
+    if (!ok) return
+    setBusy('n' + e.org_id)
+    const j = await adminFetch('/api/admin/renewals', { method: 'POST', body: { action: 'notify', org_id: e.org_id } })
+    setBusy('')
+    setMsg(j.success ? { t: `أُرسلت رسالة التجديد إلى ${e.org_name}: ${[j.wa && 'واتساب', j.mail && 'إيميل'].filter(Boolean).join(' و')}` } : { t: j.error || 'تعذّر الإرسال', bad: true })
+    load()
+  }
+
   const pending = (rows || []).filter(r => r.status === 'pending_payment').length
   return (
     <>
@@ -34,6 +47,24 @@ export default function RenewalsPage() {
         subtitle="العميل ضغط «تجديد الاشتراك» وحسابه يعمل (يوم سماح لو كان منتهياً). تواصل معه للدفع، ثم فعّل اشتراكه من «العملاء» فيتحوّل الطلب إلى «مدفوع» تلقائياً" />
       <Stack>
         {msg && <Notice tone={msg.bad ? 'danger' : 'primary'}>{msg.t}</Notice>}
+        {expired.length > 0 && (
+          <Card title={`اشتراكات منتهية (${expired.length})`} subtitle="آخر 60 يوماً — أرسل لهم رسالة التجديد أو تواصل معهم" pad={0}>
+            <Table head={['المنشأة', 'انتهى', 'آخر رسالة', 'تواصل', '']} minWidth={760}>
+              {expired.map(e => {
+                const link = wa(e.phone, e.org_name)
+                return (
+                  <tr key={e.org_id}>
+                    <td style={td}><div style={{ fontWeight: 600 }}>{e.org_name}</div><div style={{ fontSize: 12, color: A.text3 }}>{e.owner_name || '—'} · {e.sub_type === 'trial' ? 'تجربة' : 'مدفوع'}</div></td>
+                    <td style={td}>{fmtDate(e.ends_at)}</td>
+                    <td style={td}>{e.pending ? <Badge tone="warning">طلب التجديد</Badge> : e.notified_at ? fmtDate(e.notified_at, true) : <span style={{ color: A.text3 }}>لم تُرسل</span>}</td>
+                    <td style={td}>{link ? <a href={link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: A.primary, fontWeight: 600, textDecoration: 'none' }}><MessageCircle size={15} /><span dir="ltr">{e.phone}</span></a> : '—'}</td>
+                    <td style={{ ...td, textAlign: 'left' }}>{!e.pending && <Btn small kind="primary" onClick={() => notify(e)} disabled={!!busy}>{busy === 'n' + e.org_id ? 'جاري الإرسال...' : 'أرسل رسالة التجديد'}</Btn>}</td>
+                  </tr>
+                )
+              })}
+            </Table>
+          </Card>
+        )}
         {!rows ? <Loading /> : !rows.length ? <Card><Empty title="لا توجد طلبات تجديد" hint="تظهر هنا فور ضغط العميل «تجديد الاشتراك»" /></Card> : (
           <Card title={pending ? `${pending} بانتظار الدفع` : 'كل الطلبات'} pad={0}>
             <Table head={['المنشأة', 'الحالة', 'الطلب', 'يعمل حسابه حتى', 'تواصل', '']} minWidth={860}>
