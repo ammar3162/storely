@@ -29,14 +29,21 @@ export default function Banners({ m }: { m: DashboardShell }) {
           <button type="button" className="sh-icon-btn sh-icon-sm" aria-label="إخفاء" onClick={()=>{ setHideTrial(true); try { sessionStorage.setItem('s_hide_trial','1') } catch {} }}><X size={16}/></button>
         </div>
       )}
-      {subDaysLeft!==null && (
+      {/* المالك يجدد بنفسه؛ مدير الفرع ما يجدد — نطلب منه يبلّغ المالك (بدون زر تجديد) */}
+      {subDaysLeft!==null && (userRole === 'manager' ? (
         <div className="sh-banner sh-banner-warn">
           <span style={{flex:1}}>
-            {subDaysLeft===0?'ينتهي اشتراكك اليوم.':`ينتهي اشتراكك خلال ${subDaysLeft} ${subDaysLeft===1?'يوم':'أيام'}.`} <span className="hide-in-app">جدّد اشتراكك لتجنّب توقف حسابك.</span>
+            {subDaysLeft===0?'ينتهي اشتراك المنشأة اليوم.':`ينتهي اشتراك المنشأة خلال ${subDaysLeft} ${subDaysLeft===1?'يوم':subDaysLeft===2?'يومين':'أيام'}.`} أبلغ مالك المنشأة لتجديده حتى لا يتوقف الحساب.
+          </span>
+        </div>
+      ) : (
+        <div className="sh-banner sh-banner-warn">
+          <span style={{flex:1}}>
+            {subDaysLeft===0?'ينتهي اشتراكك اليوم.':`ينتهي اشتراكك خلال ${subDaysLeft} ${subDaysLeft===1?'يوم':subDaysLeft===2?'يومين':'أيام'}.`} <span className="hide-in-app">جدّد اشتراكك لتجنّب توقف حسابك.</span>
           </span>
           <button className="sh-btn sh-btn-sm hide-in-app" onClick={()=>router.push('/settings')}>تجديد</button>
         </div>
-      )}
+      ))}
       {showEnableNotif && (
         <div className="sh-banner">
           <span style={{flex:1}}>فعّل الإشعارات لتصلك تنبيهات نقص المخزون وإقفال الكاشير حتى لو كان التطبيق مغلقاً.</span>

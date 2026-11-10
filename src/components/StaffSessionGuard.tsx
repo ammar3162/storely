@@ -1,18 +1,28 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Lock } from 'lucide-react'
+import { Lock, CalendarX2, LogOut } from 'lucide-react'
+import { useStaffLang, pick, isRtlLang, type Dict } from '@/lib/staffLang'
 
 // حارس جلسة الموظف — يغلّف كل صفحات /staff:
 // 1) لو أي طلب للسيرفر رجع «انتهت الجلسة»، تطلع نافذة رمز PIN، وبعد الدخول نعيد نفس الطلب
 //    تلقائياً — الموظف يكمل اللي كان يسويه بدون ما يضيع شي ولا يشوف رسالة تقنية.
-// 2) لو نشرنا نسخة جديدة والصفحة مفتوحة من قبل، تتحدّث لحالها (لما يرجع للصفحة أو كل دقيقتين وهو ما يكتب).
+// 2) لو انتهى اشتراك المنشأة (أي طلب رجع 403 بسبب الاشتراك)، تطلع شاشة قفل واحدة بلغة الموظف في كل الصفحات
+// 3) لو نشرنا نسخة جديدة والصفحة مفتوحة من قبل، تتحدّث لحالها (لما يرجع للصفحة أو كل دقيقتين وهو ما يكتب).
 
 const SKIP = ['/api/staff-login', '/api/staff-reauth', '/api/version']
 const SESSION_ENDED = 'انتهت جلستك — أدخل رمزك من جديد'   // نفس نص lib/staffAuth
 const BUILD = process.env.NEXT_PUBLIC_BUILD_ID || 'dev'
 
 type Waiter = { resolve: (ok: boolean) => void }
+
+// نصوص شاشة انتهاء الاشتراك بلغات الموظفين
+const SUB_DICT: Dict = {
+  title: { ar: 'انتهت صلاحية اشتراك المنشأة', en: "The business's subscription has expired", ur: 'ادارے کی سبسکرپشن ختم ہو گئی ہے', hi: 'संस्थान की सदस्यता समाप्त हो गई है', tl: 'Nag-expire na ang subscription ng negosyo', bn: 'প্রতিষ্ঠানের সাবস্ক্রিপশনের মেয়াদ শেষ হয়েছে', fr: "L'abonnement de l'établissement a expiré" },
+  body: { ar: 'لا يمكن استخدام التطبيق حالياً. يرجى إبلاغ صاحب المنشأة لتجديد الاشتراك.', en: 'The app is unavailable for now. Please ask the business owner to renew the subscription.', ur: 'ایپ فی الحال دستیاب نہیں۔ براہ کرم مالک سے سبسکرپشن کی تجدید کروائیں۔', hi: 'ऐप अभी उपलब्ध नहीं है। कृपया मालिक से सदस्यता नवीनीकृत करने को कहें।', tl: 'Hindi magagamit ang app ngayon. Pakisabihan ang may-ari na i-renew ang subscription.', bn: 'অ্যাপটি এখন ব্যবহার করা যাচ্ছে না। মালিককে সাবস্ক্রিপশন নবায়ন করতে বলুন।', fr: "L'application est indisponible pour le moment. Demandez au propriétaire de renouveler l'abonnement." },
+  out: { ar: 'تسجيل خروج', en: 'Sign out', ur: 'لاگ آؤٹ', hi: 'साइन आउट', tl: 'Mag-sign out', bn: 'সাইন আউট', fr: 'Se déconnecter' },
+}
+const isSubExpired = (b: any) => b?.reason === 'subscription_expired' || b?.subscriptionExpired === true || (typeof b?.error === 'string' && b.error.includes('اشتراك المنشأة'))
 
 export default function StaffSessionGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -22,6 +32,8 @@ export default function StaffSessionGuard({ children }: { children: React.ReactN
   const [busy, setBusy] = useState(false)
   const [name, setName] = useState('')
   const waiters = useRef<Waiter[]>([])
+  const [expired, setExpired] = useState(false)
+  const { lang } = useStaffLang()
 
   // ── 1) اعتراض الطلبات المنتهية الجلسة ──
   useEffect(() => {
@@ -35,10 +47,17 @@ export default function StaffSessionGuard({ children }: { children: React.ReactN
     window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
       const res = await original(input, init)
       const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+      // انتهاء اشتراك المنشأة: قفل واحد لكل الصفحات (الدخول نفسه له رسالته في صفحة الرمز)
+      if (res.status === 403 && url.includes('/api/') && !url.includes('/api/staff-login') && localStorage.getItem('staff_session')) {
+        const b = await res.clone().json().catch(() => null)
+        if (isSubExpired(b)) setExpired(true)
+        return res
+      }
       if (res.status !== 401 || !url.includes('/api/') || SKIP.some(p => url.includes(p))) return res
       if (!localStorage.getItem('staff_session')) return res
       // نطلب PIN بس لما الجلسة نفسها انتهت (رسالة verifyStaffToken) — مو لأي 401 ثاني أو انتهاء الاشتراك
       const body = await res.clone().json().catch(() => null)
+      if (isSubExpired(body)) { setExpired(true); return res }   // بعض المسارات ترجع الاشتراك المنتهي بـ401
       if (body?.error !== SESSION_ENDED || body?.reason === 'subscription_expired') return res
 
       const ok = await askPin()
@@ -97,9 +116,27 @@ export default function StaffSessionGuard({ children }: { children: React.ReactN
     return () => { stopped = true; document.removeEventListener('visibilitychange', onVisible); clearInterval(t) }
   }, [])
 
+  function signOutExpired() {
+    localStorage.removeItem('staff_session'); localStorage.removeItem('staff_token')
+    setExpired(false); router.replace('/staff')
+  }
+
   return (
     <>
       {children}
+      {expired && (
+        <div role="alertdialog" aria-modal="true" aria-labelledby="sub-exp-t" dir={isRtlLang(lang) ? 'rtl' : 'ltr'}
+          style={{ position: 'fixed', inset: 0, zIndex: 9500, background: '#203640', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center', fontFamily: "'IBM Plex Sans Arabic',system-ui" }}>
+          <div style={{ maxWidth: 340 }}>
+            <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(255,255,255,.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}><CalendarX2 size={30} /></div>
+            <div id="sub-exp-t" style={{ fontSize: 19, fontWeight: 700, color: '#fff', marginBottom: 10, lineHeight: 1.5 }}>{pick(SUB_DICT, 'title', lang)}</div>
+            <div style={{ fontSize: 14, color: 'rgba(255,255,255,.78)', lineHeight: 1.8, marginBottom: 26 }}>{pick(SUB_DICT, 'body', lang)}</div>
+            <button onClick={signOutExpired} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 26px', background: '#fff', color: '#203640', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <LogOut size={17} />{pick(SUB_DICT, 'out', lang)}
+            </button>
+          </div>
+        </div>
+      )}
       {open && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(15,23,42,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, fontFamily: "'IBM Plex Sans Arabic',system-ui", direction: 'rtl' }}>
           <div style={{ background: 'white', borderRadius: 20, width: '100%', maxWidth: 340, padding: 26, textAlign: 'center', boxShadow: '0 20px 50px rgba(15,23,42,.25)' }}>
