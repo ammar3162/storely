@@ -168,9 +168,9 @@ export default function AccountantPortalPage() {
             {!shown.length ? <div style={{ padding: 32, textAlign: 'center', color: colors.text3, fontSize: 13.5 }}>لا توجد منشآت تطابق البحث</div> : <>
               {/* الكمبيوتر: جدول */}
               <div className="ap-desk" style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13.5, minWidth: 820 }}>
-                  <thead><tr>{['المنشأة', 'الحالة', 'المبيعات', 'المشتريات', 'الضريبة المستحقة', 'للموردين', ''].map((h, i) =>
-                    <th key={i} style={{ textAlign: i >= 2 && i <= 5 ? 'left' : 'right', padding: '10px 16px', background: '#F6F8F9', color: colors.text3, fontWeight: 600, fontSize: 12, whiteSpace: 'nowrap' as const, borderBottom: `1px solid ${colors.border}` }}>{h}</th>)}</tr></thead>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13.5, minWidth: 940 }}>
+                  <thead><tr>{['المنشأة', 'الحالة', `إقفال ${data.close_month?.label || 'الشهر'}`, 'المبيعات', 'المشتريات', 'الضريبة المستحقة', 'للموردين', ''].map((h, i) =>
+                    <th key={i} style={{ textAlign: i >= 3 && i <= 6 ? 'left' : 'right', padding: '10px 16px', background: '#F6F8F9', color: colors.text3, fontWeight: 600, fontSize: 12, whiteSpace: 'nowrap' as const, borderBottom: `1px solid ${colors.border}` }}>{h}</th>)}</tr></thead>
                   <tbody>{shown.map(c => {
                     const locked = c.inactive || c.expired, t = c.totals
                     return (
@@ -179,12 +179,13 @@ export default function AccountantPortalPage() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <OrgLogo name={c.name} url={c.logo_url} size={34} />
                             <div style={{ minWidth: 0 }}>
-                              <div style={{ fontWeight: 600 }}>{c.name}</div>
-                              <div style={{ fontSize: 12, color: colors.text3 }}>{c.branch || 'كل الفروع'}</div>
+                              <div style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{c.name}</div>
+                              <div style={{ fontSize: 12, color: colors.text3, whiteSpace: 'nowrap' }}>{c.branch || 'كل الفروع'}</div>
                             </div>
                           </div>
                         </td>
                         <td style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}` }}><StatusBadges c={c} /></td>
+                        <td style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}` }}>{locked ? null : <LockBadge locked={c.locked} />}</td>
                         {[t?.sales, t?.purchases, t?.vatNet, t?.payables].map((v, i) =>
                           <td key={i} dir="ltr" style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, textAlign: 'left', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' as const }}>{locked ? '' : money(v)}</td>)}
                         <td style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, width: 80 }}>
@@ -213,7 +214,7 @@ export default function AccountantPortalPage() {
                         </div>
                         {!locked && <ChevronLeft size={18} color={colors.text4} />}
                       </div>
-                      <div style={{ marginTop: 10 }}><StatusBadges c={c} /></div>
+                      <div style={{ marginTop: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}><StatusBadges c={c} />{!locked && <LockBadge locked={c.locked} label={data.close_month?.label} />}</div>
                       {!locked && t && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10, fontSize: 12.5 }}>
                         {[['المبيعات', t.sales], ['المشتريات', t.purchases], ['الضريبة المستحقة', t.vatNet], ['للموردين', t.payables]].filter(([, v]) => v != null).map(([k, v]) => (
                           <div key={k as string}><div style={{ color: colors.text3 }}>{k}</div><div dir="ltr" style={{ fontWeight: 600, fontSize: 14, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmt(v as number)}</div></div>))}
@@ -227,6 +228,11 @@ export default function AccountantPortalPage() {
         </>}
     </PortalShell>
   )
+}
+
+// حالة إقفال آخر شهر انتهى
+function LockBadge({ locked, label }: { locked?: boolean; label?: string }) {
+  return locked ? <Badge tone="green">{label ? `${label} مقفل` : 'مقفل'}</Badge> : <Badge tone="grey">{label ? `${label} مفتوح` : 'مفتوح'}</Badge>
 }
 
 // ترتيب العملاء: اللي يحتاج إجراء أولاً، والموقوف آخراً

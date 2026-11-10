@@ -19,6 +19,7 @@ export async function POST(req: Request) {
     if (!me) return NextResponse.json({ error: 'سجّل الدخول' }, { status: 401 })
     const access = await accessFor(db, me.id, String(b.org_id || ''))
     if (!access) return NextResponse.json({ error: 'ليست لديك صلاحية على هذه المنشأة' }, { status: 403 })
+    if (b.kind === 'bulk_purchase') return bulkPurchase(db, b, access, me)
     if (!UUID.test(String(b.id || ''))) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const sections: string[] = Array.isArray(access.sections) ? access.sections : []
     const editor = me.name || me.email
@@ -58,4 +59,33 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
+}
+
+// تعديل جماعي: الرقم الضريبي لكل فواتير مورد، أو «عليها ضريبة / بدون» لعدة سطور — كل سطر يمر على نفس فحص التعديل الفردي
+async function bulkPurchase(db: ReturnType<typeof sb>, b: any, access: any, me: { id: string; name?: string | null; email: string }) {
+  const sections: string[] = Array.isArray(access.sections) ? access.sections : []
+  if (!sections.some(s => PURCHASE_SECTIONS.includes(s))) return NextResponse.json({ error: 'ليست لديك صلاحية على المشتريات' }, { status: 403 })
+  const ids: string[] = [...new Set<string>((Array.isArray(b.ids) ? b.ids : []).map(String))].filter(x => UUID.test(x))
+  if (!ids.length || ids.length > 200) return NextResponse.json({ error: 'حدد من 1 إلى 200 سطر' }, { status: 400 })
+  const fields: Record<string, unknown> = {}
+  if (b.supplier_vat_number !== undefined) fields.supplier_vat_number = b.supplier_vat_number
+  if (typeof b.has_vat === 'boolean') fields.has_vat = b.has_vat
+  if (!Object.keys(fields).length) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+  const orgId = access.org_id as string, editor = me.name || me.email
+  let changed = 0
+  const batches: string[] = [], errors: string[] = []
+  for (const id of ids) {
+    const r = await editPurchase(db, orgId, id, fields, editor, { source: 'accountant', accountantId: me.id }, access.branch_id || null)
+    if (r.ok) { changed += r.changed; batches.push(r.batchId) }
+    else if (r.status !== 400 || r.error !== 'لا يوجد تغيير') { if (r.status === 400) return NextResponse.json({ error: r.error }, { status: 400 }); errors.push(r.error) }
+  }
+  // الرقم الضريبي يُحفظ للمورد أيضاً (إذا كان فارغاً) — فواتيره القادمة تطلع مكتملة
+  if (typeof fields.supplier_vat_number === 'string' && fields.supplier_vat_number && typeof b.supplier === 'string' && b.supplier.trim()) {
+    await db.from('suppliers').update({ vat_number: String(fields.supplier_vat_number).replace(/\s/g, '') } as any)
+      .eq('org_id', orgId).eq('name', b.supplier.trim()).is('vat_number', null)
+  }
+  if (changed) await db.from('notifications').insert({ org_id: orgId, branch_id: access.branch_id || null, type: 'warning', read: false, title: 'محاسبك عدّل فواتير مشتريات',
+    message: `${editor} عدّل ${changed} سطر مشتريات دفعة واحدة (${'supplier_vat_number' in fields ? 'الرقم الضريبي للمورد' : fields.has_vat ? 'عليها ضريبة' : 'بدون ضريبة'}). يمكنك التراجع من صفحة المشتريات.`.slice(0, 600),
+    ref_type: 'accountant_edit', ref_id: batches[0] || null } as any)
+  return NextResponse.json({ success: true, changed, skipped: errors.length, error: !changed && errors.length ? errors[0] : undefined })
 }

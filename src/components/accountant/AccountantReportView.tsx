@@ -60,8 +60,9 @@ function Edited({ date, src }: { date: string; src?: string | null }) {
 }
 const editBtn = (onClick: () => void) => <button onClick={onClick} style={{ fontSize: 12, fontWeight: 600, color: colors.primary, background: '#fff', border: `1px solid ${colors.border}`, borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>تعديل</button>
 
-export default function AccountantReportView({ data, downloadHref, kicker = 'تقرير المحاسب', onRequest, onRequestMissing, hideHeader, onEditClosing, onEditPurchase, only, startMissing, onShowMissing }: { data: any; downloadHref: string; kicker?: string; onRequest?: (inv: any) => void; onRequestMissing?: (invs: any[]) => void; hideHeader?: boolean
+export default function AccountantReportView({ data, downloadHref, kicker = 'تقرير المحاسب', onRequest, onRequestMissing, hideHeader, onEditClosing, onEditPurchase, only, startMissing, onShowMissing, onBulkEdit }: { data: any; downloadHref: string; kicker?: string; onRequest?: (inv: any) => void; onRequestMissing?: (invs: any[]) => void; hideHeader?: boolean
   only?: ReportBlock[]; startMissing?: boolean; onShowMissing?: () => void
+  onBulkEdit?: (ids: string[], fields: { has_vat?: boolean; supplier_vat_number?: string; supplier?: string }) => Promise<{ success?: boolean; error?: string; changed?: number }>
   onEditClosing?: (c: any) => void; onEditPurchase?: (t: { id: string; mode: 'invoice' | 'line'; label: string; amount?: number; hasVat?: boolean; invoiceNumber?: string | null; supplierVat?: string | null }) => void }) {
   const r = data.report, t = data.totals
   // «اعرض الناقصة»: من تنبيه الإقرار ينزل لجدول الفواتير الضريبية ويعرض الناقصة بس
@@ -73,6 +74,19 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
   const has = (s: string) => r.sections.includes(s) && show(s as ReportBlock)
   const multi = !r.branchName
   const diffs = r.closings.filter((c: any) => c.difference !== 0)
+  // تحديد سطور المشتريات للتعديل الجماعي
+  const [sel, setSel] = useState<Set<string>>(new Set())
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const selectable = onBulkEdit ? (r.purchases as any[]).filter(p => p.id).map(p => p.id as string) : []
+  const toggle = (id: string) => setSel(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
+  async function bulkVat(has_vat: boolean) {
+    if (!onBulkEdit || !sel.size) return
+    if (!window.confirm(`سنجعل ${sel.size} سطر ${has_vat ? 'عليها ضريبة 15٪' : 'بدون ضريبة'}. يصل إلى المنشأة إشعار ويمكنها التراجع. متابعة؟`)) return
+    setBulkBusy(true); const j = await onBulkEdit([...sel], { has_vat }); setBulkBusy(false)
+    if (!j.success || j.error) { window.alert(j.error || 'تعذر حفظ التعديل'); return }
+    setSel(new Set())
+  }
+  const check = (on: boolean, onChange: () => void, label: string) => <input type="checkbox" checked={on} onChange={onChange} onClick={e => e.stopPropagation()} aria-label={label} style={{ width: 16, height: 16, accentColor: colors.primary, cursor: 'pointer' }} />
 
   return (<>
     <style>{'.rv-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}@media(min-width:1100px){.rv-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.rv-wide{grid-column:1/-1}}'}</style>
@@ -103,6 +117,7 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
         {t.taxVerified > 0 && <span style={{ color: '#059669' }}> · {t.taxVerified} موثقة من باركود الهيئة</span>}
       </div>}
       {t.taxMismatch > 0 && <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: '#dc2626' }}>{t.taxMismatch} فاتورة مبلغها المسجّل أكبر من الأصلية — راجعها</div>}
+      {onBulkEdit && <SupplierVatFix invoices={missing} onApply={(ids, vat, supplier) => onBulkEdit(ids, { supplier_vat_number: vat, supplier })} />}
       {onlyMissing && <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontSize: 12.5, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '8px 12px', marginTop: 6 }}>
         يتم عرض الفواتير الناقصة فقط ({missing.length})
         {onRequestMissing && missing.length > 0 && <button onClick={() => onRequestMissing(missing)} style={btn(true)}>اطلب من المنشأة إكمالها</button>}
@@ -117,8 +132,20 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
 
     {has('purchases') && <Card wide title={`المشتريات (${invoicesLabel(t.invoices)})`}>
       <Lines rows={[['قبل الضريبة', t.purNet], ['الضريبة', t.purVat], ['الإجمالي', t.purTotal, true], ['منها آجلة', t.purUnpaid]]} />
-      <Table head={['التاريخ', ...(multi ? ['الفرع'] : []), 'المورد', 'الصنف', 'قبل الضريبة', 'الضريبة', 'الإجمالي', 'الدفع', ...(onEditPurchase ? [''] : [])]} moneyCols={multi ? [4, 5, 6] : [3, 4, 5]}
-        rows={r.purchases.map((p: any) => [<Edited key="d" date={p.date} src={p.editedSource} />, ...(multi ? [p.branch] : []), p.supplier || '—', p.name, p.net, p.vat, p.total, p.paid ? 'مدفوعة' : 'آجلة',
+      {onBulkEdit && selectable.length > 0 && <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: colors.text3, fontSize: 13, marginTop: 12 }}>
+        {check(sel.size > 0 && sel.size === selectable.length, () => setSel(sel.size === selectable.length ? new Set() : new Set(selectable)), 'تحديد الكل')}
+        {sel.size ? `تم تحديد ${sel.size} من ${selectable.length}` : 'حدد سطوراً لتعديلها دفعة واحدة'}
+      </label>}
+      {/* شريط التعديل الجماعي يطفو أسفل الشاشة ما دام فيه تحديد */}
+      {sel.size > 0 && <div role="toolbar" aria-label="تعديل جماعي" style={{ position: 'fixed', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 50, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'center',
+        background: colors.primary, color: '#fff', borderRadius: 14, padding: '10px 14px', boxShadow: '0 12px 32px rgba(15,23,42,.25)', maxWidth: 'calc(100vw - 32px)', fontSize: 13 }}>
+        <span style={{ fontWeight: 600, marginInlineEnd: 4 }}>تم تحديد {sel.size}</span>
+        <button disabled={bulkBusy} onClick={() => bulkVat(false)} style={barBtn}>اجعلها بدون ضريبة</button>
+        <button disabled={bulkBusy} onClick={() => bulkVat(true)} style={barBtn}>اجعلها عليها ضريبة</button>
+        <button onClick={() => setSel(new Set())} style={{ ...barBtn, background: 'transparent', border: 'none' }}>إلغاء</button>
+      </div>}
+      <Table head={[...(onBulkEdit ? [''] : []), 'التاريخ', ...(multi ? ['الفرع'] : []), 'المورد', 'الصنف', 'قبل الضريبة', 'الضريبة', 'الإجمالي', 'الدفع', ...(onEditPurchase ? [''] : [])]} moneyCols={(multi ? [4, 5, 6] : [3, 4, 5]).map(x => x + (onBulkEdit ? 1 : 0))}
+        rows={r.purchases.map((p: any) => [...(onBulkEdit ? [p.id ? check(sel.has(p.id), () => toggle(p.id), `تحديد ${p.name}`) : ''] : []), <Edited key="d" date={p.date} src={p.editedSource} />, ...(multi ? [p.branch] : []), p.supplier || '—', p.name, p.net, p.vat, p.total, p.paid ? 'مدفوعة' : 'آجلة',
           ...(onEditPurchase ? [p.id ? editBtn(() => onEditPurchase({ id: p.id, mode: 'line', label: `${p.supplier || '—'} · ${p.name}`, amount: p.net, hasVat: p.hasVat !== false && p.vat > 0, invoiceNumber: p.invoiceNumber, supplierVat: p.supplierVat })) : ''] : [])])} />
     </Card>}
 
@@ -200,10 +227,47 @@ function VatReturnView({ r, onShowMissing, onRequestMissing }: { r: any; onShowM
   </>
 }
 
+// «أكمل الرقم الضريبي للمورد»: كل مورد فواتيره بدون رقم ضريبي في سطر — يكتبه مرة وينطبق على كل فواتيره (ويُحفظ للمورد)
+function SupplierVatFix({ invoices, onApply }: { invoices: any[]; onApply: (ids: string[], vat: string, supplier: string) => Promise<{ success?: boolean; error?: string; changed?: number }> }) {
+  const groups = new Map<string, string[]>()
+  for (const i of invoices) if (i.supplier && i.firstId && i.missing.includes('الرقم الضريبي للمورد')) groups.set(i.supplier, [...(groups.get(i.supplier) || []), i.firstId])
+  const [vals, setVals] = useState<Record<string, string>>({})
+  const [busy, setBusy] = useState(''), [msg, setMsg] = useState<Record<string, string>>({})
+  if (!groups.size) return null
+  async function apply(sup: string, ids: string[]) {
+    const v = (vals[sup] || '').replace(/\s/g, '').replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+    if (!/^3\d{13}3$/.test(v)) { setMsg(m => ({ ...m, [sup]: 'يتكون من 15 رقماً ويبدأ وينتهي بالرقم 3' })); return }
+    setBusy(sup); setMsg(m => ({ ...m, [sup]: '' }))
+    const j = await onApply(ids, v, sup); setBusy('')
+    if (!j.success || j.error) setMsg(m => ({ ...m, [sup]: j.error || 'تعذر الحفظ' }))
+  }
+  return (
+    <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, marginTop: 10, marginBottom: 4 }}>
+      <div style={{ padding: '10px 14px', borderBottom: `1px solid ${colors.border}`, fontSize: 13, fontWeight: 600 }}>أكمل الرقم الضريبي للموردين
+        <span style={{ fontWeight: 400, color: colors.text3 }}> — اكتبه مرة واحدة لكل مورد، فيُطبَّق على كل فواتيره ويُحفظ للفواتير القادمة</span></div>
+      {[...groups].map(([sup, ids], k) => (
+        <div key={sup} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', padding: '10px 14px', borderTop: k ? `1px solid ${colors.border}` : 'none' }}>
+          <div style={{ flex: '1 1 180px', minWidth: 0 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 600 }}>{sup}</div>
+            <div style={{ fontSize: 12, color: colors.text3 }}>{ids.length === 1 ? 'فاتورة واحدة' : ids.length === 2 ? 'فاتورتان' : `${ids.length} ${ids.length <= 10 ? 'فواتير' : 'فاتورة'}`} بدون رقم ضريبي</div>
+            {msg[sup] && <div style={{ fontSize: 12, color: '#B42318', marginTop: 2 }}>{msg[sup]}</div>}
+          </div>
+          <input value={vals[sup] || ''} onChange={e => setVals(v => ({ ...v, [sup]: e.target.value }))} inputMode="numeric" dir="ltr" placeholder="3XXXXXXXXXXXXX3" aria-label={`الرقم الضريبي ${sup}`}
+            onKeyDown={e => e.key === 'Enter' && apply(sup, ids)}
+            style={{ width: 190, padding: '8px 10px', borderRadius: 9, border: `1px solid ${colors.border}`, fontSize: 16, fontFamily: 'inherit', fontVariantNumeric: 'tabular-nums' }} />
+          <button disabled={busy === sup} onClick={() => apply(sup, ids)} style={btn(true)}>{busy === sup ? 'جاري الحفظ...' : 'طبّق على الكل'}</button>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // حالة الفاتورة: أحمر للناقصة، أخضر للمكتملة
 function Pill({ bad, children }: { bad: boolean; children: React.ReactNode }) {
   return <span style={{ display: 'inline-block', fontSize: 12, fontWeight: 600, borderRadius: 99, padding: '2px 9px', background: bad ? '#FEF3F2' : '#ECFDF3', color: bad ? '#B42318' : '#067647', lineHeight: 1.6 }}>{children}</span>
 }
+
+const barBtn: React.CSSProperties = { fontSize: 12.5, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', borderRadius: 9, padding: '7px 12px', whiteSpace: 'nowrap', border: '1px solid rgba(255,255,255,.25)', background: 'rgba(255,255,255,.1)', color: '#fff' }
 
 // زر صغير لتنبيهات التقرير — أساسي (تعبئة) أو ثانوي (حد)
 function btn(primary: boolean): React.CSSProperties {

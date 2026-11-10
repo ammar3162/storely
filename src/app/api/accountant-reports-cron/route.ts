@@ -5,6 +5,7 @@ import { isSubscriptionActive } from '@/lib/subscription'
 import { duePeriod, scheduleToday } from '@/lib/accountantSchedule'
 import { sendAccountantReport } from '@/lib/accountantSend'
 import { inviteStatus } from '@/lib/accountantInvite'
+import { runDigests } from '@/lib/accountantDigest'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 export const maxDuration = 300
@@ -34,5 +35,8 @@ export async function GET(req: Request) {
       console.error('ACCOUNTANT_REPORT_FAILED', link.org_id, e)
     }
   }
-  return NextResponse.json({ ok: true, sent, failed })
+  // الأحد ٨ الصبح: الملخص الأسبوعي لكل محاسب
+  let digests = 0
+  try { digests = (await runDigests(db)).sent } catch (e) { console.error('ACCOUNTANT_DIGESTS_FAILED', e) }
+  return NextResponse.json({ ok: true, sent, failed, digests })
 }

@@ -116,7 +116,8 @@ export default function PortalClientPage() {
               startMissing={tab === 'purchases' && missingKey > 0} onShowMissing={() => setTab('purchases', { missing: true })}
               onRequest={inv => setReqTarget({ invoice_group: inv.group, purchase_id: inv.firstId, label: `${inv.supplier || '—'} · ${inv.date} · ${Number(inv.total).toFixed(2)}${inv.invoiceNumber ? ` · ${inv.invoiceNumber}` : ''}` })}
               onRequestMissing={requestMissing}
-              onEditClosing={c => setEditClosing(closingForEditor(c))} onEditPurchase={setEditPurchase} />}
+              onEditClosing={c => setEditClosing(closingForEditor(c))} onEditPurchase={setEditPurchase}
+              onBulkEdit={async (ids, fields) => { const j = await sendEdit({ kind: 'bulk_purchase', ids, ...fields }); if (j.success && j.changed) setReload(x => x + 1); return j }} />}
       </>}
       {tab === 'requests' && <AccountantRequestsPanel orgId={orgId} refreshKey={reqKey} onNew={() => setReqTarget(null)} />}
       {tab === 'locks' && <PortalLocks orgId={orgId} />}
