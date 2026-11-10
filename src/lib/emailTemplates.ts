@@ -238,6 +238,23 @@ export function subscriptionEndedEmail(o: { name?: string | null; isTrial: boole
   }
 }
 
+/** تذكير يدوي من الإدارة لمن انتهى اشتراكه (لا يغيّر شيئاً في الرسائل التلقائية) */
+export function subscriptionReminderEmail(o: { name?: string | null; isTrial: boolean }) {
+  const subject = 'تذكير: جدّد اشتراكك في Storely'
+  const url = `${BRAND.site}/renew`
+  const paragraphs = [
+    o.isTrial ? 'نذكّرك بأن تجربتك المجانية في Storely انتهت، ويسعدنا أن تواصل معنا.' : 'نذكّرك بأن اشتراكك في Storely بانتظار التجديد.',
+    'جدّد اشتراكك الآن ليُعاد تفعيل حسابك فوراً، وتواصل متابعة منشأتك من حيث توقفت.',
+    'إذا كان لديك أي استفسار، فريقنا جاهز لمساعدتك.',
+  ]
+  return {
+    subject,
+    html: brandEmail({ title: subject, preheader: 'جدّد اشتراكك ليُعاد تفعيل حسابك فوراً', greeting: o.name ? `مرحباً ${o.name}،` : 'مرحباً،',
+      paragraphs, button: { label: o.isTrial ? 'تفعيل الاشتراك' : 'تجديد الاشتراك', rawUrl: url }, minimal: true, small: 'وصلك هذا البريد لأنك مالك حساب في Storely.' }),
+    text: [o.name ? `مرحباً ${o.name}،` : 'مرحباً،', '', ...paragraphs, '', `${o.isTrial ? 'تفعيل الاشتراك' : 'تجديد الاشتراك'}: ${url}`, '', 'مع تحيات فريق Storely'].join('\n'),
+  }
+}
+
 export function welcomeEmail(o: { name: string; trialEnds?: string | null }) {
   return {
     subject: 'أهلاً بك في Storely',

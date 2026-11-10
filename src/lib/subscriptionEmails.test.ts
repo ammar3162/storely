@@ -23,3 +23,16 @@ describe('subscription emails (inbox-friendly)', () => {
       expect(m.text + m.html).not.toMatch(/بيانات/)
   })
 })
+
+describe('manual renewal reminder', () => {
+  it('has its own subject, renew link and no data wording', async () => {
+    const { subscriptionReminderEmail } = await import('./emailTemplates')
+    const { reminderWhatsappText } = await import('./subscriptionNotice')
+    const e = subscriptionReminderEmail({ name: 'عمار', isTrial: false })
+    expect(e.subject).toBe('تذكير: جدّد اشتراكك في Storely')
+    expect(e.text).toContain('https://www.storely.dev/renew')
+    expect(e.text + e.html).not.toMatch(/بيانات/)
+    expect(reminderWhatsappText('عمار', true)).toContain('تجربتك المجانية')
+    expect(reminderWhatsappText(null, false).startsWith('مرحباً،')).toBe(true)
+  })
+})

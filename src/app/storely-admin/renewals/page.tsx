@@ -28,15 +28,17 @@ export default function RenewalsPage() {
     load(); window.dispatchEvent(new Event('admin-counts-refresh'))
   }
 
-  // رسالة التجديد (واتساب + إيميل) لمنشأة اشتراكها منتهي
-  async function notify(e: any) {
-    const ok = await confirmDialog({ title: `إرسال رسالة التجديد إلى ${e.org_name}؟`,
-      message: `يصل إلى ${e.owner_name || 'المالك'} واتساب وإيميل: «${e.sub_type === 'trial' ? 'انتهت تجربتك المجانية' : 'انتهى اشتراكك'} في Storely… جدّد اشتراكك الآن ليُعاد تفعيل حسابك فوراً»، مع رابط التجديد.`, confirmText: 'إرسال', type: 'success' })
+  // تذكير يدوي (واتساب + إيميل) — ما يغيّر الرسائل التلقائية
+  const remindable = expired.filter(e => !e.pending)
+  async function remind(e: any | null) {
+    const n = e ? 1 : remindable.length
+    const ok = await confirmDialog({ title: e ? `إرسال تذكير إلى ${e.org_name}؟` : `إرسال تذكير إلى ${n} ${n === 1 ? 'منشأة' : n === 2 ? 'منشأتين' : 'منشآت'}؟`,
+      message: 'يصل إلى المالك واتساب وإيميل: «تذكير: جدّد اشتراكك في Storely… جدّد اشتراكك الآن ليُعاد تفعيل حسابك فوراً» مع رابط التجديد. الرسائل التلقائية تبقى كما هي.', confirmText: 'إرسال التذكير', type: 'success' })
     if (!ok) return
-    setBusy('n' + e.org_id)
-    const j = await adminFetch('/api/admin/renewals', { method: 'POST', body: { action: 'notify', org_id: e.org_id } })
+    setBusy(e ? 'n' + e.org_id : 'all')
+    const j = await adminFetch('/api/admin/renewals', { method: 'POST', body: e ? { action: 'remind', org_id: e.org_id } : { action: 'remind_all', expected: n } })
     setBusy('')
-    setMsg(j.success ? { t: `أُرسلت رسالة التجديد إلى ${e.org_name}: ${[j.wa && 'واتساب', j.mail && 'إيميل'].filter(Boolean).join(' و')}` } : { t: j.error || 'تعذّر الإرسال', bad: true })
+    setMsg(j.success ? { t: `أُرسل التذكير إلى ${j.sent} ${j.sent === 1 ? 'منشأة' : 'منشآت'} (واتساب ${j.wa}، إيميل ${j.mail})${j.failed ? ` · تعذّر ${j.failed}` : ''}` } : { t: j.error || 'تعذّر الإرسال', bad: true })
     load()
   }
 
@@ -48,17 +50,23 @@ export default function RenewalsPage() {
       <Stack>
         {msg && <Notice tone={msg.bad ? 'danger' : 'primary'}>{msg.t}</Notice>}
         {expired.length > 0 && (
-          <Card title={`اشتراكات منتهية (${expired.length})`} subtitle="آخر 60 يوماً — أرسل لهم رسالة التجديد أو تواصل معهم" pad={0}>
-            <Table head={['المنشأة', 'انتهى', 'آخر رسالة', 'تواصل', '']} minWidth={760}>
+          <Card title={`اشتراكات منتهية (${expired.length})`} subtitle="آخر 60 يوماً — التذكير اليدوي إضافة على الرسائل التلقائية ولا يغيّرها" pad={0}
+            actions={remindable.length > 1 ? <Btn small kind="primary" onClick={() => remind(null)} disabled={!!busy}>{busy === 'all' ? 'جاري الإرسال...' : `أرسل تذكير للجميع (${remindable.length})`}</Btn> : undefined}>
+            <Table head={['المنشأة', 'انتهى', 'الرسائل', 'تواصل', '']} minWidth={780}>
               {expired.map(e => {
                 const link = wa(e.phone, e.org_name)
                 return (
                   <tr key={e.org_id}>
                     <td style={td}><div style={{ fontWeight: 600 }}>{e.org_name}</div><div style={{ fontSize: 12, color: A.text3 }}>{e.owner_name || '—'} · {e.sub_type === 'trial' ? 'تجربة' : 'مدفوع'}</div></td>
                     <td style={td}>{fmtDate(e.ends_at)}</td>
-                    <td style={td}>{e.pending ? <Badge tone="warning">طلب التجديد</Badge> : e.notified_at ? fmtDate(e.notified_at, true) : <span style={{ color: A.text3 }}>لم تُرسل</span>}</td>
+                    <td style={td}>
+                      {e.pending ? <Badge tone="warning">طلب التجديد</Badge> : <>
+                        <div style={{ fontSize: 12.5 }}>تلقائي: {e.auto_at ? fmtDate(e.auto_at, true) : <span style={{ color: A.text3 }}>لم يُرسل بعد</span>}</div>
+                        <div style={{ fontSize: 12.5, color: A.text3 }}>تذكير يدوي: {e.manual_at ? fmtDate(e.manual_at, true) : '—'}</div>
+                      </>}
+                    </td>
                     <td style={td}>{link ? <a href={link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: A.primary, fontWeight: 600, textDecoration: 'none' }}><MessageCircle size={15} /><span dir="ltr">{e.phone}</span></a> : '—'}</td>
-                    <td style={{ ...td, textAlign: 'left' }}>{!e.pending && <Btn small kind="primary" onClick={() => notify(e)} disabled={!!busy}>{busy === 'n' + e.org_id ? 'جاري الإرسال...' : 'أرسل رسالة التجديد'}</Btn>}</td>
+                    <td style={{ ...td, textAlign: 'left' }}>{!e.pending && <Btn small onClick={() => remind(e)} disabled={!!busy}>{busy === 'n' + e.org_id ? 'جاري الإرسال...' : 'أرسل تذكير'}</Btn>}</td>
                   </tr>
                 )
               })}
