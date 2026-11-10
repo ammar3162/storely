@@ -21,7 +21,7 @@ export function trialEndingMessage(name: string | null | undefined, daysLeft: nu
     '',
     `من الفرع ${ORDINAL[BRANCH_DISCOUNT_FROM] || BRANCH_DISCOUNT_FROM} يحصل كل فرع على خصم ${pct}%، والاشتراك السنوي يوفّر 20%.`,
     '',
-    'أرسل لنا المزايا التي تريدها وسنفعّلها لك، أو عدّلها بنفسك من صفحة الإضافات:',
-    'storely.dev',
+    'لتفعيل اشتراكك بالمزايا التي تريدها، اضغط الرابط وسيتواصل معك فريقنا:',
+    'https://www.storely.dev/renew',
   ].join('\n')
 }

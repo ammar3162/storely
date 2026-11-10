@@ -67,7 +67,7 @@ export async function POST(req: Request) {
       const daysLeft = Math.ceil((endsAt.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
       const text = isTrial
         ? trialEndingMessage(p.full_name, daysLeft)
-        : `مرحباً ${p.full_name || ''}\n\nينتهي اشتراكك في Storely خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'}.\n\nجدّد اشتراكك الآن لمتابعة إدارة مخزونك وفريقك دون انقطاع:\nstorely.dev`
+        : `مرحباً ${p.full_name || ''}\n\nينتهي اشتراكك في Storely خلال ${daysLeft} ${daysLeft === 1 ? 'يوم' : 'أيام'}.\n\nجدّد اشتراكك الآن لمتابعة إدارة مخزونك وفريقك دون انقطاع:\nhttps://www.storely.dev/renew`
       const waOk = to ? (await sendWhatsAppMessage(to, text)).ok : false
       // نفس التذكير بالبريد (مرة وحدة مع الواتساب)
       const mailOk = await mail(await ownerEmail(p.id), subscriptionEndingEmail({ name, daysLeft, endsAt: p.subscription_ends_at, isTrial }))
