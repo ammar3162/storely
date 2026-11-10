@@ -71,7 +71,7 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
     toast(value ? `الإذن حتى ${value}` : 'الإذن بدون نهاية')
   }
   async function revoke(a: any) {
-    if (!(await confirmDialog({ title: 'سحب إذن المحاسب؟', message: `${a.name || a.email} لن يتمكن بعد ذلك من الاطلاع على بيانات منشأتك.`, confirmText: 'سحب الإذن', type: 'danger' }))) return
+    if (!(await confirmDialog({ title: 'سحب إذن المحاسب؟', message: `${a.name || a.email} لن يتمكن بعد ذلك من الاطلاع على بيانات منشأتك.${(() => { const n = list.filter((x: any) => x.delegated_from === a.id).length; return n ? ` وسيُسحب معه إذن ${n === 1 ? 'موظف واحد' : `${n} موظفين`} من مكتبه.` : '' })()}`, confirmText: 'سحب الإذن', type: 'danger' }))) return
     const j = await api.del('/api/accountant-access', { org_id: orgId, id: a.id })
     if (!j.success) { toast(j.error || 'تعذر الحذف', 'error'); return }
     toast('تم سحب الإذن'); load()
@@ -110,7 +110,7 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: 'block', fontSize: 14, fontWeight: 800, color: colors.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{a.name || a.email}</span>
               <span style={{ display: 'block', fontSize: 12, color: colors.text3, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
-                {a.sections.length} {a.sections.length === 1 ? 'قسم' : a.sections.length === 2 ? 'قسمان' : 'أقسام'} · {a.status !== 'active' ? `الدعوة ${ago(a.invited_at)}` : a.last_view_at ? `آخر دخول ${ago(a.last_view_at)}` : 'لم يدخل بعد'}
+                {a.team_of ? `من فريق مكتب ${a.team_of} · ` : ''}{a.sections.length} {a.sections.length === 1 ? 'قسم' : a.sections.length === 2 ? 'قسمان' : 'أقسام'} · {a.status !== 'active' ? `الدعوة ${ago(a.invited_at)}` : a.last_view_at ? `آخر دخول ${ago(a.last_view_at)}` : 'لم يدخل بعد'}
               </span>
             </span>
             <span style={{ fontSize: 11.5, fontWeight: 700, padding: '3px 10px', borderRadius: 99, background: st.bg, color: st.c, flexShrink: 0, whiteSpace: 'nowrap' as const }}>{st.t}</span>
@@ -119,7 +119,8 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
           {isOpen && (
           <div style={{ padding: '14px 16px 16px', borderTop: `1px solid ${colors.border}`, display: 'grid', gap: 14 }}>
             {a.name && a.email && <div style={{ fontSize: 13, color: colors.text, textAlign: 'right' as const }}><span dir="ltr">{a.email}</span></div>}
-            <div>
+            {a.delegated_from && <div style={{ fontSize: 13, color: colors.text3, lineHeight: 1.7 }}>أسنده محاسبك {a.team_of || ''} من فريق مكتبه. يرى نفس الأقسام المتاحة لمحاسبك وللمدة نفسها، وتتغير صلاحياته معه. يمكنك سحب إذنه في أي وقت.</div>}
+            {!a.delegated_from && <><div>
               <div style={label}>الأقسام المتاحة له</div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
                 {ACC_SECTIONS.map(s => <button key={s.key} onClick={() => toggleSection(a, s.key)} style={chip(a.sections.includes(s.key))}>{s.label}</button>)}
@@ -132,7 +133,7 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
                 {a.expires_on ? <button onClick={() => setExpiry(a, '')} style={{ fontSize: 12, fontWeight: 700, color: colors.primary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, padding: 0 }}>بدون نهاية</button>
                   : <span style={{ fontSize: 12, color: colors.text3 }}>اختر تاريخاً لينتهي الإذن تلقائياً</span>}
               </div>
-            </div>
+            </div></>}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, paddingTop: 12, borderTop: `1px solid ${colors.border}` }}>
               {a.status !== 'active' && <button onClick={() => resend(a)} disabled={busy} style={{ ...btnSecondary, padding: '8px 12px', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13 }}><Send size={14} /> إعادة إرسال الدعوة</button>}
               <button onClick={() => revoke(a)} style={{ padding: '8px 12px', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: colors.danger, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, marginInlineStart: 'auto' }}><Trash2 size={14} /> سحب الإذن</button>
@@ -174,7 +175,7 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
             <button onClick={() => setAdding(false)} style={{ ...btnSecondary, padding: '10px 16px' }}>إلغاء</button>
           </div>
         </div>
-      ) : list.length < 3 && (
+      ) : list.filter(a => !a.delegated_from).length < 3 && (
         <button onClick={() => setAdding(true)} style={{ width: '100%', marginBottom: 12, padding: '13px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: colors.surface, border: `1.5px dashed ${colors.border}`, borderRadius: radius.lg, color: colors.text, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
           <UserPlus size={16} /> {list.length ? 'دعوة محاسب آخر' : 'دعوة محاسب'}
         </button>

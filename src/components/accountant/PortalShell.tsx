@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutGrid, MessageSquareText, Lock, Smartphone, UserRound, LogOut, Menu, X } from 'lucide-react'
+import { LayoutGrid, MessageSquareText, Lock, Smartphone, UserRound, Users, LogOut, Menu, X } from 'lucide-react'
 import { colors, font, radius } from '@/lib/ds'
 import { ListSkeleton } from '@/components/PageSkeleton'
 
@@ -51,6 +51,7 @@ export function PortalShell({ title, subtitle, actions, children, orgLogo }: {
     { href: '/accountant-portal', label: 'نظرة عامة', icon: LayoutGrid },
     { href: '/accountant-portal/requests', label: 'الطلبات', icon: MessageSquareText, badge: pending },
     { href: '/accountant-portal/locks', label: 'إقفال الأشهر', icon: Lock },
+    { href: '/accountant-portal/team', label: 'فريق المكتب', icon: Users },
     { href: '/accountant-portal/devices', label: 'حسابي', icon: UserRound },
   ]
   const isActive = (h: string) => h === '/accountant-portal' ? path === h : path.startsWith(h)

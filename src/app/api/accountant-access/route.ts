@@ -10,7 +10,8 @@ import { sendInviteEmail } from '@/lib/accountantInvite'
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 const UUID_RE = /^[0-9a-f-]{36}$/i
 const MAX_PER_ORG = 3
-const FIELDS = 'id,email,name,branch_id,sections,vat_registered,status,invited_at,accepted_at,last_view_at,expires_on'
+const FIELDS = 'id,email,name,branch_id,sections,vat_registered,status,invited_at,accepted_at,last_view_at,expires_on,delegated_from'
+// delegated_from: موظف من مكتب المحاسب (أسنده المحاسب) — يرث صلاحياته، والمالك يقدر يشيله بس
 
 // بوابة المحاسب — صلاحيات المحاسبين على المنشأة (للمالك بس)
 async function ownerOnly(org_id: unknown) {
@@ -46,7 +47,9 @@ export async function GET(req: Request) {
       db.from('accountant_access').select(FIELDS).eq('org_id', org_id!).order('invited_at'),
       db.from('accountant_view_logs').select('action,period_start,period_end,created_at,accountant_users(email,name)').eq('org_id', org_id!).order('created_at', { ascending: false }).limit(8),
     ])
-    return NextResponse.json({ success: true, accountants: list || [], logs: logs || [] })
+    const rows = (list || []) as any[]
+    const lead = (id: string) => { const l = rows.find(r => r.id === id); return l ? (l.name || l.email) : null }
+    return NextResponse.json({ success: true, accountants: rows.map(r => r.delegated_from ? { ...r, team_of: lead(r.delegated_from) } : r), logs: logs || [] })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
@@ -82,7 +85,7 @@ export async function POST(req: Request) {
 
     const { data: existing } = await db.from('accountant_access').select('id').eq('org_id', b.org_id).eq('email', email).maybeSingle()
     if (existing) return NextResponse.json({ error: 'هذا المحاسب مدعو مسبقاً' }, { status: 409 })
-    const { count } = await db.from('accountant_access').select('id', { count: 'exact', head: true }).eq('org_id', b.org_id)
+    const { count } = await db.from('accountant_access').select('id', { count: 'exact', head: true }).eq('org_id', b.org_id).is('delegated_from', null)
     if ((count || 0) >= MAX_PER_ORG) return NextResponse.json({ error: `الحد ${MAX_PER_ORG} محاسبين لكل منشأة` }, { status: 400 })
 
     // الإذن يبقى «بانتظار القبول» لين المحاسب يضغط «قبول الدعوة» في الإيميل
@@ -110,8 +113,13 @@ export async function PATCH(req: Request) {
     const db = sb()
     if ('branch_id' in b) { const br = await checkBranch(db, b.org_id, b.branch_id); if (!br.ok) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 }); upd.branch_id = br.id }
     if (!Object.keys(upd).length) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+    const { data: cur } = await db.from('accountant_access').select('delegated_from').eq('id', b.id).eq('org_id', b.org_id).maybeSingle()
+    if (!cur) return NextResponse.json({ error: 'المحاسب غير موجود' }, { status: 404 })
+    if ((cur as any).delegated_from) return NextResponse.json({ error: 'صلاحيات موظف المكتب تتبع المحاسب الرئيسي — عدّل المحاسب الرئيسي' }, { status: 400 })
     const { data, error } = await db.from('accountant_access').update(upd as any).eq('id', b.id).eq('org_id', b.org_id).select(FIELDS).maybeSingle()
     if (error || !data) return NextResponse.json({ error: 'تعذر الحفظ' }, { status: 500 })
+    // موظفو مكتبه يتبعونه (الأقسام، الفرع، المدة)
+    await db.from('accountant_access').update(upd as any).eq('org_id', b.org_id).eq('delegated_from', b.id)
     return NextResponse.json({ success: true, accountant: data })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
