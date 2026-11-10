@@ -47,7 +47,7 @@ export default function AcceptInvitePage() {
   const m = msg[state]
 
   return (
-    <div dir="rtl" style={{ minHeight: '100vh', fontFamily: font.family, background:'linear-gradient(180deg,#0d4543 0,#203640 260px,#f3f6f6 260px)', padding: '36px 16px' }}>
+    <div dir="rtl" style={{ minHeight: '100vh', fontFamily: font.family, background:`linear-gradient(180deg,${colors.primary} 0,${colors.primary} 260px,${colors.bg} 260px)`, padding: '36px 16px' }}>
       <div style={{ maxWidth: 460, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, color:'#fff', marginBottom: 22 }}>
           <img src="/storely-logo.png" alt="Storely" width={38} height={38} style={{ borderRadius: 10, background:'#fff' }} />

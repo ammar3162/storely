@@ -7,6 +7,7 @@ import { staffHasPermission, NO_PURCHASES } from '@/lib/staffPermission'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { staffFeatureError, branchFeatureDenied } from '@/lib/featureRoutes'
+import { conversionFactor, loadUnitMap } from '@/lib/productUnits'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -76,11 +77,16 @@ export async function POST(req: Request) {
       const unitCost = purchasedQty > 0 ? (Number(amount) || 0) / purchasedQty : 0
 
       let existingQ = supabase.from('products')
-        .select('id,qty,avg_cost').eq('org_id', org_id).eq('name', name)
+        .select('id,qty,avg_cost,unit').eq('org_id', org_id).eq('name', name)
       if (branch_id) existingQ = existingQ.eq('branch_id', branch_id)
       const { data: existing } = await existingQ.limit(1)
 
       if (existing && existing.length > 0) {
+        // وحدة الشراء المحفوظة للصنف (كرتون = 12 كيس) — الموظف يكتب بالكرتون والمخزون يزيد بالكيس
+        const ex = existing[0] as any
+        const factor = conversionFactor(ex.unit, unit || ex.unit, (await loadUnitMap(supabase, org_id, [ex.id])).get(ex.id)) || 1
+        const purchasedQty = factor === 1 ? Number(qty) : Math.max(1, Math.round(Number(qty) * factor))   // المخزون أعداد صحيحة
+        const unitCost = purchasedQty > 0 ? (Number(amount) || 0) / purchasedQty : 0
         const oldQty = Number(existing[0].qty) || 0
         const oldAvgCost = Number((existing[0] as any).avg_cost) || 0
         const newAvgCost = (oldQty + purchasedQty) > 0

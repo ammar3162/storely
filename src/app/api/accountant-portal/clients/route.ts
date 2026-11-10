@@ -7,6 +7,7 @@ import { customPeriod, saudiToday, periodLabel } from '@/lib/accountantSchedule'
 import { isSubscriptionActive } from '@/lib/subscription'
 import { mapLimit } from '@/lib/mapLimit'
 import { sectionLabels } from '@/lib/accountantInvite'
+import { closedMonths, monthName } from '@/lib/periodLock'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 const LIGHT: AccSection[] = ['sales', 'purchases', 'vat', 'payables']   // ملخص البطاقات (بدون الرواتب — ثقيلة)
@@ -25,9 +26,14 @@ export async function GET(req: Request) {
     const { data: rows } = await db.from('accountant_access').select('org_id,branch_id,sections,vat_registered,last_view_at,expires_on,organizations(name,logo_url),branches(name)')
       .eq('accountant_id', me.id).eq('status', 'active')
     const { data: reqs } = await db.from('accountant_requests').select('org_id,status').eq('accountant_id', me.id).neq('status', 'resolved')
+    // آخر شهر انتهى: هل أقفله المحاسب؟ (عمود «الإقفال» في جدول العملاء)
+    const lastMonth = closedMonths(1)[0]
+    const orgIds = ((rows || []) as any[]).map(a => a.org_id)
+    const { data: lockRows } = orgIds.length ? await db.from('period_locks').select('org_id').eq('month', lastMonth).in('org_id', orgIds) : { data: [] }
+    const lockedSet = new Set(((lockRows || []) as any[]).map(l => l.org_id))
     const reqCount = (orgId: string, st: string) => ((reqs || []) as any[]).filter(r => r.org_id === orgId && r.status === st).length
     const clients = await mapLimit((rows || []) as any[], 4, async a => {
-      const base = { org_id: a.org_id, name: a.organizations?.name || '—', logo_url: a.organizations?.logo_url || null, branch: a.branches?.name || null, sections: a.sections, expires_on: a.expires_on || null,
+      const base = { org_id: a.org_id, name: a.organizations?.name || '—', logo_url: a.organizations?.logo_url || null, branch: a.branches?.name || null, sections: a.sections, expires_on: a.expires_on || null, locked: lockedSet.has(a.org_id),
         requests: { open: reqCount(a.org_id, 'open'), answered: reqCount(a.org_id, 'answered') } }
       if (accessExpired(a.expires_on)) return { ...base, expired: true }
       if (!(await isSubscriptionActive(db, a.org_id))) return { ...base, inactive: true }
@@ -54,7 +60,7 @@ export async function GET(req: Request) {
     // دعوات تنتظر قبوله (لو دخل البوابة قبل ما يضغط الزر في الإيميل)
     const { data: inv } = await db.from('accountant_access').select('id,sections,invited_at,organizations(name,logo_url),branches(name)').eq('email', me.email).eq('status', 'pending').order('invited_at')
     const invites = ((inv || []) as any[]).map(i => ({ id: i.id, org: i.organizations?.name || 'منشأة', logo_url: i.organizations?.logo_url || null, branch: i.branches?.name || null, sections: sectionLabels(i.sections || []) }))
-    return NextResponse.json({ success: true, accountant: me, period: p, clients, invites })
+    return NextResponse.json({ success: true, accountant: me, period: p, clients, invites, close_month: { month: lastMonth, label: monthName(lastMonth) } })
   } catch {
     return NextResponse.json({ error: 'تعذر تحميل العملاء، حاول مرة أخرى' }, { status: 500 })
   }

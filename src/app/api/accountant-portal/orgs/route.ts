@@ -11,7 +11,7 @@ export async function GET(req: Request) {
     const me = await currentAccountant(db, req)
     if (!me) return NextResponse.json({ error: 'سجّل الدخول' }, { status: 401 })
     const [{ data: rows }, { data: reqs }] = await Promise.all([
-      db.from('accountant_access').select('org_id,expires_on,organizations(name,logo_url),branches(name)').eq('accountant_id', me.id).eq('status', 'active'),
+      db.from('accountant_access').select('org_id,expires_on,delegated_from,organizations(name,logo_url),branches(name)').eq('accountant_id', me.id).eq('status', 'active'),
       db.from('accountant_requests').select('org_id,status').eq('accountant_id', me.id).neq('status', 'resolved'),
     ])
     const count = (o: string, st: string) => ((reqs || []) as any[]).filter(r => r.org_id === o && r.status === st).length
@@ -19,7 +19,9 @@ export async function GET(req: Request) {
       org_id: a.org_id, name: a.organizations?.name || '—', logo_url: a.organizations?.logo_url || null, branch: a.branches?.name || null,
       expired: accessExpired(a.expires_on), open: count(a.org_id, 'open'), answered: count(a.org_id, 'answered'),
     })).sort((x, y) => x.name.localeCompare(y.name, 'ar'))
-    return NextResponse.json({ success: true, accountant: { name: me.name, email: me.email }, orgs })
+    // lead: دعته منشأة مباشرة (يقدر يدير فريق مكتبه) — موظف المكتب ما يشوف «فريق المكتب»
+    const lead = ((rows || []) as any[]).some(a => !a.delegated_from && !accessExpired(a.expires_on))
+    return NextResponse.json({ success: true, accountant: { name: me.name, email: me.email }, orgs, lead })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }

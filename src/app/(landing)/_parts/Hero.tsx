@@ -1,6 +1,6 @@
 'use client'
-import { Check, ArrowLeft } from 'lucide-react'
-import { PhoneVideo } from './constants'
+import { Check, ArrowLeft, Play } from 'lucide-react'
+import HeroMock from './HeroMock'
 import type { LandingState } from './useLanding'
 import { STARTING_PRICE as CUSTOM_MIN_MONTHLY } from '@/lib/planPricing'  // «يبدأ من»: أرخص ميزة لكل فرع
 
@@ -19,16 +19,15 @@ export default function Hero({ m }: { m: LandingState }) {
             <p className="lp-lead">{t('heroSub')}</p>
             <div className="lp-cta-row">
               <button className="lp-btn lp-btn-dark lp-btn-lg" onClick={()=>router.push('/login?mode=register')}>{t('heroStart')} <ArrowLeft size={18}/></button>
-              <a className="lp-btn lp-btn-soft lp-btn-lg" href="#demo">{t('heroDemo')}</a>
+              <a className="lp-btn lp-btn-soft lp-btn-lg" href="#video"><span className="lp-play"><Play size={12} fill="currentColor"/></span>{t('heroVideo')}</a>
             </div>
             <ul className="lp-ticks">
-              {['heroPoint1','heroPoint2','heroPoint3'].map(k=><li key={k}><Check size={16}/>{t(k)}</li>)}
+              {['heroP1','heroP2','heroP3'].map(k=><li key={k}><Check size={16}/>{t(k)}</li>)}
             </ul>
           </div>
 
           <div className="lp-hero-media">
-            <div className="lp-halo"/>
-            <PhoneVideo src="/videos/storely-brand.mp4" poster="/videos/storely-brand.jpg" label="إعلان Storely"/>
+            <HeroMock m={m}/>
           </div>
         </div>
 

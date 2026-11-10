@@ -2,9 +2,10 @@
 import { catsFor, unitsFor } from '@/lib/businessTypes'
 import SelectOrOther from '@/components/SelectOrOther'
 import NumberInput from '@/components/NumberInput'
-import { X, Camera, Ruler, Trash2 } from 'lucide-react'
+import { X, Camera, Trash2 } from 'lucide-react'
 import { C } from './constants'
 import type { InventoryState } from './useInventory'
+import UnitsSection from './UnitsSection'
 
 export default function ProductSheet({ m }: { m: InventoryState }) {
   const { showAdd, setShowAdd, saving, editItem, setEditItem, addQty, setAddQty, setConfirm, form, setForm, setShowScan, businessType, lbl, inp, handleSave } = m
@@ -56,32 +57,8 @@ export default function ProductSheet({ m }: { m: InventoryState }) {
                     <input type="date" value={form.expiry_date} onChange={e=>setForm({...form,expiry_date:e.target.value})} style={inp()}/>
                   </div>
 
-                  {/* تحويل الوحدة الدقيقة — لدقة استخدام هذا المنتج بالوصفات */}
-                  <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:12}}>
-                    <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
-                      <span style={{display:'flex',alignItems:'center'}}><Ruler size={13} strokeWidth={2.25}/></span>
-                      <div style={{fontSize:13,fontWeight:600,color:C.text}}>تحويل الوحدة الدقيقة (اختياري)</div>
-                      {form.recipe_unit && form.recipe_unit_factor && Number(form.recipe_unit_factor)>0 && (
-                        <span style={{fontSize:12,fontWeight:600,color:C.primary,marginRight:'auto'}}>محدد</span>
-                      )}
-                    </div>
-                    <div style={{fontSize:12,color:C.text3,marginBottom:8,lineHeight:1.6}}>مفيد إذا كنت تستخدم هذا المنتج في الوصفات — مثال: كم غراماً في الكيس، وكم علبة في الكرتون</div>
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                      <div>
-                        <label style={lbl}>الوحدة الدقيقة</label>
-                        <input value={form.recipe_unit} onChange={e=>setForm({...form,recipe_unit:e.target.value})} style={inp()} placeholder="مثال: جرام"/>
-                      </div>
-                      <div>
-                        <label style={lbl}>الكمية بالوحدة الدقيقة</label>
-                        <NumberInput min="0" step="any" value={form.recipe_unit_factor} onChange={e=>setForm({...form,recipe_unit_factor:e.target.value})} style={inp()} placeholder={`1 ${form.unit} = ؟ ${form.recipe_unit||'وحدة'}`}/>
-                      </div>
-                    </div>
-                    {form.recipe_unit && form.recipe_unit_factor && Number(form.recipe_unit_factor)>0 && (
-                      <div style={{fontSize:12,fontWeight:600,color:C.text2,marginTop:8}}>
-                        1 {form.unit} = {form.recipe_unit_factor} {form.recipe_unit}
-                      </div>
-                    )}
-                  </div>
+                  {/* الوحدة الدقيقة للوصفات (مطوي) — تحويل الشراء يُتعلّم من «كم يدخل المخزون» بالفاتورة */}
+                  <UnitsSection form={form} setForm={setForm} inp={inp} lbl={lbl}/>
 
                   {editItem?(
                     <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:12}}>

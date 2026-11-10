@@ -24,6 +24,8 @@ describe('branch manager permissions', () => {
     expect(managerApiAllowed('/api/branch-transfer', 'POST', { inventory: true })).toBe(false)
     expect(managerApiAllowed('/api/branch-transfer', 'POST', { transfer: true })).toBe(true)
     expect(managerApiAllowed('/api/branch-transfer', 'GET', {})).toBe(false)
+    expect(managerApiAllowed('/api/branch-transfer', 'GET', { reports: true })).toBe(true)   // تقرير التحويلات
+    expect(managerApiAllowed('/api/branch-transfer', 'POST', { reports: true })).toBe(false)
   })
   it('does not confuse prefixes (/reports vs /reportsx)', () => {
     expect(managerPageAllowed('/reports/x', { reports: true })).toBe(true)

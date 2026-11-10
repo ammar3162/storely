@@ -21,6 +21,7 @@ export async function POST(req: Request) {
     ])
     if ((byEmail || 0) >= 5 || (byIp || 0) >= 20) return NextResponse.json({ error: 'طلبت رموزاً كثيرة — حاول بعد ساعة' }, { status: 429 })
 
+    // فقط من له إذن على منشأة: دعوة من مالكها، أو إسناد من محاسبها (والمالك يصله إشعار) — الإضافة للفريق وحدها لا تكفي
     const { count: invited } = await db.from('accountant_access').select('id', { count: 'exact', head: true }).eq('email', email)
     if (!invited) return NextResponse.json({ success: true, message: GENERIC })
 

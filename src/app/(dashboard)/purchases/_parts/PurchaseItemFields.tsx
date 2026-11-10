@@ -7,10 +7,19 @@ import SelectOrOther from '@/components/SelectOrOther'
 import InvoicePickButtons from '@/components/InvoicePickButtons'
 import { C, CATS, CAT_ICONS, lbl, inp } from './constants'
 import type { PurchasesState } from './usePurchases'
+import { conversionFactor, normalizeUnit, sameUnit } from '@/lib/productUnits'
+import { looksLikeExpense } from '@/lib/expenseHint'
 
 export default function PurchaseItemFields({ m }: { m: PurchasesState }) {
   const { invOn, products, isExisting, setIsExisting, uploading, bizType, setShowScan, previewUrl, form, setForm, handleImage } = m
   const cats = CATS.filter(c => invOn || c !== 'مخزون')
+  // «كم يدخل المخزون؟» لصنف موجود: افتراضياً نفس الكمية (أو المحفوظ من فاتورة سابقة: كرتون = 12 كيس)، والعميل يعدّله
+  const picked = form.category==='مخزون' && isExisting ? (products as any[]).find(p=>p.name===form.name) : null
+  const qtyNum = Number(form.qty) || 0
+  const savedFactor = picked ? conversionFactor(picked.unit, form.unit || picked.unit, Object.fromEntries(((picked.purchase_units||[]) as {unit:string;factor:number}[]).map(u=>[normalizeUnit(u.unit),u.factor]))) : null
+  const factor = Number(form.unit_factor) > 0 ? Number(form.unit_factor) : (savedFactor || 1)
+  const stockQty = Math.round(qtyNum * factor)
+  const unclear = !!picked && !(Number(form.unit_factor) > 0) && !savedFactor && !sameUnit(form.unit, picked.unit)
   return (
     <>
             {/* Category */}
@@ -81,6 +90,14 @@ export default function PurchaseItemFields({ m }: { m: PurchasesState }) {
               )}
             </div>
 
+            {form.category==='مخزون' && looksLikeExpense(form.name) && (
+              <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',fontSize:13,fontWeight:600,color:'#92400e',background:'#fffbeb',border:'1.5px solid #f59e0b',borderRadius:8,padding:'9px 11px',marginBottom:10}}>
+                «{form.name}» يبدو مصروفاً وليس صنف مخزون — لن يُصرف أو يُجرد.
+                <button type="button" onClick={()=>setForm({...form,category:'مشتريات'})}
+                  style={{marginInlineStart:'auto',padding:'5px 10px',borderRadius:7,border:'1px solid #f59e0b',background:'white',color:'#92400e',fontSize:12.5,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>اجعله مشتريات</button>
+              </div>
+            )}
+
             {/* Barcode + qty */}
             {form.category==='مخزون'&&(
               <>
@@ -91,7 +108,7 @@ export default function PurchaseItemFields({ m }: { m: PurchasesState }) {
                     <button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 10px',background:C.primaryL,color:C.primary,border:`1px solid ${C.primaryB}`,borderRadius:6,fontSize:14,cursor:'pointer',display:'flex',alignItems:'center'}} aria-label="مسح الباركود"><ScanLine size={16}/></button>
                   </div>
                 </div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:10}}>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:picked&&qtyNum>0?8:10}}>
                   <div>
                     <label style={lbl}>الكمية</label>
                     <NumberInput min="0" step="any" value={form.qty} onChange={e=>setForm({...form,qty:e.target.value})} style={inp} placeholder="0" inputMode="numeric"/>
@@ -105,6 +122,20 @@ export default function PurchaseItemFields({ m }: { m: PurchasesState }) {
                     <NumberInput min="0" value={form.reorder_point} onChange={e=>setForm({...form,reorder_point:e.target.value})} style={inp} inputMode="numeric"/>
                   </div>
                 </div>
+                {picked && qtyNum > 0 && (
+                  <div style={{background:C.bg,border:`1px solid ${unclear?'#f59e0b':C.border2}`,borderRadius:8,padding:'10px 12px',marginBottom:10}}>
+                    <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                      <span style={{fontSize:12.5,fontWeight:600,color:C.text}}>يدخل المخزون:</span>
+                      <NumberInput key={`${picked.id}-${qtyNum}-${form.unit}-${savedFactor}`} min="0" step="any" defaultValue={String(stockQty)} aria-label="الكمية التي تدخل المخزون"
+                        onBlur={(e:any)=>{ const v=Math.round(Number(e.target.value)); if(v>0) setForm({...form,unit_factor:String(Math.round(v/qtyNum*10000)/10000)}) }}
+                        style={{...inp,width:100}}/>
+                      <span style={{fontSize:12.5,color:C.text2}}>{picked.unit}</span>
+                    </div>
+                    <div style={{fontSize:11.5,color:unclear?'#b45309':C.text3,marginTop:6}}>
+                      {unclear ? `الفاتورة بـ${form.unit} والمخزون بـ${picked.unit} — اكتب كم ${picked.unit} دخل فعلاً.` : factor !== 1 ? 'محفوظ من فاتورة سابقة — عدّله إذا تغيّر.' : 'إذا الكرتون فيه أكثر من وحدة، اكتب كم دخل مخزنك فعلاً. نتذكرها للمرة القادمة.'}
+                    </div>
+                  </div>
+                )}
               </>
             )}
     </>

@@ -8,6 +8,7 @@ import { noteInvoiceScan } from '@/lib/scanUsage'
 import { classifyItems, applyAnswer, draftStatus, aliasKey, type AgentItem } from '@/lib/invoiceAgent'
 import { guard, limit } from '@/lib/rateLimit'
 import { branchFeatureDenied } from '@/lib/featureRoutes'
+import { conversionFactor, loadUnitMap, saveProductUnit } from '@/lib/productUnits'
 
 // قراءة فاتورة مفصّلة تاخذ أكثر من ١٠ ثواني
 export const maxDuration = 60
@@ -66,7 +67,9 @@ export async function POST(req: Request) {
       db.from('product_aliases').select('alias_norm,product_id').eq('org_id', org_id),
     ])
     const aliases = Object.fromEntries(((al || []) as any[]).map(a => [a.alias_norm, a.product_id]))
-    const items = classifyItems(rawItems, products, aliases)
+    // وحدات الشراء المحفوظة لأصناف الفرع (كرتون = 12 كيس) — تتحول بدون سؤال
+    const units = await loadUnitMap(db, org_id, products.map((p: any) => p.id))
+    const items = classifyItems(rawItems, products, aliases, units)
     const { data: draft, error } = await db.from('invoice_drafts').insert({
       org_id, branch_id: bid, created_by: access.userId, invoice_image: invoice_image || null,
       supplier: d.supplier ? String(d.supplier).slice(0, 120) : null, supplier_vat_number: d.supplier_vat_number || null,
@@ -103,21 +106,43 @@ export async function PATCH(req: Request) {
     if (typeof body.has_vat === 'boolean') update.has_vat = body.has_vat
 
     let items: AgentItem[] = Array.isArray(dr.items) ? dr.items : []
-    if (Number.isInteger(body.index)) {
+    // نوع الفاتورة كاملة: «مشتريات» = كل الأصناف بدون مخزون (صيانة، تنظيف...)، «مخزون» = يرجع يصنّف كل صنف من جديد
+    if (body.invoice_type === 'expense') {
+      items = items.map(it => it.status === 'skip' ? it : applyAnswer(it, { action: 'expense' }))
+      update.items = items
+    } else if (body.invoice_type === 'stock') {
+      const [products, { data: al }] = await Promise.all([
+        branchProducts(db, org_id, dr.branch_id || null),
+        db.from('product_aliases').select('alias_norm,product_id').eq('org_id', org_id),
+      ])
+      const aliases = Object.fromEntries(((al || []) as any[]).map(a => [a.alias_norm, a.product_id]))
+      const units = await loadUnitMap(db, org_id, products.map((p: any) => p.id))
+      items = classifyItems(items.filter(it => it.status !== 'skip').map(it => ({ name: it.name, qty: it.qty, unit: it.unit, total: it.total })), products, aliases, units)
+      update.items = items
+    } else if (Number.isInteger(body.index)) {
       const i = body.index as number
       if (i < 0 || i >= items.length || !['match', 'new', 'expense', 'skip', 'set'].includes(body.action)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
-      let productName: string | null = null
+      let productName: string | null = null, stockUnit: string | null = null, knownFactor: number | null = null
       if (body.action === 'match') {
         // الصنف لازم يكون من نفس المنشأة والفرع
-        let q = db.from('products').select('id,name').eq('id', body.product_id).eq('org_id', org_id).eq('is_active', true)
+        let q = db.from('products').select('id,name,unit').eq('id', body.product_id).eq('org_id', org_id).eq('is_active', true)
         if (dr.branch_id) q = q.eq('branch_id', dr.branch_id)
         const { data: p } = await q.maybeSingle()
         if (!p) return NextResponse.json({ error: 'الصنف غير موجود' }, { status: 404 })
         productName = (p as any).name
+        stockUnit = (p as any).unit ?? null
+        knownFactor = conversionFactor(stockUnit, items[i].unit, (await loadUnitMap(db, org_id, [(p as any).id])).get((p as any).id))
         // يتعلم: المرة الجاية نفس الاسم ينربط بدون سؤال
         await db.from('product_aliases').upsert({ org_id, product_id: (p as any).id, alias_norm: aliasKey(items[i].name) } as any, { onConflict: 'org_id,alias_norm' })
       }
-      items = items.map((it, j) => j === i ? applyAnswer(it, { action: body.action, product_id: body.product_id, product_name: productName, qty: body.qty, total: body.total }) : it)
+      // «كم يدخل المخزون؟»: الكمية بوحدة المخزون ÷ كمية الفاتورة = المعامل، وينحفظ للصنف (الفاتورة الجاية تتعبّى لحالها)
+      let factor: number | undefined
+      if (body.action === 'set' && Number(body.stock_qty) > 0 && Number(items[i].qty) > 0 && items[i].product_id) {
+        factor = Math.round(Number(body.stock_qty) / Number(items[i].qty) * 10000) / 10000
+        if (items[i].unit) await saveProductUnit(db, org_id, items[i].product_id!, items[i].stock_unit, items[i].unit!, factor)
+      }
+      items = items.map((it, j) => j === i ? applyAnswer(it, { action: body.action, product_id: body.product_id, product_name: productName, qty: body.qty, total: body.total,
+        factor, stock_unit: stockUnit, known_factor: knownFactor }) : it)
       update.items = items
     }
     update.status = draftStatus(items)

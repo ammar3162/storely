@@ -294,6 +294,46 @@ describe.skipIf(!enabled)('integration (staging) — inventory', async () => {
     }, 180_000)
   })
 
+  describe('«كم يدخل المخزون؟» (invoice in cartons, stock in bags)', () => {
+    it('owner types 24 bags for 2 cartons once → 24 in stock at the bag cost; the next invoice fills 12 per carton on its own', async () => {
+      const agent = await import('@/app/api/invoice-agent/route')
+      const confirm = await import('@/app/api/invoice-agent/confirm/route')
+      const { data: bag } = await db.from('products').insert({ org_id: orgId, branch_id: branchA, name: `سكر أكياس ${stamp}`, unit: 'كيس', qty: 0, is_active: true } as any).select('id,name').single()
+      const sugar = bag as any
+      const image = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/invoices/${orgId}/units-${stamp}.jpg`
+      const today = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
+      try {
+        ocrFixture.current = { ok: true, data: { supplier: 'مورد الوحدات', invoice_date: today, has_vat: false, total_amount: 240, items: [{ name: sugar.name, qty: 2, unit: 'cartoon', total: 240 }] } }
+        let d = (await call(agent.POST, 'POST', '/api/invoice-agent', { org_id: orgId, branch_id: branchA, image: 'x', mediaType: 'image/jpeg', invoice_image: image })).json.draft
+        // ما يوقف الحفظ — جاهز، والعميل يقدر يصحّح «يدخل المخزون»
+        expect(d.items[0]).toMatchObject({ status: 'matched', unit: 'كرتون', stock_unit: 'كيس', factor: null })
+        // نوع الفاتورة: كلها مشتريات بدون مخزون، ثم ترجع أصناف مخزون (تُصنَّف من جديد)
+        d = (await call(agent.PATCH, 'PATCH', '/api/invoice-agent', { org_id: orgId, id: d.id, invoice_type: 'expense' })).json.draft
+        expect(d.items.map((x: any) => x.status)).toEqual(['expense'])
+        d = (await call(agent.PATCH, 'PATCH', '/api/invoice-agent', { org_id: orgId, id: d.id, invoice_type: 'stock' })).json.draft
+        expect(d.items[0]).toMatchObject({ status: 'matched', product_id: sugar.id })
+        d = (await call(agent.PATCH, 'PATCH', '/api/invoice-agent', { org_id: orgId, id: d.id, index: 0, action: 'set', stock_qty: 24 })).json.draft
+        expect(d.items[0]).toMatchObject({ status: 'matched', factor: 12 })
+        expect((await call(confirm.POST, 'POST', '/api/invoice-agent/confirm', { org_id: orgId, id: d.id })).status).toBe(200)
+        const p1 = (await db.from('products').select('qty,avg_cost').eq('id', sugar.id).single()).data as any
+        expect(Number(p1.qty)).toBe(24)
+        expect(Number(p1.avg_cost)).toBeCloseTo(10, 4)
+
+        // الفاتورة الجاية: يتعبّى لحاله (1 كرتون = 12 كيس)
+        ocrFixture.current = { ok: true, data: { supplier: 'مورد الوحدات', invoice_date: today, has_vat: false, total_amount: 120, invoice_number: 'U2', items: [{ name: sugar.name, qty: 1, unit: 'كرتونة', total: 120 }] } }
+        const d2 = (await call(agent.POST, 'POST', '/api/invoice-agent', { org_id: orgId, branch_id: branchA, image: 'x', mediaType: 'image/jpeg', invoice_image: image })).json.draft
+        expect(d2.items[0]).toMatchObject({ status: 'matched', factor: 12 })
+        expect((await call(confirm.POST, 'POST', '/api/invoice-agent/confirm', { org_id: orgId, id: d2.id, allow_duplicate: true })).status).toBe(200)
+        expect(Number(((await db.from('products').select('qty').eq('id', sugar.id).single()).data as any).qty)).toBe(36)
+      } finally {
+        await db.from('purchases').delete().eq('org_id', orgId).eq('supplier', 'مورد الوحدات')
+        await db.from('invoice_drafts').delete().eq('org_id', orgId)
+        await db.from('product_aliases').delete().eq('org_id', orgId)
+        await db.from('product_units').delete().eq('org_id', orgId)
+      }
+    }, 180_000)
+  })
+
   describe('products shared between staff', () => {
     it('two staff can have the same product, and products from another branch are refused', async () => {
       const assign = await import('@/app/api/staff-members/assign/route')

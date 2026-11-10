@@ -45,7 +45,7 @@ export function usePurchases() {
   }
   const [invOn, setInvOn] = useState(true)
   const [form, setForm] = useState({
-    category:'مخزون', name:'', sku:'', qty:'', unit:'قطعة',
+    category:'مخزون', name:'', sku:'', qty:'', unit:'قطعة', unit_factor:'',
     reorder_point:'5', total_amount:'', supplier:'',
     note:'', invoice_image:'', hasVat:'', invoice_date: todayRiyadh(),
     payment_status:'paid', due_date:'', invoice_number:'', supplier_vat_number:'',
@@ -202,7 +202,7 @@ export function usePurchases() {
     const body:any={
       org_id:orgId, branch_id:sessionStorage.getItem('s_branch_id')||null,
       category:form.category, name:form.name, sku:form.sku||null, qty:form.qty||null,
-      unit:form.unit||null, reorder_point:form.reorder_point, total_amount:form.total_amount,
+      unit:form.unit||null, unit_factor:Number(form.unit_factor)>0?Number(form.unit_factor):null, reorder_point:form.reorder_point, total_amount:form.total_amount,
       supplier:form.supplier, note:form.note||null, invoice_image:form.invoice_image||null,
       has_vat:form.hasVat==='yes', invoice_date:form.invoice_date, payment_status:form.payment_status, due_date:form.due_date||null,
       invoice_number:form.hasVat==='yes'?form.invoice_number||null:null, supplier_vat_number:form.hasVat==='yes'?form.supplier_vat_number||null:null, zatca_qr:form.hasVat==='yes'?zatca?.raw||null:null,
@@ -226,7 +226,7 @@ export function usePurchases() {
       setPendingThanks({ productId: res.product_id, productName: form.name, supplierName: form.supplier.trim() })
     }
 
-    setForm({category:invOn?'مخزون':'مشتريات',name:'',sku:'',qty:'',unit:'قطعة',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:'',invoice_number:'',supplier_vat_number:''});setZatca(null);setVatFromSupplier(false)
+    setForm({category:invOn?'مخزون':'مشتريات',name:'',sku:'',qty:'',unit:'قطعة',unit_factor:'',reorder_point:'5',total_amount:'',supplier:'',note:'',invoice_image:'',hasVat:'',invoice_date:todayRiyadh(),payment_status:'paid',due_date:'',invoice_number:'',supplier_vat_number:''});setZatca(null);setVatFromSupplier(false)
     setPreviewUrl(null);setLoading(false);submitting.current=false
     cache.invalidate('purchases:');cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
     loadHistory(orgId);loadPayables(orgId)

@@ -460,5 +460,96 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
       }
     })
   })
-})
 
+  describe('accountant office team, bulk edits and journal export', () => {
+    it('lead delegates a client to a team member (inherits sections, follows owner changes, removable), bulk-fixes supplier VAT, and exports balanced journal', async () => {
+      process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
+      const savedKey = process.env.RESEND_API_KEY; delete process.env.RESEND_API_KEY
+      const { makeSession, accessFor } = await import('@/lib/accountantPortalAuth')
+      const team = await import('@/app/api/accountant-portal/team/route')
+      const edit = await import('@/app/api/accountant-portal/edit/route')
+      const journal = await import('@/app/api/accountant-portal/journal/route')
+      const owner = await import('@/app/api/accountant-access/route')
+      const leadEmail = `it-lead-${stamp}@storely.test`, memberEmail = `it-member-${stamp}@storely.test`
+      const { data: lead } = await db.from('accountant_users').insert({ email: leadEmail, name: 'رئيس المكتب' } as any).select('id').single()
+      const leadId = (lead as any).id
+      const { data: la } = await db.from('accountant_access').insert({ org_id: orgId, email: leadEmail, name: 'رئيس المكتب', accountant_id: leadId, status: 'active', sections: ['sales', 'purchases'] } as any).select('id').single()
+      const { data: sess } = await db.from('accountant_sessions').insert({ accountant_id: leadId } as any).select('id').single()
+      const cookie = `acc_session=${makeSession(leadId, (sess as any).id)}`
+      const req = (h: (r: Request) => Promise<Response>, method: string, url: string, body?: any) => h(new Request(`http://test${url}`, { method, headers: { 'Content-Type': 'application/json', cookie }, body: body ? JSON.stringify(body) : undefined }))
+        .then(async r => { const isJson = (r.headers.get('content-type') || '').includes('json'); const text = await r.text(); return { status: r.status, text, json: isJson ? JSON.parse(text) as any : null } })
+      try {
+        // الفريق والإسناد
+        // الإضافة تحتاج منشأة واحدة على الأقل
+        expect((await req(team.POST, 'POST', '/api/accountant-portal/team', { action: 'add', email: memberEmail, name: 'موظف المكتب' })).status).toBe(400)
+        expect((await req(team.POST, 'POST', '/api/accountant-portal/team', { action: 'add', email: memberEmail, name: 'موظف المكتب', org_ids: [orgId] })).json).toMatchObject({ success: true, assigned: 1 })
+        expect((await req(team.POST, 'POST', '/api/accountant-portal/team', { action: 'add', email: memberEmail, org_ids: [orgId] })).status).toBe(409)
+        expect((await req(team.POST, 'POST', '/api/accountant-portal/team', { action: 'assign', email: memberEmail, org_id: orgId, on: true })).status).toBe(200)
+        const mUser = (await db.from('accountant_users').select('id').eq('email', memberEmail).single()).data as any
+        expect(await accessFor(db as any, mUser.id, orgId)).toMatchObject({ sections: ['sales', 'purchases'] })
+        const listed = await req(team.GET, 'GET', '/api/accountant-portal/team')
+        expect(listed.json.members[0]).toMatchObject({ email: memberEmail, orgs: [orgId] })
+
+        // الثغرة: موظف المكتب ما يقدر يكوّن فريقاً، والبريد المضاف للفريق بدون إسناد ما يوصله رمز دخول
+        const login = await import('@/app/api/accountant-portal/login/route')
+        const mSess = (await db.from('accountant_sessions').insert({ accountant_id: mUser.id } as any).select('id').single()).data as any
+        const mCookie = `acc_session=${makeSession(mUser.id, mSess.id)}`
+        const asMember = (body: any) => team.POST(new Request('http://test/api/accountant-portal/team', { method: 'POST', headers: { 'Content-Type': 'application/json', cookie: mCookie }, body: JSON.stringify(body) }))
+        expect((await asMember({ action: 'add', email: `it-x-${stamp}@storely.test`, org_ids: [orgId] })).status).toBe(403)
+        expect((await (await team.GET(new Request('http://test/api/accountant-portal/team', { headers: { cookie: mCookie } }))).json() as any).lead).toBe(false)
+        const loneEmail = `it-lone-${stamp}@storely.test`
+        expect((await req(team.POST, 'POST', '/api/accountant-portal/team', { action: 'add', email: loneEmail })).status).toBe(400)   // بدون منشأة: ما يُضاف
+        const askCode = (email: string) => login.POST(new Request('http://test/api/accountant-portal/login', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '10.9.8.7' }, body: JSON.stringify({ email }) }))
+        expect((await askCode(loneEmail)).status).toBe(200)   // نفس الرد للكل
+        expect((await db.from('accountant_login_codes').select('id', { count: 'exact', head: true }).eq('email', loneEmail)).count).toBe(0)
+        await askCode(memberEmail)
+        expect((await db.from('accountant_login_codes').select('id', { count: 'exact', head: true }).eq('email', memberEmail)).count).toBe(1)
+        await db.from('accountant_login_codes').delete().in('email', [loneEmail, memberEmail])
+
+        // المالك: يشوف الموظف، تعديل المحاسب الرئيسي ينسحب عليه، وما يقدر يعدّل الموظف مباشرة
+        const ol = await call(owner.GET, 'GET', `/api/accountant-access?org_id=${orgId}`)
+        const memberRow = ol.json.accountants.find((a: any) => a.email === memberEmail)
+        expect(memberRow).toMatchObject({ delegated_from: (la as any).id, team_of: 'رئيس المكتب' })
+        expect((await call(owner.PATCH, 'PATCH', '/api/accountant-access', { org_id: orgId, id: (la as any).id, sections: ['purchases'] })).status).toBe(200)
+        expect((await accessFor(db as any, mUser.id, orgId))?.sections).toEqual(['purchases'])
+        expect((await call(owner.PATCH, 'PATCH', '/api/accountant-access', { org_id: orgId, id: memberRow.id, sections: ['sales'] })).status).toBe(400)
+        await db.from('accountant_access').update({ sections: ['sales', 'purchases'] } as any).in('id', [(la as any).id, memberRow.id])
+
+        // إلغاء الإسناد ثم إعادته
+        expect((await req(team.POST, 'POST', '/api/accountant-portal/team', { action: 'assign', email: memberEmail, org_id: orgId, on: false })).status).toBe(200)
+        expect(await accessFor(db as any, mUser.id, orgId)).toBeNull()
+        expect((await req(team.POST, 'POST', '/api/accountant-portal/team', { action: 'assign', email: memberEmail, org_id: orgId, on: true })).status).toBe(200)
+
+        // تعديل جماعي: الرقم الضريبي لكل فواتير المورد + يُحفظ للمورد
+        const supName = `مورد الفريق ${stamp}`
+        const { error: sErr } = await db.from('suppliers').insert({ org_id: orgId, name: supName, phone: uniqPhone() } as any); if (sErr) throw sErr
+        const { data: pr, error: pErr } = await db.from('purchases').insert([{ org_id: orgId, branch_id: branchA, supplier: supName, name: 'صنف أ', category: 'مشتريات', amount: 100, has_vat: true },
+          { org_id: orgId, branch_id: branchA, supplier: supName, name: 'صنف ب', category: 'مشتريات', amount: 40, has_vat: true }] as any).select('id')
+        if (pErr) throw pErr
+        const ids = ((pr || []) as any[]).map(p => p.id)
+        const bulk = await req(edit.POST, 'POST', '/api/accountant-portal/edit', { org_id: orgId, kind: 'bulk_purchase', ids, supplier_vat_number: '300000000000003', supplier: supName })
+        expect(bulk.json).toMatchObject({ success: true, changed: 2 })
+        expect((await db.from('suppliers').select('vat_number').eq('org_id', orgId).eq('name', supName).single()).data).toMatchObject({ vat_number: '300000000000003' })
+        expect((await req(edit.POST, 'POST', '/api/accountant-portal/edit', { org_id: orgId, kind: 'bulk_purchase', ids, supplier_vat_number: '123' })).status).toBe(400)
+        expect((await req(edit.POST, 'POST', '/api/accountant-portal/edit', { org_id: orgId, kind: 'bulk_purchase', ids: [ids[1]], has_vat: false })).json.changed).toBe(1)
+
+        // القيود: دليل الحسابات يُحفظ، والملف فيه الحساب الجديد
+        expect((await req(journal.GET, 'GET', `/api/accountant-portal/journal?org_id=${orgId}`)).json.saved).toBe(false)
+        expect((await req(journal.POST, 'POST', '/api/accountant-portal/journal', { org_id: orgId, map: { purchases: { code: '51001', name: 'مشتريات المطبخ' } } })).json.map.purchases.code).toBe('51001')
+        const today = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
+        const csv = await req(journal.GET, 'GET', `/api/accountant-portal/journal?org_id=${orgId}&from=${today.slice(0, 8)}01&to=${today}&format=csv`)
+        expect(csv.status).toBe(200)
+        expect(csv.text.startsWith('رقم القيد')).toBe(true)   // text() يحذف BOM؛ وجوده مختبر في journalExport.test
+        expect(csv.text).toContain('51001')
+
+        // سحب المحاسب الرئيسي من المالك → الموظف ينشال معه
+        expect((await call(owner.DELETE, 'DELETE', `/api/accountant-access?org_id=${orgId}&id=${(la as any).id}`)).status).toBe(200)
+        expect(await accessFor(db as any, mUser.id, orgId)).toBeNull()
+      } finally {
+        if (savedKey) process.env.RESEND_API_KEY = savedKey
+        await db.from('accountant_access').delete().eq('org_id', orgId).in('email', [leadEmail, memberEmail])
+        await db.from('accountant_users').delete().in('email', [leadEmail, memberEmail])
+      }
+    })
+  })
+})

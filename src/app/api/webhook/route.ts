@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { timingSafeEqual } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import { fetchExternal } from '@/lib/fetchExternal'
 import { CUSTOM_MODULES, PLAN_CAPS } from '@/lib/planPricing'
+import { validWasenderWebhook } from '@/lib/webhookAuth'
 const API_KEY      = process.env.WASENDER_API_KEY!
 const SESSION      = process.env.WASENDER_SESSION_ID!
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -235,13 +235,11 @@ async function searchProduct(to: string, orgId: string, query: string) {
   await send(to, `🔍 *نتائج البحث عن "${query}"*\n\n${list}\n\nاكتب 0 للقائمة`)
 }
 
-// Wasender يرسل سر الـ webhook بالهيدر — بدونه أي أحد يقدر يزوّر «تم» من رقم مورد ويأكد طلب ما تأكد
+// Wasender يرسل سر الـ webhook بالهيدر — بدونه أي أحد يقدر يزوّر رسائل (مثل «تم» من رقم مورد) — lib/webhookAuth
 function validWebhook(req: Request) {
-  const secret = process.env.WASENDER_WEBHOOK_SECRET
-  if (!secret) return true // لين يتضبط السر بـ Vercel و Wasender
-  const got = Buffer.from(req.headers.get('x-webhook-signature') || '')
-  const want = Buffer.from(secret)
-  return got.length === want.length && timingSafeEqual(got, want)
+  const ok = validWasenderWebhook(req.headers.get('x-webhook-signature'), process.env.WASENDER_WEBHOOK_SECRET)
+  if (!ok && !process.env.WASENDER_WEBHOOK_SECRET) console.error('WEBHOOK_SECRET_MISSING: WASENDER_WEBHOOK_SECRET غير مضبوط — كل رسائل واتساب الواردة مرفوضة')
+  return ok
 }
 
 export async function POST(req: Request) {

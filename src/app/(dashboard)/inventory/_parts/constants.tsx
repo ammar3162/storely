@@ -15,6 +15,7 @@ export interface Product {
   id:string; name:string; sku:string|null; unit:string
   qty:number; reorder_point:number; category:string|null; expiry_date?:string|null
   org_id:string; is_active:boolean; created_at:string; updated_at:string
+  purchase_units?:{unit:string;factor:number}[]   // وحدات الشراء (كرتون = 12 كيس) — لعرض الكمية بالوحدتين
 }
 
 // منتجات مقترحة جاهزة حسب نوع النشاط — اختيارية بالكامل، تظهر بس لما يكون المخزون فارغ

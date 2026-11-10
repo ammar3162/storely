@@ -67,7 +67,7 @@ export const API_GUARDS: Record<string, { read?: Rule; write?: Rule }> = {
   '/api/period-locks': { read: OWNER, write: OWNER },
   '/api/backup': { read: OWNER, write: OWNER },
   '/api/branch-comparison': { read: OWNER, write: OWNER },
-  '/api/branch-transfer': { read: ['transfer'], write: ['transfer'] },
+  '/api/branch-transfer': { read: ['transfer', 'reports'], write: ['transfer'] },
   '/api/delete-branch': { read: OWNER, write: OWNER },
   '/api/delete-account': { read: OWNER, write: OWNER },
   '/api/setup-progress': { read: OWNER, write: OWNER },
@@ -81,6 +81,7 @@ export const API_GUARDS: Record<string, { read?: Rule; write?: Rule }> = {
   // المخزون والصرف
   '/api/products': { write: ['inventory', 'ai_tools'] },
   '/api/products/import': { read: ['inventory'], write: ['inventory'] },
+  '/api/product-units': { read: ['inventory', 'purchases'], write: ['inventory', 'purchases'] },
   '/api/sync-product-to-staff': { write: ['inventory', 'purchases'] },
   '/api/stock-movements': { write: ['dispense'] },
   '/api/stock-counts': { read: ['inventory', 'ai_tools'], write: ['inventory'] },
