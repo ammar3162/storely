@@ -82,6 +82,8 @@ export default function PortalTeamPage() {
                     style={{ background: 'none', border: `1px solid ${colors.border}`, borderRadius: 9, padding: 8, cursor: 'pointer', color: colors.text3, display: 'inline-flex' }}><Trash2 size={15} /></button>
                 </header>
                 <div style={{ padding: '12px 16px' }}>
+                  {!m.orgs.length && <div style={{ fontSize: 12.5, color: '#B54708', background: '#FFFAEB', borderRadius: 10, padding: '8px 12px', marginBottom: 10, lineHeight: 1.7 }}>
+                    لن يصله بريد الدخول ولن يستطيع الدخول حتى تسند إليه منشأة واحدة على الأقل من الأسفل.</div>}
                   <div style={{ fontSize: 12.5, color: colors.text3, marginBottom: 8 }}>المنشآت التي يعمل عليها</div>
                   {!data.clients.length ? <div style={{ fontSize: 13, color: colors.text3 }}>لا توجد لديك منشآت يمكن إسنادها</div> : (
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
