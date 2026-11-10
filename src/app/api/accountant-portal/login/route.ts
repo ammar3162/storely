@@ -21,11 +21,9 @@ export async function POST(req: Request) {
     ])
     if ((byEmail || 0) >= 5 || (byIp || 0) >= 20) return NextResponse.json({ error: 'طلبت رموزاً كثيرة — حاول بعد ساعة' }, { status: 429 })
 
-    const [{ count: invited }, { count: inTeam }] = await Promise.all([
-      db.from('accountant_access').select('id', { count: 'exact', head: true }).eq('email', email),
-      db.from('accountant_team').select('id', { count: 'exact', head: true }).eq('email', email),   // موظف في مكتب محاسبة
-    ])
-    if (!invited && !inTeam) return NextResponse.json({ success: true, message: GENERIC })
+    // فقط من له إذن على منشأة: دعوة من مالكها، أو إسناد من محاسبها (والمالك يصله إشعار) — الإضافة للفريق وحدها لا تكفي
+    const { count: invited } = await db.from('accountant_access').select('id', { count: 'exact', head: true }).eq('email', email)
+    if (!invited) return NextResponse.json({ success: true, message: GENERIC })
 
     const code = newCode()
     await db.from('accountant_login_codes').insert({ email, code_hash: hashCode(email, code), ip, expires_at: new Date(Date.now() + CODE_MINUTES * 60e3).toISOString() } as any)

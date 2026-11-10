@@ -488,6 +488,22 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
         const listed = await req(team.GET, 'GET', '/api/accountant-portal/team')
         expect(listed.json.members[0]).toMatchObject({ email: memberEmail, orgs: [orgId] })
 
+        // الثغرة: موظف المكتب ما يقدر يكوّن فريقاً، والبريد المضاف للفريق بدون إسناد ما يوصله رمز دخول
+        const login = await import('@/app/api/accountant-portal/login/route')
+        const mSess = (await db.from('accountant_sessions').insert({ accountant_id: mUser.id } as any).select('id').single()).data as any
+        const mCookie = `acc_session=${makeSession(mUser.id, mSess.id)}`
+        const asMember = (body: any) => team.POST(new Request('http://test/api/accountant-portal/team', { method: 'POST', headers: { 'Content-Type': 'application/json', cookie: mCookie }, body: JSON.stringify(body) }))
+        expect((await asMember({ action: 'add', email: `it-x-${stamp}@storely.test` })).status).toBe(403)
+        expect((await (await team.GET(new Request('http://test/api/accountant-portal/team', { headers: { cookie: mCookie } }))).json() as any).lead).toBe(false)
+        const loneEmail = `it-lone-${stamp}@storely.test`
+        expect((await req(team.POST, 'POST', '/api/accountant-portal/team', { action: 'add', email: loneEmail })).status).toBe(200)
+        const askCode = (email: string) => login.POST(new Request('http://test/api/accountant-portal/login', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '10.9.8.7' }, body: JSON.stringify({ email }) }))
+        expect((await askCode(loneEmail)).status).toBe(200)   // نفس الرد للكل
+        expect((await db.from('accountant_login_codes').select('id', { count: 'exact', head: true }).eq('email', loneEmail)).count).toBe(0)
+        await askCode(memberEmail)
+        expect((await db.from('accountant_login_codes').select('id', { count: 'exact', head: true }).eq('email', memberEmail)).count).toBe(1)
+        await db.from('accountant_login_codes').delete().in('email', [loneEmail, memberEmail])
+
         // المالك: يشوف الموظف، تعديل المحاسب الرئيسي ينسحب عليه، وما يقدر يعدّل الموظف مباشرة
         const ol = await call(owner.GET, 'GET', `/api/accountant-access?org_id=${orgId}`)
         const memberRow = ol.json.accountants.find((a: any) => a.email === memberEmail)

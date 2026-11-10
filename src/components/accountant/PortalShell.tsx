@@ -9,7 +9,7 @@ import { ListSkeleton } from '@/components/PageSkeleton'
 // نفس ألوان وقياسات قائمة لوحة المالك عشان التجربة وحدة
 
 type Org = { org_id: string; name: string; logo_url: string | null; branch: string | null; expired: boolean; open: number; answered: number }
-let cache: { at: number; orgs: Org[]; me: { name: string | null; email: string } } | null = null
+let cache: { at: number; orgs: Org[]; me: { name: string | null; email: string }; lead?: boolean } | null = null
 
 const SIDEBAR = 248
 const GRAD = colors.primary   // كحلي — نفس قائمة لوحة المالك
@@ -37,7 +37,7 @@ export function PortalShell({ title, subtitle, actions, children, orgLogo, subna
     if (cache && Date.now() - cache.at < 60e3) return
     fetch('/api/accountant-portal/orgs').then(r => r.json()).then(j => {
       if (!j.success) { router.replace('/accountant-portal'); return }
-      cache = { at: Date.now(), orgs: j.orgs, me: j.accountant }; setData(cache)
+      cache = { at: Date.now(), orgs: j.orgs, me: j.accountant, lead: !!j.lead }; setData(cache)
     }).catch(() => {})
   }, [path])
   useEffect(() => { setOpen(false) }, [path])
@@ -52,7 +52,7 @@ export function PortalShell({ title, subtitle, actions, children, orgLogo, subna
     { href: '/accountant-portal', label: 'نظرة عامة', icon: LayoutGrid },
     { href: '/accountant-portal/requests', label: 'الطلبات', icon: MessageSquareText, badge: pending },
     { href: '/accountant-portal/locks', label: 'إقفال الأشهر', icon: Lock },
-    { href: '/accountant-portal/team', label: 'فريق المكتب', icon: Users },
+    ...(data?.lead ? [{ href: '/accountant-portal/team', label: 'فريق المكتب', icon: Users }] : []),
     { href: '/accountant-portal/devices', label: 'حسابي', icon: UserRound },
   ]
   const isActive = (h: string) => h === '/accountant-portal' ? path === h : path.startsWith(h)

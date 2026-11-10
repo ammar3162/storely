@@ -10,7 +10,7 @@ type Member = { email: string; name: string | null; orgs: string[]; last_view_at
 type Client = { org_id: string; name: string; branch: string | null }
 
 export default function PortalTeamPage() {
-  const [data, setData] = useState<{ members: Member[]; clients: Client[] } | null>(null)
+  const [data, setData] = useState<{ lead: boolean; members: Member[]; clients: Client[] } | null>(null)
   const [form, setForm] = useState({ name: '', email: '' })
   const [busy, setBusy] = useState(''), [err, setErr] = useState('')
   const load = () => fetch('/api/accountant-portal/team').then(r => r.json()).then(j => j.success ? setData(j) : setErr(j.error || 'تعذر التحميل')).catch(() => setErr('تأكد من الإنترنت'))
@@ -42,9 +42,14 @@ export default function PortalTeamPage() {
   const inp: React.CSSProperties = { padding: '10px 12px', borderRadius: 10, border: `1px solid ${colors.border}`, fontSize: 16, fontFamily: font.family, background: '#fff', minWidth: 0, boxSizing: 'border-box' }
   return (
     <PortalShell title="فريق المكتب" subtitle="أضف موظفي مكتبك وحدد العملاء الذين يعمل عليهم كل موظف">
+      {data && !data.lead ? (
+        <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: radius.xl, padding: '36px 20px', textAlign: 'center', fontSize: 14, color: colors.text3, lineHeight: 1.8 }}>
+          إدارة فريق المكتب متاحة للمحاسب الذي دعته المنشأة مباشرة فقط.
+        </div>
+      ) : <>
       <section style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: radius.xl, padding: 16, marginBottom: 16 }}>
         <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 4px' }}>إضافة موظف</h2>
-        <p style={{ fontSize: 12.5, color: colors.text3, margin: '0 0 12px', lineHeight: 1.6 }}>يدخل الموظف ببريده الإلكتروني برمز يصله، ويرى فقط المنشآت التي تسندها إليه.</p>
+        <p style={{ fontSize: 12.5, color: colors.text3, margin: '0 0 12px', lineHeight: 1.6 }}>لا يستطيع الموظف الدخول حتى تسند إليه منشأة، وعندها يصله بريد الدخول وتُبلَّغ المنشأة. يرى فقط المنشآت التي تسندها إليه.</p>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="اسم الموظف" aria-label="اسم الموظف" style={{ ...inp, flex: '1 1 160px' }} />
           <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="name@office.sa" dir="ltr" type="email" aria-label="البريد الإلكتروني" style={{ ...inp, flex: '2 1 220px' }}
@@ -97,6 +102,7 @@ export default function PortalTeamPage() {
             ))}
           </div>
         )}
+      </>}
     </PortalShell>
   )
 }
