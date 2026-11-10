@@ -1,5 +1,5 @@
 'use client'
-import { PhoneVideo } from './constants'
+import { Users, PackageMinus, BadgeCheck } from 'lucide-react'
 import type { LandingState } from './useLanding'
 
 export default function HowItWorks({ m }: { m: LandingState }) {
@@ -21,8 +21,16 @@ export default function HowItWorks({ m }: { m: LandingState }) {
               ))}
             </ol>
           </div>
+          {/* يومك مع Storely: الصباح ← الظهر ← نهاية اليوم */}
           <div className="lp-how-media rv">
-            <PhoneVideo src="/videos/storely-brand-ad.mp4" poster="/videos/storely-brand-ad.jpg" label="إعلان Storely" lazy controls/>
+            <ol className="lp-day">
+              {([[Users, 'dayMorning', 'n1T', 'n1D'], [PackageMinus, 'dayNoon', 'n2T', 'n2D'], [BadgeCheck, 'dayNight', 'n3T', 'n3D']] as [any, string, string, string][]).map(([Icon, when, ti, d]) => (
+                <li key={when}>
+                  <span className="lp-day-when">{t(when)}</span>
+                  <div className="lp-day-card"><span className="lp-day-ic"><Icon size={18}/></span><div><b>{t(ti)}</b><small>{t(d)}</small></div></div>
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
       </section>

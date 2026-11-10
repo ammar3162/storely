@@ -14,8 +14,12 @@ import FaqSection from './_parts/FaqSection'
 import FinalCta from './_parts/FinalCta'
 import SiteFooter from './_parts/SiteFooter'
 import WhatsAppFloat from './_parts/WhatsAppFloat'
+import PainSection from './_parts/PainSection'
+import VideoSection from './_parts/VideoSection'
+import StartSteps from './_parts/StartSteps'
+import StickyCta from './_parts/StickyCta'
 
-// ترتيب مثل صفحات الشركات (فودكس، قيود، رواء): العنوان بزرين ← المزايا ← كيف يشتغل ← الموردين ← قصة عميل ← الأسعار (صفحة مستقلة) ← طلب عرض ← الأسئلة
+// ترتيب يقود للتجربة: الواجهة (المنتج نفسه) ← المشكلات وحلولها ← المزايا ← الفيديو ← يومك مع Storely ← الموردين ← قصة صاحب المنشأة ← ابدأ في 3 خطوات ← الأسعار ← طلب عرض ← الأسئلة
 export default function LandingPage({ initialMarquee }: { initialMarquee?: string[] } = {}) {
   const m = useLanding(initialMarquee)
   const { rootRef } = m
@@ -30,8 +34,11 @@ export default function LandingPage({ initialMarquee }: { initialMarquee?: strin
 
       <Hero m={m}/>
 
+      <PainSection m={m}/>
 
       <FeaturesSection m={m}/>
+
+      <VideoSection m={m}/>
 
       <HowItWorks m={m}/>
 
@@ -39,6 +46,7 @@ export default function LandingPage({ initialMarquee }: { initialMarquee?: strin
 
       <OwnerStory m={m}/>
 
+      <StartSteps m={m}/>
 
       <PricingTeaser m={m}/>
 
@@ -51,6 +59,8 @@ export default function LandingPage({ initialMarquee }: { initialMarquee?: strin
       <SiteFooter m={m}/>
 
       <WhatsAppFloat/>
+
+      <StickyCta m={m}/>
 
     </div>
   )
