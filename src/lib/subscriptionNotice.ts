@@ -8,14 +8,14 @@ import { pickOwnerWhatsapp } from '@/lib/ownerContact'
 /** نص الواتساب: يوم الانتهاء، وبعده تذكير «بانتظار التجديد» */
 export function expiredWhatsappText(name: string | null | undefined, daysAgo: number, isTrial = false) {
   const hi = `مرحباً ${name || ''}،`.replace(' ،', '،')
-  if (daysAgo <= 1) return `${hi}\n\nنود إعلامك بأن ${isTrial ? 'تجربتك المجانية' : 'اشتراكك'} في Storely انتهى اليوم.\n\nجدّد اشتراكك الآن ليُعاد تفعيل حسابك فوراً، وتواصل متابعة منشأتك من حيث توقفت:\nstorely.dev/renew\n\nشكراً لثقتك بـ Storely.`
-  return `${hi}\n\nنذكّرك بأن اشتراكك في Storely بانتظار التجديد.\n\nجدّد اشتراكك ليُعاد تفعيل حسابك فوراً:\nstorely.dev/renew\n\nيسعدنا خدمتك دائماً.`
+  if (daysAgo <= 1) return `${hi}\n\nنود إعلامك بأن ${isTrial ? 'تجربتك المجانية' : 'اشتراكك'} في Storely انتهى اليوم.\n\nجدّد اشتراكك الآن ليُعاد تفعيل حسابك فوراً، وتواصل متابعة منشأتك من حيث توقفت:\nhttps://www.storely.dev/renew\n\nشكراً لثقتك بـ Storely.`
+  return `${hi}\n\nنذكّرك بأن اشتراكك في Storely بانتظار التجديد.\n\nجدّد اشتراكك ليُعاد تفعيل حسابك فوراً:\nhttps://www.storely.dev/renew\n\nيسعدنا خدمتك دائماً.`
 }
 
 /** نص واتساب التذكير اليدوي */
 export function reminderWhatsappText(name: string | null | undefined, isTrial: boolean) {
   const hi = `مرحباً ${name || ''}،`.replace(' ،', '،')
-  return `${hi}\n\nنذكّرك بأن ${isTrial ? 'تجربتك المجانية في Storely انتهت' : 'اشتراكك في Storely بانتظار التجديد'}.\n\nجدّد اشتراكك الآن ليُعاد تفعيل حسابك فوراً:\nstorely.dev/renew\n\nيسعدنا خدمتك دائماً.`
+  return `${hi}\n\nنذكّرك بأن ${isTrial ? 'تجربتك المجانية في Storely انتهت' : 'اشتراكك في Storely بانتظار التجديد'}.\n\nجدّد اشتراكك الآن ليُعاد تفعيل حسابك فوراً:\nhttps://www.storely.dev/renew\n\nيسعدنا خدمتك دائماً.`
 }
 
 /** تذكير يدوي من زر الإدارة (واتساب + إيميل) — لا يغيّر علامات الرسائل التلقائية فتبقى كما هي */
