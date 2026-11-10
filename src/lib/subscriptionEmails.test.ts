@@ -6,9 +6,9 @@ describe('subscription emails (inbox-friendly)', () => {
   it('3-day reminder: clear subject, one renew link, plain text, no emoji', () => {
     const e = subscriptionEndingEmail({ name: 'عمار', daysLeft: 3, endsAt: '2026-11-13T00:00:00Z', isTrial: false })
     expect(e.subject).toBe('ينتهي اشتراكك في Storely خلال 3 أيام')
-    expect(e.text).toContain('https://www.storely.dev/login')
+    expect(e.text).toContain('https://www.storely.dev/renew')
     expect(EMOJI.test(e.subject + e.text)).toBe(false)
-    expect((e.html.match(/href="https:\/\/www\.storely\.dev\/login"/g) || []).length).toBeGreaterThanOrEqual(1)
+    expect((e.html.match(/href="https:\/\/www\.storely\.dev\/renew"/g) || []).length).toBeGreaterThanOrEqual(1)
     expect(e.html).not.toContain('wa.me')   // بدون زر واتساب (minimal)
   })
   it('trial wording and day forms', () => {

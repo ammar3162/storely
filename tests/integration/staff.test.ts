@@ -552,4 +552,37 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
       }
     })
   })
+
+
+  describe('subscription renewal button (no payment gateway yet)', () => {
+    it('expired owner gets one grace day, a second press does not extend again, and payment marks it paid', async () => {
+      const { requestRenewal, markRenewalPaid, GRACE_MS } = await import('@/lib/renewal')
+      const past = new Date(Date.now() - 2 * 86400e3).toISOString()
+      await db.from('profiles').update({ subscription_ends_at: past, subscription_type: 'paid' } as any).eq('org_id', orgId)
+      try {
+        const t0 = Date.now()
+        const r1 = await requestRenewal(db as any, orgId, userId, t0)
+        expect(r1).toMatchObject({ ok: true, created: true, extended: true })
+        const ends = (await db.from('profiles').select('subscription_ends_at').eq('id', userId).single()).data as any
+        expect(Math.abs(Date.parse(ends.subscription_ends_at) - (t0 + GRACE_MS))).toBeLessThan(5000)
+        // ضغطة ثانية: نفس الطلب، بدون تمديد
+        const r2 = await requestRenewal(db as any, orgId, userId, t0 + 3600e3)
+        expect(r2).toMatchObject({ ok: true, created: false, extended: false })
+        expect((await db.from('subscription_renewals').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('status', 'pending_payment')).count).toBe(1)
+        // بعد الدفع: مدفوع، وطلب جديد ممكن في الدورة الجاية
+        await markRenewalPaid(db as any, orgId, 'مشرف الاختبار')
+        const row = (await db.from('subscription_renewals').select('status,decided_by_name,previous_ends_at').eq('org_id', orgId).single()).data as any
+        expect(row).toMatchObject({ status: 'paid', decided_by_name: 'مشرف الاختبار' })
+        // اشتراك ساري: الطلب بدون تمديد
+        const future = new Date(Date.now() + 2 * 86400e3).toISOString()
+        await db.from('profiles').update({ subscription_ends_at: future } as any).eq('org_id', orgId)
+        const r3 = await requestRenewal(db as any, orgId, userId)
+        expect(r3).toMatchObject({ ok: true, created: true, extended: false })
+        expect(Date.parse((r3 as any).endsAt)).toBe(Date.parse(future))
+      } finally {
+        await db.from('subscription_renewals').delete().eq('org_id', orgId)
+        await db.from('profiles').update({ subscription_ends_at: null } as any).eq('org_id', orgId)
+      }
+    })
+  })
 })

@@ -26,6 +26,7 @@ export function approverEmails(admins: AdminRow[]): string[] {
 export type RequestNotice =
   | { kind: 'addon'; addonName: string; quantity: number; note?: string | null }
   | { kind: 'plan'; fromPlan: string; toPlan: string; billAtRequest?: number | null }
+  | { kind: 'renewal'; expired: boolean; graceUntil?: string | null }
   | { kind: 'signup'; email?: string | null; businessType?: string | null; plan: string; branches: number; billing: 'monthly' | 'yearly'; source?: string | null; sourceDetail?: string | null; agentCode?: string | null; demoMatched?: boolean }
 
 const sourceLabel = (v?: string | null) => SIGNUP_SOURCES.find(x => x.v === v)?.ar || null
@@ -57,6 +58,21 @@ export function requestEmail(n: RequestNotice, org: { name: string; owner?: stri
         paragraphs: ['بدأ فترة التجربة المجانية الحين. تواصل معه في أول يومين يساعده يبدأ صح.'],
         rows,
         button: { label: 'فتح العملاء', url: ADMIN_CUSTOMERS_URL },
+        small: 'وصلك هذا الإيميل لأنك مشرف في لوحة إدارة ستورلي.',
+      }),
+    }
+  }
+
+  if (n.kind === 'renewal') {
+    return {
+      subject: oneLine(`طلب تجديد اشتراك: ${org.name}`),
+      html: brandEmail({
+        title: 'طلب تجديد اشتراك',
+        preheader: `${org.name} ضغط «تجديد الاشتراك» — تواصل معه للدفع`,
+        eyebrow: 'لوحة الإدارة',
+        paragraphs: [n.expired ? 'كان اشتراكه منتهياً، فتفعّل حسابه يوم سماح واحد لحين الدفع.' : 'اشتراكه ما زال سارياً، وطلب التجديد قبل الانتهاء.', 'تواصل معه لإتمام الدفع، ثم فعّل اشتراكه من «العملاء» — يتحوّل الطلب إلى «مدفوع» تلقائياً.'],
+        rows: [...who, ...(n.graceUntil ? [{ label: 'يعمل حسابه حتى', value: new Date(n.graceUntil).toLocaleString('ar-SA-u-ca-gregory-nu-latn', { timeZone: 'Asia/Riyadh', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }) }] : [])],
+        button: { label: 'فتح طلبات التجديد', url: 'https://storely.dev/storely-admin/renewals' },
         small: 'وصلك هذا الإيميل لأنك مشرف في لوحة إدارة ستورلي.',
       }),
     }

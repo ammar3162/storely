@@ -82,8 +82,8 @@ export async function POST(req: Request) {
     if (endsAt <= now && now.getTime() - endsAt.getTime() <= REMIND_FOR && now.getTime() - last >= REMIND_EVERY) {
       const days = Math.max(1, Math.floor((now.getTime() - endsAt.getTime()) / DAY))
       const text = days <= 1
-        ? `مرحباً ${p.full_name || ''}،\n\nنود إعلامك بأن اشتراكك في Storely انتهى اليوم.\n\nجدّد اشتراكك الآن ليُعاد تفعيل حسابك فوراً، وتواصل متابعة منشأتك من حيث توقفت:\nstorely.dev/login\n\nشكراً لثقتك بـ Storely.`
-        : `مرحباً ${p.full_name || ''}،\n\nنذكّرك بأن اشتراكك في Storely بانتظار التجديد.\n\nجدّد اشتراكك ليُعاد تفعيل حسابك فوراً:\nstorely.dev/login\n\nيسعدنا خدمتك دائماً.`
+        ? `مرحباً ${p.full_name || ''}،\n\nنود إعلامك بأن اشتراكك في Storely انتهى اليوم.\n\nجدّد اشتراكك الآن ليُعاد تفعيل حسابك فوراً، وتواصل متابعة منشأتك من حيث توقفت:\nstorely.dev/renew\n\nشكراً لثقتك بـ Storely.`
+        : `مرحباً ${p.full_name || ''}،\n\nنذكّرك بأن اشتراكك في Storely بانتظار التجديد.\n\nجدّد اشتراكك ليُعاد تفعيل حسابك فوراً:\nstorely.dev/renew\n\nيسعدنا خدمتك دائماً.`
       const waOk = to ? (await sendWhatsAppMessage(to, text)).ok : false
       // البريد مرة وحدة يوم الانتهاء (مو كل يومين — الإيميلات المتكررة تروح للرسائل المزعجة)
       const mailOk = !p.expiry_notice_sent ? await mail(await ownerEmail(p.id), subscriptionEndedEmail({ name, isTrial })) : false

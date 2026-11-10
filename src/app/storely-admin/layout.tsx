@@ -40,7 +40,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // طلبات الإضافات المعلّقة: عدّاد بالقائمة + تنبيه لما يوصل طلب جديد
   const [pendingAddons, setPendingAddons] = useState(0)
   const [pendingDemos, setPendingDemos] = useState(0)   // طلبات عرض جديدة ما انتواصل معها
-  const [newAlert, setNewAlert] = useState(false)
+  const [pendingRenewals, setPendingRenewals] = useState(0)   // طلبات تجديد بانتظار الدفع
+  const [newAlert, setNewAlert] = useState<false | 'addon' | 'renewal'>(false)
   useEffect(() => {
     if (!admin || !can('manage_users')) return
     let last = -1
@@ -48,16 +49,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const count = (url: string) => fetch(url, { headers: { 'x-admin-key': adminKey() } }).then(r => r.ok ? r.json() : null).then(j => j?.pending || 0).catch(() => 0)
     const tick = () => Promise.all([count('/api/admin/addon-requests?count=1'), count('/api/admin/plan-requests?count=1')]).then(([a, b]) => {
       const n = a + b
-      if (last >= 0 && n > last) setNewAlert(true)
+      if (last >= 0 && n > last) setNewAlert('addon')
       last = n; setPendingAddons(n)
     })
     const tickDemos = () => count('/api/admin/demo-requests?count=1').then(setPendingDemos)
-    const all = () => { tick(); tickDemos() }
+    let lastR = -1
+    const tickRenewals = () => count('/api/admin/renewals?count=1').then(n => { if (lastR >= 0 && n > lastR) setNewAlert('renewal'); lastR = n; setPendingRenewals(n) })
+    const all = () => { tick(); tickDemos(); tickRenewals() }
     all()
     const t = setInterval(all, 60_000)
     // صفحة طلبات العرض تطلب تحديث العدّاد فوراً لما تتغير حالة طلب
-    window.addEventListener('admin-counts-refresh', tickDemos)
-    return () => { clearInterval(t); window.removeEventListener('admin-counts-refresh', tickDemos) }
+    const refresh = () => { tickDemos(); tickRenewals() }
+    window.addEventListener('admin-counts-refresh', refresh)
+    return () => { clearInterval(t); window.removeEventListener('admin-counts-refresh', refresh) }
   }, [admin, pathname])
 
   const can = useCallback((perm?: string | string[]) => {
@@ -85,8 +89,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {newAlert && (
         <div role="alert" style={{ position: 'fixed', bottom: 20, left: 20, zIndex: 1000, background: A.surface, border: `1px solid ${A.border}`, borderRadius: 14, boxShadow: A.shadowLg, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, maxWidth: 'calc(100vw - 40px)' }}>
           <PackagePlus size={20} color={A.primary} />
-          <div style={{ fontSize: 13.5, fontWeight: 600 }}>وصل طلب جديد (إضافة أو ترقية)</div>
-          <button onClick={() => { setNewAlert(false); router.push('/storely-admin/addon-requests') }} style={{ background: A.primary, color: 'white', border: 'none', borderRadius: 10, padding: '7px 14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>عرض</button>
+          <div style={{ fontSize: 13.5, fontWeight: 600 }}>{newAlert === 'renewal' ? 'وصل طلب تجديد اشتراك — تواصل مع العميل للدفع' : 'وصل طلب جديد (إضافة أو ترقية)'}</div>
+          <button onClick={() => { setNewAlert(false); router.push(newAlert === 'renewal' ? '/storely-admin/renewals' : '/storely-admin/addon-requests') }} style={{ background: A.primary, color: 'white', border: 'none', borderRadius: 10, padding: '7px 14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>عرض</button>
           <button onClick={() => setNewAlert(false)} aria-label="إغلاق" style={{ background: 'none', border: 'none', cursor: 'pointer', color: A.text3 }}><X size={16} /></button>
         </div>
       )}
@@ -122,7 +126,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <Icon size={18} />
                   <span>{item.label}</span>
                   {(() => {
-                    const n = item.href === '/storely-admin/addon-requests' ? pendingAddons : item.href === '/storely-admin/demo-requests' ? pendingDemos : 0
+                    const n = item.href === '/storely-admin/addon-requests' ? pendingAddons : item.href === '/storely-admin/demo-requests' ? pendingDemos : item.href === '/storely-admin/renewals' ? pendingRenewals : 0
                     return n > 0 && (
                       <span style={{ marginInlineStart: 'auto', background: A.danger, color: 'white', borderRadius: 99, fontSize: 11, fontWeight: 600, minWidth: 20, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>{n}</span>
                     )

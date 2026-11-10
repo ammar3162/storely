@@ -199,7 +199,7 @@ const daysAr = (n: number) => n <= 1 ? 'يوم واحد' : n === 2 ? 'يومين
 const SIGN = 'مع تحيات فريق Storely'
 export function subscriptionEndingEmail(o: { name?: string | null; daysLeft: number; endsAt: string; isTrial: boolean }) {
   const subject = o.isTrial ? `تنتهي تجربتك المجانية في Storely خلال ${daysAr(o.daysLeft)}` : `ينتهي اشتراكك في Storely خلال ${daysAr(o.daysLeft)}`
-  const url = `${BRAND.site}/login`
+  const url = `${BRAND.site}/renew`
   const label = o.isTrial ? 'تفعيل الاشتراك' : 'تجديد الاشتراك'
   const paragraphs = o.isTrial ? [
     `نأمل أن تكون تجربتك مع Storely مفيدة لمنشأتك. نود تذكيرك بأن تجربتك المجانية تنتهي يوم ${arDate(o.endsAt)}.`,
@@ -219,7 +219,7 @@ export function subscriptionEndingEmail(o: { name?: string | null; daysLeft: num
 }
 export function subscriptionEndedEmail(o: { name?: string | null; isTrial: boolean }) {
   const subject = o.isTrial ? 'انتهت تجربتك المجانية في Storely' : 'انتهى اشتراكك في Storely'
-  const url = `${BRAND.site}/login`
+  const url = `${BRAND.site}/renew`
   const paragraphs = o.isTrial ? [
     'شكراً لتجربتك Storely. نود إعلامك بأن فترة التجربة المجانية انتهت اليوم.',
     'فعّل اشتراكك الآن لمواصلة متابعة منشأتك من حيث توقفت، باختيار المزايا التي تحتاجها فقط.',
