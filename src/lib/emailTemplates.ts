@@ -54,6 +54,8 @@ export function brandEmail(o: {
   rawLinkFallback?: string
   rawSections?: string   // HTML جاهز ومحمي مسبقاً (جداول التقارير)
   rawFooter?: string     // HTML جاهز أسفل الإيميل (رابط إلغاء الاشتراك بالإعلانات)
+  // إيميلات الأمان (رمز التحقق، استعادة كلمة المرور): بدون زر واتساب ورابط الموقع — روابط أقل = أقل احتمال للسبام
+  minimal?: boolean
 }) {
   const b = BRAND
   const btnUrl = o.button ? (o.button.rawUrl ?? esc(o.button.url || '')) : ''
@@ -117,8 +119,8 @@ export function brandEmail(o: {
     ${o.note ? `<tr><td style="padding:14px 28px 0"><div style="font-size:12px;line-height:1.8;background:rgba(2,159,162,.06);border:1px solid rgba(2,159,162,.18);border-radius:12px;padding:10px 12px;color:#334155">${esc(o.note)}</div></td></tr>` : ''}
     <tr><td style="padding:20px 28px 24px;text-align:center">
       ${o.small ? `<div style="font-size:12px;color:${b.muted};line-height:1.8;margin-bottom:12px">${esc(o.small)}</div>` : ''}
-      <a href="https://wa.me/${b.whatsapp}" style="display:inline-block;color:${b.color};text-decoration:none;font-weight:bold;font-size:12px;border:1px solid rgba(2,159,162,.35);padding:9px 18px;border-radius:10px">تواصل معنا عبر واتساب</a>
-      <div style="font-size:11px;color:#94a3b8;margin-top:14px;line-height:1.8">Storely — نظام واحد يربط كل أعمال منشأتك<br><a href="${b.site}" style="color:#94a3b8" dir="ltr">storely.dev</a></div>
+      ${o.minimal ? `<div style="font-size:11px;color:#94a3b8;line-height:1.8">Storely — نظام واحد يربط كل أعمال منشأتك</div>` : `<a href="https://wa.me/${b.whatsapp}" style="display:inline-block;color:${b.color};text-decoration:none;font-weight:bold;font-size:12px;border:1px solid rgba(2,159,162,.35);padding:9px 18px;border-radius:10px">تواصل معنا عبر واتساب</a>
+      <div style="font-size:11px;color:#94a3b8;margin-top:14px;line-height:1.8">Storely — نظام واحد يربط كل أعمال منشأتك<br><a href="${b.site}" style="color:#94a3b8" dir="ltr">storely.dev</a></div>`}
       ${o.rawFooter || ''}
     </td></tr>
   </table>
@@ -165,6 +167,7 @@ export function resetPasswordEmail(o: { name?: string; link: string }) {
       button: { label: 'تعيين كلمة مرور جديدة', url: o.link },
       note: 'الرابط صالح لمدة ساعة واحدة، ويُستخدم مرة واحدة فقط.',
       small: 'إذا لم تطلب ذلك، فتجاهل هذه الرسالة، وحسابك في أمان.',
+      minimal: true,
     }),
   }
 }
@@ -184,13 +187,14 @@ export function deviceCodeEmail(o: { name?: string; code: string; device: string
       code: o.code,
       note: 'الرمز صالح لمدة 10 دقائق، ويُستخدم مرة واحدة فقط. بعد التحقق لن يُطلب منك رمز على هذا الجهاز مرة أخرى.',
       small: o.firstTime ? 'إذا لم تسجّل في Storely، تجاهل هذه الرسالة.' : 'إذا لم تحاول الدخول، لا تشارك هذا الرمز مع أحد، وغيّر كلمة المرور من الإعدادات.',
+      minimal: true,
     }),
   }
 }
 
 export function welcomeEmail(o: { name: string; trialEnds?: string | null }) {
   return {
-    subject: 'أهلاً بك في Storely 👋',
+    subject: 'أهلاً بك في Storely',
     html: brandEmail({
       title: `أهلاً بك في Storely، ${o.name}`,
       preheader: 'حسابك جاهز، ابدأ بإضافة مخزونك',
@@ -209,7 +213,7 @@ export function welcomeEmail(o: { name: string; trialEnds?: string | null }) {
 
 export function activationEmail(o: { name: string; orgName: string; paid: boolean; endsAt?: string | null }) {
   return {
-    subject: o.paid ? 'تم تفعيل اشتراكك في Storely ✅' : 'تم تفعيل حسابك في Storely ✅',
+    subject: o.paid ? 'تم تفعيل اشتراكك في Storely' : 'تم تفعيل حسابك في Storely',
     html: brandEmail({
       title: o.paid ? 'تم تفعيل اشتراكك بنجاح' : 'تم تفعيل حسابك بنجاح',
       preheader: `حساب ${o.orgName} مفعّل${o.endsAt ? ` حتى ${arDate(o.endsAt)}` : ''}`,
