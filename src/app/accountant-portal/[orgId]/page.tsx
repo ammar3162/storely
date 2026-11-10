@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Loader2, FileSpreadsheet, MessageSquarePlus, BookOpen } from 'lucide-react'
+import { confirmDialog } from '@/components/ConfirmDialog'
+import { toast } from '@/components/toast'
 import { colors } from '@/lib/ds'
 import { PortalShell, PeriodBar, presetRange } from '@/components/accountant/PortalShell'
 import AccountantReportView, { type ReportBlock } from '@/components/accountant/AccountantReportView'
@@ -83,13 +85,13 @@ export default function PortalClientPage() {
 
   // طلب واحد لكل فاتورة ناقصة (الرقم الضريبي أو رقم الفاتورة) — المنشأة يوصلها إشعار واحد وتعبّيها من «طلبات المحاسب»
   async function requestMissing(invs: any[]) {
-    if (!invs.length || !window.confirm(`سنرسل إلى المنشأة طلباً لإكمال الرقم الضريبي أو رقم الفاتورة لـ ${invs.length === 1 ? 'فاتورة واحدة' : `${invs.length} فواتير`}؟`)) return
+    if (!invs.length || !(await confirmDialog({ title: `طلب إكمال ${invs.length === 1 ? 'فاتورة واحدة' : invs.length === 2 ? 'فاتورتين' : `${invs.length} فواتير`}؟`, message: 'يصل إلى المنشأة طلب لكل فاتورة لإكمال الرقم الضريبي للمورد أو رقم الفاتورة، وتتابع ردودها من تبويب «الطلبات».', confirmText: 'إرسال الطلب', type: 'success' }))) return
     const j = await fetch('/api/accountant-portal/requests', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ org_id: orgId, targets: invs.map(i => ({ invoice_group: i.group || null, purchase_id: i.firstId || null })) }) })
       .then(r => r.json()).catch(() => ({ error: 'تأكد من الإنترنت' }))
-    if (j.error) { window.alert(j.error); return }
-    if (!j.created) { window.alert('جميع الفواتير الناقصة عليها طلبات مفتوحة مسبقاً — تابعها من «الطلبات»'); setTab('requests'); return }
-    window.alert(`أُرسل إلى المنشأة ${j.created === 1 ? 'طلب واحد' : `${j.created} طلبات`}${j.skipped ? ` (${j.skipped} عليها طلب مسبقاً)` : ''} `)
+    if (j.error) { toast(j.error, 'error'); return }
+    if (!j.created) { toast('جميع الفواتير الناقصة عليها طلبات مفتوحة مسبقاً — تابعها من «الطلبات»', 'info'); setTab('requests'); return }
+    toast(`أُرسل إلى المنشأة ${j.created === 1 ? 'طلب واحد' : `${j.created} طلبات`}${j.skipped ? ` (${j.skipped} عليها طلب مسبقاً)` : ''}`)
     setReqKey(k => k + 1); setTab('requests')
   }
 

@@ -1,6 +1,8 @@
 'use client'
 import { useState } from 'react'
 import { Download, FileSpreadsheet } from 'lucide-react'
+import { confirmDialog } from '@/components/ConfirmDialog'
+import { toast } from '@/components/toast'
 import { colors, radius } from '@/lib/ds'
 import { invoicesLabel, staffLabel, taxInvoices, vatReturn, payrollName } from '@/lib/accountantExport'
 import { fileLink } from '@/lib/invoiceUrl'
@@ -81,9 +83,10 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
   const toggle = (id: string) => setSel(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
   async function bulkVat(has_vat: boolean) {
     if (!onBulkEdit || !sel.size) return
-    if (!window.confirm(`سنجعل ${sel.size} سطر ${has_vat ? 'عليها ضريبة 15٪' : 'بدون ضريبة'}. يصل إلى المنشأة إشعار ويمكنها التراجع. متابعة؟`)) return
+    if (!(await confirmDialog({ title: has_vat ? `جعل ${sel.size} سطر عليها ضريبة 15٪؟` : `جعل ${sel.size} سطر بدون ضريبة؟`, message: 'يتغير الإقرار الضريبي بناءً على ذلك. يصل إلى المنشأة إشعار بالتعديل ويمكنها التراجع عنه.', confirmText: 'تطبيق التعديل', type: 'warning' }))) return
     setBulkBusy(true); const j = await onBulkEdit([...sel], { has_vat }); setBulkBusy(false)
-    if (!j.success || j.error) { window.alert(j.error || 'تعذر حفظ التعديل'); return }
+    if (!j.success || j.error) { toast(j.error || 'تعذر حفظ التعديل', 'error'); return }
+    toast(`عُدّل ${j.changed || sel.size} سطر`)
     setSel(new Set())
   }
   const check = (on: boolean, onChange: () => void, label: string) => <input type="checkbox" checked={on} onChange={onChange} onClick={e => e.stopPropagation()} aria-label={label} style={{ width: 16, height: 16, accentColor: colors.primary, cursor: 'pointer' }} />

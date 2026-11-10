@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { Lock, Unlock } from 'lucide-react'
+import { confirmDialog } from '@/components/ConfirmDialog'
+import { toast } from '@/components/toast'
 import { colors, font, radius } from '@/lib/ds'
 import { ListSkeleton } from '@/components/PageSkeleton'
 
@@ -15,7 +17,9 @@ export default function PortalLocks({ orgId }: { orgId: string }) {
   useEffect(() => { load() }, [orgId])
   async function act(m: any) {
     const lock = !m.locked
-    if (!window.confirm(lock ? `هل تريد إقفال شهر ${m.label}؟ بعدها لن يتمكن أحد من إضافة أو تعديل أو حذف المشتريات أو إقفالات الكاشير بتاريخ داخله.` : `هل تريد فتح شهر ${m.label}؟ سيصبح قابلاً للتعديل.`)) return
+    if (!(await confirmDialog(lock
+      ? { title: `إقفال شهر ${m.label}؟`, message: 'بعد الإقفال لن يتمكن أحد من إضافة أو تعديل أو حذف المشتريات أو إقفالات الكاشير بتاريخ داخل هذا الشهر. يمكنك فتحه لاحقاً عند الحاجة.', confirmText: 'إقفال الشهر', type: 'warning' }
+      : { title: `فتح شهر ${m.label}؟`, message: 'سيصبح الشهر قابلاً للتعديل من المنشأة ومنك.', confirmText: 'فتح الشهر', type: 'warning' }))) return
     setBusy(m.month); setErr('')
     const j = await fetch('/api/accountant-portal/locks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ org_id: orgId, month: m.month, action: lock ? 'lock' : 'unlock' }) })
       .then(r => r.json()).catch(() => ({ error: 'تأكد من الإنترنت' }))

@@ -480,8 +480,10 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
         .then(async r => { const isJson = (r.headers.get('content-type') || '').includes('json'); const text = await r.text(); return { status: r.status, text, json: isJson ? JSON.parse(text) as any : null } })
       try {
         // الفريق والإسناد
-        expect((await req(team.POST, 'POST', '/api/accountant-portal/team', { action: 'add', email: memberEmail, name: 'موظف المكتب' })).status).toBe(200)
-        expect((await req(team.POST, 'POST', '/api/accountant-portal/team', { action: 'add', email: memberEmail })).status).toBe(409)
+        // الإضافة تحتاج منشأة واحدة على الأقل
+        expect((await req(team.POST, 'POST', '/api/accountant-portal/team', { action: 'add', email: memberEmail, name: 'موظف المكتب' })).status).toBe(400)
+        expect((await req(team.POST, 'POST', '/api/accountant-portal/team', { action: 'add', email: memberEmail, name: 'موظف المكتب', org_ids: [orgId] })).json).toMatchObject({ success: true, assigned: 1 })
+        expect((await req(team.POST, 'POST', '/api/accountant-portal/team', { action: 'add', email: memberEmail, org_ids: [orgId] })).status).toBe(409)
         expect((await req(team.POST, 'POST', '/api/accountant-portal/team', { action: 'assign', email: memberEmail, org_id: orgId, on: true })).status).toBe(200)
         const mUser = (await db.from('accountant_users').select('id').eq('email', memberEmail).single()).data as any
         expect(await accessFor(db as any, mUser.id, orgId)).toMatchObject({ sections: ['sales', 'purchases'] })
@@ -493,10 +495,10 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
         const mSess = (await db.from('accountant_sessions').insert({ accountant_id: mUser.id } as any).select('id').single()).data as any
         const mCookie = `acc_session=${makeSession(mUser.id, mSess.id)}`
         const asMember = (body: any) => team.POST(new Request('http://test/api/accountant-portal/team', { method: 'POST', headers: { 'Content-Type': 'application/json', cookie: mCookie }, body: JSON.stringify(body) }))
-        expect((await asMember({ action: 'add', email: `it-x-${stamp}@storely.test` })).status).toBe(403)
+        expect((await asMember({ action: 'add', email: `it-x-${stamp}@storely.test`, org_ids: [orgId] })).status).toBe(403)
         expect((await (await team.GET(new Request('http://test/api/accountant-portal/team', { headers: { cookie: mCookie } }))).json() as any).lead).toBe(false)
         const loneEmail = `it-lone-${stamp}@storely.test`
-        expect((await req(team.POST, 'POST', '/api/accountant-portal/team', { action: 'add', email: loneEmail })).status).toBe(200)
+        expect((await req(team.POST, 'POST', '/api/accountant-portal/team', { action: 'add', email: loneEmail })).status).toBe(400)   // بدون منشأة: ما يُضاف
         const askCode = (email: string) => login.POST(new Request('http://test/api/accountant-portal/login', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '10.9.8.7' }, body: JSON.stringify({ email }) }))
         expect((await askCode(loneEmail)).status).toBe(200)   // نفس الرد للكل
         expect((await db.from('accountant_login_codes').select('id', { count: 'exact', head: true }).eq('email', loneEmail)).count).toBe(0)
