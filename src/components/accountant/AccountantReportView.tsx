@@ -6,6 +6,8 @@ import { invoicesLabel, staffLabel, taxInvoices, vatReturn, payrollName } from '
 import { fileLink } from '@/lib/invoiceUrl'
 
 // عرض تقرير المحاسب — صفحة الرابط وبوابة المحاسب تستخدمه
+// only: البوابة تعرض كل تبويب بأقسامه (المبيعات، المشتريات…)؛ صفحة الرابط تعرض الكل
+export type ReportBlock = 'sales' | 'tax_invoices' | 'purchases' | 'vat' | 'payables' | 'payroll' | 'expenses' | 'cash_diff' | 'stock'
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const DECISION: Record<string, string> = { pending: 'بانتظار قرار المالك', approved: 'خُصم من الموظف', rejected: 'لم يُخصم' }
 
@@ -13,7 +15,7 @@ const DECISION: Record<string, string> = { pending: 'بانتظار قرار ا�
 function Card({ title, children, wide }: { title: string; children: React.ReactNode; wide?: boolean }) {
   return (
     <section className={wide ? 'rv-wide' : undefined} style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: 16, padding: 18, minWidth: 0 }}>
-      <h2 style={{ fontSize: 15, fontWeight: 800, color: colors.primary, margin: '0 0 12px' }}>{title}</h2>
+      <h2 style={{ fontSize: 15, fontWeight: 700, color: colors.text, margin: '0 0 12px' }}>{title}</h2>
       {children}
     </section>
   )
@@ -23,22 +25,28 @@ function Lines({ rows }: { rows: [string, number, boolean?][] }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 8 }}>
       {rows.map(([k, v, strong]) => (
-        <div key={k} style={{ borderRadius: 12, padding: '10px 12px', background: strong ? colors.primaryLight : '#f8fafc', border: `1px solid ${strong ? colors.primaryBorder : colors.border}` }}>
-          <div style={{ fontSize: 11.5, color: strong ? colors.primary : colors.text3, fontWeight: 700 }}>{k}</div>
-          <div dir="ltr" style={{ fontSize: strong ? 19 : 16, fontWeight: 800, color: strong ? colors.primary : colors.text, marginTop: 3, fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>{fmt(v)}</div>
+        <div key={k} style={{ borderRadius: 12, padding: '10px 12px', background: strong ? colors.primaryLight : '#fff', border: `1px solid ${colors.border}` }}>
+          <div style={{ fontSize: 12, color: colors.text3, fontWeight: 600 }}>{k}</div>
+          <div dir="ltr" style={{ fontSize: strong ? 19 : 16, fontWeight: 700, color: colors.text, marginTop: 3, fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>{fmt(v)}</div>
         </div>
       ))}
     </div>
   )
 }
-function Table({ head, rows, moneyCols = [] }: { head: string[]; rows: (string | number | React.ReactNode)[][]; moneyCols?: number[] }) {
-  if (!rows.length) return <div style={{ fontSize: 12.5, color: colors.text4, padding: '8px 0' }}>لا توجد بيانات لهذه الفترة</div>
+function Table({ head, rows, moneyCols = [], limit = 25 }: { head: string[]; rows: (string | number | React.ReactNode)[][]; moneyCols?: number[]; limit?: number }) {
+  const [all, setAll] = useState(false)
+  if (!rows.length) return <div style={{ fontSize: 13, color: colors.text3, padding: '10px 0' }}>لا توجد بيانات لهذه الفترة</div>
+  const shown = all ? rows : rows.slice(0, limit)
   return (
-    <div style={{ overflowX: 'auto', marginTop: 10 }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, minWidth: 420 }}>
-        <thead><tr>{head.map((h, i) => <th key={i} style={{ textAlign: 'right', padding: '7px 8px', background: colors.primaryLight, color: colors.primaryDark, fontWeight: 700, whiteSpace: 'nowrap' }}>{h}</th>)}</tr></thead>
-        <tbody>{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} dir={moneyCols.includes(j) ? 'ltr' : undefined} style={{ padding: '7px 8px', borderBottom: `1px solid ${colors.border}`, textAlign: moneyCols.includes(j) ? 'left' : 'right', whiteSpace: moneyCols.includes(j) || j === 0 ? 'nowrap' : undefined }}>{moneyCols.includes(j) ? fmt(Number(c)) : c}</td>)}</tr>)}</tbody>
-      </table>
+    <div style={{ marginTop: 12, border: `1px solid ${colors.border}`, borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ overflowX: 'auto' }}>
+        <table className="rv-t" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 420 }}>
+          <thead><tr>{head.map((h, i) => <th key={i} style={{ textAlign: moneyCols.includes(i) ? 'left' : 'right', padding: '9px 10px', background: '#F6F8F9', color: colors.text3, fontWeight: 600, fontSize: 12, whiteSpace: 'nowrap', borderBottom: `1px solid ${colors.border}` }}>{h}</th>)}</tr></thead>
+          <tbody>{shown.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} dir={moneyCols.includes(j) ? 'ltr' : undefined} style={{ padding: '9px 10px', borderBottom: i === shown.length - 1 ? 'none' : `1px solid ${colors.border}`, textAlign: moneyCols.includes(j) ? 'left' : 'right', fontVariantNumeric: 'tabular-nums', whiteSpace: moneyCols.includes(j) || j === 0 ? 'nowrap' : undefined }}>{moneyCols.includes(j) ? fmt(Number(c)) : c}</td>)}</tr>)}</tbody>
+        </table>
+      </div>
+      {rows.length > limit && <button onClick={() => setAll(a => !a)} style={{ width: '100%', padding: 10, border: 'none', borderTop: `1px solid ${colors.border}`, background: '#fff', color: colors.primary, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+        {all ? 'عرض أقل' : `عرض الكل (${rows.length})`}</button>}
     </div>
   )
 }
@@ -50,23 +58,25 @@ function Edited({ date, src }: { date: string; src?: string | null }) {
   return <>{date}<div style={{ marginTop: 3 }}><span style={{ fontSize: 10.5, fontWeight: 800, borderRadius: 999, padding: '1px 7px', whiteSpace: 'nowrap',
     color: acc ? '#7c3aed' : colors.warning, background: acc ? '#f5f3ff' : colors.warningLight }}>{acc ? 'معدّل من المحاسب' : 'معدّل من المنشأة'}</span></div></>
 }
-const editBtn = (onClick: () => void) => <button onClick={onClick} style={{ fontSize: 12, fontWeight: 800, color: colors.primary, background: '#fff', border: `1px solid ${colors.primaryBorder}`, borderRadius: 8, padding: '4px 9px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>تعديل</button>
+const editBtn = (onClick: () => void) => <button onClick={onClick} style={{ fontSize: 12, fontWeight: 600, color: colors.primary, background: '#fff', border: `1px solid ${colors.border}`, borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>تعديل</button>
 
-export default function AccountantReportView({ data, downloadHref, kicker = 'تقرير المحاسب', onRequest, onRequestMissing, hideHeader, onEditClosing, onEditPurchase }: { data: any; downloadHref: string; kicker?: string; onRequest?: (inv: any) => void; onRequestMissing?: (invs: any[]) => void; hideHeader?: boolean
+export default function AccountantReportView({ data, downloadHref, kicker = 'تقرير المحاسب', onRequest, onRequestMissing, hideHeader, onEditClosing, onEditPurchase, only, startMissing, onShowMissing }: { data: any; downloadHref: string; kicker?: string; onRequest?: (inv: any) => void; onRequestMissing?: (invs: any[]) => void; hideHeader?: boolean
+  only?: ReportBlock[]; startMissing?: boolean; onShowMissing?: () => void
   onEditClosing?: (c: any) => void; onEditPurchase?: (t: { id: string; mode: 'invoice' | 'line'; label: string; amount?: number; hasVat?: boolean; invoiceNumber?: string | null; supplierVat?: string | null }) => void }) {
   const r = data.report, t = data.totals
   // «اعرض الناقصة»: من تنبيه الإقرار ينزل لجدول الفواتير الضريبية ويعرض الناقصة بس
-  const [onlyMissing, setOnlyMissing] = useState(false)
+  const [onlyMissing, setOnlyMissing] = useState(!!startMissing)
   const allTax = taxInvoices(r.purchases)
   const missing = allTax.filter(i => !i.complete)
-  const showMissing = () => { setOnlyMissing(true); requestAnimationFrame(() => document.getElementById('rv-tax')?.scrollIntoView({ behavior: 'smooth', block: 'start' })) }
-  const has = (s: string) => r.sections.includes(s)
+  const showMissing = onShowMissing || (() => { setOnlyMissing(true); requestAnimationFrame(() => document.getElementById('rv-tax')?.scrollIntoView({ behavior: 'smooth', block: 'start' })) })
+  const show = (b: ReportBlock) => !only || only.includes(b)
+  const has = (s: string) => r.sections.includes(s) && show(s as ReportBlock)
   const multi = !r.branchName
   const diffs = r.closings.filter((c: any) => c.difference !== 0)
 
   return (<>
     <style>{'.rv-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}@media(min-width:1100px){.rv-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.rv-wide{grid-column:1/-1}}'}</style>
-    {!hideHeader && <header style={{ background: 'linear-gradient(135deg,#029FA2,#0f3f40)', color: '#fff', borderRadius: radius.xl, padding: '20px 22px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
+    {!hideHeader && <header style={{ background: colors.primary, color: '#fff', borderRadius: radius.xl, padding: '20px 22px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
       <div>
         <div style={{ fontSize: 12, opacity: .85 }}>{kicker}</div>
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: '4px 0' }}>{r.orgName}</h1>
@@ -87,7 +97,7 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
           ...(onEditClosing && c.id ? [editBtn(() => onEditClosing(c))] : onEditClosing ? [''] : [])])} />
     </Card>}
 
-    {(has('purchases') || has('vat')) && r.vatRegistered && <div id="rv-tax" className="rv-wide" style={{ scrollMarginTop: 16 }}><Card wide title={`الفواتير الضريبية (${invoicesLabel(t.taxInvoices)})`}>
+    {(r.sections.includes('purchases') || r.sections.includes('vat')) && show('tax_invoices') && r.vatRegistered && <div id="rv-tax" className="rv-wide" style={{ scrollMarginTop: 16 }}><Card wide title={`الفواتير الضريبية (${invoicesLabel(t.taxInvoices)})`}>
       {t.taxInvoices > 0 && <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6, color: t.taxInvoices === t.taxComplete ? '#059669' : '#b45309' }}>
         {t.taxInvoices === t.taxComplete ? 'كل الفواتير مكتملة البيانات' : `${t.taxInvoices - t.taxComplete} ناقصة — تحتاج الرقم الضريبي أو رقم الفاتورة قبل الإقفال`}
         {t.taxVerified > 0 && <span style={{ color: '#059669' }}> · {t.taxVerified} موثقة من باركود الهيئة</span>}
@@ -99,9 +109,10 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
         <button onClick={() => setOnlyMissing(false)} style={btn(false)}>اعرض الكل</button>
       </div>}
       <Table head={['التاريخ', 'رقم الفاتورة', 'المورد', 'الرقم الضريبي', 'الضريبة', 'الإجمالي', 'الحالة', 'الفاتورة', ...(onRequest ? [''] : []), ...(onEditPurchase ? [''] : [])]} moneyCols={[4, 5]}
-        rows={(onlyMissing ? missing : allTax).map(i => [<Edited key="d" date={i.date} src={i.editedSource} />, i.invoiceNumber || '—', i.supplier || '—', i.supplierVat || '—', i.vat, i.total, (i.mismatch ? 'أكبر من الأصلية · ' : '') + (!i.complete ? `ناقص: ${i.missing.filter(m => m !== 'صورة الفاتورة').join('، ')}` : i.verified ? 'موثقة' : 'مكتملة'),
+        rows={(onlyMissing ? missing : allTax).map(i => [<Edited key="d" date={i.date} src={i.editedSource} />, <span key="n" style={{ whiteSpace: 'nowrap' }}>{i.invoiceNumber || '—'}</span>, i.supplier || '—', <span key="v" dir="ltr" style={{ whiteSpace: 'nowrap' }}>{i.supplierVat || '—'}</span>, i.vat, i.total,
+          <Pill key="s" bad={i.mismatch || !i.complete}>{(i.mismatch ? 'أكبر من الأصلية · ' : '') + (!i.complete ? `ينقصها ${i.missing.filter(m => m !== 'صورة الفاتورة').join(' و')}` : i.verified ? 'موثقة' : 'مكتملة')}</Pill>,
           i.invoiceUrl && /^https:\/\//.test(i.invoiceUrl) ? <a href={fileLink(i.invoiceUrl)} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 700 }}>عرض</a> : '—',
-          ...(onRequest ? [<button key="rq" onClick={() => onRequest(i)} style={{ fontSize: 12, fontWeight: 800, color: colors.primary, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, borderRadius: 8, padding: '4px 9px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>اطلب</button>] : []), ...(onEditPurchase ? [i.firstId ? editBtn(() => onEditPurchase({ id: i.firstId!, mode: 'invoice', label: `${i.supplier || '—'} · ${i.date}`, invoiceNumber: i.invoiceNumber, supplierVat: i.supplierVat })) : ''] : [])])} />
+          ...(onRequest ? [<button key="rq" onClick={() => onRequest(i)} style={{ fontSize: 12, fontWeight: 600, color: colors.primary, background: '#fff', border: `1px solid ${colors.border}`, borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>اطلب</button>] : []), ...(onEditPurchase ? [i.firstId ? editBtn(() => onEditPurchase({ id: i.firstId!, mode: 'invoice', label: `${i.supplier || '—'} · ${i.date}`, invoiceNumber: i.invoiceNumber, supplierVat: i.supplierVat })) : ''] : [])])} />
     </Card></div>}
 
     {has('purchases') && <Card wide title={`المشتريات (${invoicesLabel(t.invoices)})`}>
@@ -163,10 +174,10 @@ function VatReturnView({ r, onShowMissing, onRequestMissing }: { r: any; onShowM
     <div style={{ overflowX: 'auto', marginTop: 12 }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, minWidth: 560 }}>
         <thead><tr>{['الخانة', 'البند', 'المبلغ (⃁)', 'التعديلات', 'ضريبة القيمة المضافة'].map(h =>
-          <th key={h} style={{ textAlign: 'right', padding: '7px 8px', background: colors.primaryLight, color: colors.primaryDark, fontWeight: 700, whiteSpace: 'nowrap' }}>{h}</th>)}</tr></thead>
+          <th key={h} style={{ textAlign: 'right', padding: '9px 10px', background: '#F6F8F9', color: colors.text3, fontWeight: 600, fontSize: 12, whiteSpace: 'nowrap' }}>{h}</th>)}</tr></thead>
         <tbody>{v.boxes.map(b => (
           <tr key={b.no} style={{ background: b.total ? '#f8fafc' : undefined, fontWeight: b.total ? 800 : 400 }}>
-            <td style={{ padding: '7px 8px', borderBottom: `1px solid ${colors.border}`, textAlign: 'center', fontWeight: 800, color: colors.primary }}>{b.no}</td>
+            <td style={{ padding: '7px 8px', borderBottom: `1px solid ${colors.border}`, textAlign: 'center', fontWeight: 700, color: colors.text3 }}>{b.no}</td>
             <td style={{ padding: '7px 8px', borderBottom: `1px solid ${colors.border}` }}>{b.label}</td>
             {[b.amount, b.adjust, b.vat].map((x, k) => <td key={k} dir="ltr" style={{ padding: '7px 8px', borderBottom: `1px solid ${colors.border}`, textAlign: 'left', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{cell(x)}</td>)}
           </tr>))}</tbody>
@@ -187,6 +198,11 @@ function VatReturnView({ r, onShowMissing, onRequestMissing }: { r: any; onShowM
       <div style={{ color: colors.text4 }}>المبيعات من إقفالات الكاشير (شاملة ضريبة ١٥٪) والمشتريات من الفواتير المسجلة — راجعها قبل التقديم.</div>
     </div>
   </>
+}
+
+// حالة الفاتورة: أحمر للناقصة، أخضر للمكتملة
+function Pill({ bad, children }: { bad: boolean; children: React.ReactNode }) {
+  return <span style={{ display: 'inline-block', fontSize: 12, fontWeight: 600, borderRadius: 99, padding: '2px 9px', background: bad ? '#FEF3F2' : '#ECFDF3', color: bad ? '#B42318' : '#067647', lineHeight: 1.6 }}>{children}</span>
 }
 
 // زر صغير لتنبيهات التقرير — أساسي (تعبئة) أو ثانوي (حد)

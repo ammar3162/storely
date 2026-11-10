@@ -12,8 +12,8 @@ type Org = { org_id: string; name: string; logo_url: string | null; branch: stri
 let cache: { at: number; orgs: Org[]; me: { name: string | null; email: string } } | null = null
 
 const SIDEBAR = 248
-const GRAD = 'linear-gradient(180deg,#0d4543 0%,#0b3b3a 45%,#0a3231 100%)'
-const PALETTE = ['#0f766e', '#7c3aed', '#b45309', '#1d4ed8', '#be185d', '#0369a1', '#15803d']
+const GRAD = colors.primary   // كحلي — نفس قائمة لوحة المالك
+const PALETTE = ['#203640', '#4F6678', '#3b5563', '#2c4a57', '#5b6f7c', '#1f3a4a', '#465a66']   // درجات كحلية هادئة
 
 /** شعار المنشأة — أو أول حرف من اسمها بلون ثابت */
 export function OrgLogo({ name, url, size = 34 }: { name: string; url?: string | null; size?: number }) {
@@ -58,7 +58,7 @@ export function PortalShell({ title, subtitle, actions, children, orgLogo }: {
   const sidebar = (
     <aside className={`ap-side${open ? ' open' : ''}`} style={{ background: GRAD, color: '#fff', display: 'flex', flexDirection: 'column', fontFamily: font.family }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 18px 14px' }}>
-        <img src="/storely-logo.png" alt="Storely" width={38} height={38} style={{ borderRadius: 10, background: '#fff' }} />
+        <img src="/storely-logo.png" alt="Storely" width={34} height={34} style={{ borderRadius: 8, background: '#fff', border: '1px solid rgba(255,255,255,.2)' }} />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: .3 }} dir="ltr">Storely</div>
           <div style={{ fontSize: 11.5, opacity: .7 }}>بوابة المحاسب</div>
@@ -108,30 +108,45 @@ export function PortalShell({ title, subtitle, actions, children, orgLogo }: {
   )
 
   return (
-    <div dir="rtl" style={{ minHeight: '100vh', background: '#f3f6f6', fontFamily: font.family, color: colors.text }}>
+    <div dir="rtl" style={{ minHeight: '100vh', background: colors.bg, fontFamily: font.family, color: colors.text }}>
       <style>{`
         .ap-side{position:fixed;top:0;right:0;bottom:0;width:${SIDEBAR}px;z-index:60}
-        .ap-sec{font-size:11px;font-weight:700;opacity:.55;padding:10px 10px 6px;display:flex;align-items:center;gap:6px}
-        .ap-sec::before{content:'';width:5px;height:5px;border-radius:99px;background:#5eead4}
-        .ap-item,.ap-org{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;color:rgba(255,255,255,.82);text-decoration:none;font-size:13.5px;font-weight:600;margin-bottom:2px;transition:background .15s}
+        .ap-sec{font-size:11px;font-weight:600;color:rgba(255,255,255,.65);padding:10px 10px 6px;display:flex;align-items:center;gap:8px}
+        .ap-sec::before{content:'';width:7px;height:7px;border-radius:50%;background:#fff}.ap-sec::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.1)}
+        .ap-item,.ap-org{position:relative;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;color:rgba(255,255,255,.88);text-decoration:none;font-size:13.5px;font-weight:500;margin-bottom:1px;transition:background .15s}
         .ap-item:hover,.ap-org:hover{background:rgba(255,255,255,.07)}
-        .ap-item.on{background:#fff;color:#0f766e;font-weight:800;box-shadow:0 6px 16px rgba(0,0,0,.18)}
+        .ap-item.on{background:#fff;color:#203640;font-weight:600}.ap-item.on::before{content:'';position:absolute;right:-10px;top:8px;bottom:8px;width:3px;border-radius:3px 0 0 3px;background:#fff}
         .ap-org{padding:7px 10px;font-size:13px}
         .ap-org.on{background:rgba(255,255,255,.14);color:#fff}
-        .ap-badge{background:#f59e0b;color:#1f1300;font-size:11px;font-weight:800;border-radius:99px;padding:1px 8px}
-        .ap-item.on .ap-badge{background:#0f766e;color:#fff}
+        .ap-badge{background:rgba(255,255,255,.14);color:#fff;font-size:11px;font-weight:700;border-radius:99px;min-width:20px;height:20px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center}
+        .ap-item.on .ap-badge{background:#EEF2F4;color:#203640}
         .ap-dot{width:8px;height:8px;border-radius:99px;flex-shrink:0}
         .ap-main{margin-right:${SIDEBAR}px;min-height:100vh}
-        .ap-top{position:sticky;top:0;z-index:40;background:rgba(243,246,246,.92);backdrop-filter:blur(8px);border-bottom:1px solid ${colors.border}}
+        .ap-top{position:sticky;top:0;z-index:40;background:#fff;border-bottom:1px solid ${colors.border}}
         .ap-burger,.ap-close{display:none}
         .ap-veil{display:none}
         @media (max-width:900px){
-          .ap-side{transform:translateX(100%);transition:transform .25s ease;box-shadow:-20px 0 40px rgba(0,0,0,.25);width:min(86vw,300px)}
-          .ap-side.open{transform:none}
+          .ap-side{transform:translateX(100%);transition:transform .25s ease,box-shadow .25s;width:min(86vw,300px)}
+          .ap-side.open{transform:none;box-shadow:-20px 0 40px rgba(0,0,0,.25)}
           .ap-main{margin-right:0}
           .ap-burger,.ap-close{display:inline-flex}
           .ap-veil.open{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:55}
         }
+        .ap-mob{display:none}
+        @media (max-width:760px){.ap-desk{display:none!important}.ap-mob{display:block}}
+        @media (max-width:600px){.ap-lbl{display:none}.ap-body{padding:16px 16px 40px!important}.ap-head{padding:12px 16px!important}}
+        .ap-row{cursor:pointer;transition:background .12s}.ap-row:hover{background:#F8FAFB}
+        .ap-tabs{display:flex;gap:4px;border-bottom:1px solid ${colors.border};margin-bottom:18px;overflow-x:auto;scrollbar-width:none}
+        .ap-tabs::-webkit-scrollbar{display:none}
+        .ap-tab{position:relative;display:inline-flex;align-items:center;gap:6px;padding:10px 12px 12px;border:none;background:none;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:500;color:${colors.text3};white-space:nowrap}
+        .ap-tab:hover{color:${colors.text}}
+        .ap-tab.on{color:${colors.primary};font-weight:600}.ap-tab.on::after{content:'';position:absolute;inset-inline:8px;bottom:-1px;height:2px;border-radius:2px;background:${colors.primary}}
+        .ap-tab .ap-count{font-size:11px;font-weight:600;border-radius:99px;padding:0 6px;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;background:#EEF2F4;color:${colors.text3}}
+        .ap-tab .ap-count.hot{background:#EFF8FF;color:#175CD3}
+        .ap-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap;cursor:pointer;font-family:inherit}
+        .ap-btn.pri{background:${colors.primary};color:#fff;border:1px solid ${colors.primary}}
+        .ap-btn.sec{background:#fff;color:${colors.text};border:1px solid ${colors.border}}
+        .ap-btn.sec:hover{background:#F8FAFB}
         @keyframes spin{to{transform:rotate(360deg)}}.spin{animation:spin .8s linear infinite}
       `}</style>
       <div className={`ap-veil${open ? ' open' : ''}`} onClick={() => setOpen(false)} />
@@ -140,35 +155,45 @@ export function PortalShell({ title, subtitle, actions, children, orgLogo }: {
 
       <main className="ap-main">
         <header className="ap-top">
-          <div style={{ maxWidth: 1320, margin: '0 auto', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="ap-head" style={{ maxWidth: 1320, margin: '0 auto', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <button className="ap-burger" onClick={() => setOpen(true)} aria-label="القائمة" style={{ border: `1px solid ${colors.border}`, background: '#fff', borderRadius: 10, padding: 8, cursor: 'pointer' }}><Menu size={19} /></button>
             {orgLogo && <OrgLogo name={orgLogo.name} url={orgLogo.url} size={40} />}
             <div style={{ flex: 1, minWidth: 0 }}>
-              {title && <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</h1>}
+              {title && <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</h1>}
               {subtitle && <div style={{ fontSize: 12.5, color: colors.text3, marginTop: 2 }}>{subtitle}</div>}
             </div>
             {actions}
           </div>
         </header>
-        <div style={{ maxWidth: 1320, margin: '0 auto', padding: '20px 24px 48px' }}>{children}</div>
+        <div className="ap-body" style={{ maxWidth: 1320, margin: '0 auto', padding: '20px 24px 48px' }}>{children}</div>
       </main>
     </div>
   )
 }
 
-/** بطاقة رقم (KPI) */
-export function Stat({ label, value, hint, tone = 'teal', icon }: { label: string; value: string; hint?: string; tone?: 'teal' | 'amber' | 'red' | 'blue'; icon?: React.ReactNode }) {
-  const T = { teal: ['#0f766e', '#f0fdfa'], amber: ['#b45309', '#fffbeb'], red: ['#b91c1c', '#fef2f2'], blue: ['#1d4ed8', '#eff6ff'] }[tone]
+/** بطاقة رقم (KPI) — هادئة: عنوان ورقم كبير، واللون للتنبيه بس (ناقص/متأخر). onClick = تصفية */
+export function Stat({ label, value, hint, tone = 'teal', icon, onClick, active }: { label: string; value: string; hint?: string; tone?: 'teal' | 'amber' | 'red' | 'blue'; icon?: React.ReactNode; onClick?: () => void; active?: boolean }) {
+  const valueColor = tone === 'red' ? '#B42318' : tone === 'amber' ? '#B54708' : tone === 'blue' ? '#175CD3' : colors.text
+  const Tag = onClick ? 'button' : 'div'
   return (
-    <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: radius.xl, padding: 16, position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', insetInlineStart: -30, bottom: -30, width: 90, height: 90, borderRadius: 99, background: T[1] }} />
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8, color: colors.text3, fontSize: 12.5, fontWeight: 700 }}>
-        {icon && <span style={{ width: 30, height: 30, borderRadius: 9, background: T[1], color: T[0], display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>}{label}
+    <Tag onClick={onClick} aria-pressed={onClick ? !!active : undefined} style={{ background: '#fff', border: `1px solid ${active ? colors.primary : colors.border}`, boxShadow: active ? `0 0 0 1px ${colors.primary}` : 'none', borderRadius: radius.xl, padding: 16,
+      textAlign: 'start', fontFamily: 'inherit', cursor: onClick ? 'pointer' : 'default', width: '100%', color: 'inherit' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: colors.text3, fontSize: 12.5, fontWeight: 600 }}>
+        {icon && <span style={{ display: 'inline-flex' }}>{icon}</span>}{label}
       </div>
-      <div style={{ position: 'relative', fontSize: 24, fontWeight: 800, color: T[0], marginTop: 8 }} dir="ltr">{value}</div>
-      {hint && <div style={{ position: 'relative', fontSize: 11.5, color: colors.text4, marginTop: 2 }}>{hint}</div>}
-    </div>
+      <div style={{ fontSize: 24, fontWeight: 700, color: valueColor, marginTop: 8, fontVariantNumeric: 'tabular-nums' }} dir="ltr">{value}</div>
+      {hint && <div style={{ fontSize: 12, color: colors.text3, marginTop: 2 }}>{hint}</div>}
+    </Tag>
   )
+}
+
+/** شارة حالة صغيرة بنقطة — الألوان للمعنى فقط */
+export type BadgeTone = 'red' | 'amber' | 'blue' | 'green' | 'grey'
+const BADGE: Record<BadgeTone, [string, string]> = { red: ['#FEF3F2', '#B42318'], amber: ['#FFFAEB', '#B54708'], blue: ['#EFF8FF', '#175CD3'], green: ['#ECFDF3', '#067647'], grey: ['#F2F4F7', '#475467'] }
+export function Badge({ tone, children }: { tone: BadgeTone; children: React.ReactNode }) {
+  const [bg, fg] = BADGE[tone]
+  return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: bg, color: fg, fontSize: 12, fontWeight: 600, borderRadius: 99, padding: '3px 10px', whiteSpace: 'nowrap' }}>
+    <span style={{ width: 6, height: 6, borderRadius: 99, background: fg }} />{children}</span>
 }
 
 const today = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
@@ -188,12 +213,14 @@ const PRESETS = [{ k: 'month', l: 'هذا الشهر' }, { k: 'last_month', l: '
 
 export function PeriodBar({ from, to, onChange }: { from: string; to: string; onChange: (r: { from: string; to: string }) => void }) {
   const active = PRESETS.find(p => { const r = presetRange(p.k); return r.from === from && r.to === to })?.k
-  const chip = (on: boolean): React.CSSProperties => ({ padding: '7px 13px', borderRadius: 99, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: font.family,
-    border: `1.5px solid ${on ? colors.primary : colors.border}`, background: on ? colors.primary : '#fff', color: on ? '#fff' : colors.text3 })
-  const date: React.CSSProperties = { padding: '7px 9px', borderRadius: 10, border: `1px solid ${colors.border}`, fontSize: 12.5, fontFamily: font.family, background: '#fff' }
+  const seg = (on: boolean): React.CSSProperties => ({ flex: '1 1 auto', padding: '8px 10px', borderRadius: 8, fontSize: 12.5, fontWeight: on ? 700 : 600, cursor: 'pointer', fontFamily: font.family,
+    border: 'none', background: on ? '#fff' : 'transparent', color: on ? colors.text : colors.text3, boxShadow: on ? '0 1px 2px rgba(15,23,42,.08)' : 'none', whiteSpace: 'nowrap' })
+  const date: React.CSSProperties = { padding: '7px 9px', borderRadius: 8, border: `1px solid ${colors.border}`, fontSize: 12.5, fontFamily: font.family, background: '#fff' }
   return (
     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, alignItems: 'center', marginBottom: 16 }}>
-      {PRESETS.map(p => <button key={p.k} onClick={() => onChange(presetRange(p.k))} style={chip(active === p.k)}>{p.l}</button>)}
+      <div style={{ display: 'flex', gap: 2, padding: 3, background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: 10, overflowX: 'auto' as const }}>
+        {PRESETS.map(p => <button key={p.k} onClick={() => onChange(presetRange(p.k))} aria-pressed={active === p.k} style={seg(active === p.k)}>{p.l}</button>)}
+      </div>
       <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center', marginInlineStart: 4 }}>
         <span style={{ fontSize: 12, color: colors.text4 }}>من</span>
         <input type="date" value={from} max={to} onChange={e => e.target.value && onChange({ from: e.target.value, to })} style={date} />
