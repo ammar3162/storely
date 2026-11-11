@@ -170,7 +170,7 @@ export default function OnboardingPage() {
     if(!r.success){setSaving(false);toast(r.error||'حدث خطأ — أعد تسجيل الدخول','error');return}
     const failedCount=r.failed||0
     setSaving(false)
-    if(failedCount>0) toast(`تنبيه: فشل حفظ ${failedCount} من ${toAdd.length} — تقدر تضيفهم لاحقاً من صفحة المخزون`,'warning')
+    if(failedCount>0) toast(`تنبيه: فشل حفظ ${failedCount} من ${toAdd.length} ، ويمكنك إضافتها لاحقاً من صفحة المخزون`,'warning')
     setStep('staff')
   }
 
@@ -189,7 +189,7 @@ export default function OnboardingPage() {
     const fin=await api.patch('/api/onboarding',{org_id:orgId,onboarding_done:true})
     setSaving(false)
     if(!fin.success){toast('حدث خطأ أثناء إنهاء الإعداد — حاول مرة أخرى','error');return}
-    if(failedCount>0) toast(`تنبيه: فشل حفظ ${failedCount} من ${toAdd.length} موظف — تقدر تضيفهم لاحقاً من صفحة الموظفين`,'warning')
+    if(failedCount>0) toast(`تنبيه: فشل حفظ ${failedCount} من ${toAdd.length} موظف، ويمكنك إضافتهم لاحقاً من صفحة الموظفين`,'warning')
     setStep('done')
   }
 
@@ -236,7 +236,7 @@ export default function OnboardingPage() {
             <img src="/storely-logo.png" alt="Storely" style={{width:36,height:36,borderRadius:10,border:'1px solid var(--storely-border)',background:'white',padding:3,objectFit:'contain'}}/>
             <span style={{fontSize:16,fontWeight:600,color:'var(--storely-text)'}}>Storely</span>
           </div>
-          {step!=='done'&&<button onClick={skipToDashboard} style={{fontSize:14,color:'#4b5565',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>تخطي الإعداد<ArrowLeft size={15} strokeWidth={1.75}/></button>}
+          {step!=='done'&&<button onClick={skipToDashboard} style={{fontSize:14,color:'#4b5565',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>تخطّي الإعداد<ArrowLeft size={15} strokeWidth={1.75}/></button>}
         </div>
         {step!=='done' && (
           <div style={{maxWidth:640,margin:'0 auto',padding:'0 20px 12px',display:'flex',alignItems:'center',gap:8}}>
@@ -267,7 +267,7 @@ export default function OnboardingPage() {
             <div style={{marginBottom:28}}>
               <img src="/storely-logo.png" alt="" style={{width:56,height:56,borderRadius:14,border:'1px solid var(--storely-border)',background:'white',padding:5,objectFit:'contain',marginBottom:16}}/>
               <h1 style={{fontSize:26,fontWeight:600,lineHeight:'36px',color:'var(--storely-text)',marginBottom:6}}>أهلاً بك في Storely</h1>
-              <p style={{fontSize:15,color:'#4b5565',lineHeight:1.7}}>دقيقتين ونجهّز حسابك. وش نوع نشاطك؟</p>
+              <p style={{fontSize:15,color:'#4b5565',lineHeight:1.7}}>دقيقتان ويصبح حسابك جاهزاً. ما نوع نشاطك؟</p>
             </div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:10,marginBottom:28}}>
               {BUSINESS_TYPES.map(b=>(
@@ -288,7 +288,7 @@ export default function OnboardingPage() {
         {/* 2: بيانات المنشأة */}
         {step==='setup'&&(
           <div className="su">
-            {head(Store, 'بيانات منشأتك', 'اسم منشأتك ورقم الواتساب اللي توصله التنبيهات')}
+            {head(Store, 'بيانات منشأتك', 'اسم منشأتك ورقم الواتساب الذي تصل إليه التنبيهات')}
             <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:20,display:'flex',flexDirection:'column' as const,gap:18,marginBottom:24}}>
               <div>
                 <label style={lbl}>اسم المنشأة</label>
@@ -297,14 +297,14 @@ export default function OnboardingPage() {
               <div>
                 <label style={lbl}>رقم واتساب التنبيهات</label>
                 <input value={whatsapp} onChange={e=>setWhatsapp(e.target.value)} style={{...inp(),direction:'ltr' as const,fontSize:16}} placeholder="+966500000000"/>
-                <div style={{fontSize:13,color:'#6b7487',marginTop:6}}>يوصلك عليه تنبيه نقص المخزون وتقرير الصباح</div>
+                <div style={{fontSize:13,color:'#6b7487',marginTop:6}}>تصلك عليه تنبيهات نقص المخزون والتقرير الصباحي</div>
               </div>
             </div>
             <div style={{display:'flex',gap:10}}>
               {back('business')}
               <button onClick={saveSetup} disabled={saving||!orgName.trim()}
                 style={{...btnPrimary,flex:2,padding:'13px',fontSize:16,opacity:saving||!orgName.trim()?.5:1,cursor:saving||!orgName.trim()?'not-allowed':'pointer'}}>
-                {saving?'جاري الحفظ...':'التالي'}
+                {saving?'جارٍ الحفظ...':'التالي'}
               </button>
             </div>
           </div>
@@ -335,7 +335,7 @@ export default function OnboardingPage() {
                         </div>
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{fontSize:15,fontWeight:500,color:'var(--storely-text)'}}>{p.name}</div>
-                          <div style={{fontSize:12,color:'#6b7487'}}>{p.unit} · ننبهك تحت {p.reorder}</div>
+                          <div style={{fontSize:12,color:'#6b7487'}}>{p.unit} · تنبيه عند أقل من {p.reorder}</div>
                         </div>
                         {p.selected&&(
                           <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
@@ -356,7 +356,7 @@ export default function OnboardingPage() {
               {!known && back('setup')}
               <button onClick={saveProducts} disabled={saving}
                 style={{...btnPrimary,flex:2,padding:'13px',fontSize:16,opacity:saving?.7:1,cursor:saving?'not-allowed':'pointer'}}>
-                {saving?'جاري الحفظ...':'التالي'}
+                {saving?'جارٍ الحفظ...':'التالي'}
               </button>
             </div>
           </div>
@@ -365,7 +365,7 @@ export default function OnboardingPage() {
         {/* 4: الموظفين */}
         {step==='staff'&&(
           <div className="su">
-            {head(Users, 'أضف موظفيك', 'كل موظف يدخل من جواله برقمه ورمز سري نعطيك إياه. هذي الخطوة اختيارية')}
+            {head(Users, 'أضف موظفيك', 'يدخل كل موظف من جواله برقم جواله ورمز سري يُنشأ تلقائياً. هذه الخطوة اختيارية')}
             <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:16,display:'flex',flexDirection:'column' as const,gap:10,marginBottom:20}}>
               {staffList.map((s,i)=>(
                 <div key={i} style={{display:'grid',gridTemplateColumns:staffList.length>1?'1fr 1fr 36px':'1fr 1fr',gap:8,alignItems:'center'}}>
@@ -382,7 +382,7 @@ export default function OnboardingPage() {
               {(hasInventory || !known) && back(hasInventory ? 'products' : 'setup')}
               <button onClick={saveStaff} disabled={saving}
                 style={{...btnPrimary,flex:2,padding:'13px',fontSize:16,opacity:saving?.7:1,cursor:saving?'not-allowed':'pointer'}}>
-                {saving?'جاري الحفظ...':'إنهاء الإعداد'}
+                {saving?'جارٍ الحفظ...':'إنهاء الإعداد'}
               </button>
             </div>
           </div>
@@ -394,11 +394,11 @@ export default function OnboardingPage() {
             <div style={{marginBottom:24}}>
               <span style={{width:56,height:56,borderRadius:16,background:'#f3faf8',color:colors.primary,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:16,border:'1px solid #cfe8e4'}}><Check size={28} strokeWidth={2}/></span>
               <h1 style={{fontSize:26,fontWeight:600,lineHeight:'36px',color:'var(--storely-text)',marginBottom:6}}>منشأتك جاهزة</h1>
-              <p style={{fontSize:15,color:'#4b5565',lineHeight:1.7}}>كل شي جاهز تبدأ فيه. تقدر تعدّل أي شي بعدين من الإعدادات</p>
+              <p style={{fontSize:15,color:'#4b5565',lineHeight:1.7}}>كل شيء جاهز للبدء، ويمكنك تعديل أي إعداد لاحقاً من صفحة الإعدادات</p>
             </div>
             <div style={{display:'grid',gridTemplateColumns:hasInventory?'1fr 1fr':'1fr',background:'white',border:'1px solid var(--storely-border)',borderRadius:14,marginBottom:16}}>
-              {hasInventory && <div style={{padding:16}}><div style={{fontSize:26,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{selectedCount}</div><div style={{fontSize:13,color:'#6b7487'}}>منتج أضفناه</div></div>}
-              <div style={{padding:16,borderInlineStart:hasInventory?'1px solid #e5e7eb':'none'}}><div style={{fontSize:26,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{createdStaff.length}</div><div style={{fontSize:13,color:'#6b7487'}}>موظف أضفناه</div></div>
+              {hasInventory && <div style={{padding:16}}><div style={{fontSize:26,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{selectedCount}</div><div style={{fontSize:13,color:'#6b7487'}}>منتجات مُضافة</div></div>}
+              <div style={{padding:16,borderInlineStart:hasInventory?'1px solid #e5e7eb':'none'}}><div style={{fontSize:26,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{createdStaff.length}</div><div style={{fontSize:13,color:'#6b7487'}}>موظفون مُضافون</div></div>
             </div>
             {createdStaff.length>0&&(
               <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:16,marginBottom:16}}>
@@ -425,10 +425,10 @@ export default function OnboardingPage() {
             {!pushEnabled ? (
               <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:16,marginBottom:20}}>
                 <div style={{display:'flex',alignItems:'center',gap:8,fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}><Bell size={16} strokeWidth={1.75}/>فعّل الإشعارات</div>
-                <p style={{fontSize:13,color:'#4b5565',lineHeight:1.7,marginBottom:12}}>يوصلك تنبيه نقص المخزون وإقفال الكاشير وتوريد الموردين أول بأول، حتى لو التطبيق مقفول</p>
+                <p style={{fontSize:13,color:'#4b5565',lineHeight:1.7,marginBottom:12}}>تصلك تنبيهات نقص المخزون وإقفال الكاشير وتوريد الموردين أولاً بأول، حتى لو كان التطبيق مغلقاً</p>
                 <button onClick={enablePushOnboarding} disabled={pushLoading}
                   style={{...btnSecondary,width:'100%',padding:'12px',fontSize:15}}>
-                  {pushLoading?'جاري التفعيل...':'تفعيل الإشعارات'}
+                  {pushLoading?'جارٍ التفعيل...':'تفعيل الإشعارات'}
                 </button>
               </div>
             ) : (

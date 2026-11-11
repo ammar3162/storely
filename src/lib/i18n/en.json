@@ -388,6 +388,7 @@
 "أي فرع يصرف أكثر؟": "Which branch dispenses more?",
 "أي منشأة تسجّل من رابطك أو تكتب كودك وتشترك، تنضاف مكافأتك في محفظتك ويوصلك إشعار.": "Any business that signs up via your link or enters your code and subscribes adds a reward to your wallet, and you get notified.",
 "أي نشاط ثاني": "Any other business",
+"أي نشاط آخر": "Any other business",
 "أي يوم تتركه على «الوردية الأساسية» يتبع": "Any day left on «Main shift» follows",
 "أيام": "Days",
 "أيام أحددها بالتقويم": "Days I pick on the calendar",
@@ -3991,5 +3992,18 @@
 "نوع الفاتورة": "Invoice type",
 "أصناف للمخزون": "Stock items",
 "كل الأصناف مصروفات (صيانة، تنظيف، غاز…) ولا تُضاف إلى المخزون.": "All items are expenses (maintenance, cleaning, gas…) and are not added to stock.",
-"كل صنف يُضاف إلى مخزونك، وتقدر تحوّل أي صنف منها إلى مشتريات من سطره.": "Each item is added to your stock; you can turn any of them into a purchase from its line."
+"كل صنف يُضاف إلى مخزونك، وتقدر تحوّل أي صنف منها إلى مشتريات من سطره.": "Each item is added to your stock; you can turn any of them into a purchase from its line.",
+"دقيقتان ويصبح حسابك جاهزاً. ما نوع نشاطك؟": "Two minutes and your account is ready. What type of business do you have?",
+"اسم منشأتك ورقم الواتساب الذي تصل إليه التنبيهات": "Your business name and the WhatsApp number that receives alerts",
+"تصلك عليه تنبيهات نقص المخزون والتقرير الصباحي": "You receive low-stock alerts and the morning report on it",
+"· تنبيه عند أقل من": "· alert below",
+"يدخل كل موظف من جواله برقم جواله ورمز سري يُنشأ تلقائياً. هذه الخطوة اختيارية": "Each employee signs in from their phone with their number and an auto-generated PIN. This step is optional",
+"كل شيء جاهز للبدء، ويمكنك تعديل أي إعداد لاحقاً من صفحة الإعدادات": "Everything is ready to start. You can change any setting later from Settings",
+"تصلك تنبيهات نقص المخزون وإقفال الكاشير وتوريد الموردين أولاً بأول، حتى لو كان التطبيق مغلقاً": "You get low-stock, cashier-closing and supplier-delivery alerts in real time, even when the app is closed",
+"منتجات مُضافة": "Products added",
+"موظفون مُضافون": "Staff added",
+"جارٍ التفعيل...": "Activating...",
+"تخطّي الإعداد": "Skip setup",
+"تنبيه: فشل حفظ * من * موظف، ويمكنك إضافتهم لاحقاً من صفحة الموظفين": "Note: saving * of * staff failed. You can add them later from the Staff page",
+"تنبيه: فشل حفظ * من *، ويمكنك إضافتها لاحقاً من صفحة المخزون": "Note: saving * of * failed. You can add them later from the Inventory page"
 }
