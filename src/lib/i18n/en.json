@@ -4005,5 +4005,20 @@
 "جارٍ التفعيل...": "Activating...",
 "تخطّي الإعداد": "Skip setup",
 "تنبيه: فشل حفظ * من * موظف، ويمكنك إضافتهم لاحقاً من صفحة الموظفين": "Note: saving * of * staff failed. You can add them later from the Staff page",
-"تنبيه: فشل حفظ * من *، ويمكنك إضافتها لاحقاً من صفحة المخزون": "Note: saving * of * failed. You can add them later from the Inventory page"
+"تنبيه: فشل حفظ * من *، ويمكنك إضافتها لاحقاً من صفحة المخزون": "Note: saving * of * failed. You can add them later from the Inventory page",
+"تكلفة المواد من المبيعات": "Material cost of sales",
+"آخر # أيام (*)": "Last # days (*)",
+"أعلى من الهدف": "Above target",
+"ضمن الهدف": "Within target",
+"تظهر النسبة بعد تسجيل # إقفالات كاشير على الأقل خلال الأسبوع، مع تسجيل الصرف أو الجرد. سجّلت # من # هذا الأسبوع.": "The ratio appears after at least # cashier closings in the week, with dispensing or stock counts recorded. # of # recorded this week.",
+"مثل الأسبوع الماضي": "Same as last week",
+"# نقطة أعلى من الأسبوع الماضي (#%)": "# points higher than last week (#%)",
+"# نقطة أقل من الأسبوع الماضي (#%)": "# points lower than last week (#%)",
+"من كل # * مبيعات، خرج من المخزون مواد بقيمة": "For every # * of sales, materials left stock worth",
+"المبيعات * · المواد *": "Sales * · Materials *",
+"الهدف المعتاد لنشاطك #% أو أقل": "Typical target for your business: #% or less",
+"أكثر المواد تكلفة هذا الأسبوع": "Highest-cost materials this week",
+"صنف واحد انصرف": "One item was used",
+"# أصناف انصرفت": "# items were used",
+"بدون تكلفة معروفة لأنه لا توجد له فاتورة شراء، فلم يُحسب في النسبة.": "without a known cost (no purchase invoice), so it is not included in the ratio."
 }

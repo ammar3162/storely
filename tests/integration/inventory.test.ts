@@ -433,4 +433,31 @@ describe.skipIf(!enabled)('integration (staging) — inventory', async () => {
       await db.from('recipes').delete().in('id', [latte, flat])
     }, 180_000)
   })
+
+  describe('food cost', () => {
+    it('food cost % = consumed stock cost / net sales over the last 7 days', async () => {
+      const foodCost = await import('@/app/api/food-cost/route')
+      const { foodCostWindows } = await import('@/lib/foodCost')
+      const w = foodCostWindows()
+      const day = (d: string, n: number) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10)
+      const { data: prod, error: pErr } = await db.from('products').insert({ org_id: orgId, branch_id: branchA, name: `لحم-${stamp}`, unit: 'كيلو', qty: 0, avg_cost: 40, is_active: true } as any).select('id').single()
+      if (pErr) throw pErr
+      const pid = (prod as any).id
+      const at = (d: string) => `${d}T12:00:00+03:00`
+      const mv = (type: string, q: number, d: string, note: string | null = null) => ({ org_id: orgId, product_id: pid, branch_id: branchA, profile_id: userId, type, qty_change: q, note, recorded_at: at(d), created_at: at(d) })
+      await db.from('stock_movements').insert([
+        mv('in', 100, day(w.from, -1)),
+        mv('out', -20, w.from), mv('waste', -2, day(w.from, 1)), mv('adjustment', -3, day(w.from, 2)),
+        mv('out', -10, day(w.from, 3), 'إلغاء فاتورة شراء محذوفة (مورد)'),   // ليس استهلاكاً
+      ] as any).then(r => { if (r.error) throw r.error })
+      for (const d of [w.from, day(w.from, 1), day(w.from, 2)])
+        await db.from('cashier_closings').insert({ org_id: orgId, branch_id: branchA, staff_name: 'كاشير', closing_date: d, total_sales: 1000, cash_amount: 1000, difference: 0 } as any).then(r => { if (r.error) throw r.error })
+
+      const r = await call(foodCost.GET, 'GET', `/api/food-cost?org_id=${orgId}&branch_id=${branchA}`)
+      expect(r.status).toBe(200)
+      expect(r.json.week).toEqual({ sales: 3000, cost: 1000, pct: 33.3, closingDays: 3 })   // 25 كيلو × 40
+      expect(r.json.items[0]).toMatchObject({ qty: 25, cost: 1000 })
+      expect((await call(foodCost.GET, 'GET', '/api/food-cost?org_id=00000000-0000-0000-0000-000000000000')).status).not.toBe(200)
+    }, 180_000)
+  })
 })

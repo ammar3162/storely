@@ -14,6 +14,7 @@ import { VatThresholdBanner } from '@/components/VatRegistration'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
 import TodayDecisions from '@/components/TodayDecisions'
 import SetupChecklist from '@/components/SetupChecklist'
+import FoodCostCard from '@/components/FoodCostCard'
 
 class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|null}> {
   state = { error: null }
@@ -337,6 +338,9 @@ export default function DashboardPage() {
             </div>
           </StorelyCard>
         ) : null}
+
+        {/* نسبة تكلفة المواد من المبيعات — تحتاج المخزون */}
+        {featKnown && inv && <FoodCostCard curr={curr} />}
 
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(380px,0.92fr)]">
           <div className="min-w-0 space-y-4">
