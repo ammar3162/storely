@@ -14,6 +14,7 @@ export default function TodayDecisions({ full, curr, onCount }: { full: boolean;
   const router = useRouter()
   const [list, setList] = useState<Decision[] | null>(null)
   const [loading, setLoading] = useState(false)
+  const [whyOpen, setWhyOpen] = useState<number | null>(null)
 
   async function load() {
     const org_id = sessionStorage.getItem('s_org_id'), branch_id = sessionStorage.getItem('s_branch_id')
@@ -27,6 +28,7 @@ export default function TodayDecisions({ full, curr, onCount }: { full: boolean;
     const out = buildDecisions({ forecast: f?.forecast, timing: t?.suggestions, buy: b?.suggestions, season: s?.byDay ? s : null,
       waste: w?.report ? w : null, dead: d?.waste, todayDow, curr })
     setList(out)
+    setWhyOpen(null)
     onCount?.(out.filter(x => x.level !== 'info').length)
     setLoading(false)
   }
@@ -70,11 +72,20 @@ export default function TodayDecisions({ full, curr, onCount }: { full: boolean;
         {list?.map((d, i) => {
           const s = style[d.level]
           return (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderTop: i ? `1px solid ${C.border}` : 'none' }}>
-              <s.Icon size={17} style={{ color: s.fg, flexShrink: 0 }} />
+            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px', borderTop: i ? `1px solid ${C.border}` : 'none' }}>
+              <s.Icon size={17} style={{ color: s.fg, flexShrink: 0, marginTop: 3 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13.5, fontWeight: 700, color: C.text, lineHeight: 1.6 }}>{d.title}</div>
                 <div style={{ fontSize: 12, color: C.text3, marginTop: 1, lineHeight: 1.6 }}>{d.detail}</div>
+                {d.why && (
+                  <>
+                    <button type="button" onClick={() => setWhyOpen(whyOpen === i ? null : i)} aria-expanded={whyOpen === i}
+                      style={{ marginTop: 2, padding: 0, border: 'none', background: 'none', color: C.text, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, textDecoration: 'underline dotted', textUnderlineOffset: 4 }}>
+                      {whyOpen === i ? 'إخفاء' : 'لماذا؟'}
+                    </button>
+                    {whyOpen === i && <div style={{ marginTop: 4, padding: '8px 10px', borderRadius: 8, background: C.bg, color: C.text, fontSize: 12.5, lineHeight: 1.7 }}>{d.why}</div>}
+                  </>
+                )}
               </div>
               {d.action && (
                 <button onClick={() => go(d.action!.href)} style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${d.level === 'urgent' ? C.danger : C.border}`, background: C.surface, color: d.level === 'urgent' ? C.danger : C.text, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const, flexShrink: 0 }}>

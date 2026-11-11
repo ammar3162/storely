@@ -2,6 +2,8 @@
 import { Lock, Trash2 } from 'lucide-react'
 import { StorelyPageHeader } from '@/components/ui/page-header'
 import { StorelyButton } from '@/components/ui/button'
+import InfoHint from '@/components/InfoHint'
+import { netProfitHelp } from '@/lib/infoHints'
 import { StorelyCard } from '@/components/ui/card'
 import { StorelyFormField } from '@/components/ui/form-field'
 import { storelyTokens as T } from '@/components/ui/design-tokens'
@@ -346,7 +348,7 @@ export default function ProfitabilityPage() {
         <StorelyCard className="ui-workspace pf-net">
           <div>
             <div className="ui-inline">
-              <span className="ui-supporting" style={{color:T.color.textMuted}}>صافي الربح — {monthLabel(month)}</span>
+              <span className="ui-supporting" style={{color:T.color.textMuted,display:'inline-flex',alignItems:'center',gap:2}}>صافي الربح — {monthLabel(month)}<InfoHint title="صافي الربح" {...netProfitHelp} /></span>
               {data.closed ? (
                 <span className="ui-strong" style={{color:T.color.danger}}>
                   مقفل {new Date(data.closedAt).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',day:'numeric',month:'long'})}

@@ -175,13 +175,13 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
         <div style={{...card,padding:'16px',marginBottom:16}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
             <span style={{fontSize:13,fontWeight:700,color:colors.text,display:'inline-flex',alignItems:'center',gap:6}}><BarChart3 size={15} strokeWidth={2.25}/> مقارنة الأداء الشهري</span>
-            <span style={{fontSize:10,color:colors.text4}}>مقابل الشهر السابق</span>
+            <span style={{fontSize:10,color:colors.text4}}>مقابل نفس الأيام من الشهر السابق</span>
           </div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>
             {[
               {label:'المبيعات', val:monthComp.current.sales, change:monthComp.changes.sales, unit:curr},
               {label:'المشتريات', val:monthComp.current.purchasesTotal, change:monthComp.changes.purchases, unit:curr},
-              {label:'الصافي', val:monthComp.current.net, change:monthComp.changes.net, unit:curr},
+              {label:'المبيعات − المشتريات', val:monthComp.current.net, change:monthComp.changes.net, unit:curr},
             ].map((m,i)=>{
               const up = m.change !== null && m.change >= 0
               const color = m.change===null ? colors.text4 : up ? colors.primary : colors.danger

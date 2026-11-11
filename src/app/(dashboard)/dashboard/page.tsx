@@ -14,6 +14,8 @@ import { VatThresholdBanner } from '@/components/VatRegistration'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
 import TodayDecisions from '@/components/TodayDecisions'
 import SetupChecklist from '@/components/SetupChecklist'
+import InfoHint from '@/components/InfoHint'
+import { salesMinusPurchasesHelp, monthCardHelp } from '@/lib/infoHints'
 import FoodCostCard from '@/components/FoodCostCard'
 
 class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|null}> {
@@ -246,9 +248,9 @@ export default function DashboardPage() {
       tone: stats.lowStock > 0 ? 'danger' : 'success',
     },
     {
-      label: 'أداء الفرع',
+      label: monthComp?.success ? <InfoHint title="المبيعات − المشتريات" {...salesMinusPurchasesHelp}>المبيعات − المشتريات</InfoHint> : 'أداء الفرع',
       value: monthComp?.success ? fmtMoney(monthComp.current.net) : stats.products.toLocaleString('en-US'),
-      helper: monthComp?.success ? 'الصافي' : t('dashboard.inStock'),
+      helper: monthComp?.success ? 'منذ بداية الشهر' : t('dashboard.inStock'),
       tone: monthComp?.success && Number(monthComp.current.net) < 0 ? 'warning' : 'neutral',
     },
     {
@@ -277,7 +279,7 @@ export default function DashboardPage() {
   const performanceRows = monthComp?.success ? [
     { metric:'المبيعات', current:fmtMoney(monthComp.current.sales), change:monthComp.changes.sales, inverse:false },
     ...(pur ? [{ metric:'المشتريات', current:fmtMoney(monthComp.current.purchasesTotal), change:monthComp.changes.purchases, inverse:true }] : []),
-    { metric:'الصافي', current:fmtMoney(monthComp.current.net), change:monthComp.changes.net, inverse:false },
+    { metric:'المبيعات − المشتريات', current:fmtMoney(monthComp.current.net), change:monthComp.changes.net, inverse:false },
     ...(inv ? [{ metric:'عمليات الصرف', current:Number(monthComp.current.dispenseCount).toLocaleString('en-US'), change:monthComp.changes.dispenseCount, inverse:false }] : []),
   ] : []
 
@@ -321,7 +323,7 @@ export default function DashboardPage() {
         {showDecisions && <TodayDecisions full={feat.ai === true} curr={curr} onCount={setDecCount} />}
 
         {monthComp?.success ? (
-          <StorelyCard title="هذا الشهر" description="مقارنة بالشهر الماضي" className={cardClass}>
+          <StorelyCard title="هذا الشهر" description="مقارنة بنفس الأيام من الشهر الماضي" className={cardClass} actions={<InfoHint title="هذا الشهر" {...monthCardHelp} />}>
             <div className="grid grid-cols-2 gap-px bg-[var(--storely-border)] xl:grid-cols-4">
               {performanceRows.map((m,i)=>(
                 <div key={i} className={'min-w-0 bg-[var(--storely-surface)] px-3.5 py-3 sm:px-[18px] sm:py-4' + (performanceRows.length % 2 && i === performanceRows.length - 1 ? ' col-span-2 xl:col-span-1' : '')}>
