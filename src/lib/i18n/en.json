@@ -4020,5 +4020,19 @@
 "أكثر المواد تكلفة هذا الأسبوع": "Highest-cost materials this week",
 "صنف واحد انصرف": "One item was used",
 "# أصناف انصرفت": "# items were used",
-"بدون تكلفة معروفة لأنه لا توجد له فاتورة شراء، فلم يُحسب في النسبة.": "without a known cost (no purchase invoice), so it is not included in the ratio."
+"بدون تكلفة معروفة لأنه لا توجد له فاتورة شراء، فلم يُحسب في النسبة.": "without a known cost (no purchase invoice), so it is not included in the ratio.",
+"ما هذه النسبة؟": "What is this ratio?",
+"تبيّن كم تكلّفك المواد مقابل كل # * من المبيعات خلال آخر # أيام.": "It shows how much materials cost you for every # * of sales over the last # days.",
+"كيف تُحسب؟": "How is it calculated?",
+"المبيعات: من إقفالات الكاشير، بدون ضريبة القيمة المضافة إذا كانت المنشأة مسجّلة فيها.": "Sales: from cashier closings, excluding VAT if the business is VAT-registered.",
+"المواد: قيمة كل ما خرج من المخزون فعلاً، وهو الصرف والهدر وفروقات الجرد، مضروباً في متوسط تكلفة الصنف من فواتير الشراء.": "Materials: the value of everything that actually left stock (dispensing, waste and count differences) multiplied by each item's average cost from purchase invoices.",
+"لا يدخل في الحساب النقل بين الفروع ولا إلغاء فواتير الشراء.": "Transfers between branches and cancelled purchase invoices are not included.",
+"كيف أقرؤها؟": "How do I read it?",
+"كلما قلّت النسبة زاد ربحك من المبيعات.": "The lower the ratio, the more you keep from your sales.",
+"المعتاد لنشاطك #% أو أقل. المطاعم عادةً بين #% و#%، والمقاهي بين #% و#%.": "Typical for your business: #% or less. Restaurants are usually #%–#%, cafés #%–#%.",
+"المطاعم عادةً بين #% و#%، والمقاهي بين #% و#%.": "Restaurants are usually #%–#%, cafés #%–#%.",
+"إذا ارتفعت النسبة": "If the ratio goes up",
+"راجع قائمة «أكثر المواد تكلفة هذا الأسبوع». الصنف الذي زادت تكلفته كثيراً عن الأسبوع الماضي غالباً هو السبب، بسبب هدر أو زيادة في الكميات أو صرف غير مسجّل.": "Check «Highest-cost materials this week». The item whose cost rose sharply from last week is usually the cause: waste, larger portions or unrecorded dispensing.",
+"لتكون النسبة دقيقة": "To keep the ratio accurate",
+"سجّل إقفال الكاشير يومياً، وسجّل الصرف والهدر، وأجرِ جرداً دورياً، وأدخل فواتير الشراء حتى تُعرف تكلفة كل صنف.": "Record the cashier closing daily, record dispensing and waste, do regular stock counts, and enter purchase invoices so every item's cost is known."
 }
