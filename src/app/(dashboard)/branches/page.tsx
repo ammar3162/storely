@@ -15,7 +15,7 @@ import { confirmDialog } from '@/components/ConfirmDialog'
 import { cache } from '@/lib/cache'
 import { ListSkeleton } from '@/components/PageSkeleton'
 import { useLiveRefresh } from '@/lib/useLiveRefresh'
-import { PauseCircle, MapPin, Plus, AlertTriangle, Pencil } from 'lucide-react'
+import { PauseCircle, MapPin, Plus, AlertTriangle, Pencil, Copy, PackagePlus, CheckCircle2 } from 'lucide-react'
 
 
 const BRANCH_STYLES = `
@@ -151,6 +151,18 @@ export default function BranchesPage() {
   const [copyingProducts, setCopyingProducts] = useState(false)
   const [undoingBranch, setUndoingBranch] = useState(false)
   const [copySourceBranchId, setCopySourceBranchId] = useState('')
+  // نافذة بداية مخزون الفرع الجديد: اختيار (نسخ/جديد) ← تحديد الأصناف ← تم (مع نقل كميات اختياري)
+  const [copyStep, setCopyStep] = useState<'choose'|'pick'|'done'>('choose')
+  const [copySources, setCopySources] = useState<any[]>([])
+  const [newBranchName, setNewBranchName] = useState('')
+  const [copySearch, setCopySearch] = useState('')
+  const [copiedCount, setCopiedCount] = useState(0)
+  async function loadSource(id: string) {
+    setCopySourceBranchId(id)
+    const pj = await api.get('/api/branches/copy-products', { org_id: orgId, from_branch_id: id })
+    const prods = pj.products || []
+    setSourceProducts(prods); setSelectedProductIds(new Set(prods.map((p:any)=>p.id)))
+  }
 
   async function deleteBranchPermanently() {
     if (!confirmDeleteBranch) return
@@ -233,10 +245,10 @@ export default function BranchesPage() {
     const bList=bj.branches||[]
     setBranches(bList); cache.set('branches:'+orgId, bList); setNewBranch({name:'',location:''}); setBranchSaving(false)
     toast('تم إضافة الفرع')
-    setPendingBranchReload(true)
 
     // نعرض عليه منتجات الفرع الأساسي (الأقدم) عشان يختار أيها يبيها بالفرع الجديد — بدون كميات
-    const mainBranch = ((bList||[]) as any[]).find((b:any)=>b.id!==created.id)
+    const others = ((bList||[]) as any[]).filter((b:any)=>b.id!==created.id && b.is_active!==false)
+    const mainBranch = others[0]
     if(mainBranch){
       const pj=await api.get('/api/branches/copy-products',{org_id:orgId,from_branch_id:mainBranch.id})
       const prods=pj.products
@@ -244,10 +256,15 @@ export default function BranchesPage() {
         setSourceProducts(prods)
         setSelectedProductIds(new Set(prods.map((p:any)=>p.id)))
         setNewBranchId(created.id)
+        setNewBranchName(created.name || '')
         setCopySourceBranchId(mainBranch.id)
+        setCopySources(others)
+        setCopyStep('choose'); setCopySearch('')
         setShowCopyProducts(true)
       }
     }
+    // التحديث بعد قفل نافذة المخزون — كان يصير قبلها فتنقفل النافذة قبل ما تطلع
+    setPendingBranchReload(true)
   }
 
   async function undoAddBranch() {
@@ -267,8 +284,8 @@ export default function BranchesPage() {
     const rows={length:r.count||ids.length}
     setCopyingProducts(false)
     if(!r.success){toast('فشل نسخ المنتجات — حاول تضيفها يدوياً من صفحة المخزون','error');setShowCopyProducts(false);return}
-    toast(`تم نسخ ${rows.length} منتج للفرع الجديد (بدون كميات)`)
-    setShowCopyProducts(false)
+    setCopiedCount(rows.length)
+    setCopyStep('done')
   }
 
   async function deleteBranch(id:string) {
@@ -529,51 +546,93 @@ export default function BranchesPage() {
         </div>
       )}
 
-      {showCopyProducts && (
+      {showCopyProducts && (() => {
+        const srcName = copySources.find((b:any)=>b.id===copySourceBranchId)?.name || 'الفرع الحالي'
+        const q = copySearch.trim()
+        const shown = q ? sourceProducts.filter((p:any)=>String(p.name).includes(q) || String(p.category||'').includes(q)) : sourceProducts
+        const items = (n: number) => n === 1 ? 'صنف واحد' : n === 2 ? 'صنفان' : n <= 10 ? `${n} أصناف` : `${n} صنفاً`
+        const card = (on: boolean): React.CSSProperties => ({ display:'flex', gap:12, alignItems:'flex-start', textAlign:'start', width:'100%', padding:'14px 16px', borderRadius:12, cursor:'pointer', fontFamily:'inherit',
+          border:`1.5px solid ${on?T.color.navy:T.color.border}`, background:on?'#EEF2F4':'white', color:T.color.text })
+        return (
         <div className="br-overlay">
-          <div className="br-backdrop"  onClick={()=>{if(!copyingProducts)setShowCopyProducts(false)}}/>
-          <div className="br-dialog br-copy-dialog">
-            <div className="br-section-title" style={{color:T.color.text}}>نسخ منتجات للفرع الجديد</div>
-            <div className="br-supporting" style={{color:T.color.textMuted}}>اختر المنتجات التي تريد إضافتها لهذا الفرع (بنفس الاسم والوحدة ودون أي كمية — يبدأ الفرع بمخزون صفر)</div>
+          <div className="br-backdrop" onClick={()=>{if(!copyingProducts)setShowCopyProducts(false)}}/>
+          <div className="br-dialog br-copy-dialog" role="dialog" aria-modal="true" aria-label="مخزون الفرع الجديد">
+            {copyStep==='choose' && <>
+              <div className="br-section-title" style={{color:T.color.text}}>كيف تبدأ مخزون «{newBranchName}»؟</div>
+              <div className="br-supporting" style={{color:T.color.textMuted}}>لديك {items(sourceProducts.length)} في «{srcName}». يمكنك نسخها لتوفير الوقت.</div>
+              <div style={{display:'grid',gap:10,margin:'16px 0'}}>
+                <button type="button" style={card(true)} onClick={()=>setCopyStep('pick')}>
+                  <Copy size={20} style={{flexShrink:0,marginTop:2}}/>
+                  <span><span className="br-strong" style={{display:'block'}}>انسخ قائمة الأصناف <span style={{fontSize:12,fontWeight:500,color:T.color.textMuted}}>(مقترح)</span></span>
+                    <span className="br-supporting" style={{color:T.color.textMuted,display:'block',marginTop:4,lineHeight:1.7}}>نفس الأصناف والوحدات والفئات والموردين وحدود الطلب، بكمية صفر. تختار ما تحتاجه منها.</span></span>
+                </button>
+                <button type="button" style={card(false)} onClick={()=>setShowCopyProducts(false)}>
+                  <PackagePlus size={20} style={{flexShrink:0,marginTop:2}}/>
+                  <span><span className="br-strong" style={{display:'block'}}>ابدأ من جديد</span>
+                    <span className="br-supporting" style={{color:T.color.textMuted,display:'block',marginTop:4,lineHeight:1.7}}>فرع بدون أصناف، وتضيف أصنافه بنفسك من صفحة المخزون.</span></span>
+                </button>
+              </div>
+              {copySources.length>1 && (
+                <label style={{display:'block',fontSize:13,color:T.color.text,marginBottom:12}}>انسخ من:
+                  <select className="br-control" value={copySourceBranchId} onChange={e=>loadSource(e.target.value)} style={{marginTop:6}}>
+                    {copySources.map((b:any)=><option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select>
+                </label>
+              )}
+              <button type="button" onClick={undoAddBranch} disabled={undoingBranch} style={{background:'none',border:'none',color:T.color.textMuted,fontSize:13,cursor:'pointer',fontFamily:'inherit',textDecoration:'underline',padding:0}}>
+                {undoingBranch?'جاري التراجع...':'تراجع عن إضافة الفرع'}
+              </button>
+            </>}
 
-            <div className="br-copy-toolbar">
-              <span className="br-supporting" style={{color:T.color.textMuted}}>{selectedProductIds.size} من {sourceProducts.length} محدد</span>
-              <StorelyButton className="br-button" onClick={()=>setSelectedProductIds(selectedProductIds.size===sourceProducts.length?new Set():new Set(sourceProducts.map((p:any)=>p.id)))}>
-                {selectedProductIds.size===sourceProducts.length?'إلغاء تحديد الكل':'تحديد الكل'}
-              </StorelyButton>
-            </div>
+            {copyStep==='pick' && <>
+              <div className="br-section-title" style={{color:T.color.text}}>اختر الأصناف المنسوخة إلى «{newBranchName}»</div>
+              <div className="br-supporting" style={{color:T.color.textMuted}}>من «{srcName}»، بكمية صفر — الكميات الفعلية تُنقل بعد ذلك بالتحويل بين الفروع</div>
+              <input className="br-control" value={copySearch} onChange={e=>setCopySearch(e.target.value)} placeholder="ابحث باسم الصنف أو الفئة" aria-label="بحث" style={{margin:'12px 0 8px'}}/>
+              <div className="br-copy-toolbar">
+                <span className="br-supporting" style={{color:T.color.textMuted}}>{selectedProductIds.size} من {sourceProducts.length} محدد</span>
+                <StorelyButton className="br-button" onClick={()=>setSelectedProductIds(selectedProductIds.size===sourceProducts.length?new Set():new Set(sourceProducts.map((p:any)=>p.id)))}>
+                  {selectedProductIds.size===sourceProducts.length?'إلغاء تحديد الكل':'تحديد الكل'}
+                </StorelyButton>
+              </div>
+              <div className="br-copy-list">
+                {shown.map((p:any)=>{
+                  const checked = selectedProductIds.has(p.id)
+                  return (
+                    <label className="br-copy-option" key={p.id}>
+                      <input className="br-checkbox" type="checkbox" checked={checked} onChange={()=>{
+                        const next=new Set(selectedProductIds)
+                        if(checked) next.delete(p.id); else next.add(p.id)
+                        setSelectedProductIds(next)
+                      }} />
+                      <span className="br-strong" style={{color:T.color.text}}>{p.name}</span>
+                      <span className="br-supporting" style={{color:T.color.textMuted}}>{[p.category, p.unit].filter(Boolean).join(' · ')}</span>
+                    </label>
+                  )
+                })}
+              </div>
+              <div className="br-dialog-footer">
+                <StorelyButton className="br-button" onClick={()=>setCopyStep('choose')} disabled={copyingProducts}>رجوع</StorelyButton>
+                <StorelyButton className="br-button br-primary" variant="primary" onClick={confirmCopyProducts} disabled={copyingProducts||selectedProductIds.size===0}>
+                  {copyingProducts?'جاري النسخ...':`نسخ ${items(selectedProductIds.size)}`}
+                </StorelyButton>
+              </div>
+            </>}
 
-            <div className="br-copy-list">
-              {sourceProducts.map((p:any)=>{
-                const checked = selectedProductIds.has(p.id)
-                return (
-                  <label className="br-copy-option" key={p.id}>
-                    <input className="br-checkbox" type="checkbox" checked={checked} onChange={()=>{
-                      const next=new Set(selectedProductIds)
-                      if(checked) next.delete(p.id); else next.add(p.id)
-                      setSelectedProductIds(next)
-                    }} />
-                    <span className="br-strong" style={{color:T.color.text}}>{p.name}</span>
-                    <span className="br-supporting" style={{color:T.color.textMuted}}>{p.unit}</span>
-                  </label>
-                )
-              })}
-            </div>
-
-            <div className="br-dialog-footer">
-              <StorelyButton className="br-button" onClick={()=>setShowCopyProducts(false)} disabled={copyingProducts||undoingBranch}>
-                الفرع بدون نسخ منتجات
-              </StorelyButton>
-              <StorelyButton className="br-button br-danger" variant="danger" onClick={undoAddBranch} disabled={copyingProducts||undoingBranch}>
-                {undoingBranch?'جاري التراجع...':'تراجع عن الإضافة'}
-              </StorelyButton>
-              <StorelyButton className="br-button br-primary" variant="primary" onClick={confirmCopyProducts} disabled={copyingProducts}>
-                {copyingProducts?'جاري النسخ...':`إضافة ${selectedProductIds.size} منتج`}
-              </StorelyButton>
-            </div>
+            {copyStep==='done' && <>
+              <div style={{width:48,height:48,borderRadius:12,background:'#ECFDF3',color:'#067647',display:'grid',placeItems:'center',marginBottom:12}}><CheckCircle2 size={24}/></div>
+              <div className="br-section-title" style={{color:T.color.text}}>نُسخ {items(copiedCount)} إلى «{newBranchName}»</div>
+              <div className="br-supporting" style={{color:T.color.textMuted,lineHeight:1.8}}>الأصناف بكمية صفر. هل تريد نقل كميات من «{srcName}» الآن؟ النقل يُنقص من فرع ويزيد في الآخر، ويظهر في تقرير التحويلات.</div>
+              <div className="br-dialog-footer" style={{marginTop:16}}>
+                <StorelyButton className="br-button" onClick={()=>setShowCopyProducts(false)}>لاحقاً</StorelyButton>
+                <StorelyButton className="br-button br-primary" variant="primary" onClick={()=>{ setShowCopyProducts(false); setPendingBranchReload(false); window.location.href='/transfer-stock' }}>
+                  نقل كميات الآن
+                </StorelyButton>
+              </div>
+            </>}
           </div>
         </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

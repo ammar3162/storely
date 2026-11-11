@@ -114,13 +114,18 @@ export default function OnboardingPage() {
   const router = useRouter()
   // خطوة المنتجات بس لو باقته فيها المخزون (مثلاً «ابنِ باقتك» بالإقفال لحاله ما تحتاجها)
   const [hasInventory, setHasInventory] = useState(true)
-  const flow: Step[] = hasInventory ? ['business','setup','products','staff','done'] : ['business','setup','staff','done']
+  // بيانات المنشأة (الاسم والنشاط) جت من التسجيل؟ ما نسأله عنها مرة ثانية — نبدأ من المنتجات
+  const [known, setKnown] = useState(false)
+  const lead: Step[] = known ? [] : ['business','setup']
+  const flow: Step[] = hasInventory ? [...lead,'products','staff','done'] : [...lead,'staff','done']
 
   useEffect(()=>{
     loadOrg(); setTimeout(()=>setVisible(true),50)
     getMe().then(me => { const o: any = me?.org; if (o && (o.features?.inventory === false || (o.trial_locked || []).includes('inventory'))) setHasInventory(false) }).catch(()=>{})
   },[])
-  useEffect(()=>{ setProgress((flow.indexOf(step)/(flow.length-1))*100) },[step, hasInventory])   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(()=>{ setProgress((flow.indexOf(step)/(flow.length-1))*100) },[step, hasInventory, known])   // eslint-disable-line react-hooks/exhaustive-deps
+  // بدون مخزون: نتجاوز خطوة المنتجات
+  useEffect(()=>{ if(!hasInventory && step==='products') setStep('staff') },[hasInventory, step])
   useEffect(()=>{
     if(businessType && TEMPLATES[businessType]){
       const prods:SelectedProduct[]=[]
@@ -139,6 +144,7 @@ export default function OnboardingPage() {
     if(org?.whatsapp_number) setWhatsapp(org.whatsapp_number)
     if(org?.business_type) setBusinessType(org.business_type)
     if(j.branch_id) setBranchId(j.branch_id)
+    if(org?.name && org?.business_type){ setKnown(true); setStep('products') }
   }
 
   async function saveSetup() {
@@ -300,7 +306,7 @@ export default function OnboardingPage() {
         {/* 3: المنتجات */}
         {step==='products'&&(
           <div className="su">
-            {head(Package, 'منتجاتك الأساسية', <>جهّزنا منتجات شائعة لـ<b style={{color:'var(--storely-text)',fontWeight:600}}> {businessType}</b>. اختر اللي عندك واكتب الكمية، وتقدر تضيف الباقي بعدين</>)}
+            {head(Package, known ? 'أهلاً بك في Storely، لنبدأ بمنتجاتك' : 'منتجاتك الأساسية', <>جهّزنا منتجات شائعة لـ<b style={{color:'var(--storely-text)',fontWeight:600}}> {businessType}</b>. اختر ما لديك واكتب الكمية الموجودة الآن، ويمكنك إضافة البقية لاحقاً</>)}
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
               <span style={{fontSize:14,color:'var(--storely-text)',fontWeight:500}}>{selectedCount} منتج مختار</span>
               <div style={{display:'flex',gap:14}}>
@@ -340,7 +346,7 @@ export default function OnboardingPage() {
               ))}
             </div>
             <div style={{display:'flex',gap:10}}>
-              {back('setup')}
+              {!known && back('setup')}
               <button onClick={saveProducts} disabled={saving}
                 style={{...btnPrimary,flex:2,padding:'13px',fontSize:16,opacity:saving?.7:1,cursor:saving?'not-allowed':'pointer'}}>
                 {saving?'جاري الحفظ...':'التالي'}
@@ -366,7 +372,7 @@ export default function OnboardingPage() {
               </button>
             </div>
             <div style={{display:'flex',gap:10}}>
-              {back(hasInventory ? 'products' : 'setup')}
+              {(hasInventory || !known) && back(hasInventory ? 'products' : 'setup')}
               <button onClick={saveStaff} disabled={saving}
                 style={{...btnPrimary,flex:2,padding:'13px',fontSize:16,opacity:saving?.7:1,cursor:saving?'not-allowed':'pointer'}}>
                 {saving?'جاري الحفظ...':'إنهاء الإعداد'}

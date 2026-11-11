@@ -73,7 +73,7 @@ export const translations = {
       useAnotherAccount: 'استخدام حساب آخر',
       createAccountFree: 'أنشئ حسابك مجاناً',
       freeTrialNoCard: 'تجربة مجانية لمدة 14 يوماً — دون الحاجة إلى بطاقة',
-      orgNameLabel: 'اسم المؤسسة *',
+      orgNameLabel: 'اسم المنشأة *',
       orgNamePlaceholder: 'مثال: مطعم النجمة',
       businessTypeLabel: 'نوع النشاط',
       whatsappLabel: 'رقم واتساب *',

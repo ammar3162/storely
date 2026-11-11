@@ -47,6 +47,10 @@ export async function buildBranchReports(db: SupabaseClient, orgId: string, bran
     f.hr ? db.from('staff_members').select('id,name,branch_id,shift_id,weekday_shifts,date_shifts,days_off_mode,weekly_off_days,biweekly_anchor,off_dates').eq('org_id', orgId).eq('is_active', true) : Promise.resolve({ data: [] as any[] }),
     f.hr ? db.from('staff_attendance').select('staff_id,type,late_minutes,recorded_at').eq('org_id', orgId).eq('type', 'check_in').gte('recorded_at', startOf(yesterday)).lt('recorded_at', startOf(today)) : Promise.resolve({ data: [] as any[] }),
   ])
+  // أصناف كميتها صفر وما عليها ولا حركة (أُضيفت وقت الإعداد بدون جرد): ما نعدّها «نفدت» — كان أول تقرير للعميل الجديد كله نواقص وهمية
+  const zeroIds = ((products || []) as any[]).filter(p => Number(p.qty) <= 0).map(p => p.id)
+  const { data: zeroMoves } = zeroIds.length ? await db.from('stock_movements').select('product_id').in('product_id', zeroIds).limit(20000) : { data: [] as any[] }
+  const everMoved = new Set(((zeroMoves || []) as any[]).map(m => m.product_id))
   // الإجازات المعتمدة (أمس واليوم) — صاحبها ما ينحسب «ما سجّل حضور»
   const { data: leaves } = f.hr ? await db.from('staff_leave_requests').select('staff_id,start_date,end_date').eq('org_id', orgId).eq('status', 'approved').lte('start_date', today).gte('end_date', yesterday) : { data: [] as any[] }
 
@@ -116,7 +120,7 @@ export async function buildBranchReports(db: SupabaseClient, orgId: string, bran
     }
 
     // المخزون: اللي خلص (سطر واحد) واللي قرب يخلص (الأقل نسبة لحد الطلب أول) — مختصرة
-    const out = prods.filter(p => Number(p.qty) <= 0).map(p => p.name)
+    const out = prods.filter(p => Number(p.qty) <= 0 && everMoved.has(p.id)).map(p => p.name)
     const stockOut = out.length ? out.slice(0, MAX_OUT).join('، ') + (out.length > MAX_OUT ? `، ${moreItems(out.length - MAX_OUT)}` : '') : null
     const low = prods.filter(p => Number(p.qty) > 0 && Number(p.qty) <= Number(p.reorder_point) && !decided.has(p.id))
       .sort((a, z) => Number(a.qty) / (Number(a.reorder_point) || 1) - Number(z.qty) / (Number(z.reorder_point) || 1))

@@ -225,7 +225,11 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
       const now = Date.now(), yesterday = new Date(now + 3 * 3600e3 - 864e5).toISOString().slice(0, 10)
       const { data: shift } = await db.from('shifts').insert({ org_id: orgId, branch_id: branchA, name: 'تقرير', start_time: '00:00', end_time: '23:59' } as any).select('id').single()
       await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: 'غائب التقرير', phone: uniqPhone(), pin: 'x', is_active: true, role: 'staff', shift_id: (shift as any).id } as any)
-      await db.from('products').insert({ org_id: orgId, branch_id: branchA, name: 'صنف التقرير', unit: 'حبة', reorder_point: 5, is_active: true } as any)
+      const { data: rp } = await db.from('products').insert({ org_id: orgId, branch_id: branchA, name: 'صنف التقرير', unit: 'حبة', reorder_point: 5, is_active: true } as any).select('id').single()
+      // كان فيه مخزون وخلص (حركة دخول ثم صرف) → «نفدت»
+      await db.from('stock_movements').insert([{ product_id: (rp as any).id, org_id: orgId, branch_id: branchA, type: 'in', qty_change: 3 }, { product_id: (rp as any).id, org_id: orgId, branch_id: branchA, type: 'out', qty_change: -3 }] as any)
+      // أُضيف وقت الإعداد بدون جرد (صفر وما عليه حركة) → ما يطلع «نفدت»
+      await db.from('products').insert({ org_id: orgId, branch_id: branchA, name: 'صنف لم يُجرد', unit: 'حبة', reorder_point: 5, is_active: true } as any)
       await db.from('cashier_closings').insert({ org_id: orgId, branch_id: branchA, staff_name: 'كاشير', closing_date: yesterday, total_sales: 1000, cash_amount: 400, network_amount: 600, difference: -20 } as any).then(r => { if (r.error) throw r.error })
 
       const all = { inventory: true, purchases: true, ai: true, cashier: true, hr: true, profitability: true }
@@ -234,6 +238,7 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
       expect(rep.staff!.join(' ')).toContain('غائب التقرير')
       expect(rep.staffNotable).toBe(true)
       expect(rep.stockOut).toContain('صنف التقرير')   // كميته صفر → «خلصت»، وما يتكرر في «المطلوب اليوم»
+      expect(rep.stockOut || '').not.toContain('صنف لم يُجرد')
       expect((rep.decisions || []).join(' ')).not.toContain('صنف التقرير')
       const basic = await buildBranchReports(db as any, orgId, [{ id: branchA, name: 'الفرع الرئيسي' }], { inventory: true, purchases: true, ai: false, cashier: false, hr: false, profitability: false }, now)
       expect(basic[0].sales).toBeNull()
@@ -243,7 +248,7 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
       await db.from('cashier_closings').delete().eq('org_id', orgId).eq('closing_date', yesterday).eq('staff_name', 'كاشير')
       await db.from('staff_members').delete().eq('org_id', orgId).eq('name', 'غائب التقرير')
       await db.from('shifts').delete().eq('id', (shift as any).id)
-      await db.from('products').delete().eq('org_id', orgId).eq('name', 'صنف التقرير')
+      await db.from('products').delete().eq('org_id', orgId).in('name', ['صنف التقرير', 'صنف لم يُجرد'])
     }, 120_000)
   })
 
