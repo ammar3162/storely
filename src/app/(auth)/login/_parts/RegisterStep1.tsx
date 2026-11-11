@@ -62,7 +62,7 @@ export default function RegisterStep1({ m }: { m: LoginState }) {
                       onBlurCapture={e=>(e.currentTarget as HTMLElement).style.borderColor='#e5e7eb'}>
                       <select value={countryCode} onChange={e=>setCountryCode(e.target.value)}
                         style={{background:'transparent',border:'none',borderLeft:'1.5px solid var(--storely-border)',padding:'12px 8px',fontSize:13,fontFamily:'inherit',outline:'none',cursor:'pointer',direction:'ltr',color:'var(--storely-text)',minWidth:100}}>
-                        {COUNTRY_CODES.map(c=><option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}
+                        {COUNTRY_CODES.map(c=><option key={c.code} value={c.code}>{c.name} {'\u2066'+c.code+'\u2069'}</option>)}
                       </select>
                       <input type="tel" required value={phone} onChange={e=>{setPhone(e.target.value);setOtpSent(false);setOtpVerified(false);setOtp('')}}
                         placeholder={phonePlaceholder} dir="ltr"

@@ -57,7 +57,7 @@ export default function OrgTab({ m }: { m: SettingsState }) {
                     <select value={countryCode} onChange={e=>setCountryCode(e.target.value)}
                       style={{background:'transparent',color:'var(--storely-text)',border:'none',borderLeft:'1.5px solid var(--storely-border)',padding:'12px 8px',fontSize:13,fontFamily:'inherit',outline:'none',flexShrink:0,cursor:'pointer',direction:'ltr',minWidth:130}}>
                       {COUNTRY_CODES.map(c=>(
-                        <option key={c.code} value={c.code}>{c.flag} {c.code}</option>
+                        <option key={c.code} value={c.code}>{c.name} {'\u2066'+c.code+'\u2069'}</option>
                       ))}
                     </select>
                     <input value={form.whatsapp_number} onChange={e=>setForm({...form,whatsapp_number:e.target.value})}
