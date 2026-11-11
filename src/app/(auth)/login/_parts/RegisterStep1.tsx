@@ -1,20 +1,27 @@
 'use client'
+import { UtensilsCrossed, Coffee, Store, Eye, EyeOff, Check } from 'lucide-react'
 import { COUNTRY_CODES, PHONE_RULES, GoogleIcon, BUSINESS_TYPES } from './constants'
+import { SIGNUP_SOURCES } from '@/lib/signupSource'
+
+// أيقونات النشاط (بدل الرموز التعبيرية)
+const BIZ_ICON: Record<string, typeof Store> = { 'مطعم': UtensilsCrossed, 'كوفي': Coffee }
 import type { LoginState } from './useLogin'
 
 export default function RegisterStep1({ m }: { m: LoginState }) {
-  const { t, oauth, mode, setMode, step, setOtpSent, setOtp, setOtpVerified, email, setEmail, password, setPassword, orgName, setOrgName, phone, setPhone, countryCode, setCountryCode, businessType, setBusinessType, loading, error, setError, showPassword, setShowPassword, phonePlaceholder, handleGoogle, leaveOauth, nextStep } = m
+  const { t, oauth, mode, setMode, step, setOtpSent, setOtp, setOtpVerified, email, setEmail, password, setPassword, orgName, setOrgName, phone, setPhone, countryCode, setCountryCode, businessType, setBusinessType, loading, error, setError, showPassword, setShowPassword, phonePlaceholder, handleGoogle, leaveOauth, nextStep, planFromLink, lang, agreedTerms, setAgreedTerms, signupSource, setSignupSource, signupSourceDetail, setSignupSourceDetail } = m
+  // تسجيل بخطوة واحدة (إلا لو جا من صفحة الأسعار ومعه اختياره — له خطوة ملخص)
+  const oneStep = !planFromLink
   return (
     <>
             {/* Register Step 1 */}
             {mode==='register' && step===1 && (
               <>
                 <div style={{marginBottom:28}}>
-                  <div style={{display:'flex',gap:4,marginBottom:20}}>
+                  {!oneStep && <div style={{display:'flex',gap:4,marginBottom:20}}>
                     {[1,2].map(s=>(
                       <div key={s} style={{flex:1,height:3,borderRadius:99,background:step>=s?'#203640':'#e5e7eb',transition:'background .3s'}}/>
                     ))}
-                  </div>
+                  </div>}
                   <h1 style={{fontSize:26,fontWeight:800,color:'var(--storely-text)',marginBottom:6,letterSpacing:'-0.5px'}}>{oauth ? t('login.completeTitle') : t('login.createAccountFree')}</h1>
                   <p style={{fontSize:14,color:'#6b7280'}}>{oauth ? <>{t('login.completeSub')} <b style={{color:'var(--storely-text)'}} dir="ltr">{email}</b></> : t('login.freeTrialNoCard')}</p>
                 </div>
@@ -37,8 +44,8 @@ export default function RegisterStep1({ m }: { m: LoginState }) {
                     <label style={{fontSize:13,fontWeight:600,color:'var(--storely-text)',display:'block',marginBottom:8}}>{t('login.businessTypeLabel')}</label>
                     <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
                       {BUSINESS_TYPES.map(b=>(
-                        <button key={b.v} type="button" onClick={()=>setBusinessType(b.v)} className={`biz${businessType===b.v?' on':''}`}>
-                          <span style={{fontSize:20}}>{b.icon}</span>
+                        <button key={b.v} type="button" onClick={()=>setBusinessType(b.v)} className={`biz${businessType===b.v?' on':''}`} aria-pressed={businessType===b.v}>
+                          {(() => { const I = BIZ_ICON[b.v] || Store; return <I size={20} strokeWidth={1.75}/> })()}
                           <span style={{fontSize:11}}>{b.v}</span>
                         </button>
                       ))}
@@ -55,7 +62,7 @@ export default function RegisterStep1({ m }: { m: LoginState }) {
                       onBlurCapture={e=>(e.currentTarget as HTMLElement).style.borderColor='#e5e7eb'}>
                       <select value={countryCode} onChange={e=>setCountryCode(e.target.value)}
                         style={{background:'transparent',border:'none',borderLeft:'1.5px solid var(--storely-border)',padding:'12px 8px',fontSize:13,fontFamily:'inherit',outline:'none',cursor:'pointer',direction:'ltr',color:'var(--storely-text)',minWidth:100}}>
-                        {COUNTRY_CODES.map(c=><option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}
+                        {COUNTRY_CODES.map(c=><option key={c.code} value={c.code}>{c.name} {'\u2066'+c.code+'\u2069'}</option>)}
                       </select>
                       <input type="tel" required value={phone} onChange={e=>{setPhone(e.target.value);setOtpSent(false);setOtpVerified(false);setOtp('')}}
                         placeholder={phonePlaceholder} dir="ltr"
@@ -73,7 +80,7 @@ export default function RegisterStep1({ m }: { m: LoginState }) {
                       <button type="button" onClick={()=>setShowPassword(s=>!s)}
                         style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',fontSize:16,color:'var(--storely-subtle)',padding:4}}
                         aria-label={showPassword?t('login.hidePassword'):t('login.showPassword')}>
-                        {showPassword?'':''}
+                        {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
                       </button>
                     </div>
                     {password.length>0 && (
@@ -90,7 +97,39 @@ export default function RegisterStep1({ m }: { m: LoginState }) {
                       </div>
                     )}
                   </div>}
-                  <button type="submit" className="btn-main" style={{marginTop:4}}>{t('login.nextChoosePlan')}</button>
+                  {oneStep && <>
+                    <div>
+                      <label style={{fontSize:13,fontWeight:600,color:'var(--storely-text)',display:'block',marginBottom:8}}>{t('login.sourceLabel')}</label>
+                      <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                        {SIGNUP_SOURCES.map(src=>(
+                          <button key={src.v} type="button" onClick={()=>setSignupSource(signupSource===src.v?'':src.v)} aria-pressed={signupSource===src.v}
+                            style={{padding:'7px 12px',borderRadius:99,border:`1.5px solid ${signupSource===src.v?'#203640':'var(--storely-border)'}`,background:signupSource===src.v?'#EEF2F4':'white',color:'var(--storely-text)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                            {lang==='ar'?src.ar:src.en}
+                          </button>
+                        ))}
+                      </div>
+                      {signupSource==='other' && (
+                        <input className="inp" type="text" maxLength={100} value={signupSourceDetail} onChange={e=>setSignupSourceDetail(e.target.value)}
+                          placeholder={t('login.sourceOtherPlaceholder')} style={{marginTop:8}}/>
+                      )}
+                    </div>
+                    <div style={{display:'flex',gap:8,alignItems:'flex-start',background:'var(--storely-background)',border:'1px solid var(--storely-border)',borderRadius:10,padding:'10px 12px',fontSize:13,color:'var(--storely-text)',lineHeight:1.7}}>
+                      <Check size={16} style={{flexShrink:0,marginTop:3}}/>
+                      <span>{lang==='ar'?'تجربتك تشمل كل المزايا لمدة 14 يوماً، وتختار ما تحتاجه عند الاشتراك.':'Your trial includes every feature for 14 days; pick what you need when you subscribe.'}</span>
+                    </div>
+                    <label style={{display:'flex',alignItems:'flex-start',gap:8,fontSize:12.5,color:'#4b5563',cursor:'pointer'}}>
+                      <input type="checkbox" checked={agreedTerms} onChange={e=>setAgreedTerms(e.target.checked)} style={{marginTop:3,flexShrink:0,cursor:'pointer',width:16,height:16}}/>
+                      <span>
+                        {t('login.agreeTo')}{' '}
+                        <a href="/terms" target="_blank" rel="noopener noreferrer" style={{color:'#203640',fontWeight:700,textDecoration:'underline'}}>{t('login.termsAndConditions')}</a>
+                        {' '}{t('login.andWord')}{' '}
+                        <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{color:'#203640',fontWeight:700,textDecoration:'underline'}}>{t('login.privacyPolicy')}</a>
+                      </span>
+                    </label>
+                  </>}
+                  <button type="submit" className="btn-main" disabled={loading || (oneStep && !agreedTerms)} style={{marginTop:4,opacity:loading || (oneStep && !agreedTerms)?.6:1}}>
+                    {oneStep ? (loading ? (lang==='ar'?'جاري إنشاء الحساب...':'Creating your account...') : (lang==='ar'?'ابدأ تجربتك المجانية':'Start your free trial')) : t('login.nextChoosePlan')}
+                  </button>
                 </form>
                 {oauth ? (
                   <div style={{textAlign:'center',marginTop:20,fontSize:13,color:'#6b7280'}}>

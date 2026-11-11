@@ -15,8 +15,8 @@ export default function AddSupplierForm({ m }: { m: SuppliersPageState }) {
             <div style={{display:'flex',gap:8}}>
               <select value={supCountry} onChange={e=>setSupCountry(e.target.value)}
                 style={{padding:'10px 8px',border:'1px solid var(--storely-border)',borderRadius:8,fontFamily:'inherit',fontSize:12,background:'white',cursor:'pointer'}}>
-                {[['+966','🇸🇦'],['+971','🇦🇪'],['+965','🇰🇼'],['+973','🇧🇭'],['+974','🇶🇦'],['+968','🇴🇲'],['+20','🇪🇬'],['+962','🇯🇴'],['+1','🇺🇸'],['+44','🇬🇧'],['+91','🇮🇳'],['+92','🇵🇰']].map(([code,flag])=>(
-                <option key={code} value={code}>{flag} {code}</option>
+                {[['+966','السعودية'],['+971','الإمارات'],['+965','الكويت'],['+973','البحرين'],['+974','قطر'],['+968','عُمان'],['+20','مصر'],['+962','الأردن'],['+1','أمريكا'],['+44','بريطانيا'],['+91','الهند'],['+92','باكستان']].map(([code,name])=>(
+                <option key={code} value={code}>{name} {'\u2066'+code+'\u2069'}</option>
               ))}
               </select>
               <input value={newPhone} onChange={e=>setNewPhone(e.target.value)} style={{...inp(),flex:1,direction:'ltr'}} placeholder={supCountry==='+966'?'5xxxxxxxx':supCountry==='+20'?'1xxxxxxxxx':'xxxxxxxxxx'} />

@@ -16,6 +16,7 @@ import { cache } from '@/lib/cache'
 import { ListSkeleton } from '@/components/PageSkeleton'
 import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import NumberInput from '@/components/NumberInput'
+import { unitFor } from '@/lib/arabicCount'
 
 type CartItem = { productId: string; name: string; unit: string; qty: number; available: number }
 
@@ -98,7 +99,7 @@ export default function TransferStockPage() {
     const qtyNum = Number(qty)
     if(!(qtyNum>0)){ toast('الكمية غير صحيحة','warning'); return }
     if(!selectedProduct){ toast('الصنف غير موجود','error'); return }
-    if(qtyNum > remainingForSelected){ toast(`الكمية أكبر من المتوفر (متبقي ${remainingForSelected} ${selectedProduct.unit})`,'warning'); return }
+    if(qtyNum > remainingForSelected){ toast(`الكمية أكبر من المتوفر (متبقي ${remainingForSelected} ${unitFor(remainingForSelected, selectedProduct.unit)})`,'warning'); return }
 
     setCart(prev=>{
       const existing = prev.find(c=>c.productId===productId)
@@ -116,7 +117,7 @@ export default function TransferStockPage() {
   async function reviewAndSubmit() {
     if(cart.length===0){ toast('أضف صنف واحد على الأقل للنقل','warning'); return }
     const fromName = branchName(fromBranch), toName = branchName(toBranch)
-    const summary = cart.map(c=>`• ${c.name}: ${c.qty} ${c.unit}`).join('\n')
+    const summary = cart.map(c=>`• ${c.name}: ${c.qty} ${unitFor(c.qty, c.unit)}`).join('\n')
     const ok = await confirmDialog({
       title: `تأكيد نقل ${cart.length} ${cart.length===1?'صنف':'أصناف'}`,
       message: `من "${fromName}" إلى "${toName}":\n\n${summary}`,

@@ -17,7 +17,11 @@ describe('buildDecisions', () => {
     const d = buildDecisions({ ...base, todayDow: 5 })   // الجمعة → بكرة السبت الذروة
     expect(d.map(x => x.level)).toEqual(['urgent', 'urgent', 'warn', 'warn', 'info'])
     expect(d[0].title).toBe('باستا: طلبه متأخر 5 أيام')
-    expect(d[1]).toMatchObject({ title: 'اطلب دجاج اليوم', detail: 'ينفد غداً · المتبقي 4 كيس · تحتاج 54 كيس', action: { label: 'أرسل للمورد', href: '/suppliers?sid=sup-1' } })
+    expect(d[0].why).toBe('يُصرف منه نحو 0.5 كرتون يومياً، ويورّده المورد عادةً خلال 3 أيام، لذلك كان يجب طلبه قبل 5 أيام ليصل قبل النفاد.')
+    expect(d[1].why).toBe('يُصرف منه نحو 3 أكياس يومياً، لذلك يجب طلبه اليوم ليصل قبل النفاد.')
+    expect(d[2].why).toBe('7 عمليات هدر مسجّلة خلال آخر 30 يوماً، محسوبة بمتوسط تكلفة كل صنف من فواتير الشراء.')
+    expect(d[3].why).toMatch(/^خلال آخر 90 يوماً، الصرف يوم السبت أعلى من متوسط أيامك بنسبة \d+%\.$/)
+    expect(d[1]).toMatchObject({ title: 'اطلب دجاج اليوم', detail: 'ينفد غداً · المتبقي 4 أكياس · تحتاج 54 كيس', action: { label: 'أرسل للمورد', href: '/suppliers?sid=sup-1' } })
     expect(d[0].action).toEqual({ label: 'اربط بمورد', href: '/suppliers' })   // باستا بدون مورد
     expect(d[2]).toMatchObject({ title: 'خسرت 420 ريال بسبب الهدر خلال آخر 30 يوماً', detail: 'معظمه من دجاج (منتهي الصلاحية) — قلّل كمية طلبه أو راجع طريقة التخزين' })
     expect(d[3]).toMatchObject({ title: 'غداً (السبت) هو الأكثر ازدحاماً لديك', detail: 'جهّز مخزونك من اليوم قبل 11 الصباح' })

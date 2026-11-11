@@ -14,6 +14,7 @@ import { getMe } from '@/lib/session'
 import { toast } from '@/components/toast'
 import { useVisibilityRefresh } from '@/hooks/useVisibilityRefresh'
 import { confirmDialog } from '@/components/ConfirmDialog'
+import { unitFor } from '@/lib/arabicCount'
 
 /** حالة صفحة المشتريات ودوالها — منقولة كما هي من page.tsx */
 export function usePurchases() {
@@ -136,7 +137,7 @@ export function usePurchases() {
 
   async function deletePurchase(purchase:any) {
     const confirmMsg = purchase.category==='مخزون' && purchase.qty
-      ? `تأكيد حذف فاتورة "${purchase.name}"؟\n\nسيتم أيضاً طرح ${purchase.qty} ${purchase.unit||''} من المخزون (لأن الفاتورة أضافتها سابقاً).`
+      ? `تأكيد حذف فاتورة "${purchase.name}"؟\n\nسيتم أيضاً طرح ${purchase.qty} ${unitFor(purchase.qty, purchase.unit||'')} من المخزون (لأن الفاتورة أضافتها سابقاً).`
       : `تأكيد حذف فاتورة "${purchase.name}"؟`
     if(!(await confirmDialog({ title: 'حذف الفاتورة', message: confirmMsg }))) return
     setDeletingId(purchase.id)

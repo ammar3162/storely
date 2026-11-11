@@ -14,7 +14,7 @@ function pct(current: number, previous: number): number | null {
 }
 
 /**
- * يقارن أداء الشهر الحالي بالشهر السابق: مبيعات، مشتريات، صافي، عدد عمليات صرف
+ * يقارن الشهر الحالي حتى اليوم بنفس الأيام من الشهر السابق: مبيعات، مشتريات، الفرق بينهما، عدد عمليات صرف
  */
 export async function GET(req: Request) {
   try {
@@ -31,7 +31,9 @@ export async function GET(req: Request) {
     const now = new Date()
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
     const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
+    // نفس عدد الأيام من الشهر الماضي (١–١٢ نوفمبر مقابل ١–١٢ أكتوبر) — مقارنة جزء من الشهر بشهر كامل تطلع النسبة سالبة دائماً في أوله
+    const prevMonthLastDay = new Date(now.getFullYear(), now.getMonth(), 0).getDate()
+    const prevMonthEnd = new Date(now.getFullYear(), now.getMonth() - 1, Math.min(now.getDate(), prevMonthLastDay))
 
     const fmt = (d: Date) => d.toISOString().slice(0, 10)
 
@@ -56,6 +58,7 @@ export async function GET(req: Request) {
       success: true,
       current,
       previous,
+      prevFrom: fmt(prevMonthStart), prevTo: fmt(prevMonthEnd),
       changes: {
         sales: pct(current.sales, previous.sales),
         purchases: pct(current.purchasesTotal, previous.purchasesTotal),

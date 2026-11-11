@@ -9,7 +9,7 @@ import { useTranslation } from '@/lib/i18n/LanguageContext'
 import { DEVICE_UNVERIFIED_REASON, VERIFY_DEVICE_PATH } from '@/lib/deviceMessages'
 import { PHONE_RULES } from './constants'
 import { CUSTOM_MODULES, PLAN_MODULES } from '@/lib/planPricing'
-import { DEFAULT_PRESET } from '@/lib/featurePresets'
+import { FEATURE_PRESETS } from '@/lib/featurePresets'
 
 /** حالة صفحة الدخول والتسجيل ودوالها — منقولة كما هي من page.tsx */
 export function useLogin() {
@@ -59,7 +59,8 @@ export function useLogin() {
       const all = [...new Set([...fromPlan, ...fromList])]
       if (all.length) return all
     }
-    return [...DEFAULT_PRESET.mods]
+    // 2026-11-11: التسجيل بدون اختيار مزايا — التجربة بكل المزايا، والاختيار عند التجديد
+    return [...(FEATURE_PRESETS.find(p => p.key === 'all') || FEATURE_PRESETS[0]).mods]
   })
   const [branchCount, setBranchCount] = useState<number>(() => {
     if (typeof window !== 'undefined') {
@@ -188,13 +189,15 @@ export function useLogin() {
 
   function nextStep(e: React.FormEvent) {
     e.preventDefault(); setError('')
-    if (!orgName.trim()) { setError('أدخل اسم المؤسسة'); return }
+    if (!orgName.trim()) { setError('أدخل اسم المنشأة'); return }
     if (!phone.trim())   { setError('أدخل رقم الجوال'); return }
-    if (oauth) { setStep(2); return }
-    const pwErr = validatePassword(password)
-    if (pwErr) { setError(pwErr); return }
-    if (password.length < 6) { setError('يجب أن تتكون كلمة المرور من 6 أحرف على الأقل'); return }
-    setStep(2)
+    if (!oauth) {
+      const pwErr = validatePassword(password)
+      if (pwErr) { setError(pwErr); return }
+    }
+    // جا من صفحة الأسعار ومعه اختياره → خطوة ملخص قصيرة؛ غير كذا ننشئ الحساب مباشرة (التجربة بكل المزايا)
+    if (planFromLink) { setStep(2); return }
+    return handleRegister(e)
   }
 
   function validatePassword(p: string): string|null {

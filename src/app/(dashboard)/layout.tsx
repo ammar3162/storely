@@ -11,7 +11,6 @@ import WhatsAppConsentModal from './_shell/WhatsAppConsentModal'
 import WaInviteModal from './_shell/WaInviteModal'
 import BranchPickerSheet from './_shell/BranchPickerSheet'
 import StopBranchConfirm from './_shell/StopBranchConfirm'
-import OnboardingModal from './_shell/OnboardingModal'
 import PricingSwitchModal from './_shell/PricingSwitchModal'
 import MoreMenuSheet from './_shell/MoreMenuSheet'
 import MobileShell from './_shell/MobileShell'
@@ -34,7 +33,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       <WaInviteModal m={m}/>
       <BranchPickerSheet m={m}/>
       <StopBranchConfirm m={m}/>
-      <OnboardingModal m={m}/>
       <MoreMenuSheet m={m}/>
 
       <div className="sh-root">

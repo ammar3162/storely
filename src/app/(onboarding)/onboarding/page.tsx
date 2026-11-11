@@ -8,11 +8,17 @@ import { colors, btnPrimary, btnSecondary, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { SIGNUP_BUSINESS_TYPES } from '@/lib/businessTypes'
 import { getMe } from '@/lib/session'
-import { UtensilsCrossed, Coffee, Store, Package, Users, Check, Bell, KeyRound, Plus, X, ArrowLeft, ArrowRight, Minus } from 'lucide-react'
+import { UtensilsCrossed, Coffee, Store, Package, Users, Check, Bell, KeyRound, Plus, X, ArrowLeft, ArrowRight, Minus, MessageCircle, Copy } from 'lucide-react'
 
 // أيقونة لكل نشاط (بدل الإيموجي)
 const BIZ_ICON: Record<string, typeof Store> = { 'مطعم': UtensilsCrossed, 'كوفي': Coffee }
 const BUSINESS_TYPES = SIGNUP_BUSINESS_TYPES.map(b=>({ id:b.v, Icon: BIZ_ICON[b.v] || Store, desc:b.desc }))
+
+// رقم الموظف بصيغة واتساب الدولية (05xxxxxxxx أو 5xxxxxxxx → 9665xxxxxxxx)
+const waNumber = (raw: string) => { const d = raw.replace(/\D/g, ''); return d.startsWith('00') ? d.slice(2) : d.startsWith('05') ? '966' + d.slice(1) : d.length === 9 && d.startsWith('5') ? '966' + d : d }
+// رسالة دخول الموظف — تنفتح في واتساب المالك وهو يرسلها بنفسه
+const staffWelcome = (org: string, c: { name: string; phone: string; pin: string }) =>
+  `مرحباً ${c.name}،\n\nأضافك ${org || 'صاحب المنشأة'} إلى تطبيق Storely للموظفين.\n\nادخل من الرابط: https://www.storely.dev/staff\nرقم جوالك: ${c.phone}\nرمزك السري: ${c.pin}\n\nاحتفظ بالرمز ولا تشاركه مع أحد.`
 
 const TEMPLATES: Record<string, { category:string; products:{name:string;unit:string;reorder:number}[] }[]> = {
   'مطعم': [
@@ -107,20 +113,26 @@ export default function OnboardingPage() {
   const [branchId, setBranchId]       = useState('')
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([])
   const [staffList, setStaffList]     = useState<{name:string;phone:string}[]>([{name:'',phone:''}])
-  const [createdStaff, setCreatedStaff] = useState<{name:string;pin:string}[]>([])
+  const [createdStaff, setCreatedStaff] = useState<{name:string;phone:string;pin:string}[]>([])
+  const [sentTo, setSentTo] = useState<Set<number>>(new Set())
   const [saving, setSaving]           = useState(false)
   const [progress, setProgress]       = useState(0)
   const [visible, setVisible]         = useState(false)
   const router = useRouter()
   // خطوة المنتجات بس لو باقته فيها المخزون (مثلاً «ابنِ باقتك» بالإقفال لحاله ما تحتاجها)
   const [hasInventory, setHasInventory] = useState(true)
-  const flow: Step[] = hasInventory ? ['business','setup','products','staff','done'] : ['business','setup','staff','done']
+  // بيانات المنشأة (الاسم والنشاط) جت من التسجيل؟ ما نسأله عنها مرة ثانية — نبدأ من المنتجات
+  const [known, setKnown] = useState(false)
+  const lead: Step[] = known ? [] : ['business','setup']
+  const flow: Step[] = hasInventory ? [...lead,'products','staff','done'] : [...lead,'staff','done']
 
   useEffect(()=>{
     loadOrg(); setTimeout(()=>setVisible(true),50)
     getMe().then(me => { const o: any = me?.org; if (o && (o.features?.inventory === false || (o.trial_locked || []).includes('inventory'))) setHasInventory(false) }).catch(()=>{})
   },[])
-  useEffect(()=>{ setProgress((flow.indexOf(step)/(flow.length-1))*100) },[step, hasInventory])   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(()=>{ setProgress((flow.indexOf(step)/(flow.length-1))*100) },[step, hasInventory, known])   // eslint-disable-line react-hooks/exhaustive-deps
+  // بدون مخزون: نتجاوز خطوة المنتجات
+  useEffect(()=>{ if(!hasInventory && step==='products') setStep('staff') },[hasInventory, step])
   useEffect(()=>{
     if(businessType && TEMPLATES[businessType]){
       const prods:SelectedProduct[]=[]
@@ -139,6 +151,7 @@ export default function OnboardingPage() {
     if(org?.whatsapp_number) setWhatsapp(org.whatsapp_number)
     if(org?.business_type) setBusinessType(org.business_type)
     if(j.branch_id) setBranchId(j.branch_id)
+    if(org?.name && org?.business_type){ setKnown(true); setStep('products') }
   }
 
   async function saveSetup() {
@@ -157,7 +170,7 @@ export default function OnboardingPage() {
     if(!r.success){setSaving(false);toast(r.error||'حدث خطأ — أعد تسجيل الدخول','error');return}
     const failedCount=r.failed||0
     setSaving(false)
-    if(failedCount>0) toast(`تنبيه: فشل حفظ ${failedCount} من ${toAdd.length} — تقدر تضيفهم لاحقاً من صفحة المخزون`,'warning')
+    if(failedCount>0) toast(`تنبيه: فشل حفظ ${failedCount} من ${toAdd.length} ، ويمكنك إضافتها لاحقاً من صفحة المخزون`,'warning')
     setStep('staff')
   }
 
@@ -165,18 +178,18 @@ export default function OnboardingPage() {
     setSaving(true)
     const toAdd=staffList.filter(s=>s.name.trim()&&s.phone.trim())
     let failedCount=0
-    const created:{name:string;pin:string}[]=[]
+    const created:{name:string;phone:string;pin:string}[]=[]
     for(const s of toAdd){
       const pin=String(Math.floor(1000+Math.random()*9000))
       const r=await api.post('/api/add-staff',{org_id:orgId,branch_id:branchId||null,name:s.name.trim(),phone:s.phone.trim(),pin,permissions:{dispense:true,inventory:false,purchases:false,reports:false}})
-      if(r.success) created.push({name:s.name.trim(),pin})
+      if(r.success) created.push({name:s.name.trim(),phone:s.phone.trim(),pin})
       else failedCount++
     }
     setCreatedStaff(created)
     const fin=await api.patch('/api/onboarding',{org_id:orgId,onboarding_done:true})
     setSaving(false)
     if(!fin.success){toast('حدث خطأ أثناء إنهاء الإعداد — حاول مرة أخرى','error');return}
-    if(failedCount>0) toast(`تنبيه: فشل حفظ ${failedCount} من ${toAdd.length} موظف — تقدر تضيفهم لاحقاً من صفحة الموظفين`,'warning')
+    if(failedCount>0) toast(`تنبيه: فشل حفظ ${failedCount} من ${toAdd.length} موظف، ويمكنك إضافتهم لاحقاً من صفحة الموظفين`,'warning')
     setStep('done')
   }
 
@@ -223,7 +236,7 @@ export default function OnboardingPage() {
             <img src="/storely-logo.png" alt="Storely" style={{width:36,height:36,borderRadius:10,border:'1px solid var(--storely-border)',background:'white',padding:3,objectFit:'contain'}}/>
             <span style={{fontSize:16,fontWeight:600,color:'var(--storely-text)'}}>Storely</span>
           </div>
-          {step!=='done'&&<button onClick={skipToDashboard} style={{fontSize:14,color:'#4b5565',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>تخطي الإعداد<ArrowLeft size={15} strokeWidth={1.75}/></button>}
+          {step!=='done'&&<button onClick={skipToDashboard} style={{fontSize:14,color:'#4b5565',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>تخطّي الإعداد<ArrowLeft size={15} strokeWidth={1.75}/></button>}
         </div>
         {step!=='done' && (
           <div style={{maxWidth:640,margin:'0 auto',padding:'0 20px 12px',display:'flex',alignItems:'center',gap:8}}>
@@ -254,7 +267,7 @@ export default function OnboardingPage() {
             <div style={{marginBottom:28}}>
               <img src="/storely-logo.png" alt="" style={{width:56,height:56,borderRadius:14,border:'1px solid var(--storely-border)',background:'white',padding:5,objectFit:'contain',marginBottom:16}}/>
               <h1 style={{fontSize:26,fontWeight:600,lineHeight:'36px',color:'var(--storely-text)',marginBottom:6}}>أهلاً بك في Storely</h1>
-              <p style={{fontSize:15,color:'#4b5565',lineHeight:1.7}}>دقيقتين ونجهّز حسابك. وش نوع نشاطك؟</p>
+              <p style={{fontSize:15,color:'#4b5565',lineHeight:1.7}}>دقيقتان ويصبح حسابك جاهزاً. ما نوع نشاطك؟</p>
             </div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:10,marginBottom:28}}>
               {BUSINESS_TYPES.map(b=>(
@@ -275,7 +288,7 @@ export default function OnboardingPage() {
         {/* 2: بيانات المنشأة */}
         {step==='setup'&&(
           <div className="su">
-            {head(Store, 'بيانات منشأتك', 'اسم منشأتك ورقم الواتساب اللي توصله التنبيهات')}
+            {head(Store, 'بيانات منشأتك', 'اسم منشأتك ورقم الواتساب الذي تصل إليه التنبيهات')}
             <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:20,display:'flex',flexDirection:'column' as const,gap:18,marginBottom:24}}>
               <div>
                 <label style={lbl}>اسم المنشأة</label>
@@ -284,14 +297,14 @@ export default function OnboardingPage() {
               <div>
                 <label style={lbl}>رقم واتساب التنبيهات</label>
                 <input value={whatsapp} onChange={e=>setWhatsapp(e.target.value)} style={{...inp(),direction:'ltr' as const,fontSize:16}} placeholder="+966500000000"/>
-                <div style={{fontSize:13,color:'#6b7487',marginTop:6}}>يوصلك عليه تنبيه نقص المخزون وتقرير الصباح</div>
+                <div style={{fontSize:13,color:'#6b7487',marginTop:6}}>تصلك عليه تنبيهات نقص المخزون والتقرير الصباحي</div>
               </div>
             </div>
             <div style={{display:'flex',gap:10}}>
               {back('business')}
               <button onClick={saveSetup} disabled={saving||!orgName.trim()}
                 style={{...btnPrimary,flex:2,padding:'13px',fontSize:16,opacity:saving||!orgName.trim()?.5:1,cursor:saving||!orgName.trim()?'not-allowed':'pointer'}}>
-                {saving?'جاري الحفظ...':'التالي'}
+                {saving?'جارٍ الحفظ...':'التالي'}
               </button>
             </div>
           </div>
@@ -300,7 +313,7 @@ export default function OnboardingPage() {
         {/* 3: المنتجات */}
         {step==='products'&&(
           <div className="su">
-            {head(Package, 'منتجاتك الأساسية', <>جهّزنا منتجات شائعة لـ<b style={{color:'var(--storely-text)',fontWeight:600}}> {businessType}</b>. اختر اللي عندك واكتب الكمية، وتقدر تضيف الباقي بعدين</>)}
+            {head(Package, known ? 'أهلاً بك في Storely، لنبدأ بمنتجاتك' : 'منتجاتك الأساسية', <>جهّزنا منتجات شائعة لـ<b style={{color:'var(--storely-text)',fontWeight:600}}> {businessType}</b>. اختر ما لديك واكتب الكمية الموجودة الآن، ويمكنك إضافة البقية لاحقاً</>)}
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
               <span style={{fontSize:14,color:'var(--storely-text)',fontWeight:500}}>{selectedCount} منتج مختار</span>
               <div style={{display:'flex',gap:14}}>
@@ -322,7 +335,7 @@ export default function OnboardingPage() {
                         </div>
                         <div style={{flex:1,minWidth:0}}>
                           <div style={{fontSize:15,fontWeight:500,color:'var(--storely-text)'}}>{p.name}</div>
-                          <div style={{fontSize:12,color:'#6b7487'}}>{p.unit} · ننبهك تحت {p.reorder}</div>
+                          <div style={{fontSize:12,color:'#6b7487'}}>{p.unit} · تنبيه عند أقل من {p.reorder}</div>
                         </div>
                         {p.selected&&(
                           <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
@@ -340,10 +353,10 @@ export default function OnboardingPage() {
               ))}
             </div>
             <div style={{display:'flex',gap:10}}>
-              {back('setup')}
+              {!known && back('setup')}
               <button onClick={saveProducts} disabled={saving}
                 style={{...btnPrimary,flex:2,padding:'13px',fontSize:16,opacity:saving?.7:1,cursor:saving?'not-allowed':'pointer'}}>
-                {saving?'جاري الحفظ...':'التالي'}
+                {saving?'جارٍ الحفظ...':'التالي'}
               </button>
             </div>
           </div>
@@ -352,7 +365,7 @@ export default function OnboardingPage() {
         {/* 4: الموظفين */}
         {step==='staff'&&(
           <div className="su">
-            {head(Users, 'أضف موظفيك', 'كل موظف يدخل من جواله برقمه ورمز سري نعطيك إياه. هذي الخطوة اختيارية')}
+            {head(Users, 'أضف موظفيك', 'يدخل كل موظف من جواله برقم جواله ورمز سري يُنشأ تلقائياً. هذه الخطوة اختيارية')}
             <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:16,display:'flex',flexDirection:'column' as const,gap:10,marginBottom:20}}>
               {staffList.map((s,i)=>(
                 <div key={i} style={{display:'grid',gridTemplateColumns:staffList.length>1?'1fr 1fr 36px':'1fr 1fr',gap:8,alignItems:'center'}}>
@@ -366,10 +379,10 @@ export default function OnboardingPage() {
               </button>
             </div>
             <div style={{display:'flex',gap:10}}>
-              {back(hasInventory ? 'products' : 'setup')}
+              {(hasInventory || !known) && back(hasInventory ? 'products' : 'setup')}
               <button onClick={saveStaff} disabled={saving}
                 style={{...btnPrimary,flex:2,padding:'13px',fontSize:16,opacity:saving?.7:1,cursor:saving?'not-allowed':'pointer'}}>
-                {saving?'جاري الحفظ...':'إنهاء الإعداد'}
+                {saving?'جارٍ الحفظ...':'إنهاء الإعداد'}
               </button>
             </div>
           </div>
@@ -381,20 +394,30 @@ export default function OnboardingPage() {
             <div style={{marginBottom:24}}>
               <span style={{width:56,height:56,borderRadius:16,background:'#f3faf8',color:colors.primary,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:16,border:'1px solid #cfe8e4'}}><Check size={28} strokeWidth={2}/></span>
               <h1 style={{fontSize:26,fontWeight:600,lineHeight:'36px',color:'var(--storely-text)',marginBottom:6}}>منشأتك جاهزة</h1>
-              <p style={{fontSize:15,color:'#4b5565',lineHeight:1.7}}>كل شي جاهز تبدأ فيه. تقدر تعدّل أي شي بعدين من الإعدادات</p>
+              <p style={{fontSize:15,color:'#4b5565',lineHeight:1.7}}>كل شيء جاهز للبدء، ويمكنك تعديل أي إعداد لاحقاً من صفحة الإعدادات</p>
             </div>
             <div style={{display:'grid',gridTemplateColumns:hasInventory?'1fr 1fr':'1fr',background:'white',border:'1px solid var(--storely-border)',borderRadius:14,marginBottom:16}}>
-              {hasInventory && <div style={{padding:16}}><div style={{fontSize:26,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{selectedCount}</div><div style={{fontSize:13,color:'#6b7487'}}>منتج أضفناه</div></div>}
-              <div style={{padding:16,borderInlineStart:hasInventory?'1px solid #e5e7eb':'none'}}><div style={{fontSize:26,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{createdStaff.length}</div><div style={{fontSize:13,color:'#6b7487'}}>موظف أضفناه</div></div>
+              {hasInventory && <div style={{padding:16}}><div style={{fontSize:26,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{selectedCount}</div><div style={{fontSize:13,color:'#6b7487'}}>منتجات مُضافة</div></div>}
+              <div style={{padding:16,borderInlineStart:hasInventory?'1px solid #e5e7eb':'none'}}><div style={{fontSize:26,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{createdStaff.length}</div><div style={{fontSize:13,color:'#6b7487'}}>موظفون مُضافون</div></div>
             </div>
             {createdStaff.length>0&&(
               <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:16,marginBottom:16}}>
-                <div style={{display:'flex',alignItems:'center',gap:8,fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}><KeyRound size={16} strokeWidth={1.75}/>رموز دخول الموظفين</div>
-                <p style={{fontSize:13,color:'#4b5565',lineHeight:1.7,marginBottom:10}}>احفظها وأرسلها لكل موظف. يدخل برقم جواله وهذا الرمز، وتقدر تغيّرها من صفحة الموظفين</p>
+                <div style={{display:'flex',alignItems:'center',gap:8,fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}><KeyRound size={16} strokeWidth={1.75}/>أرسل لموظفيك رموز الدخول</div>
+                <p style={{fontSize:13,color:'#4b5565',lineHeight:1.7,marginBottom:10}}>اضغط «إرسال واتساب» عند كل موظف، فتُفتح محادثته برسالة جاهزة فيها رابط التطبيق ورقمه ورمزه. يمكنك الاطلاع على الرموز لاحقاً من صفحة الموظفين.</p>
                 {createdStaff.map((c,i)=>(
-                  <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'10px 0',borderTop:'1px solid var(--storely-border)',fontSize:15}}>
-                    <span style={{color:'var(--storely-text)'}}>{c.name}</span>
-                    <span style={{fontFamily:"'IBM Plex Mono',ui-monospace,monospace",fontWeight:500,fontSize:17,letterSpacing:2,color:'var(--storely-text)',direction:'ltr'}}>{c.pin}</span>
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 0',borderTop:'1px solid var(--storely-border)',flexWrap:'wrap'}}>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:15,color:'var(--storely-text)'}}>{c.name}</div>
+                      <div style={{fontSize:13,color:'#6b7487'}}>الرمز <span style={{fontFamily:"'IBM Plex Mono',ui-monospace,monospace",fontWeight:500,letterSpacing:2,color:'var(--storely-text)',direction:'ltr',display:'inline-block'}}>{c.pin}</span></div>
+                    </div>
+                    <button type="button" aria-label={`نسخ رسالة ${c.name}`} title="نسخ الرسالة"
+                      onClick={()=>{ navigator.clipboard?.writeText(staffWelcome(orgName, c)).then(()=>toast('نُسخت الرسالة')).catch(()=>{}) }}
+                      style={{...btnSecondary,padding:'9px 10px',display:'inline-flex',alignItems:'center'}}><Copy size={16} strokeWidth={1.75}/></button>
+                    <a href={`https://wa.me/${waNumber(c.phone)}?text=${encodeURIComponent(staffWelcome(orgName, c))}`} target="_blank" rel="noopener noreferrer"
+                      onClick={()=>setSentTo(prev=>new Set(prev).add(i))}
+                      style={{...btnSecondary,padding:'9px 12px',display:'inline-flex',alignItems:'center',gap:6,fontSize:14,textDecoration:'none',color:sentTo.has(i)?'#067647':'var(--storely-text)'}}>
+                      {sentTo.has(i) ? <Check size={16} strokeWidth={2}/> : <MessageCircle size={16} strokeWidth={1.75}/>}{sentTo.has(i) ? 'فُتحت المحادثة' : 'إرسال واتساب'}
+                    </a>
                   </div>
                 ))}
               </div>
@@ -402,10 +425,10 @@ export default function OnboardingPage() {
             {!pushEnabled ? (
               <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:16,marginBottom:20}}>
                 <div style={{display:'flex',alignItems:'center',gap:8,fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}><Bell size={16} strokeWidth={1.75}/>فعّل الإشعارات</div>
-                <p style={{fontSize:13,color:'#4b5565',lineHeight:1.7,marginBottom:12}}>يوصلك تنبيه نقص المخزون وإقفال الكاشير وتوريد الموردين أول بأول، حتى لو التطبيق مقفول</p>
+                <p style={{fontSize:13,color:'#4b5565',lineHeight:1.7,marginBottom:12}}>تصلك تنبيهات نقص المخزون وإقفال الكاشير وتوريد الموردين أولاً بأول، حتى لو كان التطبيق مغلقاً</p>
                 <button onClick={enablePushOnboarding} disabled={pushLoading}
                   style={{...btnSecondary,width:'100%',padding:'12px',fontSize:15}}>
-                  {pushLoading?'جاري التفعيل...':'تفعيل الإشعارات'}
+                  {pushLoading?'جارٍ التفعيل...':'تفعيل الإشعارات'}
                 </button>
               </div>
             ) : (

@@ -29,8 +29,8 @@ export default function AddStaffModal({ m }: { m: StaffPage }) {
                 <div style={{display:'flex',gap:8}}>
                   <select value={staffCountry} onChange={e=>setStaffCountry(e.target.value)}
                     style={{padding:'10px 8px',border:`1px solid ${colors.border}`,borderRadius:8,fontFamily:'inherit',fontSize:12,color:colors.text,background:'white',cursor:'pointer'}}>
-                    {[['+966','🇸🇦'],['+971','🇦🇪'],['+965','🇰🇼'],['+973','🇧🇭'],['+974','🇶🇦'],['+968','🇴🇲'],['+20','🇪🇬'],['+962','🇯🇴'],['+1','🇺🇸'],['+44','🇬🇧'],['+91','🇮🇳'],['+92','🇵🇰']].map(([code,flag])=>(
-                      <option key={code} value={code}>{flag} {code}</option>
+                    {[['+966','السعودية'],['+971','الإمارات'],['+965','الكويت'],['+973','البحرين'],['+974','قطر'],['+968','عُمان'],['+20','مصر'],['+962','الأردن'],['+1','أمريكا'],['+44','بريطانيا'],['+91','الهند'],['+92','باكستان']].map(([code,name])=>(
+                      <option key={code} value={code}>{name} {'\u2066'+code+'\u2069'}</option>
                     ))}
                   </select>
                   <input value={newPhone} onChange={e=>setNewPhone(e.target.value)} style={{...inp(),direction:'ltr' as const,flex:1}} placeholder={staffCountry==='+966'?'5xxxxxxxx':staffCountry==='+20'?'1xxxxxxxxx':'xxxxxxxxxx'}/>

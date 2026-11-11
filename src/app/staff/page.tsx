@@ -5,16 +5,16 @@ import { LanguageProvider, useTranslation } from '@/lib/i18n/LanguageContext'
 import { Delete, ChevronDown } from 'lucide-react'
 import { setStaffDevice } from '@/lib/inApp'
 
-const COUNTRY_PHONE_LEN: {code:string;flag:string;name:string;key:string;len:number}[] = [
-  {code:'966',flag:'🇸🇦',name:'السعودية',key:'countrySaudi',len:10},
-  {code:'965',flag:'🇰🇼',name:'الكويت',key:'countryKuwait',len:8},
-  {code:'971',flag:'🇦🇪',name:'الإمارات',key:'countryUAE',len:9},
-  {code:'973',flag:'🇧🇭',name:'البحرين',key:'countryBahrain',len:8},
-  {code:'974',flag:'🇶🇦',name:'قطر',key:'countryQatar',len:8},
-  {code:'968',flag:'🇴🇲',name:'عُمان',key:'countryOman',len:8},
-  {code:'20',flag:'🇪🇬',name:'مصر',key:'countryEgypt',len:10},
-  {code:'962',flag:'🇯🇴',name:'الأردن',key:'countryJordan',len:9},
-  {code:'other',flag:'🌍',name:'دولة أخرى',key:'countryOther',len:14},
+const COUNTRY_PHONE_LEN: {code:string;name:string;key:string;len:number}[] = [
+  {code:'966',name:'السعودية',key:'countrySaudi',len:10},
+  {code:'965',name:'الكويت',key:'countryKuwait',len:8},
+  {code:'971',name:'الإمارات',key:'countryUAE',len:9},
+  {code:'973',name:'البحرين',key:'countryBahrain',len:8},
+  {code:'974',name:'قطر',key:'countryQatar',len:8},
+  {code:'968',name:'عُمان',key:'countryOman',len:8},
+  {code:'20',name:'مصر',key:'countryEgypt',len:10},
+  {code:'962',name:'الأردن',key:'countryJordan',len:9},
+  {code:'other',name:'دولة أخرى',key:'countryOther',len:14},
 ]
 
 function StaffLoginInner() {
@@ -153,8 +153,7 @@ function StaffLoginInner() {
                 <div className={shake?'shake':''} style={{display:'flex',alignItems:'center',background:'#ffffff',border:`1.5px solid ${shake?'#dc2626':'#111827'}`,borderRadius:12,padding:'2px 4px',minHeight:56}}>
                   <button onClick={()=>setShowCountryPicker(v=>!v)}
                     style={{background:'transparent',border:'none',color:'#4b5565',fontSize:15,fontWeight:500,padding:'12px 10px',cursor:'pointer',display:'flex',alignItems:'center',gap:6,fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
-                    <span style={{fontSize:18}}>{selectedCountry.flag}</span>
-                    <span style={{fontSize:14}}>+{selectedCountry.code}</span>
+                    <span style={{fontSize:14,direction:'ltr' as const}}>+{selectedCountry.code}</span>
                     <ChevronDown size={14} style={{transform:showCountryPicker?'rotate(180deg)':'none',color:'#4b5565'}}/>
                   </button>
                   <div style={{width:1,height:24,background:'#e5e7eb'}}/>
@@ -168,7 +167,6 @@ function StaffLoginInner() {
                     {COUNTRY_PHONE_LEN.map(c=>(
                       <button key={c.code} onClick={()=>{setCountry(c.name);setPhone('');setShowCountryPicker(false)}}
                         style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'11px 12px',background:country===c.name?'#e7f3f1':'transparent',border:'none',borderRadius:10,color:'var(--storely-text)',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
-                        <span style={{fontSize:18}}>{c.flag}</span>
                         <span style={{flex:1}}>{t('staffLogin.'+c.key)}</span>
                         <span style={{color:'#4b5565',fontSize:12,direction:'ltr' as const}}>+{c.code}</span>
                       </button>

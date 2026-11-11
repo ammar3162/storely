@@ -104,7 +104,6 @@ export function useDashboardShell() {
   const [ready, setReady]           = useState(false)
   // الصفحة تنرسم في تخطيط واحد بس (جوال أو كمبيوتر حسب العرض) — كانت تنرسم في الاثنين ويختفي واحد بالـ CSS، فكل طلب بيانات واشتراك لحظي يتكرر مرتين
   const isDesk = useIsDesktop()
-  const [showOnboarding, setShowOnboarding] = useState(false)
   const [showConsent, setShowConsent] = useState(false)
   const [showWaInvite, setShowWaInvite] = useState(false)
   const [consentChecked, setConsentChecked] = useState(false)
@@ -117,7 +116,6 @@ export function useDashboardShell() {
   const [termsChecked, setTermsChecked] = useState(false)
   const [termsSaving, setTermsSaving] = useState(false)
   const [profileId, setProfileId] = useState('')
-  const [onboardingStep, setOnboardingStep] = useState(0)
   const [theme, setTheme]           = useState<'light'|'dark'>('light')
   const router   = useRouter()
   const pathname = usePathname()
@@ -426,7 +424,7 @@ export function useDashboardShell() {
   const visibleGroups = NAV_GROUPS.map(g=>({...g, items:g.items.filter(i=>navAllowed(i.href))})).filter(g=>g.items.length)
   async function signOut(){ await sb.auth.signOut(); _cache=null; sessionStorage.clear(); window.location.href='/login' }
 
-  return { pageLock, branchFeat, trialLocked, trialEnds, t, lang, setLang, orgName, setOrgName, subDaysLeft, setSubDaysLeft, orgLogo, setOrgLogo, hasHrAddon, setHasHrAddon, hasProfitAddon, setHasProfitAddon, hasAiAddon, setHasAiAddon, hasExtraBranchAddon, setHasExtraBranchAddon, inApp, setInApp, branchName, setBranchName, userName, setUserName, userInit, setUserInit, lowCount, setLowCount, unread, setUnread, branches, setBranches, orgPlan, setOrgPlan, orgFeat, setOrgFeat, orgMaxBranches, setOrgMaxBranches, userRole, setUserRole, managerPermissions, setManagerPermissions, showMore, setShowMore, showBranch, setShowBranch, branchLowCounts, setBranchLowCounts, ready, setReady, showOnboarding, setShowOnboarding, showConsent, setShowConsent, showWaInvite, setShowWaInvite, consentChecked, setConsentChecked, consentSaving, setConsentSaving, showMaintenance, setShowMaintenance, showEnableNotif, setShowEnableNotif, enablingPush, setEnablingPush, maintenanceMsg, setMaintenanceMsg, showTermsConsent, setShowTermsConsent, termsChecked, setTermsChecked, termsSaving, setTermsSaving, profileId, setProfileId, onboardingStep, setOnboardingStep, theme, setTheme, confirmStopBranch, setConfirmStopBranch, stoppingBranch, setStoppingBranch, loadAddons, isDesk, router, pathname, navRef, sb, load, isActive, BOT_NAV, visibleGroups, toggleTheme, acceptConsent, confirmWaFirstContact, acceptTermsConsent, enablePush, loadBranchLowCounts, openBranchSelector, selectBranch, stopBranch, navVisible, navAllowed, signOut }
+  return { pageLock, branchFeat, trialLocked, trialEnds, t, lang, setLang, orgName, setOrgName, subDaysLeft, setSubDaysLeft, orgLogo, setOrgLogo, hasHrAddon, setHasHrAddon, hasProfitAddon, setHasProfitAddon, hasAiAddon, setHasAiAddon, hasExtraBranchAddon, setHasExtraBranchAddon, inApp, setInApp, branchName, setBranchName, userName, setUserName, userInit, setUserInit, lowCount, setLowCount, unread, setUnread, branches, setBranches, orgPlan, setOrgPlan, orgFeat, setOrgFeat, orgMaxBranches, setOrgMaxBranches, userRole, setUserRole, managerPermissions, setManagerPermissions, showMore, setShowMore, showBranch, setShowBranch, branchLowCounts, setBranchLowCounts, ready, setReady, showConsent, setShowConsent, showWaInvite, setShowWaInvite, consentChecked, setConsentChecked, consentSaving, setConsentSaving, showMaintenance, setShowMaintenance, showEnableNotif, setShowEnableNotif, enablingPush, setEnablingPush, maintenanceMsg, setMaintenanceMsg, showTermsConsent, setShowTermsConsent, termsChecked, setTermsChecked, termsSaving, setTermsSaving, profileId, setProfileId, theme, setTheme, confirmStopBranch, setConfirmStopBranch, stoppingBranch, setStoppingBranch, loadAddons, isDesk, router, pathname, navRef, sb, load, isActive, BOT_NAV, visibleGroups, toggleTheme, acceptConsent, confirmWaFirstContact, acceptTermsConsent, enablePush, loadBranchLowCounts, openBranchSelector, selectBranch, stopBranch, navVisible, navAllowed, signOut }
 }
 
 export type DashboardShell = ReturnType<typeof useDashboardShell>

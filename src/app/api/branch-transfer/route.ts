@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { branchFeatureDenied } from '@/lib/featureRoutes'
+import { unitFor } from '@/lib/arabicCount'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -127,12 +128,12 @@ export async function POST(req: Request) {
       {
         org_id, branch_id: from_branch_id, type: 'info',
         title: 'نقل مخزون صادر',
-        message: `تم نقل ${transferQty} ${unit} من "${productName}" إلى فرع ${(toBranch as any).name}`,
+        message: `تم نقل ${transferQty} ${unitFor(transferQty, unit)} من "${productName}" إلى فرع ${(toBranch as any).name}`,
       },
       {
         org_id, branch_id: to_branch_id, type: 'success',
         title: 'نقل مخزون وارد',
-        message: `استلم هذا الفرع ${transferQty} ${unit} من "${productName}" من فرع ${(fromBranch as any).name}`,
+        message: `استلم هذا الفرع ${transferQty} ${unitFor(transferQty, unit)} من "${productName}" من فرع ${(fromBranch as any).name}`,
       },
     ] as any)
 

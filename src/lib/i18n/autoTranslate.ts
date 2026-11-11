@@ -42,6 +42,8 @@ const WORDS: Record<string, string> = {
   'الأحد': 'Sunday', 'الاثنين': 'Monday', 'الإثنين': 'Monday', 'الثلاثاء': 'Tuesday', 'الأربعاء': 'Wednesday', 'الخميس': 'Thursday', 'الجمعة': 'Friday', 'السبت': 'Saturday',
   'أحد': 'Sun', 'إثن': 'Mon', 'اثن': 'Mon', 'ثلث': 'Tue', 'أرب': 'Wed', 'خمس': 'Thu', 'جمع': 'Fri', 'سبت': 'Sat',
   'ص': 'AM', 'م': 'PM', 'ر.س': 'SAR', 'ريال': 'SAR', 'قطعة': 'pcs', 'كيس': 'bag', 'كرتون': 'carton', 'علبة': 'can', 'كجم': 'kg', 'جم': 'g', 'لتر': 'L', 'مل': 'ml', 'حبة': 'pc', 'باكيت': 'pack', 'صندوق': 'box', 'دقيقة': 'min', 'ساعة': 'h', 'يوم': 'day', 'أيام': 'days',
+  'قطع': 'pcs', 'حبات': 'pcs', 'أكياس': 'bags', 'كراتين': 'cartons', 'علب': 'cans', 'صناديق': 'boxes', 'لترات': 'L', 'جالونات': 'gallons', 'زجاجات': 'bottles',
+  'باكيتات': 'packs', 'شدات': 'packs', 'درازن': 'dozens', 'ربطات': 'bundles', 'رولات': 'rolls', 'أمتار': 'm', 'غرامات': 'g', 'عبوات': 'packs', 'فواتير': 'invoices', 'عمليات': 'operations',
 }
 
 const cache = new Map<string, string | null>()

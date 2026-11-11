@@ -131,6 +131,7 @@ export const API_GUARDS: Record<string, { read?: Rule; write?: Rule }> = {
   // التقارير والأرباح
   '/api/reports': { read: ['reports'] },
   '/api/cashier-closing': { read: ['reports'], write: ['reports'] },
+  '/api/food-cost': { read: ['reports'] },
   '/api/cashier-deficit-decision': { write: ['reports'] },
   '/api/staff-monthly-report': { read: ['reports', 'staff', 'hr'] },
   '/api/profitability': { read: ['profitability'], write: ['profitability'] },

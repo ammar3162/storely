@@ -14,6 +14,10 @@ import { VatThresholdBanner } from '@/components/VatRegistration'
 import { useTranslation } from '@/lib/i18n/LanguageContext'
 import TodayDecisions from '@/components/TodayDecisions'
 import SetupChecklist from '@/components/SetupChecklist'
+import InfoHint from '@/components/InfoHint'
+import { salesMinusPurchasesHelp, monthCardHelp } from '@/lib/infoHints'
+import FoodCostCard from '@/components/FoodCostCard'
+import { unitFor } from '@/lib/arabicCount'
 
 class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|null}> {
   state = { error: null }
@@ -245,9 +249,9 @@ export default function DashboardPage() {
       tone: stats.lowStock > 0 ? 'danger' : 'success',
     },
     {
-      label: 'أداء الفرع',
+      label: monthComp?.success ? <InfoHint title="المبيعات − المشتريات" {...salesMinusPurchasesHelp}>المبيعات − المشتريات</InfoHint> : 'أداء الفرع',
       value: monthComp?.success ? fmtMoney(monthComp.current.net) : stats.products.toLocaleString('en-US'),
-      helper: monthComp?.success ? 'الصافي' : t('dashboard.inStock'),
+      helper: monthComp?.success ? 'منذ بداية الشهر' : t('dashboard.inStock'),
       tone: monthComp?.success && Number(monthComp.current.net) < 0 ? 'warning' : 'neutral',
     },
     {
@@ -276,7 +280,7 @@ export default function DashboardPage() {
   const performanceRows = monthComp?.success ? [
     { metric:'المبيعات', current:fmtMoney(monthComp.current.sales), change:monthComp.changes.sales, inverse:false },
     ...(pur ? [{ metric:'المشتريات', current:fmtMoney(monthComp.current.purchasesTotal), change:monthComp.changes.purchases, inverse:true }] : []),
-    { metric:'الصافي', current:fmtMoney(monthComp.current.net), change:monthComp.changes.net, inverse:false },
+    { metric:'المبيعات − المشتريات', current:fmtMoney(monthComp.current.net), change:monthComp.changes.net, inverse:false },
     ...(inv ? [{ metric:'عمليات الصرف', current:Number(monthComp.current.dispenseCount).toLocaleString('en-US'), change:monthComp.changes.dispenseCount, inverse:false }] : []),
   ] : []
 
@@ -320,7 +324,7 @@ export default function DashboardPage() {
         {showDecisions && <TodayDecisions full={feat.ai === true} curr={curr} onCount={setDecCount} />}
 
         {monthComp?.success ? (
-          <StorelyCard title="هذا الشهر" description="مقارنة بالشهر الماضي" className={cardClass}>
+          <StorelyCard title="هذا الشهر" description="مقارنة بنفس الأيام من الشهر الماضي" className={cardClass} actions={<InfoHint title="هذا الشهر" {...monthCardHelp} />}>
             <div className="grid grid-cols-2 gap-px bg-[var(--storely-border)] xl:grid-cols-4">
               {performanceRows.map((m,i)=>(
                 <div key={i} className={'min-w-0 bg-[var(--storely-surface)] px-3.5 py-3 sm:px-[18px] sm:py-4' + (performanceRows.length % 2 && i === performanceRows.length - 1 ? ' col-span-2 xl:col-span-1' : '')}>
@@ -338,6 +342,9 @@ export default function DashboardPage() {
           </StorelyCard>
         ) : null}
 
+        {/* نسبة تكلفة المواد من المبيعات — تحتاج المخزون */}
+        {featKnown && inv && <FoodCostCard curr={curr} />}
+
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(380px,0.92fr)]">
           <div className="min-w-0 space-y-4">
             {attention ? (
@@ -346,7 +353,7 @@ export default function DashboardPage() {
                   {subAlert ? <div className="flex flex-col gap-4 px-[18px] py-3.5 text-[13.5px] sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0 font-semibold leading-7 text-[#203640]">{subAlert}</div><StorelyButton size="md" variant="secondary" className={`${secondaryButtonClass} hide-in-app`} onClick={()=>router.push('/settings')}>التفاصيل</StorelyButton></div> : null}
                   {suggestions.slice(0,4).map((s:any,i:number)=>(
                     <div key={'s'+i} className="flex flex-col gap-4 px-[18px] py-3.5 text-[13.5px] sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0"><div className="flex flex-wrap items-center gap-2 font-semibold leading-7 text-[#203640]"><StorelyStatusBadge status={s.urgency==='now'?'danger':'warning'}>{s.urgency==='now'?'اطلب الآن':'خلال ' + Math.max(s.suggestedOrderInDays,0) + ' ' + t('dashboard.days')}</StorelyStatusBadge><span>{s.name}</span></div><div className="mt-1 text-[12px] leading-5 text-[#66737C]">استهلاك {s.dailyRate} {s.unit} يومياً · التوريد يأخذ {s.avgLeadTimeDays} {t('dashboard.days')} عادة</div></div>
+                      <div className="min-w-0"><div className="flex flex-wrap items-center gap-2 font-semibold leading-7 text-[#203640]"><StorelyStatusBadge status={s.urgency==='now'?'danger':'warning'}>{s.urgency==='now'?'اطلب الآن':'خلال ' + Math.max(s.suggestedOrderInDays,0) + ' ' + t('dashboard.days')}</StorelyStatusBadge><span>{s.name}</span></div><div className="mt-1 text-[12px] leading-5 text-[#66737C]">استهلاك {s.dailyRate} {unitFor(s.dailyRate, s.unit)} يومياً · التوريد يأخذ {s.avgLeadTimeDays} {t('dashboard.days')} عادة</div></div>
                       <StorelyButton size="md" variant="secondary" className={secondaryButtonClass} onClick={()=>router.push('/suppliers')}>الموردين</StorelyButton>
                     </div>
                   ))}
@@ -379,7 +386,7 @@ export default function DashboardPage() {
                 <FoldCard title="آخر 7 أيام" summary={charts.map(c => c.data.reduce((s,d)=>s+d.value,0) + ' ' + c.unit).join(' · ')}>
                   {charts.map((c,i)=>(
                     <div key={i} className={i ? 'border-t border-[var(--storely-border)]' : ''}>
-                      <div className="flex items-center justify-between px-4 pt-3.5 text-[13px] sm:px-[18px]"><span className="font-semibold text-[#203640]">{c.title}</span><span className="tabular-nums text-[#66737C]">{c.data.reduce((s,d)=>s+d.value,0)} {c.unit}</span></div>
+                      <div className="flex items-center justify-between px-4 pt-3.5 text-[13px] sm:px-[18px]"><span className="font-semibold text-[#203640]">{c.title}</span><span className="tabular-nums text-[#66737C]">{c.data.reduce((s,d)=>s+d.value,0)} {unitFor(c.data.reduce((s,d)=>s+d.value,0), c.unit)}</span></div>
                       <WeeklyBars data={c.data} />
                     </div>
                   ))}

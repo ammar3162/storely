@@ -6,6 +6,7 @@ import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { sendPushToOrg } from '@/lib/push'
 import { orderedSinceLastRestock, logSupplierOrder } from '@/lib/supplierOrderGate'
 import { fetchExternal } from '@/lib/fetchExternal'
+import { unitFor } from '@/lib/arabicCount'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -133,7 +134,7 @@ export async function POST(req: Request) {
           return NextResponse.json({ success: false, debug: orderErr.message })
         }
 
-        const supplierMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\nطلب توريد من *${(org as any).name}*\n\n• ${(product as any).name} — *${orderQty} ${(product as any).unit}*${notesLine}\nإذا كان الصنف غير متوفر أو لديك ملاحظات، فتواصل مع *${(org as any).name}*`
+        const supplierMsg = `🟢 *Storely*\n\nمرحباً ${(supplier as any).name}،\n\nطلب توريد من *${(org as any).name}*\n\n• ${(product as any).name} — *${orderQty} ${unitFor(orderQty, (product as any).unit)}*${notesLine}\nإذا كان الصنف غير متوفر أو لديك ملاحظات، فتواصل مع *${(org as any).name}*`
         const sent = await sendWA((supplier as any).phone, supplierMsg)
         await logSupplierOrder(db as any, { product_id, supplier_id: (product as any).supplier_id, qty_at_trigger: Number((product as any).qty), ok: sent.ok })
         sentToSupplier = sent.ok
@@ -154,7 +155,7 @@ export async function POST(req: Request) {
 
     // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
     const notifTitle = `نقص مخزون: ${(product as any).name}`
-    const notifMsg = `المتبقي: ${new_qty} ${(product as any).unit}` + (sentToSupplier ? ' — تم إرسال طلب توريد للمورد تلقائياً' : ' — يرجى الطلب في أقرب وقت')
+    const notifMsg = `المتبقي: ${new_qty} ${unitFor(new_qty, (product as any).unit)}` + (sentToSupplier ? ' — تم إرسال طلب توريد للمورد تلقائياً' : ' — يرجى الطلب في أقرب وقت')
     await (db as any).from('notifications').insert({
       org_id, branch_id: (product as any).branch_id || null, title: notifTitle, message: notifMsg, type: 'warning', read: false
     })
@@ -177,7 +178,7 @@ export async function POST(req: Request) {
     // رسالة المدير — وصل للحد الأدنى
     if (notifyPhone && ownerConsented) {
       const daysMsg = daysLeft !== null 
-        ? `⏳ *المخزون سينفد خلال ${daysLeft} يوم* (بناءً على معدل صرفك ${dailyRate.toFixed(1)} ${(product as any).unit}/يوم)`
+        ? `⏳ *المخزون سينفد خلال ${daysLeft} يوم* (بناءً على معدل صرفك ${dailyRate.toFixed(1)} ${unitFor(dailyRate.toFixed(1), (product as any).unit)}/يوم)`
         : ''
       
       const adminMsg = sentToSupplier
@@ -188,7 +189,7 @@ export async function POST(req: Request) {
 🏢 *${(org as any).name}*
 
 ⚠️ *${(product as any).name}* وصل للحد الأدنى
-📊 المتبقي: *${new_qty} ${(product as any).unit}*
+📊 المتبقي: *${new_qty} ${unitFor(new_qty, (product as any).unit)}*
 ${daysMsg}
 
 ✅ *تم إرسال طلب توريد للمورد تلقائياً*
@@ -200,7 +201,7 @@ ${daysMsg}
 🏢 *${(org as any).name}*
 
 ⚠️ *${(product as any).name}* وصل للحد الأدنى
-📊 المتبقي: *${new_qty} ${(product as any).unit}*
+📊 المتبقي: *${new_qty} ${unitFor(new_qty, (product as any).unit)}*
 ${daysMsg}
 
 🛒 *يرجى الطلب في أقرب وقت*`
@@ -214,7 +215,7 @@ ${daysMsg}
         })
       } catch {}
       // إشعار فوري بالمتصفح/الجوال — لا يعتمد على واتساب إطلاقاً
-      sendPushToOrg(org_id, '⚠️ نقص مخزون', `${(product as any).name} وصل للحد الأدنى — المتبقي ${new_qty} ${(product as any).unit}`, '/inventory').catch(()=>{})
+      sendPushToOrg(org_id, '⚠️ نقص مخزون', `${(product as any).name} وصل للحد الأدنى — المتبقي ${new_qty} ${unitFor(new_qty, (product as any).unit)}`, '/inventory').catch(()=>{})
     }
 
     return NextResponse.json({ success: true })

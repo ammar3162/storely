@@ -7,7 +7,7 @@ const sb = () => createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const SOURCE_FIELDS = 'id,name,unit,category,reorder_point,recipe_unit,recipe_unit_factor'
+const SOURCE_FIELDS = 'id,name,unit,category,reorder_point,recipe_unit,recipe_unit_factor,supplier_id,backup_supplier_id,supplier_reorder_point,supplier_order_qty'
 
 // أصناف الفرع المصدر المتاحة للنسخ (المالك فقط)
 export async function GET(req: Request) {
@@ -53,12 +53,22 @@ export async function POST(req: Request) {
     const rows = (source || []).map((p: any) => ({
       org_id, branch_id: to_branch_id, name: p.name, unit: p.unit, category: p.category,
       reorder_point: p.reorder_point, recipe_unit: p.recipe_unit, recipe_unit_factor: p.recipe_unit_factor,
+      // الموردين وإعدادات الطلب التلقائي تنتقل مع الصنف (الموردين على مستوى المنشأة)
+      supplier_id: p.supplier_id, backup_supplier_id: p.backup_supplier_id, supplier_reorder_point: p.supplier_reorder_point, supplier_order_qty: p.supplier_order_qty,
       qty: 0, is_active: true,
     }))
     if (!rows.length) return NextResponse.json({ error: 'لا توجد أصناف للنسخ' }, { status: 400 })
 
-    const { error } = await db.from('products').insert(rows as any)
+    const { data: inserted, error } = await db.from('products').insert(rows as any).select('id')
     if (error) return NextResponse.json({ error: 'فشل نسخ المنتجات' }, { status: 500 })
+    // وحدات الشراء المحفوظة («الكرتون فيه 12») تنتقل للصنف الجديد — نفس الترتيب اللي انضافت فيه الأصناف
+    try {
+      const map = new Map<string, string>()
+      ;((inserted || []) as any[]).forEach((r, i) => { const src = (source || [])[i] as any; if (src) map.set(src.id, r.id) })
+      const { data: units } = map.size ? await db.from('product_units').select('product_id,unit,factor').eq('org_id', org_id).in('product_id', [...map.keys()]) : { data: [] as any[] }
+      const unitRows = ((units || []) as any[]).map(u => ({ org_id, product_id: map.get(u.product_id), unit: u.unit, factor: u.factor })).filter(u => u.product_id)
+      if (unitRows.length) await db.from('product_units').insert(unitRows as any)
+    } catch { /* الوحدات تحسين — فشلها ما يلغي النسخ */ }
     return NextResponse.json({ success: true, count: rows.length })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })

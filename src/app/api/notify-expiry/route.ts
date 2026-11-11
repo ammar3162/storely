@@ -3,6 +3,7 @@ import { isCronRequest } from '@/lib/cronAuth'
 import { createClient } from '@supabase/supabase-js'
 import { isSubscriptionActive } from '@/lib/subscription'
 import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
+import { unitFor } from '@/lib/arabicCount'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -62,7 +63,7 @@ export async function POST(req: Request) {
       const lines = sorted.map((p: any) => {
         const days = Math.ceil((new Date(p.expiry_date).getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
         const daysLabel = days <= 0 ? 'انتهت اليوم!' : `المتبقي ${days} ${days === 1 ? 'يوم' : 'أيام'}`
-        return `▸ ${p.name} — ${p.qty} ${p.unit} (${daysLabel})`
+        return `▸ ${p.name} — ${p.qty} ${unitFor(p.qty, p.unit)} (${daysLabel})`
       }).join('\n')
 
       const msg =
