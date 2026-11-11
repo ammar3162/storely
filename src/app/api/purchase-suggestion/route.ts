@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { unitFor } from '@/lib/arabicCount'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -173,7 +174,7 @@ export async function POST(req: Request) {
     if (send_to_suppliers) {
       for (const g of supplierGroups as any[]) {
         if (!g.phone) { results.push({ supplier: g.supplier, sent: false }); continue }
-        const lines = g.items.map((i:any) => `• ${i.name} — ${i.suggested} ${i.unit}`).join('\n')
+        const lines = g.items.map((i:any) => `• ${i.name} — ${i.suggested} ${unitFor(i.suggested, i.unit)}`).join('\n')
         const msg = `🟢 *Storely*\n\nطلب شراء جديد 🛒\n\n${lines}\n\nيرجى التواصل لتأكيد الطلب`
         const result = await sendWhatsAppMessage(formatPhone(g.phone), msg)
         results.push({ supplier: g.supplier, sent: result.ok })

@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { fetchExternal } from '@/lib/fetchExternal'
 import { CUSTOM_MODULES, PLAN_CAPS } from '@/lib/planPricing'
 import { validWasenderWebhook } from '@/lib/webhookAuth'
+import { unitFor } from '@/lib/arabicCount'
 const API_KEY      = process.env.WASENDER_API_KEY!
 const SESSION      = process.env.WASENDER_SESSION_ID!
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -197,7 +198,7 @@ async function handleDispense(to: string, user: any, text: string) {
     return
   }
   if (product.qty < qty) {
-    await send(to, `⚠️ الكمية المطلوبة (${qty}) أكبر من المتاح (${product.qty} ${product.unit})\n\nاكتب 0 للقائمة`)
+    await send(to, `⚠️ الكمية المطلوبة (${qty}) أكبر من المتاح (${product.qty} ${unitFor(product.qty, product.unit)})\n\nاكتب 0 للقائمة`)
     return
   }
   const { error } = await sb().from('stock_movements').insert({
@@ -217,10 +218,10 @@ async function handleDispense(to: string, user: any, text: string) {
     const managerPhone = managerNotifyPhone.replace(/^\+/,'').replace(/^0/,'966')
     const remaining = product.qty - qty
     await send(managerPhone,
-      `📤 *إشعار صرف*\n\n👤 ${user.full_name}\n📦 ${product.name}: ${qty} ${product.unit}\n📊 المتبقي: ${remaining} ${product.unit}${remaining<=product.reorder_point?'\n⚠️ وصل للحد الأدنى!':''}`
+      `📤 *إشعار صرف*\n\n👤 ${user.full_name}\n📦 ${product.name}: ${qty} ${unitFor(qty, product.unit)}\n📊 المتبقي: ${remaining} ${unitFor(remaining, product.unit)}${remaining<=product.reorder_point?'\n⚠️ وصل للحد الأدنى!':''}`
     )
   }
-  await send(to, `✅ تم صرف ${qty} ${product.unit} من ${product.name}\n📊 المتبقي: ${product.qty - qty} ${product.unit}\n\nاكتب 0 للقائمة`)
+  await send(to, `✅ تم صرف ${qty} ${unitFor(qty, product.unit)} من ${product.name}\n📊 المتبقي: ${product.qty - qty} ${unitFor(product.qty - qty, product.unit)}\n\nاكتب 0 للقائمة`)
 }
 
 // ── 2. بحث عن منتج ──
@@ -231,7 +232,7 @@ async function searchProduct(to: string, orgId: string, query: string) {
     await send(to, `🔍 لم أجد منتجاً باسم "${query}"\n\nاكتب 0 للقائمة`)
     return
   }
-  const list = results.slice(0,10).map((p:any) => `${p.qty<=p.reorder_point?'🔴':'🟢'} ${p.name}: ${p.qty} ${p.unit}`).join('\n')
+  const list = results.slice(0,10).map((p:any) => `${p.qty<=p.reorder_point?'🔴':'🟢'} ${p.name}: ${p.qty} ${unitFor(p.qty, p.unit)}`).join('\n')
   await send(to, `🔍 *نتائج البحث عن "${query}"*\n\n${list}\n\nاكتب 0 للقائمة`)
 }
 
@@ -349,7 +350,7 @@ export async function POST(req: Request) {
             const p = await getProducts(user.org_id)
             const low = p.filter((x:any)=>x.qty<=x.reorder_point)
             if (!low.length) { await send(to,'✅ جميع المنتجات كافية\n\nاكتب 0 للقائمة'); continue }
-            const list = low.slice(0,15).map((x:any)=>`🔴 ${x.name}: ${x.qty}/${x.reorder_point} ${x.unit}`).join('\n')
+            const list = low.slice(0,15).map((x:any)=>`🔴 ${x.name}: ${x.qty}/${x.reorder_point} ${unitFor(x.reorder_point, x.unit)}`).join('\n')
             await send(to,`⚠️ *الناقص (${low.length})*\n\n${list}\n\nاكتب 0 للقائمة`)
             continue
           }
@@ -397,7 +398,7 @@ export async function POST(req: Request) {
             const p = await getProducts(user.org_id, branchId)
             const low = p.filter((x:any)=>x.qty<=x.reorder_point)
             if (!low.length) { await send(to,'✅ لا توجد منتجات ناقصة\n\nاكتب 0 للقائمة'); continue }
-            const list = low.slice(0,15).map((x:any)=>`🔴 ${x.name}: ${x.qty}/${x.reorder_point} ${x.unit}`).join('\n')
+            const list = low.slice(0,15).map((x:any)=>`🔴 ${x.name}: ${x.qty}/${x.reorder_point} ${unitFor(x.reorder_point, x.unit)}`).join('\n')
             await send(to,`🔴 *الناقص (${low.length})*\n\n${list}\n\nاكتب 0 للقائمة | اكتب 8 لقائمة المخزون${branchHint}`)
             continue
           }
@@ -405,7 +406,7 @@ export async function POST(req: Request) {
             const p = await getProducts(user.org_id, branchId)
             if (!p.length) { await send(to,'📦 المخزون فارغ\n\nاكتب 0 للقائمة'); continue }
             const low = p.filter((x:any)=>x.qty<=x.reorder_point).length
-            const list = p.slice(0,15).map((x:any)=>`${x.qty<=x.reorder_point?'🔴':'🟢'} ${x.name}: ${x.qty} ${x.unit}`).join('\n')
+            const list = p.slice(0,15).map((x:any)=>`${x.qty<=x.reorder_point?'🔴':'🟢'} ${x.name}: ${x.qty} ${unitFor(x.qty, x.unit)}`).join('\n')
             await send(to,`📦 *المخزون (${p.length} صنف)*\n\n${list}${p.length>15?`\n...و${p.length-15} أخرى`:''}\n\n⚠️ ناقص: ${low}\n\nاكتب 0 للقائمة | اكتب 8 للمخزون${branchHint}`)
             continue
           }
@@ -427,7 +428,7 @@ export async function POST(req: Request) {
             const yesterdayTotal = await getYesterdayDispenseTotal(user.org_id, branchId)
             const cmp = compareText(todayTotal, yesterdayTotal)
 
-            const list = moves.slice(0,10).map((x:any)=>`▪️ ${(x.products as any)?.name}: ${Math.abs(x.qty_change)} ${(x.products as any)?.unit}`).join('\n')
+            const list = moves.slice(0,10).map((x:any)=>`▪️ ${(x.products as any)?.name}: ${Math.abs(x.qty_change)} ${unitFor(Math.abs(x.qty_change), (x.products as any)?.unit)}`).join('\n')
             await send(to,`📤 *الصرف اليوم (${moves.length})*\n\n${list}\n\n📊 إجمالي الكمية: ${todayTotal} ${cmp}\n🏆 الأكثر طلباً: ${top[0]} (${top[1].qty} ${top[1].unit})\n\nاكتب 0 للقائمة | اكتب 8 للمخزون${branchHint}`)
             continue
           }

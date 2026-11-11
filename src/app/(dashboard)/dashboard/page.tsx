@@ -17,6 +17,7 @@ import SetupChecklist from '@/components/SetupChecklist'
 import InfoHint from '@/components/InfoHint'
 import { salesMinusPurchasesHelp, monthCardHelp } from '@/lib/infoHints'
 import FoodCostCard from '@/components/FoodCostCard'
+import { unitFor } from '@/lib/arabicCount'
 
 class ErrorBoundary extends Component<{children:React.ReactNode},{error:Error|null}> {
   state = { error: null }
@@ -263,8 +264,8 @@ export default function DashboardPage() {
 
   const lowStockColumns: StorelyDataTableColumn<any>[] = [
     { key: 'name', header: 'الصنف', sortable: true, sortValue: (p:any) => p.name || '', cell: (p:any) => <span className="font-semibold leading-7 text-[#203640]">{p.name}</span> },
-    { key: 'qty', header: 'المتاح', sortable: true, sortValue: (p:any) => Number(p.qty || 0), cell: (p:any) => <span className="tabular-nums">{p.qty} {p.unit}</span> },
-    { key: 'reorder', header: 'حد إعادة الطلب', sortable: true, sortValue: (p:any) => Number(p.reorder_point || 0), cell: (p:any) => <span className="tabular-nums text-[#66737C]">{p.reorder_point} {p.unit}</span> },
+    { key: 'qty', header: 'المتاح', sortable: true, sortValue: (p:any) => Number(p.qty || 0), cell: (p:any) => <span className="tabular-nums">{p.qty} {unitFor(p.qty, p.unit)}</span> },
+    { key: 'reorder', header: 'حد إعادة الطلب', sortable: true, sortValue: (p:any) => Number(p.reorder_point || 0), cell: (p:any) => <span className="tabular-nums text-[#66737C]">{p.reorder_point} {unitFor(p.reorder_point, p.unit)}</span> },
     { key: 'status', header: 'الحالة', cell: (p:any) => Number(p.qty) <= 0 ? <StorelyStatusBadge status="danger">نافد</StorelyStatusBadge> : <StorelyStatusBadge status="warning">منخفض</StorelyStatusBadge> },
     { key: 'action', header: '', className: 'hidden w-12 text-left sm:table-cell', headerClassName: 'hidden sm:table-cell', cell: () => <StorelyTableActionGroup className="justify-end"><StorelyTableAction action="view" className="hover:bg-[#EEF3F5]" onClick={(event)=>{event.stopPropagation(); router.push('/inventory')}} /></StorelyTableActionGroup> },
   ]
@@ -272,7 +273,7 @@ export default function DashboardPage() {
   const activityColumns: StorelyDataTableColumn<any>[] = [
     { key: 'product', header: 'الصنف', sortable: true, sortValue: (m:any) => (m.products as any)?.name || '', cell: (m:any) => <span className="font-semibold leading-7 text-[#203640]">{(m.products as any)?.name || '—'}</span> },
     { key: 'type', header: 'النوع', cell: (m:any) => { const label = m.type==='out' ? 'صرف' : m.type==='in' ? 'إضافة' : m.type==='waste' ? 'هدر' : m.type==='adjustment' ? 'تسوية جرد' : m.type==='transfer_in'||m.type==='transfer_out' ? 'تحويل' : 'حركة'; const status = m.type==='out' ? 'info' : m.type==='in' ? 'success' : m.type==='waste' ? 'danger' : 'warning'; return <StorelyStatusBadge status={status}>{label}</StorelyStatusBadge> } },
-    { key: 'qty', header: 'الكمية', sortable: true, sortValue: (m:any) => Number(m.qty_change || 0), cell: (m:any) => <span className={'whitespace-nowrap font-semibold tabular-nums ' + (m.qty_change < 0 ? 'text-[#B91C1C]' : 'text-[#047857]')}>{m.qty_change>0?'+':''}{m.qty_change} {(m.products as any)?.unit}</span> },
+    { key: 'qty', header: 'الكمية', sortable: true, sortValue: (m:any) => Number(m.qty_change || 0), cell: (m:any) => <span className={'whitespace-nowrap font-semibold tabular-nums ' + (m.qty_change < 0 ? 'text-[#B91C1C]' : 'text-[#047857]')}>{m.qty_change>0?'+':''}{m.qty_change} {unitFor(m.qty_change, (m.products as any)?.unit)}</span> },
     { key: 'date', header: 'الوقت', sortable: true, sortValue: (m:any) => m.created_at || '', cell: (m:any) => <span className="whitespace-nowrap text-[#66737C]">{new Date(m.created_at).toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</span> },
   ]
 
@@ -352,7 +353,7 @@ export default function DashboardPage() {
                   {subAlert ? <div className="flex flex-col gap-4 px-[18px] py-3.5 text-[13.5px] sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0 font-semibold leading-7 text-[#203640]">{subAlert}</div><StorelyButton size="md" variant="secondary" className={`${secondaryButtonClass} hide-in-app`} onClick={()=>router.push('/settings')}>التفاصيل</StorelyButton></div> : null}
                   {suggestions.slice(0,4).map((s:any,i:number)=>(
                     <div key={'s'+i} className="flex flex-col gap-4 px-[18px] py-3.5 text-[13.5px] sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0"><div className="flex flex-wrap items-center gap-2 font-semibold leading-7 text-[#203640]"><StorelyStatusBadge status={s.urgency==='now'?'danger':'warning'}>{s.urgency==='now'?'اطلب الآن':'خلال ' + Math.max(s.suggestedOrderInDays,0) + ' ' + t('dashboard.days')}</StorelyStatusBadge><span>{s.name}</span></div><div className="mt-1 text-[12px] leading-5 text-[#66737C]">استهلاك {s.dailyRate} {s.unit} يومياً · التوريد يأخذ {s.avgLeadTimeDays} {t('dashboard.days')} عادة</div></div>
+                      <div className="min-w-0"><div className="flex flex-wrap items-center gap-2 font-semibold leading-7 text-[#203640]"><StorelyStatusBadge status={s.urgency==='now'?'danger':'warning'}>{s.urgency==='now'?'اطلب الآن':'خلال ' + Math.max(s.suggestedOrderInDays,0) + ' ' + t('dashboard.days')}</StorelyStatusBadge><span>{s.name}</span></div><div className="mt-1 text-[12px] leading-5 text-[#66737C]">استهلاك {s.dailyRate} {unitFor(s.dailyRate, s.unit)} يومياً · التوريد يأخذ {s.avgLeadTimeDays} {t('dashboard.days')} عادة</div></div>
                       <StorelyButton size="md" variant="secondary" className={secondaryButtonClass} onClick={()=>router.push('/suppliers')}>الموردين</StorelyButton>
                     </div>
                   ))}
@@ -385,7 +386,7 @@ export default function DashboardPage() {
                 <FoldCard title="آخر 7 أيام" summary={charts.map(c => c.data.reduce((s,d)=>s+d.value,0) + ' ' + c.unit).join(' · ')}>
                   {charts.map((c,i)=>(
                     <div key={i} className={i ? 'border-t border-[var(--storely-border)]' : ''}>
-                      <div className="flex items-center justify-between px-4 pt-3.5 text-[13px] sm:px-[18px]"><span className="font-semibold text-[#203640]">{c.title}</span><span className="tabular-nums text-[#66737C]">{c.data.reduce((s,d)=>s+d.value,0)} {c.unit}</span></div>
+                      <div className="flex items-center justify-between px-4 pt-3.5 text-[13px] sm:px-[18px]"><span className="font-semibold text-[#203640]">{c.title}</span><span className="tabular-nums text-[#66737C]">{c.data.reduce((s,d)=>s+d.value,0)} {unitFor(c.data.reduce((s,d)=>s+d.value,0), c.unit)}</span></div>
                       <WeeklyBars data={c.data} />
                     </div>
                   ))}

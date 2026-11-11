@@ -4,6 +4,7 @@ import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 import { isCronRequest } from '@/lib/cronAuth'
 import { isSubscriptionActive } from '@/lib/subscription'
 import { PLAN_PRICING } from '@/lib/planPricing'
+import { unitFor } from '@/lib/arabicCount'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -97,7 +98,7 @@ export async function GET(req: Request) {
 
       if (topWeek.length > 0) {
         report += `📈 *الأكثر صرفاً هذا الأسبوع:*\n`
-        topWeek.forEach((p,i) => { report += `${i+1}. ${p.name}: ${p.total7} ${p.unit}\n` })
+        topWeek.forEach((p,i) => { report += `${i+1}. ${p.name}: ${p.total7} ${unitFor(p.total7, p.unit)}\n` })
         report += '\n'
       }
 
@@ -112,7 +113,7 @@ export async function GET(req: Request) {
 
       if (toBuy.length > 0) {
         report += `🛒 *قائمة الشراء المقترحة:*\n`
-        toBuy.forEach(p => { report += `• ${p.name}: اطلب ${p.toOrder} ${p.unit}\n` })
+        toBuy.forEach(p => { report += `• ${p.name}: اطلب ${p.toOrder} ${unitFor(p.toOrder, p.unit)}\n` })
         report += '\n'
       }
 

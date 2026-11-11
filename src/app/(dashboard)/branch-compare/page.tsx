@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import { getMe } from '@/lib/session'
 import { colors } from '@/lib/ds'
 import { currencySymbol } from '@/lib/currencySymbol'
+import { unitFor } from '@/lib/arabicCount'
 
 const BC_STYLES = `
   .bc-page{max-width:1200px;min-width:0;margin:0 auto;padding:${T.spacing[6]}px;direction:rtl;font-family:${T.typography.family};font-size:${T.typography.body}px;line-height:${T.typography.lineHeight};color:${T.color.text};background:${T.color.background};border-radius:${T.radius.panel}}
@@ -246,7 +247,7 @@ export default function BranchComparePage() {
                         {b.topProducts.map((p: any, pi: number) => (
                           <div className="ui-between" key={pi}>
                             <span className="ui-strong" style={{color:T.color.text}}>{pi + 1}. {p.name}</span>
-                            <span className="ui-strong" style={{color:c}}>{p.qty} {p.unit}</span>
+                            <span className="ui-strong" style={{color:c}}>{p.qty} {unitFor(p.qty, p.unit)}</span>
                           </div>
                         ))}
                       </div>

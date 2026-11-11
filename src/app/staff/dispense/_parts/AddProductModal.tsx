@@ -6,6 +6,7 @@ import { T } from './strings'
 import { apLbl, apInp } from './styles'
 import type { StaffDispense } from './useStaffDispense'
 import SheetTop, { sheetStyle, SheetFoot } from './SheetTop'
+import { unitFor } from '@/lib/arabicCount'
 
 export default function AddProductModal({ m }: { m: StaffDispense }) {
   const { lang, bizType, showAddProduct, setShowAddProduct, newProduct, setNewProduct, savingProduct, addProduct, addMode, setAddMode, pickSearch, setPickSearch, picked, setPicked, products } = m
@@ -34,7 +35,7 @@ export default function AddProductModal({ m }: { m: StaffDispense }) {
                 <div style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',borderRadius:12,border:'1.5px solid #203640',background:'#e7f3f1'}}>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:16,fontWeight:600,color:'var(--storely-text)'}}>{picked.name}</div>
-                    <div style={{fontSize:13,color:'var(--storely-text)'}}>{T('currentQty',lang)}: {Number(picked.qty) || 0} {picked.unit || ''}</div>
+                    <div style={{fontSize:13,color:'var(--storely-text)'}}>{T('currentQty',lang)}: {Number(picked.qty) || 0} {unitFor(Number(picked.qty) || 0, picked.unit || '')}</div>
                   </div>
                   <button type="button" onClick={()=>setPicked(null)} style={{border:'1px solid #d1d5db',background:'white',borderRadius:8,padding:'6px 12px',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:'var(--storely-text)'}}>{T('change',lang)}</button>
                 </div>
@@ -49,7 +50,7 @@ export default function AddProductModal({ m }: { m: StaffDispense }) {
                       <button key={p.id} type="button" onClick={()=>setPicked(p)}
                         style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:10,padding:'11px 14px',borderRadius:10,border:'1px solid var(--storely-border)',background:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
                         <span style={{fontSize:15,fontWeight:600,color:'var(--storely-text)'}}>{p.name}</span>
-                        <span style={{fontSize:13,color:'var(--storely-text)',whiteSpace:'nowrap' as const}}>{Number(p.qty) || 0} {p.unit || ''}</span>
+                        <span style={{fontSize:13,color:'var(--storely-text)',whiteSpace:'nowrap' as const}}>{Number(p.qty) || 0} {unitFor(Number(p.qty) || 0, p.unit || '')}</span>
                       </button>
                     ))}
                   </div>

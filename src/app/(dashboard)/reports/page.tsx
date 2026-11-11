@@ -19,6 +19,7 @@ import AttendanceDetail from './_parts/AttendanceDetail'
 import CashierClosingDetail from './_parts/CashierClosingDetail'
 import TransferDetail from './_parts/TransferDetail'
 import { api } from '@/lib/api-client'
+import { unitFor } from '@/lib/arabicCount'
 
 const StaffMonthlyDetail = lazy(() => import('@/components/reports/StaffMonthlyReport'))
 
@@ -329,7 +330,7 @@ export default function ReportsPage() {
                         <span style={{fontSize:11,fontWeight:800,color:i<3?colors.primary:colors.text4,width:18}}>{i+1}</span>
                         <span style={{fontSize:12,fontWeight:700,color:colors.text}}>{p.name}</span>
                       </div>
-                      <span style={{fontSize:12,fontWeight:800,color:colors.primary}}>{p.qty} {p.unit}</span>
+                      <span style={{fontSize:12,fontWeight:800,color:colors.primary}}>{p.qty} {unitFor(p.qty, p.unit)}</span>
                     </div>
                     <div style={{height:6,background:colors.border,borderRadius:99,overflow:'hidden'}}>
                       <div style={{height:'100%',width:`${(p.qty/maxVal)*100}%`,background:i===0?colors.primary:i<3?`${colors.primary}99`:`${colors.primary}44`,borderRadius:99}}/>

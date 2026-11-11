@@ -4,6 +4,7 @@ import { StorelyCard, StorelyEmptyState, StorelyStatusBadge, StorelyTableAction 
 import { C } from './constants'
 import type { PurchasesState } from './usePurchases'
 import { fileLink } from '@/lib/invoiceUrl'
+import { unitFor } from '@/lib/arabicCount'
 
 const PERIODS = [{v:'all',l:'الكل'},{v:'today',l:'اليوم'},{v:'week',l:'أسبوع'},{v:'month',l:'شهر'}]
 const CATS = [{v:'all',l:'كل الفئات'},{v:'مخزون',l:'مخزون'},{v:'مشتريات',l:'مشتريات'},{v:'أخرى',l:'أخرى'}]
@@ -45,7 +46,7 @@ export default function PurchaseHistory({ m }: { m: PurchasesState }) {
                       <Pencil size={11}/> {acc?'معدّل من المحاسب':'معدّل'}</button> })()}
                 </div>
                 <div style={{fontSize:14,fontWeight:600,color:C.text,marginBottom:2,overflowWrap:'anywhere'}}>{p.name}</div>
-                {p.qty&&<div style={{fontSize:13,color:C.text3,marginBottom:2}}>{p.qty} {p.unit}</div>}
+                {p.qty&&<div style={{fontSize:13,color:C.text3,marginBottom:2}}>{p.qty} {unitFor(p.qty, p.unit)}</div>}
                 <div style={{fontSize:12,color:C.text3,display:'flex',gap:10,flexWrap:'wrap',alignItems:'center'}}>
                   {p.supplier&&<span style={{display:'inline-flex',alignItems:'center',gap:4}}><Store size={12}/>{p.supplier}</span>}
                   <span>{new Date(p.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',day:'numeric',month:'short'})}</span>

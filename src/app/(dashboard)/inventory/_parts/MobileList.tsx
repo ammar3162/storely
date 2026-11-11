@@ -2,6 +2,7 @@
 import { C, StatusDot } from './constants'
 import { breakdownQty } from '@/lib/productUnits'
 import type { InventoryState } from './useInventory'
+import { unitFor } from '@/lib/arabicCount'
 
 export default function MobileList({ m }: { m: InventoryState }) {
   const { paginated, openEdit } = m
@@ -23,7 +24,7 @@ export default function MobileList({ m }: { m: InventoryState }) {
                     </div>
                   </div>
                   <div style={{textAlign:'left',flexShrink:0}}>
-                    <div className="iv-qty" style={{color:isOut?C.danger:isLow?C.warning:C.text}}>{p.qty} <span className="iv-unit">{p.unit}</span></div>
+                    <div className="iv-qty" style={{color:isOut?C.danger:isLow?C.warning:C.text}}>{p.qty} <span className="iv-unit">{unitFor(p.qty, p.unit)}</span></div>
                     {breakdownQty(Number(p.qty)||0, p.unit, p.purchase_units) && <div className="iv-min">{breakdownQty(Number(p.qty)||0, p.unit, p.purchase_units)}</div>}
                     <div className="iv-min">الحد {p.reorder_point}</div>
                   </div>

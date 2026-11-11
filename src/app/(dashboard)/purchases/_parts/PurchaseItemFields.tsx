@@ -9,6 +9,7 @@ import { C, CATS, CAT_ICONS, lbl, inp } from './constants'
 import type { PurchasesState } from './usePurchases'
 import { conversionFactor, normalizeUnit, sameUnit } from '@/lib/productUnits'
 import { looksLikeExpense } from '@/lib/expenseHint'
+import { unitFor } from '@/lib/arabicCount'
 
 export default function PurchaseItemFields({ m }: { m: PurchasesState }) {
   const { invOn, products, isExisting, setIsExisting, uploading, bizType, setShowScan, previewUrl, form, setForm, handleImage } = m
@@ -78,7 +79,7 @@ export default function PurchaseItemFields({ m }: { m: PurchasesState }) {
                           onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background=C.bg}
                           onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background='white'}>
                           <span style={{fontWeight:600}}>{p.name}</span>
-                          <span style={{color:C.text4,fontSize:11}}>{p.qty} {p.unit}</span>
+                          <span style={{color:C.text4,fontSize:11}}>{p.qty} {unitFor(p.qty, p.unit)}</span>
                         </div>
                       ))}
                     </div>

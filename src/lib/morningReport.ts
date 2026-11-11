@@ -6,6 +6,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Features } from '@/lib/planFeatures'
 import { shiftIdForDate } from '@/lib/shiftSchedule'
 import { offReason } from '@/lib/daysOff'
+import { unitFor } from '@/lib/arabicCount'
 
 const DAY = 864e5
 const saudiDate = (ms: number) => new Date(ms + 3 * 3600e3).toISOString().slice(0, 10)
@@ -125,7 +126,7 @@ export async function buildBranchReports(db: SupabaseClient, orgId: string, bran
     const low = prods.filter(p => Number(p.qty) > 0 && Number(p.qty) <= Number(p.reorder_point) && !decided.has(p.id))
       .sort((a, z) => Number(a.qty) / (Number(a.reorder_point) || 1) - Number(z.qty) / (Number(z.reorder_point) || 1))
     const stockLow = low.length ? [
-      ...low.slice(0, MAX_LOW).map(p => `${p.name} (المتبقي ${n2(p.qty)} من ${n2(p.reorder_point)}${p.unit ? ' ' + p.unit : ''})`),
+      ...low.slice(0, MAX_LOW).map(p => `${p.name} (المتبقي ${n2(p.qty)} من ${n2(p.reorder_point)}${p.unit ? ' ' + unitFor(n2(p.reorder_point), p.unit) : ''})`),
       ...(low.length > MAX_LOW ? [`${moreItems(low.length - MAX_LOW)} تحت الحد الأدنى — التفاصيل في صفحة المخزون`] : []),
     ] : null
 

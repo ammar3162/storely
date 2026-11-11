@@ -10,6 +10,7 @@ import { api } from '@/lib/api-client'
 import { getMe } from '@/lib/session'
 import { colors as dsColors } from '@/lib/ds'
 import { Package, Trash2, ArrowUpRight, AlertTriangle, X } from 'lucide-react'
+import { unitFor } from '@/lib/arabicCount'
 
 // موحّد مع نظام التصميم المشترك (@/lib/ds)
 const C = {
@@ -83,7 +84,7 @@ export default function DispensePage() {
     const r=await api.post('/api/stock-movements',{org_id:oid,product_id:selected.id,type:'out',qty:qn})
     if(!r.success){toast(r.error||'خطأ','error');setSaving(false);return}
     cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
-    toast(`تم صرف ${qn} ${selected.unit} من ${selected.name}`)
+    toast(`تم صرف ${qn} ${unitFor(qn, selected.unit)} من ${selected.name}`)
     fetch('/api/notify-low-stock-instant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,product_id:selected.id,new_qty:selected.qty-qn,reorder_point:(selected.supplier_reorder_point ?? selected.reorder_point)})}).catch(()=>{})
     fetch('/api/notify-staff-dispense',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,branch_id:sessionStorage.getItem('s_branch_id')||null,staff_name:sessionStorage.getItem('s_full_name')||'المالك',product_name:selected.name,qty:qn,unit:selected.unit})}).catch(()=>{})
     setSelected(null);setQty('');setWasteMode(false);setWasteReason('')
@@ -100,7 +101,7 @@ export default function DispensePage() {
     if(!r.success){toast(r.error||'خطأ','error');setSaving(false);return}
     cache.invalidate('inventory:');cache.invalidate('dashboard:');cache.invalidate('products:')
     fetch('/api/notify-waste',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({org_id:oid,branch_id:sessionStorage.getItem('s_branch_id')||null,staff_name:sessionStorage.getItem('s_full_name')||'المالك',product_name:selected.name,qty:qn,unit:selected.unit,waste_reason:wasteReason})}).catch(()=>{})
-    toast(`تم تسجيل هدر ${qn} ${selected.unit} من ${selected.name}`)
+    toast(`تم تسجيل هدر ${qn} ${unitFor(qn, selected.unit)} من ${selected.name}`)
     setSelected(null);setQty('');setWasteMode(false);setWasteReason('')
     setSaving(false);loadProducts(oid);loadHistory(oid)
   }
@@ -227,7 +228,7 @@ export default function DispensePage() {
                 {/* Name */}
                 <div style={{fontSize:11,fontWeight:700,color:C.text,lineHeight:1.3,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' as any}}>{p.name}</div>
                 {/* Unit */}
-                <div style={{fontSize:9,color:C.text4}}>{p.unit}</div>
+                <div style={{fontSize:9,color:C.text4}}>{unitFor(p.qty, p.unit)}</div>
                 {/* Status */}
                 <span style={{fontSize:8,fontWeight:700,color:sc,background:isOut?C.dangerL:isLow?C.warningL:C.primaryL,padding:'2px 8px',borderRadius:99,border:`1px solid ${isOut?C.dangerB:isLow?C.warningB:C.primaryB}`}}>
                   {isOut?'نفد':isLow?'ناقص':'كافٍ'}
@@ -268,7 +269,7 @@ export default function DispensePage() {
                     </div>
                     <div style={{fontSize:10,color:C.text4,marginTop:1}}>{new Date(h.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
                   </div>
-                  <span style={{fontSize:13,fontWeight:800,color:badgeColor,flexShrink:0}}>{Math.abs(h.qty_change)} <span style={{fontSize:10,color:C.text4,fontWeight:400}}>{(h.products as any)?.unit}</span></span>
+                  <span style={{fontSize:13,fontWeight:800,color:badgeColor,flexShrink:0}}>{Math.abs(h.qty_change)} <span style={{fontSize:10,color:C.text4,fontWeight:400}}>{unitFor(Math.abs(h.qty_change), (h.products as any)?.unit)}</span></span>
                 </div>
               )})}
             </div>
@@ -286,7 +287,7 @@ export default function DispensePage() {
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
                 <div>
                   <div style={{fontSize:16,fontWeight:800,color:C.text}}>{selected.name}</div>
-                  <div style={{fontSize:11,color:C.text3,marginTop:2}}>متاح: <b style={{color:C.primary,fontSize:14}}>{selected.qty}</b> {selected.unit}</div>
+                  <div style={{fontSize:11,color:C.text3,marginTop:2}}>متاح: <b style={{color:C.primary,fontSize:14}}>{selected.qty}</b> {unitFor(selected.qty, selected.unit)}</div>
                 </div>
                 <button onClick={()=>{setSelected(null);setQty('');setWasteMode(false);setWasteReason('')}} style={{width:28,height:28,borderRadius:'50%',background:C.bg,border:`1px solid ${C.border2}`,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}} aria-label="إغلاق"><X size={16}/></button>
               </div>
@@ -348,12 +349,12 @@ export default function DispensePage() {
               {wasteMode ? (
                 <button disabled={saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason} onClick={handleWaste}
                   style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason?C.text4:'#d97706',color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason?.6:1,boxShadow:'0 6px 16px #d9770630',transition:'all .2s'}}>
-                  {saving?'جارٍ الحفظ...':`تسجيل هدر ${qty||0} ${selected.unit}`}
+                  {saving?'جارٍ الحفظ...':`تسجيل هدر ${qty||0} ${unitFor(qty||0, selected.unit)}`}
                 </button>
               ) : (
                 <button disabled={saving||!qty||Number(qty)<=0||Number(qty)>selected.qty} onClick={handleDispense}
                   style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?C.text4:C.danger,color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?.6:1,boxShadow:`0 6px 16px ${C.danger}30`,transition:'all .2s'}}>
-                  {saving?'جارٍ الحفظ...':`صرف ${qty||0} ${selected.unit} من ${selected.name}`}
+                  {saving?'جارٍ الحفظ...':`صرف ${qty||0} ${unitFor(qty||0, selected.unit)} من ${selected.name}`}
                 </button>
               )}
             </div>

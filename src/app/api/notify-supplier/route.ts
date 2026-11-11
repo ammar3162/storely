@@ -7,6 +7,7 @@ import { isCronRequest } from '@/lib/cronAuth'
 import { orderedSinceLastRestock, failedRecently } from '@/lib/supplierOrderGate'
 import { isSubscriptionActive } from '@/lib/subscription'
 import { fetchExternal } from '@/lib/fetchExternal'
+import { unitFor } from '@/lib/arabicCount'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -15,7 +16,7 @@ const sb = () => createClient(SUPABASE_URL, SERVICE_KEY)
 
 function buildOrderMessage(orgName: string, items: { name: string; unit: string; orderQty: number; notes?: string }[], notes?: string) {
   const itemsList = items
-    .map((it, i) => `${i + 1}. *${it.name}* — ${it.orderQty} ${it.unit}${it.notes ? '\n   📝 ' + it.notes : ''}`)
+    .map((it, i) => `${i + 1}. *${it.name}* — ${it.orderQty} ${unitFor(it.orderQty, it.unit)}${it.notes ? '\n   📝 ' + it.notes : ''}`)
     .join('\n')
 
   const notesSection = notes ? `\n\n📝 *ملاحظات:* ${notes}` : ''

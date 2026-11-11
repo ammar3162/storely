@@ -1,4 +1,5 @@
 // عبارات أدوات الذكاء بلغة العميل: «يخلص بكرة» بدال «1 يوم»، «متأخر 5 أيام» بدال «−5»، وسطر «ليش» لكل توصية.
+import { unitFor } from '@/lib/arabicCount'
 
 const r1 = (n: number) => Math.round(n * 10) / 10
 
@@ -31,13 +32,13 @@ export function orderWhenText(days: number | null | undefined): string {
 /** سطر «ليش»: معدل الصرف وكم باقي */
 export function usageReason(dailyRate: number, unit: string, currentQty?: number | null): string {
   const rate = r1(Number(dailyRate) || 0)
-  const left = currentQty == null ? '' : `، والمتبقي ${r1(Number(currentQty))} ${unit}`
-  return rate > 0 ? `لأنك تصرف نحو ${rate} ${unit} يومياً${left}` : `لا يوجد صرف كافٍ لحساب المعدل${left}`
+  const left = currentQty == null ? '' : `، والمتبقي ${r1(Number(currentQty))} ${unitFor(r1(Number(currentQty)), unit)}`
+  return rate > 0 ? `لأنك تصرف نحو ${rate} ${unitFor(rate, unit)} يومياً${left}` : `لا يوجد صرف كافٍ لحساب المعدل${left}`
 }
 
 /** سطر «ليش» لتوقيت الطلب: مدة التوريد مقابل الصرف */
 export function leadReason(dailyRate: number, unit: string, leadDays: number): string {
-  return `المورد يحتاج ${daysAr(leadDays)} عادةً، وأنت تصرف ${r1(Number(dailyRate) || 0)} ${unit} يومياً`
+  return `المورد يحتاج ${daysAr(leadDays)} عادةً، وأنت تصرف ${r1(Number(dailyRate) || 0)} ${unitFor(r1(Number(dailyRate) || 0), unit)} يومياً`
 }
 
 /** مبلغ بالريال (بدون كسور) */

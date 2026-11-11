@@ -5,6 +5,7 @@ import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { sendPushToOrg } from '@/lib/push'
 import { fetchExternal } from '@/lib/fetchExternal'
+import { unitFor } from '@/lib/arabicCount'
 
 function formatPhone(raw: string): string {
   const clean = (raw || '').replace(/\s/g, '')
@@ -52,10 +53,10 @@ export async function POST(req: Request) {
 
     // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
     await (db as any).from('notifications').insert({
-      org_id, branch_id, title: `عملية صرف: ${staff_name}`, message: `${product_name} — ${qty} ${unit}`, type: 'info', read: false
+      org_id, branch_id, title: `عملية صرف: ${staff_name}`, message: `${product_name} — ${qty} ${unitFor(qty, unit)}`, type: 'info', read: false
     })
     // إشعار فوري بالمتصفح/الجوال — لا يعتمد على واتساب إطلاقاً
-    sendPushToOrg(org_id, `عملية صرف: ${staff_name}`, `${product_name} — ${qty} ${unit}`, '/dispense').catch(()=>{})
+    sendPushToOrg(org_id, `عملية صرف: ${staff_name}`, `${product_name} — ${qty} ${unitFor(qty, unit)}`, '/dispense').catch(()=>{})
 
     // جيب كل الفروع — نستخدمها لتحديد اسم الفرع ورقمه المخصص
     const { data: allBranches } = await db.from('branches').select('id,name,whatsapp_number').eq('org_id', org_id).eq('is_active', true)
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
     const now = new Date()
     const timeStr = now.toLocaleTimeString('ar-SA-u-ca-gregory',{hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'Asia/Riyadh'})
     const dateStr = now.toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',weekday:'long',day:'numeric',month:'long',timeZone:'Asia/Riyadh'})
-    const msg = `🟢 *Storely*\n\nمرحباً ${(org as any).name}،\n${branchLine}\n👤 *${staff_name}* قام بصرف:\n• ${product_name} — *${qty} ${unit}*\n\n🕐 ${timeStr} · ${dateStr}`
+    const msg = `🟢 *Storely*\n\nمرحباً ${(org as any).name}،\n${branchLine}\n👤 *${staff_name}* قام بصرف:\n• ${product_name} — *${qty} ${unitFor(qty, unit)}*\n\n🕐 ${timeStr} · ${dateStr}`
 
     const waRes = await fetchExternal('https://www.wasenderapi.com/api/send-message', {
       method: 'POST',

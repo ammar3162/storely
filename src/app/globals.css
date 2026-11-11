@@ -174,6 +174,8 @@ a:active { opacity: .8; }
 [data-theme="dark"] [class~="hover:text-[#203640]"]:hover { color: var(--storely-text); }
 [data-theme="dark"] [class~="bg-[#203640]"] { background-color: #9fb6c3; }
 [data-theme="dark"] [class~="decoration-[#9AA7AE]"] { text-decoration-color: var(--storely-muted); }
+[data-theme="dark"] [class~="text-[#B91C1C]"] { color: #eba4a4; }
+[data-theme="dark"] [class~="border-[#F1C4C4]"] { border-color: #66454a; }
 [data-theme="dark"] :is([class~="text-[#047857]"], .storely-metric-value[data-tone=success]) { color: #8dcaaa; }
 [data-theme="dark"] :is([class~="text-[#B45309]"], .storely-metric-value[data-tone=warning]) { color: #e2bb84; }
 [data-theme="dark"] .storely-metric-value[data-tone=danger] { color: #eba4a4; }

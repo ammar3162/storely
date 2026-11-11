@@ -3,6 +3,7 @@ import { Search, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react'
 import { iconFor } from './categories'
 import { T } from './strings'
 import type { StaffDispense, PageVals } from './useStaffDispense'
+import { unitFor } from '@/lib/arabicCount'
 
 // تصميم «كاونتر»: كل شي قوائم بيضاء بخطوط فاصلة، والأيقونات رمادية، والكمية رقم واضح على الطرف
 const label: React.CSSProperties = { fontSize:13, fontWeight:500, color:'#4b5565', margin:'0 4px 8px' }
@@ -17,7 +18,7 @@ export default function DispenseTab({ m, v }: { m: StaffDispense; v: PageVals })
     return (
       <span style={{textAlign:'end' as const,flexShrink:0}}>
         <span style={{fontSize:16,fontWeight:500,color:low?'#dc2626':'#111827',fontVariantNumeric:'tabular-nums'}}>{p.qty}</span>
-        <span style={{fontSize:12,color:'#6b7487',marginInlineStart:4}}>{p.unit}</span>
+        <span style={{fontSize:12,color:'#6b7487',marginInlineStart:4}}>{unitFor(p.qty, p.unit)}</span>
       </span>
     )
   }

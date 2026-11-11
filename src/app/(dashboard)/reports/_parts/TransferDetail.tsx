@@ -9,6 +9,7 @@ import { colors, font, card, btnPrimary, btnSecondary, inp } from '@/lib/ds'
 import { ListSkeleton } from '@/components/PageSkeleton'
 import { pdfOrgInfo, getRange, formatRange, BackBtn, PeriodBadge } from './shared'
 import type { FilterPeriod } from './shared'
+import { unitFor } from '@/lib/arabicCount'
 
 type Row = { id: string; qty_change: number; note: string | null; created_at: string; branch_id: string; by: string | null; products: { name: string; unit: string | null } }
 type Branch = { id: string; name: string }
@@ -148,7 +149,7 @@ export default function TransferDetail({ period, from, to, onBack, filterBar }: 
             <div key={name} style={{ marginBottom: i < topItems.length - 1 ? 10 : 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, gap: 8 }}>
                 <span style={{ fontSize: font.sm, fontWeight: 700, color: colors.text }}>{i + 1}. {name}</span>
-                <span style={{ fontSize: font.sm, color: colors.text2, whiteSpace: 'nowrap' }}>{v.times} {v.times === 1 ? 'تحويل' : 'تحويلات'} · {v.qty} {v.unit}</span>
+                <span style={{ fontSize: font.sm, color: colors.text2, whiteSpace: 'nowrap' }}>{v.times} {v.times === 1 ? 'تحويل' : 'تحويلات'} · {v.qty} {unitFor(v.qty, v.unit)}</span>
               </div>
               <div style={{ height: 5, background: colors.border, borderRadius: 99 }}>
                 <div style={{ height: '100%', width: Math.round(v.times / maxTimes * 100) + '%', background: colors.primary, borderRadius: 99 }} />
@@ -192,7 +193,7 @@ export default function TransferDetail({ period, from, to, onBack, filterBar }: 
                   <tr key={r.id} style={{ borderBottom: `1px solid ${colors.border}` }}>
                     <td data-label="التاريخ" style={{ padding: '10px 12px', fontSize: font.sm, color: colors.text2, whiteSpace: 'nowrap' }}>{fmtDate(r.created_at)} · {fmtTime(r.created_at)}</td>
                     <td data-label="الصنف" style={{ padding: '10px 12px', fontSize: font.sm, fontWeight: 700, color: colors.text }}>{r.products?.name || '—'}</td>
-                    <td data-label="الكمية" style={{ padding: '10px 12px', fontSize: font.sm, color: colors.text, whiteSpace: 'nowrap' }}>{Math.abs(r.qty_change)} {r.products?.unit || ''}</td>
+                    <td data-label="الكمية" style={{ padding: '10px 12px', fontSize: font.sm, color: colors.text, whiteSpace: 'nowrap' }}>{Math.abs(r.qty_change)} {unitFor(Math.abs(r.qty_change), r.products?.unit || '')}</td>
                     <td data-label="من فرع" style={{ padding: '10px 12px', fontSize: font.sm, color: colors.text }}>{nameOf(r.branch_id)}</td>
                     <td data-label="إلى فرع" style={{ padding: '10px 12px', fontSize: font.sm, color: colors.text }}>{destOf(r.note)}</td>
                     <td data-label="بواسطة" style={{ padding: '10px 12px', fontSize: font.sm, color: colors.text2 }}>{r.by || '—'}</td>

@@ -3,6 +3,7 @@ import { FeatureIcon } from '@/components/ui/feature-icon'
 import { riyal } from '@/lib/aiPhrases'
 import { C } from './config'
 import type { AiToolsPage } from './useAiTools'
+import { unitFor } from '@/lib/arabicCount'
 
 export default function WasteReport({ m }: { m: AiToolsPage }) {
   const { wasteReport, curr } = m
@@ -36,13 +37,13 @@ export default function WasteReport({ m }: { m: AiToolsPage }) {
                     <div style={{fontSize:9,color:'var(--storely-subtle)'}}>صُرف</div>
                   </div>
                   <div style={{background:p.risk==='high'?'#fee2e2':'#fef3c7',borderRadius:6,padding:'6px 4px'}}>
-                    <div style={{fontSize:13,fontWeight:900,color:p.risk==='high'?'#dc2626':'#d97706'}}>{p.wasteQty} {p.unit}</div>
+                    <div style={{fontSize:13,fontWeight:900,color:p.risk==='high'?'#dc2626':'#d97706'}}>{p.wasteQty} {unitFor(p.wasteQty, p.unit)}</div>
                     <div style={{fontSize:9,color:'var(--storely-subtle)'}}>هدر محتمل</div>
                   </div>
                 </div>
                 <div style={{marginTop:8,display:'flex',justifyContent:'space-between',fontSize:11,color:'var(--storely-subtle)'}}>
-                  <span>الهدر: {p.wasteQty} {p.unit}{riyal(p.estimatedValue,curr)?` · قيمته ${riyal(p.estimatedValue,curr)}`:''}</span>
-                  <span>الفعلي: {p.endStock} {p.unit}</span>
+                  <span>الهدر: {p.wasteQty} {unitFor(p.wasteQty, p.unit)}{riyal(p.estimatedValue,curr)?` · قيمته ${riyal(p.estimatedValue,curr)}`:''}</span>
+                  <span>الفعلي: {p.endStock} {unitFor(p.endStock, p.unit)}</span>
                   <span style={{fontWeight:700,color:p.risk==='high'?'#dc2626':'#d97706'}}>نسبة الاستخدام: {p.usageRatio}%</span>
                 </div>
               </div>

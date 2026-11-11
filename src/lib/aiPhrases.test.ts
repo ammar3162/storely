@@ -13,7 +13,7 @@ describe('aiPhrases', () => {
     expect(orderWhenText(0)).toBe('اطلب اليوم'); expect(orderWhenText(1)).toBe('اطلب غداً'); expect(orderWhenText(3)).toBe('اطلب بعد 3 أيام')
   })
   it('reasons', () => {
-    expect(usageReason(3.33, 'كيس', 4)).toBe('لأنك تصرف نحو 3.3 كيس يومياً، والمتبقي 4 كيس')
+    expect(usageReason(3.33, 'كيس', 4)).toBe('لأنك تصرف نحو 3.3 كيس يومياً، والمتبقي 4 أكياس')
     expect(leadReason(0.5, 'كرتون', 3)).toBe('المورد يحتاج 3 أيام عادةً، وأنت تصرف 0.5 كرتون يومياً')
   })
   it('riyal', () => {

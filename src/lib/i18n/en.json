@@ -4059,5 +4059,21 @@
 "# عمليات هدر مسجّلة خلال آخر # يوماً، محسوبة بمتوسط تكلفة كل صنف من فواتير الشراء.": "# waste entries recorded in the last # days, valued at each item's average purchase cost.",
 "# عملية هدر مسجّلة خلال آخر # يوماً، محسوبة بمتوسط تكلفة كل صنف من فواتير الشراء.": "# waste entries recorded in the last # days, valued at each item's average purchase cost.",
 "خلال آخر # يوماً، الصرف يوم * أعلى من متوسط أيامك بنسبة #%.": "Over the last # days, dispensing on * is #% above your average day.",
-"لم يُسجّل له أي صرف خلال آخر # يوماً، ولا يزال في المخزون.": "No dispensing recorded in the last # days, and it is still in stock."
+"لم يُسجّل له أي صرف خلال آخر # يوماً، ولا يزال في المخزون.": "No dispensing recorded in the last # days, and it is still in stock.",
+"قطع": "Pieces",
+"حبات": "Pieces",
+"أكياس": "Bags",
+"كراتين": "Cartons",
+"علب": "Cans",
+"صناديق": "Boxes",
+"لترات": "Liters",
+"جالونات": "Gallons",
+"زجاجات": "Bottles",
+"باكيتات": "Packets",
+"شدات": "Packs",
+"درازن": "Dozens",
+"ربطات": "Bundles",
+"رولات": "Rolls",
+"أمتار": "Meters",
+"غرامات": "Grams"
 }

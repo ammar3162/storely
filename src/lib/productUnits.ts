@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { unitFor } from '@/lib/arabicCount'
 // وحدات الشراء والتحويل لوحدة المخزون (2026-11-10).
 // الصنف يُخزَّن ويُصرف بوحدة (unit)، ويُشترى بوحدة أو أكثر (product_units: كرتون = 12 كيس، شدة = 6 علب...).
 // هنا: توحيد أسماء الوحدات (cartoon/كرتونة → كرتون) والتحويلات الثابتة (كيلو = 1000 غرام) وحساب المعامل.
@@ -69,12 +70,12 @@ export function breakdownQty(qty: number, stockUnit: string, units: { unit: stri
   const big = [...(units || [])].filter(u => u.factor > 1 && !sameUnit(u.unit, stockUnit)).sort((a, b) => b.factor - a.factor)[0]
   if (!big || !(qty >= big.factor)) return ''
   const whole = Math.floor(qty / big.factor), rest = round(qty - whole * big.factor)
-  return `${whole} ${big.unit}${rest > 0 ? ` و${rest} ${stockUnit}` : ''}`
+  return `${whole} ${unitFor(whole, big.unit)}${rest > 0 ? ` و${rest} ${unitFor(rest, stockUnit)}` : ''}`
 }
 /** «30 كيس (2 كرتون و6 كيس)» — عرض المخزون بأكبر وحدة شراء */
 export function describeQty(qty: number, stockUnit: string, units: { unit: string; factor: number }[]): string {
   const b = breakdownQty(qty, stockUnit, units)
-  return `${round(qty)} ${stockUnit}${b ? ` (${b})` : ''}`
+  return `${round(qty)} ${unitFor(round(qty), stockUnit)}${b ? ` (${b})` : ''}`
 }
 const round = (n: number) => Math.round(n * 1000) / 1000
 

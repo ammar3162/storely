@@ -6,6 +6,7 @@ import NumberInput from '@/components/NumberInput'
 import { api } from '@/lib/api-client'
 import { toast } from '@/components/toast'
 import { colors } from '@/lib/ds'
+import { unitFor } from '@/lib/arabicCount'
 
 type P = { id: string; name: string; unit: string; qty: number; category?: string | null }
 
@@ -57,7 +58,7 @@ export default function StockCountSheet({ orgId, products, lastCounts, onClose, 
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div>
                   <div style={{ fontSize: 11, color: colors.text3 }}>
-                    بالنظام {p.qty} {p.unit}{lastCounts[p.id] ? ` · آخر جرد ${fmt(lastCounts[p.id].counted_at)}` : ' · ما انجرد قبل'}
+                    بالنظام {p.qty} {unitFor(p.qty, p.unit)}{lastCounts[p.id] ? ` · آخر جرد ${fmt(lastCounts[p.id].counted_at)}` : ' · ما انجرد قبل'}
                   </div>
                 </div>
                 {diff !== null && diff !== 0 && <span style={{ fontSize: 11, fontWeight: 800, color: diff < 0 ? colors.danger : colors.primary }} dir="ltr">{diff > 0 ? '+' : ''}{diff}</span>}

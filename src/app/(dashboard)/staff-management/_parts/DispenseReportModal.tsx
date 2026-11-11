@@ -2,6 +2,7 @@
 import { X } from 'lucide-react'
 import { ListSkeleton } from '@/components/PageSkeleton'
 import type { StaffPage } from './useStaffManagement'
+import { unitFor } from '@/lib/arabicCount'
 
 export default function DispenseReportModal({ m }: { m: StaffPage }) {
   const { reportMode, reportStaff, setReportStaff, staffReport, reportLoading, openReport } = m
@@ -49,7 +50,7 @@ export default function DispenseReportModal({ m }: { m: StaffPage }) {
                     <div style={{fontSize:10,color:'#888780',marginTop:1}}>{new Date(m.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
                   </div>
                   <div style={{fontSize:11,fontWeight:600,color:'#e24b4a',flexShrink:0}}>
-                    -{Math.abs(m.qty_change)} <span style={{fontSize:10,color:'#888780',fontWeight:400}}>{(m.products as any)?.unit}</span>
+                    -{Math.abs(m.qty_change)} <span style={{fontSize:10,color:'#888780',fontWeight:400}}>{unitFor(Math.abs(m.qty_change), (m.products as any)?.unit)}</span>
                   </div>
                 </div>
               ))}

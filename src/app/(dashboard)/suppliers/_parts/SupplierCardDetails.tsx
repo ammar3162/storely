@@ -2,6 +2,7 @@
 import NumberInput from '@/components/NumberInput'
 import { btnPrimary } from '@/lib/ds'
 import type { SupplierCardState } from './useSupplierCard'
+import { unitFor } from '@/lib/arabicCount'
 
 export default function SupplierCardDetails({ m }: { m: SupplierCardState }) {
   const { s, open, selectedProduct, setSelectedProduct, productSearch, setProductSearch, reorderPoint, setReorderPoint, orderQty, setOrderQty, supplierNotes, setSupplierNotes, catalogItems, selectedCatalogItem, setSelectedCatalogItem, linked, unlinked, linkProduct, unlinkProduct } = m
@@ -29,7 +30,7 @@ export default function SupplierCardDetails({ m }: { m: SupplierCardState }) {
                       </div>
                       {p.supplier_notes && <div style={{ fontSize:11, color:'var(--storely-text)', marginTop:3 }}>{p.supplier_notes}</div>}
                       <div style={{ fontSize:11, color:'var(--storely-subtle)', marginTop:3 }}>
-                        المتاح: <b style={{color:'var(--storely-text)'}}>{p.qty} {p.unit}</b> · يُطلب عند: <b style={{color:'var(--storely-text)'}}>{p.supplier_reorder_point}</b> · كمية الطلب: <b style={{color:'var(--storely-text)'}}>{p.supplier_order_qty}</b>
+                        المتاح: <b style={{color:'var(--storely-text)'}}>{p.qty} {unitFor(p.qty, p.unit)}</b> · يُطلب عند: <b style={{color:'var(--storely-text)'}}>{p.supplier_reorder_point}</b> · كمية الطلب: <b style={{color:'var(--storely-text)'}}>{p.supplier_order_qty}</b>
                       </div>
                     </div>
                     <button onClick={()=>unlinkProduct(p.id)}
@@ -71,7 +72,7 @@ export default function SupplierCardDetails({ m }: { m: SupplierCardState }) {
                           style={{width:'100%',border:'none',fontSize:13,fontFamily:'inherit',background:'white',color:'var(--storely-text)',outline:'none',padding:'4px 0'}}>
                           <option value="">— اختر —</option>
                           {filteredUnlinked.map((p:any)=>(
-                            <option key={p.id} value={p.id}>{p.name} ({p.qty} {p.unit})</option>
+                            <option key={p.id} value={p.id}>{p.name} ({p.qty} {unitFor(p.qty, p.unit)})</option>
                           ))}
                         </select>
                       )

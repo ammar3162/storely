@@ -7,6 +7,7 @@ import { api } from '@/lib/api-client'
 import { toast } from '@/components/toast'
 import { mergeSmartOrder, type SmartOrderRow } from '@/lib/smartOrder'
 import { runOutText, orderWhenText, usageReason, daysAr } from '@/lib/aiPhrases'
+import { unitFor } from '@/lib/arabicCount'
 
 // «الطلب الذكي» — بدل أربع أدوات منفصلة (توقع النفاد، توقيت الطلب، اقتراح الكميات، حد إعادة الطلب):
 // ضغطة وحدة تشغّلها كلها وتعرض لكل صنف: متى يخلص، كم تطلب، متى تطلب، وليش.
@@ -34,7 +35,7 @@ export default function SmartOrder() {
     const j = await api.patch('/api/products', { org_id: sessionStorage.getItem('s_org_id'), id: row.productId, reorder_point: row.reorder.suggested })
     setApplying(null)
     if (!j.success) { toast(j.error || 'تعذر الحفظ', 'error'); return }
-    toast(`أصبح حد التنبيه لـ${row.name}: ${row.reorder.suggested} ${row.unit}`)
+    toast(`أصبح حد التنبيه لـ${row.name}: ${row.reorder.suggested} ${unitFor(row.reorder.suggested, row.unit)}`)
     setData(d => d && { ...d, rows: d.rows.map(x => x.name === row.name ? { ...x, reorder: null } : x) })
   }
 
@@ -70,7 +71,7 @@ export default function SmartOrder() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
                   <div style={{ background: C.bg, borderRadius: 8, padding: '8px 10px' }}>
                     <div style={{ fontSize: 10, color: C.text4 }}>اطلب</div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: C.text }}>{r.suggestedQty ? `${r.suggestedQty} ${r.unit}` : '—'}</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: C.text }}>{r.suggestedQty ? `${r.suggestedQty} ${unitFor(r.suggestedQty, r.unit)}` : '—'}</div>
                   </div>
                   <div style={{ background: C.bg, borderRadius: 8, padding: '8px 10px' }}>
                     <div style={{ fontSize: 10, color: C.text4 }}>متى</div>
@@ -82,11 +83,11 @@ export default function SmartOrder() {
                 <div style={{ fontSize: 11, color: C.text3, marginTop: 8, lineHeight: 1.7 }}>
                   {usageReason(r.dailyRate, r.unit, r.currentQty)}
                   {r.leadDays ? ` · المورد يحتاج ${daysAr(r.leadDays)}` : ''}
-                  {r.weeklyNeed ? ` · تحتاج تقريباً ${r.weeklyNeed} ${r.unit} بالأسبوع` : ''}
+                  {r.weeklyNeed ? ` · تحتاج تقريباً ${r.weeklyNeed} ${unitFor(r.weeklyNeed, r.unit)} بالأسبوع` : ''}
                 </div>
                 {r.reorder && (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 8, padding: '7px 10px', borderRadius: 8, background: C.infoLight, flexWrap: 'wrap' as const }}>
-                    <span style={{ fontSize: 11, color: C.text2 }}>حد التنبيه الحالي {r.reorder.current} — الأنسب {r.reorder.suggested} {r.unit}</span>
+                    <span style={{ fontSize: 11, color: C.text2 }}>حد التنبيه الحالي {r.reorder.current} — الأنسب {r.reorder.suggested} {unitFor(r.reorder.suggested, r.unit)}</span>
                     <button onClick={() => applyReorder(r)} disabled={applying === r.productId} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, border: 'none', background: C.info, color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
                       <Check size={12} /> {applying === r.productId ? 'جاري...' : 'اعتمد'}
                     </button>

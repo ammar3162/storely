@@ -16,6 +16,7 @@ import { cache } from '@/lib/cache'
 import { ListSkeleton } from '@/components/PageSkeleton'
 import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import NumberInput from '@/components/NumberInput'
+import { unitFor } from '@/lib/arabicCount'
 
 type CartItem = { productId: string; name: string; unit: string; qty: number; available: number }
 
@@ -98,7 +99,7 @@ export default function TransferStockPage() {
     const qtyNum = Number(qty)
     if(!(qtyNum>0)){ toast('الكمية غير صحيحة','warning'); return }
     if(!selectedProduct){ toast('الصنف غير موجود','error'); return }
-    if(qtyNum > remainingForSelected){ toast(`الكمية أكبر من المتوفر (متبقي ${remainingForSelected} ${selectedProduct.unit})`,'warning'); return }
+    if(qtyNum > remainingForSelected){ toast(`الكمية أكبر من المتوفر (متبقي ${remainingForSelected} ${unitFor(remainingForSelected, selectedProduct.unit)})`,'warning'); return }
 
     setCart(prev=>{
       const existing = prev.find(c=>c.productId===productId)
@@ -116,7 +117,7 @@ export default function TransferStockPage() {
   async function reviewAndSubmit() {
     if(cart.length===0){ toast('أضف صنف واحد على الأقل للنقل','warning'); return }
     const fromName = branchName(fromBranch), toName = branchName(toBranch)
-    const summary = cart.map(c=>`• ${c.name}: ${c.qty} ${c.unit}`).join('\n')
+    const summary = cart.map(c=>`• ${c.name}: ${c.qty} ${unitFor(c.qty, c.unit)}`).join('\n')
     const ok = await confirmDialog({
       title: `تأكيد نقل ${cart.length} ${cart.length===1?'صنف':'أصناف'}`,
       message: `من "${fromName}" إلى "${toName}":\n\n${summary}`,
@@ -268,7 +269,7 @@ export default function TransferStockPage() {
         <div className="ts-product-entry">
           <StorelyFormField className="ts-product-field" label={<>الصنف</>} htmlFor="transfer-field-3">
             <input id="transfer-field-3" className="ts-control"
-              value={selectedProduct ? `${selectedProduct.name} — متبقي: ${remainingForSelected} ${selectedProduct.unit}` : productSearch}
+              value={selectedProduct ? `${selectedProduct.name} — متبقي: ${remainingForSelected} ${unitFor(remainingForSelected, selectedProduct.unit)}` : productSearch}
               onChange={e=>{ setProductSearch(e.target.value); setProductId(''); setShowProductList(true) }}
               onFocus={()=>setShowProductList(true)}
               onBlur={()=>setTimeout(()=>setShowProductList(false),150)}
@@ -288,7 +289,7 @@ export default function TransferStockPage() {
                       onMouseEnter={e=>(e.currentTarget.style.background=colors.bg)}
                       onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
                       <span >{p.name}{inCartQty>0 && <span className="ts-record-name"> — {inCartQty} بالقائمة</span>}</span>
-                      <span className="ts-supporting">متوفر: {p.qty - inCartQty} {p.unit}</span>
+                      <span className="ts-supporting">متوفر: {p.qty - inCartQty} {unitFor(p.qty - inCartQty, p.unit)}</span>
                     </div>
                   )
                 })}
@@ -312,7 +313,7 @@ export default function TransferStockPage() {
                 <div className="ts-cart-row" key={item.productId} >
                   <span className="ts-record-name">{item.name}</span>
                   <div className="ts-inline">
-                    <span className="ts-cart-quantity">{item.qty} {item.unit}</span>
+                    <span className="ts-cart-quantity">{item.qty} {unitFor(item.qty, item.unit)}</span>
                     <StorelyButton className="ts-button ts-remove" variant="danger" onClick={()=>removeFromCart(item.productId)} title="إزالة">×</StorelyButton>
                   </div>
                 </div>
@@ -347,7 +348,7 @@ export default function TransferStockPage() {
                   <span className="ts-supporting">{branchName(h.branch_id)} ← {destBranchFromNote(h.note)}</span>
                 </div>
                 <div className="ts-inline">
-                  <span className="ts-history-quantity">{Math.abs(h.qty_change)} {(h.products as any)?.unit}</span>
+                  <span className="ts-history-quantity">{Math.abs(h.qty_change)} {unitFor(Math.abs(h.qty_change), (h.products as any)?.unit)}</span>
                   <span className="ts-supporting">{new Date(h.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn'})}</span>
                 </div>
               </div>

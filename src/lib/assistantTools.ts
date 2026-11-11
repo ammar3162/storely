@@ -8,6 +8,7 @@ import { loadAccountantReport } from '@/lib/accountantData'
 import { vatReturn } from '@/lib/accountantExport'
 import { offReason } from '@/lib/daysOff'
 import { shiftIdForDate } from '@/lib/shiftSchedule'
+import { unitFor } from '@/lib/arabicCount'
 
 type Access = { role?: string | null; permissions?: Record<string, unknown> | null }
 export type ToolCtx = { db: SupabaseClient; orgId: string; branchId: string | null; vatRegistered: boolean; businessType: string | null }
@@ -54,7 +55,7 @@ export const ASSISTANT_TOOLS: Tool[] = [
       for (const r of (rows || []) as any[]) {
         const k = r.invoice_group || r.invoice_number || `${r.created_at}|${r.supplier}`
         const g = groups.get(k) || { date: saudiDay(Date.parse(r.created_at)), supplier: r.supplier || '—', invoice: r.invoice_number || null, branch: bn.get(r.branch_id) || null, unpaid: r.payment_status === 'unpaid', items: [] as string[], net: 0, vat: 0, total: 0 }
-        g.items.push(`${r.name} ${r.qty || ''} ${r.unit || ''}`.trim()); g.net += Number(r.amount || 0); g.vat += Number(r.vat_amount || 0); g.total += Number(r.total_amount || 0)
+        g.items.push(`${r.name} ${r.qty || ''} ${unitFor(r.qty || '', r.unit || '')}`.trim()); g.net += Number(r.amount || 0); g.vat += Number(r.vat_amount || 0); g.total += Number(r.total_amount || 0)
         groups.set(k, g)
       }
       const all = [...groups.values()]
