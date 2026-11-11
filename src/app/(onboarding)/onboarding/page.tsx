@@ -8,11 +8,17 @@ import { colors, btnPrimary, btnSecondary, inp } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { SIGNUP_BUSINESS_TYPES } from '@/lib/businessTypes'
 import { getMe } from '@/lib/session'
-import { UtensilsCrossed, Coffee, Store, Package, Users, Check, Bell, KeyRound, Plus, X, ArrowLeft, ArrowRight, Minus } from 'lucide-react'
+import { UtensilsCrossed, Coffee, Store, Package, Users, Check, Bell, KeyRound, Plus, X, ArrowLeft, ArrowRight, Minus, MessageCircle, Copy } from 'lucide-react'
 
 // أيقونة لكل نشاط (بدل الإيموجي)
 const BIZ_ICON: Record<string, typeof Store> = { 'مطعم': UtensilsCrossed, 'كوفي': Coffee }
 const BUSINESS_TYPES = SIGNUP_BUSINESS_TYPES.map(b=>({ id:b.v, Icon: BIZ_ICON[b.v] || Store, desc:b.desc }))
+
+// رقم الموظف بصيغة واتساب الدولية (05xxxxxxxx أو 5xxxxxxxx → 9665xxxxxxxx)
+const waNumber = (raw: string) => { const d = raw.replace(/\D/g, ''); return d.startsWith('00') ? d.slice(2) : d.startsWith('05') ? '966' + d.slice(1) : d.length === 9 && d.startsWith('5') ? '966' + d : d }
+// رسالة دخول الموظف — تنفتح في واتساب المالك وهو يرسلها بنفسه
+const staffWelcome = (org: string, c: { name: string; phone: string; pin: string }) =>
+  `مرحباً ${c.name}،\n\nأضافك ${org || 'صاحب المنشأة'} إلى تطبيق Storely للموظفين.\n\nادخل من الرابط: https://www.storely.dev/staff\nرقم جوالك: ${c.phone}\nرمزك السري: ${c.pin}\n\nاحتفظ بالرمز ولا تشاركه مع أحد.`
 
 const TEMPLATES: Record<string, { category:string; products:{name:string;unit:string;reorder:number}[] }[]> = {
   'مطعم': [
@@ -107,7 +113,8 @@ export default function OnboardingPage() {
   const [branchId, setBranchId]       = useState('')
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([])
   const [staffList, setStaffList]     = useState<{name:string;phone:string}[]>([{name:'',phone:''}])
-  const [createdStaff, setCreatedStaff] = useState<{name:string;pin:string}[]>([])
+  const [createdStaff, setCreatedStaff] = useState<{name:string;phone:string;pin:string}[]>([])
+  const [sentTo, setSentTo] = useState<Set<number>>(new Set())
   const [saving, setSaving]           = useState(false)
   const [progress, setProgress]       = useState(0)
   const [visible, setVisible]         = useState(false)
@@ -171,11 +178,11 @@ export default function OnboardingPage() {
     setSaving(true)
     const toAdd=staffList.filter(s=>s.name.trim()&&s.phone.trim())
     let failedCount=0
-    const created:{name:string;pin:string}[]=[]
+    const created:{name:string;phone:string;pin:string}[]=[]
     for(const s of toAdd){
       const pin=String(Math.floor(1000+Math.random()*9000))
       const r=await api.post('/api/add-staff',{org_id:orgId,branch_id:branchId||null,name:s.name.trim(),phone:s.phone.trim(),pin,permissions:{dispense:true,inventory:false,purchases:false,reports:false}})
-      if(r.success) created.push({name:s.name.trim(),pin})
+      if(r.success) created.push({name:s.name.trim(),phone:s.phone.trim(),pin})
       else failedCount++
     }
     setCreatedStaff(created)
@@ -395,12 +402,22 @@ export default function OnboardingPage() {
             </div>
             {createdStaff.length>0&&(
               <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:16,marginBottom:16}}>
-                <div style={{display:'flex',alignItems:'center',gap:8,fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}><KeyRound size={16} strokeWidth={1.75}/>رموز دخول الموظفين</div>
-                <p style={{fontSize:13,color:'#4b5565',lineHeight:1.7,marginBottom:10}}>احفظها وأرسلها لكل موظف. يدخل برقم جواله وهذا الرمز، وتقدر تغيّرها من صفحة الموظفين</p>
+                <div style={{display:'flex',alignItems:'center',gap:8,fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}><KeyRound size={16} strokeWidth={1.75}/>أرسل لموظفيك رموز الدخول</div>
+                <p style={{fontSize:13,color:'#4b5565',lineHeight:1.7,marginBottom:10}}>اضغط «إرسال واتساب» عند كل موظف، فتُفتح محادثته برسالة جاهزة فيها رابط التطبيق ورقمه ورمزه. يمكنك الاطلاع على الرموز لاحقاً من صفحة الموظفين.</p>
                 {createdStaff.map((c,i)=>(
-                  <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'10px 0',borderTop:'1px solid var(--storely-border)',fontSize:15}}>
-                    <span style={{color:'var(--storely-text)'}}>{c.name}</span>
-                    <span style={{fontFamily:"'IBM Plex Mono',ui-monospace,monospace",fontWeight:500,fontSize:17,letterSpacing:2,color:'var(--storely-text)',direction:'ltr'}}>{c.pin}</span>
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 0',borderTop:'1px solid var(--storely-border)',flexWrap:'wrap'}}>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:15,color:'var(--storely-text)'}}>{c.name}</div>
+                      <div style={{fontSize:13,color:'#6b7487'}}>الرمز <span style={{fontFamily:"'IBM Plex Mono',ui-monospace,monospace",fontWeight:500,letterSpacing:2,color:'var(--storely-text)',direction:'ltr',display:'inline-block'}}>{c.pin}</span></div>
+                    </div>
+                    <button type="button" aria-label={`نسخ رسالة ${c.name}`} title="نسخ الرسالة"
+                      onClick={()=>{ navigator.clipboard?.writeText(staffWelcome(orgName, c)).then(()=>toast('نُسخت الرسالة')).catch(()=>{}) }}
+                      style={{...btnSecondary,padding:'9px 10px',display:'inline-flex',alignItems:'center'}}><Copy size={16} strokeWidth={1.75}/></button>
+                    <a href={`https://wa.me/${waNumber(c.phone)}?text=${encodeURIComponent(staffWelcome(orgName, c))}`} target="_blank" rel="noopener noreferrer"
+                      onClick={()=>setSentTo(prev=>new Set(prev).add(i))}
+                      style={{...btnSecondary,padding:'9px 12px',display:'inline-flex',alignItems:'center',gap:6,fontSize:14,textDecoration:'none',color:sentTo.has(i)?'#067647':'var(--storely-text)'}}>
+                      {sentTo.has(i) ? <Check size={16} strokeWidth={2}/> : <MessageCircle size={16} strokeWidth={1.75}/>}{sentTo.has(i) ? 'فُتحت المحادثة' : 'إرسال واتساب'}
+                    </a>
                   </div>
                 ))}
               </div>
