@@ -4,7 +4,6 @@ import NumberInput from '@/components/NumberInput'
 import { ClipboardList } from 'lucide-react'
 import type { SupplierDashboard } from './useSupplierDashboard'
 import type { DashboardView } from './deriveView'
-import { unitFor } from '@/lib/arabicCount'
 
 export default function OrdersTab({ m, v }: { m: SupplierDashboard; v: DashboardView }) {
   const { quoteRequests, respondingId, setRespondingId, respondPrice, setRespondPrice, respondNote, setRespondNote, respondSaving, reps, myGivenReviewIds, ratingCustomerId, setRatingCustomerId, customerRating, setCustomerRating, ratingSaving, approvingId, setApprovingId, selectedRepId, setSelectedRepId, deliveryDate, setDeliveryDate, approveSaving, activeTab, submitCustomerRating, markFulfilled, startApprove, approveDelivery, startRespond, submitResponse } = m
@@ -24,7 +23,7 @@ export default function OrdersTab({ m, v }: { m: SupplierDashboard; v: Dashboard
                       <b>{r.org_name || 'عميل'}</b>
                       <span className={'sd-badge t-'+st.tone}>{st.label}</span>
                     </div>
-                    <ul className="sd-order-items">{(r.items||[]).map((i:any,k:number)=><li key={k}>{i.name}<span>{i.qty} {unitFor(i.qty, i.unit||'')}</span></li>)}</ul>
+                    <ul className="sd-order-items">{(r.items||[]).map((i:any,k:number)=><li key={k}>{i.name}<span>{i.qty} {i.unit||''}</span></li>)}</ul>
                     {r.status==='accepted' ? (
                       approvingId===r.id ? (
                         <div className="sd-inline">

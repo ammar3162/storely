@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { loadOwnedSupplier } from '@/lib/supplierAccess'
-import { unitFor } from '@/lib/arabicCount'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -68,7 +67,7 @@ export async function POST(req: Request) {
         type: 'purchase',
         at: p.created_at,
         title: `مشترية مسجّلة: ${p.name}`,
-        detail: `${p.qty || ''} ${unitFor(p.qty || '', p.unit || '')} — ${p.total_amount || 0} ⃁`,
+        detail: `${p.qty || ''} ${p.unit || ''} — ${p.total_amount || 0} ⃁`,
       })
     }
 

@@ -6,7 +6,6 @@ import { foodCostHelp } from '@/lib/infoHints'
 import { api } from '@/lib/api-client'
 import { StorelyCard, StorelyStatusBadge } from '@/components/ui'
 import type { FoodCostResult } from '@/lib/foodCost'
-import { unitFor } from '@/lib/arabicCount'
 
 // «تكلفة المواد» في الصفحة الرئيسية: كم ريال مواد خرجت من المخزون مقابل كل 100 ريال مبيعات
 export default function FoodCostCard({ curr }: { curr: string }) {
@@ -74,7 +73,7 @@ export default function FoodCostCard({ curr }: { curr: string }) {
                     <div key={it.name} className="flex items-center justify-between gap-3 px-4 py-2.5 text-[13px] sm:px-[18px]">
                       <div className="min-w-0">
                         <div className="truncate font-semibold text-[#203640]">{it.name}</div>
-                        <div className="text-[12px] tabular-nums text-[#66737C]">{it.qty.toLocaleString('en-US')} {unitFor(it.qty, it.unit)}</div>
+                        <div className="text-[12px] tabular-nums text-[#66737C]">{it.qty.toLocaleString('en-US')} {it.unit}</div>
                       </div>
                       <div className="shrink-0 text-end">
                         <div className="font-semibold tabular-nums text-[#203640]">{money(it.cost)}</div>

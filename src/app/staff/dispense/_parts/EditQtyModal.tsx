@@ -3,7 +3,6 @@ import NumberInput from '@/components/NumberInput'
 import { T } from './strings'
 import type { StaffDispense } from './useStaffDispense'
 import SheetTop, { sheetStyle, SheetFoot } from './SheetTop'
-import { unitFor } from '@/lib/arabicCount'
 
 export default function EditQtyModal({ m }: { m: StaffDispense }) {
   const { lang, editingProduct, setEditingProduct, editQty, setEditQty, savingQty, updateQty } = m
@@ -14,7 +13,7 @@ export default function EditQtyModal({ m }: { m: StaffDispense }) {
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:200,backdropFilter:'blur(4px)'}} onClick={()=>setEditingProduct(null)}>
           <div style={sheetStyle} onClick={e=>e.stopPropagation()}>
             <SheetTop lang={lang} onBack={()=>setEditingProduct(null)} title={editingProduct.name}>
-              <div style={{fontSize:13,color:'#4b5565',marginTop:4}}>{T('currentQty',lang)}: <b>{editingProduct.qty}</b> {unitFor(editingProduct.qty, editingProduct.unit)}</div>
+              <div style={{fontSize:13,color:'#4b5565',marginTop:4}}>{T('currentQty',lang)}: <b>{editingProduct.qty}</b> {editingProduct.unit}</div>
             </SheetTop>
             <div style={{fontSize:13,fontWeight:600,color:'var(--storely-text)',marginBottom:8}}>{T('newQty',lang)}</div>
             <NumberInput value={editQty} onChange={e=>setEditQty(e.target.value)} min="0" autoFocus

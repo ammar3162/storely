@@ -71,7 +71,7 @@ export default function SmartOrder() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
                   <div style={{ background: C.bg, borderRadius: 8, padding: '8px 10px' }}>
                     <div style={{ fontSize: 10, color: C.text4 }}>اطلب</div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: C.text }}>{r.suggestedQty ? `${r.suggestedQty} ${unitFor(r.suggestedQty, r.unit)}` : '—'}</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: C.text }}>{r.suggestedQty ? `${r.suggestedQty} ${r.unit}` : '—'}</div>
                   </div>
                   <div style={{ background: C.bg, borderRadius: 8, padding: '8px 10px' }}>
                     <div style={{ fontSize: 10, color: C.text4 }}>متى</div>

@@ -2,7 +2,6 @@
 import { FeatureIcon } from '@/components/ui/feature-icon'
 import { C } from './config'
 import type { AiToolsPage } from './useAiTools'
-import { unitFor } from '@/lib/arabicCount'
 
 export default function RealWasteReport({ m }: { m: AiToolsPage }) {
   const { realWasteReport, curr } = m
@@ -39,7 +38,7 @@ export default function RealWasteReport({ m }: { m: AiToolsPage }) {
                       {r.estimatedCost!==null && <span style={{fontSize:12,fontWeight:800,color:'#dc2626'}}>{r.estimatedCost.toLocaleString()} {curr}</span>}
                     </div>
                     <div style={{fontSize:11,color:'var(--storely-subtle)',marginTop:4}}>
-                      الكمية: <b style={{color:'var(--storely-text)'}}>{r.totalQty} {unitFor(r.totalQty, r.unit)}</b>
+                      الكمية: <b style={{color:'var(--storely-text)'}}>{r.totalQty} {r.unit}</b>
                       {r.topReason && <span> · السبب الأكثر: <b style={{color:'#dc2626'}}>{r.topReason}</b></span>}
                     </div>
                   </div>

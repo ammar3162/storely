@@ -228,7 +228,7 @@ export default function DispensePage() {
                 {/* Name */}
                 <div style={{fontSize:11,fontWeight:700,color:C.text,lineHeight:1.3,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' as any}}>{p.name}</div>
                 {/* Unit */}
-                <div style={{fontSize:9,color:C.text4}}>{unitFor(p.qty, p.unit)}</div>
+                <div style={{fontSize:9,color:C.text4}}>{p.unit}</div>
                 {/* Status */}
                 <span style={{fontSize:8,fontWeight:700,color:sc,background:isOut?C.dangerL:isLow?C.warningL:C.primaryL,padding:'2px 8px',borderRadius:99,border:`1px solid ${isOut?C.dangerB:isLow?C.warningB:C.primaryB}`}}>
                   {isOut?'نفد':isLow?'ناقص':'كافٍ'}
@@ -269,7 +269,7 @@ export default function DispensePage() {
                     </div>
                     <div style={{fontSize:10,color:C.text4,marginTop:1}}>{new Date(h.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
                   </div>
-                  <span style={{fontSize:13,fontWeight:800,color:badgeColor,flexShrink:0}}>{Math.abs(h.qty_change)} <span style={{fontSize:10,color:C.text4,fontWeight:400}}>{unitFor(Math.abs(h.qty_change), (h.products as any)?.unit)}</span></span>
+                  <span style={{fontSize:13,fontWeight:800,color:badgeColor,flexShrink:0}}>{Math.abs(h.qty_change)} <span style={{fontSize:10,color:C.text4,fontWeight:400}}>{(h.products as any)?.unit}</span></span>
                 </div>
               )})}
             </div>
@@ -287,7 +287,7 @@ export default function DispensePage() {
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
                 <div>
                   <div style={{fontSize:16,fontWeight:800,color:C.text}}>{selected.name}</div>
-                  <div style={{fontSize:11,color:C.text3,marginTop:2}}>متاح: <b style={{color:C.primary,fontSize:14}}>{selected.qty}</b> {unitFor(selected.qty, selected.unit)}</div>
+                  <div style={{fontSize:11,color:C.text3,marginTop:2}}>متاح: <b style={{color:C.primary,fontSize:14}}>{selected.qty}</b> {selected.unit}</div>
                 </div>
                 <button onClick={()=>{setSelected(null);setQty('');setWasteMode(false);setWasteReason('')}} style={{width:28,height:28,borderRadius:'50%',background:C.bg,border:`1px solid ${C.border2}`,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}} aria-label="إغلاق"><X size={16}/></button>
               </div>

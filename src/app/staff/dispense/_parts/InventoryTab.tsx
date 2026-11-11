@@ -3,7 +3,6 @@ import { Plus, Search, Pencil } from 'lucide-react'
 import { T } from './strings'
 import { OTHER_CATEGORY } from './categories'
 import type { StaffDispense } from './useStaffDispense'
-import { unitFor } from '@/lib/arabicCount'
 
 const LOW = '__low'
 
@@ -54,7 +53,7 @@ export default function InventoryTab({ m }: { m: StaffDispense }) {
                   </div>
                   <div style={{textAlign:'end' as const,flexShrink:0}}>
                     <span style={{fontSize:18,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{p.qty}</span>
-                    <span style={{fontSize:12,color:'#6b7487',marginInlineStart:4}}>{unitFor(p.qty, p.unit)}</span>
+                    <span style={{fontSize:12,color:'#6b7487',marginInlineStart:4}}>{p.unit}</span>
                     {isLow(p) && <div style={{fontSize:12,color:'#dc2626',display:'flex',alignItems:'center',gap:4,justifyContent:'flex-end'}}><span style={{width:6,height:6,borderRadius:3,background:'#dc2626'}}/>{T('lowShort',lang)}</div>}
                   </div>
                   <button onClick={()=>{setEditingProduct(p);setEditQty(String(p.qty))}} aria-label={T('edit',lang)}

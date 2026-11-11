@@ -2,7 +2,6 @@
 import { T, WASTE_KEYS } from './strings'
 import type { StaffDispense } from './useStaffDispense'
 import SheetTop, { sheetStyle, SheetFoot } from './SheetTop'
-import { unitFor } from '@/lib/arabicCount'
 
 export default function DispenseModal({ m }: { m: StaffDispense }) {
   const { lang, selected, setSelected, dispenseQty, setDispenseQty, wasteMode, setWasteMode, wasteReason, setWasteReason, wasteNote, setWasteNote, submitting, WASTE_REASONS, tx, handleDispense, handleWaste } = m
@@ -14,7 +13,7 @@ export default function DispenseModal({ m }: { m: StaffDispense }) {
           <div style={sheetStyle} onClick={e=>e.stopPropagation()}>
             <SheetTop lang={lang} onBack={()=>{setSelected(null);setDispenseQty('');setWasteMode(false);setWasteReason('');setWasteNote('')}} title={tx(selected.name)}>
               {lang!=='ar'&&<div style={{fontSize:12,color:'#4b5565',marginTop:1,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{selected.name}</div>}
-              <div style={{fontSize:13,color:'#4b5565',marginTop:2}}>{T('available',lang)}: <b style={{color:selected.qty<=selected.reorder_point?'#dc2626':'#203640'}}>{selected.qty} {unitFor(selected.qty, selected.unit)}</b></div>
+              <div style={{fontSize:13,color:'#4b5565',marginTop:2}}>{T('available',lang)}: <b style={{color:selected.qty<=selected.reorder_point?'#dc2626':'#203640'}}>{selected.qty} {selected.unit}</b></div>
             </SheetTop>
             <div style={{display:'flex',gap:6,marginBottom:12,background:'#eceef1',borderRadius:12,padding:4}}>
               <button onClick={()=>setWasteMode(false)} style={{flex:1,padding:'9px',borderRadius:9,border:'none',background:!wasteMode?'white':'transparent',color:!wasteMode?'#203640':'#6b7487',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',boxShadow:!wasteMode?'0 1px 3px rgba(0,0,0,.1)':'none'}}>

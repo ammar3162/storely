@@ -2,7 +2,6 @@
 import { FeatureIcon } from '@/components/ui/feature-icon'
 import { C } from './config'
 import type { AiToolsPage } from './useAiTools'
-import { unitFor } from '@/lib/arabicCount'
 
 export default function WeeklyReport({ m }: { m: AiToolsPage }) {
   const { weeklyReport } = m
@@ -40,7 +39,7 @@ export default function WeeklyReport({ m }: { m: AiToolsPage }) {
                       <span style={{fontSize:11,fontWeight:800,color:i<3?C.primary:C.text4,width:16}}>{i+1}</span>
                       <span style={{fontSize:12,fontWeight:700,color:C.text}}>{p.name}</span>
                     </div>
-                    <span style={{fontSize:12,fontWeight:800,color:C.primary}}>{p.qty} {unitFor(p.qty, p.unit)}</span>
+                    <span style={{fontSize:12,fontWeight:800,color:C.primary}}>{p.qty} {p.unit}</span>
                   </div>
                 ))}
               </div>
@@ -55,7 +54,7 @@ export default function WeeklyReport({ m }: { m: AiToolsPage }) {
                 {weeklyReport.lowStockItems.slice(0,5).map((p:any,i:number)=>(
                   <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',background:'#fef3c7',borderRadius:8,border:'1px solid #fde68a'}}>
                     <span style={{fontSize:12,fontWeight:700,color:'#92400e'}}>{p.name}</span>
-                    <span style={{fontSize:12,fontWeight:800,color:'#d97706'}}>{p.qty} {unitFor(p.qty, p.unit)} متبقي</span>
+                    <span style={{fontSize:12,fontWeight:800,color:'#d97706'}}>{p.qty} {p.unit} متبقي</span>
                   </div>
                 ))}
               </div>

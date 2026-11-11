@@ -22,10 +22,10 @@ describe('purchase units', () => {
     expect(conversionFactor('كيس', 'كرتون')).toBeNull()
   })
   it('describes stock with the biggest purchase unit', () => {
-    expect(describeQty(30, 'كيس', [{ unit: 'كرتون', factor: 12 }])).toBe('30 كيس (2 كرتون و6 أكياس)')
+    expect(describeQty(30, 'كيس', [{ unit: 'كرتون', factor: 12 }])).toBe('30 كيس (2 كرتون و6 كيس)')
     expect(describeQty(24, 'كيس', [{ unit: 'كرتون', factor: 12 }])).toBe('24 كيس (2 كرتون)')
-    expect(describeQty(5, 'كيس', [{ unit: 'كرتون', factor: 12 }])).toBe('5 أكياس')
-    expect(breakdownQty(30, 'كيس', [{ unit: 'شدة', factor: 6 }, { unit: 'كرتون', factor: 12 }])).toBe('2 كرتون و6 أكياس')
+    expect(describeQty(5, 'كيس', [{ unit: 'كرتون', factor: 12 }])).toBe('5 كيس')
+    expect(breakdownQty(30, 'كيس', [{ unit: 'شدة', factor: 6 }, { unit: 'كرتون', factor: 12 }])).toBe('2 كرتون و6 كيس')
     expect(breakdownQty(30, 'كيس', [])).toBe('')
   })
 })

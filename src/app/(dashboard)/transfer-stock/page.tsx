@@ -269,7 +269,7 @@ export default function TransferStockPage() {
         <div className="ts-product-entry">
           <StorelyFormField className="ts-product-field" label={<>الصنف</>} htmlFor="transfer-field-3">
             <input id="transfer-field-3" className="ts-control"
-              value={selectedProduct ? `${selectedProduct.name} — متبقي: ${remainingForSelected} ${unitFor(remainingForSelected, selectedProduct.unit)}` : productSearch}
+              value={selectedProduct ? `${selectedProduct.name} — متبقي: ${remainingForSelected} ${selectedProduct.unit}` : productSearch}
               onChange={e=>{ setProductSearch(e.target.value); setProductId(''); setShowProductList(true) }}
               onFocus={()=>setShowProductList(true)}
               onBlur={()=>setTimeout(()=>setShowProductList(false),150)}
@@ -289,7 +289,7 @@ export default function TransferStockPage() {
                       onMouseEnter={e=>(e.currentTarget.style.background=colors.bg)}
                       onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
                       <span >{p.name}{inCartQty>0 && <span className="ts-record-name"> — {inCartQty} بالقائمة</span>}</span>
-                      <span className="ts-supporting">متوفر: {p.qty - inCartQty} {unitFor(p.qty - inCartQty, p.unit)}</span>
+                      <span className="ts-supporting">متوفر: {p.qty - inCartQty} {p.unit}</span>
                     </div>
                   )
                 })}
@@ -313,7 +313,7 @@ export default function TransferStockPage() {
                 <div className="ts-cart-row" key={item.productId} >
                   <span className="ts-record-name">{item.name}</span>
                   <div className="ts-inline">
-                    <span className="ts-cart-quantity">{item.qty} {unitFor(item.qty, item.unit)}</span>
+                    <span className="ts-cart-quantity">{item.qty} {item.unit}</span>
                     <StorelyButton className="ts-button ts-remove" variant="danger" onClick={()=>removeFromCart(item.productId)} title="إزالة">×</StorelyButton>
                   </div>
                 </div>
@@ -348,7 +348,7 @@ export default function TransferStockPage() {
                   <span className="ts-supporting">{branchName(h.branch_id)} ← {destBranchFromNote(h.note)}</span>
                 </div>
                 <div className="ts-inline">
-                  <span className="ts-history-quantity">{Math.abs(h.qty_change)} {unitFor(Math.abs(h.qty_change), (h.products as any)?.unit)}</span>
+                  <span className="ts-history-quantity">{Math.abs(h.qty_change)} {(h.products as any)?.unit}</span>
                   <span className="ts-supporting">{new Date(h.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn'})}</span>
                 </div>
               </div>

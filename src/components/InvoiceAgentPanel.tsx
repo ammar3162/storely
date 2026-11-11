@@ -15,7 +15,6 @@ import NumberInput from '@/components/NumberInput'
 import { colors } from '@/lib/ds'
 import { normalizeUnit } from '@/lib/productUnits'
 import { looksLikeExpense } from '@/lib/expenseHint'
-import { unitFor } from '@/lib/arabicCount'
 
 type Cand = { id: string; name: string; unit?: string | null; score: number }
 type Item = { name: string; qty: number | null; unit: string | null; total: number | null; status: 'matched' | 'new' | 'expense' | 'skip' | 'ask'; product_id: string | null; product_name?: string | null; candidates: Cand[]; question?: string | null; learned?: boolean; stock_unit?: string | null; factor?: number | null }
@@ -177,7 +176,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                     <div style={{ flex: 1, minWidth: 160 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{it.name}</div>
                       <div style={{ fontSize: 11.5, color: colors.text3, marginTop: 2 }}>
-                        {it.qty ? `${it.qty} ${unitFor(it.qty, it.unit || '')} · ` : it.status === 'expense' ? '' : 'الكمية ناقصة · '}{it.total ? `${fmt(it.total)} ${curr}` : 'السعر ناقص'}
+                        {it.qty ? `${it.qty} ${it.unit || ''} · ` : it.status === 'expense' ? '' : 'الكمية ناقصة · '}{it.total ? `${fmt(it.total)} ${curr}` : 'السعر ناقص'}
                       </div>
                     </div>
                     {it.status === 'matched' && <span style={pill(colors.primaryLight, colors.primary)}><Check size={12} /> مخزون: {it.product_name}{it.learned ? ' (تعلّمها)' : ''}</span>}
@@ -257,7 +256,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
               const stock = d.items.filter(i => i.status === 'matched' || i.status === 'new')
               const exp = d.items.filter(i => i.status === 'expense')
               if (!stock.length && !exp.length) return null
-              const qtyOf = (i: Item) => i.status === 'matched' && i.stock_unit ? `${Math.round((i.qty || 0) * (i.factor || 1))} ${unitFor(Math.round((i.qty || 0) * (i.factor || 1)), i.stock_unit)}` : i.qty ? `${i.qty} ${unitFor(i.qty, i.unit || '')}` : ''
+              const qtyOf = (i: Item) => i.status === 'matched' && i.stock_unit ? `${Math.round((i.qty || 0) * (i.factor || 1))} ${i.stock_unit}` : i.qty ? `${i.qty} ${i.unit || ''}` : ''
               const box = (title: string, Icon: any, list: Item[], tone: { bg: string; border: string; text: string }, right: (i: Item) => string) => (
                 <div style={{ flex: '1 1 220px', background: tone.bg, border: `1.5px solid ${tone.border}`, borderRadius: 10, padding: '10px 12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 800, color: tone.text, marginBottom: 6 }}>

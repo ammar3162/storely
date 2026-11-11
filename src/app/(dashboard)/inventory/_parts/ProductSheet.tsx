@@ -6,7 +6,7 @@ import { X, Camera, Trash2 } from 'lucide-react'
 import { C } from './constants'
 import type { InventoryState } from './useInventory'
 import UnitsSection from './UnitsSection'
-import { unitFor } from '@/lib/arabicCount'
+import { breakdownQty } from '@/lib/productUnits'
 
 export default function ProductSheet({ m }: { m: InventoryState }) {
   const { showAdd, setShowAdd, saving, editItem, setEditItem, addQty, setAddQty, setConfirm, form, setForm, setShowScan, businessType, lbl, inp, handleSave } = m
@@ -63,10 +63,10 @@ export default function ProductSheet({ m }: { m: InventoryState }) {
 
                   {editItem?(
                     <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:12}}>
-                      <div style={{fontSize:13,color:C.text2,marginBottom:8}}>الكمية الحالية: <b style={{color:C.text}}>{editItem.qty} {unitFor(editItem.qty, form.unit)}</b></div>
+                      <div style={{fontSize:13,color:C.text2,marginBottom:8}}>الكمية الحالية: <b style={{color:C.text}}>{editItem.qty} {form.unit}</b>{breakdownQty(Number(editItem.qty)||0, form.unit, editItem.purchase_units) ? <span style={{color:C.text3}}> ({breakdownQty(Number(editItem.qty)||0, form.unit, editItem.purchase_units)})</span> : null}</div>
                       <label style={lbl}>كمية تضيفها</label>
                       <NumberInput min="0" value={addQty||''} onChange={e=>setAddQty(Number(e.target.value)||0)} style={{...inp(),fontSize:16,fontWeight:600,textAlign:'center'}} placeholder="0"/>
-                      {addQty>0&&<div style={{fontSize:12,color:C.text2,marginTop:6}}>الإجمالي بعد الإضافة: {editItem.qty+addQty} {unitFor(editItem.qty+addQty, form.unit)}</div>}
+                      {addQty>0&&<div style={{fontSize:12,color:C.text2,marginTop:6}}>الإجمالي بعد الإضافة: {editItem.qty+addQty} {form.unit}</div>}
                     </div>
                   ):(
                     <div>

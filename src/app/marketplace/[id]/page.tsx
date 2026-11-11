@@ -7,7 +7,6 @@ import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
 import { getOrgId } from '@/lib/session'
 import { confirmDialog } from '@/components/ConfirmDialog'
-import { unitFor } from '@/lib/arabicCount'
 
 export default function SupplierStorefrontPage() {
   const params = useParams()
@@ -320,7 +319,7 @@ export default function SupplierStorefrontPage() {
                       {(r.items||[]).map((i:any,ii:number)=>(
                         <div key={ii} style={{display:'flex',justifyContent:'space-between',fontSize:12,color:'var(--storely-text)'}}>
                           <span>• {i.name}</span>
-                          <span style={{color:'var(--storely-subtle)'}}>{i.qty} {unitFor(i.qty, i.unit||'')}</span>
+                          <span style={{color:'var(--storely-subtle)'}}>{i.qty} {i.unit||''}</span>
                         </div>
                       ))}
                     </div>

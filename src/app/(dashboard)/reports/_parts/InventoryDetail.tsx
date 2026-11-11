@@ -7,7 +7,6 @@ import { colors, font, card, btnPrimary, btnSecondary, inp, tag } from '@/lib/ds
 import { ListSkeleton } from '@/components/PageSkeleton'
 import { pdfOrgInfo, reportData, getRange, formatRange, BackBtn, PeriodBadge } from './shared'
 import type { FilterPeriod } from './shared'
-import { unitFor } from '@/lib/arabicCount'
 
 export default function InventoryDetail({ period, from, to, onBack, filterBar }: { period:FilterPeriod; from:string; to:string; onBack:()=>void; filterBar?: React.ReactNode }) {
   const [products, setProducts] = useState<any[]>([])
@@ -165,7 +164,7 @@ export default function InventoryDetail({ period, from, to, onBack, filterBar }:
                       <td data-label="الفئة" style={{padding:'11px 14px',fontSize:font.xs,color:colors.text3}}>{p.category||'—'}</td>
                       <td data-label="مصروف" style={{padding:'11px 14px'}}>{dispensed>0?<span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder)}}>▼ {dispensed}</span>:<span style={{color:colors.text4}}>—</span>}</td>
                       <td data-label="مشترى" style={{padding:'11px 14px'}}>{purchased>0?<span style={{...tag(colors.primary,colors.primaryLight,colors.primaryBorder)}}>▲ {purchased}</span>:<span style={{color:colors.text4}}>—</span>}</td>
-                      <td data-label="المتبقي" style={{padding:'11px 14px',fontWeight:900,fontSize:18,color:statusColor}}>{p.qty} <span style={{fontSize:font.xs,fontWeight:400,color:colors.text4}}>{unitFor(p.qty, p.unit)}</span></td>
+                      <td data-label="المتبقي" style={{padding:'11px 14px',fontWeight:900,fontSize:18,color:statusColor}}>{p.qty} <span style={{fontSize:font.xs,fontWeight:400,color:colors.text4}}>{p.unit}</span></td>
                       <td data-label="الحالة" style={{padding:'11px 14px'}}><span style={{...tag(statusColor,isOut?colors.dangerLight:isLow?colors.warningLight:colors.primaryLight,isOut?colors.dangerBorder:isLow?colors.warningBorder:colors.primaryBorder)}}>{statusLabel}</span></td>
                     </tr>
                   )
