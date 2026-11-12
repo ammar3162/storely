@@ -27,7 +27,7 @@ export default function CustomerEmailCard({ orgId, orgName }: { orgId: string; o
 
   const sent: any[] = info?.sent || []
   return (
-    <Card title="مراسلة بالإيميل" subtitle={info?.email ? `إلى ${info.email} — يصله من بريد الدعم ويستطيع الرد عليك` : 'رسالة شخصية لهذا العميل'}
+    <Card title="مراسلة بالإيميل" subtitle={info?.email ? `إلى ${info.email} — يصله باسم «فريق Storely» من support@storely.dev، والرد يرجع لنفس البريد` : 'رسالة شخصية لهذا العميل'}
       actions={info?.sendable && !open ? <Btn small kind="primary" onClick={() => setOpen(true)}><Mail size={14} /> إيميل جديد</Btn> : undefined}>
       {msg && <div style={{ marginBottom: 10 }}><Notice tone={msg.bad ? 'danger' : 'primary'}>{msg.t}</Notice></div>}
       {info && !info.sendable && <div style={{ fontSize: 13, color: A.danger }}>لا يوجد بريد صالح لمالك هذه المنشأة</div>}
