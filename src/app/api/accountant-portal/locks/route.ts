@@ -61,7 +61,7 @@ export async function POST(req: Request) {
     await Promise.all([
       g.db.from('period_lock_log').insert({ org_id: org, month, action: b.action, by_name: by } as any),
       g.db.from('notifications').insert({ org_id: org, type: 'info', read: false,
-        title: b.action === 'lock' ? `🔒 محاسبك أقفل شهر ${label}` : `🔓 محاسبك فتح شهر ${label}`,
+        title: b.action === 'lock' ? `محاسبك أقفل شهر ${label}` : `محاسبك فتح شهر ${label}`,
         message: b.action === 'lock' ? `${by} راجع شهر ${label} وأقفله — لا يمكن تعديل المشتريات أو إقفالات الكاشير فيه.` : `${by} فتح شهر ${label} — أصبح قابلاً للتعديل.` } as any),
     ])
     return NextResponse.json({ success: true })

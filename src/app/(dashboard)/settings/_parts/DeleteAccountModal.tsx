@@ -25,7 +25,7 @@ export default function DeleteAccountModal({ m }: { m: SettingsState }) {
             <button onClick={()=>{setShowDelete(false);setDeleteConfirm('');setDeleteMsg(null)}} style={{...btnSecondary,flex:1,padding:'12px',fontSize:font.sm}}>إلغاء</button>
             <button onClick={deleteAccount} disabled={deleting||deleteConfirm!==form.name}
               style={{flex:2,padding:'12px',background:deleteConfirm===form.name?colors.danger:'#94a3b8',color:'white',border:'none',borderRadius:radius.md,fontSize:font.sm,fontWeight:700,cursor:deleteConfirm===form.name?'pointer':'not-allowed',fontFamily:font.family}}>
-              {deleting?'⏳ جاري الجدولة...':'جدولة الحذف (15 يوم)'}
+              {deleting?'جاري الجدولة...':'جدولة الحذف (15 يوم)'}
             </button>
           </div>
         </div>

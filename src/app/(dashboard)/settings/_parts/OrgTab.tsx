@@ -37,7 +37,7 @@ export default function OrgTab({ m }: { m: SettingsState }) {
                           <FeatureIcon name="🏢" size={24} />
                         )}
                         {logoUploading && (
-                          <div style={{position:'absolute',inset:0,background:'rgba(255,255,255,.85)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>⏳</div>
+                          <div style={{position:'absolute',inset:0,background:'rgba(255,255,255,.85)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:'#203640'}}>جاري الرفع...</div>
                         )}
                         <div style={{position:'absolute',bottom:0,left:0,right:0,background:'rgba(0,0,0,.55)',color:'white',fontSize:9,fontWeight:700,textAlign:'center',padding:'3px 0'}}>
                           تغيير

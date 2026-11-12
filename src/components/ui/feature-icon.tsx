@@ -23,7 +23,7 @@ const featureIcons = {
   '⚠️': AlertTriangle, '💾': Save, '🔐': LockKeyhole, '👤': User, '🐌': Snail, '📅': CalendarDays,
   '📆': CalendarRange, '👆': Hand, '🔒': Lock, '💎': Gem, '📍': MapPin, '🏪': Store, '📋': ClipboardList,
   '⚙️': Settings, '📄': FileText, '🚨': Siren, '🔥': Flame, '📷': Camera, '🖼️': ImageIcon, '🥇': Medal,
-  '🥈': Medal, '🥉': Medal, '🔍': Search, '📝': StickyNote, '🔁': Repeat, '📥': Download, '📤': Send, '⭐': Star, '📩': Send, '🙌': Hand, '✕': X, '✖': X, '❌': X, '✓': Check, '✔': Check, '🥤': CupSoda, '🥛': Milk, '🙋': HandHelping, '🔗': Link2, '📬': Mailbox, '🎁': Gift,
+  '🥈': Medal, '🥉': Medal, '🔍': Search, '📝': StickyNote, '🔁': Repeat, '📥': Download, '📤': Send, '⭐': Star, '📩': Send, '🙌': Hand, '✕': X, '✖': X, '❌': X, '✓': Check, '✔': Check, '🥤': CupSoda, '🥛': Milk, '🙋': HandHelping, '🔗': Link2, '📬': Mailbox, '🎁': Gift, '🌟': Star, '🥐': Wheat, '🧾': Receipt, '🔓': LockKeyhole,
 } as const
 
 export function FeatureIcon({ name, size = 20 }: { name: string; size?: number }) {

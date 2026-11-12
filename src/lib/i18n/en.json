@@ -4075,5 +4075,18 @@
 "ربطات": "Bundles",
 "رولات": "Rolls",
 "أمتار": "Meters",
-"غرامات": "Grams"
+"غرامات": "Grams",
+"إرسال...": "Sending...",
+"جاري التحقق من الرابط...": "Verifying the link...",
+"جاري التحقق والحفظ...": "Verifying and saving...",
+"جاري الجدولة...": "Scheduling...",
+"حفظ...": "Saving...",
+"الإذن لم يُمنح — الحالة: *": "Permission not granted — status: *",
+"خطأ: *": "Error: *",
+"فشل إرسال رسالة واتساب للمورد": "Failed to send the WhatsApp message to the supplier",
+"فشل حفظ الاشتراك بالسيرفر: *": "Failed to save the subscription on the server: *",
+"طلب من محاسبك": "Request from your accountant",
+"محاسبك أقفل شهر *": "Your accountant closed month *",
+"محاسبك فتح شهر *": "Your accountant opened month *",
+"تأكيد النقل": "Confirm transfer"
 }

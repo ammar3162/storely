@@ -78,7 +78,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
     const j = await api.post('/api/invoice-agent/confirm', { org_id: orgId, id: d.id, allow_duplicate: allowDuplicate })
     setBusy(null)
     if (!j.success) {
-      if (j.duplicate && await confirmDialog({ title: 'الفاتورة مسجلة قبل', message: `${j.error}\n\nتسجلها مرة ثانية؟`, confirmText: 'سجّلها' })) return confirm(d, true)
+      if (j.duplicate && await confirmDialog({ title: 'الفاتورة مسجلة قبل', message: `${j.error}\n\nتسجلها مرة ثانية؟`, confirmText: 'سجّلها', type: 'warning' })) return confirm(d, true)
       if (!j.duplicate) toast(j.error || 'فشل الحفظ', 'error')
       return
     }

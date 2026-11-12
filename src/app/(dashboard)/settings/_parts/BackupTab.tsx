@@ -28,7 +28,7 @@ export default function BackupTab({ m }: { m: SettingsState }) {
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}}>
                 <button type="button" onClick={runBackup} disabled={backupLoading}
                   style={{...btnPrimary,padding:'13px',opacity:backupLoading?0.7:1,cursor:backupLoading?'not-allowed':'pointer'}}>
-                  {backupLoading?'⏳ جاري الإنشاء...':'نسخة احتياطية الآن'}
+                  {backupLoading?'جاري الإنشاء...':'نسخة احتياطية الآن'}
                 </button>
                 <button type="button" onClick={loadBackups} style={{...btnSecondary,padding:'13px',fontSize:font.sm}}>
                   <span style={{display:"inline-flex",alignItems:"center",gap:6}}><FeatureIcon name="📋" size={15} /></span> عرض النسخ السابقة
