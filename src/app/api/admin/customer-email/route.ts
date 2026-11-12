@@ -52,9 +52,9 @@ export async function POST(req: Request) {
   const paragraphs = personalize(body, who).split('\n').map(s => s.trim()).filter(Boolean)
   const html = brandEmail({
     title: personalize(subject, who), paragraphs,
-    small: `أرسلها ${admin.full_name || 'فريق Storely'} من فريق Storely — يمكنك الرد على هذا البريد مباشرة.`,
+    small: 'فريق Storely — يمكنك الرد على هذا البريد مباشرة.',
   })
-  const r = await sendEmail({ to: o.email, subject: personalize(subject, who), html, fromName: `${admin.full_name || 'فريق'} من Storely`, fromAddress: 'support@storely.dev', replyTo: admin.email || undefined })
+  const r = await sendEmail({ to: o.email, subject: personalize(subject, who), html, fromName: 'فريق Storely', fromAddress: 'support@storely.dev', replyTo: 'support@storely.dev' })
   if (!r.success) return NextResponse.json({ error: 'تعذّر إرسال البريد' }, { status: 502 })
   await logAdminAction(admin, 'customer_email', orgId, o.orgName || null, { subject: personalize(subject, who), body: body.slice(0, 1000) })
   return NextResponse.json({ success: true })
