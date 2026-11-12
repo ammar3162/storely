@@ -23,7 +23,7 @@ const PLAN_FEATURES: Record<string, Feature[]> = {
   pro: ALL, advanced: ALL, full: ALL,
   ops: ['inventory', 'purchases', 'cashier', 'profitability'],
   essential: ['inventory', 'purchases', 'profitability'],
-  basic: ['inventory', 'purchases'],
+  basic: ['inventory', 'purchases', 'profitability'],   // 2026-11-12: الربحية مجانية لكل الباقات (حتى الأساسية القديمة)
   custom: ['profitability'],
 }
 // باقة غير معروفة = الأساسية القديمة (نفس السلوك القبل)

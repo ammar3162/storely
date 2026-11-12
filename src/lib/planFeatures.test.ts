@@ -6,8 +6,8 @@ describe('plan features', () => {
     for (const p of ['pro', 'advanced']) expect(featuresFrom(p, [])).toEqual({ inventory: true, purchases: true, cashier: true, hr: true, ai: true, profitability: true })
   })
   it('basic opens each feature only with its add-on', () => {
-    expect(featuresFrom('basic', [])).toEqual({ inventory: true, purchases: true, cashier: false, hr: false, ai: false, profitability: false })
-    expect(featuresFrom('basic', ['cashier_closing'])).toEqual({ inventory: true, purchases: true, cashier: true, hr: false, ai: false, profitability: false })
+    expect(featuresFrom('basic', [])).toEqual({ inventory: true, purchases: true, cashier: false, hr: false, ai: false, profitability: true })   // الربحية مجانية لكل الباقات (2026-11-12)
+    expect(featuresFrom('basic', ['cashier_closing'])).toEqual({ inventory: true, purchases: true, cashier: true, hr: false, ai: false, profitability: true })
     expect(featuresFrom('basic', ['hr_full', 'ai_tools'])).toMatchObject({ hr: true, ai: true, cashier: false })
     expect(featuresFrom(null, ['profitability']).profitability).toBe(true)
   })
@@ -33,8 +33,8 @@ describe('new plans (2026-11)', () => {
     expect(addonCoversBranch([], 'c')).toBe(true)
     expect(addonCoversBranch(['a'], null)).toBe(true)
   })
-  it('legacy plans keep exactly the old behaviour', () => {
-    expect(planIncludes('basic', 'profitability')).toBe(false)
+  it('legacy plans keep the old behaviour (profitability now free)', () => {
+    expect(planIncludes('basic', 'profitability')).toBe(true)   // 2026-11-12: الربحية مجانية حتى للأساسية القديمة
     expect(planIncludes(null, 'cashier')).toBe(false)
     expect(planIncludes('pro', 'hr')).toBe(true)
   })
