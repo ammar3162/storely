@@ -181,7 +181,7 @@ describe.skipIf(!enabled)('integration (staging) — plans', async () => {
       expect(down.status).toBe(200)
       expect(await counts()).toEqual(before)
       expect((await db.from('branches').select('is_active').eq('id', (br2 as any).id).single()).data).toMatchObject({ is_active: false })
-      expect(await orgFeatures(db as any, orgId)).toEqual({ inventory: true, purchases: true, cashier: false, hr: false, ai: false, profitability: false })
+      expect(await orgFeatures(db as any, orgId)).toEqual({ inventory: true, purchases: true, cashier: false, hr: false, ai: false, profitability: true })   // الربحية مجانية لكل الباقات (2026-11-12)
 
       // إضافة «موظف إضافي» منتهية ما تعطي رصيد
       const { data: es } = await db.from('marketplace_addons').select('id').eq('slug', 'extra_staff').single()
