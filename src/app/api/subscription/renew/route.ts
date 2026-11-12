@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/verifyOrgAccess'
@@ -44,7 +45,7 @@ export async function POST() {
     if (r.created) {
       forgetOrgSubState(g.me.orgId!)
       // إشعار داخل حساب المالك + إيميل للإدارة (بعد الرد)
-      await db.from('notifications').insert({ org_id: g.me.orgId, type: 'info', read: false, title: 'استلمنا طلب تجديد اشتراكك',
+      await notifyInsert(db, { org_id: g.me.orgId, type: 'info', read: false, title: 'استلمنا طلب تجديد اشتراكك',
         message: 'حسابك يعمل الآن، وسيتواصل معك فريق Storely قريباً لإتمام الدفع.' } as any)
       notifyAdminsLater(db, g.me.orgId!, { kind: 'renewal', expired: r.extended, graceUntil: r.extended ? r.endsAt : null })
     }

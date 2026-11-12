@@ -110,6 +110,11 @@ export function useDashboardShell() {
   const [consentSaving, setConsentSaving] = useState(false)
   const [showMaintenance, setShowMaintenance] = useState(false)
   const [showEnableNotif, setShowEnableNotif] = useState(false)
+  // الآيفون: الإشعارات ما تشتغل إلا لو ستورلي مضاف للشاشة الرئيسية — نشرح له مرة كل أسبوع لين يضيفه
+  const [showIosInstall, setShowIosInstall] = useState(false)
+  const NOTIF_SNOOZE = 'notif_prompt_snooze_until'
+  const snoozed = () => { try { return Number(localStorage.getItem(NOTIF_SNOOZE) || 0) > Date.now() } catch { return false } }
+  const snoozeNotif = (days: number) => { try { localStorage.setItem(NOTIF_SNOOZE, String(Date.now() + days * 864e5)) } catch {} ; setShowEnableNotif(false); setShowIosInstall(false) }
   const [enablingPush, setEnablingPush] = useState(false)
   const [maintenanceMsg, setMaintenanceMsg] = useState('')
   const [showTermsConsent, setShowTermsConsent] = useState(false)
@@ -245,8 +250,12 @@ export function useDashboardShell() {
         await navigator.serviceWorker.register("/sw.js")
         // لا نطلب الإذن تلقائياً — Safari/iOS يتجاهل الطلب لو ما كان ردة فعل مباشرة على ضغطة المستخدم.
         // بس نتحقق من الحالة الحالية، ونعرض زر "فعّل الإشعارات" لو لسا ما تقرر المستخدم.
-        if(typeof Notification !== "undefined" && Notification.permission === "default") {
-          setShowEnableNotif(true)
+        const ua = navigator.userAgent, isIOS = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+        const standalone = window.matchMedia?.('(display-mode: standalone)').matches || (navigator as any).standalone === true
+        if(isIOS && !standalone && typeof (window as any).PushManager === 'undefined') {
+          if(!snoozed()) setShowIosInstall(true)
+        } else if(typeof Notification !== "undefined" && Notification.permission === "default") {
+          if(!snoozed()) setShowEnableNotif(true)
         } else if(typeof Notification !== "undefined" && Notification.permission === "granted") {
           const reg = await navigator.serviceWorker.ready
           const existing = await reg.pushManager.getSubscription()
@@ -306,12 +315,12 @@ export function useDashboardShell() {
     setEnablingPush(true)
     try {
       if(typeof Notification === "undefined") {
-        alert("⚠️ متصفحك لا يدعم الإشعارات إطلاقاً")
+        toast('هذا المتصفح لا يدعم الإشعارات — على الآيفون أضف ستورلي إلى الشاشة الرئيسية أولاً', 'warning')
         setEnablingPush(false); setShowEnableNotif(false); return
       }
       const perm = await Notification.requestPermission()
       if(perm !== "granted") {
-        alert(`الإذن لم يُمنح — الحالة: ${perm}`)
+        toast(perm === 'denied' ? 'الإشعارات مقفلة من إعدادات المتصفح — فعّلها من إعدادات الموقع ثم أعد المحاولة' : 'لم يتم تفعيل الإشعارات', 'warning'); if(perm === 'denied') snoozeNotif(30)
         setEnablingPush(false); return
       }
       const reg = await navigator.serviceWorker.ready
@@ -329,12 +338,12 @@ export function useDashboardShell() {
       })
       const data = await res.json().catch(()=>({}))
       if(res.ok && data.success) {
-        alert("✅ تم تفعيل الإشعارات بنجاح!")
+        toast('تم تفعيل الإشعارات — ستصلك تنبيهات ستورلي على هذا الجهاز', 'success')
       } else {
-        alert(`فشل حفظ الاشتراك بالسيرفر: ${data.error || res.status}`)
+        toast('تعذّر تفعيل الإشعارات، حاول مرة أخرى', 'error')
       }
     } catch(e:any) {
-      alert(`خطأ: ${e?.message || e}`)
+      toast('تعذّر تفعيل الإشعارات، حاول مرة أخرى', 'error')
       console.log("enablePush error:", e)
     }
     setEnablingPush(false)
@@ -424,7 +433,7 @@ export function useDashboardShell() {
   const visibleGroups = NAV_GROUPS.map(g=>({...g, items:g.items.filter(i=>navAllowed(i.href))})).filter(g=>g.items.length)
   async function signOut(){ await sb.auth.signOut(); _cache=null; sessionStorage.clear(); window.location.href='/login' }
 
-  return { pageLock, branchFeat, trialLocked, trialEnds, t, lang, setLang, orgName, setOrgName, subDaysLeft, setSubDaysLeft, orgLogo, setOrgLogo, hasHrAddon, setHasHrAddon, hasProfitAddon, setHasProfitAddon, hasAiAddon, setHasAiAddon, hasExtraBranchAddon, setHasExtraBranchAddon, inApp, setInApp, branchName, setBranchName, userName, setUserName, userInit, setUserInit, lowCount, setLowCount, unread, setUnread, branches, setBranches, orgPlan, setOrgPlan, orgFeat, setOrgFeat, orgMaxBranches, setOrgMaxBranches, userRole, setUserRole, managerPermissions, setManagerPermissions, showMore, setShowMore, showBranch, setShowBranch, branchLowCounts, setBranchLowCounts, ready, setReady, showConsent, setShowConsent, showWaInvite, setShowWaInvite, consentChecked, setConsentChecked, consentSaving, setConsentSaving, showMaintenance, setShowMaintenance, showEnableNotif, setShowEnableNotif, enablingPush, setEnablingPush, maintenanceMsg, setMaintenanceMsg, showTermsConsent, setShowTermsConsent, termsChecked, setTermsChecked, termsSaving, setTermsSaving, profileId, setProfileId, theme, setTheme, confirmStopBranch, setConfirmStopBranch, stoppingBranch, setStoppingBranch, loadAddons, isDesk, router, pathname, navRef, sb, load, isActive, BOT_NAV, visibleGroups, toggleTheme, acceptConsent, confirmWaFirstContact, acceptTermsConsent, enablePush, loadBranchLowCounts, openBranchSelector, selectBranch, stopBranch, navVisible, navAllowed, signOut }
+  return { showIosInstall, snoozeNotif, pageLock, branchFeat, trialLocked, trialEnds, t, lang, setLang, orgName, setOrgName, subDaysLeft, setSubDaysLeft, orgLogo, setOrgLogo, hasHrAddon, setHasHrAddon, hasProfitAddon, setHasProfitAddon, hasAiAddon, setHasAiAddon, hasExtraBranchAddon, setHasExtraBranchAddon, inApp, setInApp, branchName, setBranchName, userName, setUserName, userInit, setUserInit, lowCount, setLowCount, unread, setUnread, branches, setBranches, orgPlan, setOrgPlan, orgFeat, setOrgFeat, orgMaxBranches, setOrgMaxBranches, userRole, setUserRole, managerPermissions, setManagerPermissions, showMore, setShowMore, showBranch, setShowBranch, branchLowCounts, setBranchLowCounts, ready, setReady, showConsent, setShowConsent, showWaInvite, setShowWaInvite, consentChecked, setConsentChecked, consentSaving, setConsentSaving, showMaintenance, setShowMaintenance, showEnableNotif, setShowEnableNotif, enablingPush, setEnablingPush, maintenanceMsg, setMaintenanceMsg, showTermsConsent, setShowTermsConsent, termsChecked, setTermsChecked, termsSaving, setTermsSaving, profileId, setProfileId, theme, setTheme, confirmStopBranch, setConfirmStopBranch, stoppingBranch, setStoppingBranch, loadAddons, isDesk, router, pathname, navRef, sb, load, isActive, BOT_NAV, visibleGroups, toggleTheme, acceptConsent, confirmWaFirstContact, acceptTermsConsent, enablePush, loadBranchLowCounts, openBranchSelector, selectBranch, stopBranch, navVisible, navAllowed, signOut }
 }
 
 export type DashboardShell = ReturnType<typeof useDashboardShell>

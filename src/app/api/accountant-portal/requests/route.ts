@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { currentAccountant, accessFor, accessExpired } from '@/lib/accountantPortalAuth'
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
 
     const { data, error } = await g.db.from('accountant_requests').insert({ org_id: g.access.org_id, accountant_id: g.me.id, kind: b.kind, message, ...target } as any).select(FIELDS).single()
     if (error) return NextResponse.json({ error: 'تعذر إرسال الطلب' }, { status: 500 })
-    await g.db.from('notifications').insert({ org_id: g.access.org_id, type: 'warning', read: false, title: 'طلب من محاسبك', ref_type: 'accountant_request', ref_id: (data as any).id,
+    await notifyInsert(g.db, { org_id: g.access.org_id, type: 'warning', read: false, title: 'طلب من محاسبك', ref_type: 'accountant_request', ref_id: (data as any).id,
       message: `${g.me.name || g.me.email}: ${REQUEST_KINDS[b.kind as keyof typeof REQUEST_KINDS]}${message ? ` — ${message}` : ''}`.slice(0, 600) } as any)
     return NextResponse.json({ success: true, request: (await withTargets(g.db, g.access.org_id, [data]))[0] })
   } catch {
@@ -109,7 +110,7 @@ async function requestMissingVat(g: any, raw: unknown[]) {
   const rows = fresh.slice(0, room).map(t => ({ org_id: org, accountant_id: g.me.id, kind: 'missing_vat', message: null, ...t }))
   const { error } = await g.db.from('accountant_requests').insert(rows as any)
   if (error) return NextResponse.json({ error: 'تعذر إرسال الطلب' }, { status: 500 })
-  await g.db.from('notifications').insert({ org_id: org, type: 'warning', read: false, title: 'طلب من محاسبك', ref_type: 'accountant_request',
+  await notifyInsert(g.db, { org_id: org, type: 'warning', read: false, title: 'طلب من محاسبك', ref_type: 'accountant_request',
     message: `${g.me.name || g.me.email}: يرجى إكمال الرقم الضريبي أو رقم الفاتورة لـ ${rows.length} ${rows.length === 1 ? 'فاتورة' : 'فواتير'} — من «طلبات المحاسب»` } as any)
   return NextResponse.json({ success: true, created: rows.length, skipped: targets.length - rows.length })
 }

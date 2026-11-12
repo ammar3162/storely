@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { currentAccountant, accessExpired, normalizeEmail, isEmail } from '@/lib/accountantPortalAuth'
@@ -66,7 +67,7 @@ async function assignOne(db: ReturnType<typeof sb>, me: Lead, clients: Client[],
     html: brandEmail({ title: 'أُسندت إليك منشأة', preheader: `${lead} أسند إليك ${mine.organizations?.name || 'منشأة'}`, greeting: member.name ? `مرحباً ${member.name}،` : 'مرحباً،',
       paragraphs: [`أسند إليك ${lead} منشأة «${mine.organizations?.name || ''}» ضمن فريق مكتبه في بوابة المحاسب على Storely.`, 'ادخل بهذا البريد الإلكتروني، وسيصلك رمز الدخول عليه.'],
       button: { label: 'الدخول إلى البوابة', rawUrl: `${siteUrl()}/accountant-portal?email=${encodeURIComponent(email)}` } }) }).catch(() => null)
-  await db.from('notifications').insert({ org_id: mine.org_id, branch_id: mine.branch_id || null, type: 'info', read: false, title: 'محاسبك أضاف موظفاً من مكتبه',
+  await notifyInsert(db, { org_id: mine.org_id, branch_id: mine.branch_id || null, type: 'info', read: false, title: 'محاسبك أضاف موظفاً من مكتبه',
     message: `${lead} أسند منشأتك إلى ${member.name || email} من فريق مكتبه، بنفس الأقسام المتاحة له. يمكنك إزالته من الإعدادات ← بوابة المحاسب.`.slice(0, 600) } as any)
   return null
 }

@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 // حماية رمز PIN من التخمين — العدّاد بقاعدة البيانات (دوال staff_login_*) عشان يشتغل صح
@@ -55,7 +56,7 @@ export async function recordSuccess(db: SupabaseClient, key: string) {
 /** تنبيه المالك لما يتقفل حساب موظف بسبب محاولات خاطئة */
 export async function notifyLocked(db: SupabaseClient, staff: { org_id: string; branch_id: string | null; name: string }[]) {
   for (const s of staff) {
-    await db.from('notifications').insert({
+    await notifyInsert(db, {
       org_id: s.org_id, branch_id: s.branch_id || null, type: 'warning', read: false,
       title: `محاولات دخول خاطئة: ${s.name}`,
       message: `أُدخل رمز PIN خاطئ ${PER_ACCOUNT_MAX} مرات متتالية على حساب ${s.name}، وأُقفل الدخول مؤقتاً. إذا لم يكن هو، فغيّر رمزه من صفحة الموظفين.`,

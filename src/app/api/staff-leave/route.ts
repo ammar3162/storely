@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 import { staffFeatureError } from '@/lib/featureRoutes'
 import { managerMay } from '@/lib/managerPerms'
 import { NextResponse } from 'next/server'
@@ -86,7 +87,7 @@ export async function POST(req: Request) {
     if (error) return NextResponse.json({ error: 'فشل إرسال الطلب' }, { status: 500 })
 
     const staffName = (staffRow as any)?.name || 'موظف'
-    await supabase.from('notifications').insert({
+    await notifyInsert(supabase, {
       org_id, branch_id: branch_id || null, type: 'info',
       title: 'طلب إجازة جديد',
       message: `${staffName} يطلب إجازة من ${start_date} إلى ${end_date} (${daysCount} يوم)${reason ? ` — السبب: ${reason}` : ''}`,

@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 import { NextResponse } from 'next/server'
 import { orgHasFeature, branchFeatureError } from '@/lib/planFeatures'
 import { notifyStaffDeduction } from '@/lib/staffDeductionNotice'
@@ -198,7 +199,7 @@ export async function POST(req: Request) {
         org_id, staff_id, attendance_id: (insRow as any).id, work_date: workDate, reason: offKind === 'monthly' ? 'monthly' : 'weekly',
       } as any).select('id').single()
       if (extra) {
-        await supabase.from('notifications').insert({
+        await notifyInsert(supabase, {
           org_id, branch_id, type: 'info', read: false,
           title: `يوم إضافي: ${(staff as any).name}`,
           message: offKind === 'monthly'
@@ -220,13 +221,13 @@ export async function POST(req: Request) {
         const mins = lateMinutes % 60
         const durationText = hrs > 0 ? `${hrs} ساعة${mins > 0 ? ` و${mins} دقيقة` : ''}` : `${mins} دقيقة`
         const penaltyText = penaltyAmount ? ` — غرامة ${penaltyAmount} ⃁ تُخصم تلقائياً (يمكنك إلغاؤها من تقرير الحضور)` : ''
-        await supabase.from('notifications').insert({
+        await notifyInsert(supabase, {
           org_id, branch_id, type: 'warning',
           title: 'تأخير موظف',
           message: `${(staff as any).name} سجّل حضوره متأخراً بـ${durationText}${penaltyText}`,
         } as any)
       } else {
-        await supabase.from('notifications').insert({
+        await notifyInsert(supabase, {
           org_id, branch_id, type: 'success',
           title: 'حضور موظف',
           message: `${(staff as any).name} سجّل حضوره الآن`,

@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 // انتقال المشتركين الحاليين للأسعار الجديدة (2026-11-08، قرار المالك):
 // أول ما يدخل المالك (اشتراك مدفوع على باقة قديمة أو جاهزة) تطلع له رسالة شكر ويختار المزايا اللي يحتاجها.
 // الاختيار يُطبَّق مع تجديد اشتراكه القادم (activate-user) بسعره الجديد، حتى لو أعلى (قرار المالك 2026-11-09).
@@ -146,6 +147,6 @@ export async function applyPricingSwitch(db: SupabaseClient, orgId: string, ends
     else if (ex) await db.from('org_addon_subscriptions').update({ status: 'cancelled', cancelled_at: nowIso } as any).eq('org_id', orgId).eq('addon_id', id)
   }
   await db.from('pricing_switches').update({ outcome: 'switch', applied_at: nowIso, current_monthly: p.current, new_monthly: p.projected, branches: br } as any).eq('org_id', orgId)
-  await db.from('notifications').insert({ org_id: orgId, type: 'success', read: false, title: 'تم تطبيق اختيارك للمزايا', message: `بدأت فاتورتك الجديدة: ${p.projected} ⃁ شهرياً للمزايا التي اخترتها.` } as any)
+  await notifyInsert(db, { org_id: orgId, type: 'success', read: false, title: 'تم تطبيق اختيارك للمزايا', message: `بدأت فاتورتك الجديدة: ${p.projected} ⃁ شهرياً للمزايا التي اخترتها.` } as any)
   return { applied: true as const, monthly: p.projected }
 }

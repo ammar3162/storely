@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 import { NextResponse } from 'next/server'
 import { isCronRequest } from '@/lib/cronAuth'
 import { createClient } from '@supabase/supabase-js'
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
 
       // إشعار داخل النظام (يظهر بجرس الإشعارات بلوحة المالك) — بجانب واتساب
       const branchKey = key !== 'none' ? key : null
-      await supabase.from('notifications').insert({
+      await notifyInsert(supabase, {
         org_id: org.id, branch_id: branchKey, type: 'warning',
         title: 'منتجات قاربت صلاحيتها على الانتهاء',
         message: `${sorted.length} منتج قرب ينتهي خلال 7 أيام: ${sorted.slice(0,3).map((p:any)=>p.name).join('، ')}${sorted.length>3?' وغيرها':''}`,

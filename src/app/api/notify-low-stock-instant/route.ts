@@ -1,9 +1,9 @@
+import { notifyInsert } from '@/lib/notify'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { isSubscriptionActive } from '@/lib/subscription'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
-import { sendPushToOrg } from '@/lib/push'
 import { orderedSinceLastRestock, logSupplierOrder } from '@/lib/supplierOrderGate'
 import { fetchExternal } from '@/lib/fetchExternal'
 import { unitFor } from '@/lib/arabicCount'
@@ -156,7 +156,7 @@ export async function POST(req: Request) {
     // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
     const notifTitle = `نقص مخزون: ${(product as any).name}`
     const notifMsg = `المتبقي: ${new_qty} ${unitFor(new_qty, (product as any).unit)}` + (sentToSupplier ? ' — تم إرسال طلب توريد للمورد تلقائياً' : ' — يرجى الطلب في أقرب وقت')
-    await (db as any).from('notifications').insert({
+    await notifyInsert((db as any), {
       org_id, branch_id: (product as any).branch_id || null, title: notifTitle, message: notifMsg, type: 'warning', read: false
     })
 
@@ -214,8 +214,6 @@ ${daysMsg}
           status: ownerSendResult.ok ? 'sent' : 'failed',
         })
       } catch {}
-      // إشعار فوري بالمتصفح/الجوال — لا يعتمد على واتساب إطلاقاً
-      sendPushToOrg(org_id, '⚠️ نقص مخزون', `${(product as any).name} وصل للحد الأدنى — المتبقي ${new_qty} ${unitFor(new_qty, (product as any).unit)}`, '/inventory').catch(()=>{})
     }
 
     return NextResponse.json({ success: true })

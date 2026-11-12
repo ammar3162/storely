@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
       await db.from('staff_members').update({ assigned_products: [...assigned, productId] } as any).eq('id', staff_id).eq('org_id', org_id)
     }
 
-    await db.from('notifications').insert({
+    await notifyInsert(db, {
       org_id, branch_id, type: 'info', read: false,
       title: created ? `منتج جديد من ${staffName}` : `إضافة كمية من ${staffName}`,
       message: `${name} — ${qty} ${created ? unit : ((existing as any)?.unit || unit)}${created ? ' (منتج جديد)' : ''}`,

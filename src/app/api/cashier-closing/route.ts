@@ -1,9 +1,9 @@
+import { notifyInsert } from '@/lib/notify'
 import { NextResponse } from 'next/server'
 import { branchFeatureError } from '@/lib/planFeatures'
 import { lockedFor, lockedFromError } from '@/lib/periodLock'
 import { createClient } from '@supabase/supabase-js'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
-import { sendPushToOrg } from '@/lib/push'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { verifyOwnerPassword } from '@/lib/ownerPassword'
 import { canCloseCashier } from '@/lib/staffRoles'
@@ -133,20 +133,18 @@ export async function POST(req: Request) {
       // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
       // الإشعار داخل النظام بالرمز ⃁، والإشعار الفوري بـ«ر.س» لأن بعض الجوالات لا تعرض الرمز الجديد
       const statusText = (cur: string) => status === 'balanced' ? 'مطابق تماماً' : status === 'deficit' ? `يوجد عجز: ${Math.abs(difference).toFixed(2)} ${cur} — السبب: ${deficitReason}` : `يوجد زيادة: ${Math.abs(difference).toFixed(2)} ${cur}`
-      await (supabase as any).from('notifications').insert({
+      await notifyInsert((supabase as any), {
         org_id, branch_id: branch_id || null, title: `إقفال كاشير: ${staff_name}`, message: `إجمالي المبيعات: ${sales.toFixed(2)} ⃁ — ${statusText('⃁')}`, type: 'info', read: false
       })
       // قرار العجز — إشعار داخل النظام فقط، فيه زر اعتماد الخصم أو رفضه
       if (status === 'deficit' && data) {
-        await (supabase as any).from('notifications').insert({
+        await notifyInsert((supabase as any), {
           org_id, branch_id: branch_id || null, type: 'warning', read: false,
           title: `عجز بانتظار قرارك: ${staff_name}`,
           message: `عجز ${Math.abs(difference).toFixed(2)} ⃁ بإقفال ${businessDate} — السبب: ${deficitReason}. تخصمه من راتب الكاشير؟`,
           ref_type: 'cashier_deficit', ref_id: (data as any).id,
         })
       }
-      // إشعار فوري بالمتصفح/الجوال — لا يعتمد على واتساب إطلاقاً
-      sendPushToOrg(org_id, `إقفال كاشير: ${staff_name}`, `إجمالي المبيعات: ${sales.toFixed(2)} ر.س — ${statusText('ر.س')}`, '/reports').catch(()=>{})
       const { data: allBranches } = await supabase.from('branches').select('id,name,whatsapp_number').eq('org_id', org_id).eq('is_active', true)
       const isMultiBranch = (allBranches || []).length > 1
       const currentBranch = branch_id ? (allBranches || []).find((b: any) => b.id === branch_id) : null

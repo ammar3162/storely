@@ -1,9 +1,9 @@
+import { notifyInsert } from '@/lib/notify'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { changeOrgPlan, PLAN_CAPS } from '@/lib/changePlan'
 import { PLAN_PRICING, isNewPlan, type PlanKey } from '@/lib/planPricing'
-import { sendPushToOrg } from '@/lib/push'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   if (action === 'reject') {
     const why = typeof reason === 'string' ? reason.trim().slice(0, 300) : ''
     await db.from('plan_requests').update({ status: 'rejected', reason: why || null, decided_at: now, decided_by_name: admin.full_name } as any).eq('id', id).eq('status', 'pending')
-    await db.from('notifications').insert({ org_id: q.org_id, title: `طلب الترقية للباقة ${label}`, message: why ? `لم تتم الموافقة: ${why}` : 'لم تتم الموافقة على الطلب — تواصل معنا إذا كان لديك استفسار', type: 'warning', read: false } as any)
+    await notifyInsert(db, { org_id: q.org_id, title: `طلب الترقية للباقة ${label}`, message: why ? `لم تتم الموافقة: ${why}` : 'لم تتم الموافقة على الطلب — تواصل معنا إذا كان لديك استفسار', type: 'warning', read: false } as any)
     await logAdminAction(admin, 'reject_plan_request', q.org_id, orgName, { request_id: id, target_plan: q.target_plan, reason: why })
     return NextResponse.json({ success: true })
   }
@@ -53,8 +53,7 @@ export async function POST(req: Request) {
   const res = await changeOrgPlan(db, q.org_id, { planName: q.target_plan, maxBranches: br, maxStaff: caps.staff * per, maxSuppliers: caps.suppliers * per, billingCycle: q.organizations?.billing_cycle })
   if (!res.ok) return NextResponse.json({ error: res.error }, { status: 500 })
   await db.from('plan_requests').update({ status: 'approved', decided_at: now, decided_by_name: admin.full_name } as any).eq('id', id)
-  await db.from('notifications').insert({ org_id: q.org_id, title: `تمت ترقيتك للباقة ${label}`, message: 'أصبحت جميع مزايا الباقة الجديدة متاحة لك الآن', type: 'success', read: false } as any)
-  sendPushToOrg(q.org_id, `تمت ترقيتك للباقة ${label}`, 'أصبحت جميع مزايا الباقة الجديدة متاحة لك الآن', '/addons-market').catch(() => {})
+  await notifyInsert(db, { org_id: q.org_id, title: `تمت ترقيتك للباقة ${label}`, message: 'أصبحت جميع مزايا الباقة الجديدة متاحة لك الآن', type: 'success', read: false } as any)
   await logAdminAction(admin, 'approve_plan_request', q.org_id, orgName, { request_id: id, target_plan: q.target_plan })
   return NextResponse.json({ success: true })
 }

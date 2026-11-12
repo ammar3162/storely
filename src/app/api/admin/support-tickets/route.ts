@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
@@ -43,7 +44,7 @@ export async function POST(req: Request) {
     const { error } = await db.from('support_tickets').update({ admin_reply: reply, replied_at: now, replied_by_name: admin.full_name, status: body.resolve ? 'resolved' : 'open', ...(body.resolve ? { resolved_at: now } : {}) } as any).eq('id', tk.id)
     if (error) return NextResponse.json({ error: 'تعذّر حفظ الرد' }, { status: 500 })
     // الرد يوصل العميل إشعاراً داخل النظام (جرس الإشعارات)
-    await db.from('notifications').insert({ org_id: tk.org_id, branch_id: tk.branch_id || null, type: 'info', read: false,
+    await notifyInsert(db, { org_id: tk.org_id, branch_id: tk.branch_id || null, type: 'info', read: false,
       title: `رد الدعم الفني — طلبك رقم ${tk.number}`, message: reply, ref_type: 'support_ticket', ref_id: tk.id } as any)
     await logAdminAction(admin, 'support_reply', tk.org_id, null, { ticket: tk.number })
     return NextResponse.json({ success: true })

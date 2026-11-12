@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 import { managerMay } from '@/lib/managerPerms'
 import { orgHasFeature, lockedMessage, branchFeatureError } from '@/lib/planFeatures'
 import { NextResponse } from 'next/server'
@@ -117,7 +118,7 @@ export async function POST(req: Request) {
       // إشعار داخل النظام للمالك (يظهر بجرس الإشعارات)
       const staffName = (staffRow as any)?.name || 'موظف'
       const branchId = (staffRow as any)?.branch_id || null
-      await supabase.from('notifications').insert({
+      await notifyInsert(supabase, {
         org_id, branch_id: branchId, type: 'info',
         title: 'طلب سلفة جديد',
         message: `${staffName} يطلب سلفة بمبلغ ${amountNum} ⃁${reason ? ` — السبب: ${reason}` : ''}`,
