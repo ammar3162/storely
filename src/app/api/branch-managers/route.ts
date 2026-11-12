@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { normalizeWhatsapp } from '@/lib/phoneNormalize'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
-import { cleanManagerPerms } from '@/lib/managerPerms'
+import { cleanManagerPerms, PERM_FEATURES } from '@/lib/managerPerms'
+import { stripPermsByFeature } from '@/lib/planFeatures'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
     id: newUser.user.id,
     org_id, branch_id,
     full_name, role: 'manager',
-    permissions: cleanManagerPerms(permissions),
+    permissions: await stripPermsByFeature(db, org_id, branch_id, cleanManagerPerms(permissions), PERM_FEATURES),
     status: 'active',
     ...(owner ? { subscription_type: (owner as any).subscription_type, subscription_ends_at: (owner as any).subscription_ends_at } : {}),
     ...(report.phone ? { report_whatsapp: report.phone, whatsapp_consent: true, whatsapp_consent_at: new Date().toISOString() } : {}),
@@ -102,7 +103,11 @@ export async function PATCH(req: Request) {
     if (!br) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
     update.branch_id = branch_id
   }
-  if (permissions !== undefined) update.permissions = cleanManagerPerms(permissions)
+  if (permissions !== undefined) {
+    let br = update.branch_id as string | undefined
+    if (!br) { const { data: cur } = await db.from('profiles').select('branch_id').eq('id', id).eq('org_id', org_id).maybeSingle(); br = (cur as any)?.branch_id }
+    update.permissions = await stripPermsByFeature(db, org_id, br, cleanManagerPerms(permissions), PERM_FEATURES)
+  }
   if (report_whatsapp !== undefined) {
     const report = reportPhone(report_whatsapp, whatsapp_consent)
     if (report.error) return NextResponse.json({ error: report.error }, { status: 400 })

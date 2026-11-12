@@ -23,6 +23,13 @@ async function sendForOrg(supabase: any, org: any) {
   const features = await orgFeatures(supabase, org.id)
   const reports = await buildBranchReports(supabase, org.id, branches as any[], features)
   const full = fullView(features)
+  // كل فرع حسب ميزاته (الإضافة ممكن تكون لفرع واحد): قسم ميزة مو مفعّلة لهالفرع ما يطلع في تقريره
+  const branchView: Record<string, typeof full> = {}
+  for (const b of (branches || []) as any[]) {
+    const v = fullView(await orgFeatures(supabase, org.id, undefined, b.id))
+    branchView[b.id] = { decisions: full.decisions && v.decisions, sales: full.sales && v.sales, staff: full.staff && v.staff, stock: full.stock && v.stock, purchases: full.purchases && v.purchases }
+  }
+  const viewOf = (branchId: string) => branchView[branchId] || full
   const multi = (branches || []).length > 1
 
   // المستلمين — رقم واحد ما يوصله أكثر من رسالة
@@ -36,17 +43,18 @@ async function sendForOrg(supabase: any, org: any) {
   // ١) المالك: كل الفروع (واتساب بس لو وافق على الرسائل — وموافقته تشمل أرقام فروعه)
   const ownerOk = (owner as any)?.whatsapp_consent === true
   if (ownerOk) {
-    const blocks = reports.map(r => ({ name: r.branchName, text: branchBlock(r, full) })).filter(b => b.text) as { name: string; text: string }[]
+    const blocks = reports.map(r => ({ name: r.branchName, text: branchBlock(r, viewOf(r.branchId)) })).filter(b => b.text) as { name: string; text: string }[]
     add(org.whatsapp_number, reportMessage(org.name, blocks, multi))
   }
   for (const r of reports) {
     const branch = (branches as any[]).find(b => b.id === r.branchId)
     // ٢) رقم الفرع (يحدده المالك): تقرير الفرع كامل
-    const text = branchBlock(r, full)
+    const text = branchBlock(r, viewOf(r.branchId))
     if (ownerOk) add(branch?.whatsapp_number, text ? reportMessage(org.name, [{ name: r.branchName, text }], multi) : null)
     // ٣) مدير الفرع: تقرير فرعه حسب صلاحياته (وافق على الرسائل وحسابه شغال)
     for (const m of ((managers || []) as any[]).filter(m => m.branch_id === r.branchId && m.whatsapp_consent === true && m.status !== 'suspended')) {
-      const v = { ...full, sales: full.sales && managerMay({ role: 'manager', permissions: m.permissions }, 'reports'), staff: full.staff && managerMay({ role: 'manager', permissions: m.permissions }, 'staff', 'attendance', 'hr') }
+      const bv = viewOf(r.branchId)
+      const v = { ...bv, sales: bv.sales && managerMay({ role: 'manager', permissions: m.permissions }, 'reports'), staff: bv.staff && managerMay({ role: 'manager', permissions: m.permissions }, 'staff', 'attendance', 'hr') }
       const mt = branchBlock(r, v)
       add(m.report_whatsapp, mt ? reportMessage(org.name, [{ name: r.branchName, text: mt }], multi) : null)
     }

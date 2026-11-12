@@ -3,7 +3,7 @@ import { Package, BarChart3, ShieldCheck, Wallet, Send, ShoppingCart, Save } fro
 import type { StaffPage } from './useStaffManagement'
 
 export default function PermissionsModal({ m }: { m: StaffPage }) {
-  const { permOk, staff, editingPerms, setEditingPerms, editingRole, editPerms, setEditPerms, hasCashier, savePermissions } = m
+  const { permOkFor, staff, editingPerms, setEditingPerms, editingRole, editPerms, setEditPerms, hasCashier, savePermissions } = m
   return (
     <>
       {editingPerms && (
@@ -17,15 +17,15 @@ export default function PermissionsModal({ m }: { m: StaffPage }) {
                 {key:'inventory',  label:'الإضافة للمخزون',  Icon:Package, locked:false},
                 {key:'purchases',  label:'تسجيل المشتريات', Icon:ShoppingCart, locked:false},
                 {key:'reports',    label:'التقارير',   Icon:BarChart3, locked:false},
-                {key:'cashier',    label:'إقفال الكاشير', Icon:Wallet, locked:!hasCashier||editingRole==='cashier'},
-              ].filter(p=>p.key==='reports'||p.key==='cashier'||permOk(p.key)).map(p=>(
+                {key:'cashier',    label:'إقفال الكاشير', Icon:Wallet, locked:editingRole==='cashier'},
+              ].filter(p=>(p.key==='cashier'&&editingRole==='cashier')||permOkFor(p.key, staff.find(s=>s.id===editingPerms)?.branch_id)).map(p=>(
                 <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'12px',background:(editPerms as any)[p.key]?'#f0fdfa':'#f9fafb',borderRadius:10,border:`1.5px solid ${(editPerms as any)[p.key]?'#203640':'var(--storely-border)'}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                   <input type="checkbox" checked={(editPerms as any)[p.key]} disabled={p.locked}
                     onChange={e=>!p.locked&&setEditPerms(prev=>({...prev,[p.key]:e.target.checked}))}
                     style={{accentColor:'#203640',width:16,height:16}}/>
                   <div>
                     <div style={{fontSize:13,fontWeight:700,color:(editPerms as any)[p.key]?'#203640':'#374151',display:'flex',alignItems:'center',gap:5}}><p.Icon size={14} strokeWidth={2.25}/> {p.label}</div>
-                    {p.locked&&<div style={{fontSize:10,color:'var(--storely-subtle)'}}>{p.key==='cashier'?(!hasCashier?'يحتاج إضافة إقفال الكاشير':'دوره كاشير'):'افتراضي'}</div>}
+                    {p.locked&&<div style={{fontSize:10,color:'var(--storely-subtle)'}}>{p.key==='cashier'?'دوره كاشير':'افتراضي'}</div>}
                   </div>
                 </label>
               ))}

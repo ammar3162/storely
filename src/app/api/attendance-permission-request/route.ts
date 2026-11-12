@@ -1,3 +1,4 @@
+import { staffFeatureError } from '@/lib/featureRoutes'
 import { managerMay } from '@/lib/managerPerms'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
@@ -19,6 +20,7 @@ export async function POST(req: Request) {
     const auth = await verifyStaffToken(extractStaffToken(req))
     if (!auth.valid || !auth.data) return NextResponse.json({ error: auth.error, reason: auth.reason }, { status: 401 })
     const { org_id, staff_id } = auth.data
+    { const locked = await staffFeatureError(auth.data as any, 'hr'); if (locked) return NextResponse.json({ error: locked }, { status: 403 }) }
     const body = await req.json().catch(() => ({}))
     const reason = typeof body.reason === 'string' ? body.reason.trim().slice(0, 300) : ''
 

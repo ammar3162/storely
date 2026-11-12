@@ -1,3 +1,4 @@
+import { orgFeatures } from '@/lib/planFeatures'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
@@ -31,6 +32,9 @@ export async function GET(req: Request) {
       const { data: owner } = await db.from('profiles').select('whatsapp_consent').eq('org_id', org.id).eq('role', 'owner').maybeSingle()
       if ((owner as any)?.whatsapp_consent !== true) continue
 
+      // التقرير الأسبوعي = ملخص المخزون (يحتاج ميزة المخزون)، والتوقعات وقائمة الشراء المقترحة = أدوات الذكاء
+      const feat = await orgFeatures(db, org.id, org.plan)
+      if (!feat.inventory) continue
       const { data: products } = await db.from('products')
         .select('id,name,qty,reorder_point,unit,category')
         .eq('org_id', org.id).eq('is_active', true)
@@ -83,7 +87,7 @@ export async function GET(req: Request) {
       report += `• أصناف ناقصة: ${low.length}\n`
       report += `• نفدت تماماً: ${out.length}\n\n`
 
-      if (urgentList.length > 0) {
+      if (feat.ai && urgentList.length > 0) {
         report += `⚡ *تنبيه عاجل — ستنفد خلال أسبوع:*\n`
         urgentList.slice(0,5).forEach(p => { report += `• ${p.name}: المتبقي ${p.daysLeft} يوم\n` })
         report += '\n'
@@ -111,7 +115,7 @@ export async function GET(req: Request) {
           return { ...p, toOrder }
         }).slice(0, 5)
 
-      if (toBuy.length > 0) {
+      if (feat.ai && toBuy.length > 0) {
         report += `🛒 *قائمة الشراء المقترحة:*\n`
         toBuy.forEach(p => { report += `• ${p.name}: اطلب ${p.toOrder} ${unitFor(p.toOrder, p.unit)}\n` })
         report += '\n'

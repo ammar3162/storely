@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId, getCurrentProfile } from '@/lib/verifyOrgAccess'
 import { DEVICE_UNVERIFIED_ERROR, DEVICE_UNVERIFIED_REASON } from '@/lib/deviceMessages'
+import { checkSupplierCapacity } from '@/lib/supplierCapacity'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -160,7 +161,10 @@ export async function POST(req: Request) {
       // إضافة المورد لموردي المنشأة (أو ربطه لو موجود بنفس الاسم) — الاسم والرقم من ملف المورد
       const { data: existing } = await db.from('suppliers').select('id').eq('org_id', org_id).eq('name', supplier.business_name).limit(1)
       if (!existing?.length) {
-        await db.from('suppliers').insert({ org_id, branch_id, name: supplier.business_name, phone: supplier.phone || null, marketplace_supplier_id: supplier_id } as any)
+        // نفس حد الموردين اللي على «إضافة مورد» (كان قبول العرض يضيف مورد حتى لو وصل الحد)
+        const capacity = await checkSupplierCapacity(db as any, org_id)
+        if (!capacity.ok) return NextResponse.json({ error: capacity.error }, { status: 403 })
+        await db.from('suppliers').insert({ org_id, branch_id, name: supplier.business_name, phone: supplier.phone || null, marketplace_supplier_id: supplier_id, addon_subscription_id: capacity.addonSubscriptionId } as any)
       } else {
         await db.from('suppliers').update({ marketplace_supplier_id: supplier_id, branch_id } as any).eq('id', (existing[0] as any).id)
       }

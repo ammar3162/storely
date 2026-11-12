@@ -38,7 +38,10 @@ export const A = {
 
 // ── الجلسة ──
 export type AdminInfo = { id: string; email: string; full_name: string; role: string; permissions?: Record<string, boolean>; totp_enabled?: boolean }
-type Ctx = { admin: AdminInfo; can: (perm?: string | string[]) => boolean; logout: () => void; setAdmin: (a: AdminInfo) => void }
+export type AdminCounts = { addons: number; demos: number; renewals: number }
+type Ctx = { admin: AdminInfo; can: (perm?: string | string[]) => boolean; logout: () => void; setAdmin: (a: AdminInfo) => void; counts?: AdminCounts }
+/** داخل صفحة تبويبات: عنوان القسم يصير مختصر (التبويب نفسه هو العنوان) */
+export const HubContext = createContext(false)
 export const AdminContext = createContext<Ctx | null>(null)
 export function useAdmin() {
   const c = useContext(AdminContext)
@@ -74,6 +77,13 @@ export const daysLeft = (d?: string | null) => (d ? Math.ceil((new Date(d).getTi
 /** عنوان الصفحة — أيقونته تُؤخذ تلقائياً من عنصر القائمة الجانبية للمسار الحالي */
 export function PageHeader({ title, subtitle, actions, icon }: { title: string; subtitle?: ReactNode; actions?: ReactNode; icon?: LucideIcon }) {
   const pathname = usePathname() || ''
+  const inHub = useContext(HubContext)
+  if (inHub) return (subtitle || actions) ? (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
+      <p style={{ fontSize: 14, color: A.text2, lineHeight: 1.7, flex: '1 1 380px', minWidth: 0, maxWidth: 820 }}>{subtitle}</p>
+      {actions && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{actions}</div>}
+    </div>
+  ) : null
   const Icon = icon || (navItemFor(pathname)?.icon as LucideIcon | undefined)
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 28 }}>

@@ -41,7 +41,12 @@ export function useStaffManagement() {
   const [hasCashier, setHasCashier] = useState(['ops','full','pro','advanced'].includes(orgPlan))
   // «ابنِ باقتك»: ميزات المنشأة — نخفي صلاحيات الصرف/المخزون/المشتريات لو ما هي باشتراكه
   const [orgFeat, setOrgFeat] = useState<Record<string, boolean | undefined>>({})
+  const [branchFeat, setBranchFeat] = useState<Record<string, Record<string, boolean | undefined>>>({})
+  const [featLoaded, setFeatLoaded] = useState(false)
   const permOk = (key: string) => permAvailable(key, orgFeat)
+  // صلاحية الموظف تظهر فقط لو ميزتها مفعّلة لفرعه (الإضافات ممكن تكون لفروع معيّنة) — وقبل ما توصل الميزات ما نعرض شي
+  const featFor = (branchId?: string | null) => (branchId && branchFeat[branchId]) || orgFeat
+  const permOkFor = (key: string, branchId?: string | null) => featLoaded && (key === 'reports' || (key === 'cashier' ? featFor(branchId).cashier === true : permAvailable(key, featFor(branchId))))
   const [newSendClosingWA, setNewSendClosingWA] = useState(true)
   const [revealedPin, setRevealedPin] = useState<{name:string,phone:string,pin:string}|null>(null)
   const [visiblePins, setVisiblePins] = useState<Record<string,boolean>>({})
@@ -84,6 +89,8 @@ export function useStaffManagement() {
   // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
   useLiveRefresh(orgId, ['staff_members'], ()=>{ if(orgId) loadStaff(orgId) })
   useEffect(() => { init() }, [])
+  // فرع بدون إقفال الكاشير: دور «كاشير» ما يكون مختار
+  useEffect(() => { if (featLoaded && newRole === 'cashier' && !permOkFor('cashier', newBranch)) setNewRole('staff') }, [featLoaded, newBranch, branchFeat])
 
   async function init() {
     setLoading(true)
@@ -97,7 +104,7 @@ export function useStaffManagement() {
       oid = await getOrgId(); if(!oid) return
     }
     setOrgId(oid)
-    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setIsOwnerSM(me?.role==='owner'); if(me?.org?.features){ setHasCashier(!!me.org.features.cashier); setOrgFeat(me.org.features) } })
+    getMe().then(me=>{ if(me?.org?.currency) setCurr(currencySymbol(me.org.currency)); setIsOwnerSM(me?.role==='owner'); if(me?.org?.features){ setHasCashier(!!me.org.features.cashier); setOrgFeat(me.org.features) } setBranchFeat((me?.org as any)?.branch_features || {}); setFeatLoaded(true) })
     const settingsRes = await api.get('/api/org-settings', { org_id: oid })
     const orgLimits = settingsRes.settings
     const h = Number((orgLimits as any)?.business_day_start_hour ?? 4)
@@ -317,7 +324,7 @@ export function useStaffManagement() {
   const activeCount   = visibleStaff.filter(s=>s.is_active).length
   const inactiveCount = visibleStaff.filter(s=>!s.is_active).length
 
-  return { orgFeat, permOk, showUnassigned, setShowUnassigned, pickerFor, setPickerFor, assigning, setAssigning, staff, setStaff, branches, setBranches, isOwnerSM, setIsOwnerSM, moveFor, setMoveFor, moveTo, setMoveTo, moving, setMoving, orgId, setOrgId, curr, setCurr, orgNotifyClosingWA, setOrgNotifyClosingWA, loading, setLoading, showAdd, setShowAdd, newPermissions, setNewPermissions, editingPerms, setEditingPerms, editingRole, setEditingRole, reportMode, setReportMode, editPerms, setEditPerms, newName, setNewName, newPhone, setNewPhone, staffCountry, setStaffCountry, newBranch, setNewBranch, newRole, setNewRole, hasCashier, setHasCashier, newSendClosingWA, setNewSendClosingWA, revealedPin, setRevealedPin, visiblePins, setVisiblePins, revealedPins, setRevealedPins, expandedId, setExpandedId, editingStaffPhoneId, setEditingStaffPhoneId, editStaffPhoneVal, setEditStaffPhoneVal, savingStaffPhone, setSavingStaffPhone, visible, setVisible, maxStaff, setMaxStaff, products, setProducts, assigningId, setAssigningId, editingNameId, setEditingNameId, editNameValue, setEditNameValue, savingName, setSavingName, reportStaff, setReportStaff, staffReport, setStaffReport, staffClosings, setStaffClosings, reportLoading, setReportLoading, selectedProds, setSelectedProds, assignSearch, setAssignSearch, sharedProducts, setSharedProducts, dayStartHour, setDayStartHour, dayStartLoaded, setDayStartLoaded, showHoursModal, setShowHoursModal, savingHours, setSavingHours, orphans, setOrphans, orgPlan, visibleStaff, activeCount, inactiveCount, saveStaffPhone, init, loadStaff, moveOrphanHere, loadProducts, openReport, openAssign, saveAssigned, quickAssignProduct, confirmMove, loadBranches, addStaff, savePermissions, saveName, saveShopHours, toggleActive, deleteStaff, toggleSendClosingWA, togglePin, regeneratePin }
+  return { orgFeat, permOk, permOkFor, featFor, featLoaded, showUnassigned, setShowUnassigned, pickerFor, setPickerFor, assigning, setAssigning, staff, setStaff, branches, setBranches, isOwnerSM, setIsOwnerSM, moveFor, setMoveFor, moveTo, setMoveTo, moving, setMoving, orgId, setOrgId, curr, setCurr, orgNotifyClosingWA, setOrgNotifyClosingWA, loading, setLoading, showAdd, setShowAdd, newPermissions, setNewPermissions, editingPerms, setEditingPerms, editingRole, setEditingRole, reportMode, setReportMode, editPerms, setEditPerms, newName, setNewName, newPhone, setNewPhone, staffCountry, setStaffCountry, newBranch, setNewBranch, newRole, setNewRole, hasCashier, setHasCashier, newSendClosingWA, setNewSendClosingWA, revealedPin, setRevealedPin, visiblePins, setVisiblePins, revealedPins, setRevealedPins, expandedId, setExpandedId, editingStaffPhoneId, setEditingStaffPhoneId, editStaffPhoneVal, setEditStaffPhoneVal, savingStaffPhone, setSavingStaffPhone, visible, setVisible, maxStaff, setMaxStaff, products, setProducts, assigningId, setAssigningId, editingNameId, setEditingNameId, editNameValue, setEditNameValue, savingName, setSavingName, reportStaff, setReportStaff, staffReport, setStaffReport, staffClosings, setStaffClosings, reportLoading, setReportLoading, selectedProds, setSelectedProds, assignSearch, setAssignSearch, sharedProducts, setSharedProducts, dayStartHour, setDayStartHour, dayStartLoaded, setDayStartLoaded, showHoursModal, setShowHoursModal, savingHours, setSavingHours, orphans, setOrphans, orgPlan, visibleStaff, activeCount, inactiveCount, saveStaffPhone, init, loadStaff, moveOrphanHere, loadProducts, openReport, openAssign, saveAssigned, quickAssignProduct, confirmMove, loadBranches, addStaff, savePermissions, saveName, saveShopHours, toggleActive, deleteStaff, toggleSendClosingWA, togglePin, regeneratePin }
 }
 
 export type StaffPage = ReturnType<typeof useStaffManagement>

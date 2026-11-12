@@ -22,20 +22,22 @@ const ALL_OFF = Object.fromEntries(MANAGER_PERMS.map(p => [p.key, false])) as Re
 const countOn = (p: Record<string, boolean> | null | undefined) => MANAGER_PERMS.filter(x => p?.[x.key]).length
 
 // شبكة الصلاحيات مقسّمة مجموعات — مع «الكل» لكل مجموعة
-function PermGrid({ value, onChange }: { value: Record<string, boolean>; onChange: (v: Record<string, boolean>) => void }) {
+// feat = ميزات فرع المدير (الإضافة ممكن تكون لفروع معيّنة) — الصلاحية اللي ميزتها مو مفعّلة لفرعه ما تنعرض
+function PermGrid({ value, onChange, feat }: { value: Record<string, boolean>; onChange: (v: Record<string, boolean>) => void; feat?: Partial<Record<string, boolean>> }) {
+  const LIST = MANAGER_PERMS.filter(p => permAvailable(p.key, feat))
   const set = (k: string, on: boolean) => onChange({ ...value, [k]: on })
-  const allOn = MANAGER_PERMS.every(p => value[p.key])
+  const allOn = LIST.every(p => value[p.key])
   return (
     <div style={{ display: 'grid', gap: 14 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: 12.5, color: colors.text3 }}>الرئيسية والإشعارات متاحة دائماً، أما الإعدادات والفروع والإضافات فللمالك فقط.</span>
-        <button type="button" onClick={() => onChange(Object.fromEntries(MANAGER_PERMS.map(p => [p.key, !allOn])))}
+        <button type="button" onClick={() => onChange({ ...value, ...Object.fromEntries(LIST.map(p => [p.key, !allOn])) })}
           style={{ background: 'none', border: 'none', color: colors.primary, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
           {allOn ? 'إلغاء الكل' : 'تحديد الكل'}
         </button>
       </div>
-      {GROUPS.map(g => {
-        const items = MANAGER_PERMS.filter(p => p.group === g)
+      {GROUPS.filter(g => LIST.some(p => p.group === g)).map(g => {
+        const items = LIST.filter(p => p.group === g)
         const gOn = items.every(p => value[p.key])
         return (
           <div key={g}>
@@ -94,6 +96,7 @@ export default function BranchManagersPage() {
   const [showPw, setShowPw] = useState(false)
   const [branchId, setBranchId] = useState('')
   const [perms, setPerms] = useState<Record<string, boolean>>({ ...ALL_OFF, inventory: true, dispense: true, purchases: true, reports: true })
+  const [brFeat, setBrFeat] = useState<Record<string, Partial<Record<string, boolean>>>>({})
   const [saving, setSaving] = useState(false)
   // رقم واتساب المدير (اختياري) — يصل إليه التقرير الصباحي لفرعه
   const [waPhone, setWaPhone] = useState('')
@@ -116,7 +119,7 @@ export default function BranchManagersPage() {
     setOrgId(oid)
     // «ابنِ باقتك»: نخفي صلاحيات المزايا اللي مو باشتراكه، ونشيلها من اختيار المدير الجديد
     getMe().then(me => {
-      applyOrgFeatures(me?.org?.features)
+      applyOrgFeatures(me?.org?.features); setBrFeat((me?.org as any)?.branch_features || {})
       setPerms(p => Object.fromEntries(Object.entries(p).filter(([k]) => MANAGER_PERMS.some(x => x.key === k) || !(k in ALL_OFF))))
       setFeatVer(v => v + 1)
     }).catch(() => {})
@@ -204,7 +207,7 @@ export default function BranchManagersPage() {
         </div>
         <WaField phone={waPhone} setPhone={setWaPhone} consent={waConsent} setConsent={setWaConsent} />
         <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={16} /> الصفحات المتاحة <span style={{ fontWeight: 600, color: colors.text4 }}>({countOn(perms)} من {MANAGER_PERMS.length})</span></div>
-        <PermGrid value={perms} onChange={setPerms} />
+        <PermGrid value={perms} onChange={setPerms} feat={brFeat[branchId]} />
         <button onClick={addManager} disabled={saving} style={{ ...btnPrimary, padding: '12px 22px', marginTop: 16 }}>{saving ? 'جاري الإضافة…' : 'أضف مدير الفرع'}</button>
       </section>
 
@@ -242,7 +245,7 @@ export default function BranchManagersPage() {
                         </select>
                       </div>
                       <WaField phone={editWa} setPhone={setEditWa} consent={editWaConsent} setConsent={setEditWaConsent} />
-                      <PermGrid value={editPerms} onChange={setEditPerms} />
+                      <PermGrid value={editPerms} onChange={setEditPerms} feat={brFeat[editBranch]} />
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button onClick={() => saveEdit(m)} disabled={editSaving} style={{ ...btnPrimary, padding: '10px 20px' }}>{editSaving ? 'جاري الحفظ…' : 'حفظ التعديلات'}</button>
                         <button onClick={() => setEditId(null)} style={{ ...btnSecondary, padding: '10px 18px' }}>إلغاء</button>

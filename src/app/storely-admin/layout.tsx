@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { PackagePlus, Menu, X, LogOut, ChevronLeft } from 'lucide-react'
 import AdminLogin from './_admin/Login'
 import { A, ADMIN_CSS, AdminContext, adminKey, type AdminInfo } from './_admin/kit'
+import { HUB_CSS } from './_admin/Hub'
 import { NAV } from './_admin/nav'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -84,13 +85,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const shell = (content: React.ReactNode) => (
     <div className="adm-root" dir="rtl" style={{ minHeight: '100vh', background: A.bg, fontFamily: A.font, color: A.text }}>
-      <style>{ADMIN_CSS + SHELL_CSS}</style>
+      <style>{ADMIN_CSS + SHELL_CSS + HUB_CSS}</style>
       {content}
       {newAlert && (
         <div role="alert" style={{ position: 'fixed', bottom: 20, left: 20, zIndex: 1000, background: A.surface, border: `1px solid ${A.border}`, borderRadius: 14, boxShadow: A.shadowLg, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, maxWidth: 'calc(100vw - 40px)' }}>
           <PackagePlus size={20} color={A.primary} />
           <div style={{ fontSize: 13.5, fontWeight: 600 }}>{newAlert === 'renewal' ? 'وصل طلب تجديد اشتراك — تواصل مع العميل للدفع' : 'وصل طلب جديد (إضافة أو ترقية)'}</div>
-          <button onClick={() => { setNewAlert(false); router.push(newAlert === 'renewal' ? '/storely-admin/renewals' : '/storely-admin/addon-requests') }} style={{ background: A.primary, color: 'white', border: 'none', borderRadius: 10, padding: '7px 14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>عرض</button>
+          <button onClick={() => { setNewAlert(false); router.push(newAlert === 'renewal' ? '/storely-admin/requests?tab=renewals' : '/storely-admin/requests?tab=addons') }} style={{ background: A.primary, color: 'white', border: 'none', borderRadius: 10, padding: '7px 14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>عرض</button>
           <button onClick={() => setNewAlert(false)} aria-label="إغلاق" style={{ background: 'none', border: 'none', cursor: 'pointer', color: A.text3 }}><X size={16} /></button>
         </div>
       )}
@@ -126,7 +127,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <Icon size={18} />
                   <span>{item.label}</span>
                   {(() => {
-                    const n = item.href === '/storely-admin/addon-requests' ? pendingAddons : item.href === '/storely-admin/demo-requests' ? pendingDemos : item.href === '/storely-admin/renewals' ? pendingRenewals : 0
+                    const n = item.href === '/storely-admin/requests' ? pendingAddons + pendingRenewals + (can() ? pendingDemos : 0) : 0
                     return n > 0 && (
                       <span style={{ marginInlineStart: 'auto', background: A.danger, color: 'white', borderRadius: 99, fontSize: 11, fontWeight: 600, minWidth: 20, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>{n}</span>
                     )
@@ -154,7 +155,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   )
 
   return shell(
-    <AdminContext.Provider value={{ admin, can: p => can(p), logout, setAdmin }}>
+    <AdminContext.Provider value={{ admin, can: p => can(p), logout, setAdmin, counts: { addons: pendingAddons, demos: pendingDemos, renewals: pendingRenewals } }}>
       <aside className="adm-side">{sidebar}</aside>
       {menuOpen && (
         <div className="adm-mob-menu">

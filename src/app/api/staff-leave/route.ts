@@ -1,3 +1,4 @@
+import { staffFeatureError } from '@/lib/featureRoutes'
 import { managerMay } from '@/lib/managerPerms'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
@@ -61,6 +62,7 @@ export async function POST(req: Request) {
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
     const { org_id, staff_id, branch_id } = auth.data!
 
+    { const locked = await staffFeatureError(auth.data as any, 'hr'); if (locked) return NextResponse.json({ error: locked }, { status: 403 }) }
     const DAY = /^\d{4}-\d{2}-\d{2}$/
     const start = new Date(String(start_date) + 'T00:00:00Z')
     const end = new Date(String(end_date) + 'T00:00:00Z')

@@ -91,7 +91,7 @@ export default function OverviewPage() {
                   <ActionRow tone="danger" text={`${s.expired} حساب مفعّل واشتراكه منتهي`} onClick={() => router.push('/storely-admin/customers?filter=active')} />
                 )}
                 {pendingSuppliers > 0 && (
-                  <ActionRow tone="info" text={`${pendingSuppliers} طلب مورد جديد`} onClick={() => router.push('/storely-admin/supplier-applications')} />
+                  <ActionRow tone="info" text={`${pendingSuppliers} طلب مورد جديد`} onClick={() => router.push('/storely-admin/requests?tab=suppliers')} />
                 )}
               </div>
             </Card>
