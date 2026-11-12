@@ -26,8 +26,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'لا يمكن حذف حساب المشرف الكامل' }, { status: 403 })
     }
 
+    if (!target) return NextResponse.json({ error: 'المشرف غير موجود' }, { status: 404 })
+
+    // سجل التدقيق يبقى (فيه اسم المشرف نفسه admin_name) — بس نفك ربطه بالحساب عشان ينحذف.
+    // وجلساته تنحذف قبله (كان الحذف يفشل: foreign key admin_audit_log_admin_id_fkey / admin_sessions)
+    const unlink = await db.from('admin_audit_log').update({ admin_id: null } as any).eq('admin_id', admin_id)
+    if (unlink.error) return NextResponse.json({ error: 'تعذّر حذف المشرف' }, { status: 500 })
+    const sess = await db.from('admin_sessions').delete().eq('admin_id', admin_id)
+    if (sess.error) return NextResponse.json({ error: 'تعذّر حذف المشرف' }, { status: 500 })
+
     const { error } = await db.from('admin_users').delete().eq('id', admin_id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) { console.error('DELETE ADMIN ERROR', error.message); return NextResponse.json({ error: 'تعذّر حذف المشرف' }, { status: 500 }) }
 
     await logAdminAction(caller, 'delete_admin', null, null, { deleted_email: target?.email, deleted_name: target?.full_name })
 
