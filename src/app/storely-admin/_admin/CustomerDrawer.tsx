@@ -158,7 +158,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   async function sendInvoice(items = bill.lines, title = 'إرسال الفاتورة') {
     const total = items.reduce((s, it) => s + it.amount, 0)
     const lines = items.map(it => `${it.label}: ${it.amount} ر.س`).join('\n')
-    if (!(await confirmDialog({ title, message: `${lines}\n\nالإجمالي: ${total} ر.س\nتُرسل عبر واتساب إلى ${c!.phone}` }))) return
+    if (!(await confirmDialog({ title, message: `${lines}\n\nالإجمالي: ${total} ر.س\nتُرسل عبر واتساب إلى ${c!.phone}`, type: 'success' }))) return
     setBusy('invoice')
     const j = await adminFetch('/api/admin/send-invoice', { method: 'POST', body: { orgId: c!.org_id, orgName: c!.org_name, phone: c!.phone, items } })
     setBusy(null)
@@ -196,7 +196,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
 
   // رمز دخول مؤقت لما رمز الإيميل ما يوصل العميل (يطلع مرة وحدة، صالح 10 دقايق، لأي جهاز)
   async function issueDeviceCode() {
-    if (!(await confirmDialog({ title: 'رمز دخول مؤقت', message: `إصدار رمز دخول لـ«${c!.full_name || c!.org_name}»؟ سلّمه للعميل بعد التأكد من أنه صاحب الحساب.` }))) return
+    if (!(await confirmDialog({ title: 'رمز دخول مؤقت', message: `إصدار رمز دخول لـ«${c!.full_name || c!.org_name}»؟ سلّمه للعميل بعد التأكد من أنه صاحب الحساب.`, type: 'warning' }))) return
     setBusy('device-code')
     const j = await adminFetch('/api/admin/device-code', { method: 'POST', body: { userId: c!.id } })
     setBusy(null)

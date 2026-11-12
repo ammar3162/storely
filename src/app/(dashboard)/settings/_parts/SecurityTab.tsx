@@ -37,7 +37,7 @@ export default function SecurityTab({ m }: { m: SettingsState }) {
                   ))}
                 </div>
                 <button type="submit" disabled={pwSaving} style={{...btnPrimary,width:'100%',padding:'14px',opacity:pwSaving?0.7:1,cursor:pwSaving?'not-allowed':'pointer',fontSize:font.base}}>
-                  {pwSaving?'⏳ جاري التحقق والحفظ...':'تغيير كلمة المرور'}
+                  {pwSaving?'جاري التحقق والحفظ...':'تغيير كلمة المرور'}
                 </button>
               </form>
 

@@ -138,7 +138,7 @@ export default function SuppliersJoinPage() {
           <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 30px', display: 'grid', gap: 18 }}>
             {BENEFITS.map(b => (
               <li key={b.t} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                <span aria-hidden style={{ fontSize: 24, lineHeight: 1.2 }}>{b.icon}</span>
+                <span aria-hidden style={{ display: 'inline-flex', color: C.teal }}><FeatureIcon name={b.icon} size={22} /></span>
                 <div><div style={{ fontSize: 17, fontWeight: 700, marginBottom: 2 }}>{b.t}</div><div style={{ fontSize: 14.5, color: C.muted, lineHeight: 1.75 }}>{b.d}</div></div>
               </li>
             ))}
@@ -194,7 +194,7 @@ export default function SuppliersJoinPage() {
                 {TYPES.map(b => { const on = form.business_type.includes(b.v); return (
                   <button key={b.v} type="button" onClick={() => toggle(b.v)} aria-pressed={on}
                     style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 99, fontFamily: 'inherit', fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                      border: `1.5px solid ${on ? C.teal2 : C.line}`, background: on ? C.mint : '#fff', color: on ? C.teal : '#334155' }}>{b.icon} {b.v}</button>) })}
+                      border: `1.5px solid ${on ? C.teal2 : C.line}`, background: on ? C.mint : '#fff', color: on ? C.teal : '#334155' }}><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><FeatureIcon name={b.icon} size={14} /> {b.v}</span></button>) })}
               </div>
             </div>
             <div><label style={lbl}>ماذا تورّد؟</label><textarea className="sj-inp" style={{ ...inp, minHeight: 84, resize: 'vertical' }} value={form.description} maxLength={1500} onChange={e => set('description', e.target.value)} placeholder="مثال: بن مختص، حليب وألبان، أكواب وتغليف…" /></div>

@@ -250,7 +250,7 @@ export default function SupplierStorefrontPage() {
             <span style={{color:'white',fontSize:13,fontWeight:700}}>{Object.keys(selected).length} صنف محدّد للتسعير</span>
             <button onClick={submitQuoteRequest} disabled={submitting}
               style={{padding:'10px 20px',background:'#203640',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>
-              {submitting?'⏳ جاري الإرسال...':'إرسال طلب التسعير'}
+              {submitting?'جاري الإرسال...':'إرسال طلب التسعير'}
             </button>
           </div>
         )}
@@ -301,7 +301,7 @@ export default function SupplierStorefrontPage() {
                     <span style={{fontSize:11,fontWeight:700,padding:'4px 12px',borderRadius:20,
                       background:r.status==='fulfilled'?'#dbeafe':r.status==='confirmed'?'#e0f2fe':r.status==='accepted'?'#ccfbf1':r.status==='quoted'?'#fef3c7':'#f1f5f9',
                       color:r.status==='fulfilled'?'#1d4ed8':r.status==='confirmed'?'#0369a1':r.status==='accepted'?'#203640':r.status==='quoted'?'#92400e':'#64748b'}}>
-                      {r.status==='fulfilled'?'تم التنفيذ':r.status==='confirmed'?'جاري التوريد':r.status==='accepted'?'مقبول':r.status==='quoted'?'تم التسعير':'⏳ بانتظار الرد'}
+                      {r.status==='fulfilled'?'تم التنفيذ':r.status==='confirmed'?'جاري التوريد':r.status==='accepted'?'مقبول':r.status==='quoted'?'تم التسعير':'بانتظار الرد'}
                     </span>
                   </div>
 

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { CircleAlert, CircleCheck, Trash2 } from 'lucide-react'
+import { ArrowLeftRight, CircleAlert, CircleCheck, Trash2 } from 'lucide-react'
 import { StorelyButton } from '@/components/ui/button'
 import { storelyTokens } from '@/components/ui/design-tokens'
 
@@ -9,7 +9,7 @@ interface Props {
   message: string
   confirmText?: string
   cancelText?: string
-  type?: 'danger' | 'warning' | 'success'
+  type?: 'danger' | 'warning' | 'success' | 'transfer'
   onConfirm: () => void
   onCancel: () => void
 }
@@ -19,6 +19,7 @@ export default function ConfirmDialog({ title, message, confirmText='تأكيد'
     danger: { icon: <Trash2 size={24}/>, color: storelyTokens.color.danger },
     warning: { icon: <CircleAlert size={24}/>, color: storelyTokens.color.warning },
     success: { icon: <CircleCheck size={24}/>, color: storelyTokens.color.success },
+    transfer: { icon: <ArrowLeftRight size={24}/>, color: storelyTokens.color.navy },
   }
   const c = colors[type]
 
@@ -48,7 +49,7 @@ interface ConfirmOptions {
   message?: string
   confirmText?: string
   cancelText?: string
-  type?: 'danger' | 'warning' | 'success'
+  type?: 'danger' | 'warning' | 'success' | 'transfer'
 }
 
 let _openConfirm: ((opts: ConfirmOptions & { resolve: (v: boolean) => void }) => void) | null = null

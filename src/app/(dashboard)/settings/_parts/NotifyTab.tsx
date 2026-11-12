@@ -80,11 +80,11 @@ export default function NotifyTab({ m }: { m: SettingsState }) {
 
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
                 <button type="submit" disabled={saving} style={{...btnPrimary,padding:'13px',opacity:saving?0.7:1,cursor:saving?'not-allowed':'pointer'}}>
-                  {saving?'⏳ حفظ...':'حفظ الجدولة'}
+                  {saving?'حفظ...':'حفظ الجدولة'}
                 </button>
                 <button type="button" onClick={sendNow} disabled={sending}
                   style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'13px',background:sending?colors.text4:'#25d366',color:'white',border:'none',borderRadius:radius.md,fontSize:font.sm,fontWeight:700,cursor:sending?'not-allowed':'pointer',fontFamily:font.family,transition:'all .15s',boxShadow:sending?'none':'0 4px 14px rgba(37,211,102,.3)'}}>
-                  {sending?'⏳ إرسال...':'إرسال الآن'}
+                  {sending?'إرسال...':'إرسال الآن'}
                 </button>
               </div>
 

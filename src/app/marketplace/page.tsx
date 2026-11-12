@@ -103,8 +103,8 @@ export default function MarketplacePage() {
         <div style={{maxWidth:900,margin:'0 auto',display:'flex',gap:8}}>
           {BUSINESS_TYPES.map(t=>(
             <button key={t.v} onClick={()=>setFilter(t.v)}
-              style={{padding:'7px 14px',borderRadius:20,border:`1.5px solid ${filter===t.v?'#203640':'var(--storely-border)'}`,background:filter===t.v?'#f0fdfa':'white',color:filter===t.v?'#203640':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',flexShrink:0,transition:'all .15s'}}>
-              {t.icon} {t.v}
+              style={{padding:'7px 14px',borderRadius:20,border:`1.5px solid ${filter===t.v?'#203640':'var(--storely-border)'}`,background:filter===t.v?'#f0fdfa':'white',color:filter===t.v?'#203640':'#64748b',fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',flexShrink:0,transition:'all .15s',display:'inline-flex',alignItems:'center',gap:6}}>
+              <FeatureIcon name={t.icon} size={14} /> {t.v}
             </button>
           ))}
         </div>

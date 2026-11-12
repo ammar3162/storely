@@ -311,7 +311,7 @@ export function useDashboardShell() {
       }
       const perm = await Notification.requestPermission()
       if(perm !== "granted") {
-        alert(`❌ الإذن لم يُمنح — الحالة: ${perm}`)
+        alert(`الإذن لم يُمنح — الحالة: ${perm}`)
         setEnablingPush(false); return
       }
       const reg = await navigator.serviceWorker.ready
@@ -331,10 +331,10 @@ export function useDashboardShell() {
       if(res.ok && data.success) {
         alert("✅ تم تفعيل الإشعارات بنجاح!")
       } else {
-        alert(`❌ فشل حفظ الاشتراك بالسيرفر: ${data.error || res.status}`)
+        alert(`فشل حفظ الاشتراك بالسيرفر: ${data.error || res.status}`)
       }
     } catch(e:any) {
-      alert(`❌ خطأ: ${e?.message || e}`)
+      alert(`خطأ: ${e?.message || e}`)
       console.log("enablePush error:", e)
     }
     setEnablingPush(false)

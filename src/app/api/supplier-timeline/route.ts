@@ -57,7 +57,7 @@ export async function POST(req: Request) {
       events.push({
         type: 'order_failed',
         at: f.created_at,
-        title: '❌ فشل إرسال رسالة واتساب للمورد',
+        title: 'فشل إرسال رسالة واتساب للمورد',
         detail: (f.products as any)?.name ? `الصنف: ${(f.products as any).name} — تحقق من رقم واتساب المورد` : 'تحقق من رقم واتساب المورد',
       })
     }

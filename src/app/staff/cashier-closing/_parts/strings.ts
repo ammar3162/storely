@@ -55,7 +55,7 @@ export const CUI: Record<string,Record<'ar'|'en',string>> = {
   step3Title:       {ar:'صور الإثبات (إلزامي)',en:'Proof Photos (Required)'},
   salesReportImg:   {ar:'صورة تقرير المبيعات',en:'Sales Report Photo'},
   networkBalanceImg:{ar:'صورة موازنة الشبكة',en:'Network Balance Photo'},
-  uploadingImg:     {ar:'⏳ جاري الرفع...',en:'⏳ Uploading...'},
+  uploadingImg:     {ar:'جاري الرفع...',en:'Uploading...'},
   tapSalesUpload:   {ar:'اضغط للرفع',en:'Tap to upload'},
   tapNetworkUpload: {ar:'اضغط للرفع',en:'Tap to upload'},
   summaryTitle:     {ar:'ملخص الاحتساب',en:'Calculation Summary'},

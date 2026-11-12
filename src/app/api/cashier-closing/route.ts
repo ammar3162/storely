@@ -131,9 +131,10 @@ export async function POST(req: Request) {
       const ownerConsented = (ownerProfile as any)?.whatsapp_consent === true
 
       // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
-      const closingStatusText = status === 'balanced' ? 'مطابق تماماً' : status === 'deficit' ? `يوجد عجز: ${Math.abs(difference).toFixed(2)} ر.س — السبب: ${deficitReason}` : `يوجد زيادة: ${Math.abs(difference).toFixed(2)} ر.س`
+      // الإشعار داخل النظام بالرمز ⃁، والإشعار الفوري بـ«ر.س» لأن بعض الجوالات لا تعرض الرمز الجديد
+      const statusText = (cur: string) => status === 'balanced' ? 'مطابق تماماً' : status === 'deficit' ? `يوجد عجز: ${Math.abs(difference).toFixed(2)} ${cur} — السبب: ${deficitReason}` : `يوجد زيادة: ${Math.abs(difference).toFixed(2)} ${cur}`
       await (supabase as any).from('notifications').insert({
-        org_id, branch_id: branch_id || null, title: `إقفال كاشير: ${staff_name}`, message: `إجمالي المبيعات: ${sales.toFixed(2)} ⃁ — ${closingStatusText}`, type: 'info', read: false
+        org_id, branch_id: branch_id || null, title: `إقفال كاشير: ${staff_name}`, message: `إجمالي المبيعات: ${sales.toFixed(2)} ⃁ — ${statusText('⃁')}`, type: 'info', read: false
       })
       // قرار العجز — إشعار داخل النظام فقط، فيه زر اعتماد الخصم أو رفضه
       if (status === 'deficit' && data) {
@@ -145,7 +146,7 @@ export async function POST(req: Request) {
         })
       }
       // إشعار فوري بالمتصفح/الجوال — لا يعتمد على واتساب إطلاقاً
-      sendPushToOrg(org_id, `إقفال كاشير: ${staff_name}`, `إجمالي المبيعات: ${sales.toFixed(2)} ر.س — ${closingStatusText}`, '/reports').catch(()=>{})
+      sendPushToOrg(org_id, `إقفال كاشير: ${staff_name}`, `إجمالي المبيعات: ${sales.toFixed(2)} ر.س — ${statusText('ر.س')}`, '/reports').catch(()=>{})
       const { data: allBranches } = await supabase.from('branches').select('id,name,whatsapp_number').eq('org_id', org_id).eq('is_active', true)
       const isMultiBranch = (allBranches || []).length > 1
       const currentBranch = branch_id ? (allBranches || []).find((b: any) => b.id === branch_id) : null

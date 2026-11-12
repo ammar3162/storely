@@ -55,7 +55,7 @@ function ResetPasswordWaPage() {
 
         {checking && (
           <div style={{ textAlign:'center', padding:'20px 0' }}>
-            <div style={{ fontSize:14, color:'#6b7280' }}>⏳ جاري التحقق من الرابط...</div>
+            <div style={{ fontSize:14, color:'#6b7280' }}>جاري التحقق من الرابط...</div>
           </div>
         )}
 

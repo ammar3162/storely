@@ -121,6 +121,7 @@ export default function TransferStockPage() {
     const ok = await confirmDialog({
       title: `تأكيد نقل ${cart.length} ${cart.length===1?'صنف':'أصناف'}`,
       message: `من "${fromName}" إلى "${toName}":\n\n${summary}`,
+      confirmText: 'تأكيد النقل', type: 'transfer',
     })
     if(!ok) return
 

@@ -30,7 +30,7 @@ export default function AgentsPage() {
   async function submitPay() {
     if (!pay) return
     const a = list.find(x => x.id === pay.id)
-    if (!(await confirmDialog({ title: 'تسجيل صرف', message: `تأكيد صرف ${sar(Number(pay.amount))} إلى ${a?.name} ${pay.method === 'transfer' ? 'بتحويل بنكي' : 'نقداً'}؟ سيصله إشعار بذلك.` }))) return
+    if (!(await confirmDialog({ title: 'تسجيل صرف', message: `تأكيد صرف ${sar(Number(pay.amount))} إلى ${a?.name} ${pay.method === 'transfer' ? 'بتحويل بنكي' : 'نقداً'}؟ سيصله إشعار بذلك.`, type: 'success' }))) return
     const j = await act({ agent_id: pay.id, action: 'payout', amount: Number(pay.amount), method: pay.method, note: pay.note })
     if (j.success) { setPay(null); load() }
   }

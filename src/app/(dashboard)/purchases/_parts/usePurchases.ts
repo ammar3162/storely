@@ -210,7 +210,7 @@ export function usePurchases() {
     }
     let res=await api.post('/api/purchases',body)
     // نفس الفاتورة مسجلة قبل؟ نسأل بدل ما تنكرر وتزيد المخزون مرتين
-    if(!res.success&&res.duplicate&&await confirmDialog({title:'الفاتورة مسجلة قبل',message:res.error+'\n\nتسجلها مرة ثانية؟',confirmText:'سجّلها'}))
+    if(!res.success&&res.duplicate&&await confirmDialog({title:'الفاتورة مسجلة قبل',message:res.error+'\n\nتسجلها مرة ثانية؟',confirmText:'سجّلها',type:'warning'}))
       res=await api.post('/api/purchases',{...body,allow_duplicate:true})
     if(!res.success){if(!res.duplicate)toast(res.error||'حدث خطأ','error');setLoading(false);submitting.current=false;return}
 
