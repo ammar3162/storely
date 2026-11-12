@@ -25,7 +25,8 @@ export const LIMITS = {
   aiScanOrg:      { max: 60,  windowSec: HOUR },      // قراءة الفواتير بالصور
   aiInsightsOrg:  { max: 30,  windowSec: HOUR },
   aiTranslateOrg: { max: 30,  windowSec: HOUR },
-  supplierAddOrg: { max: 20,  windowSec: HOUR },      // إضافة موردين (يمنع إضافة 100 مورد دفعة وحدة)
+  supplierAddOrg: { max: 20,  windowSec: HOUR },
+  supportTicketOrg: { max: 6, windowSec: HOUR },     // تذاكر الدعم الفني      // إضافة موردين (يمنع إضافة 100 مورد دفعة وحدة)
 } as const satisfies Record<string, Omit<Limit, 'key'>>
 
 export const limit = (name: keyof typeof LIMITS, id: string): Limit => ({ key: `${name}:${id}`, ...LIMITS[name] })

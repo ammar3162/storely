@@ -29,7 +29,7 @@ export default function MoreMenuSheet({ m }: { m: DashboardShell }) {
                   const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
                   return (
                     <button key={item.href} className={`sh-nav${active?' on':''}`} style={navTone(item.href)}
-                      onClick={()=>{ if(external) window.open(item.href,'_blank'); else router.push(item.href); setShowMore(false) }}>
+                      onClick={()=>{ if(item.href==='#support') window.dispatchEvent(new Event('storely:support')); else if(external) window.open(item.href,'_blank'); else router.push(item.href); setShowMore(false) }}>
                       <Icon d={item.icon} size={18} width={1.75}/>
                       <span style={{flex:1}}>{t(item.labelKey)}</span>
                       {badge>0&&<span className="sh-count">{badge}</span>}

@@ -1,7 +1,7 @@
 'use client'
 import { FeatureIcon } from '@/components/ui/feature-icon'
 import React, { useState, useRef, useEffect } from 'react'
-import { Bot, ChevronDown, ChevronUp } from 'lucide-react'
+import { Bot, ChevronDown, ChevronUp, LifeBuoy, Send } from 'lucide-react'
 import { getMe } from '@/lib/session'
 import { storelyTokens as uiTokens } from '@/components/ui/design-tokens'
 
@@ -32,7 +32,8 @@ const QUICK_BASIC = [
 const WELCOME_AI = 'مرحباً، أنا مساعدك الذكي في Storely.\n\nيمكنني مساعدتك في:\n• المخزون وما سينفد منه\n• المشتريات والموردين وأسعارهم\n• الصرف والموظفين والحضور\n• الكاشير والضريبة\n• اشتراكك وطريقة استخدام النظام\n\nبماذا يمكنني مساعدتك؟'
 const WELCOME_BASIC = 'مرحباً، أنا مساعدك في Storely.\n\nيمكنني تعليمك استخدام النظام خطوة بخطوة مع فيديوهات الشرح، والإجابة عن اشتراكك وباقتك.\n\nأما تحليل بياناتك (المخزون، والمشتريات، والموظفون…) فمتاح مع إضافة الذكاء الاصطناعي.\n\nبماذا يمكنني مساعدتك؟'
 
-interface Msg { role:'user'|'ai'; text:string; time:string }
+const SUPPORT_TIP_KEY = 'support_tip_seen'
+interface Msg { role:'user'|'ai'; text:string; time:string; kind?:'support'|'ticket' }
 
 // الروابط بالرد تنضغط: يوتيوب يطلع زر «مشاهدة فيديو الشرح»، والباقي الرابط نفسه — تفتح بتبويب جديد
 const URL_RE = /(https?:\/\/[^\s)<>»«"']+)/g
@@ -262,6 +263,25 @@ export default function AIAssistant() {
     if(!minimized) bottomRef.current?.scrollIntoView({behavior:'smooth'})
   },[msgs, minimized])
 
+  // تذكرة دعم: المحادثة كاملة + الصفحة الحالية → «صندوق الطلبات ← الدعم» في لوحة الإدارة
+  const [ticketBusy, setTicketBusy] = useState(false)
+  function offerSupport() { setMsgs(m=>[...m, {role:'ai', text:'أرسل طلبك لفريق الدعم الفني — يوصلهم سؤالك والمحادثة كاملة، ويصلك ردّهم في الإشعارات.', time:now(), kind:'support'}]) }
+  async function sendTicket() {
+    if (ticketBusy) return
+    setTicketBusy(true)
+    try {
+      const conversation = msgs.slice(1).filter(m=>m.kind!=='support'&&m.kind!=='ticket').map(m=>({role:m.role, text:m.text}))   // بدون رسالة الترحيب
+      const r = await fetch('/api/support-tickets', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ conversation, page: window.location.pathname, source:'assistant' }) })
+      const j = await r.json().catch(()=>({}))
+      setMsgs(m=>[...m.filter(x=>x.kind!=='support'), j.success
+        ? {role:'ai', text:`وصل طلبك للدعم الفني — رقم الطلب **${j.number}**.\nسيرد عليك الفريق في أقرب وقت، ويصلك الرد في الإشعارات.`, time:now(), kind:'ticket'}
+        : {role:'ai', text: j.error || 'تعذّر إرسال الطلب، حاول مرة أخرى.', time:now()}])
+    } catch {
+      setMsgs(m=>[...m, {role:'ai', text:'تعذّر إرسال الطلب، تأكد من اتصالك بالإنترنت.', time:now()}])
+    }
+    setTicketBusy(false)
+  }
+
   async function send(text?:string) {
     const msg = (text || input).trim()
     if(!msg || loading) return
@@ -274,7 +294,7 @@ export default function AIAssistant() {
     // طلب صريح لدعم بشري بس — كلمات عامة مثل «موظف» أو «واتساب» تروح للمساعد (أسئلة عن الموظفين والتقرير)
     const supportKeywords = ['الدعم الفني','مساعدة بشرية','أكلم الدعم','اكلم الدعم','تواصل مع الدعم','شكوى','مشكلة تقنية']
     if (supportKeywords.some(k => msg.includes(k))) {
-      setMsgs(m=>[...m, {role:'ai', text:'يسعدنا مساعدتك! يمكنك التواصل مع فريق دعم Storely مباشرة عبر واتساب من خلال الزر أدناه، وسيرد عليك أحد المختصين في أقرب وقت.', time:now()}])
+      setMsgs(m=>[...m, {role:'ai', text:'أرسل طلبك لفريق الدعم الفني من الزر أدناه — يوصلهم سؤالك والمحادثة كاملة، ويصلك ردّهم في الإشعارات.', time:now(), kind:'support'}])
       setLoading(false)
       return
     }
@@ -310,6 +330,23 @@ export default function AIAssistant() {
   // مكان الزر محفوظ بالجهاز: نرسمه بعد التحميل عشان ما يختلف عن نسخة الخادم
   const [mounted, setMounted] = useState(false)
   useEffect(()=>{ setMounted(true) },[])
+  // زر «الدعم الفني» (القائمة الجانبية وأعلى الصفحة) يفتح المساعد على «أرسل طلبك للدعم» — بدل واتساب شخصي
+  useEffect(()=>{
+    const onSupport = () => {
+      setOpen(true); setMinimized(false); setSupportTip(false)
+      try { localStorage.setItem(SUPPORT_TIP_KEY,'1') } catch {}
+      setMsgs(m=>{
+        const base = m.length ? m : [{role:'ai' as const, text: hasAi===false ? WELCOME_BASIC : WELCOME_AI, time:now()}]
+        return base[base.length-1]?.kind==='support' ? base : [...base, {role:'ai' as const, text:'اكتب سؤالك أو مشكلتك في الخانة تحت — أحاول أحلّها فوراً، وإذا ما انحلّت يظهر لك زر «إرسال للدعم الفني» ويوصلهم سؤالك والمحادثة كاملة.', time:now(), kind:'support' as const}]
+      })
+    }
+    window.addEventListener('storely:support', onSupport)
+    return ()=>window.removeEventListener('storely:support', onSupport)
+  },[hasAi])
+  // إعلان لمرة وحدة: الدعم الفني صار من المساعد
+  const [supportTip, setSupportTip] = useState(false)
+  useEffect(()=>{ try { if(!localStorage.getItem(SUPPORT_TIP_KEY)) setTimeout(()=>setSupportTip(true), 2500) } catch {} },[])
+  const hideSupportTip = () => { setSupportTip(false); try { localStorage.setItem(SUPPORT_TIP_KEY,'1') } catch {} }
   const dragRef = useRef<{ sx:number; sy:number; ox:number; oy:number; moved:boolean }|null>(null)
   const fabLimits = () => {
     const mobile = window.innerWidth < 768, size = mobile ? 46 : 50
@@ -330,7 +367,7 @@ export default function AIAssistant() {
   const onFabUp = (e: React.PointerEvent<HTMLButtonElement>) => {
     const d = dragRef.current; dragRef.current = null
     if(!d) return
-    if(!d.moved) { setOpen(true); return }
+    if(!d.moved) { setOpen(true); hideSupportTip(); return }
     const { size, minBottom, maxBottom } = fabLimits()
     const x = e.clientX - d.ox, y = e.clientY - d.oy
     const pos = { side: (x + size/2 < window.innerWidth/2 ? 'left' : 'right') as 'left'|'right', bottom: Math.round(Math.min(Math.max(minBottom, window.innerHeight - y - size), Math.max(minBottom, maxBottom))) }
@@ -373,6 +410,21 @@ export default function AIAssistant() {
           {unreadCount>0&&<span style={{position:'absolute',top:-2,right:-2,width:16,height:16,borderRadius:'50%',background:uiTokens.color.danger,color:'white',fontSize:uiTokens.typography.supporting,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid white'}}>{unreadCount}</span>}
         </button>
       )}
+
+      {/* إعلان الدعم الجديد — فوق زر المساعد، مرة وحدة */}
+      {supportTip && !open && mounted && !drag && (()=>{
+        const fs = fabStyle() as any, side = fs.left !== undefined ? 'left' : 'right'
+        return (
+          <div role="status" style={{position:'fixed', [side]: fs[side], bottom: (Number(fs.bottom)||24)+58, zIndex:999, width:260, background:C.surface, border:`1px solid ${C.border}`, borderRadius:uiTokens.radius.card, boxShadow:'0 12px 32px rgba(32,54,64,.18)', padding:'12px 14px'}}>
+            <div style={{display:'flex',alignItems:'center',gap:6,fontSize:uiTokens.typography.body,fontWeight:800,color:C.text,marginBottom:4}}><LifeBuoy size={16}/> جديد: الدعم الفني من هنا</div>
+            <div style={{fontSize:uiTokens.typography.supporting,color:C.text3,lineHeight:1.8,marginBottom:10}}>اسأل المساعد عن أي شيء، وإذا ما انحلّت مشكلتك أرسلها للدعم الفني بضغطة — يوصلك الرد في الإشعارات.</div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>{ hideSupportTip(); window.dispatchEvent(new Event('storely:support')) }} style={{flex:1,padding:'7px 10px',background:C.primary,color:'white',border:'none',borderRadius:uiTokens.radius.control,fontSize:uiTokens.typography.supporting,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>جرّبه</button>
+              <button onClick={hideSupportTip} style={{padding:'7px 10px',background:'none',color:C.text3,border:`1px solid ${C.border}`,borderRadius:uiTokens.radius.control,fontSize:uiTokens.typography.supporting,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>فهمت</button>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Chat Window */}
       {open && (
@@ -448,7 +500,23 @@ export default function AIAssistant() {
 
           {/* Messages */}
               <div style={{flex:1,overflowY:'auto',padding:'16px 14px',display:'flex',flexDirection:'column',gap:12,background:C.bg}}>
-                {msgs.map((m,i)=><MsgBubble key={i} msg={m}/>)}
+                {msgs.map((m,i)=>(
+                  <React.Fragment key={i}>
+                    <MsgBubble msg={m}/>
+                    {m.kind==='support' && msgs.some(x=>x.role==='user') && (
+                      <button onClick={sendTicket} disabled={ticketBusy}
+                        style={{alignSelf:'flex-end',marginRight:38,display:'inline-flex',alignItems:'center',gap:6,padding:'9px 14px',background:C.primary,color:'white',border:'none',borderRadius:uiTokens.radius.control,fontSize:uiTokens.typography.body,fontWeight:700,cursor:ticketBusy?'wait':'pointer',fontFamily:'inherit',opacity:ticketBusy?.7:1}}>
+                        <Send size={15}/> {ticketBusy?'جاري الإرسال...':'إرسال للدعم الفني'}
+                      </button>
+                    )}
+                    {i===msgs.length-1 && i>0 && m.role==='ai' && !m.kind && !loading && (
+                      <button onClick={offerSupport}
+                        style={{alignSelf:'flex-end',marginRight:38,display:'inline-flex',alignItems:'center',gap:5,background:'none',border:'none',padding:0,color:C.text3,fontSize:uiTokens.typography.supporting,cursor:'pointer',fontFamily:'inherit',textDecoration:'underline'}}>
+                        <LifeBuoy size={13}/> ما انحلت مشكلتك؟ أرسلها للدعم الفني
+                      </button>
+                    )}
+                  </React.Fragment>
+                ))}
                 {loading && (
                   <div style={{display:'flex',alignItems:'flex-end',gap:8}}>
                     <div style={{width:30,height:30,borderRadius:uiTokens.radius.control,background:C.primary,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
