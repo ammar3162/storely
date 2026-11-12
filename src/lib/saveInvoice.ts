@@ -4,7 +4,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { isStoredInvoiceUrl } from '@/lib/invoiceUrl'
 import { lockedFor } from '@/lib/periodLock'
 import { invoiceTimestamp } from '@/lib/invoiceTime'
-import { resolvePurchaseTax, notifyQrMismatch } from '@/lib/taxInvoice'
+import { resolvePurchaseTax } from '@/lib/taxInvoice'
+import { notifyQrMismatch } from '@/lib/taxInvoiceNotify'
 import { cleanItems, saveInvoiceItems, itemsSummary, type ItemResult } from '@/lib/purchaseItems'
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
