@@ -1,3 +1,4 @@
+import { orgFeatures } from '@/lib/planFeatures'
 import { NextResponse } from 'next/server'
 import { waitUntil } from '@vercel/functions'
 import { createClient } from '@supabase/supabase-js'
@@ -67,9 +68,17 @@ async function run(body: any) {
     const { data: products, error } = await query
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 })
 
-    const due = (products || []).filter(
+    const below = (products || []).filter(
       (p: any) => p.qty <= p.supplier_reorder_point
     )
+    // طلبات التوريد التلقائية = ميزة المخزون: فرع ما فيه المخزون (باقة أو إضافة لهالفرع) ما ينرسل منه طلب
+    const featCache = new Map<string, boolean>()
+    const due: any[] = []
+    for (const p of below as any[]) {
+      const k = `${p.org_id}:${p.branch_id || ''}`
+      if (!featCache.has(k)) featCache.set(k, (await orgFeatures(supabase as any, p.org_id, undefined, p.branch_id || null)).inventory)
+      if (featCache.get(k)) due.push(p)
+    }
 
     if (!due.length) return NextResponse.json({ success: true, sent: 0, message: 'لا توجد منتجات تحتاج طلب توريد' })
 

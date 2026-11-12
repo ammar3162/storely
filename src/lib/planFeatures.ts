@@ -23,7 +23,7 @@ const PLAN_FEATURES: Record<string, Feature[]> = {
   pro: ALL, advanced: ALL, full: ALL,
   ops: ['inventory', 'purchases', 'cashier', 'profitability'],
   essential: ['inventory', 'purchases', 'profitability'],
-  basic: ['inventory', 'purchases'],
+  basic: ['inventory', 'purchases', 'profitability'],   // 2026-11-12: الربحية مجانية لكل الباقات (حتى الأساسية القديمة)
   custom: ['profitability'],
 }
 // باقة غير معروفة = الأساسية القديمة (نفس السلوك القبل)
@@ -130,3 +130,17 @@ export async function branchFeatureError(db: SupabaseClient, orgId: string, f: F
   const elsewhere = !!branchId && await orgHasFeature(db, orgId, f, plan)
   return lockedMessage(f, elsewhere)
 }
+
+/** يشيل الصلاحيات اللي ميزتها مو مفعّلة لهالفرع (need: الصلاحية ← الميزات، يكفي وحدة) — حتى لو أُرسلت true */
+export async function stripPermsByFeature(db: SupabaseClient, orgId: string, branchId: string | null | undefined, perms: Record<string, boolean>, need: Record<string, readonly Feature[]>): Promise<Record<string, boolean>> {
+  if (!Object.keys(need).some(k => perms[k])) return perms
+  const f = await orgFeatures(db, orgId, undefined, branchId || null)
+  const out = { ...perms }
+  for (const [k, feats] of Object.entries(need)) if (out[k] && !feats.some(x => f[x])) out[k] = false
+  return out
+}
+
+/** صلاحيات الموظف (PIN) ← الميزة */
+export const STAFF_PERM_FEATURE: Record<string, readonly Feature[]> = { dispense: ['inventory'], inventory: ['inventory'], purchases: ['purchases'], cashier: ['cashier'] }
+export const stripUnavailablePerms = (db: SupabaseClient, orgId: string, branchId: string | null | undefined, perms: Record<string, boolean>) =>
+  stripPermsByFeature(db, orgId, branchId, perms, STAFF_PERM_FEATURE)

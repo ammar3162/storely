@@ -28,6 +28,38 @@ export const FEATURE_ROUTES: Record<string, Feature[]> = {
   '/api/marketplace': ['inventory', 'purchases'],
 }
 
+/** مسارات مقفلة حتى للقراءة (GET) — قيمتها هي البيانات نفسها (أدوات الذكاء، الحضور، الربحية، الكاشير) */
+export const FEATURE_ROUTES_ANY: Record<string, Feature[]> = {
+  // أدوات الذكاء الاصطناعي (إضافة ai_tools أو الباقة الكاملة)
+  '/api/waste-report': ['ai'], '/api/waste-detection': ['ai'], '/api/smart-insights': ['ai'], '/api/recipe-reconciliation': ['ai'],
+  '/api/weekly-report': ['ai'], '/api/weekly-report-data': ['ai'],
+  // توقعات الطلب والمخزون (قرارات اليوم) — تعتمد على بيانات المخزون
+  '/api/stock-forecast': ['inventory'], '/api/purchase-suggestion': ['inventory'], '/api/smart-reorder-timing': ['inventory'],
+  '/api/seasonality': ['inventory'], '/api/reorder-optimizer': ['inventory'],
+  // الحضور والرواتب
+  '/api/attendance-report': ['hr'], '/api/shifts': ['hr'], '/api/staff-shifts': ['hr'], '/api/extra-days': ['hr'],
+  '/api/attendance-penalty': ['hr'], '/api/attendance-manual-checkout': ['hr'], '/api/attendance-permission-request': ['hr'],
+  // الربحية
+  '/api/fixed-expenses': ['profitability'], '/api/monthly-fixed-expenses': ['profitability'], '/api/delivery-income': ['profitability'],
+  '/api/profitability/closed-months': ['profitability'],
+  // إقفال الكاشير
+  '/api/cashier-deficit-decision': ['cashier'],
+}
+
+const lookup = (map: Record<string, Feature[]>, path: string): Feature[] | null => {
+  let p = path.replace(/\/+$/, '')
+  while (p.split('/').length > 2) {
+    if (map[p]) return map[p]
+    p = p.slice(0, p.lastIndexOf('/'))
+  }
+  return null
+}
+
+/** الميزات المطلوبة لهالطلب (null = ما يحتاج ميزة) — مسارات ANY مقفلة حتى للقراءة، والباقي للتعديل فقط */
+export function routeFeatureNeed(path: string, method: string): Feature[] | null {
+  return lookup(FEATURE_ROUTES_ANY, path) || (method.toUpperCase() === 'GET' ? null : routeFeatures(path))
+}
+
 export function routeFeatures(path: string): Feature[] | null {
   let p = path.replace(/\/+$/, '')
   while (p.split('/').length > 2) {
@@ -44,8 +76,7 @@ const admin = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.
 
 /** null = مسموح، أو رسالة القفل. لو القاعدة ما ردّت نسمح (ما نوقف النظام) */
 export async function routeFeatureError(orgId: string, path: string, method: string, db?: SupabaseClient): Promise<string | null> {
-  if (method.toUpperCase() === 'GET') return null
-  const need = routeFeatures(path)
+  const need = routeFeatureNeed(path, method)
   if (!need) return null
   try {
     const hit = await orgCached(orgId, db)

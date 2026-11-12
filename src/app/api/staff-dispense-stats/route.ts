@@ -1,3 +1,4 @@
+import { staffFeatureError } from '@/lib/featureRoutes'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
@@ -12,6 +13,7 @@ export async function POST(req: Request) {
     const auth = await verifyStaffToken(extractStaffToken(req))
     if (!auth.valid) return NextResponse.json({ mostUsed: [], todayCount: 0 })
     const { org_id, staff_id } = auth.data!
+    if (await staffFeatureError(auth.data as any, 'inventory')) return NextResponse.json({ mostUsed: [], todayCount: 0 })
 
     const { branch_id } = await req.json()
     if (!org_id) return NextResponse.json({ mostUsed: [], todayCount: 0 })

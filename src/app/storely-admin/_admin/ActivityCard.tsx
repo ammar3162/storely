@@ -77,7 +77,7 @@ export default function ActivityCard({ orgId }: { orgId: string }) {
           {a.unused_included?.length > 0 && (
             <div style={{ fontSize: 12, color: A.text2, marginTop: 10 }}>مزايا لديه لا يستخدمها: {a.unused_included.join('، ')}</div>
           )}
-          <button onClick={() => router.push('/storely-admin/account-health')} style={{ marginTop: 12, background: 'none', border: 'none', padding: 0, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, color: A.primary, cursor: 'pointer' }}>
+          <button onClick={() => router.push('/storely-admin/customers?tab=health')} style={{ marginTop: 12, background: 'none', border: 'none', padding: 0, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, color: A.primary, cursor: 'pointer' }}>
             كل الحسابات في «صحة الحسابات»
           </button>
         </>

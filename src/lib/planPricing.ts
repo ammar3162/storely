@@ -147,7 +147,9 @@ export function addonIncludedIn(plan: string | null | undefined, slug: string): 
   if (slug.startsWith('mod_')) return !isCustomPlan(plan)
   if (isCustomPlan(plan)) return slug === 'profitability'
   if (isNewPlan(plan)) return !!NEW_ADDON_PRICES[slug]?.includedIn.includes(plan as NewPlanKey)
-  return (plan === 'pro' || plan === 'advanced') && ['hr_full', 'profitability', 'ai_tools', 'cashier_closing'].includes(slug)
+  // الربحية مجانية لكل الباقات (2026-11-12) — ما تنباع كإضافة لأي باقة
+  if (slug === 'profitability') return true
+  return (plan === 'pro' || plan === 'advanced') && ['hr_full', 'ai_tools', 'cashier_closing'].includes(slug)
 }
 
 /**
