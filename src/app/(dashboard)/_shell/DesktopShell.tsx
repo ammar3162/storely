@@ -36,7 +36,7 @@ export default function DesktopShell({ m, banners, children }: { m: DashboardShe
                     const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
                     return (
                       <button key={item.href} className={`sh-nav${active?' on':''}`} style={navTone(item.href)}
-                        onClick={()=>external?window.open(item.href,'_blank'):router.push(item.href)}
+                        onClick={()=>item.href==='#support'?window.dispatchEvent(new Event('storely:support')):external?window.open(item.href,'_blank'):router.push(item.href)}
                         onMouseEnter={()=>!external&&router.prefetch(item.href)}>
                         <Icon d={item.icon} size={18} width={1.75}/>
                         <span style={{flex:1}}>{t(item.labelKey)}</span>
@@ -63,7 +63,7 @@ export default function DesktopShell({ m, banners, children }: { m: DashboardShe
             <div style={{display:'flex',alignItems:'center',gap:4}}>
               <button className="sh-icon-btn" data-no-translate title={m.lang==='en'?'العربية':'English'} onClick={()=>m.setLang(m.lang==='en'?'ar':'en')} style={{fontSize:12.5,fontWeight:700,width:'auto',padding:'0 10px'}}>{m.lang==='en'?'عربي':'EN'}</button>
               <HelpVideoButton/>
-              <button className="sh-icon-btn" title="الدعم الفني" onClick={()=>window.open('https://wa.me/966594351667','_blank')}><HelpCircle size={19}/></button>
+              <button className="sh-icon-btn" title="الدعم الفني" onClick={()=>window.dispatchEvent(new Event('storely:support'))}><HelpCircle size={19}/></button>
               <button className="sh-icon-btn" title="الإعدادات" onClick={()=>router.push('/settings')}><Settings size={19}/></button>
               <button className="sh-icon-btn" title="الإشعارات" onClick={()=>router.push('/notifications')}><Bell size={19}/>{unread>0&&<span className="sh-dot"/>}</button>
             </div>

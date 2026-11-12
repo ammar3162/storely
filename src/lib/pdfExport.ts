@@ -68,7 +68,7 @@ export async function exportReportPdf(opts: PdfExportOptions) {
   overlay.appendChild(container)
 
   const headerHtml = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #029FA2">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #203640">
       <div style="display:flex;align-items:center;gap:10px">
         ${logoUrl ? `<img src="${logoUrl}" style="width:36px;height:36px;border-radius:8px;object-fit:cover" crossorigin="anonymous" />` : ''}
         <div>
@@ -113,8 +113,8 @@ export async function exportReportPdf(opts: PdfExportOptions) {
       </div>
     `).join('')
     const totalsHtml = includeTotals && totalsRow
-      ? `<div data-pdf-totals style="display:flex;background:#f0fdfa;border-top:2px solid #029FA2">
-          ${rowDivs(totalsRow, 'color:#029FA2;font-weight:800')}
+      ? `<div data-pdf-totals style="display:flex;background:#F5F3EF;border-top:2px solid #203640">
+          ${rowDivs(totalsRow, 'color:#203640;font-weight:800')}
         </div>`
       : ''
     return `

@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { makeInviteToken, makeSession, INVITE_DAYS } from '@/lib/accountantPortalAuth'
 import { ACC_SECTIONS } from '@/lib/accountantExport'
@@ -45,7 +46,7 @@ export async function acceptInvite(db: SupabaseClient, req: Request, accessId: s
     // شرط pending في التحديث نفسه — ما يتكرر الإشعار لو انضغط الزر مرتين
     const { data: done } = await db.from('accountant_access').update({ accountant_id: uid, status: 'active', accepted_at: new Date().toISOString() } as any)
       .eq('id', a.id).eq('status', 'pending').select('id')
-    if (done?.length) await db.from('notifications').insert({ org_id: a.org_id, type: 'info', read: false, title: 'المحاسب قبل الدعوة',
+    if (done?.length) await notifyInsert(db, { org_id: a.org_id, type: 'info', read: false, title: 'المحاسب قبل الدعوة',
       message: `${a.name || email} قبل دعوتك وأصبح بإمكانه الاطلاع على بيانات منشأتك. يمكنك تعديل الأقسام المتاحة له أو سحب الإذن من الإعدادات ← المحاسب.` } as any)
   }
   if (!withSession) return { ok: true as const, orgId: a.org_id as string, session: null }
@@ -59,7 +60,7 @@ export async function acceptInvite(db: SupabaseClient, req: Request, accessId: s
 export async function declineInvite(db: SupabaseClient, accessId: string, email: string) {
   const { data } = await db.from('accountant_access').delete().eq('id', accessId).eq('email', email).eq('status', 'pending').select('org_id,name')
   const a = (data as any[] | null)?.[0]
-  if (a) await db.from('notifications').insert({ org_id: a.org_id, type: 'warning', read: false, title: 'المحاسب رفض الدعوة',
+  if (a) await notifyInsert(db, { org_id: a.org_id, type: 'warning', read: false, title: 'المحاسب رفض الدعوة',
     message: `${a.name || email} رفض دعوة بوابة المحاسب. تأكد من البريد الإلكتروني وأعد دعوته عند الحاجة.` } as any)
   return !!a
 }

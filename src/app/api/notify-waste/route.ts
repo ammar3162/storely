@@ -1,9 +1,9 @@
+import { notifyInsert } from '@/lib/notify'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { WHATSAPP_PAUSED } from '@/lib/whatsappPause'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
-import { sendPushToOrg } from '@/lib/push'
 import { fetchExternal } from '@/lib/fetchExternal'
 import { unitFor } from '@/lib/arabicCount'
 
@@ -50,11 +50,9 @@ export async function POST(req: Request) {
     if (!org) return NextResponse.json({ success: false })
 
     // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
-    await (db as any).from('notifications').insert({
+    await notifyInsert((db as any), {
       org_id, branch_id, title: `تسجيل هدر: ${staff_name}`, message: `${product_name} — ${qty} ${unitFor(qty, unit)} — السبب: ${waste_reason}`, type: 'warning', read: false
     })
-    // إشعار فوري بالمتصفح/الجوال — لا يعتمد على واتساب إطلاقاً
-    sendPushToOrg(org_id, `تسجيل هدر: ${staff_name}`, `${product_name} — ${qty} ${unitFor(qty, unit)} — السبب: ${waste_reason}`, '/reports').catch(()=>{})
 
     const { data: allBranches } = await db.from('branches').select('id,name,whatsapp_number').eq('org_id', org_id).eq('is_active', true)
     const isMultiBranch = (allBranches || []).length > 1

@@ -27,6 +27,7 @@ export type RequestNotice =
   | { kind: 'addon'; addonName: string; quantity: number; note?: string | null }
   | { kind: 'plan'; fromPlan: string; toPlan: string; billAtRequest?: number | null }
   | { kind: 'renewal'; expired: boolean; graceUntil?: string | null }
+  | { kind: 'support'; number: number; subject: string; page?: string | null; requester?: string | null }
   | { kind: 'signup'; email?: string | null; businessType?: string | null; plan: string; branches: number; billing: 'monthly' | 'yearly'; source?: string | null; sourceDetail?: string | null; agentCode?: string | null; demoMatched?: boolean }
 
 const sourceLabel = (v?: string | null) => SIGNUP_SOURCES.find(x => x.v === v)?.ar || null
@@ -58,6 +59,21 @@ export function requestEmail(n: RequestNotice, org: { name: string; owner?: stri
         paragraphs: ['بدأ فترة التجربة المجانية الحين. تواصل معه في أول يومين يساعده يبدأ صح.'],
         rows,
         button: { label: 'فتح العملاء', url: ADMIN_CUSTOMERS_URL },
+        small: 'وصلك هذا الإيميل لأنك مشرف في لوحة إدارة ستورلي.',
+      }),
+    }
+  }
+
+  if (n.kind === 'support') {
+    return {
+      subject: oneLine(`تذكرة دعم #${n.number}: ${org.name}`),
+      html: brandEmail({
+        title: `تذكرة دعم جديدة #${n.number}`,
+        preheader: `${org.name}: ${n.subject.slice(0, 80)}`,
+        eyebrow: 'لوحة الإدارة',
+        paragraphs: ['طلب عميل التواصل مع الدعم الفني. المحادثة كاملة مع المساعد الذكي موجودة في التذكرة.'],
+        rows: [...who, ...(n.requester ? [{ label: 'مقدّم الطلب', value: n.requester }] : []), { label: 'السؤال', value: n.subject.slice(0, 300), strong: true }, ...(n.page ? [{ label: 'الصفحة', value: n.page }] : [])],
+        button: { label: 'فتح تذاكر الدعم', url: 'https://storely.dev/storely-admin/requests?tab=support' },
         small: 'وصلك هذا الإيميل لأنك مشرف في لوحة إدارة ستورلي.',
       }),
     }

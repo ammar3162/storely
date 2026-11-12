@@ -167,6 +167,7 @@ export function managerApiAllowed(path: string, method: string, perms: Record<st
 
 /** مسارات مفتوحة لمدير الفرع عن قصد (الرئيسية، الإشعارات، الإعدادات المشتركة) — كل مسار منشأة لازم يكون هنا أو بـ API_GUARDS */
 export const API_OPEN = [
+  '/api/support-tickets',   // الدعم الفني — متاح للمالك والمدير
   '/api/ai-assistant', '/api/branches', '/api/dashboard-summary', '/api/month-comparison', '/api/nav-counts',
   '/api/notifications', '/api/onboarding', '/api/org-settings', '/api/push-subscribe', '/api/smart-reorder-timing', '/api/vat-status',
   '/api/file',   // صور الفواتير — تتحقق بنفسها إن الملف من منشأة المستخدم

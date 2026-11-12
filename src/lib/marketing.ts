@@ -51,10 +51,11 @@ export function inSegment(p: { status?: string | null; subscription_type?: strin
   return !live
 }
 
-/** إيميلات أصحاب المنشآت في الفئة — بدون اللي ألغوا الاشتراك وبدون إيميلات الاختبار */
-export async function segmentRecipients(db: SupabaseClient, segment: Segment): Promise<Recipient[]> {
+/** أصحاب المنشآت مع إيميلاتهم وحالة الإعلانات (مصدر واحد للفئات والعملاء المحددين) */
+type OwnerRow = { org_id: string; email: string | null; name: string; orgName: string; status: string | null; subscription_type: string | null; subscription_ends_at: string | null; optedOut: boolean; sendable: boolean }
+export async function ownerRows(db: SupabaseClient): Promise<OwnerRow[]> {
   const { data: owners } = await db.from('profiles')
-    .select('id,full_name,status,subscription_type,subscription_ends_at,organizations(name)')
+    .select('id,org_id,full_name,status,subscription_type,subscription_ends_at,organizations(name)')
     .eq('role', 'owner')
   const emails = new Map<string, string>()
   for (let page = 1; page < 50; page++) {
@@ -65,18 +66,26 @@ export async function segmentRecipients(db: SupabaseClient, segment: Segment): P
   }
   const { data: out } = await db.from('email_optouts').select('email')
   const optedOut = new Set((out || []).map((r: any) => String(r.email).toLowerCase()))
+  return ((owners || []) as any[]).map(p => {
+    const email = emails.get(p.id)?.trim() || null, key = email?.toLowerCase() || ''
+    return { org_id: p.org_id, email, name: (p.full_name || '').trim(), orgName: (p.organizations?.name || '').trim(), status: p.status, subscription_type: p.subscription_type,
+      subscription_ends_at: p.subscription_ends_at, optedOut: !!key && optedOut.has(key), sendable: !!email && isSendableEmail(email) && !TEST_EMAIL.test(key) }
+  })
+}
 
-  const seen = new Set<string>()
-  const list: Recipient[] = []
-  for (const p of (owners || []) as any[]) {
-    if (!inSegment(p, segment)) continue
-    const email = emails.get(p.id)?.trim()
-    const key = email?.toLowerCase()
-    if (!email || !key || !isSendableEmail(email) || TEST_EMAIL.test(key) || optedOut.has(key) || seen.has(key)) continue
-    seen.add(key)
-    list.push({ email, name: (p.full_name || '').trim(), orgName: (p.organizations?.name || '').trim() })
+function toRecipients(rows: OwnerRow[]): Recipient[] {
+  const seen = new Set<string>(), list: Recipient[] = []
+  for (const r of rows) {
+    const key = r.email?.toLowerCase()
+    if (!r.email || !key || !r.sendable || r.optedOut || seen.has(key)) continue
+    seen.add(key); list.push({ email: r.email, name: r.name, orgName: r.orgName })
   }
   return list
+}
+
+/** إيميلات أصحاب المنشآت في الفئة — بدون اللي ألغوا الاشتراك وبدون إيميلات الاختبار */
+export async function segmentRecipients(db: SupabaseClient, segment: Segment, rows?: OwnerRow[]): Promise<Recipient[]> {
+  return toRecipients((rows || await ownerRows(db)).filter(p => inSegment(p, segment)))
 }
 
 export type CampaignContent = { subject: string; title: string; body: string; button_label?: string | null; button_url?: string | null }

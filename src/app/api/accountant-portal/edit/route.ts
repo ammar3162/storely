@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { currentAccountant, accessFor } from '@/lib/accountantPortalAuth'
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
         cash_amount: b.cash_amount, purchases: b.purchases, delivery: b.delivery, deficit_reason: b.deficit_reason,
       }, editor, { source: 'accountant', accountantId: me.id })
       if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status })
-      await db.from('notifications').insert({ org_id: orgId, branch_id: (c as any).branch_id, type: 'warning', read: false, title: 'محاسبك عدّل إقفال كاشير',
+      await notifyInsert(db, { org_id: orgId, branch_id: (c as any).branch_id, type: 'warning', read: false, title: 'محاسبك عدّل إقفال كاشير',
         message: `${editor} عدّل إقفال ${(c as any).staff_name || ''} بتاريخ ${(c as any).closing_date}. يمكنك الاطلاع على التعديل والتراجع عنه من التقارير ← إقفال الكاشير.`.slice(0, 600),
         ref_type: 'accountant_edit', ref_id: r.editId } as any)
       return NextResponse.json({ success: true, closing: r.closing })
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
       }, editor, { source: 'accountant', accountantId: me.id }, access.branch_id || null)
       if (!r.ok) return NextResponse.json({ error: r.error }, { status: r.status })
       const { data: p } = await db.from('purchases').select('supplier,branch_id').eq('id', b.id).maybeSingle()
-      await db.from('notifications').insert({ org_id: orgId, branch_id: (p as any)?.branch_id ?? null, type: 'warning', read: false, title: 'محاسبك عدّل فاتورة مشتريات',
+      await notifyInsert(db, { org_id: orgId, branch_id: (p as any)?.branch_id ?? null, type: 'warning', read: false, title: 'محاسبك عدّل فاتورة مشتريات',
         message: `${editor} عدّل فاتورة ${(p as any)?.supplier || ''}: ${r.summary.join('، ')}. يمكنك التراجع عنه من صفحة المشتريات.`.slice(0, 600),
         ref_type: 'accountant_edit', ref_id: r.batchId } as any)
       return NextResponse.json({ success: true })
@@ -84,7 +85,7 @@ async function bulkPurchase(db: ReturnType<typeof sb>, b: any, access: any, me: 
     await db.from('suppliers').update({ vat_number: String(fields.supplier_vat_number).replace(/\s/g, '') } as any)
       .eq('org_id', orgId).eq('name', b.supplier.trim()).is('vat_number', null)
   }
-  if (changed) await db.from('notifications').insert({ org_id: orgId, branch_id: access.branch_id || null, type: 'warning', read: false, title: 'محاسبك عدّل فواتير مشتريات',
+  if (changed) await notifyInsert(db, { org_id: orgId, branch_id: access.branch_id || null, type: 'warning', read: false, title: 'محاسبك عدّل فواتير مشتريات',
     message: `${editor} عدّل ${changed} سطر مشتريات دفعة واحدة (${'supplier_vat_number' in fields ? 'الرقم الضريبي للمورد' : fields.has_vat ? 'عليها ضريبة' : 'بدون ضريبة'}). يمكنك التراجع من صفحة المشتريات.`.slice(0, 600),
     ref_type: 'accountant_edit', ref_id: batches[0] || null } as any)
   return NextResponse.json({ success: true, changed, skipped: errors.length, error: !changed && errors.length ? errors[0] : undefined })

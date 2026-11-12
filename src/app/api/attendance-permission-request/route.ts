@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 import { staffFeatureError } from '@/lib/featureRoutes'
 import { managerMay } from '@/lib/managerPerms'
 import { NextResponse } from 'next/server'
@@ -43,7 +44,7 @@ export async function POST(req: Request) {
 
     // إشعار داخل النظام للمالك (يظهر بجرس الإشعارات بلوحته)
     const name = staff_name || 'موظف'
-    await supabase.from('notifications').insert({
+    await notifyInsert(supabase, {
       org_id, branch_id, type: 'info',
       title: 'طلب استئذان جديد',
       message: `${name} يطلب الانصراف قبل نهاية ورديته${reason ? ` — السبب: ${reason}` : ''}`,

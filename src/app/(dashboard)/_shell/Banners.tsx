@@ -5,7 +5,7 @@ import { FEATURE_LABEL } from '@/lib/planFeatures'
 import type { DashboardShell } from './useDashboardShell'
 
 export default function Banners({ m }: { m: DashboardShell }) {
-  const { subDaysLeft, showEnableNotif, setShowEnableNotif, enablingPush, router, enablePush, trialLocked, trialEnds, userRole, orgPlan } = m
+  const { showIosInstall, snoozeNotif, subDaysLeft, showEnableNotif, setShowEnableNotif, enablingPush, router, enablePush, trialLocked, trialEnds, userRole, orgPlan } = m
   // التجربة: كل المزايا مفتوحة — سطر هادي يوضح كم ميزة تنقفل بعدها، والتفاصيل بضغطة (يقدر يخفيه لهالجلسة)
   const [hideTrial, setHideTrial] = useState(() => { try { return sessionStorage.getItem('s_hide_trial') === '1' } catch { return false } })
   const [trialOpen, setTrialOpen] = useState(false)
@@ -46,9 +46,15 @@ export default function Banners({ m }: { m: DashboardShell }) {
       ))}
       {showEnableNotif && (
         <div className="sh-banner">
-          <span style={{flex:1}}>فعّل الإشعارات لتصلك تنبيهات نقص المخزون وإقفال الكاشير حتى لو كان التطبيق مغلقاً.</span>
-          <button className="sh-btn sh-btn-sm sh-btn-primary" onClick={enablePush} disabled={enablingPush}>{enablingPush?'جاري التفعيل...':'تفعيل'}</button>
-          <button className="sh-btn sh-btn-sm sh-btn-ghost" onClick={()=>setShowEnableNotif(false)}>لاحقاً</button>
+          <span style={{flex:1}}>فعّل الإشعارات على هذا الجهاز لتصلك تنبيهات ستورلي فوراً حتى لو كان مغلقاً: نقص المخزون، وإقفال الكاشير والعجز، وطلبات الموظفين، ورد الدعم الفني.</span>
+          <button className="sh-btn sh-btn-sm sh-btn-primary" onClick={enablePush} disabled={enablingPush}>{enablingPush?'جاري التفعيل...':'تفعيل الإشعارات'}</button>
+          <button className="sh-btn sh-btn-sm sh-btn-ghost" onClick={()=>snoozeNotif(3)}>لاحقاً</button>
+        </div>
+      )}
+      {showIosInstall && (
+        <div className="sh-banner">
+          <span style={{flex:1}}>لتصلك إشعارات ستورلي على الآيفون: اضغط زر المشاركة في سفاري، ثم «إضافة إلى الشاشة الرئيسية»، وافتح ستورلي من أيقونته وفعّل الإشعارات.</span>
+          <button className="sh-btn sh-btn-sm sh-btn-ghost" onClick={()=>snoozeNotif(7)}>فهمت</button>
         </div>
       )}
     </>

@@ -1,7 +1,7 @@
+import { notifyInsert } from '@/lib/notify'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
-import { sendPushToOrg } from '@/lib/push'
 import { fetchExternal } from '@/lib/fetchExternal'
 
 function formatPhone(raw: string): string {
@@ -65,12 +65,10 @@ export async function POST(req: Request) {
     if (!matchedSupplier) return NextResponse.json({ sent: false, reason: 'supplier_mismatch' })
 
     // إشعار داخلي — دايماً يصل بغض النظر عن موافقة واتساب
-    await (db as any).from('notifications').insert({
+    await notifyInsert((db as any), {
       org_id, branch_id: (product as any).branch_id || null, title: `توصيل مؤكد: ${matchedSupplier.name}`,
       message: `تم استلام "${product_name}" — أُرسلت رسالة شكر للمورد`, type: 'success', read: false,
     })
-    // إشعار فوري بالمتصفح/الجوال — لا يعتمد على واتساب إطلاقاً
-    sendPushToOrg(org_id, `توصيل مؤكد: ${matchedSupplier.name}`, `تم استلام "${product_name}"`, '/purchases').catch(()=>{})
 
     if (!matchedSupplier.phone || matchedSupplier.whatsapp_consent !== true) {
       return NextResponse.json({ sent: false, reason: 'no_consent' })

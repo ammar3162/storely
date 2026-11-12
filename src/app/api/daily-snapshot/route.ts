@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 import { NextResponse } from 'next/server'
 import { isCronRequest } from '@/lib/cronAuth'
 import { createClient } from '@supabase/supabase-js'
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
           .select('id,name,total_amount,supplier,branch_id')
           .eq('org_id', org.id).eq('payment_status', 'unpaid').is('deleted_at', null).eq('due_date', today)
         for (const inv of (dueToday || []) as any[]) {
-          await (db as any).from('notifications').insert({
+          await notifyInsert((db as any), {
             org_id: org.id, branch_id: inv.branch_id || null,
             title: 'تذكير: فاتورة مستحقة اليوم',
             message: `${inv.name || 'فاتورة'} — ${Number(inv.total_amount||0).toFixed(2)} ⃁ — المورد: ${inv.supplier||'—'}`,

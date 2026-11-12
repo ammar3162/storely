@@ -1,9 +1,11 @@
+import { notifyInsert } from '@/lib/notify'
 import { isStoredInvoiceUrl } from '@/lib/invoiceUrl'
 import { NextResponse } from 'next/server'
 import { lockedFor, lockedFromError } from '@/lib/periodLock'
 import { invoiceTimestamp } from '@/lib/invoiceTime'
 import { netFromTotal } from '@/lib/vat'
-import { resolvePurchaseTax, notifyQrMismatch } from '@/lib/taxInvoice'
+import { resolvePurchaseTax } from '@/lib/taxInvoice'
+import { notifyQrMismatch } from '@/lib/taxInvoiceNotify'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { currencySymbol } from '@/lib/currencySymbol'
@@ -123,7 +125,7 @@ export async function POST(req: Request) {
     if (tax.alert) await notifyQrMismatch(db, org_id, purchaseBranch, tax.alert)
 
     const { data: org } = await db.from('organizations').select('currency').eq('id', org_id).single()
-    await db.from('notifications').insert({
+    await notifyInsert(db, {
       org_id, branch_id: purchaseBranch,
       title: `فاتورة جديدة: ${name || category}`,
       message: `${total.toFixed(2)} ${currencySymbol((org as any)?.currency || 'SAR')} — ${supplier}${body.payment_status === 'unpaid' ? ' (غير مدفوعة)' : ''}`,

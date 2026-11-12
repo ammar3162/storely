@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { computeClosing } from '@/lib/cashierClosingCalc'
 import { lockedFor, lockedFromError } from '@/lib/periodLock'
@@ -71,7 +72,7 @@ export async function editClosing(db: SupabaseClient, orgId: string, id: string,
   const { data: log } = await db.from('cashier_closing_edits').insert({ org_id: orgId, closing_id: id, action: 'edit', before: pick(c), after: pick(after), edited_by: editor,
     source, accountant_id: by.accountantId || null } as any).select('id').single()
   if (!isDeficit) await db.from('notifications').update({ read: true } as any).eq('org_id', orgId).eq('ref_type', 'cashier_deficit').eq('ref_id', id)
-  if (isDeficit && !wasDeficit) await db.from('notifications').insert({ org_id: orgId, branch_id: c.branch_id, type: 'warning', read: false,
+  if (isDeficit && !wasDeficit) await notifyInsert(db, { org_id: orgId, branch_id: c.branch_id, type: 'warning', read: false,
     title: `عجز بانتظار قرارك: ${c.staff_name}`, message: `بعد تعديل إقفال ${date} أصبح هناك عجز بقيمة ${amount.toFixed(2)} ⃁ — السبب: ${reason}. هل تريد خصمه من راتب الكاشير؟`,
     ref_type: 'cashier_deficit', ref_id: id } as any)
   return { ok: true, closing: after, editId: (log as any)?.id || null }

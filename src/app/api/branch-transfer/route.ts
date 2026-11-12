@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
@@ -124,7 +125,7 @@ export async function POST(req: Request) {
     // إشعارات النظام لكل فرع بما يخصّه — يظهر بجرس الإشعارات فوراً
     const productName = (sourceProduct as any).name
     const unit = (sourceProduct as any).unit
-    await db.from('notifications').insert([
+    await notifyInsert(db, [
       {
         org_id, branch_id: from_branch_id, type: 'info',
         title: 'نقل مخزون صادر',

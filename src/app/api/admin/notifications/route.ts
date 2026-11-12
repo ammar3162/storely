@@ -1,3 +1,4 @@
+import { notifyInsert } from '@/lib/notify'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission } from '@/lib/adminAuth'
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
 
     if (with_org_notifications && org_ids.length) {
       const inserts = org_ids.map((org_id: string) => ({ org_id, title, message, type }))
-      const { error: nErr } = await db.from('notifications').insert(inserts as any)
+      const { error: nErr } = await notifyInsert(db, inserts as any)
       if (nErr) return NextResponse.json({ error: nErr.message, stage: 'notifications' }, { status: 500 })
     }
     return NextResponse.json({ success: true })
