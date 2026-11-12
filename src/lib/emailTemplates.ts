@@ -2,15 +2,19 @@
 // عشان يكون شكلها واحد. الإرسال نفسه من lib/email.ts
 // ملاحظة: إيميلات Supabase (تأكيد التسجيل وغيرها) قوالبها في supabase/email-templates وتنلصق في لوحة Supabase
 
+// الهوية الجديدة (2026-11): كحلي #203640 أساسي + رملي #A3917F لمسات — نفس ألوان النظام والموقع
 export const BRAND = {
-  color: '#029FA2',
-  dark: '#0f3f40',
-  ink: '#0f172a',
-  muted: '#64748b',
-  bg: '#eef4f4',
+  color: '#203640',
+  dark: '#16262D',
+  sand: '#A3917F',
+  sandInk: '#7A6650',
+  ink: '#1A2B33',
+  muted: '#66737C',
+  bg: '#F5F3EF',
   card: '#ffffff',
-  line: '#e2e8f0',
-  logo: 'https://www.storely.dev/storely-logo.png',
+  line: '#E6E2DB',
+  logo: 'https://www.storely.dev/icon-192.png',
+  slogan: 'نحوّل تعقيد التشغيل إلى تحكّم كامل',
   site: 'https://www.storely.dev',
   whatsapp: '966594351667',
 }
@@ -25,7 +29,7 @@ type Tone = 'success' | 'warning' | 'info' | 'danger'
 const TONES: Record<Tone, [string, string]> = {
   success: ['#15803d', 'rgba(21,128,61,.1)'],
   warning: ['#b45309', 'rgba(180,83,9,.1)'],
-  info: [BRAND.color, 'rgba(2,159,162,.1)'],
+  info: [BRAND.color, 'rgba(32,54,64,.08)'],
   danger: ['#b91c1c', 'rgba(185,28,28,.1)'],
 }
 
@@ -85,42 +89,42 @@ export function brandEmail(o: {
   return `<!doctype html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(o.title)}</title></head>
 <body style="margin:0;padding:0;background:${b.bg}">
-<div dir="rtl" style="background:${b.bg};padding:28px 12px;font-family:Tahoma,Arial,sans-serif;color:${b.ink}">
+<div dir="rtl" style="background:${b.bg};padding:28px 12px;font-family:'IBM Plex Sans Arabic',Tahoma,Arial,sans-serif;color:${b.ink}">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:540px;margin:0 auto;background:${b.card};border-radius:20px;border:1px solid ${b.line};overflow:hidden">
-    <tr><td style="background:${b.color};background-image:linear-gradient(135deg,${b.color},${b.dark});padding:20px 26px;color:#ffffff">
+    <tr><td style="background:${b.color};padding:20px 26px;color:#ffffff;border-bottom:3px solid ${b.sand}">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
         <td style="vertical-align:middle">
           <table role="presentation" cellpadding="0" cellspacing="0"><tr>
             <td style="padding-left:10px"><img src="${b.logo}" width="40" height="40" alt="Storely" style="display:block;border-radius:10px;background:#ffffff"></td>
-            <td><div style="font-size:20px;font-weight:bold;letter-spacing:.5px" dir="ltr">Storely</div><div style="font-size:11px;opacity:.8">نظام واحد يربط كل أعمال منشأتك</div></td>
+            <td><div style="font-size:20px;font-weight:bold;letter-spacing:.5px" dir="ltr">Storely</div><div style="font-size:11px;color:#D9C7AE">${esc(b.slogan)}</div></td>
           </tr></table>
         </td>
         ${o.headerSide ? `<td style="text-align:left;vertical-align:middle"><div style="font-size:15px;font-weight:bold">${esc(o.headerSide.title)}</div>${o.headerSide.sub ? `<div style="font-size:11px;opacity:.8" dir="ltr">${esc(o.headerSide.sub)}</div>` : ''}</td>` : ''}
       </tr></table>
     </td></tr>
     <tr><td style="padding:24px 28px 6px">
-      ${o.eyebrow ? `<div style="font-size:12px;font-weight:bold;color:${b.color};margin-bottom:6px">${esc(o.eyebrow)}</div>` : ''}
+      ${o.eyebrow ? `<div style="font-size:12px;font-weight:bold;color:${b.sandInk};margin-bottom:6px">${esc(o.eyebrow)}</div>` : ''}
       <div style="font-size:20px;font-weight:bold;line-height:1.5;margin-bottom:10px">${esc(o.title)}</div>
       ${o.greeting ? `<p style="margin:0 0 8px;font-size:14px;line-height:1.9">${esc(o.greeting)}</p>` : ''}
-      ${(o.paragraphs || []).map(p => `<p style="margin:0 0 8px;font-size:14px;line-height:1.9;color:#334155">${esc(p)}</p>`).join('')}
+      ${(o.paragraphs || []).map(p => `<p style="margin:0 0 8px;font-size:14px;line-height:1.9;color:#33444C">${esc(p)}</p>`).join('')}
     </td></tr>
     ${code ? `<tr><td style="padding:8px 28px 4px;text-align:center">
-      <div style="display:inline-block;background:${b.bg};border:1px dashed ${b.color};border-radius:14px;padding:14px 26px">
+      <div style="display:inline-block;background:${b.bg};border:1px dashed ${b.sand};border-radius:14px;padding:14px 26px">
         <div style="font-size:11px;color:${b.muted};margin-bottom:4px">رمز التحقق</div>
         <div style="font-size:30px;font-weight:bold;letter-spacing:8px;color:${b.dark}" dir="ltr">${code}</div>
       </div></td></tr>` : ''}
-    ${rows || badge ? `<tr><td style="padding:12px 28px 6px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid ${b.line};border-radius:14px;padding:10px 14px">${rows}${badge}</table></td></tr>` : ''}
+    ${rows || badge ? `<tr><td style="padding:12px 28px 6px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FAF9F6;border:1px solid ${b.line};border-radius:14px;padding:10px 14px">${rows}${badge}</table></td></tr>` : ''}
     ${items}
     ${o.rawSections || ''}
     ${o.button ? `<tr><td style="padding:18px 28px 6px;text-align:center">
       <a href="${btnUrl}" style="display:inline-block;background:${b.color};color:#ffffff;text-decoration:none;font-weight:bold;font-size:14px;padding:13px 30px;border-radius:12px">${esc(o.button.label)}</a>
       ${o.rawLinkFallback ? `<div style="font-size:11px;color:${b.muted};margin-top:10px;line-height:1.7">إذا لم يعمل الزر، انسخ هذا الرابط:<br><span dir="ltr" style="word-break:break-all">${o.rawLinkFallback}</span></div>` : ''}
     </td></tr>` : ''}
-    ${o.note ? `<tr><td style="padding:14px 28px 0"><div style="font-size:12px;line-height:1.8;background:rgba(2,159,162,.06);border:1px solid rgba(2,159,162,.18);border-radius:12px;padding:10px 12px;color:#334155">${esc(o.note)}</div></td></tr>` : ''}
+    ${o.note ? `<tr><td style="padding:14px 28px 0"><div style="font-size:12px;line-height:1.8;background:rgba(163,145,127,.10);border:1px solid rgba(163,145,127,.35);border-radius:12px;padding:10px 12px;color:#33444C">${esc(o.note)}</div></td></tr>` : ''}
     <tr><td style="padding:20px 28px 24px;text-align:center">
       ${o.small ? `<div style="font-size:12px;color:${b.muted};line-height:1.8;margin-bottom:12px">${esc(o.small)}</div>` : ''}
-      ${o.minimal ? `<div style="font-size:11px;color:#94a3b8;line-height:1.8">Storely — نظام واحد يربط كل أعمال منشأتك</div>` : `<a href="https://wa.me/${b.whatsapp}" style="display:inline-block;color:${b.color};text-decoration:none;font-weight:bold;font-size:12px;border:1px solid rgba(2,159,162,.35);padding:9px 18px;border-radius:10px">تواصل معنا عبر واتساب</a>
-      <div style="font-size:11px;color:#94a3b8;margin-top:14px;line-height:1.8">Storely — نظام واحد يربط كل أعمال منشأتك<br><a href="${b.site}" style="color:#94a3b8" dir="ltr">storely.dev</a></div>`}
+      ${o.minimal ? `<div style="font-size:11px;color:#94A0A6;line-height:1.8">Storely — ${esc(b.slogan)}</div>` : `<a href="https://wa.me/${b.whatsapp}" style="display:inline-block;color:${b.color};text-decoration:none;font-weight:bold;font-size:12px;border:1px solid rgba(32,54,64,.25);padding:9px 18px;border-radius:10px">تواصل معنا عبر واتساب</a>
+      <div style="font-size:11px;color:#94A0A6;margin-top:14px;line-height:1.8">Storely — ${esc(b.slogan)}<br><a href="${b.site}" style="color:#94A0A6" dir="ltr">storely.dev</a></div>`}
       ${o.rawFooter || ''}
     </td></tr>
   </table>

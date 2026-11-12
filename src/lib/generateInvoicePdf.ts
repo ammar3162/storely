@@ -27,7 +27,7 @@ interface InvoiceData {
   items: InvoiceItem[]
 }
 
-function buildInvoiceHtml(data: InvoiceData): string {
+export function buildInvoiceHtml(data: InvoiceData): string {
   const total = data.items.reduce((s, it) => s + Number(it.amount || 0), 0)
   const rows = data.items.map(it => `<tr><td>${escapeHtml(it.label)}</td><td>${escapeHtml(it.amount)} ر.س</td></tr>`).join('')
 
@@ -39,33 +39,35 @@ function buildInvoiceHtml(data: InvoiceData): string {
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'IBM Plex Sans Arabic', system-ui, sans-serif; direction:rtl; padding:48px; color:#0f172a; }
-  .header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #029FA2; padding-bottom:24px; margin-bottom:32px; }
-  .brand { font-size:28px; font-weight:900; color:#029FA2; letter-spacing:-0.5px; }
-  .brand-sub { font-size:11px; color:#94a3b8; margin-top:4px; }
-  .brand-legal { font-size:10px; color:#cbd5e1; margin-top:2px; }
+  body { font-family:'IBM Plex Sans Arabic', system-ui, sans-serif; direction:rtl; padding:48px; color:#1A2B33; }
+  .header { display:flex; justify-content:space-between; align-items:flex-start; background:#203640; color:#fff; border-radius:16px; border-bottom:4px solid #A3917F; padding:24px 28px; margin-bottom:28px; }
+  .brand-row { display:flex; align-items:center; gap:12px; }
+  .brand-logo { width:48px; height:48px; border-radius:12px; background:#fff; }
+  .brand { font-size:26px; font-weight:800; color:#fff; }
+  .brand-sub { font-size:11px; color:#D9C7AE; margin-top:2px; }
+  .brand-legal { font-size:10px; color:rgba(255,255,255,.6); margin-top:10px; }
   .meta { text-align:left; }
-  .meta-title { font-size:20px; font-weight:800; color:#0f172a; margin-bottom:6px; }
-  .meta-row { font-size:12px; color:#64748b; margin-top:2px; }
-  .meta-row b { color:#0f172a; }
-  .info-box { background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px 20px; margin-bottom:28px; }
-  .info-label { font-size:10px; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; }
-  .info-value { font-size:15px; font-weight:700; color:#0f172a; }
+  .meta-title { font-size:20px; font-weight:800; color:#fff; margin-bottom:6px; }
+  .meta-row { font-size:12px; color:rgba(255,255,255,.75); margin-top:2px; }
+  .meta-row b { color:#fff; }
+  .info-box { background:#FAF9F6; border:1px solid #E6E2DB; border-radius:12px; padding:16px 20px; margin-bottom:28px; }
+  .info-label { font-size:11px; color:#7A6650; font-weight:700; margin-bottom:4px; }
+  .info-value { font-size:16px; font-weight:700; color:#1A2B33; }
   table { width:100%; border-collapse:collapse; margin-bottom:24px; }
-  th { background:#029FA2; color:white; font-size:12px; font-weight:700; padding:12px 16px; text-align:right; }
+  th { background:#203640; color:white; font-size:12px; font-weight:700; padding:12px 16px; text-align:right; }
   th:last-child, td:last-child { text-align:left; }
-  td { padding:14px 16px; font-size:13px; border-bottom:1px solid #e2e8f0; color:#334155; }
-  .total-row td { font-size:16px; font-weight:900; color:#029FA2; border-top:2px solid #029FA2; border-bottom:none; padding-top:16px; }
-  .footer { margin-top:40px; text-align:center; padding-top:24px; border-top:1px solid #e2e8f0; }
-  .footer-thanks { font-size:14px; font-weight:700; color:#029FA2; margin-bottom:6px; }
-  .footer-note { font-size:11px; color:#94a3b8; }
+  td { padding:14px 16px; font-size:13px; border-bottom:1px solid #E6E2DB; color:#33444C; }
+  .total-row td { font-size:17px; font-weight:800; color:#203640; background:#F5F3EF; border-top:2px solid #A3917F; border-bottom:none; padding-top:16px; }
+  .footer { margin-top:40px; text-align:center; padding-top:24px; border-top:1px solid #E6E2DB; }
+  .footer-thanks { font-size:14px; font-weight:700; color:#203640; margin-bottom:6px; }
+  .footer-note { font-size:11px; color:#94A0A6; }
 </style>
 </head>
 <body>
   <div class="header">
     <div>
-      <div class="brand">Storely</div>
-      <div class="brand-sub">نظام واحد يربط كل أعمال منشأتك</div>
+      <div class="brand-row"><img class="brand-logo" src="https://www.storely.dev/icon-192.png" alt="" /><div><div class="brand">Storely</div>
+      <div class="brand-sub">نحوّل تعقيد التشغيل إلى تحكّم كامل</div></div></div>
       <div class="brand-legal">مؤسسة باسم علي خلوي لتقنية المعلومات — س.ت 7055023522</div>
     </div>
     <div class="meta">
@@ -91,7 +93,7 @@ function buildInvoiceHtml(data: InvoiceData): string {
   </table>
 
   <div class="footer">
-    <div class="footer-thanks">✅ تم استلام الدفعة بنجاح — شكراً لاشتراكك معنا 🌿</div>
+    <div class="footer-thanks">تم استلام الدفعة بنجاح — شكراً لاشتراكك معنا</div>
     <div class="footer-note">هذه الفاتورة غير خاضعة لضريبة القيمة المضافة · storely.dev</div>
     <div class="footer-note" style="margin-top:4px">مؤسسة باسم علي خلوي لتقنية المعلومات · س.ت 7055023522</div>
   </div>

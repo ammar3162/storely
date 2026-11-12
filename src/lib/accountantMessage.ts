@@ -3,7 +3,7 @@ import { summarize, deficitDecisionLabel, invoicesLabel, staffLabel, type Accoun
 
 // رسائل تقرير المحاسب: إيميل مرتب (ملخص + جداول مختصرة + الملف مرفق) ورسالة واتساب قصيرة برابط
 
-const C = { brand: '#029FA2', ink: '#0f172a', muted: '#64748b', line: '#e2e8f0', soft: '#f8fafc' }
+const C = { brand: '#203640', ink: '#1A2B33', muted: '#66737C', line: '#E6E2DB', soft: '#FAF9F6' }   // الهوية الجديدة
 const money = (v: number) => `<td style="padding:7px 0;font-size:13px;text-align:left;white-space:nowrap;font-weight:bold" dir="ltr">${esc(sar(v))}</td>`
 
 function block(title: string, rows: [string, number, boolean?][], extra = '') {

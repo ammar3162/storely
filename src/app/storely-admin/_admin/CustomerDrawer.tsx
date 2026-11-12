@@ -8,6 +8,7 @@ import { billLines, activeDiscount, PLAN_CAPS, ENTERPRISE_LABEL, addonPeriodEnd,
 import { A, Badge, Btn, Card, Drawer, adminFetch, daysLeft, fmtDate, inputStyle } from './kit'
 import { type Customer, STATUS, PLAN_KEYS, PLAN_LIMITS, planLabel } from './customers'
 import ActivityCard from './ActivityCard'
+import CustomerEmailCard from './CustomerEmailCard'
 
 const QTY_SLUGS = ['extra_staff', 'extra_suppliers', 'extra_branch']
 const DURATIONS = [{ d: 7, l: '7 أيام' }, { d: 30, l: 'شهر' }, { d: 90, l: '3 أشهر' }, { d: 365, l: 'سنة' }]
@@ -251,6 +252,9 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
 
       {/* النشاط */}
       {c.org_id && <ActivityCard orgId={c.org_id} />}
+
+      {/* مراسلة بالإيميل */}
+      {c.org_id && <CustomerEmailCard orgId={c.org_id} orgName={c.org_name} />}
 
       {/* الاشتراك */}
       <Card title="الاشتراك" subtitle="تفعيل أو تجديد لمدة تبدأ من اليوم">

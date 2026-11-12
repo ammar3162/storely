@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { sendEmail } from '@/lib/email'
 import { subscriptionEndingEmail, subscriptionEndedEmail } from '@/lib/emailTemplates'
-import { SEGMENTS, type Segment, segmentRecipients, campaignHtml, validateContent, sendCampaign, unsubUrl, isSendableEmail } from '@/lib/marketing'
+import { SEGMENTS, type Segment, segmentRecipients, ownerRows, campaignHtml, validateContent, sendCampaign, unsubUrl, isSendableEmail } from '@/lib/marketing'
 
 export const maxDuration = 300
 
@@ -16,8 +16,9 @@ export async function GET(req: Request) {
   const admin = await requirePermission(req.headers.get('x-admin-key'), PERM)
   if (!admin) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   const db = sb()
+  const rows = await ownerRows(db)
   const counts: Record<string, number> = {}
-  for (const s of Object.keys(SEGMENTS) as Segment[]) counts[s] = (await segmentRecipients(db, s)).length
+  for (const s of Object.keys(SEGMENTS) as Segment[]) counts[s] = (await segmentRecipients(db, s, rows)).length
   const [{ data: campaigns }, { count: optouts }] = await Promise.all([
     db.from('marketing_campaigns').select('id,subject,segment,recipients,sent,failed,status,created_by_name,created_at').order('created_at', { ascending: false }).limit(30),
     db.from('email_optouts').select('email', { count: 'exact', head: true }),
