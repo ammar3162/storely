@@ -10,6 +10,8 @@ describe('inbound email cleaning', () => {
   it('ignores our own addresses (loops and bounces)', () => {
     expect(isOwnAddress('support@storely.dev')).toBe(true)
     expect(isOwnAddress('support@pafwon.resend.app')).toBe(true)
+    expect(isOwnAddress('noreply@improvmx.com')).toBe(true)
+    expect(isOwnAddress('MAILER-DAEMON@googlemail.com')).toBe(true)
     expect(isOwnAddress('owner@gmail.com')).toBe(false)
   })
   it('turns html into readable text', () => {

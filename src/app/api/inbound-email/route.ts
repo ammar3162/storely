@@ -22,7 +22,11 @@ export async function POST(req: Request) {
 
   const d = ev.data
   // النص الكامل من Resend (الإشعار نفسه فيه العنوان والمرسل بس)
-  const full = await resend.emails.receiving.get(String(d.email_id)).then(r => r.data).catch(() => null)
+  // قراءة الرسائل الواردة تحتاج مفتاح Resend بصلاحية كاملة (مفتاح الإرسال ما يكفي) — نستخدمه لو موجود
+  const reader = process.env.RESEND_RECEIVING_API_KEY ? new Resend(process.env.RESEND_RECEIVING_API_KEY) : resend
+  const got = await reader.emails.receiving.get(String(d.email_id)).catch((e: any) => ({ data: null, error: e }))
+  if (!got?.data) console.error('INBOUND_EMAIL_BODY_FAILED', (got as any)?.error?.name || (got as any)?.error?.message || 'unknown')
+  const full = got?.data || null
   const from = parseFrom(full?.headers?.from || full?.headers?.From, full?.from || d.from)
   if (!from.email || isOwnAddress(from.email)) return NextResponse.json({ ok: true, ignored: true })
   const raw = full?.text || (full?.html ? htmlToText(full.html) : '')

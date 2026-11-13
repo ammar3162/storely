@@ -1,5 +1,5 @@
 // البريد الوارد (ردود العملاء على support@storely.dev) — تنظيف الرسالة قبل الحفظ
-const OWN = /@(storely\.dev|[\w-]+\.resend\.app)$/i
+const OWN = /(@(storely\.dev|[\w-]+\.resend\.app|improvmx\.com)|^(mailer-daemon|postmaster)@.+)$/i
 
 /** «اسم <email>» أو «email» → { email, name } بأحرف صغيرة للبريد */
 export function parseFrom(header: unknown, fallback: unknown): { email: string; name: string | null } {
@@ -10,7 +10,7 @@ export function parseFrom(header: unknown, fallback: unknown): { email: string; 
   return { email: email.slice(0, 254), name }
 }
 
-/** رسائل من عناويننا نفسها (ارتداد/حلقة تحويل) ما تنحفظ */
+/** رسائل من عناويننا نفسها أو من خدمات البريد (ارتداد، حلقة تحويل، رسالة اختبار ImprovMX) ما تنحفظ */
 export const isOwnAddress = (email: string) => OWN.test(email.trim())
 
 /** HTML → نص بسيط (لما الرسالة بدون نسخة نصية) */
