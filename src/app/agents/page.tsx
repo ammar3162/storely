@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { Wallet, Link2, BellRing, Banknote, Copy, Check, MessageCircle, ChevronDown, Loader2 } from 'lucide-react'
 import { colors, font } from '@/lib/ds'
-import { AGENT_REWARD } from '@/lib/agentRewards'
+import { AGENT_REWARD_TIERS } from '@/lib/agentRewards'
 import { AGENT_TERMS } from '@/lib/agentTerms'
 
 // صفحة برنامج السفراء: شرح + تسجيل + الرابط الخاص مباشرة بعد التسجيل
@@ -54,11 +54,12 @@ export default function AgentsPage() {
 
         <div style={{ display: 'grid', gap: 14 }}>
           <div style={{ background:'#fff', border: `1px solid ${colors.border}`, borderRadius: 20, padding: 22 }}>
-            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 14 }}>مكافأتك على كل منشأة تشترك</div>
+            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>مكافأتك على كل منشأة تشترك</div>
+            <div style={{ fontSize: 13, color: colors.text3, marginBottom: 14 }}>حسب قيمة اشتراكها الشهري — العميل يختار الخدمات اللي يحتاجها</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 10 }}>
-              {([['الأساسية', AGENT_REWARD.basic], ['الشاملة', AGENT_REWARD.pro], ['المتقدمة', AGENT_REWARD.advanced]] as const).map(([l, v]) => (
+              {[...AGENT_REWARD_TIERS].reverse().map(({ label: l, amount: v }) => (
                 <div key={l} style={{ background:'var(--storely-background)', border: `1px solid ${colors.primaryBorder}`, borderRadius: 14, padding: '14px 10px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 12.5, color: colors.text3 }}>{l}</div>
+                  <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.5, minHeight: 36 }}>اشتراك {l}</div>
                   <div style={{ fontSize: 24, fontWeight: 900, color: colors.primary, margin: '4px 0' }}>{v}</div>
                   <div style={{ fontSize: 11.5, color: colors.text3 }}>ريال</div>
                 </div>

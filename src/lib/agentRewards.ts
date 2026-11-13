@@ -1,10 +1,17 @@
-import type { PlanKey, BillingCycle } from '@/lib/planPricing'
+import type { BillingCycle } from '@/lib/planPricing'
 
-// مكافأة السفير على أول اشتراك مدفوع للمنشأة اللي جابها — حسب الباقة، والسنوي ضعفها
-export const AGENT_REWARD: Record<PlanKey, number> = { basic: 50, pro: 100, advanced: 150, essential: 50, ops: 100, full: 150, custom: 50 }
-export const agentReward = (plan: PlanKey, cycle: BillingCycle) => AGENT_REWARD[plan] * (cycle === 'yearly' ? 2 : 1)
+// مكافأة السفير على أول اشتراك مدفوع للمنشأة اللي جابها — حسب قيمة اشتراكها الشهري (العميل يختار خدماته)، والسنوي ضعفها.
+// 2026-11-13 (قرار المالك): بدل الباقات القديمة — أقل من 100 ريال = 50، من 100 إلى 199 = 100، 200 فأكثر = 150.
+export const AGENT_REWARD_TIERS = [
+  { min: 200, amount: 150, label: '200 ريال فأكثر' },
+  { min: 100, amount: 100, label: 'من 100 إلى 199 ريالاً' },
+  { min: 0,   amount: 50,  label: 'أقل من 100 ريال' },
+] as const
+/** monthly = قيمة الاشتراك الشهري (السنوي ÷ 12) بعد الخصم */
+export const agentReward = (monthly: number, cycle: BillingCycle) =>
+  (AGENT_REWARD_TIERS.find(t => monthly >= t.min) || AGENT_REWARD_TIERS[2]).amount * (cycle === 'yearly' ? 2 : 1)
 
-export const AGENT_TERMS_VERSION = '2026-10-09'
+export const AGENT_TERMS_VERSION = '2026-11-13'
 export const REF_COOKIE = 'ref_agent'
 export const REF_DAYS = 60
 
