@@ -42,6 +42,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [pendingAddons, setPendingAddons] = useState(0)
   const [pendingDemos, setPendingDemos] = useState(0)   // طلبات عرض جديدة ما انتواصل معها
   const [pendingRenewals, setPendingRenewals] = useState(0)   // طلبات تجديد بانتظار الدفع
+  const [pendingInbox, setPendingInbox] = useState(0)        // ردود عملاء بالإيميل لم تُقرأ
   const [pendingSupport, setPendingSupport] = useState(0)     // تذاكر دعم جديدة
   const [newAlert, setNewAlert] = useState<false | 'addon' | 'renewal'>(false)
   useEffect(() => {
@@ -57,7 +58,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const tickDemos = () => count('/api/admin/demo-requests?count=1').then(setPendingDemos)
     let lastR = -1
     const tickRenewals = () => count('/api/admin/renewals?count=1').then(n => { if (lastR >= 0 && n > lastR) setNewAlert('renewal'); lastR = n; setPendingRenewals(n) })
-    const tickSupport = () => count('/api/admin/support-tickets?count=1').then(setPendingSupport)
+    const tickSupport = () => Promise.all([count('/api/admin/support-tickets?count=1').then(setPendingSupport), count('/api/admin/inbound-emails?count=1').then(setPendingInbox)])
     const all = () => { tick(); tickDemos(); tickRenewals(); tickSupport() }
     all()
     const t = setInterval(all, 60_000)
@@ -129,7 +130,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <Icon size={18} />
                   <span>{item.label}</span>
                   {(() => {
-                    const n = item.href === '/storely-admin/requests' ? pendingAddons + pendingRenewals + pendingSupport + (can() ? pendingDemos : 0) : 0
+                    const n = item.href === '/storely-admin/requests' ? pendingAddons + pendingRenewals + pendingSupport + pendingInbox + (can() ? pendingDemos : 0) : 0
                     return n > 0 && (
                       <span style={{ marginInlineStart: 'auto', background: A.danger, color: 'white', borderRadius: 99, fontSize: 11, fontWeight: 600, minWidth: 20, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>{n}</span>
                     )
@@ -157,7 +158,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   )
 
   return shell(
-    <AdminContext.Provider value={{ admin, can: p => can(p), logout, setAdmin, counts: { addons: pendingAddons, demos: pendingDemos, renewals: pendingRenewals, support: pendingSupport } }}>
+    <AdminContext.Provider value={{ admin, can: p => can(p), logout, setAdmin, counts: { addons: pendingAddons, demos: pendingDemos, renewals: pendingRenewals, support: pendingSupport, inbox: pendingInbox } }}>
       <aside className="adm-side">{sidebar}</aside>
       {menuOpen && (
         <div className="adm-mob-menu">

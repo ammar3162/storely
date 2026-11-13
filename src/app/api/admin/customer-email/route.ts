@@ -9,7 +9,7 @@ const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 const PERM = 'manage_users'
 
 // رسالة شخصية لعميل واحد من ملفه في لوحة الإدارة — مو إعلان: من بريد الدعم، بدون رابط إلغاء،
-// والرد يوصل لبريد المشرف اللي أرسلها. وكل رسالة تنحفظ في سجل العميل (سجل التدقيق).
+// والرد يرجع لـ support@ ويظهر في «البريد الوارد» وهنا. وكل رسالة تنحفظ في سجل العميل (سجل التدقيق).
 async function owner(db: ReturnType<typeof sb>, orgId: string) {
   const [{ data: p }, { data: org }] = await Promise.all([
     db.from('profiles').select('id,full_name').eq('org_id', orgId).eq('role', 'owner').maybeSingle(),
@@ -27,13 +27,15 @@ export async function GET(req: Request) {
   const orgId = new URL(req.url).searchParams.get('org_id') || ''
   if (!orgId) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
   const db = sb()
-  const [o, { data: logs }] = await Promise.all([
+  const [o, { data: logs }, { data: inbox }] = await Promise.all([
     owner(db, orgId),
+    (db as any).from('inbound_emails').select('from_email,subject,body,received_at').eq('org_id', orgId).order('received_at', { ascending: false }).limit(20),
     (db as any).from('admin_audit_log').select('admin_name,details,created_at').eq('action', 'customer_email').eq('target_org_id', orgId).order('created_at', { ascending: false }).limit(20),
   ])
   const email = o?.email || null
   return NextResponse.json({ success: true, email: email ? email.replace(/^(.{2}).*(@.*)$/, '$1•••$2') : null, sendable: !!email && isSendableEmail(email),
-    sent: ((logs || []) as any[]).map(l => ({ by: l.admin_name, at: l.created_at, subject: l.details?.subject || '', body: l.details?.body || '' })) })
+    sent: ((logs || []) as any[]).map(l => ({ by: l.admin_name, at: l.created_at, subject: l.details?.subject || '', body: l.details?.body || '' })),
+    received: ((inbox || []) as any[]).map(m => ({ from: m.from_email, at: m.received_at, subject: m.subject || '', body: m.body || '' })) })
 }
 
 // { org_id, subject, body } — {الاسم} و{المنشأة} تتبدل

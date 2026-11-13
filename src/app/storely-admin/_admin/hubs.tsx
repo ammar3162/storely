@@ -11,6 +11,7 @@ import PricingSwitches from './sections/pricing-switches'
 import DemoRequests from './sections/demo-requests'
 import SupplierApplications from './sections/supplier-applications'
 import Support from './sections/support'
+import Inbox from './sections/inbox'
 import Agents from './sections/agents'
 import Partners from './sections/partners'
 import Notifications from './sections/notifications'
@@ -37,8 +38,9 @@ export const HUBS: Record<string, { title: string; subtitle: string; tabs: HubTa
     { key: 'metrics', label: 'مقاييس الإيراد', perm: 'view_metrics', Comp: Metrics },
     { key: 'ai', label: 'تكلفة الذكاء الاصطناعي', perm: 'view_metrics', Comp: AiUsage },
   ] },
-  requests: { title: 'صندوق الطلبات', subtitle: 'كل طلبات العملاء والموردين في مكان واحد: الدعم الفني، والتجديد، والإضافات — التبويب عليه عدد الطلبات الجديدة', tabs: [
+  requests: { title: 'صندوق الطلبات', subtitle: 'كل طلبات العملاء والموردين في مكان واحد: الدعم الفني، والبريد الوارد، والتجديد، والإضافات — التبويب عليه عدد الطلبات الجديدة', tabs: [
     { key: 'support', label: 'الدعم الفني', perm: 'manage_users', Comp: Support, count: 'support' },
+    { key: 'inbox', label: 'البريد الوارد', perm: 'manage_users', Comp: Inbox, count: 'inbox' },
     { key: 'renewals', label: 'التجديد', perm: 'manage_users', Comp: Renewals, count: 'renewals' },
     { key: 'addons', label: 'الإضافات والترقية', perm: 'manage_users', Comp: AddonRequests, count: 'addons' },
     { key: 'switches', label: 'تغيير الباقة', perm: 'manage_users', Comp: PricingSwitches },
