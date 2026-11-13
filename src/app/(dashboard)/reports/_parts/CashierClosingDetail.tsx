@@ -2,7 +2,7 @@
 import { useState, useEffect, Suspense, lazy } from 'react'
 import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import { currencySymbol } from '@/lib/currencySymbol'
-import { FileText, Inbox, Loader2, Trash2, Pencil, Lock, AlertTriangle, BarChart3, CreditCard, Bike } from 'lucide-react'
+import { FileText, Inbox, Loader2, Trash2, Pencil, Lock, AlertTriangle, BarChart3, CreditCard, Bike, ChevronDown, ChevronUp } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import { getMe } from '@/lib/session'
 import { colors, font, card, btnSecondary } from '@/lib/ds'
@@ -19,6 +19,9 @@ const PasswordBox = lazy(() => import('@/components/CashierClosingEditor').then(
 export default function CashierClosingDetail({ period, from, to, onBack, filterBar }: { period:FilterPeriod; from:string; to:string; onBack:()=>void; filterBar?: React.ReactNode }) {
   const [closings, setClosings] = useState<any[]>([])
   const [expandedReasons, setExpandedReasons] = useState<Record<string,boolean>>({})
+  // الجوال: قائمة مختصرة (سطر لكل إقفال) — الضغط يفتح التفاصيل
+  const [openRow, setOpenRow] = useState<string|null>(null)
+  const [mFilter, setMFilter] = useState<'all'|'deficit'|'pending'>('all')
   const [loading, setLoading]   = useState(true)
   const [confirmDelete, setConfirmDelete] = useState<any|null>(null)
   const [deletePassword, setDeletePassword] = useState('')
@@ -214,7 +217,8 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
         {loading?(<ListSkeleton/>
         ):closings.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><Inbox size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد تقارير إقفال</div></div>
         ):(
-          <div style={{overflowX:'auto',overflowY:'auto',maxHeight:480}}>
+          <>
+          <div className="cc-scroll cc-desktop" style={{overflowX:'auto',overflowY:'auto',maxHeight:480}}>
             <table className="m-cards" style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`,position:'sticky' as const,top:0,zIndex:2}}>
@@ -270,16 +274,16 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
                     </td>
                     <td data-label="الكاش بعد الخصم" style={{padding:'12px 16px',fontSize:font.sm,color:colors.text,fontWeight:700}}>{(Number(c.cash_amount)-Number(c.total_purchases)).toFixed(0)} {curr}</td>
                     <td data-label="الصافي" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{netOf(c).toFixed(0)} {curr}</td>
-                    <td data-label="النتيجة" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:statusColor[c.status],minWidth:150}}>
-                      {statusLabel[c.status]}{c.status!=='balanced'?` (${Math.abs(Number(c.difference)).toFixed(0)} ${curr})`:''}
-                      {c.status==='deficit' && (
-                        <div style={{fontSize:11,fontWeight:600,marginTop:4,lineHeight:1.5,color:c.deficit_reason?colors.text2:colors.text4,background:c.deficit_reason?colors.dangerLight:'transparent',borderRadius:6,padding:c.deficit_reason?'4px 8px':0,maxWidth:220,whiteSpace:'normal' as const}}>
+                    <td data-label="النتيجة" className="cc-wide" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:statusColor[c.status],minWidth:150}}>
+                      {/* المبلغ بدون أقواس (كانت تنقلب بالعربي على الجوال) */}
+                      <span style={{whiteSpace:'nowrap' as const}}>{statusLabel[c.status]}{c.status!=='balanced'?` ${(Math.abs(Number(c.difference))<1?Math.abs(Number(c.difference)).toFixed(2):Math.abs(Number(c.difference)).toFixed(0))} ${curr}`:''}</span>
+                      {c.status==='deficit' && <div className="cc-more">
+                        <div className="cc-reason" style={{fontSize:11,fontWeight:600,marginTop:4,lineHeight:1.6,color:c.deficit_reason?colors.text2:colors.text4,background:c.deficit_reason?colors.dangerLight:'transparent',borderRadius:6,padding:c.deficit_reason?'4px 8px':0,maxWidth:220,whiteSpace:'normal' as const}}>
                           {c.deficit_reason ? <>السبب: {c.deficit_reason}</> : 'بدون سبب (إقفال قديم)'}
                         </div>
-                      )}
-                      {c.status==='deficit' && c.deficit_decision==='pending' && (
+                      {c.deficit_decision==='pending' && (
                         isOwner ? (
-                          <div style={{display:'flex',gap:6,marginTop:6}}>
+                          <div className="cc-btns" style={{display:'flex',gap:6,marginTop:6}}>
                             <button onClick={()=>decideDeficit(c.id,'approved')} disabled={deciding===c.id}
                               style={{padding:'4px 10px',borderRadius:6,border:'none',background:colors.danger,color:'white',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>خصم من الراتب</button>
                             <button onClick={()=>decideDeficit(c.id,'rejected')} disabled={deciding===c.id}
@@ -287,8 +291,9 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
                           </div>
                         ) : <div style={{fontSize:11,fontWeight:600,color:colors.warning,marginTop:4}}>بانتظار قرار المالك</div>
                       )}
-                      {c.status==='deficit' && c.deficit_decision==='approved' && <div style={{fontSize:11,fontWeight:700,color:colors.danger,marginTop:4}}>خُصم من الراتب</div>}
-                      {c.status==='deficit' && c.deficit_decision==='rejected' && <div style={{fontSize:11,fontWeight:600,color:colors.text4,marginTop:4}}>رُفض الخصم</div>}
+                      {c.deficit_decision==='approved' && <div style={{fontSize:11,fontWeight:700,color:colors.danger,marginTop:4}}>خُصم من الراتب</div>}
+                      {c.deficit_decision==='rejected' && <div style={{fontSize:11,fontWeight:600,color:colors.text4,marginTop:4}}>رُفض الخصم</div>}
+                      </div>}
                     </td>
                     <td data-label="المرفقات" style={{padding:'12px 16px'}}>
                       <div style={{display:'flex',gap:6}}>
@@ -321,19 +326,109 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
               <tfoot style={{position:'sticky' as const,bottom:0,zIndex:2}}>
                 <tr style={{background:colors.primaryLight,borderTop:`2px solid ${colors.primaryBorder}`,boxShadow:'0 -2px 8px rgba(0,0,0,.06)'}}>
                   <td style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}} colSpan={2}>الإجمالي ({closings.length})</td>
-                  <td data-label="الكاشير" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_sales),0).toFixed(0)} {curr}</td>
-                  <td data-label="المبيعات" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.network_amount),0).toFixed(0)} {curr}</td>
-                  {hasDelivery && <td data-label="الشبكة" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{totalDelivery.toFixed(0)} {curr}</td>}
-                  <td data-label="التوصيل" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.cash_amount),0).toFixed(0)} {curr}</td>
-                  <td data-label="الكاش الفعلي" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0)>0?'−'+closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0).toFixed(0)+' '+curr:'—'}</td>
-                  <td data-label="المسحوبات" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount)-Number(c.total_purchases)),0).toFixed(0)} {curr}</td>
-                  <td data-label="الكاش بعد الخصم" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{closings.reduce((s:number,c:any)=>s+netOf(c),0).toFixed(0)} {curr}</td>
-                  <td data-label="الصافي" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.danger}}>{closings.reduce((s:number,c:any)=>s+Number(c.difference),0).toFixed(0)} {curr}</td>
-                  <td data-label="النتيجة"/><td data-label="المرفقات"/>
+                  {/* تسميات الإجمالي على الجوال — كانت مزحومة خانة (المبيعات تحت «الكاشير»...) */}
+                  <td data-label="المبيعات" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_sales),0).toFixed(0)} {curr}</td>
+                  <td data-label="الشبكة" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.network_amount),0).toFixed(0)} {curr}</td>
+                  {hasDelivery && <td data-label="التوصيل" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{totalDelivery.toFixed(0)} {curr}</td>}
+                  <td data-label="الكاش الفعلي" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+Number(c.cash_amount),0).toFixed(0)} {curr}</td>
+                  <td data-label="المسحوبات" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0)>0?colors.danger:colors.text4}}>{closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0)>0?'−'+closings.reduce((s:number,c:any)=>s+Number(c.total_purchases),0).toFixed(0)+' '+curr:'—'}</td>
+                  <td data-label="الكاش بعد الخصم" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.text}}>{closings.reduce((s:number,c:any)=>s+(Number(c.cash_amount)-Number(c.total_purchases)),0).toFixed(0)} {curr}</td>
+                  <td data-label="الصافي" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:colors.primary}}>{closings.reduce((s:number,c:any)=>s+netOf(c),0).toFixed(0)} {curr}</td>
+                  {(()=>{ const d = closings.reduce((s:number,c:any)=>s+Number(c.difference),0)
+                    return <td data-label="الفرق" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:800,color:d<0?statusColor.deficit:d>0?statusColor.surplus:statusColor.balanced,whiteSpace:'nowrap' as const}}>{d<0?'عجز ':d>0?'زيادة ':'مطابق'}{d!==0?`${Math.abs(d).toFixed(0)} ${curr}`:''}</td> })()}
+                  <td/><td/>
                 </tr>
               </tfoot>
             </table>
           </div>
+          {/* ── الجوال: الإجمالي فوق، وكل إقفال سطر واحد (التاريخ، الكاشير، الصافي، النتيجة) يفتح بالضغط ── */}
+          {(()=>{
+            const pending = (c:any)=>c.status==='deficit' && c.deficit_decision==='pending'
+            const nPending = closings.filter(pending).length, nDeficit = closings.filter(c=>c.status==='deficit').length
+            const sum = (f:(c:any)=>number)=>closings.reduce((s:number,c:any)=>s+f(c),0)
+            const diff = sum(c=>Number(c.difference))
+            const list = closings.filter(c=>mFilter==='all'||(mFilter==='deficit'?c.status==='deficit':pending(c)))
+              .map((c,i)=>({c,i})).sort((a,b)=>(Number(pending(b.c))-Number(pending(a.c)))||a.i-b.i).map(x=>x.c)
+            const money = (n:number)=>`${Math.round(n).toLocaleString('en-US')} ${curr}`
+            const row = (label:string, value:React.ReactNode, strong=false, color?:string)=>(
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,padding:'7px 0',borderBottom:`1px solid ${colors.border}`}}>
+                <span style={{fontSize:13,color:colors.text3}}>{label}</span>
+                <span style={{fontSize:14,fontWeight:strong?800:600,color:color||colors.text}}>{value}</span>
+              </div>)
+            const chip = (k:'all'|'deficit'|'pending', l:string, n:number)=>(
+              <button key={k} onClick={()=>{setMFilter(k);setOpenRow(null)}} style={{flex:1,padding:'8px 6px',borderRadius:10,border:`1px solid ${mFilter===k?colors.primary:colors.border}`,background:mFilter===k?colors.primary:colors.surface,color:mFilter===k?'#fff':colors.text2,fontSize:13,fontWeight:700,fontFamily:'inherit',cursor:'pointer'}}>{l} <span style={{opacity:.75}}>{n}</span></button>)
+            return (
+              <div className="cc-mobile" style={{padding:'12px 12px 4px'}}>
+                <div style={{background:colors.bg,border:`1px solid ${colors.border}`,borderRadius:12,padding:'10px 14px',marginBottom:12}}>
+                  <div style={{fontSize:13,fontWeight:800,color:colors.text,marginBottom:4}}>إجمالي الفترة ({closings.length} إقفال)</div>
+                  {row('المبيعات', money(sum(c=>Number(c.total_sales))))}
+                  {row('الصافي', money(sum(netOf)), true, colors.primary)}
+                  {row('الفرق', diff===0?'مطابق':`${diff<0?'عجز':'زيادة'} ${money(Math.abs(diff))}`, true, diff<0?statusColor.deficit:diff>0?statusColor.surplus:statusColor.balanced)}
+                </div>
+                <div style={{display:'flex',gap:6,marginBottom:10}}>
+                  {chip('all','الكل',closings.length)}{chip('deficit','فيها عجز',nDeficit)}{chip('pending','تحتاج قرار',nPending)}
+                </div>
+                {!list.length && <div style={{padding:'24px 0',textAlign:'center',fontSize:13,color:colors.text4}}>لا توجد إقفالات بهذا التصنيف</div>}
+                {list.map((c:any)=>{
+                  const open = openRow===c.id
+                  const d = new Date(c.closing_date+'T12:00:00Z')
+                  const badgeBg = c.status==='deficit'?colors.dangerLight:c.status==='surplus'?colors.infoLight:colors.bg
+                  return (
+                    <div key={c.id} style={{border:`1px solid ${pending(c)?colors.danger:colors.border}`,borderRadius:12,marginBottom:8,background:colors.surface,overflow:'hidden'}}>
+                      <button onClick={()=>setOpenRow(open?null:c.id)} style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'12px 14px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',textAlign:'start' as const}}>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:14,fontWeight:800,color:colors.text}}>{d.toLocaleDateString('ar-SA-u-ca-gregory',{numberingSystem:'latn',day:'numeric',month:'long',timeZone:'UTC'})}</div>
+                          <div style={{fontSize:12.5,color:colors.text3,marginTop:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{c.staff_name}{pending(c)?' · تحتاج قرارك':''}</div>
+                        </div>
+                        <div style={{textAlign:'end' as const}}>
+                          <div style={{fontSize:14,fontWeight:800,color:colors.text,whiteSpace:'nowrap' as const}}>{money(netOf(c))}</div>
+                          <span style={{display:'inline-block',marginTop:3,fontSize:11.5,fontWeight:800,color:statusColor[c.status],background:badgeBg,borderRadius:6,padding:'2px 8px',whiteSpace:'nowrap' as const}}>{statusLabel[c.status]}{c.status!=='balanced'?` ${(Math.abs(Number(c.difference))<1?Math.abs(Number(c.difference)).toFixed(2):Math.abs(Number(c.difference)).toFixed(0))}`:''}</span>
+                        </div>
+                        {open?<ChevronUp size={16} color={colors.text4}/>:<ChevronDown size={16} color={colors.text4}/>}
+                      </button>
+                      {open && (
+                        <div style={{padding:'0 14px 14px'}}>
+                          {row('المبيعات', money(Number(c.total_sales)))}
+                          {row('الشبكة', money(Number(c.network_amount)))}
+                          {Number(c.delivery_amount)>0 && row('التوصيل', money(Number(c.delivery_amount)))}
+                          {row('الكاش الفعلي', money(Number(c.cash_amount)))}
+                          {row('المسحوبات', Number(c.total_purchases)>0?`−${money(Number(c.total_purchases))}`:'—', false, Number(c.total_purchases)>0?colors.danger:colors.text4)}
+                          {(c.purchases||[]).length>0 && <div style={{fontSize:12,color:colors.text3,padding:'4px 0',lineHeight:1.7}}>{(c.purchases||[]).map((p:any,pi:number)=><div key={pi}>{p.reason||'بدون سبب'} — {money(Number(p.amount))}</div>)}</div>}
+                          {row('الكاش بعد الخصم', money(Number(c.cash_amount)-Number(c.total_purchases)))}
+                          {row('الصافي', money(netOf(c)), true, colors.primary)}
+                          {c.status==='deficit' && (
+                            <div style={{marginTop:10}}>
+                              <div style={{fontSize:13,lineHeight:1.7,color:c.deficit_reason?colors.text2:colors.text4,background:colors.dangerLight,borderRadius:8,padding:'8px 10px'}}>{c.deficit_reason?<>السبب: {c.deficit_reason}</>:'بدون سبب (إقفال قديم)'}</div>
+                              {pending(c) && (isOwner ? (
+                                <div style={{display:'flex',gap:8,marginTop:8}}>
+                                  <button onClick={()=>decideDeficit(c.id,'approved')} disabled={deciding===c.id} style={{flex:1,padding:'10px',borderRadius:8,border:'none',background:colors.danger,color:'#fff',fontSize:13,fontWeight:700,fontFamily:'inherit',cursor:'pointer'}}>خصم من الراتب</button>
+                                  <button onClick={()=>decideDeficit(c.id,'rejected')} disabled={deciding===c.id} style={{flex:1,padding:'10px',borderRadius:8,border:`1px solid ${colors.border2}`,background:colors.surface,color:colors.text2,fontSize:13,fontWeight:700,fontFamily:'inherit',cursor:'pointer'}}>رفض</button>
+                                </div>) : <div style={{fontSize:12,fontWeight:600,color:colors.warning,marginTop:6}}>بانتظار قرار المالك</div>)}
+                              {c.deficit_decision==='approved' && <div style={{fontSize:12,fontWeight:700,color:colors.danger,marginTop:6}}>خُصم من الراتب</div>}
+                              {c.deficit_decision==='rejected' && <div style={{fontSize:12,fontWeight:600,color:colors.text4,marginTop:6}}>رُفض الخصم</div>}
+                            </div>
+                          )}
+                          <div style={{display:'flex',alignItems:'center',gap:8,marginTop:12,flexWrap:'wrap' as const}}>
+                            {c.sales_image && <a href={fileLink(c.sales_image)} target="_blank" rel="noopener noreferrer" style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12.5,fontWeight:700,color:colors.info,background:colors.infoLight,borderRadius:8,padding:'7px 10px',textDecoration:'none'}}><BarChart3 size={14}/> تقرير المبيعات</a>}
+                            {c.network_image && <a href={fileLink(c.network_image)} target="_blank" rel="noopener noreferrer" style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12.5,fontWeight:700,color:colors.primary,background:colors.bg,border:`1px solid ${colors.border}`,borderRadius:8,padding:'7px 10px',textDecoration:'none'}}><CreditCard size={14}/> موازنة الشبكة</a>}
+                            {isOwner && <>
+                              <button onClick={()=>setEditing(c)} style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12.5,fontWeight:700,color:colors.primary,background:colors.surface,border:`1px solid ${colors.border2}`,borderRadius:8,padding:'7px 12px',fontFamily:'inherit',cursor:'pointer',marginInlineStart:'auto'}}><Pencil size={13}/> تعديل</button>
+                              <button onClick={()=>{setConfirmDelete(c);setDeletePassword('');setDeleteError('')}} style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12.5,fontWeight:700,color:'#dc2626',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'7px 12px',fontFamily:'inherit',cursor:'pointer'}}><Trash2 size={13}/> حذف</button>
+                            </>}
+                          </div>
+                          <div style={{fontSize:11.5,color:colors.text4,marginTop:8}}>
+                            {c.created_at && <>قُفل {new Date(c.created_at).toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'})}</>}
+                            {c.edited_at && <> · <button onClick={()=>isOwner&&setHistory(c)} style={{background:'none',border:'none',padding:0,color:c.edited_source==='accountant'?'#7c3aed':colors.warning,fontWeight:700,fontSize:11.5,fontFamily:'inherit',cursor:isOwner?'pointer':'default'}}>{c.edited_source==='accountant'?'معدّل من المحاسب':'معدّل'}{c.edit_count>1?` (${c.edit_count})`:''}</button></>}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
+          </>
         )}
       </div>
 
