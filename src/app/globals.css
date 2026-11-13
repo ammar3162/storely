@@ -695,6 +695,9 @@ input.df-empty::-webkit-datetime-edit { opacity: 0; }
 
 /* الجداول الخام (التقارير، الحضور، الرواتب) على الجوال: كل صف بطاقة.
    أول عمود عنوان البطاقة، والباقي سطر «اسم العمود: القيمة» (data-label). */
+/* إقفالات الكاشير: جدول على الكمبيوتر، وقائمة مختصرة على الجوال */
+.cc-mobile { display: none; }
+@media (max-width: 640px) { .cc-desktop { display: none !important; } .cc-mobile { display: block; } }
 @media (max-width: 640px) {
   table.m-cards { display: block; min-width: 0 !important; width: 100% !important; }
   table.m-cards thead { display: none; }
@@ -706,6 +709,15 @@ input.df-empty::-webkit-datetime-edit { opacity: 0; }
   table.m-cards td:first-child { font-size: 14px; font-weight: 700; padding-bottom: 4px !important; }
   table.m-cards td:first-child::before { content: none; }
   table.m-cards td:empty { display: none !important; }
+  /* إقفال الكاشير: «النتيجة» — العنوان والمبلغ بسطر، والسبب وأزرار القرار بسطر كامل تحته */
+  .cc-scroll { max-height: none !important; overflow: visible !important; }   /* بدون صندوق تمرير داخل الصفحة على الجوال */
+  table.m-cards tfoot { position: static !important; }   /* الإجمالي على الجوال يصير بطاقة عادية بآخر القائمة (كان ثابت فوق البطاقات) */
+  table.m-cards tfoot tr { border-top: 2px solid var(--storely-border) !important; box-shadow: none !important; }
+  table.m-cards td.cc-wide { flex-wrap: wrap; min-width: 0 !important; row-gap: 6px; }
+  table.m-cards td.cc-wide > .cc-more { flex-basis: 100%; }
+  table.m-cards td.cc-wide .cc-reason { max-width: none !important; font-size: 13px !important; padding: 8px 10px !important; }
+  table.m-cards td.cc-wide .cc-btns { gap: 8px !important; }
+  table.m-cards td.cc-wide .cc-btns > button { flex: 1; padding: 9px 12px !important; font-size: 13px !important; border-radius: 8px !important; }
   /* من لم يحضر (بلا حضور ولا خصم): سطر واحد — الاسم والحالة فقط بدل أسطر «—» */
   table.m-cards tr.m-off { display: flex !important; align-items: center; justify-content: space-between; gap: 12px; }
   table.m-cards tr.m-off td { display: none !important; }
