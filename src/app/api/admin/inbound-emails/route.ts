@@ -25,7 +25,7 @@ export async function GET(req: Request) {
   return NextResponse.json({ success: true, emails: ((data || []) as any[]).map(e => ({ ...e, org_name: e.organizations?.name || null, organizations: undefined })) })
 }
 
-// { id, action: 'read' | 'unread' | 'reply', reply }
+// { id, action: 'read' | 'unread' | 'reply' | 'delete', reply } — بعد الرد تنتقل للأرشيف (تبقى في ملف العميل)، والحذف للرسائل المزعجة فقط
 export async function POST(req: Request) {
   const admin = await requirePermission(req.headers.get('x-admin-key'), PERM)
   if (!admin) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
@@ -35,6 +35,11 @@ export async function POST(req: Request) {
   if (!e) return NextResponse.json({ error: 'الرسالة غير موجودة' }, { status: 404 })
   if (b.action === 'read' || b.action === 'unread') {
     if (e.status !== 'replied') await db.from('inbound_emails').update({ status: b.action === 'read' ? 'read' : 'new' }).eq('id', e.id)
+    return NextResponse.json({ success: true })
+  }
+  if (b.action === 'delete') {
+    await db.from('inbound_emails').delete().eq('id', e.id)
+    await logAdminAction(admin, 'inbound_email_delete', e.org_id || null, e.organizations?.name || null, { from: e.from_email, subject: e.subject || '' })
     return NextResponse.json({ success: true })
   }
   if (b.action !== 'reply') return NextResponse.json({ error: 'إجراء غير معروف' }, { status: 400 })

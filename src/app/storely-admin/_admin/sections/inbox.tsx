@@ -1,14 +1,16 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Mail, ChevronDown, ChevronUp } from 'lucide-react'
+import { Mail, ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
+import { confirmDialog } from '@/components/ConfirmDialog'
 import { A, Badge, Btn, Card, Empty, Loading, Notice, PageHeader, Stack, Tabs, adminFetch, fmtDate, inputStyle } from '../kit'
 
-// البريد الوارد: ردود العملاء على support@storely.dev — تظهر هنا، والرد يطلع من نفس العنوان باسم «فريق Storely»
+// البريد الوارد: ردود العملاء على support@storely.dev — تظهر هنا، والرد يطلع من نفس العنوان باسم «فريق Storely».
+// بعد الرد تنتقل الرسالة للأرشيف (وتبقى مع الرد في «المراسلات» بملف العميل)، والحذف للرسائل المزعجة فقط.
 const STATUS: Record<string, [string, 'warning' | 'primary' | 'neutral']> = { new: ['جديدة', 'warning'], read: ['مقروءة', 'neutral'], replied: ['تم الرد', 'primary'] }
 
 export default function InboxPage() {
   const [rows, setRows] = useState<any[] | null>(null)
-  const [filter, setFilter] = useState<'open' | 'replied'>('open')
+  const [filter, setFilter] = useState<'inbox' | 'archive'>('inbox')
   const [openId, setOpenId] = useState<string | null>(null)
   const [reply, setReply] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState('')
@@ -16,14 +18,16 @@ export default function InboxPage() {
   const load = () => adminFetch('/api/admin/inbound-emails').then(j => setRows(j.emails || [])).catch(() => setRows([]))
   useEffect(() => { load() }, [])
 
-  async function act(e: any, action: 'read' | 'unread' | 'reply') {
+  async function act(e: any, action: 'read' | 'unread' | 'reply' | 'delete') {
+    if (action === 'delete' && !(await confirmDialog({ title: 'حذف الرسالة؟', message: `رسالة ${e.from_email} تنحذف نهائياً ولا يمكن استرجاعها. استخدمه للرسائل المزعجة فقط — الرسائل اللي ترد عليها تنتقل للأرشيف تلقائياً.`, confirmText: 'حذف', type: 'danger' }))) return
     setBusy(e.id + action)
     const j = await adminFetch('/api/admin/inbound-emails', { method: 'POST', body: { id: e.id, action, reply: reply[e.id] } })
     setBusy('')
     if (action === 'reply') {
-      setMsg(j.success ? { t: `أُرسل الرد إلى ${e.from_email}` } : { t: j.error || 'تعذّر الإرسال', bad: true })
+      setMsg(j.success ? { t: `أُرسل الرد إلى ${e.from_email} ونُقلت الرسالة إلى الأرشيف` } : { t: j.error || 'تعذّر الإرسال', bad: true })
       if (j.success) setReply(r => ({ ...r, [e.id]: '' }))
     }
+    if (action === 'delete') setMsg(j.success ? { t: 'حُذفت الرسالة' } : { t: j.error || 'تعذّر الحذف', bad: true })
     load(); window.dispatchEvent(new Event('admin-counts-refresh'))
   }
   function toggle(e: any) {
@@ -33,14 +37,14 @@ export default function InboxPage() {
   }
 
   const all = rows || []
-  const list = all.filter(e => filter === 'replied' ? e.status === 'replied' : e.status !== 'replied')
+  const list = all.filter(e => filter === 'archive' ? e.status === 'replied' : e.status !== 'replied')
   return (
     <Stack>
-      <PageHeader title="البريد الوارد" subtitle="ردود العملاء على support@storely.dev — ردّك يوصلهم من نفس العنوان باسم «فريق Storely»" />
+      <PageHeader title="البريد الوارد" subtitle="ردود العملاء على support@storely.dev — ردّك يوصلهم من نفس العنوان باسم «فريق Storely»، وبعد الرد تنتقل الرسالة إلى الأرشيف" />
+      <Tabs items={[{ k: 'inbox', l: 'الوارد', n: all.filter(e => e.status !== 'replied').length }, { k: 'archive', l: 'الأرشيف', n: all.filter(e => e.status === 'replied').length }]} value={filter} onChange={setFilter} />
       {msg && <Notice tone={msg.bad ? 'danger' : 'primary'}>{msg.t}</Notice>}
-      <Tabs items={[{ k: 'open', l: 'تحتاج رد', n: all.filter(e => e.status !== 'replied').length }, { k: 'replied', l: 'تم الرد', n: all.filter(e => e.status === 'replied').length }]} value={filter} onChange={setFilter} />
       {rows === null ? <Loading /> : !list.length ? (
-        <Card><Empty icon={Mail} title={filter === 'open' ? 'لا توجد رسائل تحتاج رد' : 'لم ترد على أي رسالة بعد'} hint={filter === 'open' ? 'لما يرد عميل على إيميل من Storely تظهر رسالته هنا' : undefined} /></Card>
+        <Card><Empty icon={Mail} title={filter === 'inbox' ? 'لا توجد رسائل تحتاج رد' : 'الأرشيف فارغ'} hint={filter === 'inbox' ? 'لما يرد عميل على إيميل من Storely تظهر رسالته هنا' : 'الرسائل اللي ترد عليها تنتقل هنا'} /></Card>
       ) : list.map(e => {
         const [sl, tone] = STATUS[e.status] || STATUS.new
         const expanded = openId === e.id
@@ -71,11 +75,12 @@ export default function InboxPage() {
                     <div style={{ fontSize: 12, color: A.text3, marginBottom: 2 }}>ردّ {e.replied_by_name || 'الدعم'} · {fmtDate(e.replied_at, true)}</div>{e.reply_body}
                   </div>
                 )}
-                <textarea value={reply[e.id] || ''} onChange={ev => setReply(r => ({ ...r, [e.id]: ev.target.value }))} rows={3} placeholder={`اكتب الرد — يوصل ${e.from_email} بالإيميل`}
+                <textarea value={reply[e.id] || ''} onChange={ev => setReply(r => ({ ...r, [e.id]: ev.target.value }))} rows={3} placeholder={`اكتب الرد — يوصل ${e.from_email} بالإيميل، ثم تنتقل الرسالة إلى الأرشيف`}
                   style={{ ...inputStyle, minHeight: 84, resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.8 }} />
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <Btn kind="primary" small onClick={() => act(e, 'reply')} loading={busy === e.id + 'reply'} disabled={!(reply[e.id] || '').trim()}>إرسال الرد</Btn>
                   {e.status === 'read' && <Btn small onClick={() => act(e, 'unread')} loading={busy === e.id + 'unread'}>تعليم كغير مقروءة</Btn>}
+                  {e.status !== 'replied' && <Btn small onClick={() => act(e, 'delete')} loading={busy === e.id + 'delete'}><Trash2 size={14} /> حذف (رسالة مزعجة)</Btn>}
                 </div>
               </div>
             )}

@@ -136,7 +136,7 @@ export async function sendCampaign(c: CampaignContent, recipients: Recipient[], 
         // زر «إلغاء الاشتراك» في Gmail/Outlook يرسل POST لهذا الرابط — لازم يكون مسار الـ API (الصفحة ما تلغي شي)،
         // وإلا Gmail يعتبر المرسل ما يحترم إلغاء الاشتراك ويحطه بالسبام
         headers: { 'List-Unsubscribe': `<${unsub.replace('/unsubscribe?', '/api/unsubscribe?')}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
-        ...(process.env.MARKETING_REPLY_TO ? { replyTo: process.env.MARKETING_REPLY_TO } : {}),
+        replyTo: process.env.MARKETING_REPLY_TO || 'support@storely.dev',   // ردود الحملات → «البريد الوارد»
       }
     })
     const { data, error } = await withTimeout(resend.batch.send(msgs), 30_000, 'Resend batch').catch((e: Error) => ({ data: null, error: { message: e.message } as never }))

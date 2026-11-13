@@ -5,6 +5,7 @@ import { PackagePlus, Menu, X, LogOut, ChevronLeft } from 'lucide-react'
 import AdminLogin from './_admin/Login'
 import { A, ADMIN_CSS, AdminContext, adminKey, type AdminInfo } from './_admin/kit'
 import { HUB_CSS } from './_admin/Hub'
+import { EmailUsageBanner } from './_admin/EmailUsage'
 import { NAV } from './_admin/nav'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -180,7 +181,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {new Date().toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', weekday: 'long', day: 'numeric', month: 'long' })}
         </div>
       </header>
-      <main className="adm-main">{children}</main>
+      <main className="adm-main"><EmailUsageBanner />{children}</main>
     </AdminContext.Provider>
   )
 }

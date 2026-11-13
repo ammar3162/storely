@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Send, Eye, FlaskConical, FileText, Users, MailX, History } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
+import { EmailUsageLine } from '../EmailUsage'
 import { A, Badge, Btn, Card, Empty, Field, Loading, Notice, PageHeader, Stack, Table, Tabs, adminFetch, fmtDate, inputStyle, td } from '../kit'
 
 // إعلانات الإيميل: تكتب الحملة، تشوف معاينة، ترسل تجربة لإيميلك، وبعدها ترسلها لفئة من العملاء
@@ -88,6 +89,7 @@ export default function EmailCampaignsPage() {
     <>
       <PageHeader title="إعلانات الإيميل" subtitle="أرسل إعلاناً أو تحديثاً لعملاء Storely، ويتضمن كل بريد رابطاً لإلغاء الاشتراك في الإعلانات" />
       <Stack>
+      <EmailUsageLine />
       {msg && <Notice tone={msg.bad ? 'danger' : 'primary'}>{msg.t}</Notice>}
 
       <Card title="رسائل الاشتراك التلقائية" subtitle="تصل للمالك قبل انتهاء اشتراكه بـ3 أيام ويوم الانتهاء، مع الواتساب" actions={
