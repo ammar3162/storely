@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { normalizeAgentCode, agentReward } from '@/lib/agentRewards'
-import { planKeyOf, PLAN_PRICING } from '@/lib/planPricing'
+import { planKeyOf } from '@/lib/planPricing'
+import { monthlyBill } from '@/lib/orgBill'
 import { notifyAgent } from '@/lib/agentNotify'
 
 const last9 = (p: string | null | undefined) => String(p || '').replace(/\D/g, '').slice(-9)
@@ -31,11 +32,12 @@ export async function awardAgentCommission(db: SupabaseClient, orgId: string) {
   if (!agent || (agent as any).status !== 'active') return null
   const plan = planKeyOf(o.plan, o.max_branches)
   const cycle = o.billing_cycle === 'yearly' ? 'yearly' : 'monthly'
-  const amount = agentReward(plan, cycle)
+  const monthly = await monthlyBill(db, orgId).catch(() => 0)   // قيمة الاشتراك الشهري (السنوي ÷ 12) بعد الخصم
+  const amount = agentReward(monthly, cycle)
   const { data: row, error } = await db.from('agent_commissions').insert({ agent_id: o.referred_by_agent, org_id: orgId, plan, billing_cycle: cycle, amount } as any).select('id').maybeSingle()
   if (error || !row) return null   // انحسبت من قبل
   await notifyAgent(db, o.referred_by_agent, { title: `تم اشتراك عميل جديد — ${amount} ريال في محفظتك`,
-    lines: [`«${o.name}» اشتركت في ${PLAN_PRICING[plan].label} (${cycle === 'yearly' ? 'سنوي' : 'شهري'}).`, `انضاف لمحفظتك ${amount} ريال.`],
+    lines: [`«${o.name}» اشتركت في Storely (${cycle === 'yearly' ? 'اشتراك سنوي' : 'اشتراك شهري'} بقيمة ${monthly} ريال شهرياً).`, `انضاف لمحفظتك ${amount} ريال.`],
     whatsapp: `🎉 تم اشتراك «${o.name}» في Storely\n\nانضاف لمحفظتك *${amount} ريال* 💰` })
   return amount
 }

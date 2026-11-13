@@ -4,11 +4,14 @@ import { agentReward, isValidSaIban, normalizeIban, newAgentCode, normalizeAgent
 beforeAll(() => { process.env.STAFF_TOKEN_SECRET = 'test-secret' })
 
 describe('agent rewards', () => {
-  it('per plan, yearly doubles', () => {
-    expect(agentReward('basic', 'monthly')).toBe(50)
-    expect(agentReward('pro', 'monthly')).toBe(100)
-    expect(agentReward('advanced', 'monthly')).toBe(150)
-    expect(agentReward('pro', 'yearly')).toBe(200)
+  it('by monthly subscription value, yearly doubles', () => {
+    expect(agentReward(59, 'monthly')).toBe(50)       // المخزون فقط
+    expect(agentReward(99, 'monthly')).toBe(50)
+    expect(agentReward(100, 'monthly')).toBe(100)
+    expect(agentReward(108, 'monthly')).toBe(100)     // المخزون + الكاشير
+    expect(agentReward(227, 'monthly')).toBe(150)     // كل الخدمات
+    expect(agentReward(108, 'yearly')).toBe(200)
+    expect(agentReward(0, 'monthly')).toBe(50)
   })
   it('Saudi IBAN check', () => {
     expect(isValidSaIban(normalizeIban('SA03 8000 0000 6080 1016 7519'))).toBe(true)
