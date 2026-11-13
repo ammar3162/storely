@@ -13,9 +13,10 @@ export async function POST(req: Request) {
   try {
     const auth = await verifyStaffToken(extractStaffToken(req))
     if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
-    // «ابنِ باقتك»: الميزة لازم تكون لفرع الموظف
+    // «ابنِ باقتك»: نفس الرفع يخدم فواتير المشتريات وصور إقفال الكاشير (الشبكة/المبيعات) —
+    // يكفي أن يكون لفرع الموظف إحدى الميزتين (كان يشترط المشتريات فقط فيمنع صور الإقفال)
     const featureLocked = await staffFeatureError(auth.data as any, 'purchases')
-    if (featureLocked) return NextResponse.json({ error: featureLocked }, { status: 403 })
+    if (featureLocked && await staffFeatureError(auth.data as any, 'cashier')) return NextResponse.json({ error: featureLocked }, { status: 403 })
     const { org_id: orgId } = auth.data!
 
     const formData = await req.formData()
