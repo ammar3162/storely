@@ -18,6 +18,9 @@ function htmlToText(html: string) {
 // اسم المرسل الظاهر — نشيل أي رموز تكسر ترويسة From
 const cleanName = (s: string) => s.replace(/[<>"\r\n\\]/g, '').trim().slice(0, 60)
 
+/** عنوان الدعم الوحيد — الردود عليه تظهر في «البريد الوارد» بلوحة الإدارة */
+export const SUPPORT_EMAIL = 'support@storely.dev'
+
 export async function sendEmail({ to, subject, html, text, fromName, fromAddress, replyTo, attachments }: {
   to: string; subject: string; html: string; text?: string
   fromName?: string; fromAddress?: string; replyTo?: string
@@ -36,10 +39,13 @@ export async function sendEmail({ to, subject, html, text, fromName, fromAddress
     subject,
     html,
     text: text || htmlToText(html),
-    ...(replyTo ? { replyTo } : {}),
+    // أي رد من العميل يرجع لعنوان الدعم الوحيد (يظهر في «البريد الوارد» بالأدمن) — إلا لو حُدّد غيره (مثل تقرير المحاسب → المالك)
+    replyTo: replyTo || SUPPORT_EMAIL,
     ...(attachments?.length ? { attachments } : {}),
   }), EXTERNAL_TIMEOUT_MS.messaging, 'Resend').catch((e: Error) => ({ data: null, error: { message: e.message, name: 'timeout' } as never }))
   if (error) {
+    // تعدّي حد Resend (اليومي/الشهري) — كل الإرسال متوقف لين يتجدد الحد؛ لوحة الإدارة تعرض التنبيه من عدّاد الاستهلاك
+    if (/quota_exceeded/.test(String((error as any).name || ''))) console.error('EMAIL_QUOTA_EXCEEDED:', (error as any).name)
     console.error('EMAIL_SEND_FAILED:', error)
     return { success: false, error: error.message }
   }

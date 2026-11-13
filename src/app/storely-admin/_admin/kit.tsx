@@ -38,7 +38,7 @@ export const A = {
 
 // ── الجلسة ──
 export type AdminInfo = { id: string; email: string; full_name: string; role: string; permissions?: Record<string, boolean>; totp_enabled?: boolean }
-export type AdminCounts = { addons: number; demos: number; renewals: number; support: number }
+export type AdminCounts = { addons: number; demos: number; renewals: number; support: number; inbox: number }
 type Ctx = { admin: AdminInfo; can: (perm?: string | string[]) => boolean; logout: () => void; setAdmin: (a: AdminInfo) => void; counts?: AdminCounts }
 /** داخل صفحة تبويبات: عنوان القسم يصير مختصر (التبويب نفسه هو العنوان) */
 export const HubContext = createContext(false)
