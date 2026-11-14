@@ -59,6 +59,15 @@ describe('proration', () => {
   })
 })
 
+describe('custom plan staff limit', () => {
+  it('never goes below 6 per branch (old signups saved 3)', () => {
+    expect(staffBase('custom', 3, 0, 1, 3)).toBe(6)
+    expect(staffBase('custom', 6, 0, 2, 6)).toBe(12)
+    expect(staffBase('custom', 9, 0, 1, 9)).toBe(9)
+    expect(staffBase('custom', 6, 0, 1, null)).toBe(6)
+  })
+})
+
 describe('new plans (الأساسية / الشاملة / المتقدمة / المؤسسات)', () => {
   it('staff and suppliers are for the whole org, plus each extra branch', () => {
     expect(staffBase('basic', 3, 0)).toBe(3)

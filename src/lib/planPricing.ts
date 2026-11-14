@@ -231,7 +231,8 @@ const perPlan = (plan: string | null | undefined, cap: number, baseBranches?: nu
 export function staffBase(plan: string | null | undefined, storedMax: number | null | undefined, extraBranches: number, baseBranches?: number | null, staffIncluded?: number | null): number {
   const c = PLAN_CAPS[planKeyOf(plan)]
   // «ابنِ باقتك»: عدد الموظفين اللي اختاره (لو حدده)
-  if (isCustomPlan(plan) && Number(staffIncluded) > 0) return Number(staffIncluded) + Math.max(0, extraBranches) * c.branchStaff
+  // أقل شي 6 لكل فرع (مثل الفاتورة) — المسجّلين قبل 2026-11-08 محفوظ لهم 3 من الحد القديم
+  if (isCustomPlan(plan) && Number(staffIncluded) > 0) return Math.max(Number(staffIncluded), CUSTOM_MIN_STAFF_PER_BRANCH * Math.max(1, Number(baseBranches) || 1)) + Math.max(0, extraBranches) * c.branchStaff
   return keepUnlimited(storedMax, perPlan(plan, c.staff, baseBranches)) + Math.max(0, extraBranches) * c.branchStaff
 }
 
