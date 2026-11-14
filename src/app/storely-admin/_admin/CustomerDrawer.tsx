@@ -307,9 +307,9 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
           {c.plan === 'custom' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 10, border: `1px solid ${A.border}` }}>
               <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>عدد الموظفين <span style={{ fontSize: 11.5, fontWeight: 600, color: A.text3 }}>({6 * planBranches} مشمولين، 6 لكل فرع، وكل موظف إضافي 10 ⃁)</span></span>
-              <Btn small disabled={!!busy || (c.staff_included ?? 6 * planBranches) <= 6 * planBranches} onClick={() => setStaffIncluded((c.staff_included ?? 6 * planBranches) - 1)}>−</Btn>
-              <b style={{ minWidth: 24, textAlign: 'center' }}>{c.staff_included ?? 6 * planBranches}</b>
-              <Btn small disabled={!!busy} onClick={() => setStaffIncluded((c.staff_included ?? 6 * planBranches) + 1)}>+</Btn>
+              <Btn small disabled={!!busy || Math.max(c.staff_included ?? 0, 6 * planBranches) <= 6 * planBranches} onClick={() => setStaffIncluded(Math.max(c.staff_included ?? 0, 6 * planBranches) - 1)}>−</Btn>
+              <b style={{ minWidth: 24, textAlign: 'center' }}>{Math.max(c.staff_included ?? 0, 6 * planBranches)}</b>
+              <Btn small disabled={!!busy} onClick={() => setStaffIncluded(Math.max(c.staff_included ?? 0, 6 * planBranches) + 1)}>+</Btn>
             </div>
           )}
           {newPlan && (
