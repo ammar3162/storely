@@ -5,11 +5,16 @@ import { createClient } from '@supabase/supabase-js'
 import { selectAll } from '@/lib/selectAll'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
+import { computeProfit } from '@/lib/profitCalc'
+import { computeStaffPayroll, loadOvertimeSettings, staffForPayrollMonth } from '@/lib/payroll'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
+
+// نفس حقول تقرير الرواتب (staff-report) عشان الرقمين يتطابقون
+const PAYROLL_STAFF_FIELDS = 'id,org_id,name,monthly_salary,housing_allowance,transport_allowance,food_allowance,leave_balance_days,shift_id,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates'
 
 async function ensureGenerated(supabase: any, org_id: string, month: string, branchId: string | null) {
   let tplQ = supabase.from('fixed_expenses').select('id,name,amount,branch_id').eq('org_id', org_id).eq('is_active', true)
@@ -45,7 +50,7 @@ async function computeLive(supabase: any, org_id: string, monthParam: string, ef
   const { data: closings } = await selectAll(() => {
     let closingsQ = supabase
       .from('cashier_closings')
-      .select('total_sales')
+      .select('total_sales,delivery,total_purchases')
       .eq('org_id', org_id)
       .gte('closing_date', monthStart)
       .lte('closing_date', monthEndDate)
@@ -53,24 +58,16 @@ async function computeLive(supabase: any, org_id: string, monthParam: string, ef
     return closingsQ.order('id')
   })
 
-  const totalIn = (closings || []).reduce((s: number, c: any) => s + Number(c.total_sales || 0), 0)
-  const closingsCount = (closings || []).length
-
   const { data: purchases } = await selectAll(() => {
     let purchasesQ = supabase
       .from('purchases')
-      .select('category,total_amount')
+      .select('category,amount,total_amount')
       .eq('org_id', org_id)
       .gte('created_at', monthStartTs)
       .lte('created_at', monthEndTs)
     if (effectiveBranchId) purchasesQ = (purchasesQ as any).eq('branch_id', effectiveBranchId)
     return purchasesQ.order('id')
   })
-
-  const purchasesList = purchases || []
-  const inventoryPurchases = purchasesList.filter((p: any) => p.category === 'مخزون').reduce((s: number, p: any) => s + Number(p.total_amount || 0), 0)
-  const otherPurchases = purchasesList.filter((p: any) => p.category !== 'مخزون').reduce((s: number, p: any) => s + Number(p.total_amount || 0), 0)
-  const totalPurchases = inventoryPurchases + otherPurchases
 
   let fixedExpensesQ = supabase
     .from('monthly_fixed_expenses')
@@ -80,9 +77,7 @@ async function computeLive(supabase: any, org_id: string, monthParam: string, ef
     .order('created_at', { ascending: true })
   if (effectiveBranchId) fixedExpensesQ = fixedExpensesQ.eq('branch_id', effectiveBranchId)
   const { data: fixedExpensesData } = await fixedExpensesQ
-
   const fixedExpensesList = fixedExpensesData || []
-  const fixedExpensesTotal = fixedExpensesList.reduce((s: number, e: any) => s + Number(e.amount || 0), 0)
 
   let deliveryQ = supabase
     .from('delivery_income')
@@ -92,51 +87,31 @@ async function computeLive(supabase: any, org_id: string, monthParam: string, ef
     .order('created_at', { ascending: true })
   if (effectiveBranchId) deliveryQ = deliveryQ.eq('branch_id', effectiveBranchId)
   const { data: deliveryData } = await deliveryQ
-  const deliveryIncomeList = deliveryData || []
-  const deliveryIncomeTotal = deliveryIncomeList.reduce((s: number, e: any) => s + Number(e.amount || 0), 0)
 
-  // تكلفة الرواتب الفعلية: الراتب الأساسي + البدلات لكل موظف نشط في المنشأة (أو الفرع)
-  let staffQ = supabase
-    .from('staff_members')
-    .select('id,monthly_salary,housing_allowance,transport_allowance,food_allowance')
-    .eq('org_id', org_id)
-    .eq('is_active', true)
-  if (effectiveBranchId) staffQ = staffQ.eq('branch_id', effectiveBranchId)
-  const { data: staffList } = await staffQ
+  const [{ data: org }, settings, staffList] = await Promise.all([
+    supabase.from('organizations').select('vat_registered').eq('id', org_id).maybeSingle(),
+    loadOvertimeSettings(supabase, org_id),
+    // موظفين ذاك الشهر (النشطين + اللي تركوا خلاله) — مو موظفين اليوم
+    staffForPayrollMonth(supabase, { orgId: org_id, branchId: effectiveBranchId, month: monthParam, select: PAYROLL_STAFF_FIELDS }),
+  ])
 
-  const grossSalaryTotal = (staffList || []).reduce((s: number, m: any) =>
-    s + Number(m.monthly_salary || 0) + Number(m.housing_allowance || 0) + Number(m.transport_allowance || 0) + Number(m.food_allowance || 0), 0)
-
-  // خصومات الشهر الموافق عليها (مو السلف) — تقلل التكلفة الفعلية للمنشأة
-  const staffIds = (staffList || []).map((m: any) => m.id)
-  let deductionsTotal = 0
-  if (staffIds.length > 0) {
-    const { data: deductions } = await supabase
-      .from('staff_payroll_adjustments')
-      .select('amount')
-      .in('staff_id', staffIds)
-      .eq('type', 'deduction')
-      .eq('status', 'approved')
-      .gte('created_at', monthStartTs)
-      .lte('created_at', monthEndTs)
-    deductionsTotal = (deductions || []).reduce((s: number, d: any) => s + Number(d.amount || 0), 0)
+  // تكلفة الرواتب الفعلية من نفس حساب كشف الرواتب (نسبة الأيام لمن ترك، أوفر تايم، مكافآت، خصومات)
+  const staff: { gross: number; overtime: number; bonuses: number; deductions: number }[] = []
+  for (let i = 0; i < staffList.length; i += 8) {
+    const chunk = await Promise.all(staffList.slice(i, i + 8).map((m: any) => computeStaffPayroll(supabase, m, monthParam, settings)))
+    for (const p of chunk) staff.push({ gross: p.grossSalary, overtime: p.overtime.pay, bonuses: p.bonusesTotal, deductions: p.deductionsTotal })
   }
 
-  const salaryExpenseTotal = Math.max(0, grossSalaryTotal - deductionsTotal)
+  const r = computeProfit({
+    vatRegistered: !!(org as any)?.vat_registered,
+    closings: (closings || []) as any[],
+    purchases: (purchases || []) as any[],
+    fixedExpensesTotal: fixedExpensesList.reduce((s: number, e: any) => s + Number(e.amount || 0), 0),
+    deliveryIncome: (deliveryData || []) as any[],
+    staff,
+  })
 
-  const totalOut = totalPurchases + fixedExpensesTotal + salaryExpenseTotal
-  const netProfit = (totalIn + deliveryIncomeTotal) - totalOut
-  const vatAmount = totalIn - (totalIn / 1.15)
-
-  return {
-    month: monthParam,
-    totalIn, closingsCount,
-    inventoryPurchases, otherPurchases, totalPurchases,
-    fixedExpensesTotal, fixedExpensesList,
-    deliveryIncomeTotal, deliveryIncomeList,
-    salaryExpenseTotal,
-    totalOut, netProfit, vatAmount,
-  }
+  return { month: monthParam, ...r, fixedExpensesList }
 }
 
 export async function GET(req: Request) {
@@ -168,7 +143,9 @@ export async function GET(req: Request) {
     const { data: closedRow } = await closedQ.maybeSingle()
 
     if (closedRow) {
+      const { data: vatOrg } = await supabase.from('organizations').select('vat_registered').eq('id', org_id).maybeSingle()
       return NextResponse.json({
+        vatRegistered: !!(vatOrg as any)?.vat_registered,
         success: true, closed: true, closedAt: (closedRow as any).closed_at,
         month: monthParam,
         totalIn: (closedRow as any).total_in,

@@ -191,10 +191,10 @@ export default function ProfitabilityPage() {
     try {
       const rows = [
         {name:`المبيعات (${data.closingsCount} إقفال كاشير)`, type:'إيرادات', amount: Math.round(data.totalIn).toLocaleString('en-US')+' '+curr},
-        ...(data.deliveryIncomeList||[]).map((e:any)=>({name:`دخل توصيل — ${e.platform}`, type:'إيرادات', amount: Number(e.amount).toFixed(0)+' '+curr})),
-        ...(showVat?[{name:'الضريبة على المبيعات (تقديري)', type:'إيرادات', amount: Math.round(vatAmount).toLocaleString('en-US')+' '+curr}]:[]),
+        ...(data.deliveryIncomeList||[]).filter((e:any)=>!e.duplicate).map((e:any)=>({name:`دخل توصيل — ${e.platform}`, type:'إيرادات', amount: Number(e.amount).toFixed(0)+' '+curr})),
+        ...(vatOn?[{name:'الضريبة المستحقة (تقديري)', type:'إيرادات', amount: Math.round(vatAmount).toLocaleString('en-US')+' '+curr}]:[]),
         {name:'مشتريات المخزون', type:'مشتريات', amount: Math.round(data.inventoryPurchases).toLocaleString('en-US')+' '+curr},
-        {name:'مشتريات أخرى', type:'مشتريات', amount: Math.round(data.otherPurchases).toLocaleString('en-US')+' '+curr},
+        {name:Number(data.drawerPurchases||0)>0?`مشتريات أخرى (منها مسحوبات درج الكاشير ${Math.round(data.drawerPurchases)})`:'مشتريات أخرى', type:'مشتريات', amount: Math.round(data.otherPurchases).toLocaleString('en-US')+' '+curr},
         ...fixedList.map((e:any)=>({name:e.name, type:'مصروف ثابت', amount: Number(e.amount).toFixed(0)+' '+curr})),
         ...variableList.map((e:any)=>({name:e.name, type:'مصروف متغيّر', amount: Number(e.amount).toFixed(0)+' '+curr})),
       ]
@@ -212,7 +212,7 @@ export default function ProfitabilityPage() {
           {label:'المبيعات', value: Math.round(data.totalIn).toLocaleString('en-US')+' '+curr},
           {label:'إجمالي المشتريات', value: Math.round(data.totalPurchases).toLocaleString('en-US')+' '+curr},
           {label:'إجمالي المصروفات', value: Math.round(fixedTotal+variableTotal).toLocaleString('en-US')+' '+curr},
-          ...(showVat?[{label:'الضريبة (تقديري)', value: Math.round(vatAmount).toLocaleString('en-US')+' '+curr}]:[]),
+          ...(vatOn?[{label:'الضريبة المستحقة (تقديري)', value: Math.round(vatAmount).toLocaleString('en-US')+' '+curr}]:[]),
           {label:'صافي الربح', value: Math.round(data.netProfit).toLocaleString('en-US')+' '+curr, color: data.netProfit>=0?'#203640':'#dc2626'},
         ],
         totalsRow: {name:'الصافي', type:'', amount: Math.round(data.netProfit).toLocaleString('en-US')+' '+curr},
@@ -226,10 +226,10 @@ export default function ProfitabilityPage() {
     const rows: string[][] = [
       ['البند','التصنيف','المبلغ'],
       [`المبيعات (${data.closingsCount} إقفال كاشير)`,'إيرادات', Math.round(data.totalIn).toString()],
-      ...(data.deliveryIncomeList||[]).map((e:any)=>[`دخل توصيل — ${e.platform}`,'إيرادات', Number(e.amount).toFixed(0)]),
-      ...(showVat?[['الضريبة على المبيعات (تقديري)','إيرادات', Math.round(vatAmount).toString()]]:[]),
+      ...(data.deliveryIncomeList||[]).filter((e:any)=>!e.duplicate).map((e:any)=>[`دخل توصيل — ${e.platform}`,'إيرادات', Number(e.amount).toFixed(0)]),
+      ...(vatOn?[['الضريبة المستحقة (تقديري)','إيرادات', Math.round(vatAmount).toString()]]:[]),
       ['مشتريات المخزون','مشتريات', Math.round(data.inventoryPurchases).toString()],
-      ['مشتريات أخرى','مشتريات', Math.round(data.otherPurchases).toString()],
+      [Number(data.drawerPurchases||0)>0?`مشتريات أخرى (منها مسحوبات درج الكاشير ${Math.round(data.drawerPurchases)})`:'مشتريات أخرى','مشتريات', Math.round(data.otherPurchases).toString()],
       ...fixedList.map((e:any)=>[e.name,'مصروف ثابت', Number(e.amount).toFixed(0)]),
       ...variableList.map((e:any)=>[e.name,'مصروف متغيّر', Number(e.amount).toFixed(0)]),
       ['صافي الربح','—', Math.round(data.netProfit).toString()],
@@ -308,7 +308,9 @@ export default function ProfitabilityPage() {
   const variableList = (data?.fixedExpensesList||[]).filter((e:any)=>!e.fixed_expense_id)
   const fixedTotal = fixedList.reduce((s:number,e:any)=>s+Number(e.amount||0),0)
   const variableTotal = variableList.reduce((s:number,e:any)=>s+Number(e.amount||0),0)
-  const vatAmount = data ? data.totalIn - (data.totalIn/1.15) : 0
+  // الضريبة المستحقة من السيرفر (ضريبة المبيعات − ضريبة المشتريات) — بس للمنشأة المسجّلة بالضريبة
+  const vatAmount = Number(data?.vatAmount || 0)
+  const vatOn = showVat && (data?.vatRegistered ?? vatAmount > 0)
   const totalExpenses = fixedTotal + variableTotal
   const netColor = data && data.netProfit>=0 ? '#203640' : '#dc2626'
 
@@ -381,7 +383,7 @@ export default function ProfitabilityPage() {
             {label:'المشتريات',value:data.totalPurchases,prev:prevData?.totalPurchases},
             {label:'إجمالي المصروفات',value:totalExpenses,prev:prevData?(prevData.fixedExpensesTotal):undefined},
             {label:'تكلفة الرواتب',value:data.salaryExpenseTotal||0,prev:prevData?.salaryExpenseTotal},
-            ...(showVat?[{label:'الضريبة (تقديري)',value:vatAmount,prev:prevData?(prevData.totalIn-(prevData.totalIn/1.15)):undefined}]:[]),
+            ...(vatOn?[{label:'الضريبة المستحقة (تقديري)',value:vatAmount,prev:prevData?Number(prevData.vatAmount||0):undefined}]:[]),
           ].map((s,i)=>{
             // النسبة تنعرض بس لو المقارنة منطقية (مثلاً ▲1281% لما الشهر السابق شبه فاضي تضلل)
             const change = (prevData && s.prev!==undefined && changePctVisible(s.value, s.prev)) ? pctChange(s.value, s.prev) : null
@@ -460,11 +462,12 @@ export default function ProfitabilityPage() {
         <StorelyCard className="ui-workspace">
           <label className="ui-label">
             <input className="ui-checkbox" type="checkbox" checked={hasDelivery} onChange={e=>setHasDelivery(e.target.checked)} />
-            <span className="ui-strong" style={{color:T.color.text}}>عندك دخل خارجي من تطبيقات توصيل؟ (هنقرستيشن، جاهز...)</span>
+            <span className="ui-strong" style={{color:T.color.text}}>دخل توصيل غير مسجّل في إقفال الكاشير؟</span>
           </label>
 
           {hasDelivery && (
             <>
+              <div className="ui-supporting" style={{color:T.color.textMuted}}>مبيعات التطبيقات التي يسجّلها الكاشير في الإقفال محسوبة ضمن المبيعات{Number(data.deliveryInSales||0)>0 && <> ({Math.round(data.deliveryInSales).toLocaleString('en-US')} {curr} هذا الشهر)</>} — سجّل هنا فقط ما لم يدخل في الإقفال</div>
               {!data.closed && (
               <div className="pf-entry">
                 <input className="ui-control" value={newDeliveryPlatform} onChange={e=>setNewDeliveryPlatform(e.target.value)} placeholder="اسم التطبيق" />
@@ -484,9 +487,9 @@ export default function ProfitabilityPage() {
                 <div className="ui-stack">
                   {(data.deliveryIncomeList||[]).map((e:any)=>(
                     <div className="ui-between" key={e.id}>
-                      <span className="ui-strong" style={{color:T.color.text}}>{e.platform}</span>
+                      <span className="ui-strong" style={{color:T.color.text}}>{e.platform}{e.duplicate && <span className="ui-supporting" style={{color:T.color.danger}}> · مسجّل في إقفالات الكاشير، لم يُحسب مرتين</span>}</span>
                       <div className="ui-inline">
-                        <span className="ui-strong" style={{color:T.color.navy}}>{Number(e.amount).toFixed(0)} {curr}</span>
+                        <span className="ui-strong" style={{color:e.duplicate?T.color.textMuted:T.color.navy,textDecoration:e.duplicate?'line-through':'none'}}>{Number(e.amount).toFixed(0)} {curr}</span>
                         {!data.closed && <StorelyButton className="ui-button ui-danger" variant="danger" onClick={()=>deleteDeliveryIncome(e.id)} aria-label="حذف"><Trash2 size={14}/></StorelyButton>}
                       </div>
                     </div>
