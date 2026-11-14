@@ -50,7 +50,7 @@ async function computeLive(supabase: any, org_id: string, monthParam: string, ef
   const { data: closings } = await selectAll(() => {
     let closingsQ = supabase
       .from('cashier_closings')
-      .select('total_sales,delivery,total_purchases')
+      .select('total_sales,delivery,total_purchases,purchases')
       .eq('org_id', org_id)
       .gte('closing_date', monthStart)
       .lte('closing_date', monthEndDate)

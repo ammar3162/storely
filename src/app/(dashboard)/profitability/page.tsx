@@ -458,6 +458,20 @@ export default function ProfitabilityPage() {
           </StorelyCard>
         </div>
 
+        {/* مسحوبات درج الكاشير (من الإقفالات) */}
+        {(Number(data.drawerPurchases||0)>0 || Number(data.drawerExcluded||0)>0) && (
+        <StorelyCard className="ui-workspace">
+          <div className="ui-between">
+            <span className="ui-section-title" style={{color:T.color.text}}>مسحوبات درج الكاشير</span>
+            <span className="ui-strong" style={{color:T.color.text}}>{Math.round(data.drawerPurchases||0).toLocaleString('en-US')} {curr}</span>
+          </div>
+          <div className="ui-supporting" style={{color:T.color.textMuted}}>
+            محسوبة ضمن المشتريات الأخرى.
+            {Number(data.drawerExcluded||0)>0 && <> لم يُحسب {Math.round(data.drawerExcluded).toLocaleString('en-US')} {curr} كمصروف لأن سببها سلفة أو سحب للمالك أو إيداع في البنك.</>}
+          </div>
+        </StorelyCard>
+        )}
+
         {/* مصادر دخل خارجية (تطبيقات توصيل) */}
         <StorelyCard className="ui-workspace">
           <label className="ui-label">

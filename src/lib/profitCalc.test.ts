@@ -37,4 +37,13 @@ describe('computeProfit', () => {
     expect(r.salaryExpenseTotal).toBe(4500)
     expect(r.netProfit).toBe(5000 - 50 - 4500)
   })
+  it('drawer advances, owner draws and bank deposits are not expenses', () => {
+    const r = computeProfit({ ...base, vatRegistered: false, purchases: [],
+      closings: [{ total_sales: 1000, total_purchases: 650, purchases: [
+        { amount: 50, reason: 'ثلج' }, { amount: 300, reason: 'سلفة أحمد' }, { amount: 200, reason: 'سحب المالك' }, { amount: 100, reason: 'إيداع بنك' } ] },
+        { total_sales: 0, total_purchases: 30 }] })
+    expect(r.drawerPurchases).toBe(80)
+    expect(r.drawerExcluded).toBe(600)
+    expect(r.netProfit).toBe(920)
+  })
 })

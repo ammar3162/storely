@@ -2,7 +2,8 @@
 //  - المنشأة المسجّلة بالضريبة: الإيرادات والمشتريات بدون الضريبة، والضريبة المستحقة = ضريبة المبيعات − ضريبة المشتريات
 //  - غير المسجّلة: كل شي بالمبلغ الكامل (الضريبة اللي تدفعها على المشتريات تكلفة عليها)، وما فيه ضريبة مبيعات
 //  - مبيعات تطبيقات التوصيل داخل إقفال الكاشير أصلاً → «دخل التوصيل» المسجّل يدوياً لنفس التطبيق بنفس الشهر ما ينحسب مرتين
-//  - مسحوبات درج الكاشير (ثلج، غاز...) مصروف على المنشأة
+//  - مسحوبات درج الكاشير (ثلج، غاز...) مصروف على المنشأة — إلا السلف (جزء من الراتب المحسوب أصلاً)
+//    وسحب المالك والإيداع بالبنك (فلوس انتقلت، مو مصروف). سببها نص حر فنميّزها بكلمات السبب
 //  - الرواتب: من حساب الرواتب الفعلي لكل موظف بذاك الشهر (lib/payroll)
 
 export const VAT_RATE = 0.15
@@ -10,7 +11,11 @@ const r2 = (n: number) => Math.round(n * 100) / 100
 const num = (v: unknown) => Number(v) || 0
 const normApp = (s: unknown) => String(s ?? '').trim().replace(/\s+/g, ' ').toLowerCase()
 
-export type ProfitClosing = { total_sales: unknown; delivery?: unknown; total_purchases?: unknown }
+export type ProfitClosing = { total_sales: unknown; delivery?: unknown; total_purchases?: unknown; purchases?: unknown }
+
+/** مسحوبة الدرج ما تنحسب مصروف: سلفة موظف، سحب المالك، إيداع بالبنك */
+export const NOT_EXPENSE_RE = /سلف|مالك|ايداع|إيداع|بنك|تحويل/
+export const isDrawerExpense = (reason: unknown) => !NOT_EXPENSE_RE.test(String(reason ?? ''))
 export type ProfitPurchase = { category: string | null; amount: unknown; total_amount: unknown }
 export type ProfitDelivery = { id?: string; platform: string; amount: unknown }
 export type ProfitStaffCost = { gross: number; overtime: number; bonuses: number; deductions: number }
@@ -44,7 +49,14 @@ export function computeProfit(i: {
   // المشتريات: المسجّلة بالضريبة تحسب الصافي (amount)، غير المسجّلة المبلغ الكامل
   const purchaseCost = (p: ProfitPurchase) => (vat ? num(p.amount) : num(p.total_amount ?? p.amount))
   const inventoryPurchases = r2(i.purchases.filter(p => p.category === 'مخزون').reduce((s, p) => s + purchaseCost(p), 0))
-  const drawerPurchases = r2(i.closings.reduce((s, c) => s + num(c.total_purchases), 0))
+  // مسحوبات الدرج: بنودها مع السبب (الإقفالات القديمة بدون بنود → الإجمالي كمصروف)
+  let drawerPurchases = 0, drawerExcluded = 0
+  for (const c of i.closings) {
+    const items = (Array.isArray(c.purchases) ? c.purchases : []) as { amount?: unknown; reason?: unknown }[]
+    if (!items.length) { drawerPurchases += num(c.total_purchases); continue }
+    for (const it of items) { if (isDrawerExpense(it?.reason)) drawerPurchases += num(it?.amount); else drawerExcluded += num(it?.amount) }
+  }
+  drawerPurchases = r2(drawerPurchases); drawerExcluded = r2(drawerExcluded)
   const otherPurchases = r2(i.purchases.filter(p => p.category !== 'مخزون').reduce((s, p) => s + purchaseCost(p), 0) + drawerPurchases)
   const totalPurchases = r2(inventoryPurchases + otherPurchases)
 
@@ -66,7 +78,7 @@ export function computeProfit(i: {
     vatRegistered: vat,
     totalIn, closingsCount: i.closings.length, revenue,
     deliveryInSales: r2(deliveryInSales), deliveryIncomeList, deliveryIncomeTotal, deliveryDuplicateTotal,
-    inventoryPurchases, otherPurchases, drawerPurchases, totalPurchases,
+    inventoryPurchases, otherPurchases, drawerPurchases, drawerExcluded, totalPurchases,
     fixedExpensesTotal, salaryExpenseTotal, salaryStaffCount: i.staff.length,
     outputVat, inputVat, vatAmount,
     totalOut, netProfit,
