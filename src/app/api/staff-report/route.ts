@@ -52,14 +52,7 @@ export async function GET(req: Request) {
       const lateCount = pay.attendance.lateCount
       const attendanceRate = pay.workedDays > 0 ? Math.min(1, daysPresent / pay.workedDays) : 0   // اللي ترك: على أيامه بس
 
-      const { data: leaveThisMonth } = await supabase
-        .from('staff_leave_requests')
-        .select('days_count')
-        .eq('staff_id', s.id)
-        .eq('status', 'approved')
-        .gte('start_date', `${month}-01`)
-        .lte('start_date', `${month}-${String(lastDay).padStart(2, '0')}`)
-      const leaveDaysTaken = (leaveThisMonth || []).reduce((sum: number, l: any) => sum + Number(l.days_count), 0)
+      const leaveDaysTaken = pay.leaveDaysTaken   // الإجازة الممتدة على شهرين تنقسم بينهم
 
       const { data: tasks } = await supabase
         .from('staff_tasks')
@@ -84,6 +77,7 @@ export async function GET(req: Request) {
         overtimeMinutes: pay.overtime.minutes, overtimePay: pay.overtime.pay, bonusesTotal: pay.bonusesTotal,
         latePenaltiesTotal: pay.latePenaltiesTotal, latePenaltiesCount: pay.latePenalties.length,
         otherDeductionsTotal: Math.round((deductionsTotal - pay.latePenaltiesTotal) * 100) / 100,
+        absenceDays: pay.absence.days, absencePendingDates: pay.absence.pendingDates, absencePendingAmount: pay.absence.pendingAmount, absenceDailyWage: pay.absence.dailyWage,
         pendingDeficitsTotal: Math.round(pay.pendingDeficits.reduce((s2, d) => s2 + d.amount, 0) * 100) / 100,
         daysPresent, daysInMonth, attendanceRate: Math.round(attendanceRate * 100),
         lateCount, leaveDaysTaken, leaveBalance: Number(s.leave_balance_days || 0),

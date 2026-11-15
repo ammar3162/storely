@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { weeklyOffCount } from './daysOff'
+import { absenceDates, absenceSummary, deductedAbsenceDates, leaveDaysInMonth } from './absence'
 
 // حساب راتب موظف لشهر واحد — مشترك بين تقرير المالك (staff-report) وصفحة «راتبي» للموظف،
 // عشان الرقمين يطلعون نفس الشي دايماً.
@@ -79,12 +80,20 @@ export function shiftHours(shift: Shift): number | null {
 }
 
 // أجر ساعة الأوفر تايم للموظف حسب إعداد المنشأة
-export function overtimeHourRate(monthlySalary: number, shift: Shift, settings: OvertimeSettings = DEFAULT_OVERTIME) {
+// نظام العمل م107: أجر الساعة الإضافية = أجر الساعة الفعلي (الأساسي + البدلات) + 50% من أجر الساعة الأساسي
+//   → (الأساسي + البدلات) ÷ 30 ÷ ساعات الشفت + (المضاعف − 1) × الأساسي ÷ 30 ÷ ساعات الشفت
+//   بدون بدلات = الأساسي × المضاعف (نفس الحساب القديم)
+export function overtimeHourRate(monthlySalary: number, shift: Shift, settings: OvertimeSettings = DEFAULT_OVERTIME, monthlyAllowances = 0) {
   if (settings.mode === 'off') return 0
   if (settings.mode === 'fixed') return round2(Number(settings.fixedRate || 0))
   const hours = shiftHours(shift) || 8
-  return round2((Number(monthlySalary || 0) / 30 / hours) * settings.multiplier)
+  const basicHour = Number(monthlySalary || 0) / 30 / hours
+  const allowHour = Math.max(0, Number(monthlyAllowances || 0)) / 30 / hours
+  return round2(basicHour + allowHour + (settings.multiplier - 1) * basicHour)
 }
+
+/** مجموع البدلات الشهرية الكاملة للموظف (سكن + نقل + طعام) */
+export const monthlyAllowancesOf = (s: any) => Number(s?.housing_allowance || 0) + Number(s?.transport_allowance || 0) + Number(s?.food_allowance || 0)
 
 export type PayrollDeduction = { amount: number; reason: string | null; date: string; source: 'manual' | 'cashier_deficit' | 'late_bundle' }
 export type LatePenalty = { attendanceId: string; date: string; minutes: number; amount: number }
@@ -117,12 +126,15 @@ export async function computeStaffPayroll(db: SupabaseClient, staff: any, month:
     scoped(db.from('staff_attendance').select('id,type,recorded_at,late_minutes,penalty_amount,penalty_applied,penalty_waived,overtime_minutes,on_day_off')
       .eq('staff_id', staff.id).gte('recorded_at', start).lte('recorded_at', end)).order('recorded_at'),
     staff.shift_id ? db.from('shifts').select('start_time,end_time,is_24h').eq('id', staff.shift_id).maybeSingle() : Promise.resolve({ data: null }),
-    scoped(db.from('staff_leave_requests').select('days_count').eq('staff_id', staff.id).eq('status', 'approved')
-      .gte('start_date', `${month}-01`).lte('start_date', `${month}-${String(lastDay).padStart(2, '0')}`)),
+    // الإجازات اللي تتقاطع مع الشهر (الممتدة على شهرين تنقسم بينهم)
+    scoped(db.from('staff_leave_requests').select('start_date,end_date,days_count').eq('staff_id', staff.id).eq('status', 'approved')
+      .lte('start_date', `${month}-${String(lastDay).padStart(2, '0')}`).gte('end_date', `${month}-01`)),
     scoped(db.from('cashier_closings').select('id,closing_date,difference,deficit_reason')
       .eq('staff_id', staff.id).eq('deficit_decision', 'pending')
       .gte('closing_date', `${month}-01`).lte('closing_date', `${month}-${String(lastDay).padStart(2, '0')}`)).order('closing_date'),
   ])
+  const { data: comps } = await scoped(db.from('staff_extra_days').select('comp_date').eq('staff_id', staff.id).eq('status', 'comp')
+    .gte('comp_date', `${month}-01`).lte('comp_date', `${month}-${String(lastDay).padStart(2, '0')}`))
 
   const adj = (adjustments || []) as any[]
   const sourceOf = (a: any): PayrollDeduction['source'] =>
@@ -158,7 +170,7 @@ export async function computeStaffPayroll(db: SupabaseClient, staff: any, month:
       perDay.set(day, Math.max(perDay.get(day) || 0, ot))
     }
   }
-  const rate = overtimeHourRate(fullBasic, shiftRow as Shift, settings)   // سعر الساعة من الراتب الكامل
+  const rate = overtimeHourRate(fullBasic, shiftRow as Shift, settings, monthlyAllowancesOf(staff))   // سعر الساعة من الراتب الكامل مع البدلات
   const overtimeDays = [...perDay.entries()].map(([date, minutes]) => ({ date, minutes, pay: round2((minutes / 60) * rate) }))
   const overtimeMinutesTotal = overtimeDays.reduce((s, d) => s + d.minutes, 0)
   const overtimePay = round2(overtimeDays.reduce((s, d) => s + d.pay, 0))
@@ -169,6 +181,18 @@ export async function computeStaffPayroll(db: SupabaseClient, staff: any, month:
   const deductionsTotal = round2(manualDeductionsTotal + latePenaltiesTotal)
 
   const netSalary = Math.max(0, round2(grossSalary + overtimePay + bonusesTotal - deductionsTotal - advancesTotal))
+
+  // الغياب بدون عذر — مقترح للخصم (أجر اليوم = الراتب الكامل ÷ 30)، ما ينخصم إلا بعد ما يقرّه المالك
+  const leaveRows = ((leaves || []) as any[]).map(l => ({ start_date: String(l.start_date), end_date: String(l.end_date || l.start_date), days_count: l.days_count }))
+  const absence = absenceSummary(
+    absenceDates({
+      month, lastDay, today: saudi(new Date().toISOString()).toISOString().slice(0, 10), cfg: staff,
+      workedDates: new Set(checkIns.map(c => saudi(c.recorded_at).toISOString().slice(0, 10))),
+      leaves: leaveRows, compDates: ((comps || []) as any[]).map(c => String(c.comp_date)), started, until,
+    }),
+    fullBasic + monthlyAllowancesOf(staff),
+    deductedAbsenceDates(deductionRows.map(a => a.reason)),
+  )
 
   return {
     month,
@@ -192,7 +216,8 @@ export async function computeStaffPayroll(db: SupabaseClient, staff: any, month:
     attendance: { daysPresent: checkIns.length, daysInMonth: lastDay, lateCount, lateMinutes,
       extraDays: checkIns.filter(c => c.on_day_off).length,   // حضور بيوم إجازته (يوم إضافي)
       weeklyOffDays: weeklyOffCount(month, staff) },
-    leaveDaysTaken: ((leaves || []) as any[]).reduce((s, l) => s + Number(l.days_count), 0),
+    leaveDaysTaken: leaveDaysInMonth(leaveRows, `${month}-01`, `${month}-${String(lastDay).padStart(2, '0')}`),
+    absence,
   }
 }
 

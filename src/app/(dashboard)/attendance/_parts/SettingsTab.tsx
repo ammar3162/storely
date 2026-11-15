@@ -239,7 +239,7 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 8, marginBottom: 14 }}>
               {([
-                ['auto', 'تلقائي من الراتب', 'أجر الساعة = الراتب الأساسي ÷ 30 ÷ ساعات الوردية × المضاعف'],
+                ['auto', 'تلقائي من الراتب', 'أجر الساعة الفعلي (الأساسي مع البدلات) ÷ 30 ÷ ساعات الوردية، ويُضاف إليه فرق المضاعف من الأساسي (نظام العمل م107)'],
                 ['fixed', 'مبلغ ثابت للساعة', 'نفس المبلغ لكل ساعة إضافية لكل الموظفين'],
                 ['off', 'بدون عمل إضافي', 'لا يُحتسب أي وقت إضافي'],
               ] as const).map(([v, title, sub]) => (
@@ -283,7 +283,7 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
 
             {ot.mode === 'auto' && (
               <div style={{ fontSize: 12.5, color: colors.text2, background: colors.bg, borderRadius: 10, padding: '11px 14px', marginBottom: 12, lineHeight: 1.8 }}>
-                مثال: راتب أساسي 3,000 ووردية 8 ساعات ← أجر الساعة {Math.round(3000 / 30 / 8 * 100) / 100} ⃁ ← الساعة الإضافية <b>{Math.round(3000 / 30 / 8 * (Number(ot.multiplier) || 1.5) * 100) / 100} ⃁</b>
+                مثال: راتب أساسي 3,000 وبدلات 1,000 ووردية 8 ساعات ← أجر الساعة {Math.round(4000 / 30 / 8 * 100) / 100} ⃁ ← الساعة الإضافية <b>{Math.round((4000 / 30 / 8 + ((Number(ot.multiplier) || 1.5) - 1) * 3000 / 30 / 8) * 100) / 100} ⃁</b>
               </div>
             )}
             {ot.mode !== 'off' && (

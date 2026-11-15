@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { isWholeNonNegative, WHOLE_QTY_ERROR } from '@/lib/qtyRules'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { staffFeatureError } from '@/lib/featureRoutes'
@@ -17,20 +18,21 @@ export async function POST(req: Request) {
     if (featureLocked) return NextResponse.json({ error: featureLocked }, { status: 403 })
     const { org_id: orgId, staff_id: staffId } = auth.data!
 
-    const { productId, newQty, staffName } = await req.json()
+    const { productId, newQty } = await req.json()
     if (!productId || newQty === undefined || newQty === null || Number(newQty) < 0) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
+    if (!isWholeNonNegative(newQty)) return NextResponse.json({ error: WHOLE_QTY_ERROR }, { status: 400 })
 
     const supabase = sb()
 
     // تحقق إن الموظف عنده صلاحية "المخزون" فعلاً — مو بس صلاحية الصرف
-    const { data: staffRow } = await supabase.from('staff_members').select('permissions').eq('id', staffId).single()
+    const { data: staffRow } = await supabase.from('staff_members').select('name,permissions').eq('id', staffId).eq('org_id', orgId).maybeSingle()
     if (!(staffRow as any)?.permissions?.inventory) {
       return NextResponse.json({ error: 'ليست لديك صلاحية تعديل المخزون' }, { status: 403 })
     }
 
-    const { data: product } = await supabase.from('products').select('id,qty,name,unit,org_id').eq('id', productId).single()
+    const { data: product } = await supabase.from('products').select('id,qty,name,unit,org_id').eq('id', productId).eq('org_id', orgId).maybeSingle()
     if (!product) return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 })
     if ((product as any).org_id !== orgId) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
 
@@ -45,7 +47,7 @@ export async function POST(req: Request) {
         org_id: orgId,
         type: diff > 0 ? 'in' : 'out',
         qty_change: diff,
-        note: `تعديل يدوي بواسطة الموظف: ${staffName || ''}`,
+        note: `تعديل يدوي بواسطة الموظف: ${(staffRow as any)?.name || ''}`,
         staff_id: staffId || null,
       } as any)
       if (moveErr) return NextResponse.json({ error: moveErr.message }, { status: 500 })

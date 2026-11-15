@@ -1,6 +1,7 @@
 import { managerMay } from '@/lib/managerPerms'
 import { orgHasFeature, lockedMessage } from '@/lib/planFeatures'
 import { NextResponse } from 'next/server'
+import { fixedExpenseAppliesTo } from '@/lib/fixedExpenseMonth'
 import { createClient } from '@supabase/supabase-js'
 import { selectAll } from '@/lib/selectAll'
 import { createClient as createServerClient } from '@/lib/supabase/server'
@@ -16,8 +17,12 @@ const sb = () => createClient(
 // نفس حقول تقرير الرواتب (staff-report) عشان الرقمين يتطابقون
 const PAYROLL_STAFF_FIELDS = 'id,org_id,name,monthly_salary,housing_allowance,transport_allowance,food_allowance,leave_balance_days,shift_id,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates'
 
+const riyadhMonth = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 7)
+
 async function ensureGenerated(supabase: any, org_id: string, month: string, branchId: string | null) {
-  let tplQ = supabase.from('fixed_expenses').select('id,name,amount,branch_id').eq('org_id', org_id).eq('is_active', true)
+  // مجرد العرض ما يضيف مصاريف لشهر ما كان المصروف موجود فيه: لا شهور مستقبلية، ولا شهور قبل ما ينضاف المصروف
+  if (month.slice(0, 7) > riyadhMonth()) return
+  let tplQ = supabase.from('fixed_expenses').select('id,name,amount,branch_id,created_at').eq('org_id', org_id).eq('is_active', true)
   if (branchId) tplQ = tplQ.eq('branch_id', branchId)
   const { data: templates } = await tplQ
 
@@ -26,7 +31,7 @@ async function ensureGenerated(supabase: any, org_id: string, month: string, bra
   const { data: existing } = await existQ
 
   const existingIds = new Set((existing || []).map((e: any) => e.fixed_expense_id))
-  const missing = (templates || []).filter((t: any) => !existingIds.has(t.id))
+  const missing = (templates || []).filter((t: any) => !existingIds.has(t.id) && fixedExpenseAppliesTo(t.created_at, month))
 
   if (missing.length > 0) {
     await supabase.from('monthly_fixed_expenses').insert(

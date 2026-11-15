@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { staffFeatureError } from '@/lib/featureRoutes'
+import { isWholePositive, WHOLE_QTY_ERROR } from '@/lib/qtyRules'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,7 +20,8 @@ export async function POST(req: Request) {
 
     const { productId, qty } = await req.json()
     const n = Number(qty)
-    if (!productId || !(n > 0)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+    if (!productId) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
+    if (!isWholePositive(n)) return NextResponse.json({ error: WHOLE_QTY_ERROR }, { status: 400 })
 
     const supabase = sb()
     // الاسم والفرع والمنتجات المخصصة من قاعدة البيانات — مو من الطلب

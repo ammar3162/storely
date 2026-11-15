@@ -9,7 +9,7 @@ import ExcuseTab from './ExcuseTab'
 import TasksTab from './TasksTab'
 
 export default function HrStaffCard({ m, s }: { m: HrPage; s: any }) {
-  const { curr, expandedId, adjustments, tasks, leaveRequests, pendingLeaveCounts, pendingAdvanceCounts, cardPayroll, excuseRequests, hrTab, setHrTab, toggleExpand } = m
+  const { curr, deductAbsence, expandedId, adjustments, tasks, leaveRequests, pendingLeaveCounts, pendingAdvanceCounts, cardPayroll, excuseRequests, hrTab, setHrTab, toggleExpand } = m
             const isOpen = expandedId===s.id
             const pendingAdvances = adjustments.filter((a:any)=>a.type==='advance'&&a.status==='pending')
             const totalDeducted = adjustments.filter((a:any)=>a.status==='approved').reduce((sum:number,a:any)=>sum+Number(a.amount),0)
@@ -48,7 +48,7 @@ export default function HrStaffCard({ m, s }: { m: HrPage; s: any }) {
                       <span style={{color,fontWeight:700}}>{value}</span>
                     </div>
                   )
-                  const hasAny = p.bonusesTotal>0 || p.overtimePay>0 || p.latePenaltiesTotal>0 || p.otherDeductionsTotal>0 || p.advancesTotal>0 || p.pendingDeficitsTotal>0
+                  const hasAny = p.bonusesTotal>0 || p.overtimePay>0 || p.latePenaltiesTotal>0 || p.otherDeductionsTotal>0 || p.advancesTotal>0 || p.pendingDeficitsTotal>0 || p.absencePendingAmount>0
                   if (!hasAny) return null
                   return (
                     <div style={{marginTop:10,padding:'10px 12px',background:colors.bg,borderRadius:10,display:'flex',flexDirection:'column' as const,gap:6}}>
@@ -59,6 +59,15 @@ export default function HrStaffCard({ m, s }: { m: HrPage; s: any }) {
                       {p.otherDeductionsTotal>0 && line('خصومات', `−${fmtN(p.otherDeductionsTotal)} ${curr}`, colors.danger)}
                       {p.advancesTotal>0 && line('سلف معتمدة', `−${fmtN(p.advancesTotal)} ${curr}`, colors.warning)}
                       {p.pendingDeficitsTotal>0 && line('عجز كاشير بانتظار قرارك', `${fmtN(p.pendingDeficitsTotal)} ${curr}`, colors.text3)}
+                      {p.absencePendingAmount>0 && (
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontSize:11}}>
+                          <span style={{color:colors.text3}}>غياب بدون عذر ({p.absencePendingDates.length} {p.absencePendingDates.length===1?'يوم':'أيام'}) — بانتظار قرارك</span>
+                          <span style={{display:'flex',alignItems:'center',gap:8}}>
+                            <span style={{color:colors.text3,fontWeight:700}}>{fmtN(p.absencePendingAmount)} {curr}</span>
+                            <button type="button" onClick={(e)=>{e.stopPropagation(); deductAbsence(s.id, s.name)}} style={{fontSize:11,fontWeight:700,color:colors.danger,background:'transparent',border:`1px solid ${colors.dangerBorder}`,borderRadius:8,padding:'3px 10px',cursor:'pointer',fontFamily:'inherit'}}>خصم</button>
+                          </span>
+                        </div>
+                      )}
                       <div style={{display:'flex',justifyContent:'space-between',fontSize:12,fontWeight:800,paddingTop:6,borderTop:`1px dashed ${colors.border}`}}>
                         <span style={{color:colors.text}}>الصافي حتى الآن</span>
                         <span style={{color:colors.primary}}>{fmtN(p.netSalary)} {curr}</span>
