@@ -23,7 +23,7 @@ export function useHrManagement() {
   const [branches, setBranches] = useState<any[]>([])
   const [savingLocationId, setSavingLocationId] = useState<string|null>(null)
 
-  const [salaryForm, setSalaryForm] = useState<{base:string,housing:string,transport:string,food:string}>({base:'',housing:'',transport:'',food:''})
+  const [salaryForm, setSalaryForm] = useState<{base:string,housing:string,transport:string,food:string,start:string}>({base:'',housing:'',transport:'',food:'',start:''})
   const [savingSalary, setSavingSalary] = useState(false)
 
   const [adjustments, setAdjustments] = useState<any[]>([])
@@ -181,6 +181,7 @@ export function useHrManagement() {
       housing: String(s.housing_allowance || 0),
       transport: String(s.transport_allowance || 0),
       food: String(s.food_allowance || 0),
+      start: typeof s.employment_start === 'string' ? s.employment_start.slice(0, 10) : '',
     })
     loadAdjustments(s.id)
     loadTasks(s.id)
@@ -274,13 +275,14 @@ export function useHrManagement() {
         housing_allowance: Number(salaryForm.housing)||0,
         transport_allowance: Number(salaryForm.transport)||0,
         food_allowance: Number(salaryForm.food)||0,
+        employment_start: salaryForm.start || null,
       }),
     })
     const j = await res.json()
     setSavingSalary(false)
     if (!j.success) { toast(j.error || 'خطأ', 'error'); return }
     toast('تم حفظ الراتب والبدلات')
-    setStaff(prev => prev.map((s:any)=> s.id===staffId ? {...s, monthly_salary:Number(salaryForm.base)||0, housing_allowance:Number(salaryForm.housing)||0, transport_allowance:Number(salaryForm.transport)||0, food_allowance:Number(salaryForm.food)||0} : s))
+    setStaff(prev => prev.map((s:any)=> s.id===staffId ? {...s, monthly_salary:Number(salaryForm.base)||0, housing_allowance:Number(salaryForm.housing)||0, transport_allowance:Number(salaryForm.transport)||0, food_allowance:Number(salaryForm.food)||0, employment_start:salaryForm.start||null} : s))
   }
 
   async function loadAdjustments(staffId:string) {

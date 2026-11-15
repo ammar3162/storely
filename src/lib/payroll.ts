@@ -41,6 +41,15 @@ export function monthRange(month: string) {
   }
 }
 
+/** أيام العمل بالشهر بين أول يوم عمل وآخر يوم (كلها اختيارية) — 0 لو ما اشتغل فيه */
+export function workedDaysInMonth(month: string, lastDay: number, started: string | null, until: string | null): number {
+  const first = `${month}-01`, last = `${month}-${String(lastDay).padStart(2, '0')}`
+  const from = started && started > first ? started : first
+  const to = until && until < last ? until : last
+  if (from > to) return 0
+  return Number(to.slice(8, 10)) - Number(from.slice(8, 10)) + 1
+}
+
 export type Shift = { start_time: string | null; end_time: string | null; is_24h: boolean | null } | null
 
 // دقائق العمل بعد نهاية الشفت لكل انصراف (بتوقيت السعودية) — الشفتات اللي تمتد بعد منتصف الليل محسوبة
@@ -84,9 +93,12 @@ export async function computeStaffPayroll(db: SupabaseClient, staff: any, month:
   const { start, end, lastDay } = monthRange(month)
   const orgId: string | undefined = staff.org_id
 
-  // موظف ترك (payroll_until = آخر يوم له): الراتب والبدلات بنسبة الأيام اللي اشتغلها بالشهر
+  // الراتب والبدلات بنسبة الأيام اللي اشتغلها بالشهر:
+  //  - موظف ترك (payroll_until = آخر يوم له)
+  //  - موظف جديد (employment_start = أول يوم عمل) — القديم بدون تاريخ = من أول الشهر
   const until: string | null = typeof staff.payroll_until === 'string' ? staff.payroll_until.slice(0, 10) : null
-  const workedDays = !until || until > `${month}-${String(lastDay).padStart(2, '0')}` ? lastDay : until < `${month}-01` ? 0 : Number(until.slice(8, 10))
+  const started: string | null = typeof staff.employment_start === 'string' ? staff.employment_start.slice(0, 10) : null
+  const workedDays = workedDaysInMonth(month, lastDay, started, until)
   const share = (v: unknown) => round2(Number(v || 0) * workedDays / lastDay)
   const fullBasic = Number(staff.monthly_salary || 0)
   const basic = share(staff.monthly_salary)
@@ -162,7 +174,8 @@ export async function computeStaffPayroll(db: SupabaseClient, staff: any, month:
     month,
     basic, allowances, grossSalary,
     // آخر يوم للموظف لو ترك خلال هالشهر — حتى لو كان آخر يوم بالشهر (الراتب كامل بس المحاسب لازم يعرف إنه ترك)
-    workedDays, endedOn: until && until >= `${month}-01` && until <= `${month}-${String(lastDay).padStart(2, '0')}` ? until : null,
+    workedDays, startedOn: started && started >= `${month}-01` && started <= `${month}-${String(lastDay).padStart(2, '0')}` ? started : null,
+    endedOn: until && until >= `${month}-01` && until <= `${month}-${String(lastDay).padStart(2, '0')}` ? until : null,
     overtime: { minutes: overtimeMinutesTotal, pay: overtimePay, hourRate: rate, mode: settings.mode, days: overtimeDays },
     bonuses,
     bonusesTotal,
@@ -191,7 +204,7 @@ const riyadhDay = (iso: string) => new Date(Date.parse(iso) + 3 * 3600e3).toISOS
  */
 export async function staffForPayrollMonth(db: SupabaseClient, o: { orgId: string; branchId?: string | null; month: string; select: string }): Promise<any[]> {
   const { start, end } = monthRange(o.month)
-  let q = db.from('staff_members').select(`${o.select},is_active,deactivated_at`).eq('org_id', o.orgId)
+  let q = db.from('staff_members').select(`${o.select},is_active,deactivated_at,employment_start`).eq('org_id', o.orgId)
   if (o.branchId) q = q.eq('branch_id', o.branchId)
   const { data } = await q
   const all = (data || []) as any[]
@@ -206,7 +219,10 @@ export async function staffForPayrollMonth(db: SupabaseClient, o: { orgId: strin
       const d = riyadhDay(at); if (!lastSeen.has(id) || d > lastSeen.get(id)!) lastSeen.set(id, d)
     }
   }
+  const { end: monthEnd } = monthRange(o.month)
   return all.flatMap(s => {
+    // ما بدأ العمل إلا بعد الشهر → ما له راتب فيه
+    if (typeof s.employment_start === 'string' && s.employment_start.slice(0, 10) > monthEnd.slice(0, 10)) return []
     if (s.is_active) return [s]
     const until = s.deactivated_at ? riyadhDay(s.deactivated_at) : lastSeen.get(s.id)
     return until && until >= `${o.month}-01` ? [{ ...s, payroll_until: until }] : []
