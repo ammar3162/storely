@@ -241,7 +241,7 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
       const now = new Date(Date.now() + 3 * 3600e3)
       const y = now.getUTCFullYear(), m = now.getUTCMonth() + 1, last = new Date(Date.UTC(y, m, 0)).getUTCDate()
       const month = `${y}-${String(m).padStart(2, '0')}`, today = now.toISOString().slice(0, 10)
-      const { data: st } = await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: 'موظف ترك', phone: `9665${String(stamp + 90).slice(-8)}`, pin: 'x', is_active: true, role: 'staff', monthly_salary: 3100 } as any).select('id').single()
+      const { data: st } = await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: 'موظف ترك', phone: `9665${String(stamp + 90).slice(-8)}`, pin: 'x', is_active: true, role: 'staff', monthly_salary: 3100, employment_start: `${month}-01` } as any).select('id').single()   // بدأ من أول الشهر (الافتراضي = يوم الإضافة)
       const sid = (st as any).id
       await db.from('staff_payroll_adjustments').insert({ org_id: orgId, staff_id: sid, type: 'deduction', amount: 50, status: 'approved', requested_by: 'owner' } as any)
       await db.from('staff_members').update({ is_active: false } as any).eq('id', sid)
