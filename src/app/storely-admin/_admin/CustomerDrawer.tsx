@@ -342,7 +342,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
           <BadgePercent size={16} style={{ flexShrink: 0 }} />
           <span>
             السعر العادي لـ{offerLabel}: <b style={{ color: A.text }}>{listPrice} ⃁</b>
-            {offerSaving > 0 && <> · خصم <b style={{ color: A.primary }}>{offerSaving}%</b></>}
+            {offerSaving > 0 && <> · العميل يوفّر <b style={{ color: A.primary }}>{listPrice - offerPrice} ⃁ ({offerSaving}%)</b></>}
             {offerPrice > listPrice && listPrice > 0 && <> · أعلى من السعر العادي</>}
             {' '}· ينتهي في {fmtDate(offerEnds.toISOString())}
           </span>
