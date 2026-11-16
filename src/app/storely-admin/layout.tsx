@@ -58,7 +58,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     })
     const tickDemos = () => count('/api/admin/demo-requests?count=1').then(setPendingDemos)
     let lastR = -1
-    const tickRenewals = () => count('/api/admin/renewals?count=1').then(n => { if (lastR >= 0 && n > lastR) setNewAlert('renewal'); lastR = n; setPendingRenewals(n) })
+    // طلبات التجديد المعلّقة + عروض أسعار تحتاج متابعة (3 أيام بدون دفع)
+    const tickRenewals = () => Promise.all([count('/api/admin/renewals?count=1'), count('/api/admin/offers?count=1')]).then(([r, o]) => r + o).then(n => { if (lastR >= 0 && n > lastR) setNewAlert('renewal'); lastR = n; setPendingRenewals(n) })
     const tickSupport = () => Promise.all([count('/api/admin/support-tickets?count=1').then(setPendingSupport), count('/api/admin/inbound-emails?count=1').then(setPendingInbox)])
     const all = () => { tick(); tickDemos(); tickRenewals(); tickSupport() }
     all()

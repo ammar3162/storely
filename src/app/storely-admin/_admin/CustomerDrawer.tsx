@@ -1,17 +1,23 @@
 'use client'
 import { useEffect, useState } from 'react'
 import NumberInput from '@/components/NumberInput'
-import { MessageCircle, Send, Trash2, PauseCircle, PlayCircle, KeyRound } from 'lucide-react'
+import { MessageCircle, Send, Trash2, PauseCircle, PlayCircle, KeyRound, BadgePercent, Eye } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { toast } from '@/components/toast'
 import { billLines, activeDiscount, PLAN_CAPS, ENTERPRISE_LABEL, addonPeriodEnd, proratedCharge, planPriceFor, unitPrice, isNewPlan, type PlanKey } from '@/lib/planPricing'
-import { A, Badge, Btn, Card, Drawer, adminFetch, daysLeft, fmtDate, inputStyle } from './kit'
+import { A, Badge, Btn, Card, Drawer, Tabs, adminFetch, daysLeft, fmtDate, inputStyle } from './kit'
 import { type Customer, STATUS, PLAN_KEYS, PLAN_LIMITS, planLabel } from './customers'
 import ActivityCard from './ActivityCard'
+import { addMonths, offerItems as buildOfferItems, sendOffer, activateOffer, offerStart } from './offerFlow'
+import { offerState, offerMonthsLabel } from '@/lib/offerQuote'
 import CustomerEmailCard from './CustomerEmailCard'
 
 const QTY_SLUGS = ['extra_staff', 'extra_suppliers', 'extra_branch']
 const DURATIONS = [{ d: 7, l: '7 أيام' }, { d: 30, l: 'شهر' }, { d: 90, l: '3 أشهر' }, { d: 365, l: 'سنة' }]
+// العرض الخاص: مدة بالأشهر وسعر يتفق عليه مع العميل (لمرة وحدة — التجديد القادم بعرض جديد أو بالسعر العادي)
+const OFFER_MONTHS = [{ m: 1, l: 'شهر' }, { m: 3, l: '3 أشهر' }, { m: 6, l: '6 أشهر' }, { m: 12, l: 'سنة' }]
+type TabKey = 'sub' | 'plan' | 'contact' | 'account'
+const TABS: { k: TabKey; l: string }[] = [{ k: 'sub', l: 'الاشتراك والدفع' }, { k: 'plan', l: 'الباقة والإضافات' }, { k: 'contact', l: 'النشاط والتواصل' }, { k: 'account', l: 'الحساب' }]
 
 export default function CustomerDrawer({ customer, onClose, onChanged }: {
   customer: Customer | null
@@ -32,11 +38,15 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   const [ent, setEnt] = useState({ branches: '', staff: '', suppliers: '', price: '' })
   // الخصم الخاص: نسبة أو مبلغ شهري، وملاحظة، وتاريخ انتهاء اختياري
   const [disc, setDisc] = useState<{ type: 'percent' | 'amount'; value: string; note: string; until: string }>({ type: 'percent', value: '', note: '', until: '' })
+  const [offer, setOffer] = useState<{ months: number; price: string; note: string }>({ months: 6, price: '', note: '' })
+  const [tab, setTab] = useState<TabKey>('sub')
+  const [offers, setOffers] = useState<any[]>([])
 
   const c = customer
   useEffect(() => {
-    setAddons([]); setQty({}); setDays(30); setBranches([])
-    if (c?.org_id) loadAddons(c.org_id)
+    setAddons([]); setQty({}); setDays(30); setBranches([]); setTab('sub'); setOffer({ months: 6, price: '', note: '' })
+    setOffers([])
+    if (c?.org_id) { loadAddons(c.org_id); loadOffers(c.org_id) }
   }, [c?.org_id])
 
   async function loadAddons(orgId: string) {
@@ -44,6 +54,11 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
     const j = await adminFetch(`/api/admin/addon-subscriptions?org_id=${orgId}`)
     if (j.success) { setAddons(j.addons || []); setBranches(j.branches || []); setStaffUsage(j.staff_usage || null); setPick({}) }
     setLoadingAddons(false)
+  }
+
+  async function loadOffers(orgId: string) {
+    const j = await adminFetch(`/api/admin/offers?org_id=${orgId}`)
+    if (j.success) setOffers(j.offers || [])
   }
 
   if (!c) return null
@@ -55,6 +70,16 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   const planBranches = Math.max(1, Math.min(10, c.max_branches || 1))
   const curDiscount = activeDiscount(c.discount)
   const hasPhone = !!c.phone
+  // السعر العادي للمدة = الفاتورة الشهرية الحالية × الأشهر (السنوي: فاتورته ÷ 12)
+  const monthlyBill = c.billing_cycle === 'yearly' ? Math.round(bill.total / 12) : bill.total
+  const listPrice = monthlyBill * offer.months
+  const offerPrice = Number(offer.price) || 0
+  const offerSaving = listPrice > 0 && offerPrice > 0 && offerPrice < listPrice ? Math.round((1 - offerPrice / listPrice) * 100) : 0
+  // مشترك مدفوع ساري: المدة تبدأ من نهاية اشتراكه الحالي
+  const offerFrom = offerStart({ type: c.subscription_type, ends: c.subscription_ends_at })
+  const offerEnds = addMonths(offer.months, offerFrom)
+  const offerLabel = OFFER_MONTHS.find(x => x.m === offer.months)?.l || `${offer.months} أشهر`
+  const offerItems = buildOfferItems(offer.months, offerPrice, offer.note, 'manual', offerFrom)
 
   async function activate(type: 'trial' | 'paid', d: number) {
     const label = type === 'paid' ? 'تفعيل مدفوع' : 'تفعيل تجربة'
@@ -156,14 +181,66 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
     if (!remove) setDisc({ type: 'percent', value: '', note: '', until: '' })
   }
 
-  async function sendInvoice(items = bill.lines, title = 'إرسال الفاتورة') {
+  async function sendInvoice(items = bill.lines, title = 'إرسال الفاتورة', status: 'paid' | 'due' = 'paid', skipConfirm = false) {
     const total = items.reduce((s, it) => s + it.amount, 0)
     const lines = items.map(it => `${it.label}: ${it.amount} ر.س`).join('\n')
-    if (!(await confirmDialog({ title, message: `${lines}\n\nالإجمالي: ${total} ر.س\nتُرسل عبر واتساب إلى ${c!.phone}`, type: 'success' }))) return
+    if (!skipConfirm && !(await confirmDialog({ title, message: `${lines}\n\nالإجمالي: ${total} ر.س\nتُرسل عبر واتساب إلى ${c!.phone}، وإلى إيميل المالك`, type: 'success' }))) return false
     setBusy('invoice')
-    const j = await adminFetch('/api/admin/send-invoice', { method: 'POST', body: { orgId: c!.org_id, orgName: c!.org_name, phone: c!.phone, items } })
+    const j = await adminFetch('/api/admin/send-invoice', { method: 'POST', body: { orgId: c!.org_id, orgName: c!.org_name, phone: c!.phone, items, status } })
     setBusy(null)
-    toast(j.success ? `تم إرسال الفاتورة #${j.invoiceNumber}` : (j.error || 'تعذّر الإرسال'), j.success ? 'success' : 'error')
+    toast(j.success ? `${status === 'due' ? 'أُرسل عرض السعر' : 'أُرسلت الفاتورة'} #${j.invoiceNumber}` : (j.error || 'تعذّر الإرسال'), j.success ? 'success' : 'error')
+    return !!j.success
+  }
+
+  function offerValid() {
+    if (!(offerPrice > 0)) { toast('اكتب السعر المتفق عليه', 'error'); return false }
+    return true
+  }
+
+  // معاينة العرض بنفس شكل الـ PDF قبل الإرسال
+  async function previewOffer() {
+    if (!offerValid()) return
+    const w = window.open('', '_blank')
+    const j = await adminFetch('/api/admin/invoice-preview', { method: 'POST', body: { orgName: c!.org_name, items: offerItems, status: 'due' } })
+    if (!j.success || !w) { w?.close(); toast(j.error || 'تعذّرت المعاينة', 'error'); return }
+    w.document.open(); w.document.write(j.html); w.document.close()
+  }
+
+  // إرسال العرض فقط (مستحق الدفع) — بدون تفعيل، ويُحفظ في سجل العروض
+  async function sendOfferNow() {
+    if (!offerValid()) return
+    const lines = offerItems.map(it => `${it.label}: ${it.amount} ر.س`).join('\n')
+    if (!(await confirmDialog({ title: 'إرسال عرض السعر', type: 'success', message: `${lines}\n\nيُرسل عرض سعر مستحق الدفع، صالحاً 7 أيام، عبر واتساب إلى ${c!.phone} وإلى إيميل المالك.` }))) return
+    setBusy('invoice')
+    const j = await sendOffer({ orgId: c!.org_id, orgName: c!.org_name, phone: c!.phone, months: offer.months, amount: offerPrice, list: listPrice, note: offer.note, from: offerFrom })
+    setBusy(null)
+    if (!j.success) { toast(j.error || 'تعذّر الإرسال', 'error'); return }
+    toast(`أُرسل عرض السعر #${j.invoiceNumber}`, 'success')
+    loadOffers(c!.org_id)
+  }
+
+  // العميل دفع: تفعيل مدفوع حتى نهاية المدة + فاتورة مدفوعة بنفس السعر (من النموذج، أو من عرض في السجل)
+  async function payOffer(o: { months: number; amount: number; note?: string | null; kind?: 'manual' | 'renewal'; id?: string | null; list?: number | null }) {
+    const label = offerMonthsLabel(o.months), ends = addMonths(o.months, offerFrom)
+    if (!(await confirmDialog({ title: 'تفعيل العرض', type: 'success', confirmText: 'تفعيل وإرسال الفاتورة',
+      message: `تفعيل مدفوع لـ«${c!.org_name}» لمدة ${label}${offerFrom.getTime() > Date.now() + 86400000 ? ` تبدأ بعد نهاية اشتراكه الحالي (${fmtDate(offerFrom.toISOString())})` : ''}، حتى ${fmtDate(ends.toISOString())}.\n\nالمبلغ: ${o.amount} ر.س${o.list && o.amount < o.list ? ` (بدلاً من ${o.list} ر.س)` : ''}\nتتجدد الإضافات المفعّلة حتى التاريخ نفسه، ثم تُرسل فاتورة مدفوعة${hasPhone ? '' : ' (لا يوجد جوال، فلن تُرسل الفاتورة)'}.\n\nالسعر لهذه المدة فقط، والتجديد القادم بالسعر العادي أو بعرض جديد.` }))) return
+    // تفعيل من النموذج: لو فيه عرض مرسل بنفس المدة والسعر نعلّمه مدفوع
+    const match = o.id ?? offers.find(x => x.status === 'sent' && x.months === o.months && Number(x.amount) === o.amount)?.id ?? null
+    setBusy('offer')
+    const r = await activateOffer({ userId: c!.id, orgId: c!.org_id, orgName: c!.org_name, phone: c!.phone, months: o.months, amount: o.amount, note: o.note || '', kind: o.kind, offerId: match, from: offerFrom })
+    setBusy(null)
+    if (!r.ok) { toast(r.error, 'error'); return }
+    toast(r.invoiceNumber ? `تم التفعيل وأُرسلت الفاتورة #${r.invoiceNumber}` : r.invoiceError ? `تم التفعيل، لكن ${r.invoiceError}` : 'تم التفعيل', r.invoiceError ? 'error' : 'success')
+    onChanged({ status: 'active', subscription_type: 'paid', subscription_ends_at: r.ends })
+    loadAddons(c!.org_id); loadOffers(c!.org_id)
+    setOffer(x => ({ ...x, price: '', note: '' }))
+  }
+
+  async function cancelOffer(id: string) {
+    if (!(await confirmDialog({ title: 'إلغاء العرض', message: 'إلغاء هذا العرض؟ لن يظهر في المتابعة، ويبقى في السجل.', type: 'warning' }))) return
+    const j = await adminFetch('/api/admin/offers', { method: 'POST', body: { id, action: 'cancel' } })
+    if (!j.success) { toast(j.error || 'تعذّر الإلغاء', 'error'); return }
+    loadOffers(c!.org_id)
   }
 
   async function setAddon(a: any, on: boolean, quantity?: number) {
@@ -235,7 +312,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
             ['تاريخ التسجيل', fmtDate(c.created_at)],
             ['ينتهي الاشتراك', fmtDate(c.subscription_ends_at)],
             ['الباقة المطلوبة عند التسجيل', c.requested_plan ? planLabel(c.requested_plan as any) || c.requested_plan : '—'],
-            ['فروع الباقة', `${c.max_branches}`],
+            ['الفاتورة الشهرية', `${monthlyBill} ⃁ · ${c.max_branches} ${c.max_branches === 1 ? 'فرع' : 'فروع'}`],
           ].map(([k, v]) => (
             <div key={k}>
               <div style={{ fontSize: 11.5, color: A.text3, fontWeight: 600 }}>{k}</div>
@@ -250,14 +327,11 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         )}
       </Card>
 
-      {/* النشاط */}
-      {c.org_id && <ActivityCard orgId={c.org_id} />}
+      <Tabs items={TABS} value={tab} onChange={setTab} />
 
-      {/* مراسلة بالإيميل */}
-      {c.org_id && <CustomerEmailCard orgId={c.org_id} orgName={c.org_name} />}
-
+      {tab === 'sub' && <>
       {/* الاشتراك */}
-      <Card title="الاشتراك" subtitle="تفعيل أو تجديد لمدة تبدأ من اليوم">
+      <Card title="تفعيل أو تجديد بالسعر العادي" subtitle="المدة تبدأ من اليوم">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginBottom: 12 }}>
           {DURATIONS.map(x => (
             <button key={x.d} onClick={() => setDays(x.d)} className="adm-btn"
@@ -273,6 +347,117 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         </div>
       </Card>
 
+      {/* عرض سعر خاص */}
+      <Card title="عرض سعر خاص" subtitle="مدة وسعر تتفق عليهما مع العميل، لهذه المرة فقط">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginBottom: 12 }}>
+          {OFFER_MONTHS.map(x => (
+            <button key={x.m} onClick={() => setOffer(o => ({ ...o, months: x.m }))} className="adm-btn"
+              style={{ padding: '8px 4px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+                border: `1px solid ${offer.months === x.m ? A.primary : A.borderStrong}`, background: offer.months === x.m ? A.primarySoft : A.surface, color: offer.months === x.m ? A.primary : A.text2 }}>
+              {x.l}
+            </button>
+          ))}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 8 }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 600, color: A.text2 }}>
+            السعر المتفق عليه (ر.س)
+            <NumberInput min={0} value={offer.price} aria-label="سعر العرض"
+              onChange={e => setOffer(o => ({ ...o, price: String(e.target.value ?? '') }))}
+              style={{ ...inputStyle, textAlign: 'center', fontWeight: 700 }} />
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 600, color: A.text2 }}>
+            ملاحظة في الفاتورة (اختياري)
+            <input value={offer.note} maxLength={60} placeholder="مثال: عرض الافتتاح" onChange={e => setOffer(o => ({ ...o, note: e.target.value }))} style={inputStyle} />
+          </label>
+        </div>
+        {listPrice > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+            {[0, 10, 15, 20, 25].map(pct => {
+              const v = Math.round(listPrice * (1 - pct / 100))
+              const sel = offerPrice === v
+              return (
+                <button key={pct} type="button" onClick={() => setOffer(o => ({ ...o, price: String(v) }))} className="adm-btn"
+                  style={{ padding: '5px 10px', borderRadius: 99, fontSize: 12, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+                    border: `1px solid ${sel ? A.primary : A.border}`, background: sel ? A.primarySoft : A.surface, color: sel ? A.primary : A.text2 }}>
+                  {pct ? `−${pct}% · ${v}` : `السعر العادي · ${v}`}
+                </button>
+              )
+            })}
+          </div>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, padding: '10px 12px', borderRadius: 10, background: A.muted, fontSize: 12.5, color: A.text2, lineHeight: 1.7 }}>
+          <BadgePercent size={16} style={{ flexShrink: 0 }} />
+          <span>
+            السعر العادي لـ{offerLabel}: <b style={{ color: A.text }}>{listPrice} ⃁</b>
+            {offerSaving > 0 && <> · العميل يوفّر <b style={{ color: A.primary }}>{listPrice - offerPrice} ⃁ ({offerSaving}%)</b></>}
+            {offerPrice > listPrice && listPrice > 0 && <> · أعلى من السعر العادي</>}
+            {' '}· ينتهي في {fmtDate(offerEnds.toISOString())}
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <Btn disabled={!!busy} onClick={previewOffer} title="معاينة عرض السعر"><Eye size={14} /> معاينة</Btn>
+          <Btn full loading={busy === 'invoice'} disabled={!hasPhone || (!!busy && busy !== 'invoice')} onClick={sendOfferNow}><Send size={14} /> إرسال العرض</Btn>
+          <Btn kind="primary" full loading={busy === 'offer'} disabled={!!busy && busy !== 'offer'} onClick={() => offerValid() && payOffer({ months: offer.months, amount: offerPrice, note: offer.note, list: listPrice })}>دفع العميل: تفعيل</Btn>
+        </div>
+        <div style={{ fontSize: 11.5, color: A.text3, marginTop: 8, lineHeight: 1.7 }}>
+          «إرسال العرض» يرسل له عرض سعر مستحق الدفع، صالحاً 7 أيام، عبر واتساب والإيميل. وبعد ما يدفع، «تفعيل» يفعّل اشتراكه للمدة ويرسل له فاتورة مدفوعة.
+        </div>
+        {!hasPhone && <div style={{ fontSize: 12, color: A.danger, marginTop: 6 }}>لا يوجد رقم جوال مسجّل لهذا العميل</div>}
+      </Card>
+
+      {/* سجل العروض */}
+      {offers.length > 0 && (
+        <Card title="سجل العروض" subtitle="العروض المرسلة لهذا العميل وحالتها">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {offers.map(o => {
+              const stt = offerState(o)
+              const tone = stt === 'paid' ? 'primary' : stt === 'sent' ? 'warning' : 'neutral'
+              const sttLabel = { paid: 'مدفوع', sent: 'بانتظار الدفع', expired: 'انتهت صلاحيته', cancelled: 'ملغى' }[stt]
+              return (
+                <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: `1px solid ${A.border}` }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>
+                      {o.kind === 'renewal' ? 'عرض تجديد' : 'عرض'} {offerMonthsLabel(o.months)} · {Number(o.amount)} ⃁
+                      {o.list_amount && Number(o.list_amount) > Number(o.amount) && <span style={{ color: A.text3, fontWeight: 500 }}> (بدلاً من {Number(o.list_amount)})</span>}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>
+                      أُرسل {fmtDate(o.created_at)}{o.invoice_number ? ` · #${o.invoice_number}` : ''}{stt === 'sent' ? ` · صالح حتى ${fmtDate(o.valid_until)}` : ''}{o.paid_at ? ` · دُفع ${fmtDate(o.paid_at)}` : ''}{o.note ? ` · ${o.note}` : ''}
+                    </div>
+                  </div>
+                  <Badge tone={tone as any}>{sttLabel}</Badge>
+                  {(stt === 'sent' || stt === 'expired') && <>
+                    <Btn small kind="primary" disabled={!!busy} onClick={() => payOffer({ id: o.id, months: o.months, amount: Number(o.amount), note: o.note, kind: o.kind, list: o.list_amount ? Number(o.list_amount) : null })}>دفع: تفعيل</Btn>
+                    <Btn small disabled={!!busy} onClick={() => cancelOffer(o.id)}>إلغاء</Btn>
+                  </>}
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* الفاتورة */}
+      <Card title="الفاتورة الدورية" subtitle="الباقة + الإضافات المفعّلة">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {bill.lines.map((l, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 13, color: A.text2 }}>
+              <span>{l.label}</span><span style={{ fontWeight: 600, color: A.text, whiteSpace: 'nowrap' }}>{l.amount} ⃁</span>
+            </div>
+          ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${A.border}`, paddingTop: 8, marginTop: 4, fontSize: 14, fontWeight: 600 }}>
+            <span>الإجمالي</span><span>{bill.total} ⃁</span>
+          </div>
+        </div>
+        <div style={{ marginTop: 14 }}>
+          <Btn full loading={busy === 'invoice'} disabled={!hasPhone || (!!busy && busy !== 'invoice')} onClick={() => sendInvoice()}>
+            <Send size={14} /> إرسال الفاتورة عبر واتساب
+          </Btn>
+          {!hasPhone && <div style={{ fontSize: 12, color: A.danger, marginTop: 6 }}>لا يوجد رقم جوال مسجّل لهذا العميل</div>}
+        </div>
+      </Card>
+
+      </>}
+      {tab === 'plan' && <>
       {/* الباقة */}
       <Card title="الباقة" actions={
         <div style={{ display: 'inline-flex', border: `1px solid ${A.borderStrong}`, borderRadius: 8, overflow: 'hidden' }}>
@@ -427,26 +612,16 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         </div>
       </Card>
 
-      {/* الفاتورة */}
-      <Card title="الفاتورة الدورية" subtitle="الباقة + الإضافات المفعّلة">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {bill.lines.map((l, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 13, color: A.text2 }}>
-              <span>{l.label}</span><span style={{ fontWeight: 600, color: A.text, whiteSpace: 'nowrap' }}>{l.amount} ⃁</span>
-            </div>
-          ))}
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${A.border}`, paddingTop: 8, marginTop: 4, fontSize: 14, fontWeight: 600 }}>
-            <span>الإجمالي</span><span>{bill.total} ⃁</span>
-          </div>
-        </div>
-        <div style={{ marginTop: 14 }}>
-          <Btn full loading={busy === 'invoice'} disabled={!hasPhone || (!!busy && busy !== 'invoice')} onClick={() => sendInvoice()}>
-            <Send size={14} /> إرسال الفاتورة عبر واتساب
-          </Btn>
-          {!hasPhone && <div style={{ fontSize: 12, color: A.danger, marginTop: 6 }}>لا يوجد رقم جوال مسجّل لهذا العميل</div>}
-        </div>
-      </Card>
+      </>}
+      {tab === 'contact' && <>
+      {/* النشاط */}
+      {c.org_id && <ActivityCard orgId={c.org_id} />}
 
+      {/* مراسلة بالإيميل */}
+      {c.org_id && <CustomerEmailCard orgId={c.org_id} orgName={c.org_name} />}
+
+      </>}
+      {tab === 'account' && <>
       {/* منطقة الخطر */}
       <Card title="إجراءات الحساب">
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -462,6 +637,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
           </div>
         )}
       </Card>
+      </>}
     </Drawer>
   )
 }
