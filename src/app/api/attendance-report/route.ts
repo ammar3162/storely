@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { selectAll } from '@/lib/selectAll'
 import { offReason, monthlyOffDates } from '@/lib/daysOff'
-import { loadOvertimeSettings, overtimeMinutes, overtimeHourRate, type Shift } from '@/lib/payroll'
+import { loadOvertimeSettings, overtimeMinutes, overtimeHourRate, monthlyAllowancesOf, type Shift } from '@/lib/payroll'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -69,7 +69,7 @@ export async function GET(req: Request) {
 
     // القراءة متاحة دايماً حتى بدون اشتراك فعّال -- المالك يقدر يشوف سجلاته القديمة (قراءة فقط)،
     // الحماية الفعلية (منع تسجيل حضور جديد) موجودة بمسار POST /api/staff-attendance مو هنا
-    let staffQ = supabase.from('staff_members').select('id,name,branch_id,shift_id,monthly_salary,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates').eq('org_id', org_id).eq('is_active', true)
+    let staffQ = supabase.from('staff_members').select('id,name,branch_id,shift_id,monthly_salary,housing_allowance,transport_allowance,food_allowance,weekly_off_days,days_off_mode,monthly_off_days,biweekly_anchor,off_dates').eq('org_id', org_id).eq('is_active', true)
     if (effectiveBranchId) staffQ = staffQ.eq('branch_id', effectiveBranchId)
     if (staff_id) staffQ = staffQ.eq('id', staff_id)
     const { data: staffList } = await staffQ.order('name')
@@ -89,7 +89,7 @@ export async function GET(req: Request) {
       const shift = shiftOf(s)
       // المثبّت وقت الانصراف أولاً (على شفت ذاك اليوم)، والسجلات القديمة على الشفت الحالي
       const minutes = checkOut.overtime_minutes != null ? Number(checkOut.overtime_minutes) : overtimeMinutes(checkOut.recorded_at, shift, otSettings.minMinutes)
-      return { minutes, pay: round2((minutes / 60) * overtimeHourRate(Number(s.monthly_salary || 0), shift, otSettings)) }
+      return { minutes, pay: round2((minutes / 60) * overtimeHourRate(Number(s.monthly_salary || 0), shift, otSettings, monthlyAllowancesOf(s))) }
     }
     const autoFrom = otSettings.lateAutoFrom ? Date.parse(otSettings.lateAutoFrom) : null
     const isLegacy = (c?: Ev | null) => !!c && autoFrom != null && !c.penalty_applied && Number(c.penalty_amount || 0) > 0 && Date.parse(c.recorded_at) < autoFrom

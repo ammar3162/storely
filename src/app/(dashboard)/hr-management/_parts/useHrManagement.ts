@@ -8,6 +8,7 @@ import { colors } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { cache } from '@/lib/cache'
+import { absenceReason } from '@/lib/absence'
 
 /** حالة صفحة الموارد البشرية ودوالها — منقولة كما هي من page.tsx */
 export function useHrManagement() {
@@ -23,7 +24,7 @@ export function useHrManagement() {
   const [branches, setBranches] = useState<any[]>([])
   const [savingLocationId, setSavingLocationId] = useState<string|null>(null)
 
-  const [salaryForm, setSalaryForm] = useState<{base:string,housing:string,transport:string,food:string}>({base:'',housing:'',transport:'',food:''})
+  const [salaryForm, setSalaryForm] = useState<{base:string,housing:string,transport:string,food:string,start:string}>({base:'',housing:'',transport:'',food:'',start:''})
   const [savingSalary, setSavingSalary] = useState(false)
 
   const [adjustments, setAdjustments] = useState<any[]>([])
@@ -181,6 +182,7 @@ export function useHrManagement() {
       housing: String(s.housing_allowance || 0),
       transport: String(s.transport_allowance || 0),
       food: String(s.food_allowance || 0),
+      start: typeof s.employment_start === 'string' ? s.employment_start.slice(0, 10) : '',
     })
     loadAdjustments(s.id)
     loadTasks(s.id)
@@ -274,13 +276,14 @@ export function useHrManagement() {
         housing_allowance: Number(salaryForm.housing)||0,
         transport_allowance: Number(salaryForm.transport)||0,
         food_allowance: Number(salaryForm.food)||0,
+        employment_start: salaryForm.start || null,
       }),
     })
     const j = await res.json()
     setSavingSalary(false)
     if (!j.success) { toast(j.error || 'خطأ', 'error'); return }
     toast('تم حفظ الراتب والبدلات')
-    setStaff(prev => prev.map((s:any)=> s.id===staffId ? {...s, monthly_salary:Number(salaryForm.base)||0, housing_allowance:Number(salaryForm.housing)||0, transport_allowance:Number(salaryForm.transport)||0, food_allowance:Number(salaryForm.food)||0} : s))
+    setStaff(prev => prev.map((s:any)=> s.id===staffId ? {...s, monthly_salary:Number(salaryForm.base)||0, housing_allowance:Number(salaryForm.housing)||0, transport_allowance:Number(salaryForm.transport)||0, food_allowance:Number(salaryForm.food)||0, employment_start:salaryForm.start||null} : s))
   }
 
   async function loadAdjustments(staffId:string) {
@@ -307,6 +310,23 @@ export function useHrManagement() {
     toast('تم إضافة الخصم')
     setNewAdjAmount(''); setNewAdjReason('')
     loadAdjustments(staffId)
+  }
+
+  // خصم أيام الغياب بدون عذر (من بطاقة الموظف) — التواريخ بالسبب عشان ما تنخصم مرتين
+  async function deductAbsence(staffId:string, name:string) {
+    const p = cardPayroll[staffId]
+    const dates: string[] = p?.absencePendingDates || []
+    const amount = Number(p?.absencePendingAmount || 0)
+    if (!dates.length || !(amount > 0)) return
+    const ok = await confirmDialog({ title:`خصم الغياب — ${name}`, message:`${dates.length} ${dates.length===1?'يوم':'أيام'} غياب بدون عذر (${dates.join('، ')})، أجر اليوم ${p.absenceDailyWage} ⃁. المجموع ${amount} ⃁ يُضاف خصماً على راتب هذا الشهر، ويصل إشعار للموظف.`, confirmText:'اعتمد الخصم', type:'warning' })
+    if (!ok) return
+    const j = await api.post('/api/staff-payroll-adjustments', { org_id: orgId, staff_id: staffId, type:'deduction', amount, reason: absenceReason(dates) })
+    if (!j?.success) { toast(j?.error||'خطأ','error'); return }
+    toast('تم خصم أيام الغياب')
+    const curMonth = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 7)
+    const r = await api.get('/api/staff-report', { org_id: orgId, month: curMonth })
+    if (r?.success) { const map: Record<string, any> = {}; for (const x of (r.report||[])) map[x.staffId] = x; setCardPayroll(map) }
+    if (expandedId === staffId) loadAdjustments(staffId)
   }
 
   async function reviewAdvance(staffId:string, adjustmentId:string, decision:'approved'|'rejected') {
@@ -380,7 +400,7 @@ export function useHrManagement() {
     rejected:  {label:'مرفوضة',        color: colors.danger,  bg: colors.dangerLight},
   }
 
-  return { orgId, setOrgId, salaryVisible, setSalaryVisible, isOwner, setIsOwner, curr, setCurr, orgPlan, setOrgPlan, hasHrAddon, setHasHrAddon, staff, setStaff, loading, setLoading, expandedId, setExpandedId, branches, setBranches, savingLocationId, setSavingLocationId, salaryForm, setSalaryForm, savingSalary, setSavingSalary, adjustments, setAdjustments, loadingAdjustments, setLoadingAdjustments, newAdjAmount, setNewAdjAmount, newAdjReason, setNewAdjReason, savingAdj, setSavingAdj, tasks, setTasks, loadingTasks, setLoadingTasks, newTaskTitle, setNewTaskTitle, newTaskDesc, setNewTaskDesc, newTaskPhoto, setNewTaskPhoto, savingTask, setSavingTask, leaveRequests, setLeaveRequests, loadingLeave, setLoadingLeave, pendingLeaveCounts, setPendingLeaveCounts, pendingAdvanceCounts, setPendingAdvanceCounts, cardPayroll, setCardPayroll, extraDays, setExtraDays, canDecideExtra, setCanDecideExtra, excuseRequests, setExcuseRequests, loadingExcuse, setLoadingExcuse, reportMonth, setReportMonth, reportData, setReportData, loadingReport, setLoadingReport, showReport, setShowReport, hrTab, setHrTab, currentBranchId, setCurrentBranchId, MAX_ACCEPTABLE_ACCURACY_M, totalSalary, TASK_STATUS_LABEL, init, getPositionOnce, saveBranchLocation, toggleExpand, loadLeave, reviewLeave, loadExcuse, reviewExcuse, toggleSalaryVisible, loadReport, saveSalary, loadAdjustments, addDeduction, reviewAdvance, loadTasks, createTask, reviewTask, toggleDaily }
+  return { orgId, setOrgId, salaryVisible, setSalaryVisible, isOwner, setIsOwner, curr, setCurr, orgPlan, setOrgPlan, hasHrAddon, setHasHrAddon, staff, setStaff, loading, setLoading, expandedId, setExpandedId, branches, setBranches, savingLocationId, setSavingLocationId, salaryForm, setSalaryForm, savingSalary, setSavingSalary, adjustments, setAdjustments, loadingAdjustments, setLoadingAdjustments, newAdjAmount, setNewAdjAmount, newAdjReason, setNewAdjReason, savingAdj, setSavingAdj, tasks, setTasks, loadingTasks, setLoadingTasks, newTaskTitle, setNewTaskTitle, newTaskDesc, setNewTaskDesc, newTaskPhoto, setNewTaskPhoto, savingTask, setSavingTask, leaveRequests, setLeaveRequests, loadingLeave, setLoadingLeave, pendingLeaveCounts, setPendingLeaveCounts, pendingAdvanceCounts, setPendingAdvanceCounts, cardPayroll, setCardPayroll, extraDays, setExtraDays, canDecideExtra, setCanDecideExtra, excuseRequests, setExcuseRequests, loadingExcuse, setLoadingExcuse, reportMonth, setReportMonth, reportData, setReportData, loadingReport, setLoadingReport, showReport, setShowReport, hrTab, setHrTab, currentBranchId, setCurrentBranchId, MAX_ACCEPTABLE_ACCURACY_M, totalSalary, TASK_STATUS_LABEL, init, getPositionOnce, saveBranchLocation, toggleExpand, loadLeave, reviewLeave, loadExcuse, reviewExcuse, toggleSalaryVisible, loadReport, saveSalary, loadAdjustments, addDeduction, deductAbsence, reviewAdvance, loadTasks, createTask, reviewTask, toggleDaily }
 }
 
 export type HrPage = ReturnType<typeof useHrManagement>

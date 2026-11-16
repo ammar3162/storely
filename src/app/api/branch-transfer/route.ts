@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { branchFeatureDenied } from '@/lib/featureRoutes'
 import { unitFor } from '@/lib/arabicCount'
+import { transferAvgCost } from '@/lib/transferCost'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
 
     const { data: sourceProduct } = await db
       .from('products')
-      .select('id,org_id,branch_id,name,unit,category,reorder_point,qty')
+      .select('id,org_id,branch_id,name,unit,category,reorder_point,qty,avg_cost')
       .eq('id', product_id).eq('org_id', org_id).eq('branch_id', from_branch_id)
       .maybeSingle()
     if (!sourceProduct) return NextResponse.json({ error: 'المنتج غير موجود بالفرع المصدر' }, { status: 404 })
@@ -89,7 +90,7 @@ export async function POST(req: Request) {
 
     const { data: destExisting } = await db
       .from('products')
-      .select('id')
+      .select('id,qty,avg_cost')
       .eq('org_id', org_id).eq('branch_id', to_branch_id).eq('name', (sourceProduct as any).name)
       .maybeSingle()
 
@@ -101,26 +102,37 @@ export async function POST(req: Request) {
           org_id, branch_id: to_branch_id,
           name: (sourceProduct as any).name, unit: (sourceProduct as any).unit,
           category: (sourceProduct as any).category, reorder_point: (sourceProduct as any).reorder_point,
-          qty: 0, is_active: true,
-        })
+          qty: 0, is_active: true, avg_cost: Number((sourceProduct as any).avg_cost) || null,
+        } as any)
         .select('id').single()
       if (createErr || !newProduct) return NextResponse.json({ error: 'فشل إنشاء المنتج بالفرع الوجهة' }, { status: 500 })
       destProductId = (newProduct as any).id
     }
 
-    const { error: outErr } = await db.from('stock_movements').insert({
-      product_id: (sourceProduct as any).id, org_id, profile_id: access.userId,
-      type: 'transfer_out', qty_change: -transferQty, branch_id: from_branch_id,
-      note: `نقل إلى فرع ${(toBranch as any).name}`,
-    } as any)
-    if (outErr) return NextResponse.json({ error: 'فشل تسجيل حركة الفرع المصدر' }, { status: 500 })
+    // الخروج والدخول بطلب واحد = عملية وحدة بالقاعدة: يا ينحفظون الاثنين يا ولا واحد (ما تضيع الكمية بالنص)
+    const { error: moveErr } = await db.from('stock_movements').insert([
+      {
+        product_id: (sourceProduct as any).id, org_id, profile_id: access.userId,
+        type: 'transfer_out', qty_change: -transferQty, branch_id: from_branch_id,
+        note: `نقل إلى فرع ${(toBranch as any).name}`,
+      },
+      {
+        product_id: destProductId, org_id, profile_id: access.userId,
+        type: 'transfer_in', qty_change: transferQty, branch_id: to_branch_id,
+        note: `نقل من فرع ${(fromBranch as any).name}`,
+      },
+    ] as any)
+    if (moveErr) {
+      // المنتج اللي انشأناه للتو بالفرع الوجهة وفشل النقل → نشيله عشان ما يبقى صنف فاضي
+      if (!destExisting) await db.from('products').delete().eq('id', destProductId).eq('org_id', org_id)
+      return NextResponse.json({ error: 'فشل تسجيل النقل، لم تتغير الكميات' }, { status: 500 })
+    }
 
-    const { error: inErr } = await db.from('stock_movements').insert({
-      product_id: destProductId, org_id, profile_id: access.userId,
-      type: 'transfer_in', qty_change: transferQty, branch_id: to_branch_id,
-      note: `نقل من فرع ${(fromBranch as any).name}`,
-    } as any)
-    if (inErr) return NextResponse.json({ error: 'فشل تسجيل حركة الفرع الوجهة' }, { status: 500 })
+    // تكلفة الصنف بالفرع الوجهة: متوسط مرجّح بين اللي عنده وتكلفة الكمية الواردة (للمنتج الجديد = تكلفة المصدر)
+    if (destExisting) {
+      const nextAvg = transferAvgCost(Number((destExisting as any).qty), Number((destExisting as any).avg_cost), transferQty, Number((sourceProduct as any).avg_cost))
+      if (nextAvg != null) await db.from('products').update({ avg_cost: nextAvg } as any).eq('id', destProductId).eq('org_id', org_id)
+    }
 
     // إشعارات النظام لكل فرع بما يخصّه — يظهر بجرس الإشعارات فوراً
     const productName = (sourceProduct as any).name

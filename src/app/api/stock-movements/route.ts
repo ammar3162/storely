@@ -1,5 +1,6 @@
 import { managerMay } from '@/lib/managerPerms'
 import { NextResponse } from 'next/server'
+import { WHOLE_QTY_ERROR } from '@/lib/qtyRules'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
 import { branchFeatureDenied } from '@/lib/featureRoutes'
@@ -45,6 +46,7 @@ export async function POST(req: Request) {
     if (!org_id || !product_id || !(qn > 0) || (type !== 'out' && type !== 'waste')) {
       return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     }
+    if (!Number.isInteger(qn)) return NextResponse.json({ error: WHOLE_QTY_ERROR }, { status: 400 })
     if (type === 'waste' && !waste_reason) return NextResponse.json({ error: 'سبب الهدر مطلوب' }, { status: 400 })
 
     const access = await verifyOrgAccess(org_id)

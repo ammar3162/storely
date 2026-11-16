@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { overtimeMinutes, overtimeHourRate, shiftHours, DEFAULT_OVERTIME } from './payroll'
+import { overtimeMinutes, overtimeHourRate, shiftHours, DEFAULT_OVERTIME, workedDaysInMonth } from './payroll'
 
 // أوقات الانصراف بتوقيت السعودية (+03:00)
 const at = (t: string) => `2026-10-05T${t}:00+03:00`
@@ -51,8 +51,23 @@ describe('overtimeHourRate', () => {
     expect(overtimeHourRate(3000, { start_time: '08:00', end_time: '18:00', is_24h: false })).toBe(15)  // 10h shift
     expect(overtimeHourRate(3000, day, { ...DEFAULT_OVERTIME, multiplier: 2 })).toBe(25)
   })
+  it('auto with allowances: Art. 107 (full hourly wage + 50% of basic)', () => {
+    // أساسي 3000 + بدلات 1000، شفت 8 ساعات: 4000/30/8 = 16.67 + 0.5 × 12.5 = 22.92
+    expect(overtimeHourRate(3000, day, DEFAULT_OVERTIME, 1000)).toBe(22.92)
+  })
   it('fixed and off', () => {
     expect(overtimeHourRate(3000, day, { ...DEFAULT_OVERTIME, mode: 'fixed', fixedRate: 25 })).toBe(25)
     expect(overtimeHourRate(3000, day, { ...DEFAULT_OVERTIME, mode: 'off' })).toBe(0)
+  })
+})
+
+describe('employment start (first month pro-rated)', () => {
+  it('workedDaysInMonth', () => {
+    expect(workedDaysInMonth('2026-11', 30, '2026-11-25', null)).toBe(6)
+    expect(workedDaysInMonth('2026-11', 30, null, null)).toBe(30)
+    expect(workedDaysInMonth('2026-11', 30, '2026-10-01', null)).toBe(30)
+    expect(workedDaysInMonth('2026-11', 30, '2026-12-01', null)).toBe(0)
+    expect(workedDaysInMonth('2026-11', 30, '2026-11-10', '2026-11-19')).toBe(10)
+    expect(workedDaysInMonth('2026-11', 30, null, '2026-11-15')).toBe(15)
   })
 })
