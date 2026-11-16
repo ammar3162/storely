@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { RefreshCcw, MessageCircle } from 'lucide-react'
 import { A, Badge, Btn, Card, Empty, Loading, Notice, PageHeader, Stack, Table, adminFetch, fmtDate, td } from '../kit'
 import { confirmDialog } from '@/components/ConfirmDialog'
+import RenewalOffers from './renewal-offers'
 
 // طلبات تجديد الاشتراك: العميل ضغط «تجديد الاشتراك» وحسابه يشتغل — نتواصل معه للدفع ثم نفعّل من «العملاء»
 const STATUS: Record<string, [string, 'warning' | 'primary' | 'neutral']> = { pending_payment: ['بانتظار الدفع', 'warning'], paid: ['مدفوع', 'primary'], cancelled: ['ملغي', 'neutral'] }
@@ -49,6 +50,7 @@ export default function RenewalsPage() {
         subtitle="العميل ضغط «تجديد الاشتراك» وحسابه يعمل (يوم سماح لو كان منتهياً). تواصل معه للدفع، ثم فعّل اشتراكه من «العملاء» فيتحوّل الطلب إلى «مدفوع» تلقائياً" />
       <Stack>
         {msg && <Notice tone={msg.bad ? 'danger' : 'primary'}>{msg.t}</Notice>}
+        <RenewalOffers onMsg={setMsg} />
         {expired.length > 0 && (
           <Card title={`اشتراكات منتهية (${expired.length})`} subtitle="آخر 60 يوماً — التذكير اليدوي إضافة على الرسائل التلقائية ولا يغيّرها" pad={0}
             actions={remindable.length > 1 ? <Btn small kind="primary" onClick={() => remind(null)} disabled={!!busy}>{busy === 'all' ? 'جاري الإرسال...' : `أرسل تذكير للجميع (${remindable.length})`}</Btn> : undefined}>

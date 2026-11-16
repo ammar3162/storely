@@ -5,7 +5,7 @@ import { sendWhatsAppDocument, formatPhone } from '@/lib/whatsapp'
 import { generateInvoicePdf } from '@/lib/generateInvoicePdf'
 import { sendEmail } from '@/lib/email'
 import { invoiceEmail } from '@/lib/emailTemplates'
-import { offerValidUntil } from '@/lib/offerQuote'
+import { offerValidUntil, OFFER_VALID_DAYS } from '@/lib/offerQuote'
 
 export async function POST(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { orgId, orgName, phone: rawPhone, items, status: rawStatus } = await req.json()
+  const { orgId, orgName, phone: rawPhone, items, status: rawStatus, offer, offerId } = await req.json()
   // due = عرض سعر قبل الدفع (العرض الخاص من ملف العميل)، والافتراضي فاتورة مدفوعة
   const status: 'paid' | 'due' = rawStatus === 'due' ? 'due' : 'paid'
   if (!orgId || !rawPhone || !Array.isArray(items) || items.length === 0) {
@@ -83,7 +83,26 @@ export async function POST(req: Request) {
     console.error('SEND_INVOICE_EMAIL_FAILED (non-fatal):', emailErr)
   }
 
+  // سجل العروض: عرض سعر جديد (مستحق) أو تسجيل دفع عرض موجود (فاتورة مدفوعة)
+  let savedOfferId: string | null = null
+  if (status === 'due' && offer && typeof offer === 'object') {
+    const months = Math.round(Number(offer.months))
+    if (months >= 1 && months <= 24 && total > 0) {
+      const { data: row } = await (supabase as any).from('subscription_offers').insert({
+        org_id: orgId, kind: offer.kind === 'renewal' ? 'renewal' : 'manual', months, amount: total,
+        list_amount: Number(offer.list_amount) > 0 ? Math.round(Number(offer.list_amount)) : null,
+        note: typeof offer.note === 'string' ? offer.note.trim().slice(0, 60) || null : null,
+        invoice_number: invoiceNumber, valid_until: new Date(Date.now() + OFFER_VALID_DAYS * 86400000).toISOString(), sent_by_name: admin.full_name || null,
+      }).select('id').single()
+      savedOfferId = row?.id || null
+    }
+  }
+  if (status === 'paid' && typeof offerId === 'string' && offerId) {
+    await (supabase as any).from('subscription_offers').update({ status: 'paid', paid_at: new Date().toISOString(), paid_invoice_number: invoiceNumber, decided_by_name: admin.full_name || null })
+      .eq('id', offerId).eq('org_id', orgId).eq('status', 'sent')
+  }
+
   await logAdminAction(admin, 'send_invoice', orgId, orgName || null, { invoice_number: invoiceNumber, amount: total, items: cleanItems, status })
 
-  return NextResponse.json({ success: true, invoiceNumber })
+  return NextResponse.json({ success: true, invoiceNumber, offerId: savedOfferId })
 }
