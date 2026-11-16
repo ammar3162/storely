@@ -18,7 +18,9 @@ export async function POST(req: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { orgId, orgName, phone: rawPhone, items } = await req.json()
+  const { orgId, orgName, phone: rawPhone, items, status: rawStatus } = await req.json()
+  // due = عرض سعر قبل الدفع (العرض الخاص من ملف العميل)، والافتراضي فاتورة مدفوعة
+  const status: 'paid' | 'due' = rawStatus === 'due' ? 'due' : 'paid'
   if (!orgId || !rawPhone || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
   }
@@ -44,7 +46,7 @@ export async function POST(req: Request) {
   // توليد ملف PDF احترافي مفصّل للفاتورة
   let pdfBuffer: Buffer
   try {
-    pdfBuffer = await generateInvoicePdf({ invoiceNumber, date: today, orgName: orgName || '—', items: cleanItems })
+    pdfBuffer = await generateInvoicePdf({ invoiceNumber, date: today, orgName: orgName || '—', items: cleanItems, status })
   } catch (err: any) {
     console.error('PDF_GENERATION_FAILED:', err?.message || err, err?.stack || '')
     return NextResponse.json({ error: 'فشل توليد ملف الفاتورة: ' + String(err?.message || err) }, { status: 500 })
@@ -59,7 +61,7 @@ export async function POST(req: Request) {
 
   const { data: { publicUrl } } = supabase.storage.from('invoice-pdfs').getPublicUrl(fileName)
 
-  const result = await sendWhatsAppDocument(phone, publicUrl, fileName, `🧾 فاتورة اشتراك #${invoiceNumber} — ${orgName || ''}`)
+  const result = await sendWhatsAppDocument(phone, publicUrl, fileName, status === 'due' ? `عرض سعر #${invoiceNumber} — ${orgName || ''} — ${total} ر.س` : `فاتورة اشتراك #${invoiceNumber} — ${orgName || ''}`)
   if (!result.ok) {
     console.error('SEND_INVOICE_WA_FAILED:', JSON.stringify({ phone, status: result.status, data: result.data }))
     return NextResponse.json({ error: `فشل إرسال الفاتورة عبر واتساب: ${JSON.stringify(result.data || result.status || 'unknown')}` }, { status: 500 })
@@ -72,7 +74,7 @@ export async function POST(req: Request) {
       const { data: authUser } = await supabase.auth.admin.getUserById((ownerProfile as any).id)
       const ownerEmail = authUser?.user?.email
       if (ownerEmail) {
-        const mail = invoiceEmail({ invoiceNumber, orgName: orgName || '—', items: cleanItems, pdfUrl: publicUrl, status: 'paid', date: today })
+        const mail = invoiceEmail({ invoiceNumber, orgName: orgName || '—', items: cleanItems, pdfUrl: publicUrl, status, date: today })
         await sendEmail({ to: ownerEmail, subject: mail.subject, html: mail.html })
       }
     }
@@ -80,7 +82,7 @@ export async function POST(req: Request) {
     console.error('SEND_INVOICE_EMAIL_FAILED (non-fatal):', emailErr)
   }
 
-  await logAdminAction(admin, 'send_invoice', orgId, orgName || null, { invoice_number: invoiceNumber, amount: total, items: cleanItems })
+  await logAdminAction(admin, 'send_invoice', orgId, orgName || null, { invoice_number: invoiceNumber, amount: total, items: cleanItems, status })
 
   return NextResponse.json({ success: true, invoiceNumber })
 }

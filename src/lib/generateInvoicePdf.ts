@@ -25,6 +25,8 @@ interface InvoiceData {
   date: string
   orgName: string
   items: InvoiceItem[]
+  /** due = عرض سعر مستحق الدفع (قبل التفعيل) — الافتراضي مدفوعة */
+  status?: 'paid' | 'due'
 }
 
 export function buildInvoiceHtml(data: InvoiceData): string {
@@ -71,7 +73,7 @@ export function buildInvoiceHtml(data: InvoiceData): string {
       <div class="brand-legal">مؤسسة باسم علي خلوي لتقنية المعلومات — س.ت 7055023522</div>
     </div>
     <div class="meta">
-      <div class="meta-title">فاتورة اشتراك</div>
+      <div class="meta-title">${data.status === 'due' ? 'عرض سعر' : 'فاتورة اشتراك'}</div>
       <div class="meta-row">رقم الفاتورة: <b>#${escapeHtml(data.invoiceNumber)}</b></div>
       <div class="meta-row">التاريخ: <b>${escapeHtml(data.date)}</b></div>
     </div>
@@ -93,7 +95,7 @@ export function buildInvoiceHtml(data: InvoiceData): string {
   </table>
 
   <div class="footer">
-    <div class="footer-thanks">تم استلام الدفعة بنجاح — شكراً لاشتراكك معنا</div>
+    <div class="footer-thanks">${data.status === 'due' ? 'المبلغ مستحق الدفع، ويُفعَّل الاشتراك فور استلام الدفعة' : 'تم استلام الدفعة بنجاح — شكراً لاشتراكك معنا'}</div>
     <div class="footer-note">هذه الفاتورة غير خاضعة لضريبة القيمة المضافة · storely.dev</div>
     <div class="footer-note" style="margin-top:4px">مؤسسة باسم علي خلوي لتقنية المعلومات · س.ت 7055023522</div>
   </div>
