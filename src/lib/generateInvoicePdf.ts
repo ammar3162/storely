@@ -27,6 +27,8 @@ interface InvoiceData {
   items: InvoiceItem[]
   /** due = عرض سعر مستحق الدفع (قبل التفعيل) — الافتراضي مدفوعة */
   status?: 'paid' | 'due'
+  /** عرض السعر: آخر يوم يسري فيه */
+  validUntil?: string
 }
 
 export function buildInvoiceHtml(data: InvoiceData): string {
@@ -76,6 +78,7 @@ export function buildInvoiceHtml(data: InvoiceData): string {
       <div class="meta-title">${data.status === 'due' ? 'عرض سعر' : 'فاتورة اشتراك'}</div>
       <div class="meta-row">رقم الفاتورة: <b>#${escapeHtml(data.invoiceNumber)}</b></div>
       <div class="meta-row">التاريخ: <b>${escapeHtml(data.date)}</b></div>
+      ${data.status === 'due' && data.validUntil ? `<div class="meta-row">صالح حتى: <b>${escapeHtml(data.validUntil)}</b></div>` : ''}
     </div>
   </div>
 

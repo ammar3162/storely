@@ -5,6 +5,7 @@ import { sendWhatsAppDocument, formatPhone } from '@/lib/whatsapp'
 import { generateInvoicePdf } from '@/lib/generateInvoicePdf'
 import { sendEmail } from '@/lib/email'
 import { invoiceEmail } from '@/lib/emailTemplates'
+import { offerValidUntil } from '@/lib/offerQuote'
 
 export async function POST(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
   // توليد ملف PDF احترافي مفصّل للفاتورة
   let pdfBuffer: Buffer
   try {
-    pdfBuffer = await generateInvoicePdf({ invoiceNumber, date: today, orgName: orgName || '—', items: cleanItems, status })
+    pdfBuffer = await generateInvoicePdf({ invoiceNumber, date: today, orgName: orgName || '—', items: cleanItems, status, validUntil: status === 'due' ? offerValidUntil() : undefined })
   } catch (err: any) {
     console.error('PDF_GENERATION_FAILED:', err?.message || err, err?.stack || '')
     return NextResponse.json({ error: 'فشل توليد ملف الفاتورة: ' + String(err?.message || err) }, { status: 500 })

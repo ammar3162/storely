@@ -141,11 +141,11 @@ export function invoiceEmail(o: { invoiceNumber: string | number; orgName: strin
   const paid = (o.status || 'paid') === 'paid'
   const total = o.items.reduce((n, it) => n + Number(it.amount), 0)
   return {
-    subject: `فاتورة اشتراك #${o.invoiceNumber} — ${o.orgName} — ${sar(total)}`,
+    subject: `${paid ? 'فاتورة اشتراك' : 'عرض سعر'} #${o.invoiceNumber} — ${o.orgName} — ${sar(total)}`,
     html: brandEmail({
-      title: paid ? 'شكراً لك، هذه فاتورة اشتراكك' : 'فاتورة مستحقة الدفع',
+      title: paid ? 'شكراً لك، هذه فاتورة اشتراكك' : 'عرض سعر اشتراكك في Storely',
       preheader: `فاتورة #${o.invoiceNumber} بقيمة ${sar(total)}`,
-      headerSide: { title: 'فاتورة اشتراك', sub: `#${o.invoiceNumber}` },
+      headerSide: { title: paid ? 'فاتورة اشتراك' : 'عرض سعر', sub: `#${o.invoiceNumber}` },
       rows: [
         { label: 'المنشأة', value: o.orgName || '—', strong: true },
         { label: 'تاريخ الفاتورة', value: o.date || arDate(Date.now()) },
@@ -153,8 +153,8 @@ export function invoiceEmail(o: { invoiceNumber: string | number; orgName: strin
       badge: paid ? { text: 'مدفوعة', tone: 'success' } : { text: 'مستحقة الدفع', tone: 'warning' },
       items: o.items,
       totalLabel: paid ? 'الإجمالي المدفوع' : 'المبلغ المستحق',
-      button: o.pdfUrl ? { label: 'تحميل الفاتورة (PDF)', url: o.pdfUrl } : undefined,
-      small: 'المبالغ بالريال السعودي. لأي استفسار عن الفاتورة تواصل معنا.',
+      button: o.pdfUrl ? { label: paid ? 'تحميل الفاتورة (PDF)' : 'تحميل عرض السعر (PDF)', url: o.pdfUrl } : undefined,
+      small: paid ? 'المبالغ بالريال السعودي. لأي استفسار عن الفاتورة تواصل معنا.' : 'المبالغ بالريال السعودي. العرض صالح 7 أيام، ويُفعَّل الاشتراك فور استلام الدفعة.',
     }),
   }
 }

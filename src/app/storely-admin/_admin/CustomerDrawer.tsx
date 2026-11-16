@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import NumberInput from '@/components/NumberInput'
-import { MessageCircle, Send, Trash2, PauseCircle, PlayCircle, KeyRound, BadgePercent } from 'lucide-react'
+import { MessageCircle, Send, Trash2, PauseCircle, PlayCircle, KeyRound, BadgePercent, Eye } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { toast } from '@/components/toast'
 import { billLines, activeDiscount, PLAN_CAPS, ENTERPRISE_LABEL, addonPeriodEnd, proratedCharge, planPriceFor, unitPrice, isNewPlan, type PlanKey } from '@/lib/planPricing'
@@ -187,6 +187,15 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
     return true
   }
 
+  // معاينة العرض بنفس شكل الـ PDF قبل الإرسال
+  async function previewOffer() {
+    if (!offerValid()) return
+    const w = window.open('', '_blank')
+    const j = await adminFetch('/api/admin/invoice-preview', { method: 'POST', body: { orgName: c!.org_name, items: offerItems, status: 'due' } })
+    if (!j.success || !w) { w?.close(); toast(j.error || 'تعذّرت المعاينة', 'error'); return }
+    w.document.open(); w.document.write(j.html); w.document.close()
+  }
+
   // إرسال العرض فقط (مستحق الدفع) — بدون تفعيل
   async function sendOffer() {
     if (!offerValid()) return
@@ -280,7 +289,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
             ['تاريخ التسجيل', fmtDate(c.created_at)],
             ['ينتهي الاشتراك', fmtDate(c.subscription_ends_at)],
             ['الباقة المطلوبة عند التسجيل', c.requested_plan ? planLabel(c.requested_plan as any) || c.requested_plan : '—'],
-            ['فروع الباقة', `${c.max_branches}`],
+            ['الفاتورة الشهرية', `${monthlyBill} ⃁ · ${c.max_branches} ${c.max_branches === 1 ? 'فرع' : 'فروع'}`],
           ].map(([k, v]) => (
             <div key={k}>
               <div style={{ fontSize: 11.5, color: A.text3, fontWeight: 600 }}>{k}</div>
@@ -338,6 +347,21 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
             <input value={offer.note} maxLength={60} placeholder="مثال: عرض الافتتاح" onChange={e => setOffer(o => ({ ...o, note: e.target.value }))} style={inputStyle} />
           </label>
         </div>
+        {listPrice > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+            {[0, 10, 15, 20, 25].map(pct => {
+              const v = Math.round(listPrice * (1 - pct / 100))
+              const sel = offerPrice === v
+              return (
+                <button key={pct} type="button" onClick={() => setOffer(o => ({ ...o, price: String(v) }))} className="adm-btn"
+                  style={{ padding: '5px 10px', borderRadius: 99, fontSize: 12, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+                    border: `1px solid ${sel ? A.primary : A.border}`, background: sel ? A.primarySoft : A.surface, color: sel ? A.primary : A.text2 }}>
+                  {pct ? `−${pct}% · ${v}` : `السعر العادي · ${v}`}
+                </button>
+              )
+            })}
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, padding: '10px 12px', borderRadius: 10, background: A.muted, fontSize: 12.5, color: A.text2, lineHeight: 1.7 }}>
           <BadgePercent size={16} style={{ flexShrink: 0 }} />
           <span>
@@ -348,11 +372,12 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
           </span>
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <Btn disabled={!!busy} onClick={previewOffer} title="معاينة عرض السعر"><Eye size={14} /> معاينة</Btn>
           <Btn full loading={busy === 'invoice'} disabled={!hasPhone || (!!busy && busy !== 'invoice')} onClick={sendOffer}><Send size={14} /> إرسال العرض</Btn>
           <Btn kind="primary" full loading={busy === 'offer'} disabled={!!busy && busy !== 'offer'} onClick={activateOffer}>دفع العميل: تفعيل</Btn>
         </div>
         <div style={{ fontSize: 11.5, color: A.text3, marginTop: 8, lineHeight: 1.7 }}>
-          «إرسال العرض» يرسل له عرض سعر مستحق الدفع عبر واتساب والإيميل. وبعد ما يدفع، «تفعيل» يفعّل اشتراكه للمدة ويرسل له فاتورة مدفوعة.
+          «إرسال العرض» يرسل له عرض سعر مستحق الدفع، صالحاً 7 أيام، عبر واتساب والإيميل. وبعد ما يدفع، «تفعيل» يفعّل اشتراكه للمدة ويرسل له فاتورة مدفوعة.
         </div>
         {!hasPhone && <div style={{ fontSize: 12, color: A.danger, marginTop: 6 }}>لا يوجد رقم جوال مسجّل لهذا العميل</div>}
       </Card>
