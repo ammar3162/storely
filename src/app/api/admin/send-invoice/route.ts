@@ -7,6 +7,7 @@ import { generateInvoicePdf } from '@/lib/generateInvoicePdf'
 import { sendEmail } from '@/lib/email'
 import { invoiceEmail } from '@/lib/emailTemplates'
 import { offerValidUntil, OFFER_VALID_DAYS, INVOICE_LINK_TTL_SECONDS } from '@/lib/offerQuote'
+import { offerQuoteDetails } from '@/lib/offerQuoteServer'
 
 export async function POST(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
@@ -35,8 +36,16 @@ export async function POST(req: Request) {
   if (cleanItems.length === 0) return NextResponse.json({ error: 'لا توجد بنود صالحة' }, { status: 400 })
   const total = cleanItems.reduce((s: number, it: any) => s + it.amount, 0)
 
+  // العرض الخاص (عرض السعر، أو فاتورة دفعه بعد التفعيل): الباقة والفروع والمدة والخصم من بيانات المنشأة نفسها
+  // لو تعذّر حسابها لأي سبب، نرسل الفاتورة بالشكل العادي (البنود فقط) بدل ما نوقف الإرسال
+  const quote = offer && typeof offer === 'object'
+    ? await offerQuoteDetails(supabase as any, orgId, offer, total).catch((e: any) => { console.error('QUOTE_DETAILS_FAILED (non-fatal):', e?.message || e); return null })
+    : null
+  const name = quote?.orgName || orgName || '—'
+  const validUntil = status === 'due' ? offerValidUntil() : undefined
+
   const { data: inv, error: insErr } = await supabase.from('invoices').insert({
-    org_id: orgId, org_name: orgName || null, plan_label: cleanItems[0].label, amount: total,
+    org_id: orgId, org_name: name === '—' ? null : name, plan_label: cleanItems[0].label, amount: total,
     sent_to_phone: phone, items: cleanItems,
   } as any).select('invoice_number').single()
 
@@ -48,7 +57,7 @@ export async function POST(req: Request) {
   // توليد ملف PDF احترافي مفصّل للفاتورة
   let pdfBuffer: Buffer
   try {
-    pdfBuffer = await generateInvoicePdf({ invoiceNumber, date: today, orgName: orgName || '—', items: cleanItems, status, validUntil: status === 'due' ? offerValidUntil() : undefined })
+    pdfBuffer = await generateInvoicePdf({ invoiceNumber, date: today, orgName: name, items: cleanItems, status, validUntil, quote: quote?.details })
   } catch (err: any) {
     console.error('PDF_GENERATION_FAILED:', err?.message || err, err?.stack || '')
     return NextResponse.json({ error: 'فشل توليد ملف الفاتورة: ' + String(err?.message || err) }, { status: 500 })
@@ -66,7 +75,9 @@ export async function POST(req: Request) {
   if (signErr || !signed?.signedUrl) return NextResponse.json({ error: 'فشل إنشاء رابط الفاتورة' }, { status: 500 })
   const publicUrl = signed.signedUrl
 
-  const result = await sendWhatsAppDocument(phone, publicUrl, fileName, status === 'due' ? `عرض سعر #${invoiceNumber} — ${orgName || ''} — ${total} ر.س` : `فاتورة اشتراك #${invoiceNumber} — ${orgName || ''}`)
+  const result = await sendWhatsAppDocument(phone, publicUrl, fileName, status === 'due'
+    ? `${quote?.details.kind === 'renewal' ? 'عرض تجديد' : 'عرض سعر'} #${invoiceNumber} — ${name}${quote ? ` — ${quote.details.monthsLabel}` : ''} — ${total.toLocaleString('en-US')} ر.س`
+    : `فاتورة اشتراك #${invoiceNumber} — ${name}`)
   if (!result.ok) {
     console.error('SEND_INVOICE_WA_FAILED:', JSON.stringify({ phone, status: result.status, data: result.data }))
     return NextResponse.json({ error: `فشل إرسال الفاتورة عبر واتساب: ${JSON.stringify(result.data || result.status || 'unknown')}` }, { status: 500 })
@@ -79,7 +90,7 @@ export async function POST(req: Request) {
       const { data: authUser } = await supabase.auth.admin.getUserById((ownerProfile as any).id)
       const ownerEmail = authUser?.user?.email
       if (ownerEmail) {
-        const mail = invoiceEmail({ invoiceNumber, orgName: orgName || '—', items: cleanItems, pdfUrl: publicUrl, status, date: today })
+        const mail = invoiceEmail({ invoiceNumber, orgName: name, items: cleanItems, pdfUrl: publicUrl, status, date: today, quote: quote?.details, validUntil })
         await sendEmail({ to: ownerEmail, subject: mail.subject, html: mail.html })
       }
     }
@@ -94,7 +105,8 @@ export async function POST(req: Request) {
     if (months >= 1 && months <= 24 && total > 0) {
       const { data: row } = await (supabase as any).from('subscription_offers').insert({
         org_id: orgId, kind: offer.kind === 'renewal' ? 'renewal' : 'manual', months, amount: total,
-        list_amount: Number(offer.list_amount) > 0 ? Math.round(Number(offer.list_amount)) : null,
+        // السعر العادي للمدة كما حسبه الخادم (نفس اللي طلع في ملف العرض)، وإلا رقم المتصفح
+        list_amount: quote && quote.details.list > 0 ? quote.details.list : Number(offer.list_amount) > 0 ? Math.round(Number(offer.list_amount)) : null,
         note: typeof offer.note === 'string' ? offer.note.trim().slice(0, 60) || null : null,
         invoice_number: invoiceNumber, valid_until: new Date(Date.now() + OFFER_VALID_DAYS * 86400000).toISOString(), sent_by_name: admin.full_name || null,
       }).select('id').single()
@@ -106,7 +118,7 @@ export async function POST(req: Request) {
       .eq('id', offerId).eq('org_id', orgId).eq('status', 'sent')
   }
 
-  await logAdminAction(admin, 'send_invoice', orgId, orgName || null, { invoice_number: invoiceNumber, amount: total, items: cleanItems, status })
+  await logAdminAction(admin, 'send_invoice', orgId, name === '—' ? null : name, { invoice_number: invoiceNumber, amount: total, items: cleanItems, status })
 
   return NextResponse.json({ success: true, invoiceNumber, offerId: savedOfferId })
 }

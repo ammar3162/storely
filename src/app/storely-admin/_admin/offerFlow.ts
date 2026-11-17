@@ -18,9 +18,11 @@ export function offerItems(months: number, amount: number, note = '', kind: 'man
 
 /** يرسل عرض سعر مستحق (واتساب + إيميل) ويسجّله في سجل العروض */
 export async function sendOffer(o: { orgId: string; orgName: string; phone: string; months: number; amount: number; list: number; note?: string; kind?: 'manual' | 'renewal'; from?: Date }) {
+  const from = o.from || new Date()
   return adminFetch('/api/admin/send-invoice', { method: 'POST', body: {
-    orgId: o.orgId, orgName: o.orgName, phone: o.phone, status: 'due', items: offerItems(o.months, o.amount, o.note, o.kind, o.from),
-    offer: { months: o.months, list_amount: o.list, note: o.note || '', kind: o.kind || 'manual' },
+    orgId: o.orgId, orgName: o.orgName, phone: o.phone, status: 'due', items: offerItems(o.months, o.amount, o.note, o.kind, from),
+    // الخادم يكمّل تفاصيل العرض (الباقة، الفروع، الخصم) من بيانات المنشأة
+    offer: { months: o.months, list_amount: o.list, note: o.note || '', kind: o.kind || 'manual', starts_at: from.toISOString(), ends_at: addMonths(o.months, from).toISOString() },
   } })
 }
 
@@ -34,7 +36,9 @@ export async function activateOffer(o: { userId: string; orgId: string; orgName:
   await adminFetch('/api/notify-activation', { method: 'POST', body: { userId: o.userId, subscriptionType: 'paid', subscriptionEndsAt: ends } }).catch(() => null)
   let invoiceNumber: number | null = null, invoiceError: string | null = null
   if (o.phone) {
-    const j = await adminFetch('/api/admin/send-invoice', { method: 'POST', body: { orgId: o.orgId, orgName: o.orgName, phone: o.phone, status: 'paid', items: offerItems(o.months, o.amount, o.note, o.kind, from), offerId: o.offerId || undefined } })
+    const j = await adminFetch('/api/admin/send-invoice', { method: 'POST', body: { orgId: o.orgId, orgName: o.orgName, phone: o.phone, status: 'paid', items: offerItems(o.months, o.amount, o.note, o.kind, from), offerId: o.offerId || undefined,
+      // فاتورة الدفع بنفس تفاصيل العرض، والمدة من رد التفعيل
+      offer: { months: o.months, note: o.note || '', kind: o.kind || 'manual', starts_at: from.toISOString(), ends_at: ends } } })
     if (j.success) invoiceNumber = j.invoiceNumber; else invoiceError = j.error || 'تعذّر إرسال الفاتورة'
   }
   // لو الفاتورة ما انرسلت (أو ما فيه جوال) نعلّم العرض مدفوع مباشرة
