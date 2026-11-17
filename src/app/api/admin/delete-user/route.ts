@@ -6,9 +6,10 @@ import { deleteOrgCompletely } from '@/lib/deleteOrg'
 export async function POST(req: Request) {
   try {
     const adminKey = req.headers.get('x-admin-key')
-    const admin = await requirePermission(adminKey, 'manage_users')
+    // حذف نهائي = صلاحية حساسة مستقلة (مو «إدارة العملاء») — مع الاسترجاع تكفي للاستيلاء على منشأة
+    const admin = await requirePermission(adminKey, 'danger_accounts')
     if (!admin) {
-      return NextResponse.json({ success: false, error: 'unauthorized' }, { status: 401 })
+      return NextResponse.json({ success: false, error: 'ليست لديك صلاحية «حذف الحسابات واسترجاعها» — يمنحها المشرف الرئيسي' }, { status: 403 })
     }
 
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)

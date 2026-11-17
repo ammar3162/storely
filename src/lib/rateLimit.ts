@@ -23,6 +23,7 @@ export const LIMITS = {
   aiChatOrg:      { max: 60,  windowSec: 10 * MIN },  // المساعد الذكي
   aiChatOrgDay:   { max: 500, windowSec: DAY },
   aiScanOrg:      { max: 60,  windowSec: HOUR },      // قراءة الفواتير بالصور
+  aiScanOrgDay:   { max: 150, windowSec: DAY },       // سقف يومي آمن (كل قراءة ~0.12 ريال) — سخي للاستخدام الحقيقي
   aiInsightsOrg:  { max: 30,  windowSec: HOUR },
   aiTranslateOrg: { max: 30,  windowSec: HOUR },
   supplierAddOrg: { max: 20,  windowSec: HOUR },

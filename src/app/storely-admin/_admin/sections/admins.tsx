@@ -13,6 +13,7 @@ const PERMS: Record<string, string> = {
   manage_packages: 'الباقات والأسعار',
   manage_backups: 'النسخ الاحتياطية',
   send_marketing: 'إعلانات الإيميل للعملاء',
+  danger_accounts: 'حذف الحسابات نهائياً واسترجاعها (حساس)',
 }
 
 type Form = { id?: string; full_name: string; email: string; password: string; permissions: Record<string, boolean> }

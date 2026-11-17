@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { claimAttempt, consumeCode, RACE_ERROR } from '@/lib/codeAttempts'
 import { createClient } from '@supabase/supabase-js'
 import { normalizeEmail } from '@/lib/accountantPortalAuth'
 import { hashAgentCode, makeAgentSession, agentCookie, AGENT_CODE_MAX_ATTEMPTS } from '@/lib/agentAuth'
@@ -17,11 +18,9 @@ export async function POST(req: Request) {
     const r = row as any
     if (!r || Date.parse(r.expires_at) < Date.now()) return NextResponse.json({ error: 'الرمز انتهى — اطلب رمز جديد' }, { status: 400 })
     if (r.attempts >= AGENT_CODE_MAX_ATTEMPTS) return NextResponse.json({ error: 'محاولات كثيرة — اطلب رمز جديد' }, { status: 429 })
-    if (r.code_hash !== hashAgentCode(email, code)) {
-      await db.from('agent_login_codes').update({ attempts: r.attempts + 1 } as any).eq('id', r.id)
-      return NextResponse.json({ error: 'الرمز غلط' }, { status: 400 })
-    }
-    await db.from('agent_login_codes').update({ used_at: new Date().toISOString() } as any).eq('id', r.id)
+    if (!(await claimAttempt(db, 'agent_login_codes', r.id, r.attempts))) return NextResponse.json({ error: RACE_ERROR }, { status: 429 })
+    if (r.code_hash !== hashAgentCode(email, code)) return NextResponse.json({ error: 'الرمز غلط' }, { status: 400 })
+    if (!(await consumeCode(db, 'agent_login_codes', r.id))) return NextResponse.json({ error: 'الرمز انتهى — اطلب رمز جديد' }, { status: 400 })
     const { data: agent } = await db.from('sales_agents').select('id,status').eq('email', email).maybeSingle()
     if (!agent || (agent as any).status !== 'active') return NextResponse.json({ error: 'الحساب موقوف — تواصل معنا' }, { status: 403 })
     await db.from('sales_agents').update({ last_login_at: new Date().toISOString() } as any).eq('id', (agent as any).id)

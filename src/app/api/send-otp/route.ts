@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { randomInt } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import { fetchExternal } from '@/lib/fetchExternal'
 import { guard, limit, ipOf } from '@/lib/rateLimit'
@@ -38,7 +39,8 @@ export async function POST(req: Request) {
     const fullPhone = (countryCode || '+966') + phone.trim().replace(/^0+/, '')
     const limited = await guard([limit('otpSendPhone', fullPhone), limit('otpSendIp', ipOf(req))])
     if (limited) return limited
-    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+    // رمز من مولّد عشوائي آمن (Math.random يمكن توقعه)
+    const otp = String(randomInt(100000, 1000000))
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString() // 5 دقائق
 
     // خزّن الـ OTP

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
-import { requirePermission } from '@/lib/adminAuth'
+import { requirePermission, logAdminAction } from '@/lib/adminAuth'
+import { trialEndsFromNow } from '@/lib/subscription'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,8 +13,10 @@ const sb = () => createClient(
 export async function POST(req: Request) {
   try {
     const adminKey = req.headers.get('x-admin-key')
-    if (!(await requirePermission(adminKey, 'manage_users'))) {
-      return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+    // ربط بريد جديد كمالك لمنشأة = صلاحية حساسة مستقلة، ويُسجَّل في سجل الإدارة
+    const admin = await requirePermission(adminKey, 'danger_accounts')
+    if (!admin) {
+      return NextResponse.json({ error: 'ليست لديك صلاحية «حذف الحسابات واسترجاعها» — يمنحها المشرف الرئيسي' }, { status: 403 })
     }
 
     const { org_id, email, full_name } = await req.json()
@@ -48,13 +51,14 @@ export async function POST(req: Request) {
       phone: org.whatsapp_number || null,
       status: 'active',
       subscription_type: 'trial',
-      subscription_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      subscription_ends_at: trialEndsFromNow(),
     })
     if (profileErr) {
       await db.auth.admin.deleteUser(newUser.user.id).catch(() => {})
       return NextResponse.json({ error: profileErr.message }, { status: 500 })
     }
 
+    await logAdminAction(admin, 'recover_account', org.id, (org as any).name || null, { email: String(email).trim().toLowerCase(), user_id: newUser.user.id })
     return NextResponse.json({ success: true, user_id: newUser.user.id, email, tempPassword })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })

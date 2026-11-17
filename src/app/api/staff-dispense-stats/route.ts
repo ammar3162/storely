@@ -15,7 +15,8 @@ export async function POST(req: Request) {
     const { org_id, staff_id } = auth.data!
     if (await staffFeatureError(auth.data as any, 'inventory')) return NextResponse.json({ mostUsed: [], todayCount: 0 })
 
-    const { branch_id } = await req.json()
+    // فرع الموظف من توكنه — مو من الطلب (كان يقدر يطلب إحصائيات أي فرع)
+    const branch_id = (auth.data as any)?.branch_id || null
     if (!org_id) return NextResponse.json({ mostUsed: [], todayCount: 0 })
 
     const supabase = sb()

@@ -25,8 +25,10 @@ export async function POST(req: Request) {
 
     const supabase = sb()
     // الاسم والفرع والمنتجات المخصصة من قاعدة البيانات — مو من الطلب
-    const { data: me } = await supabase.from('staff_members').select('name,branch_id,assigned_products').eq('id', staffId).eq('org_id', orgId).maybeSingle()
+    const { data: me } = await supabase.from('staff_members').select('name,branch_id,assigned_products,permissions').eq('id', staffId).eq('org_id', orgId).maybeSingle()
     if (!me) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
+    // نفس شرط تبويب الصرف في تطبيق الموظفين
+    if (!(me as any).permissions?.dispense) return NextResponse.json({ error: 'ليست لديك صلاحية الصرف — اطلبها من المدير' }, { status: 403 })
     const { data: product } = await supabase.from('products').select('id,qty,branch_id').eq('id', productId).eq('org_id', orgId).maybeSingle()
     if (!product) return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 })
     const assigned: string[] = (me as any).assigned_products || []

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { noteInvoiceScan } from '@/lib/scanUsage'
 import { readInvoice } from '@/lib/invoiceOcr'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
@@ -36,10 +37,12 @@ export async function POST(req: Request) {
       if (!ownerAuth.authorized) return NextResponse.json({ error: ownerAuth.error }, { status: ownerAuth.status })
     }
 
-    const limited = await guard([limit('aiScanOrg', org_id)])
+    const limited = await guard([limit('aiScanOrg', org_id), limit('aiScanOrgDay', org_id)])
     if (limited) return limited
     const r = await readInvoice(image, type, { orgId: org_id, feature: 'invoice_scan' })
     if (!r.ok) return NextResponse.json({ error: r.error, ...(r.unavailable ? { unavailable: true } : {}) }, { status: r.status })
+    // نفس تنبيه الاستهلاك اللي في عميل المشتريات (كانت القراءة اليدوية ما تنحسب)
+    await noteInvoiceScan(createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!), org_id)
     return NextResponse.json({ success: true, data: r.data })
   } catch (err: any) {
     return NextResponse.json({ error: 'حدث خطأ أثناء معالجة الصورة' }, { status: 500 })
