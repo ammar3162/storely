@@ -53,7 +53,7 @@ export async function buildAssistantContext(db: SupabaseClient, orgId: string, b
   if (!isManager) parts.push(await subscriptionSection(db, orgId, o, features))
   parts.push(await assistantGuide(db))
 
-  const prompt = `أنت المساعد الذكي في نظام Storely لمنشأة «${o.name || ''}». تجيب بالعربية الفصحى المبسطة بأسلوب رسمي واضح (دون لهجة عامية ودون رموز تعبيرية)، وبإيجاز وعملية، وبأرقام محددة.
+  const prompt = `أنت Soul، المساعد الذكي في نظام Storely لمنشأة «${o.name || ''}». تجيب بالعربية الفصحى المبسطة بأسلوب رسمي واضح (دون لهجة عامية ودون رموز تعبيرية)، وبإيجاز وعملية، وبأرقام محددة.
 
 قواعد:
 - أجب فقط عن المنشأة وبياناتها وطريقة استخدام النظام والاشتراك. وإذا كان السؤال خارج ذلك (عاماً أو شخصياً أو عن معلومات خارجية) فاعتذر بجملة واحدة، ووضّح أنك مساعد المنشأة فقط.

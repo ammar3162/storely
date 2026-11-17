@@ -1,8 +1,9 @@
 'use client'
 import { FeatureIcon } from '@/components/ui/feature-icon'
 import React, { useState, useRef, useEffect } from 'react'
-import { Bot, ChevronDown, ChevronUp, ChevronLeft, X, ArrowUp, LifeBuoy, Send, Receipt, UserCheck, Clock, AlertTriangle, RotateCcw, PackageMinus, Percent, Wallet, CalendarClock, Sparkles } from 'lucide-react'
+import { ChevronDown, ChevronUp, ChevronLeft, X, ArrowUp, LifeBuoy, Send, Receipt, UserCheck, Clock, AlertTriangle, RotateCcw, PackageMinus, Percent, Wallet, CalendarClock, Sparkles } from 'lucide-react'
 import type { Suggestion, SuggestIcon } from '@/lib/assistantSuggestions'
+import AssistantMascot, { MASCOT_CSS } from '@/components/AssistantMascot'
 import { getMe } from '@/lib/session'
 import { storelyTokens as uiTokens } from '@/components/ui/design-tokens'
 
@@ -30,8 +31,8 @@ const QUICK_BASIC = [
   { text:'ما الفرق بين باقتي والباقات الأخرى؟' },
   { text:'ما فائدة إضافة الذكاء الاصطناعي؟' },
 ]
-const WELCOME_AI = 'مرحباً، أنا مساعدك الذكي في Storely.\n\nيمكنني مساعدتك في:\n• المخزون وما سينفد منه\n• المشتريات والموردين وأسعارهم\n• الصرف والموظفين والحضور\n• الكاشير والضريبة\n• اشتراكك وطريقة استخدام النظام\n\nبماذا يمكنني مساعدتك؟'
-const WELCOME_BASIC = 'مرحباً، أنا مساعدك في Storely.\n\nيمكنني تعليمك استخدام النظام خطوة بخطوة مع فيديوهات الشرح، والإجابة عن اشتراكك وباقتك.\n\nأما تحليل بياناتك (المخزون، والمشتريات، والموظفون…) فمتاح مع إضافة الذكاء الاصطناعي.\n\nبماذا يمكنني مساعدتك؟'
+const WELCOME_AI = 'مرحباً، أنا Soul، مساعدك الذكي في Storely.\n\nيمكنني مساعدتك في:\n• المخزون وما سينفد منه\n• المشتريات والموردين وأسعارهم\n• الصرف والموظفين والحضور\n• الكاشير والضريبة\n• اشتراكك وطريقة استخدام النظام\n\nبماذا يمكنني مساعدتك؟'
+const WELCOME_BASIC = 'مرحباً، أنا Soul، مساعدك في Storely.\n\nيمكنني تعليمك استخدام النظام خطوة بخطوة مع فيديوهات الشرح، والإجابة عن اشتراكك وباقتك.\n\nأما تحليل بياناتك (المخزون، والمشتريات، والموظفون…) فمتاح مع إضافة الذكاء الاصطناعي.\n\nبماذا يمكنني مساعدتك؟'
 
 // أيقونة كل اقتراح (lib/assistantSuggestions)
 const SUGGEST_ICON: Record<SuggestIcon, React.ComponentType<{ size?: number; strokeWidth?: number; style?: React.CSSProperties }>> = {
@@ -408,7 +409,7 @@ export default function AIAssistant() {
   },[open, sugs])
   const dragRef = useRef<{ sx:number; sy:number; ox:number; oy:number; moved:boolean }|null>(null)
   const fabLimits = () => {
-    const mobile = window.innerWidth < 768, size = mobile ? 46 : 50
+    const mobile = window.innerWidth < 768, size = mobile ? 62 : 69   // زر الشخصية: 62×58 بالجوال و69×64 بالكمبيوتر (نحسب بالأكبر)
     return { size, edge: mobile ? 14 : 24, minBottom: mobile ? 76 : 16, maxBottom: window.innerHeight - size - (mobile ? 72 : 80) }
   }
   const onFabDown = (e: React.PointerEvent<HTMLButtonElement>) => {
@@ -450,8 +451,10 @@ export default function AIAssistant() {
         @keyframes spin{to{transform:rotate(360deg)}}
         .ai-fab{display:flex;transition:transform .15s}
         /* على الكمبيوتر: النافذة بالزاوية السفلية بجهة زر المساعد (الزر مكانه يحدده العميل بالسحب) */
-        @media(min-width:768px){.ai-fab{width:50px!important;height:50px!important}.ai-win{bottom:86px!important;left:24px!important;right:auto!important;width:400px;margin:0!important}.ai-win.ai-win-r{left:auto!important;right:24px!important}}
-        .ai-fab:active{transform:none}
+        @media(min-width:768px){.ai-fab{width:69px!important;height:64px!important}.ai-win{bottom:86px!important;left:24px!important;right:auto!important;width:400px;margin:0!important}.ai-win.ai-win-r{left:auto!important;right:24px!important}}
+        .ai-fab .ai-m{width:100%!important;height:100%!important}
+        .ai-fab:hover{transform:translateY(-2px)}
+        .ai-fab:active{transform:scale(.96)}
         .ai-win button:focus-visible{outline:2px solid ${C.primary};outline-offset:2px}.ai-win{animation:aiFadeUp .2s ease}
         .ai-input:focus{border-color:${C.primary};box-shadow:0 0 0 3px rgba(32,54,64,.14);outline:none}
         .quick-btn{transition:transform .15s,background-color .15s}
@@ -465,6 +468,7 @@ export default function AIAssistant() {
         .ai-ic-btn{transition:background-color .15s}
         .ai-ic-btn:hover{background:var(--storely-control-border)}
         .ai-bubble button:focus-visible,.ai-win input:focus-visible{outline:2px solid ${C.primary};outline-offset:2px}
+        ${MASCOT_CSS}
         @media (prefers-reduced-motion:reduce){.ai-win,.ai-bubble{animation:none!important}.ai-chip:active,.ai-row:active{transform:none}}
         .ai-chips::-webkit-scrollbar{display:none}
         .quick-btn:active{transform:scale(.95)}
@@ -476,9 +480,9 @@ export default function AIAssistant() {
       {!open && mounted && (
         <button className="ai-fab" onPointerDown={onFabDown} onPointerMove={onFabMove} onPointerUp={onFabUp} onPointerCancel={()=>{ dragRef.current=null; setDrag(null) }}
           onKeyDown={e=>{ if(e.key==='Enter'||e.key===' ') { e.preventDefault(); setOpen(true) } }}
-          aria-label={urgentSug ? `المساعد — ${urgentSug.label}` : 'المساعد'} title={urgentSug ? `المساعد: ${urgentSug.label}` : 'المساعد — اسحبه لتغيير مكانه'} style={{position:'fixed',...fabStyle(),touchAction:'none',userSelect:'none' as const,zIndex:999,width:48,height:48,borderRadius:'50%',background:C.primary,color:'white',border:'none',boxShadow:'0 8px 24px rgba(32,54,64,.28), 0 1px 3px rgba(0,0,0,.12)',cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-          <Bot size={22} strokeWidth={2} />
-          {urgentSug&&<span aria-hidden style={{position:'absolute',top:0,right:0,width:13,height:13,borderRadius:'50%',background:'#FF3B30',border:'2px solid var(--storely-surface, #fff)'}}/>}
+          aria-label={urgentSug ? `Soul — ${urgentSug.label}` : 'Soul، مساعدك الذكي'} title={urgentSug ? `Soul: ${urgentSug.label}` : 'Soul — اسحبه لتغيير مكانه'} style={{position:'fixed',...fabStyle(),touchAction:'none',userSelect:'none' as const,zIndex:999,width:62,height:58,padding:0,background:'transparent',border:'none',filter:'drop-shadow(0 6px 12px rgba(32,54,64,.28)) drop-shadow(0 1px 2px rgba(0,0,0,.12))',cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <AssistantMascot size={58} motion={urgentSug ? 'alert' : 'idle'} />
+          {urgentSug&&<span aria-hidden style={{position:'absolute',top:2,right:4,width:13,height:13,borderRadius:'50%',background:'#FF3B30',border:'2px solid var(--storely-surface, #fff)'}}/>}
         </button>
       )}
 
@@ -489,12 +493,12 @@ export default function AIAssistant() {
         const Icon = SUGGEST_ICON[bubble.icon] || Sparkles
         return (
           // مثل إشعارات الآيفون: اسم المساعد بالأعلى، والعنوان، وسطر يوضّح وش يصير لو ضغط
-          <div className="ai-bubble" role="status" aria-live="polite" style={{position:'fixed', [side]: fs[side], bottom: (Number(fs.bottom)||24)+60, zIndex:999, width:300, maxWidth:'calc(100vw - 28px)', background:C.surface, borderRadius:20, boxShadow:'0 12px 40px rgba(0,0,0,.16), 0 0 0 .5px rgba(0,0,0,.08)', animation:'aiFadeUp .25s cubic-bezier(.22,1,.36,1)', direction:'rtl'}}>
+          <div className="ai-bubble" role="status" aria-live="polite" style={{position:'fixed', [side]: fs[side], bottom: (Number(fs.bottom)||24)+74, zIndex:999, width:300, maxWidth:'calc(100vw - 28px)', background:C.surface, borderRadius:20, boxShadow:'0 12px 40px rgba(0,0,0,.16), 0 0 0 .5px rgba(0,0,0,.08)', animation:'aiFadeUp .25s cubic-bezier(.22,1,.36,1)', direction:'rtl'}}>
             <button onClick={()=>openBubble(bubble)} aria-label={`${bubble.label}${bubble.count ? ` (${bubble.count})` : ''} — اضغط لأعرض لك التفاصيل`}
               style={{display:'block',width:'100%',padding:'12px 14px 13px',paddingInlineEnd:44,background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',textAlign:'start',color:C.text}}>
               <span style={{display:'flex',alignItems:'center',gap:7,marginBottom:6}}>
-                <span style={{width:20,height:20,borderRadius:6,background:C.primary,color:'white',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Bot size={13} strokeWidth={2.2}/></span>
-                <span style={{fontSize:13,fontWeight:500,color:C.text3}}>المساعد</span>
+                <AssistantMascot variant="face" size={20} />
+                <span style={{fontSize:13,fontWeight:500,color:C.text3}}>Soul</span>
                 <span style={{fontSize:13,color:C.text3}}>الآن</span>
               </span>
               <span style={{display:'flex',alignItems:'center',gap:6,fontSize:16,fontWeight:600,lineHeight:1.45}}>
@@ -514,7 +518,7 @@ export default function AIAssistant() {
       {supportTip && !open && mounted && !drag && (()=>{
         const fs = fabStyle() as any, side = fs.left !== undefined ? 'left' : 'right'
         return (
-          <div role="status" style={{position:'fixed', [side]: fs[side], bottom: (Number(fs.bottom)||24)+58, zIndex:999, width:260, background:C.surface, border:`1px solid ${C.border}`, borderRadius:uiTokens.radius.card, boxShadow:'0 12px 32px rgba(32,54,64,.18)', padding:'12px 14px'}}>
+          <div role="status" style={{position:'fixed', [side]: fs[side], bottom: (Number(fs.bottom)||24)+74, zIndex:999, width:260, background:C.surface, border:`1px solid ${C.border}`, borderRadius:uiTokens.radius.card, boxShadow:'0 12px 32px rgba(32,54,64,.18)', padding:'12px 14px'}}>
             <div style={{display:'flex',alignItems:'center',gap:6,fontSize:uiTokens.typography.body,fontWeight:800,color:C.text,marginBottom:4}}><LifeBuoy size={16}/> جديد: الدعم الفني من هنا</div>
             <div style={{fontSize:uiTokens.typography.supporting,color:C.text3,lineHeight:1.8,marginBottom:10}}>اسأل المساعد عن أي شيء، وإذا ما انحلّت مشكلتك أرسلها للدعم الفني بضغطة — يوصلك الرد في الإشعارات.</div>
             <div style={{display:'flex',gap:8}}>
@@ -549,11 +553,9 @@ export default function AIAssistant() {
 
           {/* الرأس: أيقونة دائرية واسم المساعد، وزرّا تصغير وإغلاق رماديان مثل الآيفون */}
           <div style={{background:C.surface,borderBottom:'.5px solid var(--ai-hair)',padding:'12px 14px',display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
-            <div style={{width:36,height:36,borderRadius:'50%',background:C.primary,color:'white',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-              <Bot size={19} strokeWidth={2} />
-            </div>
+            <AssistantMascot variant="face" size={36} motion="idle" />
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:17,fontWeight:600,color:C.text,lineHeight:1.3}}>المساعد</div>
+              <div style={{fontSize:17,fontWeight:600,color:C.text,lineHeight:1.3}}>Soul</div>
               <div style={{fontSize:13,color:C.text3,lineHeight:1.4}}>يجيبك من بيانات منشأتك</div>
             </div>
             <button className="ai-ic-btn" onClick={()=>setMinimized(m=>!m)} aria-label={minimized?'توسيع':'تصغير'}
@@ -600,6 +602,12 @@ export default function AIAssistant() {
               <div style={{flex:1,overflowY:'auto',padding:'14px 14px 10px',display:'flex',flexDirection:'column',gap:8,background:C.surface}}>
                 {msgs.map((m,i)=>(
                   <React.Fragment key={i}>
+                    {/* أول المحادثة: الشخصية ترفع إصبعها وعندها شي تقوله */}
+                    {i===0 && m.role==='ai' && (
+                      <div style={{display:'flex',justifyContent:'center',padding:'4px 0 2px',color:C.text}}>
+                        <AssistantMascot variant="hero" size={80} />
+                      </div>
+                    )}
                     <MsgBubble msg={m}/>
                     {m.kind==='suggest' && !!m.sugs?.length && (
                       // قائمة مثل إعدادات الآيفون: أيقونة بدائرة ملوّنة، العنوان، العدد، وسهم
