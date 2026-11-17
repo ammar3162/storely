@@ -500,7 +500,9 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
         const loneEmail = `it-lone-${stamp}@storely.test`
         expect((await req(team.POST, 'POST', '/api/accountant-portal/team', { action: 'add', email: loneEmail })).status).toBe(400)   // بدون منشأة: ما يُضاف
         const askCode = (email: string) => login.POST(new Request('http://test/api/accountant-portal/login', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-forwarded-for': '10.9.8.7' }, body: JSON.stringify({ email }) }))
-        expect((await askCode(loneEmail)).status).toBe(200)   // نفس الرد للكل
+        const lone = await askCode(loneEmail)
+        expect(lone.status).toBe(404)   // قرار المالك: البريد غير المربوط يأخذ رسالة واضحة بدل «سيصلك الرمز»
+        expect(((await lone.json()) as any).error).toContain('غير مربوط بأي منشأة')
         expect((await db.from('accountant_login_codes').select('id', { count: 'exact', head: true }).eq('email', loneEmail)).count).toBe(0)
         await askCode(memberEmail)
         expect((await db.from('accountant_login_codes').select('id', { count: 'exact', head: true }).eq('email', memberEmail)).count).toBe(1)
