@@ -38,7 +38,7 @@ export default function Hero({ m }: { m: LandingState }) {
       <p className="ap-note">{t('heroNote')}</p>
       <button className="ap-alt" onClick={switchVideo}>{t('heroOr')} {t(other.k)} ({other.sec} {t('heroSecLong')})</button>
 
-      <div className={`ap-stage${playing ? ' is-playing' : ''}`}>
+      <div className={`ap-stage${playing ? ' is-playing' : ''}`} data-fx="hero">
         <Phone className="ap-side ap-side-r" src="/landing/dash2.webp" eager />
         <Phone className="ap-side ap-side-l" src="/landing/staff-home.webp" h={1440} eager />
         <Phone className="ap-video">

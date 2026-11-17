@@ -1,9 +1,9 @@
 export const LP_CSS = `
-/* hallmark v2.0.0 · direction: apple.com structure in Storely's identity (2026-11-17, owner's call) · tones: white page, light-grey tiles (the app's own #F3F5F6, Apple's #F5F5F7), navy tiles (logo field), mint only as the logo's dot · type: IBM Plex Sans Arabic · signature: real Storely screens rising from the tiles */
-/* critique: colour is navy + the app's greys + the logo's mint dot, and the real screens; no beige; one idea per tile; no eyebrows, no invented numbers, no gradients */
+/* hallmark v2.0.0 · direction: apple.com (owner: same motion, shapes and backgrounds as Apple) in Storely's identity · backgrounds: Apple's white, #F5F5F7 and black · accent: Storely navy for actions and links, like Apple's blue · type: IBM Plex Sans Arabic · signature: real Storely screens in phone frames, moving with the scroll */
+/* critique: neutrals carry the page, navy marks what you can press, the real screens bring the colour; black text everywhere (owner); no decorative dots, no beige, no gradients, no invented numbers */
 /* waive: 39b FAQ rows are full-width disclosure rows (72px from the question text) · 77 the FAQ keeps a reading measure · sloplint 2026-11-17: 0 FAIL; two 40px buttons and 10px text it reports were not found on the live page with the same walker */
-.lp{--navy:#203640;--navy-deep:#16262D;--light:#F3F5F6;--light-2:#EEF2F4;--mint:#5FC4B8;--white:#FFFFFF;--cream:#F7F9FA;
-  --ink:#203640;--ink2:#56656D;--ink3:#66727A;--hair:rgba(32,54,64,.12);--hair-dark:rgba(255,255,255,.16);--on-navy:#FFFFFF;--on-navy2:rgba(255,255,255,.74);
+.lp{--navy:#203640;--navy-deep:#16262D;--light:#F5F5F7;--light-2:#E8E8ED;--black:#000000;--on-dark:#F5F5F7;--wa:#25D366;--mint:#5FC4B8;--white:#FFFFFF;--cream:#F7F9FA;
+  --ink:#1D1D1F;--ink2:#1D1D1F;--ink3:#424245;--hair:rgba(0,0,0,.12);--hair-dark:rgba(255,255,255,.16);--on-navy:#FFFFFF;--on-navy2:#F5F5F7;
   --line:#E2E7EA;--line2:#CBD4DC;--field-edge:#80909B;--focus:#203640;--no:#CBD5E1;
   --teal:#203640;--teal2:#203640;--mint-a25:rgba(95,196,184,.25);
   --ink-a06:rgba(32,54,64,.06);--ink-a08:rgba(32,54,64,.08);--ink-a10:rgba(32,54,64,.1);--ink-a40:rgba(32,54,64,.4);--ink-a70:rgba(32,54,64,.7);--white-a14:rgba(255,255,255,.14);
@@ -17,7 +17,7 @@ html,body{overflow-x:clip}
 .lp a{color:inherit;text-decoration:none}
 .lp img{display:block;max-width:100%}
 .lp a:focus-visible,.lp button:focus-visible,.lp input:focus-visible,.lp select:focus-visible,.lp textarea:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
-.lp .lp-cta :focus-visible,.lp .lp-demo-side :focus-visible,.lp .ap-navy :focus-visible,.lp .ap-about :focus-visible,.lp .ap-video :focus-visible{outline-color:var(--white)}
+.lp .lp-cta :focus-visible,.lp .lp-demo-side :focus-visible,.lp .ap-dark :focus-visible,.lp .ap-about :focus-visible,.lp .ap-video :focus-visible{outline-color:var(--white)}
 .lp .ap-cover:focus-visible{outline-offset:-6px}
 .lp h1,.lp h2,.lp h3{text-wrap:balance;letter-spacing:0}
 .lp p{text-wrap:pretty}
@@ -57,7 +57,7 @@ html,body{overflow-x:clip}
 .lp-anim .rv.ap-rise.in{transform:none}
 
 /* شريط الإعلان (من لوحة الإدارة): سطر هادئ فوق القائمة مثل أبل */
-.lp-ribbon{background:var(--light);color:var(--navy);text-align:center;padding:12px 20px;font-size:14px;line-height:1.6}
+.lp-ribbon{background:var(--light);color:var(--ink);text-align:center;padding:12px 20px;font-size:14px;line-height:1.6}
 
 /* القائمة: شريط رفيع شفاف يبقى أعلى الصفحة */
 .lp-nav{position:sticky;top:0;z-index:1000;background:var(--nav-glass);backdrop-filter:saturate(1.8) blur(20px);-webkit-backdrop-filter:saturate(1.8) blur(20px);border-bottom:1px solid var(--hair)}
@@ -68,17 +68,23 @@ html,body{overflow-x:clip}
 .lp-links a{font-size:14.5px;color:var(--ink2);white-space:nowrap;transition:color .2s var(--ease)}
 .lp-links a:hover{color:var(--navy)}
 .lp-nav-end{display:flex;align-items:center;gap:10px;margin-inline-start:28px}
-.lp-nav-end .lp-btn{min-height:36px;padding:0 16px;font-size:14.5px}
-.lp-burger{width:44px;height:44px;display:none;place-items:center;border:0;background:none;color:var(--navy);cursor:pointer;border-radius:12px}
-.lp-mob-menu{position:fixed;inset:56px 0 0 0;background:var(--white);padding:16px 24px 40px;display:flex;flex-direction:column;overflow-y:auto;z-index:999}
-.lp-mob-menu a:not(.lp-btn){font-size:26px;font-weight:500;color:var(--navy);padding:14px 0;border-bottom:1px solid var(--hair)}
-.lp-mob-menu .lp-btn{margin-top:14px;width:100%}
+.lp-btn-nav{min-height:40px;padding:0 18px;font-size:15px}
+.lp-mob-i{display:none}
+.lp-burger{width:44px;height:44px;display:none;place-items:center;border:0;background:none;color:var(--ink);cursor:pointer;border-radius:12px}
+.lp-mob-menu{position:fixed;inset:0;z-index:1200;background:var(--white);padding:0 20px max(28px,env(safe-area-inset-bottom));display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;animation:lpSheet .28s var(--ease) both}
+@keyframes lpSheet{from{opacity:0}to{opacity:1}}
+.lp-mob-head{height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.lp-mob-head .lp-burger{display:grid}
+.lp-mob-links{display:flex;flex-direction:column;margin-top:12px}
+.lp-mob-links a{font-size:28px;font-weight:700;color:var(--ink);padding:14px 0;border-bottom:1px solid var(--hair)}
+.lp-mob-acts{display:grid;gap:12px;margin-top:28px}
+.lp-mob-acts .lp-btn{width:100%}
 
 /* أقسام وعناوين مشتركة */
 .lp-section{padding:120px 0}
 .lp-light{background:var(--light)}
 .lp-head{text-align:center;max-width:760px;margin:0 auto 48px}
-.lp-h2{font-size:clamp(32px,4.4vw,56px);font-weight:700;line-height:1.18;color:var(--navy)}
+.lp-h2{font-size:clamp(34px,4.8vw,64px);font-weight:700;line-height:1.12;color:var(--ink)}
 .lp-sub{font-size:clamp(18px,1.7vw,22px);line-height:1.6;color:var(--ink2);margin-top:14px}
 
 /* الأسعار (صفحة /pricing) */
@@ -125,13 +131,13 @@ html,body{overflow-x:clip}
 /* الأسئلة: صفوف بخط رفيع مثل أبل */
 .lp-faq{max-width:820px;margin:0 auto;border-top:1px solid var(--hair)}
 .lp-faq-item{border-bottom:1px solid var(--hair)}
-.lp-faq-q{width:100%;min-height:72px;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px 0;background:none;border:0;cursor:pointer;font:500 clamp(17px,1.6vw,20px)/1.5 var(--font);color:var(--navy);text-align:start}
+.lp-faq-q{width:100%;min-height:72px;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px 0;background:none;border:0;cursor:pointer;font:500 clamp(17px,1.6vw,20px)/1.5 var(--font);color:var(--ink);text-align:start}
 .lp-faq-q svg{flex-shrink:0;color:var(--navy);transition:transform .25s var(--ease)}
 .lp-faq-q[aria-expanded="true"] svg{transform:rotate(45deg)}
 .lp-faq-a{padding:0 0 24px;font-size:17px;line-height:1.85;color:var(--ink2);max-width:720px}
 
 /* الدعوة الأخيرة: بلاطة كحلية كاملة */
-.lp-cta{background:var(--navy);color:var(--on-navy);text-align:center;padding:120px 24px 0;overflow:hidden}
+.lp-cta{background:var(--black);color:var(--on-navy);text-align:center;padding:120px 24px 0;overflow:hidden}
 .lp-cta h2{font-size:clamp(34px,5vw,64px);font-weight:700;line-height:1.15}
 .lp-cta p{font-size:clamp(18px,1.7vw,22px);color:var(--on-navy2);margin-top:14px}
 .lp-cta-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:32px}
@@ -145,13 +151,13 @@ html,body{overflow-x:clip}
 
 /* طلب العرض */
 .lp-demo{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);background:var(--white);border-radius:28px;overflow:hidden;border:1px solid var(--hair)}
-.lp-demo-side{background:var(--navy);color:var(--on-navy);padding:56px 44px;display:flex;flex-direction:column;justify-content:center}
+.lp-demo-side{background:var(--black);color:var(--on-navy);padding:56px 44px;display:flex;flex-direction:column;justify-content:center}
 .lp-demo-side img{width:56px;height:56px;border-radius:16px;margin-bottom:24px}
 .lp-demo-side h3{font-weight:700;font-size:clamp(26px,2.6vw,34px);line-height:1.35;margin-bottom:12px}
 .lp-demo-side p{font-size:17px;line-height:1.85;color:var(--on-navy2)}
 .lp-demo-side .lp-btn-wa{align-self:flex-start}
 .lp-demo-form{padding:48px 44px}
-.lp-demo-form h2{font-size:clamp(26px,2.6vw,34px);font-weight:700;margin-bottom:8px;color:var(--navy)}
+.lp-demo-form h2{font-size:clamp(26px,2.6vw,34px);font-weight:700;margin-bottom:8px;color:var(--ink)}
 .lp-demo-form>p{font-size:16px;color:var(--ink2);margin-bottom:26px}
 .lp-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin-bottom:18px}
 .lp-fields label{display:flex;flex-direction:column;gap:8px;font-size:14px;font-weight:500;color:var(--ink2)}
@@ -170,7 +176,7 @@ html,body{overflow-x:clip}
 .lp-foot-grid{display:grid;grid-template-columns:minmax(0,2fr) repeat(3,minmax(0,1fr));gap:32px;padding-bottom:32px;border-bottom:1px solid var(--hair)}
 .lp-footer .lp-brand{color:var(--navy)}
 .lp-foot-tag{font-size:14px;line-height:1.8;max-width:280px;margin-top:12px}
-.lp-foot-title{font-size:14px;font-weight:500;color:var(--navy);margin-bottom:12px}
+.lp-foot-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px}
 .lp-foot-link{display:block;font-size:14px;color:var(--ink2);padding:5px 0}
 .lp-foot-link:hover{color:var(--navy)}
 .lp-foot-social{display:flex;gap:8px;margin-top:18px}
@@ -178,7 +184,7 @@ html,body{overflow-x:clip}
 .lp-foot-social a:hover{background:var(--navy);color:var(--on-navy)}
 .lp-foot-bottom{padding-top:22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-size:13px}
 .lp-foot-bottom small{display:block;color:var(--ink2);margin-top:6px;font-size:12.5px}
-.lp-wa-float{position:fixed;bottom:20px;left:20px;z-index:998;width:52px;height:52px;border-radius:50%;background:var(--navy);color:var(--on-navy);display:grid;place-items:center;box-shadow:var(--float-shadow);transition:transform .2s var(--ease)}
+.lp-wa-float,.lp a.lp-wa-float{position:fixed;bottom:20px;left:20px;z-index:998;width:56px;height:56px;border-radius:50%;background:var(--wa);color:var(--white);display:grid;place-items:center;box-shadow:var(--float-shadow);transition:transform .2s var(--ease)}
 .lp-wa-float:hover{transform:scale(1.06)}
 
 /* ظهور هادئ عند التمرير (يُفعَّل بالجافاسكربت فقط، وموقوف مع تقليل الحركة) */
@@ -191,7 +197,10 @@ html,body{overflow-x:clip}
   .lp-desk{display:none!important}
   .lp-mob{display:block}
   .lp-burger.lp-mob{display:grid}
-  .lp-nav-end{margin-inline-start:auto}
+  .lp-nav-end{margin-inline-start:auto;gap:8px}
+  .lp-desk-i{display:none}
+  .lp-mob-i{display:inline}
+  .lp-btn-nav{min-height:40px;padding:0 14px;font-size:14.5px}
 }
 @media(max-width:980px){
   .lp-plans{grid-template-columns:1fr 1fr}
@@ -211,10 +220,14 @@ html,body{overflow-x:clip}
   .lp-cta-shots .ap-phone{--r:28px;--b:6px;width:34vw;margin:0 -8px}
   .lp-cta-shots .ap-phone:nth-child(1),.lp-cta-shots .ap-phone:nth-child(5){display:none}
   .lp-cta-row .lp-btn{width:100%}
-  .lp-wa-float{width:48px;height:48px;bottom:16px;left:16px}
+  .lp-wa-float{width:52px;height:52px;bottom:16px;left:16px}
   .lp-foot-grid{grid-template-columns:minmax(0,1fr)}
 }
+@media (max-width:400px){
+  .lp-nav .lp-brand span{display:none}
+}
 @media (prefers-reduced-motion:reduce){
+  .lp-mob-menu{animation:none}
   .lp *{transition:none!important}
   html{scroll-behavior:auto}
 }

@@ -2,6 +2,7 @@
 import { LP_CSS } from './_parts/styles'
 import { AP_CSS } from './_parts/styles-apple'
 import { useLanding } from './_parts/useLanding'
+import { useScrollFx } from './_parts/useScrollFx'
 import AnnouncementBar from './_parts/AnnouncementBar'
 import TopNav from './_parts/TopNav'
 import Hero from './_parts/Hero'
@@ -17,12 +18,13 @@ import FinalCta from './_parts/FinalCta'
 import SiteFooter from './_parts/SiteFooter'
 import WhatsAppFloat from './_parts/WhatsAppFloat'
 
-// بأسلوب أبل وبهوية ستورلي (أبيض / رمادي النظام الفاتح / كحلي + نقطة الشعار). الترتيب المتسلسل نفسه:
+// بأسلوب أبل: خلفيات أبل (أبيض / رمادي #F5F5F7 / أسود) وحركاتها مع التمرير، والكحلي لون الأزرار والروابط. الترتيب المتسلسل نفسه:
 // الفيديو «من هي ستورلي» ← عملاء حقيقيون ← يوم في مطعمك (لحظة لحظة بشاشات حقيقية) ← كيف يترابط ← الأدوار ←
 // من نحن ← ابدأ (السعر وإزالة المخاطرة) ← الأسئلة ← الدعوة وطلب العرض
 export default function LandingPage({ initialMarquee }: { initialMarquee?: string[] } = {}) {
   const m = useLanding(initialMarquee)
   const { rootRef } = m
+  useScrollFx(rootRef)
 
   return (
     <div ref={rootRef} className="lp" dir="rtl">

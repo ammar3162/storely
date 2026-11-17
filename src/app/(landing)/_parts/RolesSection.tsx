@@ -16,7 +16,7 @@ export default function RolesSection({ m }: { m: LandingState }) {
   return (
     <section id="roles" className="lp-section" aria-labelledby="roles-title">
       <div className="lp-wrap">
-        <div className="lp-head">
+        <div className="lp-head rv">
           <h2 id="roles-title" className="lp-h2">{t('rolesTitle')}</h2>
           <p className="lp-sub">{t('rolesSub')}</p>
         </div>
@@ -25,9 +25,9 @@ export default function RolesSection({ m }: { m: LandingState }) {
             <article key={r.label} className="ap-role">
               <h3>{t(r.label)}</h3>
               <ul>
-                {r.points.map(p => <li key={p}><span className="ap-dot" aria-hidden="true" />{t(p)}</li>)}
+                {r.points.map(p => <li key={p}>{t(p)}</li>)}
               </ul>
-              <div className="ap-shot rv ap-rise"><Phone src={`/landing/${r.img}.webp`} alt={`${t('rolesShotAlt')} ${t(r.label)}`} h={r.h} /></div>
+              <div className="ap-shot" data-fx="rise"><Phone src={`/landing/${r.img}.webp`} alt={`${t('rolesShotAlt')} ${t(r.label)}`} h={r.h} /></div>
             </article>
           ))}
         </div>

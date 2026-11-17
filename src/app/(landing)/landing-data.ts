@@ -184,6 +184,8 @@ export const LS: Record<string, {ar:string, en:string}> = {
   heroDemo:      { ar:'اطلب عرض توضيحي', en:'Book a demo' },
   navDemo:       { ar:'اطلب عرض النظام', en:'Book a demo' },
   navMenu:       { ar:'القائمة', en:'Menu' },
+  navSignIn:     { ar:'تسجيل الدخول', en:'Sign in' },
+  navClose:      { ar:'إغلاق القائمة', en:'Close menu' },
   heroBadge:     { ar:'تجربة مجانية 14 يوماً — بدون بطاقة ائتمانية', en:'14-day free trial — no credit card required' },
   heroH1a:       { ar:'نصمّم مستقبل الإدارة الذكية', en:'We design the future of smart management' },
   heroH1b:       { ar:'لكل منشأة تطمح للنمو', en:'for every business aiming to grow' },
