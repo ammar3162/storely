@@ -225,7 +225,8 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   async function previewOffer() {
     if (!offerValid()) return
     const w = window.open('', '_blank')
-    const j = await adminFetch('/api/admin/invoice-preview', { method: 'POST', body: { orgName: c!.org_name, items: offerItems, status: 'due' } })
+    const j = await adminFetch('/api/admin/invoice-preview', { method: 'POST', body: { orgId: c!.org_id, orgName: c!.org_name, items: offerItems, status: 'due',
+      offer: { months: offer.months, note: offer.note, kind: 'manual', starts_at: offerFrom.toISOString(), ends_at: offerEnds.toISOString() } } })
     if (!j.success || !w) { w?.close(); toast(j.error || 'تعذّرت المعاينة', 'error'); return }
     w.document.open(); w.document.write(j.html); w.document.close()
   }

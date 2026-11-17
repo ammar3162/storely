@@ -2,7 +2,7 @@
 import { useState, useEffect, Suspense, lazy } from 'react'
 import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import { currencySymbol } from '@/lib/currencySymbol'
-import { FileText, Inbox, Loader2, Trash2, Pencil, Lock, AlertTriangle, BarChart3, CreditCard, Bike, ChevronDown, ChevronUp } from 'lucide-react'
+import { FileText, Inbox, Loader2, Trash2, Pencil, Lock, AlertTriangle, BarChart3, CreditCard, Bike, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react'
 import { api } from '@/lib/api-client'
 import { getMe } from '@/lib/session'
 import { colors, font, card, btnSecondary } from '@/lib/ds'
@@ -11,10 +11,13 @@ import { ListSkeleton } from '@/components/PageSkeleton'
 import { netOf, pdfOrgInfo, getRange, formatRange, BackBtn, PeriodBadge } from './shared'
 import type { FilterPeriod } from './shared'
 import { fileLink } from '@/lib/invoiceUrl'
+import { closingReturns, returnsStats, RETURN_REASONS } from '@/lib/closingReturns'
+import { qtyUnit } from '@/lib/arabicCount'
 
 const CashierClosingEditor = lazy(() => import('@/components/CashierClosingEditor'))
 const EditHistoryDialog = lazy(() => import('@/components/EditHistoryDialog'))
 const PasswordBox = lazy(() => import('@/components/CashierClosingEditor').then(m => ({ default: m.PasswordBox })))
+const ClosingReturnsDialog = lazy(() => import('@/components/ClosingReturnsDialog'))
 
 export default function CashierClosingDetail({ period, from, to, onBack, filterBar }: { period:FilterPeriod; from:string; to:string; onBack:()=>void; filterBar?: React.ReactNode }) {
   const [closings, setClosings] = useState<any[]>([])
@@ -34,6 +37,7 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
   const [isOwner, setIsOwner] = useState(false)
   const [deciding, setDeciding] = useState<string|null>(null)
   const [history, setHistory] = useState<any|null>(null)   // سجل تعديلات إقفال (والترجيع)
+  const [returnsOf, setReturnsOf] = useState<any|null>(null)   // صور الفواتير المرتجعة لإقفال
   // تحديث فوري: لما تتغير بيانات المنشأة من أي جهاز، الصفحة تعيد جلبها
   useLiveRefresh(typeof window!=='undefined'?sessionStorage.getItem('s_org_id'):null, ['cashier_closings'], ()=>load())
   useEffect(()=>{
@@ -76,6 +80,7 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
           { header: 'الصافي', key: 'net', align: 'left' },
           { header: 'النتيجة', key: 'result' },
           { header: 'سبب العجز', key: 'reason' },
+          ...(hasReturns ? [{ header: 'المرتجعات', key: 'returns' }] : []),
         ],
         rows: closings.map((c: any) => ({
           date: new Date(c.closing_date+'T12:00:00Z').toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',calendar:'gregory',timeZone:'UTC'}) + (c.created_at ? ' · ' + new Date(c.created_at).toLocaleTimeString('ar-SA-u-ca-gregory',{numberingSystem:'latn',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Riyadh'}) : ''),
@@ -89,11 +94,13 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
           net: netOf(c).toFixed(2) + ' ' + curr,
           result: c.difference > 0 ? `زيادة ${c.difference.toFixed(2)}` : c.difference < 0 ? `عجز ${Math.abs(c.difference).toFixed(2)}` : 'مطابق',
           reason: c.status === 'deficit' ? (c.deficit_reason || '—') : '',
+          returns: (()=>{ const rs = closingReturns(c); return rs.length ? rs.map(r=>r.invoice_no+(r.dup_of?' (مكررة)':'')).join('، ') : '—' })(),
         })),
         summaryStats: [
           { label: 'إجمالي التقارير', value: String(closings.length), color:'var(--storely-navy)' },
           { label: 'إجمالي العجز', value: totalDeficit.toFixed(0) + ' ' + curr, color: colors.danger },
           { label: 'إجمالي الزيادة', value: totalSurplus.toFixed(0) + ' ' + curr, color: colors.info },
+          ...(hasReturns ? [{ label: 'الفواتير المرتجعة', value: String(rStats.total), color: colors.text }] : []),
         ],
         totalsRow: {
           date: 'الإجمالي',
@@ -107,6 +114,7 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
           net: closings.reduce((s:number,c:any)=>s+netOf(c),0).toFixed(2) + ' ' + curr,
           result: '—',
           reason: '',
+          returns: hasReturns ? qtyUnit(rStats.total,'فاتورة') : '',
         },
         fileName: `تقرير-اقفال-الكاشير-${new Date().toISOString().slice(0,10)}.pdf`,
       })
@@ -148,6 +156,13 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
   const totalDelivery = closings.reduce((s,c)=>s+Number(c.delivery_amount||0),0)
   const hasDelivery = totalDelivery > 0
   const deliveryByApp = Object.entries(closings.reduce((m:Record<string,number>,c:any)=>{ for(const d of (c.delivery||[])) m[d.name]=(m[d.name]||0)+Number(d.amount||0); return m },{})).sort((a,b)=>b[1]-a[1])
+  // الفواتير المرتجعة (للتوثيق): العمود والملخص يطلعون بس لو فيه مرتجعات بالفترة
+  const rStats = returnsStats(closings)
+  const hasReturns = rStats.total > 0
+  const returnsTitle = (c:any) => `إقفال ${new Date(c.closing_date+'T12:00:00Z').toLocaleDateString('ar-SA-u-ca-gregory',{numberingSystem:'latn',day:'numeric',month:'long',timeZone:'UTC'})} · ${c.staff_name||''}`
+  const returnsPill = (c:any) => { const rs = closingReturns(c); if(!rs.length) return null; const dup = rs.some(r=>r.dup_of)
+    return <button onClick={()=>setReturnsOf(c)} title="عرض صور الفواتير المرتجعة" style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12,fontWeight:600,color:dup?'#b54708':colors.text,background:dup?colors.warningLight:colors.bg,border:'none',borderRadius:999,padding:'4px 10px',cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
+      <RotateCcw size={12} strokeWidth={2.25}/> {qtyUnit(rs.length,'فاتورة')}{dup?' · مكررة':''}</button> }
   const statusLabel: Record<string,string> = {deficit:'عجز',surplus:'زيادة',balanced:'مطابق'}
   const statusColor: Record<string,string> = {deficit:colors.danger,surplus:colors.info,balanced:colors.primary}
   return (
@@ -213,6 +228,17 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
         </div>
       )}
 
+      {hasReturns && (
+        <div style={{...card,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap' as const}}>
+          <span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:font.sm,fontWeight:600,color:colors.text}}><RotateCcw size={15} strokeWidth={2.25}/> الفواتير المرتجعة بالفترة: {qtyUnit(rStats.total,'فاتورة')} في {qtyUnit(rStats.withReturns,'إقفال')}</span>
+          {RETURN_REASONS.filter(r=>rStats.byReason[r.key]).map(r=>(
+            <span key={r.key} style={{fontSize:font.xs,fontWeight:600,color:colors.text2,background:colors.bg,borderRadius:999,padding:'4px 10px'}}>{r.ar} {rStats.byReason[r.key]}</span>
+          ))}
+          {rStats.byReason.none>0 && <span style={{fontSize:font.xs,fontWeight:600,color:colors.text3,background:colors.bg,borderRadius:999,padding:'4px 10px'}}>بدون سبب {rStats.byReason.none}</span>}
+          {rStats.dups>0 && <span style={{fontSize:font.xs,fontWeight:600,color:'#b54708',background:colors.warningLight,borderRadius:999,padding:'4px 10px'}}>مكررة {rStats.dups}</span>}
+        </div>
+      )}
+
       <div style={{...card,overflow:'hidden'}}>
         {loading?(<ListSkeleton/>
         ):closings.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><Inbox size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:600,color:colors.text2}}>لا توجد تقارير إقفال</div></div>
@@ -222,7 +248,7 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
             <table className="m-cards" style={{width:'100%',borderCollapse:'collapse' as const,minWidth:600}}>
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`,position:'sticky' as const,top:0,zIndex:2}}>
-                  {['التاريخ','الكاشير','المبيعات','الشبكة',...(hasDelivery?['التوصيل']:[]),'الكاش الفعلي','المسحوبات','الكاش بعد الخصم','الصافي','النتيجة','المرفقات','إجراء'].map((h,i)=>(
+                  {['التاريخ','الكاشير','المبيعات','الشبكة',...(hasDelivery?['التوصيل']:[]),'الكاش الفعلي','المسحوبات','الكاش بعد الخصم','الصافي','النتيجة',...(hasReturns?['المرتجعات']:[]),'المرفقات','إجراء'].map((h,i)=>(
                     <th key={i} style={{padding:'10px 16px',color:colors.text4,fontSize:font.xs,fontWeight:600,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em',background:colors.bg}}>{h}</th>
                   ))}
                 </tr>
@@ -295,6 +321,7 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
                       {c.deficit_decision==='rejected' && <div style={{fontSize:12,fontWeight:600,color:colors.text4,marginTop:4}}>رُفض الخصم</div>}
                       </div>}
                     </td>
+                    {hasReturns && <td data-label="المرتجعات" style={{padding:'12px 16px'}}>{returnsPill(c) || <span style={{fontSize:12,color:colors.text4}}>—</span>}</td>}
                     <td data-label="المرفقات" style={{padding:'12px 16px'}}>
                       <div style={{display:'flex',gap:6}}>
                         {c.sales_image && (
@@ -336,6 +363,7 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
                   <td data-label="الصافي" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:600,color:colors.primary}}>{closings.reduce((s:number,c:any)=>s+netOf(c),0).toFixed(0)} {curr}</td>
                   {(()=>{ const d = closings.reduce((s:number,c:any)=>s+Number(c.difference),0)
                     return <td data-label="الفرق" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:600,color:d<0?statusColor.deficit:d>0?statusColor.surplus:statusColor.balanced,whiteSpace:'nowrap' as const}}>{d<0?'عجز ':d>0?'زيادة ':'مطابق'}{d!==0?`${Math.abs(d).toFixed(0)} ${curr}`:''}</td> })()}
+                  {hasReturns && <td data-label="المرتجعات" style={{padding:'12px 16px',fontSize:font.sm,fontWeight:600,color:colors.text,whiteSpace:'nowrap' as const}}>{qtyUnit(rStats.total,'فاتورة')}</td>}
                   <td/><td/>
                 </tr>
               </tfoot>
@@ -395,6 +423,7 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
                           {row('المسحوبات', Number(c.total_purchases)>0?`−${money(Number(c.total_purchases))}`:'—', false, Number(c.total_purchases)>0?colors.danger:colors.text4)}
                           {(c.purchases||[]).length>0 && <div style={{fontSize:13,color:colors.text3,padding:'4px 0',lineHeight:1.7}}>{(c.purchases||[]).map((p:any,pi:number)=><div key={pi}>{p.reason||'بدون سبب'} — {money(Number(p.amount))}</div>)}</div>}
                           {row('الكاش بعد الخصم', money(Number(c.cash_amount)-Number(c.total_purchases)))}
+                          {closingReturns(c).length>0 && row('الفواتير المرتجعة', returnsPill(c))}
                           {row('الصافي', money(netOf(c)), true, colors.primary)}
                           {c.status==='deficit' && (
                             <div style={{marginTop:10}}>
@@ -435,6 +464,9 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
       {history && (
         <Suspense fallback={null}><EditHistoryDialog orgId={sessionStorage.getItem('s_org_id')||''} kind="closing" id={history.id}
           title={`إقفال ${history.staff_name||''} · ${history.closing_date}`} onClose={()=>setHistory(null)} onReverted={()=>load()}/></Suspense>
+      )}
+      {returnsOf && (
+        <Suspense fallback={null}><ClosingReturnsDialog title={returnsTitle(returnsOf)} returns={closingReturns(returnsOf)} onClose={()=>setReturnsOf(null)}/></Suspense>
       )}
       {editing && (
         <Suspense fallback={null}><CashierClosingEditor orgId={sessionStorage.getItem('s_org_id')||''} closing={editing} curr={curr} onClose={()=>setEditing(null)}

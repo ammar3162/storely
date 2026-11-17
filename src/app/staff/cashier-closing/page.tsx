@@ -9,6 +9,7 @@ import SavedScreen from './_parts/SavedScreen'
 import StepData from './_parts/StepData'
 import StepExpenses from './_parts/StepExpenses'
 import StepPhotos from './_parts/StepPhotos'
+import StepReturns from './_parts/StepReturns'
 import StepReview from './_parts/StepReview'
 import StepNav from './_parts/StepNav'
 import { Lock, LogOut } from 'lucide-react'
@@ -61,6 +62,7 @@ export default function CashierClosingPage() {
             <StepExpenses m={m}/>
 
             <StepPhotos m={m}/>
+            <StepReturns m={m}/>
 
             <StepReview m={m}/>
 

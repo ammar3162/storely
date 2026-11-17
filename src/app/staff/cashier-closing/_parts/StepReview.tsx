@@ -3,13 +3,16 @@ import { CASHIER_EXTRA } from '@/lib/staffI18n/cashier'
 import { ct, DEFICIT_REASONS } from './strings'
 import { fmt } from './inputs'
 import { CheckCircle2, AlertTriangle } from 'lucide-react'
+import { localeOf } from '@/lib/staffLang'
 import { C, card, paper, receiptEdge, receiptNum, cutLine } from '../../_ui/theme'
 
 const line: React.CSSProperties = { display:'flex', justifyContent:'space-between', alignItems:'baseline', fontSize:17, lineHeight:'28px' }
 import type { CashierClosing } from './useCashierClosing'
 
 export default function StepReview({ m }: { m: CashierClosing }) {
-  const { lang, session, step, deficitChoice, setDeficitChoice, deficitNote, setDeficitNote, networkImage, salesImage, networkPreview, salesPreview, curr, sales, mada, visa, mastercard, cash, deliveryList, totalPurchasesNow, expectedCash, difference, status, deficitReasonOk, businessDateLabel, isAfterMidnightCarry } = m
+  const { lang, session, step, deficitChoice, setDeficitChoice, deficitNote, setDeficitNote, networkImage, salesImage, networkPreview, salesPreview, curr, sales, mada, visa, mastercard, cash, deliveryList, totalPurchasesNow, expectedCash, difference, status, deficitReasonOk, businessDateLabel, isAfterMidnightCarry, hasReturns, returnsList, returnsPrev } = m
+  const dayLabel = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString(localeOf(lang), { numberingSystem: 'latn', day: 'numeric', month: 'long', calendar: 'gregory', timeZone: 'UTC' })
+  const prevDups = returnsList.filter(r => returnsPrev[r.no])
   return (
     <>
             {/* خطوة 4: المراجعة */}
@@ -52,6 +55,31 @@ export default function StepReview({ m }: { m: CashierClosing }) {
                         <span style={{...receiptNum,color:C.t1}}>{fmt(totalPurchasesNow)}</span>
                       </div>
                       <div style={{fontSize:13,color:C.t3,marginTop:4}}>{ct('withdrawalsNote',lang)}</div>
+                    </div>
+                  )}
+                  {/* الفواتير المرتجعة: العدد والأرقام والصور، وتنبيه لو فيه فاتورة انسجلت مرتجع قبل */}
+                  {hasReturns && (
+                    <div style={{...card,padding:'12px 14px'}}>
+                      <div style={{display:'flex',justifyContent:'space-between',fontSize:15}}>
+                        <span style={{color:C.t2}}>{ct('returnsReviewTitle',lang)}</span>
+                        <span style={{...receiptNum,color:C.t1}}>{returnsList.length || ct('returnsNone',lang)}</span>
+                      </div>
+                      {returnsList.length>0 && (
+                        <div style={{display:'flex',gap:8,flexWrap:'wrap' as const,marginTop:10}}>
+                          {returnsList.map(r=>(
+                            <div key={r.no} style={{display:'flex',alignItems:'center',gap:8,padding:4,paddingInlineEnd:12,borderRadius:12,background:'var(--storely-fill)'}}>
+                              <img src={r.preview || r.photo} alt="" style={{width:30,height:40,borderRadius:8,objectFit:'cover',display:'block'}}/>
+                              <span dir="ltr" style={{fontSize:15,color:C.t1,fontVariantNumeric:'tabular-nums'}}>{r.no}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {prevDups.map(r=>(
+                        <div key={r.no} style={{display:'flex',gap:6,alignItems:'flex-start',marginTop:10,color:'#b54708',fontSize:13,lineHeight:1.5,textAlign:'start' as const}}>
+                          <AlertTriangle size={14} strokeWidth={1.75} style={{flexShrink:0,marginTop:3}}/>
+                          <span><b dir="ltr">{r.no}</b> {ct('returnPrevWarn',lang).replace('{date}',dayLabel(returnsPrev[r.no]))} {ct('returnPrevNote',lang)}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
                   <div style={{...card,padding:'12px 14px',textAlign:'start' as const}}>

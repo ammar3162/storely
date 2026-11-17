@@ -1,6 +1,7 @@
 // قوالب الإيميلات بهوية Storely — كل الإيميلات (الفواتير، الاستعادة، الترحيب، التفعيل) تبنى من هنا
 // عشان يكون شكلها واحد. الإرسال نفسه من lib/email.ts
 // ملاحظة: إيميلات Supabase (تأكيد التسجيل وغيرها) قوالبها في supabase/email-templates وتنلصق في لوحة Supabase
+import { quoteEmailItems, type QuoteDetails } from '@/lib/offerQuote'
 
 // الهوية الجديدة (2026-11): كحلي #203640 أساسي + رملي #A3917F لمسات — نفس ألوان النظام والموقع
 export const BRAND = {
@@ -137,24 +138,39 @@ const arDate = (d: string | number | Date) =>
 
 // ─── الإيميلات الجاهزة ───
 
-export function invoiceEmail(o: { invoiceNumber: string | number; orgName: string; items: EmailItem[]; pdfUrl?: string; status?: 'paid' | 'due'; date?: string }) {
+export function invoiceEmail(o: { invoiceNumber: string | number; orgName: string; items: EmailItem[]; pdfUrl?: string; status?: 'paid' | 'due'; date?: string; quote?: QuoteDetails | null; validUntil?: string }) {
   const paid = (o.status || 'paid') === 'paid'
-  const total = o.items.reduce((n, it) => n + Number(it.amount), 0)
+  const q = o.quote || null
+  // العرض الخاص: السعر العادي للمدة ثم الخصم (مجموعهما = المبلغ)، وبيانات الباقة والفروع والمدة فوق
+  const items: EmailItem[] = q ? quoteEmailItems(q) : o.items
+  const total = items.reduce((n, it) => n + Number(it.amount), 0)
+  const title = paid ? 'فاتورة اشتراك' : q?.kind === 'renewal' ? 'عرض تجديد' : 'عرض سعر'
+  const quoteRows = q ? [
+    ...(q.ownerName ? [{ label: 'صاحب المنشأة', value: q.ownerName }] : []),
+    { label: 'الباقة', value: q.planLabel },
+    { label: 'عدد الفروع', value: `${q.branches}${q.branchNames.length ? ` (${q.branchNames.join('، ')})` : ''}` },
+    { label: q.kind === 'renewal' ? 'مدة التجديد' : 'مدة الاشتراك', value: q.monthsLabel },
+    { label: 'فترة الاشتراك', value: `${q.start} إلى ${q.end}` },
+  ] : []
   return {
-    subject: `${paid ? 'فاتورة اشتراك' : 'عرض سعر'} #${o.invoiceNumber} — ${o.orgName} — ${sar(total)}`,
+    subject: `${title} #${o.invoiceNumber} — ${o.orgName} — ${sar(total)}`,
     html: brandEmail({
       title: paid ? 'شكراً لك، هذه فاتورة اشتراكك' : 'عرض سعر اشتراكك في Storely',
-      preheader: `فاتورة #${o.invoiceNumber} بقيمة ${sar(total)}`,
-      headerSide: { title: paid ? 'فاتورة اشتراك' : 'عرض سعر', sub: `#${o.invoiceNumber}` },
+      preheader: `${paid ? 'فاتورة' : 'عرض'} #${o.invoiceNumber} بقيمة ${sar(total)}`,
+      headerSide: { title, sub: `#${o.invoiceNumber}` },
       rows: [
         { label: 'المنشأة', value: o.orgName || '—', strong: true },
-        { label: 'تاريخ الفاتورة', value: o.date || arDate(Date.now()) },
+        ...quoteRows,
+        { label: paid ? 'تاريخ الفاتورة' : 'تاريخ العرض', value: o.date || arDate(Date.now()) },
+        ...(!paid && o.validUntil ? [{ label: 'صالح حتى', value: o.validUntil }] : []),
       ],
       badge: paid ? { text: 'مدفوعة', tone: 'success' } : { text: 'مستحقة الدفع', tone: 'warning' },
-      items: o.items,
+      items,
       totalLabel: paid ? 'الإجمالي المدفوع' : 'المبلغ المستحق',
       button: o.pdfUrl ? { label: paid ? 'تحميل الفاتورة (PDF)' : 'تحميل عرض السعر (PDF)', url: o.pdfUrl } : undefined,
-      small: paid ? 'المبالغ بالريال السعودي. لأي استفسار عن الفاتورة تواصل معنا.' : 'المبالغ بالريال السعودي. العرض صالح 7 أيام، ويُفعَّل الاشتراك فور استلام الدفعة.',
+      small: paid ? 'المبالغ بالريال السعودي. لأي استفسار عن الفاتورة تواصل معنا.'
+        : q ? 'المبالغ بالريال السعودي. السعر خاص بهذه المدة، والتفاصيل الكاملة في ملف العرض. يُفعَّل الاشتراك فور استلام الدفعة.'
+        : 'المبالغ بالريال السعودي. العرض صالح 7 أيام، ويُفعَّل الاشتراك فور استلام الدفعة.',
     }),
   }
 }

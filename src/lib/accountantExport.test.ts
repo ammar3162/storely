@@ -145,3 +145,18 @@ describe('not VAT registered', () => {
     expect(summarize(r).vatNet).toBe(0)
   })
 })
+
+describe('accountant report — returned invoices', () => {
+  it('adds a returns sheet with photo links only when the period has returns', async () => {
+    const photo = 'https://x.supabase.co/storage/v1/object/public/invoices/invoices/o-1.jpg'
+    const r = { ...base, closings: [{ ...base.closings[0], returns: [{ invoice_no: '1043', photo, reason: 'unsatisfied' as const }, { invoice_no: '1050', photo, reason: null, dup_of: '2026-09-01' }] }] }
+    const wb = await load(r)
+    const ws = wb.getWorksheet('الفواتير المرتجعة')!
+    expect(ws).toBeTruthy()
+    const cells = cellsOf(ws).map(v => (v && typeof v === 'object' && 'text' in (v as any) ? (v as any).text : v))
+    for (const t of ['1043', '1050', 'العميل غير راضٍ', 'بدون سبب', 'عرض الصورة']) expect(cells).toContain(t)
+    expect(cells.some(v => String(v).startsWith('مكررة'))).toBe(true)
+    expect(cellsOf(wb.getWorksheet('المبيعات')!)).toContain('المرتجعات')
+    expect((await load(base)).worksheets.map(w => w.name)).not.toContain('الفواتير المرتجعة')
+  })
+})

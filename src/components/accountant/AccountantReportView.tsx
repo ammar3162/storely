@@ -1,11 +1,14 @@
 'use client'
 import { useState } from 'react'
-import { Download, FileSpreadsheet } from 'lucide-react'
+import { Download, FileSpreadsheet, RotateCcw } from 'lucide-react'
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { toast } from '@/components/toast'
 import { colors, radius } from '@/lib/ds'
 import { invoicesLabel, staffLabel, taxInvoices, vatReturn, payrollName } from '@/lib/accountantExport'
 import { fileLink } from '@/lib/invoiceUrl'
+import { returnsStats, closingReturns } from '@/lib/closingReturns'
+import { qtyUnit } from '@/lib/arabicCount'
+import ClosingReturnsDialog from '@/components/ClosingReturnsDialog'
 
 // عرض تقرير المحاسب — صفحة الرابط وبوابة المحاسب تستخدمه
 // only: البوابة تعرض كل تبويب بأقسامه (المبيعات، المشتريات…)؛ صفحة الرابط تعرض الكل
@@ -76,6 +79,12 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
   const has = (s: string) => r.sections.includes(s) && show(s as ReportBlock)
   const multi = !r.branchName
   const diffs = r.closings.filter((c: any) => c.difference !== 0)
+  // الفواتير المرتجعة (صورة + رقم): عمود بجدول المبيعات يفتح الصور
+  const rStats = returnsStats(r.closings)
+  const [returnsOf, setReturnsOf] = useState<any | null>(null)
+  const returnsBtn = (c: any) => { const rs = closingReturns(c); if (!rs.length) return '—'; const dup = rs.some(x => x.dup_of)
+    return <button key="ret" onClick={() => setReturnsOf(c)} title="عرض صور الفواتير المرتجعة" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, color: dup ? '#b54708' : colors.text, background: dup ? colors.warningLight : 'var(--storely-fill)', border: 'none', borderRadius: 999, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+      <RotateCcw size={12} strokeWidth={2.25} /> {qtyUnit(rs.length, 'فاتورة')}{dup ? ' · مكررة' : ''}</button> }
   // تحديد سطور المشتريات للتعديل الجماعي
   const [sel, setSel] = useState<Set<string>>(new Set())
   const [bulkBusy, setBulkBusy] = useState(false)
@@ -109,10 +118,17 @@ export default function AccountantReportView({ data, downloadHref, kicker = 'ت�
     <div className={only ? 'rv-grid rv-one' : 'rv-grid'}>
     {has('sales') && <Card wide title="المبيعات">
       <Lines rows={[['إجمالي المبيعات', t.sales, true], ['مدى', t.mada], ['فيزا', t.visa], ['ماستركارد', t.mastercard], ...(t.delivery > 0 ? [['تطبيقات التوصيل', t.delivery] as [string, number]] : []), ['الكاش', t.cash]]} />
-      <Table head={['التاريخ', ...(multi ? ['الفرع'] : []), 'الكاشير', 'المبيعات', 'الشبكة', ...(t.delivery > 0 ? ['التوصيل'] : []), 'الكاش', ...(onEditClosing ? [''] : [])]}
+      {rStats.total > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 12, fontSize: 15, fontWeight: 600, color: colors.text }}>
+        <RotateCcw size={15} strokeWidth={2.25} /> الفواتير المرتجعة بالفترة: {qtyUnit(rStats.total, 'فاتورة')} في {qtyUnit(rStats.withReturns, 'إقفال')}
+        {rStats.dups > 0 && <span style={{ fontSize: 13, color: '#b54708', background: colors.warningLight, borderRadius: 999, padding: '2px 10px' }}>مكررة {rStats.dups}</span>}
+        <span style={{ fontSize: 13, fontWeight: 500, color: colors.text3 }}>اضغط العدد في الجدول لعرض الصور</span>
+      </div>}
+      <Table head={['التاريخ', ...(multi ? ['الفرع'] : []), 'الكاشير', 'المبيعات', 'الشبكة', ...(t.delivery > 0 ? ['التوصيل'] : []), 'الكاش', ...(rStats.total > 0 ? ['المرتجعات'] : []), ...(onEditClosing ? [''] : [])]}
         moneyCols={(multi ? [3, 4, 5] : [2, 3, 4]).concat(t.delivery > 0 ? [multi ? 6 : 5] : [])}
         rows={r.closings.map((c: any) => [<Edited key="d" date={c.date} src={c.editedSource} />, ...(multi ? [c.branch] : []), c.staff || '—', c.sales, c.network, ...(t.delivery > 0 ? [c.delivery || 0] : []), c.cash,
+          ...(rStats.total > 0 ? [returnsBtn(c)] : []),
           ...(onEditClosing && c.id ? [editBtn(() => onEditClosing(c))] : onEditClosing ? [''] : [])])} />
+      {returnsOf && <ClosingReturnsDialog title={`إقفال ${returnsOf.date} · ${returnsOf.staff || ''}${multi && returnsOf.branch ? ` · ${returnsOf.branch}` : ''}`} returns={closingReturns(returnsOf)} onClose={() => setReturnsOf(null)} />}
     </Card>}
 
     {(r.sections.includes('purchases') || r.sections.includes('vat')) && show('tax_invoices') && r.vatRegistered && <div id="rv-tax" className="rv-wide" style={{ scrollMarginTop: 16 }}><Card wide title={`الفواتير الضريبية (${invoicesLabel(t.taxInvoices)})`}>

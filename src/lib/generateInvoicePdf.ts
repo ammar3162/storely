@@ -5,6 +5,7 @@
  */
 import chromium from '@sparticuz/chromium'
 import puppeteer from 'puppeteer-core'
+import type { QuoteDetails } from '@/lib/offerQuote'
 
 // تنظيف أي نص قبل حقنه بالـHTML — يمنع ثغرات XSS من بيانات يدخلها العملاء
 // (اسم المنشأة وقت التسجيل) قبل ما تُعرض بمتصفح Chromium الحقيقي على السيرفر
@@ -29,11 +30,63 @@ interface InvoiceData {
   status?: 'paid' | 'due'
   /** عرض السعر: آخر يوم يسري فيه */
   validUntil?: string
+  /** تفاصيل العرض الخاص (الباقة، الفروع، المدة، الخصم) — يطلع بدلها جدول البنود العادي لو ما فيه */
+  quote?: QuoteDetails | null
+}
+
+// مبلغ بفواصل الآلاف، ويُكتب من اليسار (عشان علامة السالب تطلع قبل الرقم داخل صفحة عربية)
+const money = (n: number) => `<span dir="ltr">${n < 0 ? '−' : ''}${Math.abs(Number(n) || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س</span>`
+
+/** قسم العرض الخاص: بيانات العميل والاشتراك، تفصيل الفاتورة، الحساب، والشروط */
+function quoteSection(q: QuoteDetails, orgName: string, due: boolean, validUntil?: string): string {
+  const cell = (label: string, value: string, sub = '') =>
+    `<div class="cell"><div class="info-label">${label}</div><div class="cell-value">${value}</div>${sub ? `<div class="cell-sub">${sub}</div>` : ''}</div>`
+  const names = q.branchNames.length ? escapeHtml(q.branchNames.join('، ')) : ''
+  const lines = q.billLines.length && q.billTotal > 0 ? `
+  <div class="sec-title">${escapeHtml(q.billTitle)}</div>
+  <table>
+    <thead><tr><th>البند</th><th>${q.cycle === 'yearly' ? 'المبلغ السنوي' : 'المبلغ الشهري'}</th></tr></thead>
+    <tbody>
+      ${q.billLines.map(l => `<tr><td>${escapeHtml(l.label)}</td><td>${money(l.amount)}</td></tr>`).join('')}
+      <tr class="sum-row"><td>${q.cycle === 'yearly' ? 'المجموع السنوي' : 'المجموع الشهري'}</td><td>${money(q.billTotal)}</td></tr>
+      ${q.cycle === 'yearly' ? `<tr class="sum-row"><td>المقابل الشهري</td><td>${money(q.monthly)}</td></tr>` : ''}
+    </tbody>
+  </table>` : ''
+  // السعر العادي للمدة يطلع لما يكون العرض بنفسه أو أقل منه، والخصم لما يكون أقل
+  const listRow = q.list > 0 && q.amount <= q.list
+    ? `<div class="t-row"><span>السعر العادي لمدة ${escapeHtml(q.monthsLabel)} (${q.monthly.toLocaleString('en-US')} ر.س شهرياً)</span>${money(q.list)}</div>` : ''
+  const discRow = q.discount > 0 ? `<div class="t-row t-disc"><span>خصم العرض (${q.discountPct}%)</span>${money(-q.discount)}</div>` : ''
+  const terms = [
+    'السعر خاص بهذه المدة، ويتجدد الاشتراك بعدها بالسعر العادي أو بعرض جديد.',
+    'يشمل الاشتراك الباقة والإضافات المذكورة حتى نهاية المدة.',
+    q.startsLater ? 'تبدأ المدة بعد نهاية اشتراكك الحالي، فلا تخسر أيامك المتبقية.' : '',
+    due ? `العرض صالح حتى ${escapeHtml(validUntil || '')}، ويُفعَّل الاشتراك فور استلام الدفعة.` : 'تم استلام الدفعة، والاشتراك مفعّل حتى نهاية المدة.',
+    q.note ? `ملاحظة: ${escapeHtml(q.note)}` : '',
+  ].filter(Boolean)
+  return `
+  <div class="grid">
+    ${cell('المنشأة', escapeHtml(orgName))}
+    ${cell('صاحب المنشأة', escapeHtml(q.ownerName || '—'))}
+    ${cell('الباقة', escapeHtml(q.planLabel))}
+    ${cell('عدد الفروع', String(q.branches), names)}
+    ${cell(q.kind === 'renewal' ? 'مدة التجديد' : 'مدة الاشتراك', escapeHtml(q.monthsLabel))}
+    ${cell('فترة الاشتراك', `${escapeHtml(q.start)} إلى ${escapeHtml(q.end)}`)}
+  </div>
+  ${lines}
+  <div class="totals">
+    ${listRow}${discRow}
+    <div class="t-row t-grand"><span>${due ? 'المبلغ المستحق' : 'المبلغ المدفوع'}</span>${money(q.amount)}</div>
+  </div>
+  <div class="terms">
+    <div class="sec-title">${due ? 'شروط العرض' : 'ملاحظات'}</div>
+    <ul>${terms.map(t => `<li>${t}</li>`).join('')}</ul>
+  </div>`
 }
 
 export function buildInvoiceHtml(data: InvoiceData): string {
   const total = data.items.reduce((s, it) => s + Number(it.amount || 0), 0)
-  const rows = data.items.map(it => `<tr><td>${escapeHtml(it.label)}</td><td>${escapeHtml(it.amount)} ر.س</td></tr>`).join('')
+  const rows = data.items.map(it => `<tr><td>${escapeHtml(it.label)}</td><td>${money(Number(it.amount) || 0)}</td></tr>`).join('')
+  const due = data.status === 'due'
 
   return `
 <!DOCTYPE html>
@@ -62,12 +115,37 @@ export function buildInvoiceHtml(data: InvoiceData): string {
   th:last-child, td:last-child { text-align:left; }
   td { padding:14px 16px; font-size:13px; border-bottom:1px solid #E6E2DB; color:#33444C; }
   .total-row td { font-size:17px; font-weight:800; color:#203640; background:#F5F3EF; border-top:2px solid #A3917F; border-bottom:none; padding-top:16px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:24px; }
+  .cell { background:#FAF9F6; border:1px solid #E6E2DB; border-radius:12px; padding:12px 16px; }
+  .cell-value { font-size:15px; font-weight:700; color:#1A2B33; }
+  .cell-sub { font-size:11px; color:#5C6B72; margin-top:4px; line-height:1.6; }
+  .sec-title { font-size:13px; font-weight:800; color:#203640; margin:0 0 10px; }
+  .sum-row td { font-weight:700; color:#203640; background:#F5F3EF; }
+  .totals { border:1px solid #E6E2DB; border-radius:12px; padding:6px 18px; margin-bottom:24px; }
+  .t-row { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:10px 0; font-size:13px; color:#33444C; border-bottom:1px solid #E6E2DB; }
+  .t-row:last-child { border-bottom:none; }
+  .t-disc { color:#203640; font-weight:700; }
+  .t-grand { font-size:18px; font-weight:800; color:#203640; padding:14px 0; }
+  .terms ul { padding-inline-start:18px; }
+  .terms li { font-size:12px; color:#33444C; line-height:1.9; }
   .footer { margin-top:40px; text-align:center; padding-top:24px; border-top:1px solid #E6E2DB; }
+  /* عرض السعر المفصّل: مسافات أضيق عشان يطلع بصفحة A4 وحدة */
+  body.q { padding:32px 40px; }
+  body.q .header { margin-bottom:20px; padding:20px 24px; }
+  body.q .grid { gap:8px; margin-bottom:18px; }
+  body.q .cell { padding:9px 14px; }
+  body.q th, body.q td { padding:9px 14px; }
+  body.q table { margin-bottom:18px; }
+  body.q .t-row { padding:7px 0; }
+  body.q .t-grand { padding:10px 0; }
+  body.q .totals { margin-bottom:18px; }
+  body.q .terms li { line-height:1.65; }
+  body.q .footer { margin-top:20px; padding-top:14px; }
   .footer-thanks { font-size:14px; font-weight:700; color:#203640; margin-bottom:6px; }
   .footer-note { font-size:11px; color:#94A0A6; }
 </style>
 </head>
-<body>
+<body class="${data.quote ? 'q' : ''}">
   <div class="header">
     <div>
       <div class="brand-row"><img class="brand-logo" src="https://www.storely.dev/icon-192.png" alt="" /><div><div class="brand">Storely</div>
@@ -75,13 +153,14 @@ export function buildInvoiceHtml(data: InvoiceData): string {
       <div class="brand-legal">مؤسسة باسم علي خلوي لتقنية المعلومات — س.ت 7055023522</div>
     </div>
     <div class="meta">
-      <div class="meta-title">${data.status === 'due' ? 'عرض سعر' : 'فاتورة اشتراك'}</div>
-      <div class="meta-row">رقم الفاتورة: <b>#${escapeHtml(data.invoiceNumber)}</b></div>
+      <div class="meta-title">${due ? (data.quote?.kind === 'renewal' ? 'عرض تجديد' : 'عرض سعر') : 'فاتورة اشتراك'}</div>
+      <div class="meta-row">${due ? 'رقم العرض' : 'رقم الفاتورة'}: <b>#${escapeHtml(data.invoiceNumber)}</b></div>
       <div class="meta-row">التاريخ: <b>${escapeHtml(data.date)}</b></div>
-      ${data.status === 'due' && data.validUntil ? `<div class="meta-row">صالح حتى: <b>${escapeHtml(data.validUntil)}</b></div>` : ''}
+      ${due && data.validUntil ? `<div class="meta-row">صالح حتى: <b>${escapeHtml(data.validUntil)}</b></div>` : ''}
     </div>
   </div>
 
+  ${data.quote ? quoteSection(data.quote, data.orgName, due, data.validUntil) : `
   <div class="info-box">
     <div class="info-label">المنشأة</div>
     <div class="info-value">${escapeHtml(data.orgName)}</div>
@@ -93,13 +172,13 @@ export function buildInvoiceHtml(data: InvoiceData): string {
     </thead>
     <tbody>
       ${rows}
-      <tr class="total-row"><td>الإجمالي</td><td>${total} ر.س</td></tr>
+      <tr class="total-row"><td>الإجمالي</td><td>${money(total)}</td></tr>
     </tbody>
-  </table>
+  </table>`}
 
   <div class="footer">
-    <div class="footer-thanks">${data.status === 'due' ? 'المبلغ مستحق الدفع، ويُفعَّل الاشتراك فور استلام الدفعة' : 'تم استلام الدفعة بنجاح — شكراً لاشتراكك معنا'}</div>
-    <div class="footer-note">هذه الفاتورة غير خاضعة لضريبة القيمة المضافة · storely.dev</div>
+    ${data.quote ? '' : `<div class="footer-thanks">${due ? 'المبلغ مستحق الدفع، ويُفعَّل الاشتراك فور استلام الدفعة' : 'تم استلام الدفعة بنجاح، وشكراً لاشتراكك معنا'}</div>`}
+    <div class="footer-note">المبالغ غير خاضعة لضريبة القيمة المضافة · storely.dev</div>
     <div class="footer-note" style="margin-top:4px">مؤسسة باسم علي خلوي لتقنية المعلومات · س.ت 7055023522</div>
   </div>
 </body>

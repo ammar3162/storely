@@ -5,6 +5,7 @@ import { orgHasHrFeature } from '@/lib/hrAccess'
 import { computeStaffPayroll, loadOvertimeSettings, staffForPayrollMonth } from '@/lib/payroll'
 import { isFullMonth, periodLabel, type Period } from '@/lib/accountantSchedule'
 import type { AccountantReport, AccSection } from '@/lib/accountantExport'
+import { closingReturns } from '@/lib/closingReturns'
 
 const saudiDate = (iso: string) => new Date(Date.parse(iso) + 3 * 3600e3).toISOString().slice(0, 10)
 const n = (v: unknown) => Number(v) || 0
@@ -29,7 +30,7 @@ export async function loadAccountantReport(db: SupabaseClient, o: {
   const [pur, clo, prods, unpaid] = await Promise.all([
     has('purchases', 'vat') ? selectAll(() => withBranch(db.from('purchases').select('id,created_at,branch_id,supplier,name,category,qty,unit,amount,has_vat,vat_amount,total_amount,payment_status,invoice_image,invoice_number,supplier_vat_number,invoice_group,qr_verified,qr_mismatch,edited_source')
       .eq('org_id', orgId).is('deleted_at', null).gte('created_at', start).lte('created_at', end)).order('created_at').order('id')) : empty,
-    has('sales', 'vat', 'expenses', 'cash_diff') ? selectAll(() => withBranch(db.from('cashier_closings').select('id,closing_date,branch_id,staff_name,total_sales,mada_amount,visa_amount,mastercard_amount,network_amount,cash_amount,delivery_amount,delivery,total_purchases,difference,status,deficit_reason,deficit_decision,purchases,edited_source')
+    has('sales', 'vat', 'expenses', 'cash_diff') ? selectAll(() => withBranch(db.from('cashier_closings').select('id,closing_date,branch_id,staff_name,total_sales,mada_amount,visa_amount,mastercard_amount,network_amount,cash_amount,delivery_amount,delivery,total_purchases,difference,status,deficit_reason,deficit_decision,purchases,edited_source,returns')
       .eq('org_id', orgId).gte('closing_date', period.start).lte('closing_date', period.end)).order('closing_date').order('id')) : empty,
     has('stock') ? selectAll(() => withBranch(db.from('products').select('id,name,category,qty,unit,avg_cost,branch_id').eq('org_id', orgId).eq('is_active', true)).order('name').order('id')) : empty,
     // الآجل: كل الفواتير غير المدفوعة لين نهاية الفترة (مو بس فواتير الفترة)
@@ -75,7 +76,7 @@ export async function loadAccountantReport(db: SupabaseClient, o: {
     closings: closings.map(c => ({ date: c.closing_date, branch: bn(c.branch_id), staff: c.staff_name, sales: n(c.total_sales), mada: n(c.mada_amount), visa: n(c.visa_amount),
       mastercard: n(c.mastercard_amount), network: n(c.network_amount), delivery: n(c.delivery_amount), cash: n(c.cash_amount), expenses: n(c.total_purchases), difference: n(c.difference),
       status: c.status, deficitReason: c.deficit_reason, deficitDecision: c.deficit_decision, id: c.id, editedSource: c.edited_source || null,
-      deliveryApps: Array.isArray(c.delivery) ? c.delivery : [], drawer: Array.isArray(c.purchases) ? c.purchases : [] })),
+      deliveryApps: Array.isArray(c.delivery) ? c.delivery : [], drawer: Array.isArray(c.purchases) ? c.purchases : [], returns: closingReturns(c) })),
     expenses: closings.flatMap(c => (Array.isArray(c.purchases) ? c.purchases : []).map((e: any) => ({ date: c.closing_date, branch: bn(c.branch_id), staff: c.staff_name,
       item: String(e?.reason || 'بدون وصف').slice(0, 200), amount: n(e?.amount), closingId: c.id, editedSource: c.edited_source || null }))),
     payroll,
