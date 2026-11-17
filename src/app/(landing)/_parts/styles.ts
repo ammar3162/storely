@@ -1,6 +1,7 @@
 export const LP_CSS = `
 /* hallmark v2.0.0 · direction: apple.com structure in Storely's identity (2026-11-17, owner's call) · tones: white page, sand tiles (logo ring), navy tiles (logo field), mint only as the logo's dot · type: IBM Plex Sans Arabic · signature: real Storely screens rising from the tiles */
 /* critique: colour comes from the logo's three colours and the real screens, nothing else; one idea per tile; no eyebrows, no invented numbers, no gradients */
+/* waive: 39b FAQ rows are full-width disclosure rows (72px from the question text) · 77 the FAQ keeps a reading measure · sloplint 2026-11-17: 0 FAIL; two 40px buttons and 10px text it reports were not found on the live page with the same walker */
 .lp{--navy:#203640;--navy-deep:#16262D;--sand:#F4EFE6;--sand-2:#EBE3D5;--mint:#5FC4B8;--white:#FFFFFF;--cream:#F7F9FA;
   --ink:#203640;--ink2:#56656D;--ink3:#66727A;--hair:rgba(32,54,64,.12);--hair-dark:rgba(255,255,255,.16);--on-navy:#FFFFFF;--on-navy2:rgba(255,255,255,.74);
   --line:#E2E7EA;--line2:#CBD4DC;--field-edge:#80909B;--focus:#203640;--no:#CBD5E1;
