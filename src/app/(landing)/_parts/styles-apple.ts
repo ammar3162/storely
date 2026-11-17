@@ -5,7 +5,7 @@ export const AP_CSS = `
 
 /* الواجهة: ثلاثة جوالات — الفيديو في الوسط، وشاشتا المالك والموظف بزاوية — تطلع من أسفل البلاطة */
 .ap-hero{background:var(--light);text-align:center;padding:60px 20px 0;overflow:hidden}
-.ap-hero h1{font-size:clamp(44px,6.6vw,92px);font-weight:700;line-height:1.08;color:var(--navy);overflow-wrap:break-word;min-width:0}
+.ap-hero h1{font-size:clamp(40px,6.6vw,92px);font-weight:700;line-height:1.08;color:var(--navy);overflow-wrap:break-word;min-width:0}
 .ap-lead{font-size:clamp(19px,1.9vw,27px);line-height:1.5;color:var(--ink2);max-width:760px;margin:18px auto 0}
 .ap-acts{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:30px}
 .ap-note{font-size:14.5px;color:var(--ink2);margin-top:16px}
@@ -18,9 +18,9 @@ export const AP_CSS = `
 .ap-video .ap-phone-screen{background:var(--navy)}
 .ap-video video,.ap-cover,.ap-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--navy)}
 .ap-cover{border:0;padding:0;cursor:pointer}
-.ap-play{position:absolute;inset:0;margin:auto;width:76px;height:76px;border-radius:50%;background:var(--white);color:var(--navy);display:grid;place-items:center;box-shadow:var(--play-shadow);transition:transform .2s var(--ease)}
-.ap-cover:hover .ap-play{transform:scale(1.05)}
-.ap-cover:active .ap-play{transform:scale(.96)}
+.ap-play{position:absolute;top:31%;left:50%;transform:translate(-50%,-50%);width:76px;height:76px;border-radius:50%;background:var(--white);color:var(--navy);display:grid;place-items:center;box-shadow:var(--play-shadow);transition:transform .2s var(--ease)}
+.ap-cover:hover .ap-play{transform:translate(-50%,-50%) scale(1.05)}
+.ap-cover:active .ap-play{transform:translate(-50%,-50%) scale(.96)}
 .ap-side{--r:44px;--b:9px;position:absolute;top:84px;width:var(--sw);z-index:2;transform-origin:50% 100%}
 .ap-side-r{right:calc(50% - var(--vw)/2 - var(--sw) + 64px);transform:rotate(7deg)}
 .ap-side-l{left:calc(50% - var(--vw)/2 - var(--sw) + 64px);transform:rotate(-7deg)}
