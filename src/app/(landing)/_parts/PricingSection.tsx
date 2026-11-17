@@ -11,8 +11,7 @@ export default function PricingSection({ m }: { m: LandingState }) {
     <section id="pricing" className="lp-section">
       <div className="lp-wrap">
         <div className="lp-head rv">
-          <span className="lp-tag">{t('pricingTag')}</span>
-          <h2 className="lp-h2">{t('pricingTitle')}</h2>
+          <h1 className="lp-h2">{t('pricingTitle')}</h1>
           <p className="lp-plans-trial">اختر المزايا التي تحتاجها فقط، ولكل ميزة سعرها لكل فرع</p>
         </div>
         <FeaturePricing billing={billing} onBilling={setBilling} />
@@ -25,8 +24,7 @@ export default function PricingSection({ m }: { m: LandingState }) {
       <section id="pricing" className="lp-section">
         <div className="lp-wrap">
           <div className="lp-head rv">
-            <span className="lp-tag">{t('pricingTag')}</span>
-            <h2 className="lp-h2">{t('pricingTitle')}</h2>
+            <h1 className="lp-h2">{t('pricingTitle')}</h1>
             <p className="lp-plans-trial">{(lang as string)==='ar'?'جرّب جميع المزايا مجاناً لمدة 14 يوماً، ثم اختر الباقة التي تناسبك':'Try every feature free for 14 days, then pick the plan that fits you'}</p>
             <div className="lp-toggle">
               <button className={billing==='monthly'?'on':''} onClick={()=>setBilling('monthly')}>{t('billMonthly')}</button>

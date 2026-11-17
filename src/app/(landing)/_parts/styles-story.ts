@@ -3,8 +3,6 @@ export const ST_CSS = `
 .lp{--st-ink:var(--ink);--st-ink2:var(--ink2);--st-ink3:var(--ink3);--st-bg:var(--cream);--st-card:#FFFFFF;--st-sand:#F4EFE6;--st-paper:#FBFAF6;
   --st-teal:#1F7F74;--st-hair:rgba(32,54,64,.10);--st-hair2:rgba(32,54,64,.18);--st-on-ink:#FFFFFF;--st-shadow:rgba(32,54,64,.55);--st-shadow2:rgba(32,54,64,.45);--st-r1:10px;--st-r2:16px;--st-r3:20px;
   --st-font:'IBM Plex Sans Arabic',system-ui,sans-serif;--st-ease:cubic-bezier(.2,.7,.2,1)}
-html,body{overflow-x:clip}
-.lp a:focus-visible,.lp button:focus-visible,.lp input:focus-visible,.lp select:focus-visible,.lp textarea:focus-visible{outline:2px solid var(--st-teal);outline-offset:2px}
 .st-num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 
 /* شريط الإعلانات: سطر ثابت */
@@ -87,11 +85,6 @@ html,body{overflow-x:clip}
 /* الأدوار */
 .st-role-tabs{display:inline-flex;flex-wrap:wrap;gap:4px;padding:4px;border:1px solid var(--st-hair);border-radius:12px;background:var(--st-card);margin-bottom:28px}
 .st-role-tabs button{min-height:44px;border:0;background:none;padding:10px 18px;border-radius:9px;font:500 15px var(--st-font);color:var(--st-ink2);cursor:pointer;transition:background-color .15s var(--st-ease),color .15s var(--st-ease)}
-.st-foot-brand{color:var(--st-on-ink)}
-.lp h1,.lp h2,.lp h3{text-wrap:balance}
-.lp p{text-wrap:pretty}
-.lp-agree a{white-space:nowrap}
-.lp .lp-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
 .st-role-tabs button.on{background:var(--st-ink);color:var(--st-on-ink)}
 .st-role-panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:center}
 .st-role-points{list-style:none;display:flex;flex-direction:column;gap:16px}
