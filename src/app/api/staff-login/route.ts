@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
+import { subStateFromOwner } from '@/lib/subscription'
 import bcrypt from 'bcryptjs'
 import { normalizePhone, samePhone, clientIp, lockedUntil, lockedMessage, recordFailure, recordSuccess, notifyLocked, PER_IP_MAX } from '@/lib/loginThrottle'
 import { createClient } from '@supabase/supabase-js'
-import { generateStaffToken } from '@/lib/staffAuth'
+import { generateStaffToken, staffBlockedMessage } from '@/lib/staffAuth'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -75,9 +76,11 @@ export async function POST(req: Request) {
     // دخول صحيح: نمسح عدّاد الرقم
     await recordSuccess(supabase, phoneKey)
 
-    const { data: orgSub } = await supabase.from('profiles').select('subscription_ends_at').eq('org_id', staff.org_id).eq('role', 'owner').maybeSingle()
-    if ((orgSub as any)?.subscription_ends_at && new Date((orgSub as any).subscription_ends_at) < new Date()) {
-      return NextResponse.json({ error: 'انتهت فترة الاشتراك. يرجى إبلاغ صاحب المنشأة لتجديد الاشتراك', subscriptionExpired: true }, { status: 403 })
+    // المنشأة منتهية أو موقوفة من الإدارة → ما يدخل الموظف
+    const { data: orgSub } = await supabase.from('profiles').select('status,subscription_type,subscription_ends_at').eq('org_id', staff.org_id).eq('role', 'owner').maybeSingle()
+    const sub = subStateFromOwner(orgSub as any)
+    if (sub.blocked) {
+      return NextResponse.json({ error: staffBlockedMessage(sub.reason), subscriptionExpired: true, reason: 'subscription_expired' }, { status: 403 })
     }
 
     const token = generateStaffToken(staff.id, staff.org_id, staff.branch_id)

@@ -61,3 +61,13 @@ describe('orgSubscriptionState', () => {
     expect((await orgSubscriptionState('org-err', counting(null, { n: 0 }, true))).blocked).toBe(false)
   })
 })
+
+
+import { trialEndsFromNow, TRIAL_DAYS } from './subscription'
+describe('trial length is decided by the server', () => {
+  it('ends exactly 14 days after signup', () => {
+    const now = Date.UTC(2026, 10, 17, 10)
+    expect(TRIAL_DAYS).toBe(14)
+    expect(trialEndsFromNow(now)).toBe(new Date(now + 14 * 86400000).toISOString())
+  })
+})

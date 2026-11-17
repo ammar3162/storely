@@ -18,6 +18,14 @@ export async function isSubscriptionActive(supabase: any, orgId: string): Promis
   }
 }
 
+// ---------- مدة التجربة ----------
+// تُحسب بالخادم فقط عند التسجيل — كانت تجي من المتصفح، فأي أحد يقدر يرسل 2099 (تجربة مفتوحة بكل المزايا)
+// أو يحذفها (بدون تاريخ = ما تنتهي أبداً)
+export const TRIAL_DAYS = 14
+export function trialEndsFromNow(now = Date.now()): string {
+  return new Date(now + TRIAL_DAYS * 86400000).toISOString()
+}
+
 // ---------- اشتراك المنشأة لكل حساباتها (المالك والمدراء) ----------
 // المدير يتبع اشتراك المالك: التاريخ اللي يقفل المالك يقفله هو بعد — مو تاريخ حسابه هو.
 export type OrgSubState = { blocked: boolean; reason: 'expired' | 'suspended' | null; endsAt: string | null; type: string | null }
