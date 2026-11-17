@@ -11,29 +11,29 @@ export default function LoginForm({ m }: { m: LoginState }) {
             {!accountStatus && mode==='login' && (
               <>
                 <div style={{marginBottom:24,textAlign:'center' as const}}>
-                  <h1 style={{fontSize:22,fontWeight:800,color:'var(--storely-text)',marginBottom:8,letterSpacing:'-0.5px'}}>{t('login.welcomeBack')}</h1>
-                  <p style={{fontSize:15,color:'#6b7280'}}>{t('login.welcomeSub')}</p>
+                  <h1 style={{fontSize:22,fontWeight:600,color:'var(--storely-text)',marginBottom:8,letterSpacing:'-0.5px'}}>{t('login.welcomeBack')}</h1>
+                  <p style={{fontSize:17,color:'#6b7280'}}>{t('login.welcomeSub')}</p>
                 </div>
-                {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'11px 14px',marginBottom:16,fontSize:13,color:'#dc2626',fontWeight:600}}>{error}</div>}
+                {error && <div style={{background:'#fef2f2',border:'1px solid #fecaca',borderRadius:12,padding:'11px 14px',marginBottom:16,fontSize:15,color:'#dc2626',fontWeight:600}}>{error}</div>}
                 <button type="button" onClick={handleGoogle} disabled={loading}
-                  style={{width:'100%',padding:'13px',background:'white',border:'1.5px solid var(--storely-border)',borderRadius:10,fontSize:15,fontWeight:700,color:'var(--storely-text)',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+                  style={{width:'100%',padding:'13px',background:'white',border:'1.5px solid var(--storely-border)',borderRadius:999,fontSize:17,fontWeight:600,color:'var(--storely-text)',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
                   <GoogleIcon/> {t('login.continueWithGoogle')}
                 </button>
-                <div style={{display:'flex',alignItems:'center',gap:12,margin:'18px 0',color:'var(--storely-subtle)',fontSize:12}}>
-                  <div style={{flex:1,height:1,background:'#e5e7eb'}}/>{t('login.orWithEmail')}<div style={{flex:1,height:1,background:'#e5e7eb'}}/>
+                <div style={{display:'flex',alignItems:'center',gap:12,margin:'18px 0',color:'var(--storely-subtle)',fontSize:13}}>
+                  <div style={{flex:1,height:1,background:'var(--storely-border)'}}/>{t('login.orWithEmail')}<div style={{flex:1,height:1,background:'var(--storely-border)'}}/>
                 </div>
                 <form onSubmit={handleLogin} style={{display:'flex',flexDirection:'column',gap:14}}>
                   <div>
-                    <label style={{fontSize:13,fontWeight:600,color:'var(--storely-text)',display:'block',marginBottom:6}}>{t('login.email')}</label>
+                    <label style={{fontSize:15,fontWeight:600,color:'var(--storely-text)',display:'block',marginBottom:6}}>{t('login.email')}</label>
                     <input className="inp" type="email" required value={email}
                       onChange={e=>setEmail(e.target.value)}
                       placeholder="example@email.com"/>
                   </div>
                   <div>
                     <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
-                      <label style={{fontSize:13,fontWeight:600,color:'var(--storely-text)'}}>{t('login.password')}</label>
+                      <label style={{fontSize:15,fontWeight:600,color:'var(--storely-text)'}}>{t('login.password')}</label>
                       <button type="button" onClick={()=>{setMode('forgot');setError('')}}
-                        style={{background:'none',border:'none',fontSize:13,color:'#203640',cursor:'pointer',fontFamily:'inherit',fontWeight:600,padding:0}}>
+                        style={{background:'none',border:'none',fontSize:15,color:'#203640',cursor:'pointer',fontFamily:'inherit',fontWeight:600,padding:0}}>
                         {t('login.forgotPassword')}
                       </button>
                     </div>
@@ -44,14 +44,14 @@ export default function LoginForm({ m }: { m: LoginState }) {
                     {loading?<span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span style={{width:16,height:16,border:'2px solid rgba(255,255,255,.3)',borderTopColor:'white',borderRadius:'50%',animation:'spin .8s linear infinite',display:'inline-block'}}/>{t('login.loggingIn')}</span>:t('login.loginBtn')}
                   </button>
                 </form>
-                <div style={{textAlign:'center',marginTop:24,fontSize:13,color:'#6b7280'}}>
+                <div style={{textAlign:'center',marginTop:24,fontSize:15,color:'#6b7280'}}>
                   {t('login.noAccount')}{' '}
-                  <button onClick={()=>{setMode('register');setError('');setStep(1)}} style={{background:'none',border:'none',color:'#203640',fontWeight:700,cursor:'pointer',fontFamily:'inherit',fontSize:13}}>
+                  <button onClick={()=>{setMode('register');setError('');setStep(1)}} style={{background:'none',border:'none',color:'#203640',fontWeight:600,cursor:'pointer',fontFamily:'inherit',fontSize:15}}>
                     {t('login.signupNow')}
                   </button>
                 </div>
                 <button type="button" className="show-in-app" onClick={()=>{setStaffDevice(true);window.location.href='/staff'}}
-                  style={{width:'100%',marginTop:14,padding:'12px',background:'white',border:'1.5px solid var(--storely-border)',borderRadius:12,fontSize:14,fontWeight:700,color:'#203640',cursor:'pointer',fontFamily:'inherit'}}>
+                  style={{width:'100%',marginTop:14,padding:'12px',background:'white',border:'1.5px solid var(--storely-border)',borderRadius:20,fontSize:17,fontWeight:600,color:'#203640',cursor:'pointer',fontFamily:'inherit'}}>
                   أنا موظف — دخول برقم الجوال و PIN
                 </button>
               </>

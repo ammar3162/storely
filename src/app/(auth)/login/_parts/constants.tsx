@@ -56,7 +56,7 @@ export const PHONE_RULES: Record<string,{length:number, prefix:string, placehold
 export const PLANS: { v: 'essential' | 'ops' | 'full'; desc: string; descEn: string; color: string }[] = [
   { v:'essential', desc:'المخزون والموردين والمشتريات والفواتير',          descEn:'Inventory, suppliers, purchases & invoices', color:'#203640' },
   { v:'ops',       desc:'كل الأساسية + إقفال الكاشير اليومي',             descEn:'Essential + daily cashier closing',          color:'#203640' },
-  { v:'full',      desc:'كل المميزات: الحضور والرواتب والذكاء الاصطناعي', descEn:'Everything: attendance, payroll & AI',       color:'#7c3aed' },
+  { v:'full',      desc:'كل المميزات: الحضور والرواتب والذكاء الاصطناعي', descEn:'Everything: attendance, payroll & AI',       color:'var(--storely-navy)' },
 ]
 export const PLAN_EN: Record<string, string> = { essential: 'Essential', ops: 'Operations', full: 'Complete' }
 

@@ -75,24 +75,24 @@ export default function VerifyDevicePage() {
     <div className="vd">
       <style>{`
         .vd{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;direction:rtl;
-          font-family:var(--storely-font);background:radial-gradient(900px 420px at 50% -10%,#d9f4f2 0%,rgba(217,244,242,0) 70%),#f7faf9}
-        .vd-card{width:100%;max-width:420px;background:#fff;border:1px solid var(--storely-border);border-radius:20px;padding:32px 26px;box-shadow:0 20px 50px -30px rgba(11,59,58,.35);text-align:center}
+          font-family:var(--storely-font);background:var(--storely-background)}
+        .vd-card{width:100%;max-width:420px;background:#fff;border:none;border-radius:22px;padding:32px 26px;box-shadow:0 12px 40px rgba(0,0,0,.06);text-align:center}
         .vd-icon{width:60px;height:60px;border-radius:18px;background:var(--storely-background);color:#203640;display:grid;place-items:center;margin:0 auto 16px}
-        .vd h1{font-size:22px;font-weight:700;color:var(--storely-text);margin:0 0 8px}
-        .vd p{font-size:15px;color:var(--storely-text);line-height:1.8;margin:0}
-        .vd-email{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 12px;border-radius:99px;background:#f3f4f6;font-size:14px;font-weight:600;color:var(--storely-text)}
-        .vd label{display:block;text-align:start;font-size:14px;font-weight:600;color:var(--storely-text);margin:22px 0 6px}
-        .vd input{width:100%;padding:14px;border:1.5px solid #d1d5db;border-radius:12px;font-size:26px;font-weight:700;letter-spacing:10px;text-align:center;color:var(--storely-text);font-family:inherit;outline:none;direction:ltr}
-        .vd input:disabled{background:#f3f4f6}
-        .vd input:focus{border-color:#203640;box-shadow:0 0 0 3px rgba(15,118,110,.12)}
-        .vd-btn{width:100%;margin-top:14px;padding:14px;border:none;border-radius:12px;background:#203640;color:#fff;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer}
+        .vd h1{font-size:22px;font-weight:600;color:var(--storely-text);margin:0 0 8px}
+        .vd p{font-size:17px;color:var(--storely-text);line-height:1.6;margin:0}
+        .vd-email{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 12px;border-radius:99px;background:var(--storely-fill);font-size:15px;font-weight:600;color:var(--storely-text)}
+        .vd label{display:block;text-align:start;font-size:15px;font-weight:500;color:var(--storely-text);margin:22px 0 6px}
+        .vd input{width:100%;padding:14px;border:1px solid var(--storely-control-border);border-radius:14px;font-size:26px;font-weight:600;letter-spacing:10px;text-align:center;color:var(--storely-text);font-family:inherit;outline:none;direction:ltr}
+        .vd input:disabled{background:var(--storely-fill)}
+        .vd input:focus{border-color:#203640;box-shadow:0 0 0 3px rgba(32,54,64,.15)}
+        .vd-btn{width:100%;min-height:50px;margin-top:14px;padding:13px;border:none;border-radius:999px;background:#203640;color:#fff;font-size:17px;font-weight:500;font-family:inherit;cursor:pointer}
         .vd-btn:disabled{opacity:.6;cursor:not-allowed}
-        .vd-err{margin-top:12px;padding:10px 12px;border-radius:10px;background:#fef2f2;color:#991b1b;font-size:14px;font-weight:600}
-        .vd-info{margin-top:12px;font-size:14px;color:#203640;font-weight:600}
-        .vd-links{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:18px;font-size:14px}
+        .vd-err{margin-top:12px;padding:10px 12px;border-radius:12px;background:#fef2f2;color:#991b1b;font-size:15px;font-weight:600}
+        .vd-info{margin-top:12px;font-size:15px;color:#203640;font-weight:600}
+        .vd-links{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:18px;font-size:15px}
         .vd-link{background:none;border:none;padding:0;font:inherit;font-weight:600;color:#203640;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
         .vd-link:disabled{color:#6b7280;cursor:default}
-        .vd-hint{margin-top:16px;font-size:13px;color:var(--storely-text);line-height:1.7}
+        .vd-hint{margin-top:16px;font-size:15px;color:var(--storely-text);line-height:1.7}
       `}</style>
       <div className="vd-card">
         <div className="vd-icon"><ShieldCheck size={30} /></div>
