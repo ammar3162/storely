@@ -163,7 +163,7 @@ export default function SupplierStorefrontPage() {
       {/* Header */}
       <div style={{background:'#203640',padding:'32px 20px'}}>
         <div style={{maxWidth:800,margin:'0 auto'}}>
-          <button onClick={()=>router.push('/marketplace')} style={{background:'rgba(255,255,255,.1)',border:'none',color:'white',borderRadius:999,padding:'8px 14px',cursor:'pointer',fontFamily:'inherit',fontSize:15,fontWeight:600,marginBottom:20}}>← رجوع للموردين</button>
+          <button onClick={()=>router.push('/marketplace')} style={{background:'rgba(255,255,255,.1)',border:'none',color:'white',borderRadius:999,padding:'8px 14px',cursor:'pointer',fontFamily:'inherit',fontSize:15,fontWeight:500,marginBottom:20,whiteSpace:'nowrap'}}>← رجوع للموردين</button>
           <div style={{display:'flex',alignItems:'center',gap:16}}>
             <div style={{width:64,height:64,borderRadius:20,background:'rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:30}}><FeatureIcon name="🚚" size={30} /></div>
             <div>

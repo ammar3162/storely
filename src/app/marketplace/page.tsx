@@ -65,7 +65,7 @@ export default function MarketplacePage() {
       <style>{`*{box-sizing:border-box}`}</style>
       <div style={{background:'#203640',padding:'32px 20px 24px'}}>
         <div style={{maxWidth:900,margin:'0 auto'}}>
-          <button onClick={()=>window.location.href='/dashboard'} style={{background:'rgba(255,255,255,.1)',border:'none',color:'white',borderRadius:999,padding:'8px 14px',cursor:'pointer',fontFamily:'inherit',fontSize:15,fontWeight:600}}>← رجوع</button>
+          <button onClick={()=>window.location.href='/dashboard'} style={{background:'rgba(255,255,255,.1)',border:'none',color:'white',borderRadius:999,padding:'8px 14px',cursor:'pointer',fontFamily:'inherit',fontSize:15,fontWeight:500,whiteSpace:'nowrap',flexShrink:0}}>← رجوع</button>
         </div>
       </div>
       <div style={{maxWidth:600,margin:'80px auto',textAlign:'center' as const,padding:'0 20px'}}>
@@ -87,7 +87,7 @@ export default function MarketplacePage() {
       <div style={{background:'#203640',padding:'32px 20px 24px'}}>
         <div style={{maxWidth:900,margin:'0 auto'}}>
           <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
-            <button onClick={()=>window.location.href='/dashboard'} style={{background:'rgba(255,255,255,.1)',border:'none',color:'white',borderRadius:999,padding:'8px 14px',cursor:'pointer',fontFamily:'inherit',fontSize:15,fontWeight:600}}>← رجوع</button>
+            <button onClick={()=>window.location.href='/dashboard'} style={{background:'rgba(255,255,255,.1)',border:'none',color:'white',borderRadius:999,padding:'8px 14px',cursor:'pointer',fontFamily:'inherit',fontSize:15,fontWeight:500,whiteSpace:'nowrap',flexShrink:0}}>← رجوع</button>
             <div>
               <h1 style={{fontSize:28,fontWeight:600,color:'white',margin:0}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><FeatureIcon name="🤝" size={15} /></span> الموردون المعتمدون</h1>
               <p style={{fontSize:13,color:'rgba(255,255,255,.6)',margin:'4px 0 0'}}>موردون معتمدون من Storely مع عروض وأولوية توصيل حصرية</p>
@@ -252,7 +252,7 @@ export default function MarketplacePage() {
         <div style={{marginTop:32,background:'#203640',borderRadius:20,padding:'24px',textAlign:'center'}}>
           <div style={{fontSize:20,fontWeight:600,color:'white',marginBottom:8}}>هل أنت مورد؟</div>
           <div style={{fontSize:15,color:'rgba(255,255,255,.7)',marginBottom:16}}>انضم لشبكة موردينا المعتمدين واستفد من قاعدة عملائنا</div>
-          <a href="/suppliers-join" style={{display:'inline-block',padding:'12px 28px',background:'#203640',color:'white',borderRadius:20,fontSize:17,fontWeight:600,textDecoration:'none',boxShadow:'0 4px 14px rgba(22,163,74,.3)'}}>
+          <a href="/suppliers-join" style={{display:'inline-block',padding:'12px 28px',background:'white',color:'#203640',borderRadius:999,fontSize:17,fontWeight:500,textDecoration:'none',boxShadow:'none'}}>
             تقدم الآن ←
           </a>
         </div>
