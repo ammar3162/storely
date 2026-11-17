@@ -14,6 +14,7 @@ import { selectAll } from '@/lib/selectAll'
 import { computeClosing } from '@/lib/cashierClosingCalc'
 import { deliveryFromInput, rememberApps } from '@/lib/deliveryApps'
 import { fetchExternal } from '@/lib/fetchExternal'
+import { returnsFromInput, previousReturns, type ClosingReturn } from '@/lib/closingReturns'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
 
     const {
       total_sales, mada_amount, visa_amount, mastercard_amount,
-      cash_amount, purchases, delivery, network_image, sales_image, deficit_reason,
+      cash_amount, purchases, delivery, network_image, sales_image, deficit_reason, returns,
     } = await req.json()
 
     // الاسم والفرع والدور من قاعدة البيانات — وما يقفل الصندوق إلا كاشير فعّال
@@ -73,6 +74,10 @@ export async function POST(req: Request) {
     const { total_sales: sales, mada_amount: mada, visa_amount: visa, mastercard_amount: mastercard, cash_amount: cash, network_amount: network,
       purchases: purchasesList, total_purchases: totalPurchases, delivery: deliveryList, delivery_amount: deliveryAmount, expected_cash: expectedCash, difference, status } = calc
 
+    // الفواتير المرتجعة (للتوثيق): كل وحدة بصورة ورقم — الصورة لازم تكون مرفوعة على تخزيننا
+    const ret = returnsFromInput(returns, safeImageUrl)
+    if (!ret.ok) return NextResponse.json({ error: ret.error }, { status: 400 })
+
     // العجز لازم له سبب — ما ينقبل التقفيل بدونه
     const deficitReason = status === 'deficit' ? String(deficit_reason || '').trim().slice(0, 500) : ''
     if (status === 'deficit' && deficitReason.length < 3) {
@@ -86,6 +91,9 @@ export async function POST(req: Request) {
     const businessDate = computeBusinessDate({ startHour: (orgDay as any)?.business_day_start_hour })
     const locked = await lockedFor(supabase, org_id, [businessDate])
     if (locked) return NextResponse.json({ error: locked }, { status: 423 })
+    // نفس الفاتورة انسجلت مرتجع قبل بنفس الفرع؟ نعلّمها «مكرر» للمالك (ما نمنع الحفظ)
+    const prev = await previousReturns(supabase as any, org_id, branch_id || null, ret.returns.map(r => r.invoice_no), businessDate).catch(() => ({} as Record<string, string>))
+    const returnsList: ClosingReturn[] = ret.returns.map(r => (prev[r.invoice_no] ? { ...r, dup_of: prev[r.invoice_no] } : r))
     const { data, error } = await supabase
       .from('cashier_closings')
       .insert({
@@ -112,6 +120,7 @@ export async function POST(req: Request) {
         deficit_decision: status === 'deficit' ? 'pending' : null,
         network_image: safeImageUrl(network_image),
         sales_image: safeImageUrl(sales_image),
+        returns: returnsList,
       })
       .select()
       .single()
@@ -133,8 +142,9 @@ export async function POST(req: Request) {
       // إشعار داخل النظام — يصل دائماً بغض النظر عن موافقة واتساب
       // الإشعار داخل النظام بالرمز ⃁، والإشعار الفوري بـ«ر.س» لأن بعض الجوالات لا تعرض الرمز الجديد
       const statusText = (cur: string) => status === 'balanced' ? 'مطابق تماماً' : status === 'deficit' ? `يوجد عجز: ${Math.abs(difference).toFixed(2)} ${cur} — السبب: ${deficitReason}` : `يوجد زيادة: ${Math.abs(difference).toFixed(2)} ${cur}`
+      const returnsNote = returnsList.length ? ` — فواتير مرتجعة: ${returnsList.length}${returnsList.some(r => r.dup_of) ? ' (فيها مكرر)' : ''}` : ''
       await notifyInsert((supabase as any), {
-        org_id, branch_id: branch_id || null, title: `إقفال كاشير: ${staff_name}`, message: `إجمالي المبيعات: ${sales.toFixed(2)} ⃁ — ${statusText('⃁')}`, type: 'info', read: false
+        org_id, branch_id: branch_id || null, title: `إقفال كاشير: ${staff_name}`, message: `إجمالي المبيعات: ${sales.toFixed(2)} ⃁ — ${statusText('⃁')}${returnsNote}`, type: 'info', read: false
       })
       // قرار العجز — إشعار داخل النظام فقط، فيه زر اعتماد الخصم أو رفضه
       if (status === 'deficit' && data) {
@@ -194,6 +204,11 @@ export async function POST(req: Request) {
             purchasesLine = `\n🧾 مسحوبات:\n${itemsList}\n  الإجمالي: *${totalPurchases.toFixed(2)} ر.س*`
           }
 
+          const dupCount = returnsList.filter(r => r.dup_of).length
+          const returnsLine = returnsList.length
+            ? `\n\n↩️ فواتير مرتجعة: *${returnsList.length}* (${returnsList.map(r => r.invoice_no).join('، ')})${dupCount ? `\n  ⚠️ ${dupCount === 1 ? 'فاتورة مسجّلة' : `${dupCount} فواتير مسجّلة`} مرتجعاً من قبل` : ''}\n  الصور في تقرير الإقفالات`
+            : ''
+
           msg = `🟢 *Storely — إقفال كاشير*\n\n` +
             `👤 الموظف: *${staff_name}*\n` +
             branchLine +
@@ -203,6 +218,7 @@ export async function POST(req: Request) {
             deliveryLine + `\n\n` +
             `💵 الكاش الفعلي: *${cash.toFixed(2)} ر.س*` +
             purchasesLine +
+            returnsLine +
             `\n\n${statusLine}`
         }
 
@@ -244,7 +260,7 @@ export async function GET(req: Request) {
     const { data, error } = await selectAll(() => {
       let query = supabase
         .from('cashier_closings')
-        .select('id,branch_id,staff_id,closing_date,created_at,staff_name,total_sales,network_amount,mada_amount,visa_amount,mastercard_amount,cash_amount,delivery,delivery_amount,edited_at,edited_by,edited_source,edit_count,total_purchases,difference,status,deficit_reason,deficit_decision,deficit_decided_at,sales_image,network_image,purchases')
+        .select('id,branch_id,staff_id,closing_date,created_at,staff_name,total_sales,network_amount,mada_amount,visa_amount,mastercard_amount,cash_amount,delivery,delivery_amount,edited_at,edited_by,edited_source,edit_count,total_purchases,difference,status,deficit_reason,deficit_decision,deficit_decided_at,sales_image,network_image,purchases,returns')
         .eq('org_id', org_id)
         .order('closing_date', { ascending: false })
         .order('created_at', { ascending: false })

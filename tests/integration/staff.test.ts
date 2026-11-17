@@ -366,6 +366,59 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
     })
   })
 
+  describe('cashier closing with returned invoices', () => {
+    it('saves photo + number + optional reason (record only, cash math unchanged), flags repeats from earlier closings, and the owner sees them', async () => {
+      process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
+      const { generateStaffToken } = await import('@/lib/staffAuth')
+      const closing = await import('@/app/api/cashier-closing/route')
+      const check = await import('@/app/api/cashier-closing/returns-check/route')
+      const { previousReturns } = await import('@/lib/closingReturns')
+      const { data: st, error: stErr } = await db.from('staff_members').insert({
+        org_id: orgId, branch_id: branchA, name: 'كاشير مرتجعات', phone: uniqPhone(), pin: 'x', is_active: true, role: 'cashier',
+      } as any).select('id').single()
+      if (stErr) throw stErr
+      const token = generateStaffToken((st as any).id, orgId, branchA)
+      const withToken = (handler: any, body: unknown) => handler(new Request('http://test/api', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body),
+      })).then(async (r: Response) => ({ status: r.status, json: await r.json() as any }))
+      const photo = `${(process.env.NEXT_PUBLIC_SUPABASE_URL || URL_).replace(/\/$/, '')}/storage/v1/object/public/invoices/invoices/${orgId}-it-return.jpg`
+      const tail = String(stamp).replace(/\D/g, '').slice(-5)
+      const no = `٩${tail.replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[Number(d)])}`, latin = `9${tail}`
+
+      // مبيعات 1000 = مدى 600 + كاش 400 ومعه مرتجع: الحساب ما يتغير (مطابق)
+      const r1 = await withToken(closing.POST, { total_sales: 1000, mada_amount: 600, cash_amount: 400, purchases: [], delivery: [],
+        returns: [{ invoice_no: no, photo, reason: 'unsatisfied' }] })
+      expect(r1.status).toBe(200)
+      const s1 = (await db.from('cashier_closings').select('returns,status,expected_cash').eq('id', r1.json.closing.id).single()).data as any
+      expect(s1.status).toBe('balanced')
+      expect(Number(s1.expected_cash)).toBe(400)
+      expect(s1.returns).toEqual([{ invoice_no: latin, photo, reason: 'unsatisfied' }])
+
+      // قبل الحفظ الثاني: الكاشير يتنبّه إن الفاتورة انسجلت قبل
+      const pre = await withToken(check.POST, { invoice_nos: [latin, '0000'] })
+      expect(pre.status).toBe(200)
+      expect(Object.keys(pre.json.previous)).toEqual([latin])
+
+      // نفس الفاتورة مرة ثانية: تنحفظ وتتعلّم «مكررة» بتاريخ الإقفال الأول
+      const r2 = await withToken(closing.POST, { total_sales: 500, mada_amount: 500, cash_amount: 0, purchases: [], delivery: [],
+        returns: [{ invoice_no: latin, photo }] })
+      expect(r2.status).toBe(200)
+      const s2 = (await db.from('cashier_closings').select('returns,closing_date').eq('id', r2.json.closing.id).single()).data as any
+      expect(s2.returns[0]).toMatchObject({ invoice_no: latin, reason: null })
+      expect(s2.returns[0].dup_of).toBeTruthy()
+
+      // ناقص صورة، أو صورة من موقع ثاني، أو رقم مكرر بنفس الإقفال: يرفض
+      expect((await withToken(closing.POST, { total_sales: 10, cash_amount: 10, returns: [{ invoice_no: '1' }] })).status).toBe(400)
+      expect((await withToken(closing.POST, { total_sales: 10, cash_amount: 10, returns: [{ invoice_no: '1', photo: 'https://evil.example/x.jpg' }] })).status).toBe(400)
+      expect((await withToken(closing.POST, { total_sales: 10, cash_amount: 10, returns: [{ invoice_no: '1', photo }, { invoice_no: '١', photo }] })).status).toBe(400)
+
+      // المالك يشوفها بقائمة الإقفالات، ومنشأة ثانية ما تشوف تكرار من منشأتنا
+      const list = await call(closing.GET, 'GET', `/api/cashier-closing?org_id=${orgId}`)
+      expect(list.json.closings.find((c: any) => c.id === r1.json.closing.id).returns).toHaveLength(1)
+      expect(await previousReturns(db as any, crypto.randomUUID(), branchA, [latin], s2.closing_date)).toEqual({})
+    })
+  })
+
   describe('accountant edits from the portal', () => {
     it('accountant edits a closing and an invoice (applied at once, marked «from the accountant»), is limited by sections/branch/locks, and the owner can revert', async () => {
       process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'

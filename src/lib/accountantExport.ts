@@ -7,6 +7,7 @@ const loadExcel = async () => (await import('exceljs')).default
 export { ACC_SECTIONS, type AccSection } from './accountantSections'
 import type { AccSection } from './accountantSections'
 import { fileLink, siteOrigin } from '@/lib/invoiceUrl'
+import { returnReasonAr, type ClosingReturn } from '@/lib/closingReturns'
 
 export type AccPurchase = { date: string; branch?: string | null; supplier: string | null; name: string; category: string | null; qty: number | null; unit: string | null
   net: number; vat: number; total: number; paid: boolean; invoiceUrl: string | null
@@ -48,7 +49,8 @@ export function taxInvoices(purchases: AccPurchase[]): TaxInvoice[] {
   }).sort((a, b) => a.date.localeCompare(b.date))
 }
 export type AccClosing = { date: string; branch?: string | null; staff: string | null; sales: number; mada: number; visa: number; mastercard: number; network: number
-  delivery?: number; cash: number; id?: string; editedSource?: string | null; expenses: number; difference: number; status: string | null; deficitReason: string | null; deficitDecision: string | null }
+  delivery?: number; cash: number; id?: string; editedSource?: string | null; expenses: number; difference: number; status: string | null; deficitReason: string | null; deficitDecision: string | null
+  returns?: ClosingReturn[] }   // الفواتير المرتجعة (صورة + رقم + سبب) — للتوثيق
 export type AccExpense = { date: string; branch?: string | null; staff: string | null; item: string; amount: number }
 export type AccPayroll = { name: string; basic: number; housing: number; transport: number; food: number; gross: number; overtime: number; bonuses: number
   deductions: number; latePenalties: number; advances: number; net: number
@@ -186,6 +188,7 @@ export async function buildAccountantWorkbook(r: AccountantReport, opts: { water
   const has = (s: AccSection) => r.sections.includes(s)
   const t = summarize(r)
   const branchCol: Col[] = r.branchName ? [] : [{ header: 'الفرع', key: 'branch', width: 16 }]
+  const anyReturns = r.closings.some(c => (c.returns || []).length > 0)
 
   // الملخص
   const ws = wb.addWorksheet('الملخص', { views: [{ rightToLeft: true }] })
@@ -226,9 +229,24 @@ export async function buildAccountantWorkbook(r: AccountantReport, opts: { water
     { header: 'إجمالي المبيعات', key: 'sales', width: 15, money: true }, { header: 'مدى', key: 'mada', width: 12, money: true }, { header: 'فيزا', key: 'visa', width: 12, money: true },
     { header: 'ماستركارد', key: 'mastercard', width: 12, money: true }, { header: 'الشبكة', key: 'network', width: 12, money: true }, { header: 'التوصيل', key: 'delivery', width: 12, money: true }, { header: 'الكاش', key: 'cash', width: 12, money: true },
     { header: 'مصروفات', key: 'expenses', width: 11, money: true }, { header: 'الفرق', key: 'difference', width: 11, money: true }, { header: 'الحالة', key: 'status', width: 9 },
-    { header: 'التعديل', key: 'edited', width: 17 },
-  ], r.closings.map(c => ({ ...c, delivery: c.delivery || 0, staff: c.staff || '—', status: CLOSING_STATUS[c.status || ''] || '—', edited: editedLabel(c.editedSource) })),
+    { header: 'التعديل', key: 'edited', width: 17 }, ...(anyReturns ? [{ header: 'المرتجعات', key: 'returnsCount', width: 10 }] : []),
+  ], r.closings.map(c => ({ ...c, delivery: c.delivery || 0, staff: c.staff || '—', status: CLOSING_STATUS[c.status || ''] || '—', edited: editedLabel(c.editedSource), returnsCount: (c.returns || []).length || '' })),
   { date: 'الإجمالي', sales: t.sales, mada: t.mada, visa: t.visa, mastercard: t.mastercard, network: t.network, delivery: t.delivery, cash: t.cash, expenses: sum(r.closings, c => c.expenses), difference: sum(r.closings, c => c.difference) })
+
+  // الفواتير المرتجعة: سطر لكل فاتورة مع رابط صورتها (تنفتح للمحاسب المربوط)
+  if (has('sales') && anyReturns) {
+    const rows = r.closings.flatMap(c => (c.returns || []).map(x => ({ date: c.date, branch: c.branch || '—', staff: c.staff || '—', invoiceNo: x.invoice_no,
+      reason: returnReasonAr(x.reason) || 'بدون سبب', dup: x.dup_of ? `مكررة (سُجّلت في ${x.dup_of})` : '', photo: null as any, url: x.photo })))
+    const rws = addTable(wb, 'الفواتير المرتجعة', [
+      { header: 'التاريخ', key: 'date', width: 12 }, ...branchCol, { header: 'الكاشير', key: 'staff', width: 16 }, { header: 'رقم الفاتورة', key: 'invoiceNo', width: 16 },
+      { header: 'السبب', key: 'reason', width: 18 }, { header: 'تنبيه', key: 'dup', width: 26 }, { header: 'صورة الفاتورة', key: 'photo', width: 15 },
+    ], rows, { date: 'الإجمالي', invoiceNo: rows.length } as any)
+    rows.forEach((x, idx) => {
+      const row = rws.getRow(idx + 2)
+      if (x.dup) row.getCell('dup').font = { bold: true, color: { argb: 'FFB54708' } }
+      if (x.url && /^https:\/\//.test(x.url)) { const cell = row.getCell('photo'); cell.value = { text: 'عرض الصورة', hyperlink: fileLink(x.url, siteOrigin()) }; cell.font = { color: { argb: 'FF2563EB' }, underline: true } }
+    })
+  }
 
   // الفواتير الضريبية تهم المنشأة المسجلة بس (هي اللي تخصم ضريبة المشتريات)
   if ((has('purchases') || has('vat')) && r.vatRegistered) {
