@@ -7,12 +7,12 @@ export const C = {
   danger:dsColors.danger,  dangerL:dsColors.dangerLight,  dangerB:dsColors.dangerBorder,
   warning:dsColors.warning, warningL:dsColors.warningLight, warningB:dsColors.warningBorder,
   info:dsColors.info,    infoL:dsColors.infoLight,    infoB:dsColors.infoBorder,
-  text:'#0f172a', text2:'#0f172a', text3:'#1e293b', text4:'#334155',   // كتابة سوداء واضحة
+  text:'var(--storely-text)', text2:'var(--storely-text)', text3:'var(--storely-text)', text4:'var(--storely-text)',   // كتابة سوداء واضحة
   bg:dsColors.bg, surface:dsColors.surface, border:dsColors.border, border2:dsColors.border2,
 }
 
 export const CATS = ['مخزون','مشتريات','أخرى']
 export const CAT_ICONS: Record<string,LucideIcon> = {'مخزون':Package,'مشتريات':ShoppingCart,'أخرى':ClipboardList}
 
-export const lbl: React.CSSProperties = {fontSize:12,fontWeight:700,color:'#1e293b',display:'block',marginBottom:6}
-export const inp: React.CSSProperties = {width:'100%',padding:'10px 12px',border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',background:'white',color:C.text,fontFamily:'inherit'}
+export const lbl: React.CSSProperties = {fontSize:13,fontWeight:600,color:'var(--storely-text)',display:'block',marginBottom:6}
+export const inp: React.CSSProperties = {width:'100%',padding:'10px 12px',border:`1px solid ${C.border2}`,borderRadius:12,fontSize:15,outline:'none',boxSizing:'border-box',background:'white',color:C.text,fontFamily:'inherit'}

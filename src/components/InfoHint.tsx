@@ -59,12 +59,12 @@ export default function InfoHint({ title, summary, more, size = 16, label, child
   const body = (
     <>
       <div className="space-y-1.5">
-        {summary.map(t => <p key={t} className="text-[14px] font-normal leading-6 text-[#203640]">{t}</p>)}
+        {summary.map(t => <p key={t} className="text-[17px] font-normal leading-6 text-[var(--storely-text)]">{t}</p>)}
       </div>
       {more?.length ? (
         <>
           <button type="button" onClick={() => setExpanded(v => !v)} aria-expanded={expanded}
-            className="mt-2 inline-flex items-center gap-1 text-[13px] font-semibold text-[#203640] underline-offset-4 hover:underline">
+            className="mt-2 inline-flex items-center gap-1 text-[15px] font-semibold text-[var(--storely-text)] underline-offset-4 hover:underline">
             {expanded ? 'إخفاء التفاصيل' : 'المزيد'}
             <ChevronDown size={14} className={expanded ? 'rotate-180' : ''} />
           </button>
@@ -72,8 +72,8 @@ export default function InfoHint({ title, summary, more, size = 16, label, child
             <div className="mt-3 space-y-3 border-t border-[#E6ECEF] pt-3">
               {more.map(s => (
                 <div key={s.h}>
-                  <div className="mb-0.5 text-[13px] font-semibold text-[#203640]">{s.h}</div>
-                  {s.p.map(t => <p key={t} className="text-[13px] font-normal leading-6 text-[#4b5565]">{t}</p>)}
+                  <div className="mb-0.5 text-[15px] font-semibold text-[var(--storely-text)]">{s.h}</div>
+                  {s.p.map(t => <p key={t} className="text-[15px] font-normal leading-6 text-[var(--storely-muted)]">{t}</p>)}
                 </div>
               ))}
             </div>
@@ -87,12 +87,12 @@ export default function InfoHint({ title, summary, more, size = 16, label, child
     <>
       {children ? (
         <button ref={btn} type="button" onClick={toggle} aria-label={aria} aria-expanded={open}
-          className="cursor-help rounded-sm text-inherit underline decoration-[#9AA7AE] decoration-dotted decoration-1 underline-offset-[5px] hover:decoration-[#203640] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#203640]">
+          className="cursor-help rounded-sm text-inherit underline decoration-[var(--storely-subtle)] decoration-dotted decoration-1 underline-offset-[5px] hover:decoration-[var(--storely-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#203640]">
           {children}
         </button>
       ) : (
         <button ref={btn} type="button" onClick={toggle} aria-label={aria} title={aria} aria-expanded={open}
-          className="inline-flex shrink-0 items-center justify-center rounded-md p-1 align-middle text-[#66737C] hover:bg-[#EEF2F4] hover:text-[#203640] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#203640]">
+          className="inline-flex shrink-0 items-center justify-center rounded-full p-1 align-middle text-[var(--storely-muted)] hover:bg-[var(--storely-fill)] hover:text-[var(--storely-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#203640]">
           <Info size={size} />
         </button>
       )}
@@ -100,10 +100,10 @@ export default function InfoHint({ title, summary, more, size = 16, label, child
         mobile ? (
           <div role="dialog" aria-modal="true" aria-label={title} onClick={close} className="fixed inset-0 z-[1000] flex items-end bg-[rgba(2,6,23,.45)]">
             <div onClick={e => e.stopPropagation()} className="max-h-[80vh] w-full overflow-y-auto rounded-t-2xl bg-white px-5 pb-[calc(20px+env(safe-area-inset-bottom))] pt-3 text-start">
-              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#DEE6EA]" />
+              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--storely-border)]" />
               <div className="mb-2 flex items-center justify-between gap-3">
-                <div className="text-[15px] font-semibold text-[#203640]">{title}</div>
-                <button type="button" onClick={close} aria-label="إغلاق" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#66737C] hover:bg-[#EEF2F4]"><X size={18} /></button>
+                <div className="text-[17px] font-semibold text-[var(--storely-text)]">{title}</div>
+                <button type="button" onClick={close} aria-label="إغلاق" className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--storely-muted)] hover:bg-[var(--storely-fill)]"><X size={18} /></button>
               </div>
               {body}
             </div>
@@ -111,8 +111,8 @@ export default function InfoHint({ title, summary, more, size = 16, label, child
         ) : (
           <div ref={pop} role="dialog" aria-label={title}
             style={{ width: W, top: pos?.top ?? -9999, left: pos?.left ?? -9999 }}
-            className="fixed z-[1000] max-h-[70vh] overflow-y-auto rounded-xl border border-[#DEE6EA] bg-white p-4 text-start shadow-[0_12px_32px_rgba(15,23,42,.14)]">
-            <div className="mb-1.5 text-[14px] font-semibold text-[#203640]">{title}</div>
+            className="fixed z-[1000] max-h-[70vh] overflow-y-auto rounded-[20px] border border-[var(--storely-border)] bg-white p-4 text-start shadow-[0_12px_32px_rgba(15,23,42,.14)]">
+            <div className="mb-1.5 text-[17px] font-semibold text-[var(--storely-text)]">{title}</div>
             {body}
           </div>
         ),

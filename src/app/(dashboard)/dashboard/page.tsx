@@ -36,14 +36,14 @@ function WeeklyBars({ data }: { data:{label:string;value:number}[] }) {
         const last = i===data.length-1
         return (
           <div key={i} className="flex min-w-0 flex-1 flex-col items-center gap-2.5">
-            <div className="flex h-24 w-full items-end overflow-hidden rounded-b-[3px] rounded-t-[7px] bg-[#F4F7F8]">
+            <div className="flex h-24 w-full items-end overflow-hidden rounded-b-[3px] rounded-t-[7px] bg-[var(--storely-fill)]">
               <div
                 title={String(d.value)}
                 className={last ? 'w-full rounded-b-[3px] rounded-t-[7px] bg-[#203640]' : 'w-full rounded-b-[3px] rounded-t-[7px] bg-[#9AA9B1]/60'}
                 style={{height:`${Math.max((d.value/max)*100,4)}%`}}
               />
             </div>
-            <div className={last ? 'text-[13px] font-semibold leading-6 text-[#203640]' : 'text-[13px] font-medium leading-6 text-[#66737C]'}>{d.label}</div>
+            <div className={last ? 'text-[15px] font-semibold leading-6 text-[var(--storely-text)]' : 'text-[15px] font-medium leading-6 text-[var(--storely-muted)]'}>{d.label}</div>
           </div>
         )
       })}
@@ -59,10 +59,10 @@ function FoldCard({ title, summary, children }: { title: string; summary?: strin
     <section className="storely-card">
       <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open} className="flex w-full items-center gap-3 px-4 py-3.5 text-right sm:px-[18px]">
         <span className="min-w-0 flex-1">
-          <span className="block text-[15px] font-bold text-[#203640]">{title}</span>
-          {summary ? <span className="mt-0.5 block text-[12px] font-medium text-[#66737C]">{summary}</span> : null}
+          <span className="block text-[17px] font-semibold text-[var(--storely-text)]">{title}</span>
+          {summary ? <span className="mt-0.5 block text-[13px] font-medium text-[var(--storely-muted)]">{summary}</span> : null}
         </span>
-        <ChevronDown size={18} className="shrink-0 text-[#66737C]" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
+        <ChevronDown size={18} className="shrink-0 text-[var(--storely-muted)]" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
       </button>
       {open ? <div className="border-t border-[var(--storely-border)]">{children}</div> : null}
     </section>
@@ -263,18 +263,18 @@ export default function DashboardPage() {
   ] as (StorelyMetric | false)[]).filter((m): m is StorelyMetric => !!m)
 
   const lowStockColumns: StorelyDataTableColumn<any>[] = [
-    { key: 'name', header: 'الصنف', sortable: true, sortValue: (p:any) => p.name || '', cell: (p:any) => <span className="font-semibold leading-7 text-[#203640]">{p.name}</span> },
+    { key: 'name', header: 'الصنف', sortable: true, sortValue: (p:any) => p.name || '', cell: (p:any) => <span className="font-semibold leading-7 text-[var(--storely-text)]">{p.name}</span> },
     { key: 'qty', header: 'المتاح', sortable: true, sortValue: (p:any) => Number(p.qty || 0), cell: (p:any) => <span className="tabular-nums">{p.qty} {p.unit}</span> },
-    { key: 'reorder', header: 'حد إعادة الطلب', sortable: true, sortValue: (p:any) => Number(p.reorder_point || 0), cell: (p:any) => <span className="tabular-nums text-[#66737C]">{p.reorder_point} {p.unit}</span> },
+    { key: 'reorder', header: 'حد إعادة الطلب', sortable: true, sortValue: (p:any) => Number(p.reorder_point || 0), cell: (p:any) => <span className="tabular-nums text-[var(--storely-muted)]">{p.reorder_point} {p.unit}</span> },
     { key: 'status', header: 'الحالة', cell: (p:any) => Number(p.qty) <= 0 ? <StorelyStatusBadge status="danger">نافد</StorelyStatusBadge> : <StorelyStatusBadge status="warning">منخفض</StorelyStatusBadge> },
     { key: 'action', header: '', className: 'hidden w-12 text-left sm:table-cell', headerClassName: 'hidden sm:table-cell', cell: () => <StorelyTableActionGroup className="justify-end"><StorelyTableAction action="view" className="hover:bg-[#EEF3F5]" onClick={(event)=>{event.stopPropagation(); router.push('/inventory')}} /></StorelyTableActionGroup> },
   ]
 
   const activityColumns: StorelyDataTableColumn<any>[] = [
-    { key: 'product', header: 'الصنف', sortable: true, sortValue: (m:any) => (m.products as any)?.name || '', cell: (m:any) => <span className="font-semibold leading-7 text-[#203640]">{(m.products as any)?.name || '—'}</span> },
+    { key: 'product', header: 'الصنف', sortable: true, sortValue: (m:any) => (m.products as any)?.name || '', cell: (m:any) => <span className="font-semibold leading-7 text-[var(--storely-text)]">{(m.products as any)?.name || '—'}</span> },
     { key: 'type', header: 'النوع', cell: (m:any) => { const label = m.type==='out' ? 'صرف' : m.type==='in' ? 'إضافة' : m.type==='waste' ? 'هدر' : m.type==='adjustment' ? 'تسوية جرد' : m.type==='transfer_in'||m.type==='transfer_out' ? 'تحويل' : 'حركة'; const status = m.type==='out' ? 'info' : m.type==='in' ? 'success' : m.type==='waste' ? 'danger' : 'warning'; return <StorelyStatusBadge status={status}>{label}</StorelyStatusBadge> } },
     { key: 'qty', header: 'الكمية', sortable: true, sortValue: (m:any) => Number(m.qty_change || 0), cell: (m:any) => <span className={'whitespace-nowrap font-semibold tabular-nums ' + (m.qty_change < 0 ? 'text-[#B91C1C]' : 'text-[#047857]')}>{m.qty_change>0?'+':''}{m.qty_change} {(m.products as any)?.unit}</span> },
-    { key: 'date', header: 'الوقت', sortable: true, sortValue: (m:any) => m.created_at || '', cell: (m:any) => <span className="whitespace-nowrap text-[#66737C]">{new Date(m.created_at).toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</span> },
+    { key: 'date', header: 'الوقت', sortable: true, sortValue: (m:any) => m.created_at || '', cell: (m:any) => <span className="whitespace-nowrap text-[var(--storely-muted)]">{new Date(m.created_at).toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</span> },
   ]
 
   const performanceRows = monthComp?.success ? [
@@ -287,21 +287,21 @@ export default function DashboardPage() {
 
   if(loading) return (
     <div className="mx-auto max-w-[1500px] space-y-7">
-      <div className="h-28 animate-pulse rounded-[8px] border border-[#DEE6EA] bg-white" />
+      <div className="h-28 animate-pulse rounded-[20px] border border-[var(--storely-border)] bg-white" />
       <div className="grid gap-5 xl:grid-cols-2">
-        <div className="h-36 animate-pulse rounded-[8px] border border-[#DEE6EA] bg-white" />
-        <div className="h-36 animate-pulse rounded-[8px] border border-[#DEE6EA] bg-white" />
+        <div className="h-36 animate-pulse rounded-[20px] border border-[var(--storely-border)] bg-white" />
+        <div className="h-36 animate-pulse rounded-[20px] border border-[var(--storely-border)] bg-white" />
       </div>
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(380px,0.92fr)]">
-        <div className="h-80 animate-pulse rounded-[8px] border border-[#DEE6EA] bg-white" />
-        <div className="h-80 animate-pulse rounded-[8px] border border-[#DEE6EA] bg-white" />
+        <div className="h-80 animate-pulse rounded-[20px] border border-[var(--storely-border)] bg-white" />
+        <div className="h-80 animate-pulse rounded-[20px] border border-[var(--storely-border)] bg-white" />
       </div>
     </div>
   )
 
   return (
     <ErrorBoundary>
-      <div className="min-h-full text-[#203640] [&_button]:rounded-[6px] [&_button]:font-semibold" dir={dir}>
+      <div className="min-h-full text-[var(--storely-text)]" dir={dir}>
         <div className="mx-auto max-w-[1500px] space-y-4 pb-8">
         <div className="py-2">
         <StorelyPageHeader
@@ -328,10 +328,10 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 gap-px bg-[var(--storely-border)] xl:grid-cols-4">
               {performanceRows.map((m,i)=>(
                 <div key={i} className={'min-w-0 bg-[var(--storely-surface)] px-3.5 py-3 sm:px-[18px] sm:py-4' + (performanceRows.length % 2 && i === performanceRows.length - 1 ? ' col-span-2 xl:col-span-1' : '')}>
-                  <div className="text-[12.5px] font-semibold leading-5 text-[#66737C]">{m.metric}</div>
-                  <div className="mt-1 break-words text-[19px] font-bold leading-7 tabular-nums text-[#203640] sm:mt-2 sm:text-[22px] sm:leading-8">{m.current}</div>
+                  <div className="text-[13px] font-semibold leading-5 text-[var(--storely-muted)]">{m.metric}</div>
+                  <div className="mt-1 break-words text-[22px] font-semibold leading-7 tabular-nums text-[var(--storely-text)] sm:mt-2 sm:text-[22px] sm:leading-8">{m.current}</div>
                   {m.change!==null && m.change!==undefined ? (
-                    <div className={((m.change>=0)!==!!m.inverse ? 'text-[#047857]' : 'text-[#B45309]') + ' mt-1 inline-flex items-center gap-1 text-[12.5px] font-semibold sm:mt-2'} dir="ltr">
+                    <div className={((m.change>=0)!==!!m.inverse ? 'text-[#047857]' : 'text-[#B45309]') + ' mt-1 inline-flex items-center gap-1 text-[13px] font-semibold sm:mt-2'} dir="ltr">
                       {(m.change>=0)!==!!m.inverse ? <TrendingUp size={14}/> : <TrendingDown size={14}/>}
                       {m.change>=0?'+':'-'}{Math.abs(m.change)}%
                     </div>
@@ -348,17 +348,17 @@ export default function DashboardPage() {
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(380px,0.92fr)]">
           <div className="min-w-0 space-y-4">
             {attention ? (
-              <StorelyCard title="تحتاج انتباهك" className={`${cardClass} border-[#D7E3E8]`} actions={<StorelyStatusBadge status="warning" className="h-7 px-2.5 text-[13px]">{notifs.length + suggestions.length + (subAlert ? 1 : 0)}</StorelyStatusBadge>}>
+              <StorelyCard title="تحتاج انتباهك" className={`${cardClass} border-[var(--storely-border)]`} actions={<StorelyStatusBadge status="warning" className="h-7 px-2.5 text-[15px]">{notifs.length + suggestions.length + (subAlert ? 1 : 0)}</StorelyStatusBadge>}>
                 <div className="divide-y divide-[#E6ECEF]">
-                  {subAlert ? <div className="flex flex-col gap-4 px-[18px] py-3.5 text-[13.5px] sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0 font-semibold leading-7 text-[#203640]">{subAlert}</div><StorelyButton size="md" variant="secondary" className={`${secondaryButtonClass} hide-in-app`} onClick={()=>router.push('/settings')}>التفاصيل</StorelyButton></div> : null}
+                  {subAlert ? <div className="flex flex-col gap-4 px-[18px] py-3.5 text-[15px] sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0 font-semibold leading-7 text-[var(--storely-text)]">{subAlert}</div><StorelyButton size="md" variant="secondary" className={`${secondaryButtonClass} hide-in-app`} onClick={()=>router.push('/settings')}>التفاصيل</StorelyButton></div> : null}
                   {suggestions.slice(0,4).map((s:any,i:number)=>(
-                    <div key={'s'+i} className="flex flex-col gap-4 px-[18px] py-3.5 text-[13.5px] sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0"><div className="flex flex-wrap items-center gap-2 font-semibold leading-7 text-[#203640]"><StorelyStatusBadge status={s.urgency==='now'?'danger':'warning'}>{s.urgency==='now'?'اطلب الآن':'خلال ' + Math.max(s.suggestedOrderInDays,0) + ' ' + t('dashboard.days')}</StorelyStatusBadge><span>{s.name}</span></div><div className="mt-1 text-[12px] leading-5 text-[#66737C]">استهلاك {s.dailyRate} {unitFor(s.dailyRate, s.unit)} يومياً · التوريد يأخذ {s.avgLeadTimeDays} {t('dashboard.days')} عادة</div></div>
+                    <div key={'s'+i} className="flex flex-col gap-4 px-[18px] py-3.5 text-[15px] sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0"><div className="flex flex-wrap items-center gap-2 font-semibold leading-7 text-[var(--storely-text)]"><StorelyStatusBadge status={s.urgency==='now'?'danger':'warning'}>{s.urgency==='now'?'اطلب الآن':'خلال ' + Math.max(s.suggestedOrderInDays,0) + ' ' + t('dashboard.days')}</StorelyStatusBadge><span>{s.name}</span></div><div className="mt-1 text-[13px] leading-5 text-[var(--storely-muted)]">استهلاك {s.dailyRate} {unitFor(s.dailyRate, s.unit)} يومياً · التوريد يأخذ {s.avgLeadTimeDays} {t('dashboard.days')} عادة</div></div>
                       <StorelyButton size="md" variant="secondary" className={secondaryButtonClass} onClick={()=>router.push('/suppliers')}>الموردين</StorelyButton>
                     </div>
                   ))}
                   {notifs.map((n:any)=>(
-                    <div key={n.id} className="flex items-start justify-between gap-5 px-[18px] py-3.5 text-[13.5px]"><div className="min-w-0"><div className="font-semibold leading-7 text-[#203640]">{n.title}</div><div className="mt-1.5 text-[12px] leading-5 text-[#66737C]">{n.message}</div></div><StorelyTableActionGroup><StorelyTableAction action="delete" onClick={()=>dismiss(n.id)} aria-label="إخفاء" /></StorelyTableActionGroup></div>
+                    <div key={n.id} className="flex items-start justify-between gap-5 px-[18px] py-3.5 text-[15px]"><div className="min-w-0"><div className="font-semibold leading-7 text-[var(--storely-text)]">{n.title}</div><div className="mt-1.5 text-[13px] leading-5 text-[var(--storely-muted)]">{n.message}</div></div><StorelyTableActionGroup><StorelyTableAction action="delete" onClick={()=>dismiss(n.id)} aria-label="إخفاء" /></StorelyTableActionGroup></div>
                   ))}
                 </div>
               </StorelyCard>
@@ -386,7 +386,7 @@ export default function DashboardPage() {
                 <FoldCard title="آخر 7 أيام" summary={charts.map(c => c.data.reduce((s,d)=>s+d.value,0) + ' ' + c.unit).join(' · ')}>
                   {charts.map((c,i)=>(
                     <div key={i} className={i ? 'border-t border-[var(--storely-border)]' : ''}>
-                      <div className="flex items-center justify-between px-4 pt-3.5 text-[13px] sm:px-[18px]"><span className="font-semibold text-[#203640]">{c.title}</span><span className="tabular-nums text-[#66737C]">{c.data.reduce((s,d)=>s+d.value,0)} {unitFor(c.data.reduce((s,d)=>s+d.value,0), c.unit)}</span></div>
+                      <div className="flex items-center justify-between px-4 pt-3.5 text-[15px] sm:px-[18px]"><span className="font-semibold text-[var(--storely-text)]">{c.title}</span><span className="tabular-nums text-[var(--storely-muted)]">{c.data.reduce((s,d)=>s+d.value,0)} {unitFor(c.data.reduce((s,d)=>s+d.value,0), c.unit)}</span></div>
                       <WeeklyBars data={c.data} />
                     </div>
                   ))}

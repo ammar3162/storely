@@ -319,17 +319,17 @@ export default function ReportsPage() {
         return (
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,300px),1fr))',gap:14,marginTop:14,marginBottom:14}}>
             <div style={{...card,padding:'16px'}}>
-              <div style={{fontSize:font.md,fontWeight:900,color:colors.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><Flame size={17} strokeWidth={2.25}/> أكثر المنتجات صرفاً</div>
+              <div style={{fontSize:font.md,fontWeight:600,color:colors.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><Flame size={17} strokeWidth={2.25}/> أكثر المنتجات صرفاً</div>
               <div style={{fontSize:font.xs,color:colors.text3,marginBottom:16}}>الفترة المحددة</div>
               <div style={{display:'flex',flexDirection:'column',gap:10}}>
                 {top.map((p,i)=>(
                   <div key={i}>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
                       <div style={{display:'flex',alignItems:'center',gap:8}}>
-                        <span style={{fontSize:11,fontWeight:800,color:i<3?colors.primary:colors.text4,width:18}}>{i+1}</span>
-                        <span style={{fontSize:12,fontWeight:700,color:colors.text}}>{p.name}</span>
+                        <span style={{fontSize:12,fontWeight:600,color:i<3?colors.primary:colors.text4,width:18}}>{i+1}</span>
+                        <span style={{fontSize:13,fontWeight:600,color:colors.text}}>{p.name}</span>
                       </div>
-                      <span style={{fontSize:12,fontWeight:800,color:colors.primary}}>{p.qty} {p.unit}</span>
+                      <span style={{fontSize:13,fontWeight:600,color:colors.primary}}>{p.qty} {p.unit}</span>
                     </div>
                     <div style={{height:6,background:colors.border,borderRadius:99,overflow:'hidden'}}>
                       <div style={{height:'100%',width:`${(p.qty/maxVal)*100}%`,background:i===0?colors.primary:i<3?`${colors.primary}99`:`${colors.primary}44`,borderRadius:99}}/>
@@ -339,7 +339,7 @@ export default function ReportsPage() {
               </div>
             </div>
             <div style={{...card,padding:'16px'}}>
-              <div style={{fontSize:font.md,fontWeight:900,color:colors.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><BarChart3 size={17} strokeWidth={2.25}/> الصرف الشهري</div>
+              <div style={{fontSize:font.md,fontWeight:600,color:colors.text,marginBottom:4,display:'flex',alignItems:'center',gap:6}}><BarChart3 size={17} strokeWidth={2.25}/> الصرف الشهري</div>
               <div style={{fontSize:font.xs,color:colors.text3,marginBottom:16}}>توزيع الكميات</div>
               <div style={{display:'flex',alignItems:'flex-end',gap:6,height:120}}>
                 {(()=>{
@@ -356,11 +356,11 @@ export default function ReportsPage() {
                     const mn=new Date(Number(y),Number(m)-1).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',month:'short'})
                     return (
                       <div key={key} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-                        <span style={{fontSize:9,color:colors.text4,fontWeight:700}}>{val}</span>
+                        <span style={{fontSize:12,color:colors.text4,fontWeight:600}}>{val}</span>
                         <div style={{width:'100%',background:colors.border,borderRadius:'6px 6px 0 0',height:90,display:'flex',alignItems:'flex-end',overflow:'hidden'}}>
                           <div style={{width:'100%',background:i===months.length-1?colors.primary:`${colors.primary}66`,height:`${Math.max((val/maxM)*100,4)}%`,borderRadius:'6px 6px 0 0'}}/>
                         </div>
-                        <span style={{fontSize:9,color:colors.text4}}>{mn}</span>
+                        <span style={{fontSize:12,color:colors.text4}}>{mn}</span>
                       </div>
                     )
                   })

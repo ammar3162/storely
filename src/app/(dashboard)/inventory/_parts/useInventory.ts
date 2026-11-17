@@ -214,8 +214,8 @@ export function useInventory() {
   const lowCount=products.filter(p=>p.qty<=p.reorder_point).length
   const totalQty=products.reduce((s,p)=>s+p.qty,0)
 
-  const lbl: React.CSSProperties = {fontSize:10,fontWeight:700,color:C.text3,display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em'}
-  const inp = (extra?:any): React.CSSProperties => ({width:'100%',padding:'10px 12px',border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,outline:'none',boxSizing:'border-box',background:'white',color:C.text,fontFamily:'inherit',...extra})
+  const lbl: React.CSSProperties = {fontSize:12,fontWeight:600,color:C.text3,display:'block',marginBottom:5,textTransform:'uppercase',letterSpacing:'.06em'}
+  const inp = (extra?:any): React.CSSProperties => ({width:'100%',padding:'10px 12px',border:`1px solid ${C.border2}`,borderRadius:12,fontSize:15,outline:'none',boxSizing:'border-box',background:'white',color:C.text,fontFamily:'inherit',...extra})
 
   return { products, setProducts, currentPage, setCurrentPage, hasMore, setHasMore, totalCount, setTotalCount, page, setPage, loading, setLoading, search, setSearch, statusFilter, setStatusFilter, catFilter, setCatFilter, showAdd, setShowAdd, saving, setSaving, editItem, setEditItem, addQty, setAddQty, confirm, setConfirm, form, setForm, showAudit, setShowAudit, showScan, setShowScan, showJardScan, setShowJardScan, countSheet, setCountSheet, showImport, setShowImport, importPreview, setImportPreview, importing, setImporting, jardNotFound, setJardNotFound, visible, setVisible, businessType, setBusinessType, selectedTemplate, setSelectedTemplate, addingTemplate, setAddingTemplate, templateDismissed, setTemplateDismissed, PAGE_SIZE, PER, importFileRef, allCats, filtered, paginated, lowCount, totalQty, lbl, inp, openCount, addTemplateProducts, load, handleSave, doDelete, downloadImportTemplate, handleImportFile, confirmImport, openEdit, exportCSV }
 }

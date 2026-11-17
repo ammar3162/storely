@@ -19,7 +19,7 @@ export default function ProductSheet({ m }: { m: InventoryState }) {
             <div style={{padding:'10px 18px 0',flexShrink:0}}>
               <div style={{width:36,height:4,borderRadius:99,background:C.border2,margin:'0 auto 14px'}}/>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
-                <div style={{fontSize:17,fontWeight:700,color:C.text}}>{editItem?'تعديل المنتج':'منتج جديد'}</div>
+                <div style={{fontSize:17,fontWeight:600,color:C.text}}>{editItem?'تعديل المنتج':'منتج جديد'}</div>
                 <button onClick={()=>{setShowAdd(false);setEditItem(null)}} style={{width:28,height:28,borderRadius:'50%',border:`1px solid ${C.border2}`,background:C.bg,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}}><X size={14} strokeWidth={2.25}/></button>
               </div>
             </div>
@@ -45,7 +45,7 @@ export default function ProductSheet({ m }: { m: InventoryState }) {
                       <label style={lbl}>باركود</label>
                       <div style={{display:'flex',gap:5}}>
                         <input value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} style={{...inp(),flex:1}} placeholder="اختياري"/>
-                        <button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 10px',background:C.primaryL,color:C.primary,border:`1px solid ${C.primaryB}`,borderRadius:8,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><Camera size={15} strokeWidth={2.25}/></button>
+                        <button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 10px',background:C.primaryL,color:C.primary,border:`1px solid ${C.primaryB}`,borderRadius:12,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><Camera size={15} strokeWidth={2.25}/></button>
                       </div>
                     </div>
                     <div>
@@ -62,28 +62,28 @@ export default function ProductSheet({ m }: { m: InventoryState }) {
                   <UnitsSection form={form} setForm={setForm} inp={inp} lbl={lbl}/>
 
                   {editItem?(
-                    <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,padding:12}}>
-                      <div style={{fontSize:13,color:C.text2,marginBottom:8}}>الكمية الحالية: <b style={{color:C.text}}>{editItem.qty} {form.unit}</b>{breakdownQty(Number(editItem.qty)||0, form.unit, editItem.purchase_units) ? <span style={{color:C.text3}}> ({breakdownQty(Number(editItem.qty)||0, form.unit, editItem.purchase_units)})</span> : null}</div>
+                    <div style={{background:C.bg,border:`1px solid ${C.border}`,borderRadius:12,padding:12}}>
+                      <div style={{fontSize:15,color:C.text2,marginBottom:8}}>الكمية الحالية: <b style={{color:C.text}}>{editItem.qty} {form.unit}</b>{breakdownQty(Number(editItem.qty)||0, form.unit, editItem.purchase_units) ? <span style={{color:C.text3}}> ({breakdownQty(Number(editItem.qty)||0, form.unit, editItem.purchase_units)})</span> : null}</div>
                       <label style={lbl}>كمية تضيفها</label>
-                      <NumberInput min="0" value={addQty||''} onChange={e=>setAddQty(Number(e.target.value)||0)} style={{...inp(),fontSize:16,fontWeight:600,textAlign:'center'}} placeholder="0"/>
-                      {addQty>0&&<div style={{fontSize:12,color:C.text2,marginTop:6}}>الإجمالي بعد الإضافة: {editItem.qty+addQty} {form.unit}</div>}
+                      <NumberInput min="0" value={addQty||''} onChange={e=>setAddQty(Number(e.target.value)||0)} style={{...inp(),fontSize:17,fontWeight:600,textAlign:'center'}} placeholder="0"/>
+                      {addQty>0&&<div style={{fontSize:13,color:C.text2,marginTop:6}}>الإجمالي بعد الإضافة: {editItem.qty+addQty} {form.unit}</div>}
                     </div>
                   ):(
                     <div>
                       <label style={lbl}>الكمية الابتدائية *</label>
-                      <NumberInput min="1" required value={form.qty||''} onChange={e=>setForm({...form,qty:Number(e.target.value)})} style={{...inp(),fontSize:16,fontWeight:600,textAlign:'center'}} placeholder="0"/>
+                      <NumberInput min="1" required value={form.qty||''} onChange={e=>setForm({...form,qty:Number(e.target.value)})} style={{...inp(),fontSize:17,fontWeight:600,textAlign:'center'}} placeholder="0"/>
                     </div>
                   )}
                 </div>
                 {editItem && (
                   <button type="button" onClick={()=>{setConfirm({id:editItem.id,name:editItem.name});setShowAdd(false)}}
-                    style={{width:'100%',padding:'10px',marginTop:16,background:C.dangerL,color:C.danger,border:`1px solid ${C.dangerB}`,borderRadius:8,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                    style={{width:'100%',padding:'10px',marginTop:16,background:C.dangerL,color:C.danger,border:`1px solid ${C.dangerB}`,borderRadius:12,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                     <Trash2 size={13} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> حذف هذا المنتج
                   </button>
                 )}
                 <div style={{display:'flex',gap:8,marginTop:editItem?8:16}}>
-                  <button type="button" onClick={()=>{setShowAdd(false);setEditItem(null)}} style={{flex:1,padding:'11px',background:C.bg,color:C.text2,border:`1px solid ${C.border2}`,borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
-                  <button type="submit" disabled={saving} style={{flex:2,padding:'11px',background:C.primary,color:'white',border:'none',borderRadius:8,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:saving?.7:1}}>
+                  <button type="button" onClick={()=>{setShowAdd(false);setEditItem(null)}} style={{flex:1,padding:'11px',background:C.bg,color:C.text2,border:`1px solid ${C.border2}`,borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                  <button type="submit" disabled={saving} style={{flex:2,padding:'11px',background:C.primary,color:'white',border:'none',borderRadius:999,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit',opacity:saving?.7:1}}>
                     {saving?'جاري الحفظ...':editItem?'حفظ التعديلات':'إضافة المنتج'}
                   </button>
                 </div>

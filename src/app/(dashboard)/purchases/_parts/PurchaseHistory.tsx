@@ -44,17 +44,17 @@ export default function PurchaseHistory({ m }: { m: PurchasesState }) {
                       className="storely-badge" data-status="warning" style={{gap:4,cursor:isOwner?'pointer':'default',fontFamily:'inherit'}}>
                       <Pencil size={11}/> {acc?'معدّل من المحاسب':'معدّل'}</button> })()}
                 </div>
-                <div style={{fontSize:14,fontWeight:600,color:C.text,marginBottom:2,overflowWrap:'anywhere'}}>{p.name}</div>
-                {p.qty&&<div style={{fontSize:13,color:C.text3,marginBottom:2}}>{p.qty} {p.unit}</div>}
-                <div style={{fontSize:12,color:C.text3,display:'flex',gap:10,flexWrap:'wrap',alignItems:'center'}}>
+                <div style={{fontSize:17,fontWeight:600,color:C.text,marginBottom:2,overflowWrap:'anywhere'}}>{p.name}</div>
+                {p.qty&&<div style={{fontSize:15,color:C.text3,marginBottom:2}}>{p.qty} {p.unit}</div>}
+                <div style={{fontSize:13,color:C.text3,display:'flex',gap:10,flexWrap:'wrap',alignItems:'center'}}>
                   {p.supplier&&<span style={{display:'inline-flex',alignItems:'center',gap:4}}><Store size={12}/>{p.supplier}</span>}
                   <span>{new Date(p.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',day:'numeric',month:'short'})}</span>
                 </div>
               </div>
               <div style={{textAlign:'left',flexShrink:0,display:'flex',flexDirection:'column',alignItems:'flex-end',gap:8}}>
                 <div>
-                  <div style={{fontSize:16,fontWeight:600,color:C.text,fontVariantNumeric:'tabular-nums'}}>{Number(p.total_amount||0).toLocaleString('en-US',{maximumFractionDigits:0})} <span style={{fontSize:12,color:C.text3,fontWeight:400}}>{curr}</span></div>
-                  {Number(p.vat_amount||0)>0&&<div style={{fontSize:12,color:C.warning,marginTop:2}}>منها ضريبة {Number(p.vat_amount||0).toFixed(0)}</div>}
+                  <div style={{fontSize:17,fontWeight:600,color:C.text,fontVariantNumeric:'tabular-nums'}}>{Number(p.total_amount||0).toLocaleString('en-US',{maximumFractionDigits:0})} <span style={{fontSize:13,color:C.text3,fontWeight:400}}>{curr}</span></div>
+                  {Number(p.vat_amount||0)>0&&<div style={{fontSize:13,color:C.warning,marginTop:2}}>منها ضريبة {Number(p.vat_amount||0).toFixed(0)}</div>}
                 </div>
                 <StorelyTableAction action="delete" disabled={deletingId===p.id} onClick={()=>deletePurchase(p)} />
               </div>

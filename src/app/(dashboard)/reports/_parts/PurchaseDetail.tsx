@@ -171,7 +171,7 @@ export default function PurchaseDetail({ period, from, to, onBack, filterBar }: 
           {label:'الفواتير',value:String(filtered.length),color:colors.info,bg:colors.infoLight,border:colors.infoBorder},
         ].map((s,i)=>(
           <div key={i} style={{...card,padding:'14px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
-            <div style={{fontSize:i===2?20:16,fontWeight:900,color:s.color,letterSpacing:'-0.5px'}}>{s.value}</div>
+            <div style={{fontSize:i===2?20:16,fontWeight:600,color:s.color,letterSpacing:'-0.5px'}}>{s.value}</div>
             <div style={{fontSize:font.xs,color:s.color,marginTop:4,fontWeight:600,opacity:.8}}>{s.label}</div>
           </div>
         ))}
@@ -191,7 +191,7 @@ export default function PurchaseDetail({ period, from, to, onBack, filterBar }: 
           </button>
         </div>
         {loading?(<ListSkeleton/>
-        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><Receipt size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
+        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><Receipt size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:600,color:colors.text2}}>لا توجد نتائج</div></div>
         ):(
           <>
           <div style={{overflowX:'auto'}}>
@@ -199,7 +199,7 @@ export default function PurchaseDetail({ period, from, to, onBack, filterBar }: 
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
                   {['التاريخ','الصنف','النوع','بدون ضريبة','ضريبة','الإجمالي','المورد','فاتورة','إجراء'].map((h,i)=>(
-                    <th key={i} style={{padding:'10px 12px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
+                    <th key={i} style={{padding:'10px 12px',color:colors.text4,fontSize:font.xs,fontWeight:600,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -207,20 +207,20 @@ export default function PurchaseDetail({ period, from, to, onBack, filterBar }: 
                 {filtered.map((p,i)=>(
                   <tr key={p.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}>
                     <td style={{padding:'11px 12px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(p.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
-                    <td data-label="الصنف" style={{padding:'11px 12px',fontSize:font.sm,fontWeight:700,color:colors.text,maxWidth:140,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.name}</td>
+                    <td data-label="الصنف" style={{padding:'11px 12px',fontSize:font.sm,fontWeight:600,color:colors.text,maxWidth:140,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.name}</td>
                     <td data-label="النوع" style={{padding:'11px 12px'}}><span style={catTag(p.category)}>{p.category}</span></td>
                     <td data-label="بدون ضريبة" style={{padding:'11px 12px',fontSize:font.sm}}>{Number(p.amount||0).toFixed(0)} {curr}</td>
                     <td data-label="ضريبة" style={{padding:'11px 12px',fontSize:font.sm,color:colors.warning,fontWeight:600}}>{Number(p.vat_amount||0).toFixed(0)} {curr}</td>
-                    <td data-label="الإجمالي" style={{padding:'11px 12px',fontSize:font.sm,fontWeight:700,color:colors.primary}}>{Number(p.total_amount||0).toFixed(0)} {curr}</td>
+                    <td data-label="الإجمالي" style={{padding:'11px 12px',fontSize:font.sm,fontWeight:600,color:colors.primary}}>{Number(p.total_amount||0).toFixed(0)} {curr}</td>
                     <td data-label="المورد" style={{padding:'11px 12px',fontSize:font.xs,color:colors.text4,maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.supplier||'—'}</td>
                     <td data-label="فاتورة" style={{padding:'11px 12px',textAlign:'center' as const}}>
                       {p.invoice_image
-                        ? <a href={fileLink(p.invoice_image)} target="_blank" rel="noreferrer" style={{background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:6,padding:'3px 10px',fontSize:11,fontWeight:700,textDecoration:'none',whiteSpace:'nowrap' as const,display:'inline-flex',alignItems:'center',gap:4}}><Paperclip size={11} strokeWidth={2.25}/> عرض</a>
+                        ? <a href={fileLink(p.invoice_image)} target="_blank" rel="noreferrer" style={{background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:12,padding:'3px 10px',fontSize:12,fontWeight:600,textDecoration:'none',whiteSpace:'nowrap' as const,display:'inline-flex',alignItems:'center',gap:4}}><Paperclip size={11} strokeWidth={2.25}/> عرض</a>
                         : <span style={{color:colors.border2}}>—</span>}
                     </td>
                     <td data-label="إجراء" style={{padding:'11px 12px',textAlign:'center' as const}}>
                       <button onClick={()=>{setConfirmDelete(p);setDeletePassword('');setDeleteError('')}}
-                        style={{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:6,padding:'4px 10px',fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                        style={{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:12,padding:'4px 10px',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                         <Trash2 size={12} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> حذف
                       </button>
                     </td>
@@ -229,10 +229,10 @@ export default function PurchaseDetail({ period, from, to, onBack, filterBar }: 
               </tbody>
               <tfoot>
                 <tr style={{background:colors.primaryLight,borderTop:`2px solid ${colors.primaryBorder}`}}>
-                  <td colSpan={3} style={{padding:'11px 12px',fontWeight:800,fontSize:font.sm,color:colors.text}}>الإجمالي ({filtered.length} فاتورة)</td>
-                  <td data-label="الصنف" style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm}}>{totalAmount.toFixed(0)} {curr}</td>
-                  <td data-label="النوع" style={{padding:'11px 12px',fontWeight:700,fontSize:font.sm,color:colors.warning}}>{totalVat.toFixed(0)} {curr}</td>
-                  <td data-label="بدون ضريبة" style={{padding:'11px 12px',fontWeight:900,fontSize:font.md,color:colors.primary}}>{totalWithVat.toFixed(0)} {curr}</td>
+                  <td colSpan={3} style={{padding:'11px 12px',fontWeight:600,fontSize:font.sm,color:colors.text}}>الإجمالي ({filtered.length} فاتورة)</td>
+                  <td data-label="الصنف" style={{padding:'11px 12px',fontWeight:600,fontSize:font.sm}}>{totalAmount.toFixed(0)} {curr}</td>
+                  <td data-label="النوع" style={{padding:'11px 12px',fontWeight:600,fontSize:font.sm,color:colors.warning}}>{totalVat.toFixed(0)} {curr}</td>
+                  <td data-label="بدون ضريبة" style={{padding:'11px 12px',fontWeight:600,fontSize:font.md,color:colors.primary}}>{totalWithVat.toFixed(0)} {curr}</td>
                   <td data-label="ضريبة"/><td data-label="الإجمالي"/><td data-label="المورد"/>
                 </tr>
               </tfoot>
@@ -243,35 +243,35 @@ export default function PurchaseDetail({ period, from, to, onBack, filterBar }: 
       </div>
 
       {/* سجل الفواتير المحذوفة — تدقيق واسترجاع */}
-      <div style={{marginTop:20,background:'white',borderRadius:14,border:`1px solid ${colors.border2}`,overflow:'hidden'}}>
+      <div style={{marginTop:20,background:'white',borderRadius:20,border:`1px solid ${colors.border2}`,overflow:'hidden'}}>
         <button type="button" onClick={()=>{ if(!showDeletedLog) loadDeletedLog(); setShowDeletedLog(v=>!v) }}
           style={{width:'100%',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>
           <div style={{display:'flex',alignItems:'center',gap:8}}>
             <span style={{display:'flex',alignItems:'center'}}><Trash2 size={16} strokeWidth={2.25}/></span>
-            <span style={{fontSize:13,fontWeight:700,color:colors.text}}>سجل الفواتير المحذوفة</span>
+            <span style={{fontSize:15,fontWeight:600,color:colors.text}}>سجل الفواتير المحذوفة</span>
           </div>
-          <span style={{fontSize:12,color:colors.text3}}>{showDeletedLog?'إخفاء ▲':'عرض ▼'}</span>
+          <span style={{fontSize:13,color:colors.text3}}>{showDeletedLog?'إخفاء ▲':'عرض ▼'}</span>
         </button>
         {showDeletedLog && (
           <div style={{borderTop:`1px solid ${colors.border2}`,padding:'12px 18px 18px'}}>
             {loadingDeleted ? (
               <ListSkeleton/>
             ) : deletedList.length===0 ? (
-              <div style={{textAlign:'center' as const,padding:20,fontSize:12,color:colors.text4,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><PartyPopper size={14} strokeWidth={2.25}/> لا توجد فواتير محذوفة</div>
+              <div style={{textAlign:'center' as const,padding:20,fontSize:13,color:colors.text4,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><PartyPopper size={14} strokeWidth={2.25}/> لا توجد فواتير محذوفة</div>
             ) : (
               <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
                 {deletedList.map((d:any)=>(
-                  <div key={d.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'#fef2f2',border:'1px solid #fecaca',borderRight:'3px solid #dc2626',borderRadius:9,padding:'10px 14px'}}>
+                  <div key={d.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'#fef2f2',border:'1px solid #fecaca',borderRight:'3px solid #dc2626',borderRadius:12,padding:'10px 14px'}}>
                     <div>
-                      <div style={{fontSize:12,fontWeight:700,color:colors.text}}>{d.name}
-                        <span style={{fontSize:10,fontWeight:600,color:colors.text4,marginRight:6}}>({d.category||'—'})</span>
+                      <div style={{fontSize:13,fontWeight:600,color:colors.text}}>{d.name}
+                        <span style={{fontSize:12,fontWeight:600,color:colors.text4,marginRight:6}}>({d.category||'—'})</span>
                       </div>
-                      <div style={{fontSize:10,color:'#991b1b',marginTop:2}}>
+                      <div style={{fontSize:12,color:'#991b1b',marginTop:2}}>
                         {Number(d.total_amount||0).toFixed(0)} {curr} — حُذفت {relativeTime(d.deleted_at)} بواسطة {d.deleterName}
                       </div>
                     </div>
                     <button onClick={()=>restorePurchase(d)} disabled={restoringId===d.id}
-                      style={{padding:'6px 14px',background:'white',color:'#203640',border:'1.5px solid var(--storely-border)',borderRadius:8,fontSize:11,fontWeight:700,cursor:restoringId===d.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:restoringId===d.id?.6:1,whiteSpace:'nowrap' as const}}>
+                      style={{padding:'6px 14px',background:'white',color:'#203640',border:'1.5px solid var(--storely-border)',borderRadius:12,fontSize:12,fontWeight:600,cursor:restoringId===d.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:restoringId===d.id?.6:1,whiteSpace:'nowrap' as const}}>
                       {restoringId===d.id?'...':'↩️ استعادة'}
                     </button>
                   </div>
@@ -285,24 +285,24 @@ export default function PurchaseDetail({ period, from, to, onBack, filterBar }: 
       {confirmDelete && (
         <div style={{position:'fixed',inset:0,zIndex:2000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
           <div style={{position:'absolute',inset:0,background:'rgba(15,23,42,.4)',backdropFilter:'blur(6px)'}} onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}/>
-          <div style={{background:'white',borderRadius:16,padding:24,width:'100%',maxWidth:360,position:'relative',boxShadow:'0 24px 60px rgba(0,0,0,.2)'}}>
-            <div style={{width:48,height:48,borderRadius:12,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',color:'#dc2626'}}><Lock size={22} strokeWidth={2}/></div>
-            <div style={{fontSize:15,fontWeight:800,color:colors.text,textAlign:'center',marginBottom:6}}>تأكيد حذف العملية</div>
-            <div style={{fontSize:12,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
+          <div style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:360,position:'relative',boxShadow:'0 24px 60px rgba(0,0,0,.2)'}}>
+            <div style={{width:48,height:48,borderRadius:20,background:'#fef2f2',border:'1px solid #fecaca',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px',color:'#dc2626'}}><Lock size={22} strokeWidth={2}/></div>
+            <div style={{fontSize:17,fontWeight:600,color:colors.text,textAlign:'center',marginBottom:6}}>تأكيد حذف العملية</div>
+            <div style={{fontSize:13,color:colors.text3,textAlign:'center',lineHeight:1.7,marginBottom:16}}>
               سيتم حذف <b style={{color:colors.text}}>{confirmDelete.name}</b> ({Number(confirmDelete.total_amount||0).toFixed(0)} {curr}) من السجل الحالي (يمكنك استرجاعها لاحقاً من "سجل المحذوفات").<br/>أدخل كلمة مرور حسابك للتأكيد
             </div>
             <input type="password" value={deletePassword} onChange={e=>setDeletePassword(e.target.value)}
               onKeyDown={e=>{if(e.key==='Enter'&&deletePassword&&!deleting) confirmDeletePurchase()}}
               placeholder="كلمة المرور" autoFocus
               style={{...inp(),width:'100%',marginBottom:10,boxSizing:'border-box' as const}}/>
-            {deleteError && <div style={{fontSize:12,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><AlertTriangle size={13} strokeWidth={2.25}/> {deleteError}</div>}
+            {deleteError && <div style={{fontSize:13,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><AlertTriangle size={13} strokeWidth={2.25}/> {deleteError}</div>}
             <div style={{display:'flex',gap:8}}>
               <button onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}
-                style={{flex:1,padding:'11px',background:colors.bg,color:colors.text3,border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                style={{flex:1,padding:'11px',background:colors.bg,color:colors.text3,border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                 إلغاء
               </button>
               <button onClick={confirmDeletePurchase} disabled={!deletePassword||deleting}
-                style={{flex:2,padding:'11px',background:!deletePassword||deleting?colors.border2:'#dc2626',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:!deletePassword||deleting?'not-allowed':'pointer',fontFamily:'inherit'}}>
+                style={{flex:2,padding:'11px',background:!deletePassword||deleting?colors.border2:'#dc2626',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:!deletePassword||deleting?'not-allowed':'pointer',fontFamily:'inherit'}}>
                 {deleting?'جاري الحذف...':'تأكيد الحذف'}
               </button>
             </div>

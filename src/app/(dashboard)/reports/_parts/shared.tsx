@@ -55,15 +55,15 @@ export function FilterBar({ period, setPeriod, from, setFrom, to, setTo }: any) 
   ]
   return (
     <div style={{marginBottom:16}}>
-      <div style={{display:'flex',gap:2,padding:3,background:colors.bg,border:`1px solid ${colors.border}`,borderRadius:10,overflowX:'auto' as const,marginBottom:period==='custom'?10:0}}>
+      <div style={{display:'flex',gap:2,padding:3,background:colors.bg,border:`1px solid ${colors.border}`,borderRadius:12,overflowX:'auto' as const,marginBottom:period==='custom'?10:0}}>
         {PERIODS.map(p=>{
           const active = period===p.key
           return (
             <button key={p.key} onClick={()=>setPeriod(p.key as FilterPeriod)} aria-pressed={active}
               style={{
-                flex:'1 1 auto',padding:'8px 6px',borderRadius:8,fontFamily:font.family,border:'none',
+                flex:'1 1 auto',padding:'8px 6px',borderRadius:12,fontFamily:font.family,border:'none',
                 background:active?colors.surface:'transparent',boxShadow:active?'0 1px 2px rgba(15,23,42,.08)':'none',
-                color:active?colors.text:colors.text3,fontSize:12.5,fontWeight:active?800:600,cursor:'pointer',
+                color:active?colors.text:colors.text3,fontSize:13,fontWeight:active?800:600,cursor:'pointer',
                 display:'inline-flex',alignItems:'center',justifyContent:'center',gap:5,whiteSpace:'nowrap' as const,
               }}>
               {p.icon}{p.label}
@@ -73,9 +73,9 @@ export function FilterBar({ period, setPeriod, from, setFrom, to, setTo }: any) 
       </div>
       {period==='custom'&&(
         <div style={{...card,padding:12,display:'flex',gap:10,flexWrap:'wrap' as const,alignItems:'center'}}>
-          <span style={{fontSize:12,fontWeight:700,color:colors.text3}}>من</span>
+          <span style={{fontSize:13,fontWeight:600,color:colors.text3}}>من</span>
           <DateField value={from} max={to||undefined} onChange={setFrom} placeholder="من تاريخ" ariaLabel="من تاريخ" width={150}/>
-          <span style={{fontSize:12,fontWeight:700,color:colors.text3}}>إلى</span>
+          <span style={{fontSize:13,fontWeight:600,color:colors.text3}}>إلى</span>
           <DateField value={to} min={from||undefined} onChange={setTo} placeholder="إلى تاريخ" ariaLabel="إلى تاريخ" width={150}/>
         </div>
       )}
@@ -103,10 +103,10 @@ export function ReportCard({ title, subtitle, icon, color, stats, onClick, loadi
       style={{width:'100%',textAlign:'right' as const,cursor:'pointer',fontFamily:font.family,padding:0,background:colors.surface,border:`1px solid ${colors.border}`,borderRadius:radius.xl,overflow:'hidden',display:'block'}}>
       <style>{`.rc-card:hover{border-color:${colors.text3}!important}`}</style>
       <div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 16px'}}>
-        <span style={{width:38,height:38,borderRadius:10,background:colors.bg,border:`1px solid ${colors.border}`,color:colors.text,display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{icon}</span>
+        <span style={{width:38,height:38,borderRadius:12,background:colors.bg,border:`1px solid ${colors.border}`,color:colors.text,display:'inline-flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{icon}</span>
         <span style={{flex:1,minWidth:0}}>
-          <span style={{display:'block',fontSize:15,fontWeight:800,color:colors.text}}>{title}</span>
-          <span style={{display:'block',fontSize:12,color:colors.text3,marginTop:1}}>{subtitle}</span>
+          <span style={{display:'block',fontSize:17,fontWeight:600,color:colors.text}}>{title}</span>
+          <span style={{display:'block',fontSize:13,color:colors.text3,marginTop:1}}>{subtitle}</span>
         </span>
         <svg width={16} height={16} fill="none" stroke={colors.text3} strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24" style={{flexShrink:0}}><path d="M15 19l-7-7 7-7"/></svg>
       </div>
@@ -116,9 +116,9 @@ export function ReportCard({ title, subtitle, icon, color, stats, onClick, loadi
           {(loading?stats.map(()=>null):stats).map((s:any,i:number)=>(
             <div key={i} style={{background:colors.surface,padding:'10px 8px',textAlign:'center' as const,minWidth:0}}>
               {s===null
-                ? <><div style={{height:20,margin:'0 auto 6px',width:'50%',background:colors.border,borderRadius:6,animation:'sk 1.4s infinite'}}/><div style={{height:9,margin:'0 auto',width:'70%',background:colors.border,borderRadius:4,animation:'sk 1.4s infinite'}}/></>
-                : <><div style={{fontSize:18,fontWeight:800,color:(parseFloat(String(s.value).replace(/[^0-9.-]/g,''))||0)===0?colors.text:(s.color||colors.text),fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{s.value}</div>
-                   <div style={{fontSize:11.5,color:colors.text3,marginTop:2,fontWeight:600,whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{s.label}</div></>}
+                ? <><div style={{height:20,margin:'0 auto 6px',width:'50%',background:colors.border,borderRadius:12,animation:'sk 1.4s infinite'}}/><div style={{height:9,margin:'0 auto',width:'70%',background:colors.border,borderRadius:4,animation:'sk 1.4s infinite'}}/></>
+                : <><div style={{fontSize:20,fontWeight:600,color:(parseFloat(String(s.value).replace(/[^0-9.-]/g,''))||0)===0?colors.text:(s.color||colors.text),fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{s.value}</div>
+                   <div style={{fontSize:13,color:colors.text3,marginTop:2,fontWeight:600,whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{s.label}</div></>}
             </div>
           ))}
         </div>
@@ -146,7 +146,7 @@ export function PeriodBadge({ period, from, to }: any) {
   return (
     <div style={{...card,padding:'10px 16px',marginBottom:16,display:'flex',alignItems:'center',gap:8,background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`}}>
       <span style={{display:'flex',alignItems:'center'}}><CalendarDays size={16} strokeWidth={2.25}/></span>
-      <span style={{fontSize:font.sm,fontWeight:700,color:colors.primary}}>{formatRange(period,from,to)}</span>
+      <span style={{fontSize:font.sm,fontWeight:600,color:colors.primary}}>{formatRange(period,from,to)}</span>
     </div>
   )
 }

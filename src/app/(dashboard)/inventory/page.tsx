@@ -28,13 +28,13 @@ export default function InventoryPage() {
     <div style={{fontFamily:'var(--storely-font)',direction:'rtl'}}>
       <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.4s ease infinite}`}</style>
       <div style={{display:'flex',justifyContent:'space-between',marginBottom:16}}>
-        <div className="sk" style={{height:24,width:100,background:C.border2,borderRadius:6}}/>
-        <div className="sk" style={{height:34,width:80,background:C.border,borderRadius:8}}/>
+        <div className="sk" style={{height:24,width:100,background:C.border2,borderRadius:12}}/>
+        <div className="sk" style={{height:34,width:80,background:C.border,borderRadius:12}}/>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:1,marginBottom:16,borderRadius:12,overflow:'hidden'}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:1,marginBottom:16,borderRadius:20,overflow:'hidden'}}>
         {[1,2,3,4].map(i=><div key={i} className="sk" style={{height:96,background:C.border}}/>)}
       </div>
-      <div className="sk" style={{height:400,borderRadius:12,background:C.border}}/>
+      <div className="sk" style={{height:400,borderRadius:20,background:C.border}}/>
     </div>
   )
 
@@ -46,7 +46,7 @@ export default function InventoryPage() {
         @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
         .u{animation:up .3s ease both}
         input:focus,select:focus{border-color:${C.primary}!important;outline:none!important;box-shadow:0 0 0 3px rgba(32,54,64,.14)!important}
-        .chip{padding:5px 12px;border-radius:99px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;border:1px solid;transition:all .15s;font-family:inherit}
+        .chip{padding:5px 12px;border-radius:99px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border:1px solid;transition:all .15s;font-family:inherit}
         .rh{transition:background .1s}
         .rh:hover{background:#f9f9f8}
         .tap{transition:all .12s;cursor:pointer}
@@ -78,7 +78,7 @@ export default function InventoryPage() {
       <ImportSheet m={m}/>
 
       {jardNotFound&&(
-        <div style={{position:'fixed',bottom:20,left:'50%',transform:'translateX(-50%)',background:C.dangerL,color:C.danger,border:`1px solid ${C.dangerB}`,borderRadius:10,padding:'10px 16px',fontSize:12,fontWeight:600,zIndex:2000,boxShadow:'0 4px 16px rgba(0,0,0,.1)'}}>
+        <div style={{position:'fixed',bottom:20,left:'50%',transform:'translateX(-50%)',background:C.dangerL,color:C.danger,border:`1px solid ${C.dangerB}`,borderRadius:12,padding:'10px 16px',fontSize:13,fontWeight:600,zIndex:2000,boxShadow:'0 4px 16px rgba(0,0,0,.1)'}}>
           <span style={{display:'inline-flex',alignItems:'center',gap:5}}><AlertTriangle size={13} strokeWidth={2.25}/> لا يوجد منتج بهذا الباركود: {jardNotFound}</span>
           <button onClick={()=>setJardNotFound('')} style={{marginRight:8,background:'none',border:'none',color:C.danger,cursor:'pointer',display:'flex',alignItems:'center'}}><X size={15} strokeWidth={2.5}/></button>
         </div>

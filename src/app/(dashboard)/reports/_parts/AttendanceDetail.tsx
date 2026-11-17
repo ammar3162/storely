@@ -85,21 +85,21 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
     setExporting(false)
   }
 
-  const th: React.CSSProperties = { padding:'11px 14px', textAlign:'right', fontSize:11, fontWeight:700, color:colors.text3, whiteSpace:'nowrap' }
-  const td: React.CSSProperties = { padding:'12px 14px', fontSize:13, color:colors.text2, whiteSpace:'nowrap' }
-  const pill = (txt: string, c: string, bg: string) => <span style={{ fontSize:11, fontWeight:700, color:c, background:bg, padding:'3px 10px', borderRadius:99 }}>{txt}</span>
-  const label: React.CSSProperties = { fontSize:11, color:colors.text3, fontWeight:600, display:'block', marginBottom:5 }
+  const th: React.CSSProperties = { padding:'11px 14px', textAlign:'right', fontSize:12, fontWeight:600, color:colors.text3, whiteSpace:'nowrap' }
+  const td: React.CSSProperties = { padding:'12px 14px', fontSize:15, color:colors.text2, whiteSpace:'nowrap' }
+  const pill = (txt: string, c: string, bg: string) => <span style={{ fontSize:12, fontWeight:600, color:c, background:bg, padding:'3px 10px', borderRadius:99 }}>{txt}</span>
+  const label: React.CSSProperties = { fontSize:12, color:colors.text3, fontWeight:600, display:'block', marginBottom:5 }
   const stat = (title: string, value: string, sub: string, c: string, bg: string) => (
     <div style={{ ...card, padding:'14px 16px', background:bg, border:`1px solid ${colors.border}` }}>
-      <div style={{ fontSize:11, color:colors.text3, fontWeight:600 }}>{title}</div>
-      <div style={{ fontSize:22, fontWeight:900, color:c, marginTop:4 }}>{value}</div>
-      <div style={{ fontSize:11, color:colors.text4, marginTop:2 }}>{sub}</div>
+      <div style={{ fontSize:12, color:colors.text3, fontWeight:600 }}>{title}</div>
+      <div style={{ fontSize:22, fontWeight:600, color:c, marginTop:4 }}>{value}</div>
+      <div style={{ fontSize:12, color:colors.text4, marginTop:2 }}>{sub}</div>
     </div>
   )
 
   return (
     <div style={{ fontFamily:font.family, direction:'rtl' }}>
-      <button onClick={onBack} style={{ background:'none', border:'none', color:colors.primary, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', marginBottom:12, display:'flex', alignItems:'center', gap:4 }}>→ رجوع</button>
+      <button onClick={onBack} style={{ background:'none', border:'none', color:colors.primary, fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginBottom:12, display:'flex', alignItems:'center', gap:4 }}>→ رجوع</button>
       <h1 style={pageTitle}><PageIcon/>تقرير الحضور والانصراف</h1>
       <p style={pageSub}>حضور الموظفين وتأخيرهم والعمل الإضافي خلال الفترة — اختر موظفاً لعرض سجله يوماً بيوم</p>
 
@@ -131,7 +131,7 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
       </div>
 
       {!loading && !person && summary.some((r: any) => r.shift_warning === 'none') && (
-        <div style={{ ...card, padding:'10px 14px', marginBottom:14, background:colors.warningLight, border:`1px solid ${colors.warningBorder}`, color:colors.warning, fontSize:12, fontWeight:600 }}>
+        <div style={{ ...card, padding:'10px 14px', marginBottom:14, background:colors.warningLight, border:`1px solid ${colors.warningBorder}`, color:colors.warning, fontSize:13, fontWeight:600 }}>
           {summary.filter((r: any) => r.shift_warning === 'none').length} موظف غير مرتبطين بوردية — لا يُحتسب لهم تأخير أو عمل إضافي. اربطهم من صفحة الحضور والانصراف ← الإعدادات.
         </div>
       )}
@@ -141,12 +141,12 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
         ) : person ? (
           <>
             {person.shift_warning && (
-              <div style={{ padding:'10px 16px', background:colors.warningLight, borderBottom:`1px solid ${colors.warningBorder}`, color:colors.warning, fontSize:12, fontWeight:600 }}>
+              <div style={{ padding:'10px 16px', background:colors.warningLight, borderBottom:`1px solid ${colors.warningBorder}`, color:colors.warning, fontSize:13, fontWeight:600 }}>
                 {person.shift_warning === 'none' ? 'هذا الموظف غير مرتبط بوردية' : 'هذا الموظف على وردية 24 ساعة'} — لا يُحتسب له تأخير أو عمل إضافي. اربطه بوردية من صفحة الحضور والانصراف ← الإعدادات.
               </div>
             )}
             <div style={{ padding:'14px 16px', borderBottom:`1px solid ${colors.border}`, display:'flex', justifyContent:'space-between', alignItems:'center', gap:8, flexWrap:'wrap' as const }}>
-              <div style={{ fontWeight:800, fontSize:14, color:colors.text }}>{person.name}</div>
+              <div style={{ fontWeight:600, fontSize:17, color:colors.text }}>{person.name}</div>
               <div style={{ display:'flex', gap:6 }}>
                 {pill(`${person.days_present} حضور`, colors.primary, colors.primaryLight)}
                 {pill(`${person.days_absent} غياب`, colors.danger, colors.dangerLight)}
@@ -160,16 +160,16 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
                 <tbody>
                   {[...person.days].reverse().map((d: any) => (
                     <tr key={d.date} className={(!d.check_in && !(d.penalty_original ?? d.penalty_amount) ? 'm-off' : undefined)} style={{ borderBottom:`1px solid ${colors.border}`, background: d.check_in ? undefined : colors.bg }}>
-                      <td style={{ ...td, fontWeight:700, color:colors.text }}>{attDay(d.date)}</td>
+                      <td style={{ ...td, fontWeight:600, color:colors.text }}>{attDay(d.date)}</td>
                       <td data-label="الحالة" style={td}>{!d.check_in ? pill('غياب', colors.danger, colors.dangerLight) : d.check_out ? pill('انصرف', colors.primary, colors.primaryLight) : pill('حاضر', colors.info, colors.infoLight)}</td>
                       <td data-label="الحضور" style={td}>{attTime(d.check_in)}</td>
                       <td data-label="الانصراف" style={td}>{attTime(d.check_out)}{d.is_excused && <span style={{ marginRight:6 }}>{pill('مستأذن', colors.warning, colors.warningLight)}</span>}</td>
                       <td data-label="الساعات" style={{ ...td, fontWeight:600 }}>{d.hours_worked !== null ? `${d.hours_worked} ساعة` : '—'}</td>
                       <td data-label="التأخير" style={{ ...td, color: d.late_minutes ? colors.warning : colors.text4, fontWeight: d.late_minutes ? 700 : 400 }}>
-                        {d.late_minutes ? attMin(d.late_minutes) : '—'}{d.penalty_amount ? <div style={{ fontSize:11, color:colors.danger }}>خصم {d.penalty_amount} ⃁</div> : null}
+                        {d.late_minutes ? attMin(d.late_minutes) : '—'}{d.penalty_amount ? <div style={{ fontSize:12, color:colors.danger }}>خصم {d.penalty_amount} ⃁</div> : null}
                       </td>
                       <td data-label="العمل الإضافي" style={{ ...td, color: d.overtime_minutes ? colors.info : colors.text4, fontWeight: d.overtime_minutes ? 700 : 400 }}>
-                        {d.overtime_minutes ? attMin(d.overtime_minutes) : '—'}{d.overtime_pay ? <div style={{ fontSize:11, color:colors.text3 }}>{d.overtime_pay} ⃁</div> : null}
+                        {d.overtime_minutes ? attMin(d.overtime_minutes) : '—'}{d.overtime_pay ? <div style={{ fontSize:12, color:colors.text3 }}>{d.overtime_pay} ⃁</div> : null}
                       </td>
                     </tr>
                   ))}
@@ -178,7 +178,7 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
             </div>
           </>
         ) : summary.length === 0 ? (
-          <div style={{ textAlign:'center' as const, padding:48, color:colors.text4, fontSize:13 }}>لا يوجد موظفون نشطون في هذا الفرع</div>
+          <div style={{ textAlign:'center' as const, padding:48, color:colors.text4, fontSize:15 }}>لا يوجد موظفون نشطون في هذا الفرع</div>
         ) : (
           <div style={{ overflowX:'auto' as const }}>
             <table className="m-cards" style={{ width:'100%', borderCollapse:'collapse' as const }}>
@@ -189,15 +189,15 @@ export default function AttendanceDetail({ onBack }: { onBack:()=>void }) {
                 {summary.map((r: any) => (
                   <tr key={r.staff_id} onClick={() => setStaffId(r.staff_id)} style={{ borderBottom:`1px solid ${colors.border}`, cursor:'pointer' }}
                     onMouseEnter={e => (e.currentTarget.style.background = colors.bg)} onMouseLeave={e => (e.currentTarget.style.background = '')}>
-                    <td style={{ ...td, fontWeight:700, color:colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف غير مرتبط بوردية — لا يُحتسب له تأخير أو عمل إضافي' : 'وردية 24 ساعة — لا يُحتسب تأخير أو عمل إضافي'} style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color:'#b45309', background:'#fffbeb', border:'1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? 'بدون وردية' : 'وردية 24 ساعة'}</span>}</td>
+                    <td style={{ ...td, fontWeight:600, color:colors.text }}>{r.name}{r.shift_warning && <span title={r.shift_warning === 'none' ? 'الموظف غير مرتبط بوردية — لا يُحتسب له تأخير أو عمل إضافي' : 'وردية 24 ساعة — لا يُحتسب تأخير أو عمل إضافي'} style={{ marginRight: 6, fontSize:12, fontWeight:600, color:'#b45309', background:'#fffbeb', border:'1px solid #fde68a', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{r.shift_warning === 'none' ? 'بدون وردية' : 'وردية 24 ساعة'}</span>}</td>
                     <td data-label="الحضور" style={td}>{pill(`${r.days_present} يوم`, colors.primary, colors.primaryLight)}</td>
                     <td data-label="الغياب" style={td}>{r.days_absent ? pill(`${r.days_absent} يوم`, colors.danger, colors.dangerLight) : '—'}</td>
                     <td data-label="التأخير" style={{ ...td, color: r.total_late_minutes ? colors.warning : colors.text4, fontWeight:600 }}>{r.total_late_minutes ? attMin(r.total_late_minutes) : '—'}</td>
                     <td data-label="الخصومات" style={{ ...td, color: r.total_penalty ? colors.danger : colors.text4, fontWeight:600 }}>{r.total_penalty ? `${r.total_penalty} ⃁` : '—'}</td>
                     <td data-label="العمل الإضافي" style={{ ...td, color: r.total_overtime_minutes ? colors.info : colors.text4, fontWeight:600 }}>
-                      {r.total_overtime_minutes ? attMin(r.total_overtime_minutes) : '—'}{r.total_overtime_pay ? <div style={{ fontSize:11, color:colors.text3 }}>{r.total_overtime_pay} ⃁</div> : null}
+                      {r.total_overtime_minutes ? attMin(r.total_overtime_minutes) : '—'}{r.total_overtime_pay ? <div style={{ fontSize:12, color:colors.text3 }}>{r.total_overtime_pay} ⃁</div> : null}
                     </td>
-                    <td style={{ ...td, color:colors.primary, fontSize:12, fontWeight:700 }}>السجل ←</td>
+                    <td style={{ ...td, color:colors.primary, fontSize:13, fontWeight:600 }}>السجل ←</td>
                   </tr>
                 ))}
               </tbody>

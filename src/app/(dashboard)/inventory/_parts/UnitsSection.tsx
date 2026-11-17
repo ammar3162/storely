@@ -14,13 +14,13 @@ export default function UnitsSection({ form, setForm, inp, lbl }: {
   const [open, setOpen] = useState(false)
   const has = !!form.recipe_unit && Number(form.recipe_unit_factor) > 0
   return (
-    <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10 }}>
+    <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius:12 }}>
       <button type="button" onClick={() => setOpen(o => !o)} aria-expanded={open}
         style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: 12, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'start' }}>
         <Ruler size={14} strokeWidth={2.25} color={C.text2} />
         <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: C.text }}>الوحدة الدقيقة للوصفات <span style={{ fontWeight: 400, color: C.text3 }}>(اختياري)</span></span>
-          <span style={{ display: 'block', fontSize: 12, color: has ? C.text2 : C.text3, marginTop: 2 }}>
+          <span style={{ display: 'block', fontSize:15, fontWeight: 600, color: C.text }}>الوحدة الدقيقة للوصفات <span style={{ fontWeight: 400, color: C.text3 }}>(اختياري)</span></span>
+          <span style={{ display: 'block', fontSize:13, color: has ? C.text2 : C.text3, marginTop: 2 }}>
             {has ? `1 ${form.unit} = ${form.recipe_unit_factor} ${form.recipe_unit}` : 'تستخدمه في وصفات؟ أضف كم غراماً فيه'}
           </span>
         </span>
