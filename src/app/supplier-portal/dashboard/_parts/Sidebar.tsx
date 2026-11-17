@@ -17,7 +17,7 @@ export default function Sidebar({ m, v }: { m: SupplierDashboard; v: DashboardVi
         <nav className="sd-nav" aria-label="أقسام بوابة المورد">
           {NAV_ITEMS.map(({id,label,Icon,badge})=>(
             <button key={id} onClick={()=>router.push(TAB_PATHS[id])} className={activeTab===id?'on':''} aria-current={activeTab===id?'page':undefined}>
-              <Icon size={18} strokeWidth={2}/><span>{label}</span>{badge && <em>{badge}</em>}
+              <Icon size={18} strokeWidth={1.75}/><span>{label}</span>{badge && <em>{badge}</em>}
             </button>
           ))}
         </nav>

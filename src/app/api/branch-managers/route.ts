@@ -52,8 +52,9 @@ export async function POST(req: Request) {
   if (access.role !== 'owner') return NextResponse.json({ error: 'هذه الصلاحية للمالك فقط' }, { status: 403 })
 
   const db = sb()
-  const { data: branch } = await db.from('branches').select('id').eq('id', branch_id).eq('org_id', org_id).maybeSingle()
+  const { data: branch } = await db.from('branches').select('id,is_active').eq('id', branch_id).eq('org_id', org_id).maybeSingle()
   if (!branch) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
+  if ((branch as any).is_active === false) return NextResponse.json({ error: 'الفرع موقوف — فعّله أولاً من صفحة الفروع' }, { status: 403 })
 
   const cleanEmail = String(email).trim().toLowerCase()
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) return NextResponse.json({ error: 'الإيميل غير صحيح' }, { status: 400 })

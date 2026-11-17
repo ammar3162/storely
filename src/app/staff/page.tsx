@@ -105,7 +105,7 @@ function StaffLoginInner() {
   const keyContent = (k: string) => k === '⌫' ? <Delete size={22} strokeWidth={1.75} /> : k
 
   return (
-    <div style={{minHeight:'100vh',background:'#f4f5f6',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:dir}}>
+    <div style={{minHeight:'100vh',background:'var(--storely-background)',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:'var(--storely-font)',direction:dir}}>
       <style>{`
         *{box-sizing:border-box}
         @keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}
@@ -114,7 +114,7 @@ function StaffLoginInner() {
         .fade-up{animation:fadeUp .3s cubic-bezier(.22,1,.36,1) both}
         @keyframes dotPulse{0%,100%{opacity:.25;transform:scale(.85)}50%{opacity:1;transform:scale(1)}}
         .kp-btn{transition:background-color .12s cubic-bezier(.22,1,.36,1), transform .08s ease}
-        .kp-btn:active{transform:scale(.97);background:#eceef1 !important}
+        .kp-btn:active{transform:scale(.97);background:var(--storely-fill) !important}
         @media(hover:hover){.kp-btn:hover{background:var(--storely-background)}}
         @media (prefers-reduced-motion:reduce){.fade-up,.shake{animation:none}}
       `}</style>
@@ -123,8 +123,8 @@ function StaffLoginInner() {
 
         {/* شريط علوي: الشعار وزر اللغة */}
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:16}}>
-          <img src="/storely-logo.png" alt="Storely" style={{width:40,height:40,objectFit:'contain',borderRadius:10,background:'white',padding:4,border:'1px solid var(--storely-border)'}}/>
-          <button onClick={()=>setLang(lang==='ar'?'en':'ar')} style={{background:'#eceef1',border:'none',borderRadius:10,height:36,padding:'0 12px',fontSize:13,fontWeight:500,color:'var(--storely-text)',cursor:'pointer',fontFamily:'inherit'}}>
+          <img src="/storely-logo.png" alt="Storely" style={{width:40,height:40,objectFit:'contain',borderRadius:12,background:'white',padding:4,border:'1px solid var(--storely-border)'}}/>
+          <button onClick={()=>setLang(lang==='ar'?'en':'ar')} style={{background:'var(--storely-fill)',border:'none',borderRadius:999,height:36,padding:'0 12px',fontSize:15,fontWeight:500,color:'var(--storely-text)',cursor:'pointer',fontFamily:'inherit'}}>
             {lang==='ar'?'English':'عربي'}
           </button>
         </div>
@@ -138,83 +138,83 @@ function StaffLoginInner() {
             {[t('staffLogin.stepPhone'),t('staffLogin.stepPin')].map((label,i)=>{
               const on = (step==='phone'?0:1) === i
               return (
-                <span key={i} style={{display:'flex',alignItems:'center',gap:6,fontSize:13,fontWeight:on?500:400,color:on?'#111827':'#6b7487'}}>
-                  <span style={{width:16,height:2,background:on?'#111827':'#d1d5db',transition:'background-color .2s'}}/>{label}
+                <span key={i} style={{display:'flex',alignItems:'center',gap:6,fontSize:15,fontWeight:on?500:400,color:on?'var(--storely-text)':'var(--storely-muted)'}}>
+                  <span style={{width:16,height:2,background:on?'var(--storely-text)':'var(--storely-control-border)',transition:'background-color .2s'}}/>{label}
                 </span>
               )
             })}
           </div>
           {step === 'phone' ? (
             <div key="phone-step" className="fade-up">
-              <p style={{fontSize:15,color:'#4b5565',marginBottom:12}}>{t('staffLogin.subtitle')}</p>
+              <p style={{fontSize:17,color:'var(--storely-muted)',marginBottom:12}}>{t('staffLogin.subtitle')}</p>
 
               {/* حقل الجوال + اختيار الدولة */}
               <div style={{position:'relative' as const,marginBottom:24}}>
-                <div className={shake?'shake':''} style={{display:'flex',alignItems:'center',background:'#ffffff',border:`1.5px solid ${shake?'#dc2626':'#111827'}`,borderRadius:12,padding:'2px 4px',minHeight:56}}>
+                <div className={shake?'shake':''} style={{display:'flex',alignItems:'center',background:'#ffffff',border:`1.5px solid ${shake?'#dc2626':'var(--storely-text)'}`,borderRadius:20,padding:'2px 4px',minHeight:56}}>
                   <button onClick={()=>setShowCountryPicker(v=>!v)}
-                    style={{background:'transparent',border:'none',color:'#4b5565',fontSize:15,fontWeight:500,padding:'12px 10px',cursor:'pointer',display:'flex',alignItems:'center',gap:6,fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
-                    <span style={{fontSize:14,direction:'ltr' as const}}>+{selectedCountry.code}</span>
-                    <ChevronDown size={14} style={{transform:showCountryPicker?'rotate(180deg)':'none',color:'#4b5565'}}/>
+                    style={{background:'transparent',border:'none',color:'var(--storely-muted)',fontSize:17,fontWeight:500,padding:'12px 10px',cursor:'pointer',display:'flex',alignItems:'center',gap:6,fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
+                    <span style={{fontSize:17,direction:'ltr' as const}}>+{selectedCountry.code}</span>
+                    <ChevronDown size={14} style={{transform:showCountryPicker?'rotate(180deg)':'none',color:'var(--storely-muted)'}}/>
                   </button>
-                  <div style={{width:1,height:24,background:'#e5e7eb'}}/>
-                  <div style={{flex:1,padding:'12px 12px',fontSize:20,fontWeight:500,fontFamily:"'IBM Plex Mono',ui-monospace,monospace",color:'var(--storely-text)',textAlign:'left' as const,direction:'ltr' as const,minHeight:24,letterSpacing:'1px'}}>
+                  <div style={{width:1,height:24,background:'var(--storely-border)'}}/>
+                  <div style={{flex:1,padding:'12px 12px',fontSize:20,fontWeight:500,fontFamily:'var(--storely-font)',fontVariantNumeric:'tabular-nums',color:'var(--storely-text)',textAlign:'left' as const,direction:'ltr' as const,minHeight:24,letterSpacing:'0.5px'}}>
                     {phone ? groupDigits(phone) : <span style={{color:'var(--storely-subtle)',fontWeight:400}}>{phonePlaceholder}</span>}
                   </div>
                 </div>
 
                 {showCountryPicker && (
-                  <div style={{position:'absolute' as const,top:'calc(100% + 8px)',right:0,left:0,background:'#ffffff',border:'1px solid var(--storely-border)',borderRadius:14,padding:6,zIndex:20,maxHeight:260,overflowY:'auto' as const,boxShadow:'0 20px 50px -12px rgba(16,24,40,.25)'}}>
+                  <div style={{position:'absolute' as const,top:'calc(100% + 8px)',right:0,left:0,background:'#ffffff',border:'1px solid var(--storely-border)',borderRadius:20,padding:6,zIndex:20,maxHeight:260,overflowY:'auto' as const,boxShadow:'0 20px 50px -12px rgba(16,24,40,.25)'}}>
                     {COUNTRY_PHONE_LEN.map(c=>(
                       <button key={c.code} onClick={()=>{setCountry(c.name);setPhone('');setShowCountryPicker(false)}}
-                        style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'11px 12px',background:country===c.name?'#e7f3f1':'transparent',border:'none',borderRadius:10,color:'var(--storely-text)',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
+                        style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'11px 12px',background:country===c.name?'var(--storely-fill)':'transparent',border:'none',borderRadius:12,color:'var(--storely-text)',fontSize:17,fontWeight:600,cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
                         <span style={{flex:1}}>{t('staffLogin.'+c.key)}</span>
-                        <span style={{color:'#4b5565',fontSize:12,direction:'ltr' as const}}>+{c.code}</span>
+                        <span style={{color:'var(--storely-muted)',fontSize:13,direction:'ltr' as const}}>+{c.code}</span>
                       </button>
                     ))}
                   </div>
                 )}
               </div>
 
-              {error && <div style={{color:'#dc2626',fontSize:14,marginBottom:16}}>{error}</div>}
+              {error && <div style={{color:'#dc2626',fontSize:17,marginBottom:16}}>{error}</div>}
 
               {/* لوحة أرقام مخصصة لإدخال الجوال */}
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:16,direction:'ltr' as const}}>
                 {keypadKeys.map((k,i)=> k==='' ? <div key={i}/> : (
                   <button key={i} className="kp-btn" onClick={()=>pressPhoneKey(k)}
-                    style={{height:56,borderRadius:12,border:k==='⌫'?'none':'1px solid #e5e7eb',background:k==='⌫'?'transparent':'#ffffff',fontSize:22,fontWeight:500,fontFamily:"'IBM Plex Mono',ui-monospace,monospace",color:k==='⌫'?'#4b5565':'#111827',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    style={{height:56,borderRadius:20,border:k==='⌫'?'none':'1px solid var(--storely-border)',background:k==='⌫'?'transparent':'#ffffff',fontSize:22,fontWeight:500,fontFamily:'var(--storely-font)',fontVariantNumeric:'tabular-nums',color:k==='⌫'?'var(--storely-muted)':'var(--storely-text)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
                     {keyContent(k)}
                   </button>
                 ))}
               </div>
 
               <button onClick={goToPin} disabled={phone.length<requiredLen}
-                style={{width:'100%',height:48,marginBottom:16,background:phone.length>=requiredLen?'#203640':'#eceef1',color:phone.length>=requiredLen?'#ffffff':'#6b7487',border:'none',borderRadius:10,fontSize:16,fontWeight:600,cursor:phone.length>=requiredLen?'pointer':'not-allowed',fontFamily:'inherit',transition:'background .15s, color .15s'}}>
+                style={{width:'100%',height:48,marginBottom:16,background:phone.length>=requiredLen?'#203640':'var(--storely-fill)',color:phone.length>=requiredLen?'#ffffff':'var(--storely-muted)',border:'none',borderRadius:999,fontSize:17,fontWeight:600,cursor:phone.length>=requiredLen?'pointer':'not-allowed',fontFamily:'inherit',transition:'background .15s, color .15s'}}>
                 {t('staffLogin.continueBtn')}
               </button>
               <div style={{textAlign:'center' as const}}>
                 <button onClick={()=>{setStaffDevice(false);window.location.href='/login'}}
-                  style={{background:'none',border:'none',color:'#4b5565',fontSize:14,cursor:'pointer',fontFamily:'inherit'}}>
-                  صاحب المنشأة؟ <span style={{color:'#0b5d56',fontWeight:500}}>دخول بالإيميل</span>
+                  style={{background:'none',border:'none',color:'var(--storely-muted)',fontSize:17,cursor:'pointer',fontFamily:'inherit'}}>
+                  صاحب المنشأة؟ <span style={{color:'var(--storely-navy)',fontWeight:500}}>دخول بالإيميل</span>
                 </button>
               </div>
             </div>
           ) : (
             <div key="pin-step" className="fade-up">
               <button onClick={()=>{setStep('phone');setPin('');setError('')}}
-                style={{background:'none',border:'none',color:'#0b5d56',fontSize:14,fontWeight:500,cursor:'pointer',fontFamily:'inherit',marginBottom:12,display:'flex',alignItems:'center',gap:4,padding:0}}>
+                style={{background:'none',border:'none',color:'var(--storely-navy)',fontSize:17,fontWeight:500,cursor:'pointer',fontFamily:'inherit',marginBottom:12,display:'flex',alignItems:'center',gap:4,padding:0}}>
                 {t('staffLogin.changeNumber')}
               </button>
 
-              <p style={{fontSize:15,color:'#4b5565',marginBottom:4}}>{t('staffLogin.enterPin')}</p>
-              <p style={{fontSize:16,color:'var(--storely-text)',marginBottom:24,direction:'ltr' as const,textAlign:dir==='rtl'?'right':'left',fontFamily:"'IBM Plex Mono',ui-monospace,monospace"}}>+{selectedCountry.code} {groupDigits(phone)}</p>
+              <p style={{fontSize:17,color:'var(--storely-muted)',marginBottom:4}}>{t('staffLogin.enterPin')}</p>
+              <p style={{fontSize:17,color:'var(--storely-text)',marginBottom:24,direction:'ltr' as const,textAlign:dir==='rtl'?'right':'left',fontFamily:'var(--storely-font)',fontVariantNumeric:'tabular-nums'}}>+{selectedCountry.code} {groupDigits(phone)}</p>
 
               {/* نقاط عرض PIN */}
               <div className={shake?'shake':''} style={{display:'flex',justifyContent:'center',gap:14,marginBottom:32,direction:'ltr' as const}}>
                 {[0,1,2,3].map(i=>(
                   <div key={i} style={{
                     width:14,height:14,borderRadius:'50%',
-                    background: i<pin.length ? '#111827' : '#ffffff',
-                    border: i<pin.length ? 'none' : '1.5px solid #d1d5db',
+                    background: i<pin.length ? 'var(--storely-text)' : '#ffffff',
+                    border: i<pin.length ? 'none' : '1.5px solid var(--storely-control-border)',
                     animation: loading && i<pin.length ? 'dotPulse 1s ease infinite' : 'none',
                     animationDelay: `${i*0.08}s`,
                     transition:'all .15s',
@@ -222,21 +222,21 @@ function StaffLoginInner() {
                 ))}
               </div>
 
-              {error && <div style={{textAlign:'center' as const,color:'#dc2626',fontSize:14,marginBottom:20}}>{error}</div>}
-              {loading && <div style={{textAlign:'center' as const,color:'#4b5565',fontSize:13,marginBottom:20}}>{t('staffLogin.verifying')}</div>}
+              {error && <div style={{textAlign:'center' as const,color:'#dc2626',fontSize:17,marginBottom:20}}>{error}</div>}
+              {loading && <div style={{textAlign:'center' as const,color:'var(--storely-muted)',fontSize:15,marginBottom:20}}>{t('staffLogin.verifying')}</div>}
 
               {/* لوحة أرقام PIN */}
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:24,direction:'ltr' as const}}>
                 {keypadKeys.map((k,i)=> k==='' ? <div key={i}/> : (
                   <button key={i} className="kp-btn" disabled={loading} onClick={()=>pressPinKey(k)}
-                    style={{height:56,borderRadius:12,border:k==='⌫'?'none':'1px solid #e5e7eb',background:k==='⌫'?'transparent':'#ffffff',fontSize:22,fontWeight:500,fontFamily:"'IBM Plex Mono',ui-monospace,monospace",color:k==='⌫'?'#4b5565':'#111827',cursor:loading?'default':'pointer',opacity:loading?.5:1,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    style={{height:56,borderRadius:20,border:k==='⌫'?'none':'1px solid var(--storely-border)',background:k==='⌫'?'transparent':'#ffffff',fontSize:22,fontWeight:500,fontFamily:'var(--storely-font)',fontVariantNumeric:'tabular-nums',color:k==='⌫'?'var(--storely-muted)':'var(--storely-text)',cursor:loading?'default':'pointer',opacity:loading?.5:1,display:'flex',alignItems:'center',justifyContent:'center'}}>
                     {keyContent(k)}
                   </button>
                 ))}
               </div>
 
               <div style={{textAlign:'center' as const}}>
-                <span style={{fontSize:13,color:'#4b5565'}}>{t('staffLogin.forgotPin')}</span>
+                <span style={{fontSize:15,color:'var(--storely-muted)'}}>{t('staffLogin.forgotPin')}</span>
               </div>
             </div>
           )}

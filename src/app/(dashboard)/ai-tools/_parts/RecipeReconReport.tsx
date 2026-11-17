@@ -9,54 +9,54 @@ export default function RecipeReconReport({ m }: { m: AiToolsPage }) {
   return (
     <>
       {recipeReconReport && (
-        <div style={{marginTop:16,background:C.surface,borderRadius:14,padding:'20px',border:'1.5px solid #ddd6fe'}}>
-          <div style={{fontSize:14,fontWeight:800,color:'#5b21b6',marginBottom:4}}>تقدير الإنتاج ({reconFrom||reconTo ? `${reconFrom||'البداية'} إلى ${reconTo||'اليوم'}` : 'آخر 30 يوم'})</div>
-          <div style={{fontSize:11,color:'#7c3aed',marginBottom:16}}>{recipeReconReport.method==='count'?'محسوب من الفرق بين الجرد الفعلي أول وآخر الفترة':'محسوب من الصرف المسجّل للمواد الخام'} ÷ كمية كل مكوّن بالوصفة. الرقم تقديري ومقرّب للأقل</div>
+        <div style={{marginTop:16,background:C.surface,borderRadius:20,padding:'20px',border:'1.5px solid var(--storely-border)'}}>
+          <div style={{fontSize:17,fontWeight:600,color:'var(--storely-navy)',marginBottom:4}}>تقدير الإنتاج ({reconFrom||reconTo ? `${reconFrom||'البداية'} إلى ${reconTo||'اليوم'}` : 'آخر 30 يوم'})</div>
+          <div style={{fontSize:12,color:'var(--storely-navy)',marginBottom:16}}>{recipeReconReport.method==='count'?'محسوب من الفرق بين الجرد الفعلي أول وآخر الفترة':'محسوب من الصرف المسجّل للمواد الخام'} ÷ كمية كل مكوّن بالوصفة. الرقم تقديري ومقرّب للأقل</div>
 
           {!recipeReconReport.hasData ? (
-            <div style={{textAlign:'center',padding:'24px',color:'var(--storely-subtle)',fontSize:13}}>
+            <div style={{textAlign:'center',padding:'24px',color:'var(--storely-subtle)',fontSize:15}}>
               لا توجد أي وصفة معرّفة بعد<br/>
-              <span style={{fontSize:11}}>اضغط "+ وصفة جديدة" وأضف اسمها ومكوناتها أولاً</span>
+              <span style={{fontSize:12}}>اضغط "+ وصفة جديدة" وأضف اسمها ومكوناتها أولاً</span>
             </div>
           ) : (
             <>
               {(()=>{
                 const grandTotal = recipeReconReport.recipes.reduce((s:number,r:any)=>s+(r.totalCost||0),0)
                 return grandTotal>0 && (
-                  <div style={{background:'var(--storely-background)',border:'1px solid var(--storely-border)',borderRadius:10,padding:'12px 14px',marginBottom:12,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                    <span style={{fontSize:12,fontWeight:700,color:'#16262D',display:'flex',alignItems:'center',gap:6}}><Wallet size={14}/>إجمالي تكلفة الإنتاج التقديرية</span>
-                    <span style={{fontSize:18,fontWeight:900,color:'#203640'}}>{grandTotal.toFixed(2)} ⃁</span>
+                  <div style={{background:'var(--storely-background)',border:'1px solid var(--storely-border)',borderRadius:12,padding:'12px 14px',marginBottom:12,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <span style={{fontSize:13,fontWeight:600,color:'#16262D',display:'flex',alignItems:'center',gap:6}}><Wallet size={14}/>إجمالي تكلفة الإنتاج التقديرية</span>
+                    <span style={{fontSize:20,fontWeight:600,color:'#203640'}}>{grandTotal.toFixed(2)} ⃁</span>
                   </div>
                 )
               })()}
             <div style={{display:'flex',flexDirection:'column' as const,gap:12}}>
               {recipeReconReport.recipes.map((r:any)=>(
-                <div key={r.id} style={{background:C.bg,border:`1px solid ${C.border2}`,borderRadius:10,padding:'12px 14px'}}>
+                <div key={r.id} style={{background:C.bg,border:`1px solid ${C.border2}`,borderRadius:12,padding:'12px 14px'}}>
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
-                    <span style={{fontSize:13,fontWeight:700,color:C.text}}>{r.name}</span>
-                    <span style={{fontSize:16,fontWeight:900,color:'#7c3aed'}}>{r.basis==='shared'?'حتى ':''}{r.estimatedProduced} وحدة</span>
+                    <span style={{fontSize:15,fontWeight:600,color:C.text}}>{r.name}</span>
+                    <span style={{fontSize:17,fontWeight:600,color:'var(--storely-navy)'}}>{r.basis==='shared'?'حتى ':''}{r.estimatedProduced} وحدة</span>
                   </div>
                   {r.totalCost!==null && r.totalCost!==undefined && (
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,background:'var(--storely-background)',borderRadius:7,padding:'6px 10px'}}>
-                      <span style={{fontSize:10,color:'#16262D'}}>تكلفة الوحدة: {Number(r.costPerUnit).toFixed(2)} ⃁</span>
-                      <span style={{fontSize:12,fontWeight:800,color:'#203640'}}>الإجمالي: {Number(r.totalCost).toFixed(2)} ⃁</span>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,background:'var(--storely-background)',borderRadius:12,padding:'6px 10px'}}>
+                      <span style={{fontSize:12,color:'#16262D'}}>تكلفة الوحدة: {Number(r.costPerUnit).toFixed(2)} ⃁</span>
+                      <span style={{fontSize:13,fontWeight:600,color:'#203640'}}>الإجمالي: {Number(r.totalCost).toFixed(2)} ⃁</span>
                     </div>
                   )}
                   {r.basis==='shared' && (
-                    <div style={{fontSize:10,color:'var(--storely-muted)',background:'var(--storely-background)',borderRadius:7,padding:'6px 10px',marginBottom:8,display:'flex',gap:6,alignItems:'flex-start'}}><Info size={12} style={{flexShrink:0,marginTop:2}}/>جميع مكوّنات هذه الوصفة مستخدمة في وصفات أخرى، لذا يمثّل الرقم حداً أعلى. أضف مكوّناً خاصاً بها (مثل الكوب أو العلبة) ليكون التقدير أدق</div>
+                    <div style={{fontSize:12,color:'var(--storely-muted)',background:'var(--storely-background)',borderRadius:12,padding:'6px 10px',marginBottom:8,display:'flex',gap:6,alignItems:'flex-start'}}><Info size={12} style={{flexShrink:0,marginTop:2}}/>جميع مكوّنات هذه الوصفة مستخدمة في وصفات أخرى، لذا يمثّل الرقم حداً أعلى. أضف مكوّناً خاصاً بها (مثل الكوب أو العلبة) ليكون التقدير أدق</div>
                   )}
                   {r.basis==='none' && (
-                    <div style={{fontSize:10,color:'var(--storely-muted)',marginBottom:8}}>{recipeReconReport.method==='count'?'لا يوجد جردان لمكوّنات هذه الوصفة خلال الفترة — أجرِ جرداً من صفحة المخزون في بداية الفترة ونهايتها':'لا يوجد صرف مسجّل لمكوّنات هذه الوصفة خلال الفترة'}</div>
+                    <div style={{fontSize:12,color:'var(--storely-muted)',marginBottom:8}}>{recipeReconReport.method==='count'?'لا يوجد جردان لمكوّنات هذه الوصفة خلال الفترة — أجرِ جرداً من صفحة المخزون في بداية الفترة ونهايتها':'لا يوجد صرف مسجّل لمكوّنات هذه الوصفة خلال الفترة'}</div>
                   )}
                   {r.bottleneckName && r.basis!=='none' && (
-                    <div style={{fontSize:10,color:'#b45309',marginBottom:8,display:'flex',gap:5,alignItems:'center'}}><AlertTriangle size={12}/>التقدير مبني على: {r.bottleneckName} (أقل مكوّن صرفاً نسبةً لكميته بالوصفة)</div>
+                    <div style={{fontSize:12,color:'#b45309',marginBottom:8,display:'flex',gap:5,alignItems:'center'}}><AlertTriangle size={12}/>التقدير مبني على: {r.bottleneckName} (أقل مكوّن صرفاً نسبةً لكميته بالوصفة)</div>
                   )}
                   {r.components.length>0 ? (
                     <div style={{display:'flex',flexDirection:'column' as const,gap:4}}>
                       {r.components.map((c:any,i:number)=>{
                         const isBottleneck = c.name===r.bottleneckName
                         return (
-                          <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:10,color:isBottleneck?'#b45309':c.untracked?'#94a3b8':C.text4,fontWeight:isBottleneck?700:400}}>
+                          <div key={i} style={{display:'flex',justifyContent:'space-between',fontSize:12,color:isBottleneck?'#b45309':c.untracked?'var(--storely-subtle)':C.text4,fontWeight:isBottleneck?700:400}}>
                             <span>{c.name}{c.shared?' (مشترك)':''}: {recipeReconReport.method==='count'?'استُهلك':'صُرف'} {formatQty(c.consumed,c)} · بالوصفة {formatQty(c.qtyPerUnit,c)}</span>
                             <span>{c.untracked ? (recipeReconReport.method==='count'?'ليس له جردان — مستثنى':'لا يُصرف عبر النظام — مستثنى') : `يكفي لـ ${c.impliedCount} وحدة`}</span>
                           </div>
@@ -64,7 +64,7 @@ export default function RecipeReconReport({ m }: { m: AiToolsPage }) {
                       })}
                     </div>
                   ) : (
-                    <div style={{fontSize:10,color:C.text4}}>هذه الوصفة بدون مكوّنات بعد</div>
+                    <div style={{fontSize:12,color:C.text4}}>هذه الوصفة بدون مكوّنات بعد</div>
                   )}
                 </div>
               ))}

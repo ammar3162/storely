@@ -59,9 +59,26 @@ export async function syncBranchesToLimit(db: SupabaseClient, org_id: string): P
   return { locked: 0, restored: back.length }
 }
 
-/** يرجّع فروع موقوفة بسبب الحد مع موظفينها اللي توقفوا معها */
-export async function restoreLockedBranches(db: SupabaseClient, org_id: string, ids: string[]) {
+/** يرجّع فروع موقوفة (بسبب الحد أو أوقفها المالك) مع موظفينها اللي توقفوا معها —
+ *  الموظفين يرجعون على قد حد الموظفين فقط (الأقدم أولاً)، والباقي يظل موقوف لين يتوفر مكان */
+export async function restoreLockedBranches(db: SupabaseClient, org_id: string, ids: string[]): Promise<{ staffRestored: number; staffStillLocked: number }> {
   await db.from('branches').update({ is_active: true, plan_locked_at: null } as any).in('id', ids).eq('org_id', org_id)
-  await db.from('staff_members').update({ is_active: true, plan_locked_at: null } as any)
-    .in('branch_id', ids).eq('org_id', org_id).not('plan_locked_at', 'is', null)
+  const { staffLimitFor } = await import('@/lib/staffCapacity')
+  const [limit, { count: activeNow }, { data: lockedStaff }] = await Promise.all([
+    staffLimitFor(db, org_id),
+    db.from('staff_members').select('id', { count: 'exact', head: true }).eq('org_id', org_id).eq('is_active', true),
+    db.from('staff_members').select('id').in('branch_id', ids).eq('org_id', org_id).eq('is_active', false)
+      .not('plan_locked_at', 'is', null).order('created_at', { ascending: true }),
+  ])
+  const all = ((lockedStaff || []) as any[]).map(s => s.id)
+  const back = all.slice(0, Math.max(0, limit - (activeNow || 0)))
+  if (back.length) await db.from('staff_members').update({ is_active: true, plan_locked_at: null } as any).in('id', back).eq('org_id', org_id)
+  return { staffRestored: back.length, staffStillLocked: all.length - back.length }
+}
+
+/** إيقاف المالك لفرع: موظفينه يتوقفون معه (يرجعون مع الفرع) — وإلا يشتغلون بفرع موقوف ويتعدّى حد الفروع */
+export async function pauseBranchStaff(db: SupabaseClient, org_id: string, branchId: string): Promise<number> {
+  const { data } = await db.from('staff_members').update({ is_active: false, plan_locked_at: new Date().toISOString() } as any)
+    .eq('org_id', org_id).eq('branch_id', branchId).eq('is_active', true).select('id')
+  return (data || []).length
 }

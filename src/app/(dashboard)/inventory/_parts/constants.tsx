@@ -50,5 +50,5 @@ export const STARTER_PRODUCTS: Record<string,{name:string;unit:string;category:s
 
 export function StatusDot({ out, low }: { out: boolean; low: boolean }) {
   const c = out ? C.danger : low ? C.warning : C.primary
-  return <span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:12.5,fontWeight:500,color:C.text2}}><span style={{width:7,height:7,borderRadius:'50%',background:c}}/>{out?'نفد':low?'ناقص':'كافٍ'}</span>
+  return <span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:13,fontWeight:500,color:C.text2}}><span style={{width:7,height:7,borderRadius:'50%',background:c}}/>{out?'نفد':low?'ناقص':'كافٍ'}</span>
 }

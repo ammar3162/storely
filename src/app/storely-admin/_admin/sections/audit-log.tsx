@@ -41,15 +41,15 @@ export default function AuditLogPage() {
               <Avatar name={l.admin_name} size={34} />
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: A.text }}>{l.admin_name}</span>
+                  <span style={{ fontSize:17, fontWeight: 600, color: A.text }}>{l.admin_name}</span>
                   <Badge tone="neutral"><span dir="ltr">{l.action}</span></Badge>
                 </div>
-                <div style={{ fontSize: 12.5, color: A.text3, marginTop: 4 }}>{fmtDate(l.created_at, true)}{l.target_org_name ? ` · المنشأة: ${l.target_org_name}` : ''}</div>
+                <div style={{ fontSize:13, color: A.text3, marginTop: 4 }}>{fmtDate(l.created_at, true)}{l.target_org_name ? ` · المنشأة: ${l.target_org_name}` : ''}</div>
               </div>
               {l.details && <ChevronDown size={16} color={A.text3} style={{ transform: open === l.id ? 'rotate(180deg)' : 'none', transition: 'transform .15s', marginTop: 4 }} />}
             </Row>
             {open === l.id && l.details && (
-              <pre style={{ margin: '0 20px 16px', padding: '12px 14px', borderRadius: 12, background: A.muted, fontSize: 12, color: A.text2, direction: 'ltr', textAlign: 'left', whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>{JSON.stringify(l.details, null, 2)}</pre>
+              <pre style={{ margin: '0 20px 16px', padding: '12px 14px', borderRadius:20, background: A.muted, fontSize:13, color: A.text2, direction: 'ltr', textAlign: 'left', whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>{JSON.stringify(l.details, null, 2)}</pre>
             )}
           </div>
         ))}

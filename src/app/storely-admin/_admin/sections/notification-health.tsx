@@ -66,8 +66,8 @@ export default function NotificationHealthPage() {
               <Row key={o.org_id} style={{ flexWrap: 'wrap' }}>
                 <Avatar name={o.org_name} size={34} />
                 <div style={{ flex: '1 1 200px', minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: A.text }}>{o.org_name}</div>
-                  <div style={{ fontSize: 12.5, color: A.text3, marginTop: 2 }}><span dir="ltr">{o.phone}</span> · آخر محاولة {fmtDate(o.last_at, true)}</div>
+                  <div style={{ fontSize:17, fontWeight: 600, color: A.text }}>{o.org_name}</div>
+                  <div style={{ fontSize:13, color: A.text3, marginTop: 2 }}><span dir="ltr">{o.phone}</span> · آخر محاولة {fmtDate(o.last_at, true)}</div>
                 </div>
                 <div style={{ width: 140, height: 6, borderRadius: 99, background: A.muted, overflow: 'hidden' }}>
                   <div style={{ width: `${pct}%`, height: '100%', background: allFailed ? A.danger : o.failed ? A.warning : A.primary, borderRadius: 99 }} />

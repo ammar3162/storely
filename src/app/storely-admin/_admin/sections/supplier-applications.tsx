@@ -62,10 +62,10 @@ export default function SupplierApplicationsPage() {
                   <Avatar name={a.company_name} size={44} />
                   <div style={{ flex: '1 1 320px', minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <div style={{ fontSize: 15, fontWeight: 600 }}>{a.company_name}</div>
+                      <div style={{ fontSize:17, fontWeight: 600 }}>{a.company_name}</div>
                       <Badge tone={st.t}>{st.l}</Badge>
                     </div>
-                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: A.text2, marginTop: 8 }}>
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize:15, color: A.text2, marginTop: 8 }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><User size={13} color={A.text3} />{a.contact_name}</span>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Phone size={13} color={A.text3} /><span dir="ltr">{a.phone}</span></span>
                       {a.email && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Mail size={13} color={A.text3} /><span dir="ltr">{a.email}</span></span>}
@@ -76,8 +76,8 @@ export default function SupplierApplicationsPage() {
                         {a.business_type.map((t: string) => <Badge key={t}>{t}</Badge>)}
                       </div>
                     )}
-                    {a.description && <div style={{ fontSize: 13.5, color: A.text2, marginTop: 12, lineHeight: 1.8, padding: '10px 12px', background: A.muted, borderRadius: 10 }}>{a.description}</div>}
-                    <div style={{ fontSize: 12.5, color: A.text3, marginTop: 10 }}>{fmtDate(a.created_at, true)}</div>
+                    {a.description && <div style={{ fontSize:15, color: A.text2, marginTop: 12, lineHeight: 1.8, padding: '10px 12px', background: A.muted, borderRadius:12 }}>{a.description}</div>}
+                    <div style={{ fontSize:13, color: A.text3, marginTop: 10 }}>{fmtDate(a.created_at, true)}</div>
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {phone && <LinkBtn href={`https://wa.me/${phone}`}><MessageCircle size={14} /> واتساب</LinkBtn>}

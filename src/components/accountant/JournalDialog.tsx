@@ -31,32 +31,32 @@ export default function JournalDialog({ orgId, range, periodLabel, onClose }: { 
     setTimeout(() => setBusy(''), 1500)
   }
 
-  const cell: React.CSSProperties = { width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, border: `1px solid ${colors.border}`, fontSize: 16, fontFamily: font.family, background: '#fff' }
+  const cell: React.CSSProperties = { width: '100%', boxSizing: 'border-box', padding: '8px 10px', borderRadius:12, border: `1px solid ${colors.border}`, fontSize:17, fontFamily: font.family, background: '#fff' }
   return (
     <div role="dialog" aria-modal="true" aria-label="تصدير القيود" style={{ position: 'fixed', inset: 0, zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, fontFamily: font.family }}>
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,.45)' }} onClick={() => !busy && onClose()} />
-      <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 720, maxHeight: '92vh', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 24px 60px rgba(0,0,0,.25)' }}>
+      <div style={{ background: '#fff', borderRadius:20, width: '100%', maxWidth: 720, maxHeight: '92vh', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 24px 60px rgba(0,0,0,.25)' }}>
         <header style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 20px', borderBottom: `1px solid ${colors.border}` }}>
-          <span style={{ width: 36, height: 36, borderRadius: 10, background: colors.bg, color: colors.text3, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><BookOpen size={18} /></span>
+          <span style={{ width: 36, height: 36, borderRadius:12, background: colors.bg, color: colors.text3, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><BookOpen size={18} /></span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 16, fontWeight: 700 }}>تصدير القيود اليومية</div>
-            <div style={{ fontSize: 12.5, color: colors.text3 }}>{periodLabel} · قيد لكل إقفال كاشير وكل فاتورة مشتريات</div>
+            <div style={{ fontSize:17, fontWeight:600 }}>تصدير القيود اليومية</div>
+            <div style={{ fontSize:13, color: colors.text3 }}>{periodLabel} · قيد لكل إقفال كاشير وكل فاتورة مشتريات</div>
           </div>
           <button onClick={onClose} aria-label="إغلاق" style={{ background: 'none', border: 'none', cursor: 'pointer', color: colors.text3, padding: 4 }}><X size={20} /></button>
         </header>
 
         <div style={{ padding: '14px 20px', overflowY: 'auto' }}>
-          <p style={{ fontSize: 13, color: colors.text3, lineHeight: 1.7, margin: '0 0 12px' }}>
+          <p style={{ fontSize:15, color: colors.text3, lineHeight: 1.7, margin: '0 0 12px' }}>
             اربط كل بند بحسابه في دليل حسابات العميل لديك. يُحفظ الربط لهذا العميل، فلا تحتاج إلى إعادته. الملف يُستورد في قيود ودفترة و Zoho Books وأودو.
           </p>
           {!map ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={22} className="spin" color={colors.primary} /></div> : (
-            <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: 'hidden' }}>
-              <div className="jd-row" style={{ background: '#F6F8F9', color: colors.text3, fontSize: 12, fontWeight: 600 }}>
+            <div style={{ border: `1px solid ${colors.border}`, borderRadius:20, overflow: 'hidden' }}>
+              <div className="jd-row" style={{ background: 'var(--storely-background)', color: colors.text3, fontSize:13, fontWeight: 600 }}>
                 <span>البند في ستورلي</span><span>رقم الحساب</span><span>اسم الحساب لديك</span>
               </div>
               {ACCOUNT_KEYS.map(k => (
                 <div key={k} className="jd-row" style={{ borderTop: `1px solid ${colors.border}` }}>
-                  <span style={{ fontSize: 13.5, fontWeight: 600 }}>{ACCOUNT_LABELS[k]}</span>
+                  <span style={{ fontSize:15, fontWeight: 600 }}>{ACCOUNT_LABELS[k]}</span>
                   <input value={map[k].code} onChange={e => set(k, 'code', e.target.value)} dir="ltr" inputMode="numeric" aria-label={`رقم حساب ${ACCOUNT_LABELS[k]}`} placeholder={DEFAULT_ACCOUNTS[k].code} style={cell} />
                   <input value={map[k].name} onChange={e => set(k, 'name', e.target.value)} aria-label={`اسم حساب ${ACCOUNT_LABELS[k]}`} style={cell} />
                 </div>
@@ -64,7 +64,7 @@ export default function JournalDialog({ orgId, range, periodLabel, onClose }: { 
             </div>
           )}
           <style>{'.jd-row{display:grid;grid-template-columns:minmax(0,1.2fr) 110px minmax(0,1.4fr);gap:10px;align-items:center;padding:8px 12px}@media(max-width:560px){.jd-row{grid-template-columns:1fr 1fr}.jd-row>span:first-child{grid-column:1/-1}}'}</style>
-          {err && <div style={{ marginTop: 10, fontSize: 13, color: '#B42318' }}>{err}</div>}
+          {err && <div style={{ marginTop: 10, fontSize:15, color: '#B42318' }}>{err}</div>}
         </div>
 
         <footer style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '12px 20px', borderTop: `1px solid ${colors.border}` }}>

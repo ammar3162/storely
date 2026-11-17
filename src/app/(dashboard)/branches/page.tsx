@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { StorelyPageHeader } from '@/components/ui/page-header'
+import { qtyUnit } from '@/lib/arabicCount'
 import { StorelyButton } from '@/components/ui/button'
 import { StorelyCard } from '@/components/ui/card'
 import { StorelyFormField } from '@/components/ui/form-field'
@@ -32,8 +33,8 @@ const BRANCH_STYLES = `
   .br-record-main{display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:start;gap:${T.spacing[3]}px}
   .br-identity{min-width:0;overflow-wrap:anywhere}
   .br-identity-link{cursor:pointer}
-  .br-identity-link>.br-section-title{display:flex;align-items:center;flex-wrap:wrap;gap:${T.spacing[2]}px;margin:0;font-size:16px;font-weight:600}
-  .br-identity>.br-supporting:first-child{font-size:16px;font-weight:600;color:${T.color.text}!important}
+  .br-identity-link>.br-section-title{display:flex;align-items:center;flex-wrap:wrap;gap:${T.spacing[2]}px;margin:0;font-size:17px;font-weight:600}
+  .br-identity>.br-supporting:first-child{font-size:17px;font-weight:600;color:${T.color.text}!important}
   .br-identity .br-supporting{margin-top:${T.spacing[1]}px}
   .br-section-title{font-size:${T.typography.section}px;font-weight:600;line-height:${T.typography.lineHeight};margin-bottom:${T.spacing[4]}px}
   .br-supporting{font-size:${T.typography.supporting}px;color:${T.color.textMuted};line-height:1.8}
@@ -45,7 +46,7 @@ const BRANCH_STYLES = `
   .branches-page .br-primary:hover:not(:disabled){background:${T.color.navy};border-color:${T.color.navy};color:${T.color.surface}}
   .branches-page .br-danger{background:${T.color.surface};border-color:${T.color.dangerBorder};color:${T.color.danger}}
   .branches-page .br-danger:hover:not(:disabled){background:${T.color.dangerBg};border-color:${T.color.dangerBorder}}
-  .branches-page .br-branch-icon{width:36px;height:36px;min-height:36px;padding:0;display:flex;align-items:center;justify-content:center;border:1px solid ${T.color.border};border-radius:${T.radius.control};background:${T.color.surface};font-size:18px;flex-shrink:0}
+  .branches-page .br-branch-icon{width:36px;height:36px;min-height:36px;padding:0;display:flex;align-items:center;justify-content:center;border:1px solid ${T.color.border};border-radius:${T.radius.control};background:${T.color.surface};font-size:20px;flex-shrink:0}
   .branches-page .br-edit-icon{width:32px;height:32px;min-height:32px;padding:0;border-color:transparent;background:transparent;font-size:${T.typography.supporting}px}
   .br-record-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:${T.spacing[2]}px;max-width:100%}
   .br-record-actions .br-button{font-size:${T.typography.supporting}px}
@@ -290,13 +291,13 @@ export default function BranchesPage() {
 
   async function deleteBranch(id:string) {
     if(branches.length<=1){toast('لا يمكن حذف الفرع الوحيد','warning');return}
-    if(!(await confirmDialog({ title: 'إيقاف الفرع', message: 'إيقاف هذا الفرع؟ بياناته تبقى محفوظة ويمكن تفعيله لاحقاً.', type: 'warning' }))) return
+    if(!(await confirmDialog({ title: 'إيقاف الفرع', message: 'إيقاف هذا الفرع؟ يتوقف معه موظفوه ومدير الفرع، وتبقى بياناته محفوظة. عند تفعيله يرجع موظفوه معه.', type: 'warning' }))) return
     const r=await api.patch('/api/branches',{org_id:orgId,id,is_active:false})
     if(!r.success){toast(r.error||'فشل إيقاف الفرع — حاول مرة أخرى','error');return}
     const stopped = branches.find((b:any)=>b.id===id)
     setBranches(prev=>prev.filter((b:any)=>b.id!==id))
     if (stopped) setInactiveBranches(prev=>[...prev, stopped])
-    toast('تم إيقاف الفرع')
+    toast(r.note ? `تم إيقاف الفرع — ${r.note}` : 'تم إيقاف الفرع')
   }
 
   async function reactivateBranch(id:string) {
@@ -307,7 +308,7 @@ export default function BranchesPage() {
     setInactiveBranches(prev=>prev.filter((x:any)=>x.id!==id))
     if (b) setBranches(prev=>[...prev, b])
     setReactivatingId(null)
-    toast('تم إعادة تفعيل الفرع')
+    toast(r.note ? `تم إعادة تفعيل الفرع — ${r.note}` : 'تم إعادة تفعيل الفرع', r.note && r.note.includes('موقوفين') ? 'warning' : undefined)
   }
 
   function resetPhoneEdit() {
@@ -367,7 +368,7 @@ export default function BranchesPage() {
       <style>{BRANCH_STYLES}</style>
       <StorelyPageHeader
         title="إدارة الفروع"
-        description={<>كل فرع له مخزونه المستقل. باقتك مع الإضافات تسمح بـ <b>{maxBranches} فرع</b>.</>}
+        description={<>كل فرع له مخزونه المستقل. باقتك مع الإضافات تسمح بـ <b>{qtyUnit(maxBranches,'فرع')}</b>.</>}
       />
 
       {branches.length>0&&(
@@ -551,7 +552,7 @@ export default function BranchesPage() {
         const q = copySearch.trim()
         const shown = q ? sourceProducts.filter((p:any)=>String(p.name).includes(q) || String(p.category||'').includes(q)) : sourceProducts
         const items = (n: number) => n === 1 ? 'صنف واحد' : n === 2 ? 'صنفان' : n <= 10 ? `${n} أصناف` : `${n} صنفاً`
-        const card = (on: boolean): React.CSSProperties => ({ display:'flex', gap:12, alignItems:'flex-start', textAlign:'start', width:'100%', padding:'14px 16px', borderRadius:12, cursor:'pointer', fontFamily:'inherit',
+        const card = (on: boolean): React.CSSProperties => ({ display:'flex', gap:12, alignItems:'flex-start', textAlign:'start', width:'100%', padding:'14px 16px', borderRadius:20, cursor:'pointer', fontFamily:'inherit',
           border:`1.5px solid ${on?T.color.navy:T.color.border}`, background:on?'#EEF2F4':'white', color:T.color.text })
         return (
         <div className="br-overlay">
@@ -563,7 +564,7 @@ export default function BranchesPage() {
               <div style={{display:'grid',gap:10,margin:'16px 0'}}>
                 <button type="button" style={card(true)} onClick={()=>setCopyStep('pick')}>
                   <Copy size={20} style={{flexShrink:0,marginTop:2}}/>
-                  <span><span className="br-strong" style={{display:'block'}}>انسخ قائمة الأصناف <span style={{fontSize:12,fontWeight:500,color:T.color.textMuted}}>(مقترح)</span></span>
+                  <span><span className="br-strong" style={{display:'block'}}>انسخ قائمة الأصناف <span style={{fontSize:13,fontWeight:500,color:T.color.textMuted}}>(مقترح)</span></span>
                     <span className="br-supporting" style={{color:T.color.textMuted,display:'block',marginTop:4,lineHeight:1.7}}>نفس الأصناف والوحدات والفئات والموردين وحدود الطلب، بكمية صفر. تختار ما تحتاجه منها.</span></span>
                 </button>
                 <button type="button" style={card(false)} onClick={()=>setShowCopyProducts(false)}>
@@ -573,13 +574,13 @@ export default function BranchesPage() {
                 </button>
               </div>
               {copySources.length>1 && (
-                <label style={{display:'block',fontSize:13,color:T.color.text,marginBottom:12}}>انسخ من:
+                <label style={{display:'block',fontSize:15,color:T.color.text,marginBottom:12}}>انسخ من:
                   <select className="br-control" value={copySourceBranchId} onChange={e=>loadSource(e.target.value)} style={{marginTop:6}}>
                     {copySources.map((b:any)=><option key={b.id} value={b.id}>{b.name}</option>)}
                   </select>
                 </label>
               )}
-              <button type="button" onClick={undoAddBranch} disabled={undoingBranch} style={{background:'none',border:'none',color:T.color.textMuted,fontSize:13,cursor:'pointer',fontFamily:'inherit',textDecoration:'underline',padding:0}}>
+              <button type="button" onClick={undoAddBranch} disabled={undoingBranch} style={{background:'none',border:'none',color:T.color.textMuted,fontSize:15,cursor:'pointer',fontFamily:'inherit',textDecoration:'underline',padding:0}}>
                 {undoingBranch?'جاري التراجع...':'تراجع عن إضافة الفرع'}
               </button>
             </>}
@@ -619,7 +620,7 @@ export default function BranchesPage() {
             </>}
 
             {copyStep==='done' && <>
-              <div style={{width:48,height:48,borderRadius:12,background:'#ECFDF3',color:'#067647',display:'grid',placeItems:'center',marginBottom:12}}><CheckCircle2 size={24}/></div>
+              <div style={{width:48,height:48,borderRadius:20,background:'#ECFDF3',color:'#067647',display:'grid',placeItems:'center',marginBottom:12}}><CheckCircle2 size={24}/></div>
               <div className="br-section-title" style={{color:T.color.text}}>نُسخ {items(copiedCount)} إلى «{newBranchName}»</div>
               <div className="br-supporting" style={{color:T.color.textMuted,lineHeight:1.8}}>الأصناف بكمية صفر. هل تريد نقل كميات من «{srcName}» الآن؟ النقل يُنقص من فرع ويزيد في الآخر، ويظهر في تقرير التحويلات.</div>
               <div className="br-dialog-footer" style={{marginTop:16}}>

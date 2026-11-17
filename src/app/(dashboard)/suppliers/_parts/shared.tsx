@@ -16,12 +16,12 @@ export function UpgradeBlock() {
     <div style={{minHeight:'60vh',display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
       <div style={{textAlign:'center',maxWidth:400}}>
         <div style={{display:'flex',justifyContent:'center',marginBottom:16,color:'var(--storely-muted)'}}><Lock size={44} strokeWidth={1.5}/></div>
-        <h2 style={{fontSize:22,fontWeight:900,color:'var(--storely-text)',marginBottom:8}}>هذه الميزة غير متاحة في باقتك</h2>
-        <p style={{fontSize:14,color:'var(--storely-muted)',lineHeight:1.8,marginBottom:24}}>
+        <h2 style={{fontSize:22,fontWeight:600,color:'var(--storely-text)',marginBottom:8}}>هذه الميزة غير متاحة في باقتك</h2>
+        <p style={{fontSize:17,color:'var(--storely-muted)',lineHeight:1.8,marginBottom:24}}>
           إدارة الموردين متاحة في الباقة الشاملة وما فوق.
         </p>
         <button className="hide-in-app" onClick={()=>router.push('/settings')}
-          style={{padding:'14px 32px',background:'#203640',color:'white',border:'none',borderRadius:14,fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>
+          style={{padding:'14px 32px',background:'#203640',color:'white',border:'none',borderRadius:20,fontSize:17,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
           ترقية الباقة ←
         </button>
       </div>
@@ -31,7 +31,7 @@ export function UpgradeBlock() {
 
 export function NotifyBadge({ mode, time, day }: { mode:string; time:string; day:number }) {
   const opt = NOTIFY_OPTS.find(o=>o.id===mode)
-  if (mode==='instant') return <span style={{fontSize:11,background:'#fef3c7',color:'#92400e',border:'1px solid #fcd34d',borderRadius:20,padding:'2px 8px',fontWeight:700}}>فوري</span>
-  if (mode==='daily') return <span style={{fontSize:11,background:'#eff6ff',color:'#1d4ed8',border:'1px solid #bfdbfe',borderRadius:20,padding:'2px 8px',fontWeight:700}}>يومي {time}</span>
-  return <span style={{fontSize:11,background:'#f5f3ff',color:'#6d28d9',border:'1px solid #ddd6fe',borderRadius:20,padding:'2px 8px',fontWeight:700}}>{DAYS[day]} {time}</span>
+  if (mode==='instant') return <span style={{fontSize:12,background:'#fef3c7',color:'#92400e',border:'1px solid #fcd34d',borderRadius:20,padding:'2px 8px',fontWeight:600}}>فوري</span>
+  if (mode==='daily') return <span style={{fontSize:12,background:'var(--storely-fill)',color:'var(--storely-navy)',border:'1px solid var(--storely-border)',borderRadius:20,padding:'2px 8px',fontWeight:600}}>يومي {time}</span>
+  return <span style={{fontSize:12,background:'var(--storely-fill)',color:'var(--storely-navy)',border:'1px solid var(--storely-border)',borderRadius:20,padding:'2px 8px',fontWeight:600}}>{DAYS[day]} {time}</span>
 }

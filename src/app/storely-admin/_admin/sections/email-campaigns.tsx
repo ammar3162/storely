@@ -94,7 +94,7 @@ export default function EmailCampaignsPage() {
 
       <Card title="رسائل الاشتراك التلقائية" subtitle="تصل للمالك قبل انتهاء اشتراكه بـ3 أيام ويوم الانتهاء، مع الواتساب" actions={
         <Btn small onClick={systemTest} disabled={busy === 'sys'}>{busy === 'sys' ? 'جاري الإرسال...' : 'أرسل لي نسخة تجريبية'}</Btn>}>
-        <div style={{ fontSize: 13, color: A.text3, lineHeight: 1.8 }}>تُرسل النسختان إلى بريد حسابك في لوحة الأدمن للتأكد من شكلهما ووصولهما إلى الوارد.</div>
+        <div style={{ fontSize:15, color: A.text3, lineHeight: 1.8 }}>تُرسل النسختان إلى بريد حسابك في لوحة الأدمن للتأكد من شكلهما ووصولهما إلى الوارد.</div>
       </Card>
 
       {info && (
@@ -106,9 +106,9 @@ export default function EmailCampaignsPage() {
           }>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: A.text, marginBottom: 8 }}><Users size={15} color={A.text3} /> المستلمون</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize:15, fontWeight: 600, color: A.text, marginBottom: 8 }}><Users size={15} color={A.text3} /> المستلمون</div>
                 <Tabs items={Object.entries(info.segments as Record<string, string>).map(([k, label]) => ({ k, l: label, n: info.counts[k] }))} value={segment} onChange={setSegment} />
-                {info.optouts > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: A.text3, marginTop: 8 }}><MailX size={13} /> {info.optouts} ألغوا الاشتراك في الإعلانات ولن تصلهم الحملة</div>}
+                {info.optouts > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize:13, color: A.text3, marginTop: 8 }}><MailX size={13} /> {info.optouts} ألغوا الاشتراك في الإعلانات ولن تصلهم الحملة</div>}
               </div>
               <Field label="عنوان البريد (يظهر في صندوق الوارد)"><input style={inputStyle} value={form.subject} onChange={set('subject')} maxLength={150} /></Field>
               <Field label="العنوان الرئيسي داخل البريد"><input style={inputStyle} value={form.title} onChange={set('title')} maxLength={150} /></Field>
@@ -123,7 +123,7 @@ export default function EmailCampaignsPage() {
                 <Btn onClick={test} loading={busy === 'test'} disabled={!!busy}><FlaskConical size={15} />إرسال رسالة تجريبية إلى بريدي</Btn>
                 <Btn kind="primary" onClick={send} loading={busy === 'send'} disabled={!!busy || !count}><Send size={15} />إرسال إلى {count} عميل</Btn>
               </div>
-              <div style={{ fontSize: 12, color: A.text3, lineHeight: 1.7 }}>تصل الرسالة التجريبية إلى {info.adminEmail}، وتُرسل الإعلانات من عنوان منفصل عن رسائل النظام.</div>
+              <div style={{ fontSize:13, color: A.text3, lineHeight: 1.7 }}>تصل الرسالة التجريبية إلى {info.adminEmail}، وتُرسل الإعلانات من عنوان منفصل عن رسائل النظام.</div>
             </div>
           </Card>
 

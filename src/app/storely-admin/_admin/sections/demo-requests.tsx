@@ -83,21 +83,21 @@ export default function DemoRequestsPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
                   <Avatar name={r.first_name} size={40} />
                   <div style={{ flex: 1, minWidth: 160 }}>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: A.text }}>{r.first_name} {r.last_name}</div>
-                    <div style={{ fontSize: 12.5, color: A.text3, marginTop: 2 }}>{fmtDate(r.created_at, true)}</div>
+                    <div style={{ fontSize:17, fontWeight: 600, color: A.text }}>{r.first_name} {r.last_name}</div>
+                    <div style={{ fontSize:13, color: A.text3, marginTop: 2 }}>{fmtDate(r.created_at, true)}</div>
                   </div>
                   {r.matched_org_id ? (
                     <Badge tone={isPaid ? 'primary' : 'info'}>{isPaid ? 'مشترك مدفوع' : 'أنشأ حساباً، وهو في فترة التجربة'}</Badge>
                   ) : (
                     <select value={r.status} onChange={e => updateStatus(r.id, e.target.value)} aria-label="حالة الطلب"
-                      style={{ ...inputStyle, width: 'auto', minHeight: 34, padding: '5px 10px', fontSize: 13, fontWeight: 500 }}>
+                      style={{ ...inputStyle, width: 'auto', minHeight: 34, padding: '5px 10px', fontSize:15, fontWeight: 500 }}>
                       {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                     </select>
                   )}
                   <Btn small kind="ghost" onClick={() => remove(r)} title="حذف الطلب"><Trash2 size={14} /></Btn>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 10, fontSize: 13, marginBottom: r.matched_org_id ? 0 : 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 10, fontSize:15, marginBottom: r.matched_org_id ? 0 : 14 }}>
                   <Info icon={<Building2 size={15} />}>{r.business_name}</Info>
                   <Info icon={<Store size={15} />}>{r.branch_count || 'عدد الفروع غير محدد'}</Info>
                   <Info icon={<Phone size={15} />}><a href={`https://wa.me/${phone}`} target="_blank" rel="noreferrer" style={{ color: A.info, direction: 'ltr' }}>{r.phone}</a></Info>
@@ -121,7 +121,7 @@ export default function DemoRequestsPage() {
 
 function Info({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: A.text, minWidth: 0, fontSize: 13.5 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: A.text, minWidth: 0, fontSize:15 }}>
       <span style={{ color: A.text3, display: 'flex', flexShrink: 0 }}>{icon}</span>
       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{children}</span>
     </div>

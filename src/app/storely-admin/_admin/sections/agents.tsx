@@ -56,11 +56,11 @@ export default function AgentsPage() {
                 <Avatar name={a.name} size={44} />
                 <div style={{ flex: '1 1 300px', minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <div style={{ fontSize: 15, fontWeight: 600 }}>{a.name}</div>
+                    <div style={{ fontSize:17, fontWeight: 600 }}>{a.name}</div>
                     <Badge tone="primary">{a.code}</Badge>
                     {a.status !== 'active' && <Badge tone="danger">موقوف</Badge>}
                   </div>
-                  <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 13, color: A.text2, marginTop: 8 }}>
+                  <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize:15, color: A.text2, marginTop: 8 }}>
                     <span dir="ltr">+{a.phone}</span><span dir="ltr">{a.email}</span>
                     <span>{a.payout_method === 'transfer' ? <>تحويل بنكي · <span dir="ltr">{iban[a.id] || `••••${a.iban_last4 || ''}`}</span></> : 'نقداً'}</span>
                   </div>
@@ -72,9 +72,9 @@ export default function AgentsPage() {
                     <Mini label="المصروف" value={sar(a.paid)} />
                   </div>
                 </div>
-                <div style={{ minWidth: 130, padding: '10px 14px', borderRadius: 12, background: a.balance > 0 ? A.warningSoft : A.muted, textAlign: 'center' as const }}>
-                  <div style={{ fontSize: 12, color: A.text2 }}>الرصيد المستحق</div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: a.balance > 0 ? A.warning : A.text, fontVariantNumeric: 'tabular-nums' }}>{sar(a.balance)}</div>
+                <div style={{ minWidth: 130, padding: '10px 14px', borderRadius:20, background: a.balance > 0 ? A.warningSoft : A.muted, textAlign: 'center' as const }}>
+                  <div style={{ fontSize:13, color: A.text2 }}>الرصيد المستحق</div>
+                  <div style={{ fontSize: 20, fontWeight:600, color: a.balance > 0 ? A.warning : A.text, fontVariantNumeric: 'tabular-nums' }}>{sar(a.balance)}</div>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16, paddingTop: 16, borderTop: `1px solid ${A.border}` }}>
@@ -95,7 +95,7 @@ export default function AgentsPage() {
                 </div>
               )}
               {open === a.id && (
-                <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${A.border}`, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 16, fontSize: 13 }}>
+                <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${A.border}`, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 16, fontSize:15 }}>
                   <div>
                     <div style={{ fontWeight: 600, marginBottom: 8 }}>المكافآت</div>
                     {a.commissions.length ? a.commissions.map((c: any, i: number) => <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px dashed ${A.border}`, color: c.status === 'cancelled' ? A.text3 : A.text }}><span>{c.org} · {fmtDate(c.created_at)}</span><b style={{ fontWeight: 600 }}>{sar(c.amount)}</b></div>) : <div style={{ color: A.text3 }}>لا توجد مكافآت</div>}
@@ -117,7 +117,7 @@ export default function AgentsPage() {
 
 function Mini({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div style={{ padding: '6px 10px', borderRadius: 9, background: A.muted, fontSize: 12.5 }}>
+    <div style={{ padding: '6px 10px', borderRadius:12, background: A.muted, fontSize:13 }}>
       <span style={{ color: A.text3 }}>{label} </span><span style={{ color: A.text, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{value}</span>
     </div>
   )

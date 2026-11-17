@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 export const fetchCache = 'force-no-store'
 import { NextResponse } from 'next/server'
+import { clearFeatureCache } from '@/lib/featureRoutes'
 import { createClient } from '@supabase/supabase-js'
 import { addonsForPlan } from '@/lib/planPricing'
 import { verifyOrgAccess } from '@/lib/verifyOrgAccess'
@@ -34,6 +35,7 @@ export async function DELETE(req: Request) {
       .eq('id', existingSubId)
 
     if (error) return NextResponse.json({ error: 'فشل الإلغاء' }, { status: 500 })
+    clearFeatureCache(org_id)   // القفل يطبّق فوراً (بدل ما يستنى 30 ثانية)
 
     // تراجع عن زيادة الحدود اللي صارت وقت التفعيل، وتوقيف أي بيانات مرتبطة بهالإضافة تلقائياً
     const { data: addonRow } = await supabase.from('marketplace_addons').select('slug').eq('id', addon_id).single()

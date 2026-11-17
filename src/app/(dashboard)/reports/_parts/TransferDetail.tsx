@@ -120,7 +120,7 @@ export default function TransferDetail({ period, from, to, onBack, filterBar }: 
           { label: 'فروع شاركت', value: perBranch.length },
         ].map((s, i) => (
           <div key={i} style={{ ...card, padding: '14px', textAlign: 'center' as const }}>
-            <div style={{ fontSize: 24, fontWeight: 800, color: colors.text }}>{s.value}</div>
+            <div style={{ fontSize: 24, fontWeight:600, color: colors.text }}>{s.value}</div>
             <div style={{ fontSize: font.xs, color: colors.text3, marginTop: 4, fontWeight: 600 }}>{s.label}</div>
           </div>
         ))}
@@ -128,11 +128,11 @@ export default function TransferDetail({ period, from, to, onBack, filterBar }: 
 
       {perBranch.length > 0 && (
         <div style={{ ...card, padding: '14px 16px', marginBottom: 16 }}>
-          <div style={{ fontSize: font.base, fontWeight: 800, color: colors.text, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}><ArrowLeftRight size={16} strokeWidth={2.25} /> حركة كل فرع</div>
+          <div style={{ fontSize: font.base, fontWeight:600, color: colors.text, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}><ArrowLeftRight size={16} strokeWidth={2.25} /> حركة كل فرع</div>
           <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
             {perBranch.map(b => (
               <div key={b.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: `1px solid ${colors.border}` }}>
-                <span style={{ flex: 1, fontSize: font.sm, fontWeight: 700, color: colors.text }}>{b.name}</span>
+                <span style={{ flex: 1, fontSize: font.sm, fontWeight:600, color: colors.text }}>{b.name}</span>
                 <span style={{ fontSize: font.sm, color: colors.text2 }}>أرسل <b style={{ color: colors.text }}>{b.sent}</b></span>
                 <span style={{ fontSize: font.sm, color: colors.text2 }}>استلم <b style={{ color: colors.text }}>{b.received}</b></span>
               </div>
@@ -143,11 +143,11 @@ export default function TransferDetail({ period, from, to, onBack, filterBar }: 
 
       {topItems.length > 0 && (
         <div style={{ ...card, padding: '14px 16px', marginBottom: 16 }}>
-          <div style={{ fontSize: font.base, fontWeight: 800, color: colors.text, marginBottom: 12 }}>أكثر الأصناف تحويلاً</div>
+          <div style={{ fontSize: font.base, fontWeight:600, color: colors.text, marginBottom: 12 }}>أكثر الأصناف تحويلاً</div>
           {topItems.map(([name, v], i) => (
             <div key={name} style={{ marginBottom: i < topItems.length - 1 ? 10 : 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, gap: 8 }}>
-                <span style={{ fontSize: font.sm, fontWeight: 700, color: colors.text }}>{i + 1}. {name}</span>
+                <span style={{ fontSize: font.sm, fontWeight:600, color: colors.text }}>{i + 1}. {name}</span>
                 <span style={{ fontSize: font.sm, color: colors.text2, whiteSpace: 'nowrap' }}>{v.times} {v.times === 1 ? 'تحويل' : 'تحويلات'} · {v.qty} {v.unit}</span>
               </div>
               <div style={{ height: 5, background: colors.border, borderRadius: 99 }}>
@@ -175,7 +175,7 @@ export default function TransferDetail({ period, from, to, onBack, filterBar }: 
         {loading ? <ListSkeleton /> : filtered.length === 0 ? (
           <div style={{ padding: 56, textAlign: 'center' }}>
             <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'center', color: colors.text4 }}><Inbox size={40} strokeWidth={1.5} /></div>
-            <div style={{ fontSize: font.base, fontWeight: 700, color: colors.text2 }}>لا توجد تحويلات في هذه الفترة</div>
+            <div style={{ fontSize: font.base, fontWeight:600, color: colors.text2 }}>لا توجد تحويلات في هذه الفترة</div>
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -183,7 +183,7 @@ export default function TransferDetail({ period, from, to, onBack, filterBar }: 
               <thead>
                 <tr style={{ background: colors.bg, borderBottom: `1.5px solid ${colors.border}` }}>
                   {['التاريخ', 'الصنف', 'الكمية', 'من فرع', 'إلى فرع', 'بواسطة'].map(h => (
-                    <th key={h} style={{ padding: '10px 12px', textAlign: 'start' as const, fontSize: font.xs, fontWeight: 700, color: colors.text3, whiteSpace: 'nowrap' }}>{h}</th>
+                    <th key={h} style={{ padding: '10px 12px', textAlign: 'start' as const, fontSize: font.xs, fontWeight:600, color: colors.text3, whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -191,7 +191,7 @@ export default function TransferDetail({ period, from, to, onBack, filterBar }: 
                 {filtered.map(r => (
                   <tr key={r.id} style={{ borderBottom: `1px solid ${colors.border}` }}>
                     <td data-label="التاريخ" style={{ padding: '10px 12px', fontSize: font.sm, color: colors.text2, whiteSpace: 'nowrap' }}>{fmtDate(r.created_at)} · {fmtTime(r.created_at)}</td>
-                    <td data-label="الصنف" style={{ padding: '10px 12px', fontSize: font.sm, fontWeight: 700, color: colors.text }}>{r.products?.name || '—'}</td>
+                    <td data-label="الصنف" style={{ padding: '10px 12px', fontSize: font.sm, fontWeight:600, color: colors.text }}>{r.products?.name || '—'}</td>
                     <td data-label="الكمية" style={{ padding: '10px 12px', fontSize: font.sm, color: colors.text, whiteSpace: 'nowrap' }}>{Math.abs(r.qty_change)} {r.products?.unit || ''}</td>
                     <td data-label="من فرع" style={{ padding: '10px 12px', fontSize: font.sm, color: colors.text }}>{nameOf(r.branch_id)}</td>
                     <td data-label="إلى فرع" style={{ padding: '10px 12px', fontSize: font.sm, color: colors.text }}>{destOf(r.note)}</td>

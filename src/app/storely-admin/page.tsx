@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, RefreshCw, Wallet, Building2, CircleCheck, Hourglass, CalendarClock, UserPlus } from 'lucide-react'
-import { A, Avatar, Badge, Btn, Card, Empty, Loading, Notice, PageHeader, Row, Stack, Stat, StatGrid, adminFetch, daysLeft, fmtDate, useAdmin } from './_admin/kit'
+import { A, Avatar, Badge, Btn, Card, Empty, Loading, Notice, PageHeader, Row, Stack, Stat, StatGrid, adminFetch, daysLeft, fmtDate, useAdmin, daysAr } from './_admin/kit'
 import { type Customer, PLAN_KEYS, PLAN_TONE, STATUS, mapCustomer, monthlyRevenue, planLabel } from './_admin/customers'
 import CustomerDrawer from './_admin/CustomerDrawer'
 
@@ -102,7 +102,7 @@ export default function OverviewPage() {
             <Card title="اشتراكات تنتهي قريباً" subtitle="خلال 7 أيام" pad={0}>
               {s.expiring.length === 0 ? <Empty icon={CalendarClock} title="لا توجد اشتراكات تنتهي هذا الأسبوع" /> : s.expiring.slice(0, 6).map(({ u, d }) => (
                 <ListRow key={u.id} onClick={() => setSelectedId(u.id)} title={u.org_name} sub={`${planLabel(u.plan)} · ${u.subscription_type === 'paid' ? 'مدفوع' : 'تجربة'}`}
-                  end={<Badge tone={d! <= 3 ? 'danger' : 'warning'}>متبقٍ {d} يوم</Badge>} />
+                  end={<Badge tone={d! <= 3 ? 'danger' : 'warning'}>متبقٍ {daysAr(d!)}</Badge>} />
               ))}
             </Card>
 
@@ -121,7 +121,7 @@ export default function OverviewPage() {
                   const pct = s.active ? Math.round((n / s.active) * 100) : 0
                   return (
                     <div key={k}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize:15, marginBottom: 6 }}>
                         <Badge tone={PLAN_TONE[k]}>{planLabel(k)}</Badge>
                         <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{n} <span style={{ color: A.text3, fontWeight: 500 }}>({pct}%)</span></span>
                       </div>
@@ -148,7 +148,7 @@ function ActionRow({ text, tone, onClick }: { text: string; tone: 'warning' | 'd
   const bg = { warning: A.warningSoft, danger: A.dangerSoft, info: A.infoSoft }[tone]
   return (
     <button onClick={onClick} className="adm-hover"
-      style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 14px', borderRadius: 12, border: `1px solid ${color}24`, background: bg, color, fontSize: 13.5, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', textAlign: 'right' }}>
+      style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 14px', borderRadius:20, border: `1px solid ${color}24`, background: bg, color, fontSize:15, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', textAlign: 'right' }}>
       <span style={{ width: 8, height: 8, borderRadius: 99, background: color, flexShrink: 0 }} />
       <span style={{ flex: 1 }}>{text}</span>
       <ChevronLeft size={16} />
@@ -161,8 +161,8 @@ function ListRow({ title, sub, end, onClick }: { title: string; sub: string; end
     <Row onClick={onClick}>
       <Avatar name={title} />
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: A.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</div>
-        <div style={{ fontSize: 12.5, color: A.text3, marginTop: 2 }}>{sub}</div>
+        <div style={{ fontSize:17, fontWeight: 600, color: A.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</div>
+        <div style={{ fontSize:13, color: A.text3, marginTop: 2 }}>{sub}</div>
       </div>
       {end}
     </Row>

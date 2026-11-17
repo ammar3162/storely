@@ -44,12 +44,12 @@ export default function AssistantQuestionsPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {topics.map(t => (
               <div key={t.label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ width: 150, flexShrink: 0, fontSize: 13.5, color: A.text }}>{t.label}</span>
+                <span style={{ width: 150, flexShrink: 0, fontSize:15, color: A.text }}>{t.label}</span>
                 <div style={{ flex: 1, height: 8, borderRadius: 99, background: A.muted, overflow: 'hidden' }}><div style={{ width: `${(t.n / rows.length) * 100}%`, height: '100%', background: A.primary, borderRadius: 99 }} /></div>
-                <span style={{ width: 32, textAlign: 'left', fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{t.n}</span>
+                <span style={{ width: 32, textAlign: 'left', fontSize:15, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{t.n}</span>
               </div>
             ))}
-            {topics.length === 0 && <div style={{ fontSize: 13, color: A.text3 }}>لا تتطابق الأسئلة الحالية مع أي موضوع محدد</div>}
+            {topics.length === 0 && <div style={{ fontSize:15, color: A.text3 }}>لا تتطابق الأسئلة الحالية مع أي موضوع محدد</div>}
           </div>
         </Card>
       )}
@@ -65,8 +65,8 @@ export default function AssistantQuestionsPage() {
             <Row onClick={() => setOpen(open === r.id ? null : r.id)} style={{ alignItems: 'flex-start', borderBottom: 'none' }}>
               <Avatar name={r.organizations?.name} size={34} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: A.text, lineHeight: 1.7 }}>{r.question}</div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4, fontSize: 12.5, color: A.text3, alignItems: 'center' }}>
+                <div style={{ fontSize:17, fontWeight: 600, color: A.text, lineHeight: 1.7 }}>{r.question}</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4, fontSize:13, color: A.text3, alignItems: 'center' }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Building2 size={12} />{r.organizations?.name || '—'}</span>
                   <span>· {r.role === 'manager' ? 'مدير فرع' : 'المالك'}</span>
                   <span>· {fmtDate(r.created_at)}</span>
@@ -76,7 +76,7 @@ export default function AssistantQuestionsPage() {
               {r.reply && <ChevronDown size={16} color={A.text3} style={{ transform: open === r.id ? 'rotate(180deg)' : 'none', transition: 'transform .15s', marginTop: 4, flexShrink: 0 }} />}
             </Row>
             {open === r.id && r.reply && (
-              <div style={{ margin: '0 20px 16px', marginInlineStart: 66, padding: '12px 14px', borderRadius: 12, background: A.primarySoft, fontSize: 13.5, color: A.text, whiteSpace: 'pre-wrap', lineHeight: 1.9 }}>{r.reply}</div>
+              <div style={{ margin: '0 20px 16px', marginInlineStart: 66, padding: '12px 14px', borderRadius:20, background: A.primarySoft, fontSize:15, color: A.text, whiteSpace: 'pre-wrap', lineHeight: 1.9 }}>{r.reply}</div>
             )}
           </div>
         ))}

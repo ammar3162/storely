@@ -1,4 +1,5 @@
 import { notifyInsert } from '@/lib/notify'
+import { orgHasFeature } from '@/lib/planFeatures'
 import { NextResponse } from 'next/server'
 import { isCronRequest } from '@/lib/cronAuth'
 import { createClient } from '@supabase/supabase-js'
@@ -32,6 +33,8 @@ export async function POST(req: Request) {
   for (const org of orgs as any[]) {
     const subActive = await isSubscriptionActive(supabase, org.id)
     if (!subActive) continue
+    // تنبيهات انتهاء الصلاحية من المخزون — لو ميزة المخزون مو باشتراكه ما نرسل
+    if (!(await orgHasFeature(supabase as any, org.id, 'inventory'))) continue
 
     const { data: products } = await supabase
       .from('products')

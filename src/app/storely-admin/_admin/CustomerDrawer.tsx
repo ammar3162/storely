@@ -5,11 +5,12 @@ import { MessageCircle, Send, Trash2, PauseCircle, PlayCircle, KeyRound, BadgePe
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { toast } from '@/components/toast'
 import { billLines, activeDiscount, PLAN_CAPS, ENTERPRISE_LABEL, addonPeriodEnd, proratedCharge, planPriceFor, unitPrice, isNewPlan, type PlanKey } from '@/lib/planPricing'
-import { A, Badge, Btn, Card, Drawer, Tabs, adminFetch, daysLeft, fmtDate, inputStyle } from './kit'
+import { A, Badge, Btn, Card, Drawer, Tabs, adminFetch, daysLeft, fmtDate, inputStyle, daysAr } from './kit'
 import { type Customer, STATUS, PLAN_KEYS, PLAN_LIMITS, planLabel } from './customers'
 import ActivityCard from './ActivityCard'
 import { addMonths, offerItems as buildOfferItems, sendOffer, activateOffer, offerStart } from './offerFlow'
 import { offerState, offerMonthsLabel } from '@/lib/offerQuote'
+import { renewalEnd, resumeOutcome } from '@/lib/subscriptionLifecycle'
 import CustomerEmailCard from './CustomerEmailCard'
 
 const QTY_SLUGS = ['extra_staff', 'extra_suppliers', 'extra_branch']
@@ -69,6 +70,9 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   // الجديدة: فروع الباقة الحالية (1–10) — القديمة تنتقل بنفس عدد فروعها
   const planBranches = Math.max(1, Math.min(10, c.max_branches || 1))
   const curDiscount = activeDiscount(c.discount)
+  // معاينة التفعيل المدفوع للمدة المختارة — نفس قاعدة الخادم
+  const paidPreview = renewalEnd({ type: c.subscription_type, endsAt: c.subscription_ends_at }, 'paid', { days })
+  const resumeInfo = resumeOutcome({ type: c.subscription_type, endsAt: c.subscription_ends_at })
   const hasPhone = !!c.phone
   // السعر العادي للمدة = الفاتورة الشهرية الحالية × الأشهر (السنوي: فاتورته ÷ 12)
   const monthlyBill = c.billing_cycle === 'yearly' ? Math.round(bill.total / 12) : bill.total
@@ -88,26 +92,46 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
     const planNote = type === 'paid' && c!.subscription_type === 'trial' && wanted && wanted !== c!.plan && (PLAN_KEYS as string[]).includes(wanted)
       ? `\n\nتنبيه: باقته الحالية «${planLabel(c!.plan)}» (التجربة)، والباقة التي اختارها عند التسجيل «${planLabel(wanted)}». غيّر الباقة أولاً إن كان سيشترك فيها، لأن الفاتورة ومكافأة السفير تُحتسبان على الباقة الحالية.`
       : ''
-    if (!(await confirmDialog({ title: label, message: `${label} لـ"${c!.org_name}" لمدة ${DURATIONS.find(x => x.d === d)?.l || d + ' يوم'}؟\n\nتتجدد الإضافات المفعّلة حتى التاريخ نفسه.${planNote}`, type: planNote ? 'warning' : undefined }))) return
+    const p = renewalEnd({ type: c!.subscription_type, endsAt: c!.subscription_ends_at }, type, { days: d })
+    const fromEnd = p.start.getTime() > Date.now() + 60000
+    const durLabel = DURATIONS.find(x => x.d === d)?.l || d + ' يوم'
+    if (!(await confirmDialog({ title: label, message: `${label} لـ«${c!.org_name}» لمدة ${durLabel}.\n\nيبدأ: ${fromEnd ? `بعد نهاية اشتراكه الحالي (${fmtDate(p.start.toISOString())}) — ما يخسر أيامه المتبقية` : 'من اليوم'}\nينتهي: ${fmtDate(p.end.toISOString())}${c!.status === 'suspended' ? '\nويُستأنف الحساب الموقوف.' : ''}\n\nتتجدد الإضافات المفعّلة حتى التاريخ نفسه.${planNote}`, type: planNote ? 'warning' : undefined }))) return
     setBusy('activate')
-    const ends = new Date(Date.now() + d * 86400000).toISOString()
-    const j = await adminFetch('/api/admin/activate-user', { method: 'POST', body: { userId: c!.id, type, ends } })
+    // الخادم يحسب التاريخ النهائي بنفس القاعدة (lib/subscriptionLifecycle)
+    const j = await adminFetch('/api/admin/activate-user', { method: 'POST', body: { userId: c!.id, type, days: d } })
     if (!j.success) { setBusy(null); toast(j.error || 'تعذّر التفعيل', 'error'); return }
+    const ends: string = j.ends
     await adminFetch('/api/notify-activation', { method: 'POST', body: { userId: c!.id, subscriptionType: type, subscriptionEndsAt: ends } })
     setBusy(null)
-    toast('تم التفعيل', 'success')
+    toast(`تم التفعيل حتى ${fmtDate(ends)}`, 'success')
     onChanged({ status: 'active', subscription_type: type, subscription_ends_at: ends })
     loadAddons(c!.org_id)
   }
 
   async function suspend() {
-    if (!(await confirmDialog({ title: 'إيقاف الحساب', message: `إيقاف «${c!.org_name}»؟ يشمل ذلك جميع مديري الفروع التابعين له.` }))) return
+    if (!(await confirmDialog({ title: 'إيقاف الحساب', message: `إيقاف «${c!.org_name}»؟\n\nيتوقف: دخول المالك ومديري الفروع والموظفين، وبوت واتساب، والرسائل والتقارير التلقائية، وتعديلات المحاسب.\n\nتاريخ انتهاء الاشتراك لا يتغيّر (${fmtDate(c!.subscription_ends_at)})، وتقدر تستأنفه لاحقاً لنفس التاريخ. الأيام التي يقضيها موقوفاً محسوبة من اشتراكه.` }))) return
     setBusy('suspend')
     const j = await adminFetch('/api/admin/suspend-user', { method: 'POST', body: { userId: c!.id } })
     setBusy(null)
     if (!j.success) { toast(j.error || 'تعذّر الإيقاف', 'error'); return }
     toast('تم إيقاف الحساب', 'success')
     onChanged({ status: 'suspended' })
+  }
+
+  // استئناف حساب موقوف: نفس الاشتراك السابق (نفس النوع ونفس تاريخ الانتهاء) — مو مدة جديدة
+  async function resume() {
+    const r = resumeOutcome({ type: c!.subscription_type, endsAt: c!.subscription_ends_at })
+    const msg = r.expired
+      ? `انتهى اشتراك «${c!.org_name}» أثناء الإيقاف (${fmtDate(r.endsAt)}).\n\nبعد الاستئناف يدخل على صفحة «انتهى الاشتراك» حتى تجدّد له من تبويب «الاشتراك والدفع».`
+      : `يكمل «${c!.org_name}» اشتراكه نفسه حتى ${fmtDate(r.endsAt)} (متبقٍ ${daysAr(r.daysLeft)}).\n\nيرجع دخول المالك والمديرين والموظفين وكل المزايا كما كانت.`
+    if (!(await confirmDialog({ title: 'استئناف الاشتراك', message: msg, type: r.expired ? 'warning' : 'success', confirmText: 'استئناف' }))) return
+    setBusy('resume')
+    const j = await adminFetch('/api/admin/resume-user', { method: 'POST', body: { userId: c!.id } })
+    if (!j.success) { setBusy(null); toast(j.error || 'تعذّر الاستئناف', 'error'); return }
+    if (!j.expired && j.endsAt) await adminFetch('/api/notify-activation', { method: 'POST', body: { userId: c!.id, subscriptionType: j.type || c!.subscription_type, subscriptionEndsAt: j.endsAt } }).catch(() => null)
+    setBusy(null)
+    toast(j.expired ? 'استُؤنف الحساب — الاشتراك منتهٍ ويحتاج تجديد' : `استُؤنف حتى ${fmtDate(j.endsAt)}`, j.expired ? 'error' : 'success')
+    onChanged({ status: 'active' })
   }
 
   // branchesOverride = تغيير عدد فروع الباقة الجديدة (نفس الباقة)
@@ -260,7 +284,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         ? `\n\nتنخفض الكمية من ${oldQty} إلى ${q}.${a.slug === 'extra_staff' ? ' وإن كان موظفوه أكثر من الحد الجديد، يتوقف أحدثهم مؤقتاً.' : a.slug === 'extra_branch' ? ' وإن كانت فروعه أكثر من الحد الجديد، يتوقف أحدثها مؤقتاً مع موظفيها.' : ''}`
         : ''
       if (!(await confirmDialog({ title: `${wasActive ? 'تغيير كمية' : 'تفعيل'} «${a.name}»${q > 1 ? ` × ${q}` : ''}`, type: lessNote ? 'warning' : 'success', confirmText: 'تأكيد', message:
-        `تنتهي مع الباقة بتاريخ ${fmtDate(end.toISOString())}.\n\nالمستحق الآن: ${pr.amount} ر.س (${pr.days} يوم)\nومن التجديد: ${q * unit} ر.س شهرياً${lessNote}` }))) return
+        `تنتهي مع الباقة بتاريخ ${fmtDate(end.toISOString())}.\n\nالمستحق الآن: ${pr.amount} ر.س (${daysAr(pr.days)})\nومن التجديد: ${q * unit} ر.س شهرياً${lessNote}` }))) return
     } else if (!(await confirmDialog({ title: `إلغاء «${a.name}»`, message: 'تتوقف الإضافة فوراً، وتتوقف مؤقتاً أي فروع أو موظفين يتجاوزون الحد.' }))) return
     setBusy('addon:' + a.id)
     const j = await adminFetch('/api/admin/addon-subscriptions', { method: on ? 'POST' : 'DELETE', body: { org_id: c!.org_id, addon_id: a.id, org_name: c!.org_name, addon_name: a.name, quantity: q, ...(branchIds ? { branch_ids: branchIds } : {}) } })
@@ -268,7 +292,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
     if (!j.success) { toast(j.error || 'تعذّر تنفيذ الإجراء', 'error'); return }
     await loadAddons(c!.org_id)
     if (on && j.proratedAmount > 0 && hasPhone) {
-      await sendInvoice([{ label: `إضافة «${a.name}»${q > 1 ? ` × ${q}` : ''} — ${j.proratedDays} يوم حتى تجديد الباقة`, amount: j.proratedAmount }], 'إرسال فاتورة الإضافة؟')
+      await sendInvoice([{ label: `إضافة «${a.name}»${q > 1 ? ` × ${q}` : ''} — ${daysAr(j.proratedDays)} حتى تجديد الباقة`, amount: j.proratedAmount }], 'إرسال فاتورة الإضافة؟')
     }
   }
 
@@ -304,7 +328,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         <Badge tone={st.tone}>{st.label}</Badge>
         <Badge tone={c.subscription_type === 'paid' ? 'info' : 'violet'}>{c.subscription_type === 'paid' ? 'مدفوع' : 'تجربة'}</Badge>
         <Badge tone="neutral">{planLabel(c.plan, c.max_branches)} · {c.billing_cycle === 'yearly' ? 'سنوي' : 'شهري'}</Badge>
-        {dl !== null && <Badge tone={dl <= 0 ? 'danger' : dl <= 7 ? 'warning' : 'neutral'}>{dl <= 0 ? 'الاشتراك منتهي' : `متبقٍ ${dl} يوم`}</Badge>}
+        {dl !== null && <Badge tone={dl <= 0 ? 'danger' : dl <= 7 ? 'warning' : 'neutral'}>{dl <= 0 ? 'الاشتراك منتهي' : `متبقٍ ${daysAr(dl)}`}</Badge>}
       </div>
       <Card pad={16}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
@@ -315,13 +339,13 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
             ['الفاتورة الشهرية', `${monthlyBill} ⃁ · ${c.max_branches} ${c.max_branches === 1 ? 'فرع' : 'فروع'}`],
           ].map(([k, v]) => (
             <div key={k}>
-              <div style={{ fontSize: 11.5, color: A.text3, fontWeight: 600 }}>{k}</div>
-              <div style={{ fontSize: 13.5, fontWeight: 600, marginTop: 3 }}>{v}</div>
+              <div style={{ fontSize:13, color: A.text3, fontWeight: 600 }}>{k}</div>
+              <div style={{ fontSize:15, fontWeight: 600, marginTop: 3 }}>{v}</div>
             </div>
           ))}
         </div>
         {hasPhone && (
-          <a href={waLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize: 13, fontWeight: 600, color: A.primary, textDecoration: 'none' }}>
+          <a href={waLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize:15, fontWeight: 600, color: A.primary, textDecoration: 'none' }}>
             <MessageCircle size={15} /> مراسلة على واتساب
           </a>
         )}
@@ -331,19 +355,23 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
 
       {tab === 'sub' && <>
       {/* الاشتراك */}
-      <Card title="تفعيل أو تجديد بالسعر العادي" subtitle="المدة تبدأ من اليوم">
+      <Card title={c.subscription_type === 'paid' ? 'تجديد بالسعر العادي' : 'تفعيل بالسعر العادي'} subtitle={paidPreview.start.getTime() > Date.now() + 60000 ? `يبدأ بعد نهاية اشتراكه الحالي (${fmtDate(paidPreview.start.toISOString())}) — ما يخسر أيامه` : 'يبدأ من اليوم'}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginBottom: 12 }}>
           {DURATIONS.map(x => (
             <button key={x.d} onClick={() => setDays(x.d)} className="adm-btn"
-              style={{ padding: '8px 4px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+              style={{ padding: '8px 4px', borderRadius:999, fontSize:13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
                 border: `1px solid ${days === x.d ? A.primary : A.borderStrong}`, background: days === x.d ? A.primarySoft : A.surface, color: days === x.d ? A.primary : A.text2 }}>
               {x.l}
             </button>
           ))}
         </div>
+        <div style={{ fontSize:13, color: A.text2, marginBottom: 10 }}>
+          ينتهي المدفوع في <b style={{ color: A.text }}>{fmtDate(paidPreview.end.toISOString())}</b>
+          {c.status === 'suspended' && ' · ويُستأنف الحساب الموقوف'}
+        </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <Btn kind="primary" full loading={busy === 'activate'} onClick={() => activate('paid', days)}>تفعيل مدفوع</Btn>
-          <Btn full disabled={!!busy} onClick={() => activate('trial', days)}>تجربة مجانية</Btn>
+          <Btn kind="primary" full loading={busy === 'activate'} onClick={() => activate('paid', days)}>{c.subscription_type === 'paid' ? 'تجديد مدفوع' : 'تفعيل مدفوع'}</Btn>
+          <Btn full disabled={!!busy} onClick={() => activate('trial', days)}>{c.subscription_type === 'trial' && (dl ?? 0) > 0 ? 'تمديد التجربة' : 'تجربة مجانية'}</Btn>
         </div>
       </Card>
 
@@ -352,20 +380,20 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginBottom: 12 }}>
           {OFFER_MONTHS.map(x => (
             <button key={x.m} onClick={() => setOffer(o => ({ ...o, months: x.m }))} className="adm-btn"
-              style={{ padding: '8px 4px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+              style={{ padding: '8px 4px', borderRadius:999, fontSize:13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
                 border: `1px solid ${offer.months === x.m ? A.primary : A.borderStrong}`, background: offer.months === x.m ? A.primarySoft : A.surface, color: offer.months === x.m ? A.primary : A.text2 }}>
               {x.l}
             </button>
           ))}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 8 }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 600, color: A.text2 }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize:13, fontWeight: 600, color: A.text2 }}>
             السعر المتفق عليه (ر.س)
             <NumberInput min={0} value={offer.price} aria-label="سعر العرض"
               onChange={e => setOffer(o => ({ ...o, price: String(e.target.value ?? '') }))}
-              style={{ ...inputStyle, textAlign: 'center', fontWeight: 700 }} />
+              style={{ ...inputStyle, textAlign: 'center', fontWeight:600 }} />
           </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 600, color: A.text2 }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize:13, fontWeight: 600, color: A.text2 }}>
             ملاحظة في الفاتورة (اختياري)
             <input value={offer.note} maxLength={60} placeholder="مثال: عرض الافتتاح" onChange={e => setOffer(o => ({ ...o, note: e.target.value }))} style={inputStyle} />
           </label>
@@ -377,7 +405,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
               const sel = offerPrice === v
               return (
                 <button key={pct} type="button" onClick={() => setOffer(o => ({ ...o, price: String(v) }))} className="adm-btn"
-                  style={{ padding: '5px 10px', borderRadius: 99, fontSize: 12, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+                  style={{ padding: '5px 10px', borderRadius: 99, fontSize:13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
                     border: `1px solid ${sel ? A.primary : A.border}`, background: sel ? A.primarySoft : A.surface, color: sel ? A.primary : A.text2 }}>
                   {pct ? `−${pct}% · ${v}` : `السعر العادي · ${v}`}
                 </button>
@@ -385,7 +413,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
             })}
           </div>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, padding: '10px 12px', borderRadius: 10, background: A.muted, fontSize: 12.5, color: A.text2, lineHeight: 1.7 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, padding: '10px 12px', borderRadius:12, background: A.muted, fontSize:13, color: A.text2, lineHeight: 1.7 }}>
           <BadgePercent size={16} style={{ flexShrink: 0 }} />
           <span>
             السعر العادي لـ{offerLabel}: <b style={{ color: A.text }}>{listPrice} ⃁</b>
@@ -399,10 +427,10 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
           <Btn full loading={busy === 'invoice'} disabled={!hasPhone || (!!busy && busy !== 'invoice')} onClick={sendOfferNow}><Send size={14} /> إرسال العرض</Btn>
           <Btn kind="primary" full loading={busy === 'offer'} disabled={!!busy && busy !== 'offer'} onClick={() => offerValid() && payOffer({ months: offer.months, amount: offerPrice, note: offer.note, list: listPrice })}>دفع العميل: تفعيل</Btn>
         </div>
-        <div style={{ fontSize: 11.5, color: A.text3, marginTop: 8, lineHeight: 1.7 }}>
+        <div style={{ fontSize:13, color: A.text3, marginTop: 8, lineHeight: 1.7 }}>
           «إرسال العرض» يرسل له عرض سعر مستحق الدفع، صالحاً 7 أيام، عبر واتساب والإيميل. وبعد ما يدفع، «تفعيل» يفعّل اشتراكه للمدة ويرسل له فاتورة مدفوعة.
         </div>
-        {!hasPhone && <div style={{ fontSize: 12, color: A.danger, marginTop: 6 }}>لا يوجد رقم جوال مسجّل لهذا العميل</div>}
+        {!hasPhone && <div style={{ fontSize:13, color: A.danger, marginTop: 6 }}>لا يوجد رقم جوال مسجّل لهذا العميل</div>}
       </Card>
 
       {/* سجل العروض */}
@@ -414,13 +442,13 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
               const tone = stt === 'paid' ? 'primary' : stt === 'sent' ? 'warning' : 'neutral'
               const sttLabel = { paid: 'مدفوع', sent: 'بانتظار الدفع', expired: 'انتهت صلاحيته', cancelled: 'ملغى' }[stt]
               return (
-                <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: `1px solid ${A.border}` }}>
+                <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius:12, border: `1px solid ${A.border}` }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>
+                    <div style={{ fontSize:15, fontWeight: 600 }}>
                       {o.kind === 'renewal' ? 'عرض تجديد' : 'عرض'} {offerMonthsLabel(o.months)} · {Number(o.amount)} ⃁
                       {o.list_amount && Number(o.list_amount) > Number(o.amount) && <span style={{ color: A.text3, fontWeight: 500 }}> (بدلاً من {Number(o.list_amount)})</span>}
                     </div>
-                    <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>
+                    <div style={{ fontSize:13, color: A.text3, marginTop: 2 }}>
                       أُرسل {fmtDate(o.created_at)}{o.invoice_number ? ` · #${o.invoice_number}` : ''}{stt === 'sent' ? ` · صالح حتى ${fmtDate(o.valid_until)}` : ''}{o.paid_at ? ` · دُفع ${fmtDate(o.paid_at)}` : ''}{o.note ? ` · ${o.note}` : ''}
                     </div>
                   </div>
@@ -440,11 +468,11 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
       <Card title="الفاتورة الدورية" subtitle="الباقة + الإضافات المفعّلة">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {bill.lines.map((l, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 13, color: A.text2 }}>
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize:15, color: A.text2 }}>
               <span>{l.label}</span><span style={{ fontWeight: 600, color: A.text, whiteSpace: 'nowrap' }}>{l.amount} ⃁</span>
             </div>
           ))}
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${A.border}`, paddingTop: 8, marginTop: 4, fontSize: 14, fontWeight: 600 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${A.border}`, paddingTop: 8, marginTop: 4, fontSize:17, fontWeight: 600 }}>
             <span>الإجمالي</span><span>{bill.total} ⃁</span>
           </div>
         </div>
@@ -452,7 +480,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
           <Btn full loading={busy === 'invoice'} disabled={!hasPhone || (!!busy && busy !== 'invoice')} onClick={() => sendInvoice()}>
             <Send size={14} /> إرسال الفاتورة عبر واتساب
           </Btn>
-          {!hasPhone && <div style={{ fontSize: 12, color: A.danger, marginTop: 6 }}>لا يوجد رقم جوال مسجّل لهذا العميل</div>}
+          {!hasPhone && <div style={{ fontSize:13, color: A.danger, marginTop: 6 }}>لا يوجد رقم جوال مسجّل لهذا العميل</div>}
         </div>
       </Card>
 
@@ -460,10 +488,10 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
       {tab === 'plan' && <>
       {/* الباقة */}
       <Card title="الباقة" actions={
-        <div style={{ display: 'inline-flex', border: `1px solid ${A.borderStrong}`, borderRadius: 8, overflow: 'hidden' }}>
+        <div style={{ display: 'inline-flex', border: `1px solid ${A.borderStrong}`, borderRadius:12, overflow: 'hidden' }}>
           {(['monthly', 'yearly'] as const).map(cy => (
             <button key={cy} onClick={() => changeCycle(cy)} disabled={!!busy}
-              style={{ padding: '5px 12px', border: 'none', fontSize: 12, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', background: c.billing_cycle === cy ? A.primary : A.surface, color: c.billing_cycle === cy ? 'white' : A.text2 }}>
+              style={{ padding: '5px 12px', border: 'none', fontSize:13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', background: c.billing_cycle === cy ? A.primary : A.surface, color: c.billing_cycle === cy ? 'white' : A.text2 }}>
               {cy === 'monthly' ? 'شهري' : 'سنوي'}
             </button>
           ))}
@@ -479,47 +507,47 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
             const price = k === 'custom' ? (on ? `${bill.total} ⃁${c.billing_cycle === 'yearly' ? '/سنة' : '/شهر'}` : 'حسب المزايا') : c.billing_cycle === 'yearly' ? `${pp.yearly} ⃁/سنة` : `${pp.monthly} ⃁/شهر`
             return (
               <button key={k} onClick={() => changePlan(k)} disabled={!!busy} className="adm-hover"
-                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, textAlign: 'right', fontFamily: 'inherit', cursor: on ? 'default' : 'pointer',
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius:12, textAlign: 'right', fontFamily: 'inherit', cursor: on ? 'default' : 'pointer',
                   border: `1.5px solid ${on ? A.primary : A.border}`, background: on ? A.primarySoft : A.surface }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, color: on ? A.primary : A.text }}>{planLabel(k)} {on && '· الحالية'}</div>
-                  <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>{PLAN_LIMITS[k].desc}{k !== 'custom' && ' · للمشتركين الحاليين فقط'}</div>
+                  <div style={{ fontSize:15, fontWeight: 600, color: on ? A.primary : A.text }}>{planLabel(k)} {on && '· الحالية'}</div>
+                  <div style={{ fontSize:13, color: A.text3, marginTop: 2 }}>{PLAN_LIMITS[k].desc}{k !== 'custom' && ' · للمشتركين الحاليين فقط'}</div>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: on ? A.primary : A.text2, whiteSpace: 'nowrap' }}>{price}</div>
+                <div style={{ fontSize:15, fontWeight: 600, color: on ? A.primary : A.text2, whiteSpace: 'nowrap' }}>{price}</div>
               </button>
             )
           })}
           {c.plan === 'custom' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 10, border: `1px solid ${A.border}` }}>
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>عدد الموظفين <span style={{ fontSize: 11.5, fontWeight: 600, color: A.text3 }}>({6 * planBranches} مشمولين، 6 لكل فرع، وكل موظف إضافي 10 ⃁)</span></span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius:12, border: `1px solid ${A.border}` }}>
+              <span style={{ flex: 1, fontSize:15, fontWeight: 600 }}>عدد الموظفين <span style={{ fontSize:13, fontWeight: 600, color: A.text3 }}>({6 * planBranches} مشمولين، 6 لكل فرع، وكل موظف إضافي 10 ⃁)</span></span>
               <Btn small disabled={!!busy || Math.max(c.staff_included ?? 0, 6 * planBranches) <= 6 * planBranches} onClick={() => setStaffIncluded(Math.max(c.staff_included ?? 0, 6 * planBranches) - 1)}>−</Btn>
               <b style={{ minWidth: 24, textAlign: 'center' }}>{Math.max(c.staff_included ?? 0, 6 * planBranches)}</b>
               <Btn small disabled={!!busy} onClick={() => setStaffIncluded(Math.max(c.staff_included ?? 0, 6 * planBranches) + 1)}>+</Btn>
             </div>
           )}
           {newPlan && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 10, border: `1px solid ${A.border}` }}>
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>فروع الباقة <span style={{ fontSize: 11.5, fontWeight: 600, color: A.text3 }}>(الفرع الإضافي {PLAN_CAPS[c.plan].branchPrice} ⃁)</span></span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius:12, border: `1px solid ${A.border}` }}>
+              <span style={{ flex: 1, fontSize:15, fontWeight: 600 }}>فروع الباقة <span style={{ fontSize:13, fontWeight: 600, color: A.text3 }}>(الفرع الإضافي {PLAN_CAPS[c.plan].branchPrice} ⃁)</span></span>
               <Btn small disabled={!!busy || planBranches <= 1} onClick={() => changePlan(c.plan, planBranches - 1)}>−</Btn>
               <b style={{ minWidth: 20, textAlign: 'center' }}>{planBranches}</b>
               <Btn small disabled={!!busy || planBranches >= 10} onClick={() => changePlan(c.plan, planBranches + 1)}>+</Btn>
             </div>
           )}
-          <div style={{ border: `1.5px dashed ${A.border}`, borderRadius: 10, padding: '11px 14px' }}>
-            <div style={{ fontSize: 13.5, fontWeight: 600, color: A.text }}>{ENTERPRISE_LABEL} <span style={{ fontSize: 11.5, fontWeight: 600, color: A.text3 }}>— أكثر من {PLAN_CAPS.advanced.maxBranches} فروع، بسعر متفق عليه</span></div>
+          <div style={{ border: `1.5px dashed ${A.border}`, borderRadius:12, padding: '11px 14px' }}>
+            <div style={{ fontSize:15, fontWeight: 600, color: A.text }}>{ENTERPRISE_LABEL} <span style={{ fontSize:13, fontWeight: 600, color: A.text3 }}>— أكثر من {PLAN_CAPS.advanced.maxBranches} فروع، بسعر متفق عليه</span></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginTop: 8 }}>
               {([['branches', 'فروع'], ['staff', 'موظفين'], ['suppliers', 'موردين'], ['price', '⃁ شهرياً']] as const).map(([k, l]) => (
                 <input key={k} inputMode="numeric" placeholder={l} value={ent[k]} onChange={e => setEnt(v => ({ ...v, [k]: e.target.value.replace(/[^0-9]/g, '') }))}
-                  style={{ padding: '7px 8px', borderRadius: 8, border: `1px solid ${A.border}`, fontSize: 12.5, fontFamily: 'inherit', textAlign: 'center' }} />
+                  style={{ padding: '7px 8px', borderRadius:12, border: `1px solid ${A.border}`, fontSize:13, fontFamily: 'inherit', textAlign: 'center' }} />
               ))}
             </div>
-            <button onClick={setEnterprise} disabled={!!busy} style={{ marginTop: 8, width: '100%', padding: '8px', borderRadius: 8, border: 'none', background: A.primary, color: 'white', fontSize: 12.5, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>تفعيل باقة {ENTERPRISE_LABEL}</button>
+            <button onClick={setEnterprise} disabled={!!busy} style={{ marginTop: 8, width: '100%', padding: '8px', borderRadius:999, border: 'none', background: A.primary, color: 'white', fontSize:13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>تفعيل باقة {ENTERPRISE_LABEL}</button>
           </div>
         </div>
       </Card>
 
       {staffUsage && staffUsage.active > staffUsage.limit && staffUsage.limit < 999 && (
-        <div style={{ padding: '12px 14px', borderRadius: 10, background:'#fef3c7', border:'1px solid #fcd34d', fontSize: 12.5, color:'#92400e', lineHeight: 1.8 }}>
+        <div style={{ padding: '12px 14px', borderRadius:12, background:'#fef3c7', border:'1px solid #fcd34d', fontSize:13, color:'#92400e', lineHeight: 1.8 }}>
           <b>الموظفون فوق حد الباقة:</b> عنده {staffUsage.active} موظف نشط والحد {staffUsage.limit}.
           فعّل له «موظف إضافي» × {staffUsage.active - staffUsage.limit}، أو رقّ باقته — أو لو ألغيت/قلّلت إضافة يتوقف الأحدث تلقائياً.
         </div>
@@ -527,8 +555,8 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
 
       {/* الإضافات */}
       <Card title="الإضافات" subtitle="تنتهي وتتجدد مع الباقة، والدفع بالتناسب">
-        {loadingAddons ? <div style={{ fontSize: 12.5, color: A.text3 }}>جارٍ التحميل...</div>
-          : addons.length === 0 ? <div style={{ fontSize: 12.5, color: A.text3 }}>لا توجد إضافات متاحة</div>
+        {loadingAddons ? <div style={{ fontSize:13, color: A.text3 }}>جارٍ التحميل...</div>
+          : addons.length === 0 ? <div style={{ fontSize:13, color: A.text3 }}>لا توجد إضافات متاحة</div>
           : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {addons.map(a => {
@@ -542,11 +570,11 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
                 const chosen: string[] = pick[a.id] || subBranches
                 const branchesChanged = on && a.per_branch && (chosen.length !== subBranches.length || chosen.some(id => !subBranches.includes(id)))
                 return (
-                  <div key={a.id} style={{ padding: '10px 12px', borderRadius: 10, border: `1px solid ${on ? A.primary + '55' : A.border}`, background: on ? A.primarySoft : A.surface }}>
+                  <div key={a.id} style={{ padding: '10px 12px', borderRadius:12, border: `1px solid ${on ? A.primary + '55' : A.border}`, background: on ? A.primarySoft : A.surface }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{a.name}</div>
-                      <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>
+                      <div style={{ fontSize:15, fontWeight: 600 }}>{a.name}</div>
+                      <div style={{ fontSize:13, color: A.text3, marginTop: 2 }}>
                         {on ? `مفعّلة${isQty ? ` (${a.subscription?.quantity || 1})` : a.per_branch ? ` لـ ${a.subscription?.quantity || 1} ${(a.subscription?.quantity || 1) === 1 ? 'فرع' : 'فروع'}` : ''} حتى ${fmtDate(a.subscription.expires_at)}` : `${a.monthly_price} ⃁${isQty ? ' للوحدة' : a.per_branch ? ' لكل فرع' : ''} / شهر`}
                       </div>
                     </div>
@@ -568,7 +596,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
                         return (
                           <button key={b.id} type="button" disabled={!!busy}
                             onClick={() => setPick(p => ({ ...p, [a.id]: sel ? chosen.filter(x => x !== b.id) : [...chosen, b.id] }))}
-                            style={{ padding: '4px 10px', borderRadius: 99, fontSize: 12, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+                            style={{ padding: '4px 10px', borderRadius: 99, fontSize:13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
                               border: `1px solid ${sel ? A.primary : A.border}`, background: sel ? A.primary : A.surface, color: sel ? 'white' : A.text2 }}>
                             {b.name}
                           </button>
@@ -586,11 +614,11 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
       {/* الخصم */}
       <Card title="الخصم" subtitle="خصم خاص لهذا العميل، ويظهر سطراً في فاتورته وفي صفحتي الإضافات والإعدادات لديه">
         {curDiscount && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: A.primarySoft, border: `1px solid ${A.primary}55`, marginBottom: 10, fontSize: 13 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius:12, background: A.primarySoft, border: `1px solid ${A.primary}55`, marginBottom: 10, fontSize:15 }}>
             <div style={{ flex: 1 }}>
               <b>{curDiscount.type === 'percent' ? `${curDiscount.value}%` : `${curDiscount.value} ⃁ شهرياً`}</b>
               {curDiscount.note && ` — ${curDiscount.note}`}
-              <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>{curDiscount.until ? `حتى ${fmtDate(curDiscount.until)}` : 'بدون تاريخ انتهاء'}</div>
+              <div style={{ fontSize:13, color: A.text3, marginTop: 2 }}>{curDiscount.until ? `حتى ${fmtDate(curDiscount.until)}` : 'بدون تاريخ انتهاء'}</div>
             </div>
             <Btn small kind="danger" loading={busy === 'discount'} disabled={!!busy && busy !== 'discount'} onClick={() => saveDiscount(true)}>إلغاء الخصم</Btn>
           </div>
@@ -606,7 +634,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
           <input placeholder="سبب الخصم (يظهر في الفاتورة)" value={disc.note} maxLength={60} onChange={e => setDisc(d => ({ ...d, note: e.target.value }))} style={{ ...inputStyle, flex: 1, minWidth: 140 }} />
           <input type="date" value={disc.until} onChange={e => setDisc(d => ({ ...d, until: e.target.value }))} title="ينتهي في (اختياري)" style={{ ...inputStyle, width: 150 }} />
         </div>
-        <div style={{ fontSize: 11.5, color: A.text3, marginTop: 6 }}>النسبة من إجمالي الفاتورة (الباقة والإضافات)، والمبلغ شهري (×12 في الاشتراك السنوي)، وتاريخ الانتهاء اختياري.</div>
+        <div style={{ fontSize:13, color: A.text3, marginTop: 6 }}>النسبة من إجمالي الفاتورة (الباقة والإضافات)، والمبلغ شهري (×12 في الاشتراك السنوي)، وتاريخ الانتهاء اختياري.</div>
         <div style={{ marginTop: 10 }}>
           <Btn kind="primary" full loading={busy === 'discount'} disabled={!!busy && busy !== 'discount'} onClick={() => saveDiscount()}>{curDiscount ? 'تغيير الخصم' : 'حفظ الخصم'}</Btn>
         </div>
@@ -626,14 +654,21 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
       <Card title="إجراءات الحساب">
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {c.status === 'active' && <Btn loading={busy === 'suspend'} disabled={!!busy} onClick={suspend}><PauseCircle size={15} /> إيقاف الحساب</Btn>}
-          {c.status === 'suspended' && <Btn kind="primary" disabled={!!busy} onClick={() => activate(c.subscription_type === 'paid' ? 'paid' : 'trial', 30)}><PlayCircle size={15} /> إعادة تفعيل (شهر)</Btn>}
+          {c.status === 'suspended' && <Btn kind="primary" loading={busy === 'resume'} disabled={!!busy && busy !== 'resume'} onClick={resume}><PlayCircle size={15} /> استئناف الاشتراك</Btn>}
           <Btn loading={busy === 'device-code'} disabled={!!busy} onClick={issueDeviceCode}><KeyRound size={15} /> رمز دخول مؤقت</Btn>
           <Btn kind="danger" loading={busy === 'delete'} disabled={!!busy} onClick={remove}><Trash2 size={15} /> حذف نهائي</Btn>
         </div>
+        {c.status === 'suspended' && (
+          <div style={{ marginTop: 12, padding: '10px 12px', borderRadius:12, background: A.muted, fontSize:13, color: A.text2, lineHeight: 1.8 }}>
+            {resumeInfo.expired
+              ? <>انتهى اشتراكه أثناء الإيقاف ({fmtDate(resumeInfo.endsAt)}). بعد الاستئناف جدّد له من تبويب «الاشتراك والدفع».</>
+              : <>الاستئناف يكمل اشتراكه نفسه حتى <b style={{ color: A.text }}>{fmtDate(resumeInfo.endsAt)}</b> (متبقٍ {daysAr(resumeInfo.daysLeft)}) — بدون مدة جديدة.</>}
+          </div>
+        )}
         {deviceCode && (
-          <div style={{ marginTop: 12, padding: '12px 14px', borderRadius: 10, background: A.primarySoft, fontSize: 13, color: A.text }}>
+          <div style={{ marginTop: 12, padding: '12px 14px', borderRadius:12, background: A.primarySoft, fontSize:15, color: A.text }}>
             رمز الدخول: <b dir="ltr" style={{ fontSize: 20, letterSpacing: 4, color: A.primary }}>{deviceCode}</b>
-            <div style={{ fontSize: 12, color: A.text2, marginTop: 4 }}>صالح لمدة 10 دقائق ولمرة واحدة، ويُدخله العميل في صفحة «تحقق من جهازك».</div>
+            <div style={{ fontSize:13, color: A.text2, marginTop: 4 }}>صالح لمدة 10 دقائق ولمرة واحدة، ويُدخله العميل في صفحة «تحقق من جهازك».</div>
           </div>
         )}
       </Card>

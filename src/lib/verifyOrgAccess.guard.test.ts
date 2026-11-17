@@ -16,11 +16,16 @@ vi.mock('@/lib/deviceTrust', () => ({ currentDeviceAllowed: async () => state.de
 // اشتراك المنشأة (من ملف المالك) — ساري إلا لو الاختبار غيّره
 vi.mock('@/lib/subscription', () => ({ orgSubscriptionState: async () => ({ blocked: state.subBlocked, reason: state.subBlocked ? 'expired' : null, endsAt: null, type: null }) }))
 
+// الاختبار ما يتصل بقاعدة البيانات: حالة الفرع (branchIsActive) وقفل الميزات (routeFeatureError) كانت تتصل بالقاعدة فعلياً،
+// فتأخر الاختبار مرة على جهاز البناء في Vercel وتجاوز المهلة. نثبّتهما هنا: الفرع شغّال، ولا ميزة مقفلة.
+vi.mock('@supabase/supabase-js', () => ({ createClient: () => ({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { is_active: true }, error: null }) }) }) }) }) }))
+vi.mock('@/lib/featureRoutes', () => ({ routeFeatureError: async () => null }))
+
 const { verifyOrgAccess } = await import('./verifyOrgAccess')
 const { DEVICE_UNVERIFIED_ERROR, SUBSCRIPTION_BLOCKED_ERROR } = await import('./deviceMessages')
 const at = (path: string, method: string) => { state.headers = new Headers({ 'x-storely-path': path, 'x-storely-method': method }) }
 
-describe('verifyOrgAccess — branch manager API guard', () => {
+describe('verifyOrgAccess — branch manager API guard', { timeout: 15_000 }, () => {
   beforeEach(() => { state.deviceOk = true; state.subBlocked = false; state.profile = { org_id: 'o1', role: 'manager', branch_id: 'b1', status: 'active', permissions: { inventory: true } } })
 
   it('refuses a manager on a route their permissions do not cover', async () => {

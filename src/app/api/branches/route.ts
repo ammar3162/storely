@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifyOrgAccess, enforcedBranchId } from '@/lib/verifyOrgAccess'
-import { getBranchLimit, restoreLockedBranches } from '@/lib/branchLimit'
+import { getBranchLimit, restoreLockedBranches, pauseBranchStaff } from '@/lib/branchLimit'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -137,8 +137,16 @@ export async function PATCH(req: Request) {
     const { data, error } = await db.from('branches').update(update as any).eq('id', id).eq('org_id', org_id).select('id')
     if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
     if (!data?.length) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
-    // تفعيل فرع كان موقوف بسبب حد الباقة: يرجع موظفينه معه
-    if (update.is_active === true) await restoreLockedBranches(db, org_id, [id])
+    // تفعيل فرع: يرجع موظفينه معه (على قد حد الموظفين). إيقافه: يتوقفون معه
+    if (update.is_active === true) {
+      const r = await restoreLockedBranches(db, org_id, [id])
+      const note = r.staffStillLocked ? `رجع ${r.staffRestored} موظف، و${r.staffStillLocked} باقين موقوفين لأن حد الموظفين ممتلئ — فعّلهم من صفحة الموظفين بعد إضافة «موظف إضافي»` : null
+      return NextResponse.json({ success: true, ...(note ? { note } : {}) })
+    }
+    if (update.is_active === false) {
+      const paused = await pauseBranchStaff(db, org_id, id)
+      return NextResponse.json({ success: true, ...(paused ? { note: `توقف ${paused} موظف مع الفرع، ويرجعون عند تفعيله` } : {}) })
+    }
     return NextResponse.json({ success: true })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })

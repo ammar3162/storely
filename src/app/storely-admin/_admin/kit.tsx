@@ -5,34 +5,34 @@ import { usePathname } from 'next/navigation'
 import { Inbox, Loader2, Lock, Search, X, type LucideIcon } from 'lucide-react'
 import { navItemFor } from './nav'
 
-// تصميم «Clean Modern SaaS» بألوان نظام Storely الموحّد (الكحلي — src/components/ui/design-tokens)
+// تصميم أبل بهوية Storely (2026-11-17): خلفية #F5F5F7، بطاقات بيضاء بلا إطار، أزرار بأطراف دائرية، نص أسود، والكحلي للأفعال وللقائمة الجانبية
 export const A = {
-  bg: '#F7F9FA',
+  bg: 'var(--storely-background)',
   surface: '#ffffff',
   sidebar: '#203640',
-  muted: '#F3F5F6',
+  muted: 'var(--storely-fill)',
   border:'var(--storely-border)',
   borderStrong:'var(--storely-border)',
-  text: '#203640',
-  text2: '#4F6678',
-  text3: '#66737C',
+  text: 'var(--storely-text)',
+  text2: 'var(--storely-muted)',
+  text3: 'var(--storely-muted)',
   primary: '#203640',
   primaryHover: '#16262D',
-  primarySoft: '#EEF2F4',
+  primarySoft: 'var(--storely-fill)',
   danger: '#B91C1C',
   dangerSoft: '#fef3f2',
   warning: '#B45309',
   warningSoft: '#fffaeb',
-  info: '#175cd3',
-  infoSoft: '#eff8ff',
-  violet: '#6941c6',
-  violetSoft: '#f4f3ff',
-  radius: 10,
-  radiusCard: 16,
-  shadowSm: '0 1px 2px rgba(32,54,64,.04)',
-  shadow: '0 1px 2px rgba(32,54,64,.04)',
-  shadowLg: '0 12px 32px rgba(32,54,64,.12)',
-  font: "'IBM Plex Sans Arabic', system-ui, sans-serif",
+  info: '#203640',
+  infoSoft: 'var(--storely-fill)',
+  violet: '#203640',
+  violetSoft: 'var(--storely-fill)',
+  radius: 12,
+  radiusCard: 20,
+  shadowSm: 'none',
+  shadow: 'none',
+  shadowLg: '0 12px 32px rgba(0,0,0,.14)',
+  font: 'var(--storely-font)',
 }
 
 
@@ -71,6 +71,9 @@ export async function adminFetch(path: string, opts: { method?: string; body?: u
 export const fmtDate = (d?: string | null, withTime = false) =>
   d ? new Date(d).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', year: 'numeric', month: 'short', day: 'numeric', ...(withTime ? { hour: '2-digit', minute: '2-digit' } : {}) }) : '—'
 
+/** العدد مع «يوم» بالفصحى: يوم واحد، يومان، 3–10 أيام، 11 فأكثر يوماً */
+export const daysAr = (n: number | null | undefined) => n == null ? '—' : n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : n >= 3 && n <= 10 ? `${n} أيام` : `${n} يوماً`
+
 export const daysLeft = (d?: string | null) => (d ? Math.ceil((new Date(d).getTime() - Date.now()) / 86400000) : null)
 
 // ── عناصر ──
@@ -80,7 +83,7 @@ export function PageHeader({ title, subtitle, actions, icon }: { title: string; 
   const inHub = useContext(HubContext)
   if (inHub) return (subtitle || actions) ? (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
-      <p style={{ fontSize: 14, color: A.text2, lineHeight: 1.7, flex: '1 1 380px', minWidth: 0, maxWidth: 820 }}>{subtitle}</p>
+      <p style={{ fontSize: 15, color: A.text2, lineHeight: 1.6, flex: '1 1 380px', minWidth: 0, maxWidth: 820 }}>{subtitle}</p>
       {actions && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{actions}</div>}
     </div>
   ) : null
@@ -89,13 +92,13 @@ export function PageHeader({ title, subtitle, actions, icon }: { title: string; 
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 28 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, minWidth: 0, maxWidth: 820, flex: '1 1 420px' }}>
         {Icon && (
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: A.surface, border: `1px solid ${A.border}`, boxShadow: A.shadow, color: A.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: A.surface, border: 'none', boxShadow: 'none', color: A.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Icon size={20} />
           </div>
         )}
         <div style={{ minWidth: 0 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: A.text, lineHeight: 1.3 }}>{title}</h1>
-          {subtitle && <p style={{ fontSize: 14, color: A.text2, marginTop: 4, lineHeight: 1.7 }}>{subtitle}</p>}
+          <h1 style={{ fontSize: 28, fontWeight: 600, color: A.text, lineHeight: 1.25 }}>{title}</h1>
+          {subtitle && <p style={{ fontSize: 15, color: A.text2, marginTop: 4, lineHeight: 1.6 }}>{subtitle}</p>}
         </div>
       </div>
       {actions && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{actions}</div>}
@@ -105,12 +108,12 @@ export function PageHeader({ title, subtitle, actions, icon }: { title: string; 
 
 export function Card({ title, subtitle, actions, children, pad = 20, style }: { title?: string; subtitle?: string; actions?: ReactNode; children: ReactNode; pad?: number; style?: CSSProperties }) {
   return (
-    <section style={{ background: A.surface, border: `1px solid ${A.border}`, borderRadius: A.radiusCard, boxShadow: A.shadow, overflow: 'hidden', flexShrink: 0, ...style }}>
+    <section style={{ background: A.surface, border: 'none', borderRadius: A.radiusCard, boxShadow: A.shadow, overflow: 'hidden', flexShrink: 0, ...style }}>
       {(title || actions) && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: `16px ${Math.max(pad, 20)}px`, borderBottom: `1px solid ${A.border}` }}>
           <div style={{ minWidth: 0 }}>
-            {title && <div style={{ fontSize: 15, fontWeight: 600, color: A.text }}>{title}</div>}
-            {subtitle && <div style={{ fontSize: 12.5, color: A.text3, marginTop: 3 }}>{subtitle}</div>}
+            {title && <div style={{ fontSize:17, fontWeight: 600, color: A.text }}>{title}</div>}
+            {subtitle && <div style={{ fontSize:13, color: A.text3, marginTop: 3 }}>{subtitle}</div>}
           </div>
           {actions}
         </div>
@@ -126,30 +129,30 @@ export function Stat({ label, value, hint, tone = 'default', onClick, icon: Icon
   return (
     <div onClick={onClick} className={onClick ? 'adm-hover' : undefined} role={onClick ? 'button' : undefined} tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } } : undefined}
-      style={{ background: A.surface, border: `1px solid ${active ? A.primary : A.border}`, borderRadius: A.radiusCard, boxShadow: active ? `0 0 0 3px ${A.primary}1a` : A.shadow, padding: '18px 20px', cursor: onClick ? 'pointer' : 'default' }}>
+      style={{ background: A.surface, border: `1px solid ${active ? A.primary : 'transparent'}`, borderRadius: A.radiusCard, boxShadow: active ? `0 0 0 3px ${A.primary}1a` : A.shadow, padding: '18px 20px', cursor: onClick ? 'pointer' : 'default' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-        <div style={{ fontSize: 13, fontWeight: 500, color: A.text2 }}>{label}</div>
-        {Icon && <div style={{ width: 32, height: 32, borderRadius: 9, background: soft, color: tone === 'default' ? A.text2 : color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={16} /></div>}
+        <div style={{ fontSize:15, fontWeight: 500, color: A.text2 }}>{label}</div>
+        {Icon && <div style={{ width: 32, height: 32, borderRadius:12, background: soft, color: tone === 'default' ? A.text2 : color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={16} /></div>}
       </div>
-      <div style={{ fontSize: 28, fontWeight: 700, color, marginTop: Icon ? 4 : 8, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-      {hint && <div style={{ fontSize: 12, color: A.text3, marginTop: 6 }}>{hint}</div>}
+      <div style={{ fontSize: 28, fontWeight:600, color, marginTop: Icon ? 4 : 8, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+      {hint && <div style={{ fontSize:13, color: A.text3, marginTop: 6 }}>{hint}</div>}
     </div>
   )
 }
 
 // ألوان دلالية من نظام Storely: نجاح، تنبيه، خطر، معلومة — مع حد بلون الحالة
 const TONES = {
-  neutral: { bg: '#F7F9FA', fg: '#4F6678', border: '#E2E7EA' },
-  primary: { bg: '#ECFDF5', fg: '#047857', border: '#A7F3D0' },
-  warning: { bg: '#FFFBEB', fg: '#B45309', border: '#FDE68A' },
-  danger: { bg: '#FEF2F2', fg: '#B91C1C', border: '#FECACA' },
-  info: { bg: '#F3F5F6', fg: '#4F6678', border: '#CBD4DC' },
-  violet: { bg: '#F3F5F6', fg: '#4F6678', border: '#CBD4DC' },
+  neutral: { bg: 'var(--storely-fill)', fg: 'var(--storely-muted)', border: 'transparent' },
+  primary: { bg: '#ECFDF5', fg: '#047857', border: 'transparent' },
+  warning: { bg: '#FFFBEB', fg: '#B45309', border: 'transparent' },
+  danger: { bg: '#FEF2F2', fg: '#B91C1C', border: 'transparent' },
+  info: { bg: 'var(--storely-fill)', fg: '#203640', border: 'transparent' },
+  violet: { bg: 'var(--storely-fill)', fg: '#203640', border: 'transparent' },
 }
 export type Tone = keyof typeof TONES
 export function Badge({ tone = 'neutral', children }: { tone?: Tone; children: ReactNode }) {
   const t = TONES[tone]
-  return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: t.bg, color: t.fg, border: `1px solid ${t.border}`, fontSize: 12, fontWeight: 600, padding: '2px 9px', borderRadius: 99, whiteSpace: 'nowrap', lineHeight: 1.6 }}>{children}</span>
+  return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: t.bg, color: t.fg, border: 'none', fontSize: 13, fontWeight: 600, padding: '3px 10px', borderRadius: 99, whiteSpace: 'nowrap', lineHeight: 1.6 }}>{children}</span>
 }
 
 type BtnKind = 'primary' | 'secondary' | 'danger' | 'ghost'
@@ -158,14 +161,14 @@ export function Btn({ kind = 'secondary', children, onClick, disabled, loading, 
 }) {
   const s: Record<BtnKind, CSSProperties> = {
     primary: { background: A.primary, color: 'white', border: `1px solid ${A.primary}` },
-    secondary: { background: A.surface, color: A.text, border: `1px solid ${A.borderStrong}`, boxShadow: A.shadowSm },
-    danger: { background: A.surface, color: A.danger, border:`1px solid #fecdca`, boxShadow: A.shadowSm },
-    ghost: { background: 'transparent', color: A.text2, border: '1px solid transparent' },
+    secondary: { background: 'var(--storely-fill)', color: A.text, border: '1px solid transparent' },
+    danger: { background: A.dangerSoft, color: A.danger, border: '1px solid transparent' },
+    ghost: { background: 'transparent', color: A.primary, border: '1px solid transparent' },
   }
   return (
     <button type={type} onClick={onClick} disabled={disabled || loading} title={title} className={`adm-btn adm-btn-${kind}`}
-      style={{ ...s[kind], display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: small ? 30 : 38, padding: small ? '4px 10px' : '8px 16px', borderRadius: small ? 8 : 10,
-        fontSize: small ? 12.5 : 13.5, fontWeight: 600, fontFamily: 'inherit', cursor: disabled || loading ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
+      style={{ ...s[kind], display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: small ? 32 : 40, padding: small ? '4px 12px' : '8px 18px', borderRadius: 999,
+        fontSize: small ? 13 : 15, fontWeight: 500, fontFamily: 'inherit', cursor: disabled || loading ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
         width: full ? '100%' : undefined, whiteSpace: 'nowrap' }}>
       {loading && <Loader2 size={14} className="adm-spin" />}
       {children}
@@ -174,23 +177,23 @@ export function Btn({ kind = 'secondary', children, onClick, disabled, loading, 
 }
 
 export const inputStyle: CSSProperties = {
-  width: '100%', minHeight: 40, padding: '9px 12px', border: `1px solid ${A.borderStrong}`, borderRadius: 10, fontSize: 14,
+  width: '100%', minHeight: 44, padding: '10px 12px', border: '1px solid var(--storely-control-border)', borderRadius: 12, fontSize: 17,
   fontFamily: 'inherit', background: A.surface, color: A.text, outline: 'none', boxShadow: A.shadowSm,
 }
 
 export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <label style={{ display: 'block' }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: A.text, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 15, fontWeight: 500, color: A.text, marginBottom: 6 }}>{label}</div>
       {children}
-      {hint && <div style={{ fontSize: 12, color: A.text3, marginTop: 5 }}>{hint}</div>}
+      {hint && <div style={{ fontSize:13, color: A.text3, marginTop: 5 }}>{hint}</div>}
     </label>
   )
 }
 
 export function Loading({ label = 'جارٍ التحميل...' }: { label?: string }) {
   return (
-    <div style={{ padding: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: A.text3, fontSize: 13 }}>
+    <div style={{ padding: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: A.text3, fontSize:15 }}>
       <Loader2 size={16} className="adm-spin" /> {label}
     </div>
   )
@@ -199,9 +202,9 @@ export function Loading({ label = 'جارٍ التحميل...' }: { label?: stri
 export function Empty({ title, hint, icon: Icon = Inbox, action }: { title: string; hint?: ReactNode; icon?: LucideIcon; action?: ReactNode }) {
   return (
     <div style={{ padding: '48px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <div style={{ width: 48, height: 48, borderRadius: 14, background: A.muted, color: A.text3, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}><Icon size={22} /></div>
-      <div style={{ fontSize: 14.5, fontWeight: 600, color: A.text }}>{title}</div>
-      {hint && <div style={{ fontSize: 13, color: A.text3, marginTop: 4, maxWidth: 420, lineHeight: 1.7 }}>{hint}</div>}
+      <div style={{ width: 48, height: 48, borderRadius: 16, background: A.muted, color: A.text3, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}><Icon size={22} /></div>
+      <div style={{ fontSize:17, fontWeight: 600, color: A.text }}>{title}</div>
+      {hint && <div style={{ fontSize:15, color: A.text3, marginTop: 4, maxWidth: 420, lineHeight: 1.7 }}>{hint}</div>}
       {action && <div style={{ marginTop: 16 }}>{action}</div>}
     </div>
   )
@@ -210,7 +213,7 @@ export function Empty({ title, hint, icon: Icon = Inbox, action }: { title: stri
 export function Notice({ tone = 'info', children, action }: { tone?: Tone; children: ReactNode; action?: ReactNode }) {
   const t = TONES[tone]
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: A.surface, color: t.fg, border: `1px solid ${t.border}`, borderRadius: 12, padding: '12px 16px', fontSize: 13.5, fontWeight: 500, lineHeight: 1.7 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: t.bg, color: t.fg, border: 'none', borderRadius: 16, padding: '12px 16px', fontSize:15, fontWeight: 500, lineHeight: 1.7 }}>
       <div style={{ flex: 1 }}>{children}</div>
       {action}
     </div>
@@ -222,14 +225,14 @@ export function Drawer({ open, onClose, title, subtitle, children, width = 520 }
   if (!open) return null
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000 }}>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(16,24,40,.32)', backdropFilter: 'blur(2px)' }} />
-      <aside style={{ position: 'absolute', top: 8, bottom: 8, left: 8, width: `min(${width}px, calc(100vw - 16px))`, background: A.bg, borderRadius: 20, overflow: 'hidden', border: `1px solid ${A.border}`, boxShadow: A.shadowLg, display: 'flex', flexDirection: 'column', animation: 'admDrawer .2s ease' }}>
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.35)', backdropFilter: 'blur(2px)' }} />
+      <aside style={{ position: 'absolute', top: 8, bottom: 8, left: 8, width: `min(${width}px, calc(100vw - 16px))`, background: A.bg, borderRadius: 22, overflow: 'hidden', border: 'none', boxShadow: A.shadowLg, display: 'flex', flexDirection: 'column', animation: 'admDrawer .2s ease' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '18px 20px', background: A.surface, borderBottom: `1px solid ${A.border}` }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 17, fontWeight: 700, color: A.text }}>{title}</div>
-            {subtitle && <div style={{ fontSize: 12.5, color: A.text2, marginTop: 2 }}>{subtitle}</div>}
+            <div style={{ fontSize: 20, fontWeight: 600, color: A.text }}>{title}</div>
+            {subtitle && <div style={{ fontSize:13, color: A.text2, marginTop: 2 }}>{subtitle}</div>}
           </div>
-          <button onClick={onClose} aria-label="إغلاق" className="adm-btn" style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${A.border}`, background: A.surface, boxShadow: A.shadowSm, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: A.text2 }}>
+          <button onClick={onClose} aria-label="إغلاق" className="adm-btn" style={{ width: 36, height: 36, borderRadius: 999, border: 'none', background: 'var(--storely-fill)', boxShadow: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: A.text2 }}>
             <X size={16} />
           </button>
         </div>
@@ -247,7 +250,7 @@ export function Table({ head, children, minWidth = 720 }: { head: string[]; chil
         <thead>
           <tr>
             {head.map((h, i) => (
-              <th key={i} style={{ textAlign: 'right', padding: '11px 16px', fontSize: 12.5, fontWeight: 600, color: A.text3, background:'#fafbfc', borderBottom: `1px solid ${A.border}`, whiteSpace: 'nowrap' }}>{h}</th>
+              <th key={i} style={{ textAlign: 'right', padding: '11px 16px', fontSize:13, fontWeight: 600, color: A.text3, background:'var(--storely-background)', borderBottom: `1px solid ${A.border}`, whiteSpace: 'nowrap' }}>{h}</th>
             ))}
           </tr>
         </thead>
@@ -257,7 +260,7 @@ export function Table({ head, children, minWidth = 720 }: { head: string[]; chil
   )
 }
 
-export const td: CSSProperties = { padding: '14px 16px', borderBottom: `1px solid ${A.border}`, fontSize: 13.5, color: A.text, verticalAlign: 'middle' }
+export const td: CSSProperties = { padding: '14px 16px', borderBottom: `1px solid ${A.border}`, fontSize:15, color: A.text, verticalAlign: 'middle' }
 
 // ── مكوّنات مشتركة إضافية ──
 
@@ -281,7 +284,7 @@ export function SearchBox({ value, onChange, placeholder = 'بحث', onSubmit, s
         style={{ ...inputStyle, paddingRight: 38, paddingLeft: value ? 34 : 12 }} />
       {value && (
         <button type="button" onClick={() => { onChange(''); if (onSubmit) setTimeout(onSubmit, 0) }} aria-label="مسح البحث"
-          style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', width: 24, height: 24, borderRadius: 6, border: 'none', background: A.muted, color: A.text2, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', width: 24, height: 24, borderRadius:999, border: 'none', background: A.muted, color: A.text2, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <X size={13} />
         </button>
       )}
@@ -292,15 +295,15 @@ export function SearchBox({ value, onChange, placeholder = 'بحث', onSubmit, s
 /** تبويبات مقسّمة (Segmented) — للتصفية بين الحالات */
 export function Tabs<K extends string>({ items, value, onChange }: { items: { k: K; l: string; n?: number }[]; value: K; onChange: (k: K) => void }) {
   return (
-    <div role="tablist" style={{ display: 'inline-flex', flexWrap: 'wrap', gap: 2, padding: 3, background: A.muted, border: `1px solid ${A.border}`, borderRadius: 11, maxWidth: '100%' }}>
+    <div role="tablist" style={{ display: 'inline-flex', flexWrap: 'wrap', gap: 2, padding: 3, background: A.muted, border: 'none', borderRadius: 999, maxWidth: '100%' }}>
       {items.map(it => {
         const on = it.k === value
         return (
           <button key={it.k} role="tab" aria-selected={on} type="button" onClick={() => onChange(it.k)} className="adm-tab"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px', borderRadius: 8, border: 'none', fontFamily: 'inherit', fontSize: 13, fontWeight: on ? 600 : 500, cursor: 'pointer', whiteSpace: 'nowrap',
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px', borderRadius:999, border: 'none', fontFamily: 'inherit', fontSize:15, fontWeight: on ? 600 : 500, cursor: 'pointer', whiteSpace: 'nowrap',
               background: on ? A.primary : 'transparent', color: on ? '#fff' : A.text2, boxShadow: 'none' }}>
             {it.l}
-            {it.n !== undefined && <span style={{ fontSize: 11.5, fontWeight: 600, minWidth: 20, padding: '0 6px', height: 18, borderRadius: 99, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: on ? 'rgba(255,255,255,.18)' : A.surface, color: on ? '#fff' : A.text3 }}>{it.n}</span>}
+            {it.n !== undefined && <span style={{ fontSize:13, fontWeight: 600, minWidth: 20, padding: '0 6px', height: 18, borderRadius: 99, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: on ? 'rgba(255,255,255,.18)' : A.surface, color: on ? '#fff' : A.text3 }}>{it.n}</span>}
           </button>
         )
       })}
@@ -313,13 +316,13 @@ export function Toolbar({ children }: { children: ReactNode }) {
   return <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', padding: '14px 16px', borderBottom: `1px solid ${A.border}` }}>{children}</div>
 }
 
-const AVATAR_TINTS = [['#F3F5F6', '#203640']]
+const AVATAR_TINTS = [['var(--storely-fill)', '#203640']]
 /** دائرة بالحرف الأول من الاسم — لونها ثابت لنفس الاسم */
 export function Avatar({ name, size = 36 }: { name?: string | null; size?: number }) {
   const n = (name || '').trim()
   let h = 0; for (let i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0
   const [bg, fg] = AVATAR_TINTS[h % AVATAR_TINTS.length]
-  return <div aria-hidden style={{ width: size, height: size, borderRadius: size >= 40 ? 12 : 10, background: bg, color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: size * 0.4, flexShrink: 0 }}>{n[0] || '؟'}</div>
+  return <div aria-hidden style={{ width: size, height: size, borderRadius: '50%', background: bg, color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: size * 0.4, flexShrink: 0 }}>{n[0] || '؟'}</div>
 }
 
 /** صف داخل بطاقة (قائمة) — مع حد علوي بين الصفوف */
@@ -338,8 +341,8 @@ export function NoAccess({ title }: { title?: string }) {
 export function LinkBtn({ href, children, kind = 'secondary', small }: { href: string; children: ReactNode; kind?: 'primary' | 'secondary'; small?: boolean }) {
   return (
     <a href={href} target="_blank" rel="noopener noreferrer" className={`adm-btn adm-btn-${kind}`}
-      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: small ? 30 : 38, padding: small ? '4px 10px' : '8px 16px', borderRadius: small ? 8 : 10, fontSize: small ? 12.5 : 13.5, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap',
-        ...(kind === 'primary' ? { background: A.primary, color: 'white', border: `1px solid ${A.primary}` } : { background: A.surface, color: A.text, border: `1px solid ${A.borderStrong}`, boxShadow: A.shadowSm }) }}>
+      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: small ? 32 : 40, padding: small ? '4px 12px' : '8px 18px', borderRadius: 999, fontSize: small ? 13 : 15, fontWeight: 500, textDecoration: 'none', whiteSpace: 'nowrap',
+        ...(kind === 'primary' ? { background: A.primary, color: 'white', border: `1px solid ${A.primary}` } : { background: 'var(--storely-fill)', color: A.text, border: '1px solid transparent' }) }}>
       {children}
     </a>
   )
@@ -353,11 +356,11 @@ export const ADMIN_CSS = `
   .adm-root tbody tr:last-child td{border-bottom:none}
   .adm-btn{transition:background .15s,border-color .15s,color .15s,box-shadow .15s}
   .adm-btn-primary:hover:not(:disabled){background:${A.primaryHover}!important}
-  .adm-btn-secondary:hover:not(:disabled){background:var(--storely-background)!important;border-color:${A.borderStrong}!important}
+  .adm-btn-secondary:hover:not(:disabled){background:var(--storely-control-border)!important;border-color:transparent!important}
   .adm-btn-danger:hover:not(:disabled){background:${A.dangerSoft}!important}
   .adm-btn-ghost:hover:not(:disabled){background:${A.muted}!important}
   .adm-hover{transition:border-color .15s,box-shadow .15s,transform .15s}
-  .adm-hover:hover{border-color:${A.borderStrong}!important;box-shadow:0 6px 16px -6px rgba(16,24,40,.12)!important}
+  .adm-hover:hover{box-shadow:0 6px 16px -6px rgba(0,0,0,.14)!important}
   .adm-row{cursor:pointer;transition:background .1s}
   .adm-row:hover td{background:var(--storely-background)}
   .adm-row-btn:hover{background:var(--storely-background)!important}
@@ -369,5 +372,5 @@ export const ADMIN_CSS = `
   @keyframes admSpin{to{transform:rotate(360deg)}}
   @keyframes admDrawer{from{transform:translateX(-24px);opacity:0}to{transform:none;opacity:1}}
   @media(max-width:1000px){.adm-two{grid-template-columns:1fr!important}}
-  @media(max-width:900px){.adm-root input,.adm-root select,.adm-root textarea{font-size:16px!important}}
+  @media(max-width:900px){.adm-root input,.adm-root select,.adm-root textarea{font-size:17px!important}}
 `

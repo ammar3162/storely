@@ -102,8 +102,8 @@ export default function AddonRequestsPage() {
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
         <Avatar name={r.organizations?.name} size={40} />
         <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 600, color: A.text }}>{title}</div>
-          <div style={{ fontSize: 12.5, color: A.text3, marginTop: 3 }}>{sub}</div>
+          <div style={{ fontSize:17, fontWeight: 600, color: A.text }}>{title}</div>
+          <div style={{ fontSize:13, color: A.text3, marginTop: 3 }}>{sub}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Badge tone={tone}>{label}</Badge>
@@ -142,12 +142,12 @@ export default function AddonRequestsPage() {
                 <Card key={r.id} style={r.status === 'pending' ? { borderColor:'#fedf89' } : undefined}>
                   {head(r, r.organizations?.name,
                     <>{fmtDate(r.created_at, true)}{r.bill_at_request != null ? ` · فاتورته وقت الطلب ${r.bill_at_request} ⃁ شهرياً` : ''}</>, 'plan')}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, flexWrap: 'wrap', fontSize: 13.5 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, flexWrap: 'wrap', fontSize:15 }}>
                     <Badge tone="neutral">{PLAN_AR[r.current_plan] || '—'}</Badge>
                     <ArrowLeft size={15} color={A.text3} />
                     <Badge tone="primary">{PLAN_AR[r.target_plan]}</Badge>
                   </div>
-                  {r.reason && <div style={{ fontSize: 13, color: A.text2, marginTop: 10 }}>سبب الرفض: {r.reason}</div>}
+                  {r.reason && <div style={{ fontSize:15, color: A.text2, marginTop: 10 }}>سبب الرفض: {r.reason}</div>}
                   {actions(r, 'plan')}
                 </Card>
               ))}
@@ -158,7 +158,7 @@ export default function AddonRequestsPage() {
             <Section icon={PackagePlus} title="طلبات الإضافات" n={shownAddons.length}>
               {shownAddons.map(r => (
                 <Card key={r.id} style={r.status === 'pending' ? { borderColor:'#fedf89' } : undefined}>
-                  {head(r, <>{r.marketplace_addons?.name} <span style={{ color: A.text2, fontWeight: 500, fontSize: 13.5 }}>· {r.organizations?.name}</span></>, fmtDate(r.created_at, true), 'addon')}
+                  {head(r, <>{r.marketplace_addons?.name} <span style={{ color: A.text2, fontWeight: 500, fontSize:15 }}>· {r.organizations?.name}</span></>, fmtDate(r.created_at, true), 'addon')}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(220px,100%),1fr))', gap: 10, marginTop: 14 }}>
                     <Info label="المطلوب">{r.branch_names?.length && r.marketplace_addons?.slug !== 'extra_staff' ? `${r.branch_names.length} فرع` : `${r.quantity} وحدة`} <span style={{ color: A.text3, fontWeight: 400 }}>({addonQty(r) * (r.marketplace_addons?.monthly_price || 0)} ⃁ شهرياً)</span></Info>
                     {r.branch_names?.length > 0 && <Info label="الفروع">{r.branch_names.join('، ')}</Info>}
@@ -167,8 +167,8 @@ export default function AddonRequestsPage() {
                     {r.status === 'approved' && r.prorated_amount > 0 && <Info label="المبلغ المستحق">{r.prorated_amount} ⃁</Info>}
                     {r.decided_by_name && <Info label="بواسطة">{r.decided_by_name}</Info>}
                   </div>
-                  {r.note && <div style={{ fontSize: 13, color: A.text2, marginTop: 12, padding: '10px 12px', background: A.muted, borderRadius: 10 }}>ملاحظة العميل: {r.note}</div>}
-                  {r.reason && <div style={{ fontSize: 13, color: A.text2, marginTop: 10 }}>سبب الرفض: {r.reason}</div>}
+                  {r.note && <div style={{ fontSize:15, color: A.text2, marginTop: 12, padding: '10px 12px', background: A.muted, borderRadius:12 }}>ملاحظة العميل: {r.note}</div>}
+                  {r.reason && <div style={{ fontSize:15, color: A.text2, marginTop: 10 }}>سبب الرفض: {r.reason}</div>}
                   {actions(r, 'addon')}
                 </Card>
               ))}
@@ -183,8 +183,8 @@ export default function AddonRequestsPage() {
 function Section({ icon: Icon, title, n, children }: { icon: React.ComponentType<{ size?: number }>; title: string; n: number; children: React.ReactNode }) {
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 600, color: A.text, marginBottom: 12 }}>
-        <span style={{ color: A.text3, display: 'flex' }}><Icon size={17} /></span>{title}<span style={{ fontSize: 12.5, color: A.text3, fontWeight: 500 }}>({n})</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize:17, fontWeight: 600, color: A.text, marginBottom: 12 }}>
+        <span style={{ color: A.text3, display: 'flex' }}><Icon size={17} /></span>{title}<span style={{ fontSize:13, color: A.text3, fontWeight: 500 }}>({n})</span>
       </div>
       <Stack gap={12}>{children}</Stack>
     </div>
@@ -194,8 +194,8 @@ function Section({ icon: Icon, title, n, children }: { icon: React.ComponentType
 function Info({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ minWidth: 0 }}>
-      <div style={{ fontSize: 12, color: A.text3, marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: 13.5, color: A.text, fontWeight: 500 }}>{children}</div>
+      <div style={{ fontSize:13, color: A.text3, marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize:15, color: A.text, fontWeight: 500 }}>{children}</div>
     </div>
   )
 }

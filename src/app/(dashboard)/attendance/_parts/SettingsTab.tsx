@@ -34,10 +34,10 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
         const step = (n: number, title: string, desc: string, status?: React.ReactNode) => (
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16, flexWrap: 'wrap' as const }}>
             <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', minWidth: 0, flex: '1 1 260px' }}>
-              <span style={{ width: 30, height: 30, borderRadius: 10, background: colors.primaryLight, color: colors.primary, fontWeight: 900, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n}</span>
+              <span style={{ width: 30, height: 30, borderRadius:12, background: colors.primaryLight, color: colors.primary, fontWeight:600, fontSize:17, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n}</span>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: colors.text }}>{title}</div>
-                <div style={{ fontSize: 12, color: colors.text3, marginTop: 3, lineHeight: 1.7 }}>{desc}</div>
+                <div style={{ fontSize:17, fontWeight:600, color: colors.text }}>{title}</div>
+                <div style={{ fontSize:13, color: colors.text3, marginTop: 3, lineHeight: 1.7 }}>{desc}</div>
               </div>
             </div>
             {status}
@@ -45,9 +45,9 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
         )
         const pill = (txt: React.ReactNode, tone: 'ok' | 'warn' | 'muted') => {
           const c = tone === 'ok' ? { fg: colors.primary, bg: colors.primaryLight, bd: colors.primaryBorder } : tone === 'warn' ? { fg: '#b45309', bg: '#fffbeb', bd: '#fde68a' } : { fg: colors.text3, bg: colors.bg, bd: colors.border }
-          return <span style={{ fontSize: 11.5, fontWeight: 700, color: c.fg, background: c.bg, border: `1px solid ${c.bd}`, borderRadius: 99, padding: '5px 11px', whiteSpace: 'nowrap' as const }}>{txt}</span>
+          return <span style={{ fontSize:13, fontWeight:600, color: c.fg, background: c.bg, border: `1px solid ${c.bd}`, borderRadius: 99, padding: '5px 11px', whiteSpace: 'nowrap' as const }}>{txt}</span>
         }
-        const fieldLabel: React.CSSProperties = { fontSize: 11.5, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6 }
+        const fieldLabel: React.CSSProperties = { fontSize:13, fontWeight:600, color: colors.text3, display: 'block', marginBottom: 6 }
         const box: React.CSSProperties = { ...card, padding: '20px 22px' }
 
         const newDur = durMin(newShiftStart, newShiftEnd)
@@ -67,8 +67,8 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
                     const es = editShift
                     const eDur = durMin(es.start, es.end)
                     return (
-                      <div key={sh.id} style={{ border: `1.5px solid ${colors.primary}`, borderRadius: 14, padding: 14, background: colors.surface }}>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10 }}>تعديل الوردية</div>
+                      <div key={sh.id} style={{ border: `1.5px solid ${colors.primary}`, borderRadius:20, padding: 14, background: colors.surface }}>
+                        <div style={{ fontSize:15, fontWeight:600, color: colors.text, marginBottom: 10 }}>تعديل الوردية</div>
                         <label style={fieldLabel}>اسم الوردية</label>
                         <input value={es.name} onChange={e => setEditShift({ ...es, name: e.target.value })} style={inp()} />
                         {!es.is24h && (
@@ -83,46 +83,46 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
                             </div>
                           </div>
                         )}
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: colors.text2, cursor: 'pointer', fontWeight: 600, marginTop: 10 }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize:13, color: colors.text2, cursor: 'pointer', fontWeight: 600, marginTop: 10 }}>
                           <input type="checkbox" checked={es.is24h} onChange={e => setEditShift({ ...es, is24h: e.target.checked })} style={{ width: 16, height: 16, accentColor: colors.primary }} />
                           دوام 24 ساعة
                         </label>
                         {!es.is24h && eDur > 0 && (
-                          <div style={{ fontSize: 12, color: colors.text3, marginTop: 8 }}>من {t12(es.start)} إلى {t12(es.end)} · {durLabel(eDur)}{crossesMidnight(es.start, es.end) ? ' · ينتهي اليوم الثاني' : ''}</div>
+                          <div style={{ fontSize:13, color: colors.text3, marginTop: 8 }}>من {t12(es.start)} إلى {t12(es.end)} · {durLabel(eDur)}{crossesMidnight(es.start, es.end) ? ' · ينتهي اليوم الثاني' : ''}</div>
                         )}
-                        <div style={{ fontSize: 11.5, color: colors.text3, background: colors.bg, borderRadius: 8, padding: '8px 10px', marginTop: 10, lineHeight: 1.7 }}>
+                        <div style={{ fontSize:13, color: colors.text3, background: colors.bg, borderRadius:12, padding: '8px 10px', marginTop: 10, lineHeight: 1.7 }}>
                           يُطبَّق التعديل بدءاً من الحضور القادم{n ? ` على ${n} موظف` : ''}، ولا يتغيّر الحضور والتأخير المسجّل سابقاً.
                         </div>
                         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                           <button onClick={saveEditShift} disabled={savingEditShift} style={{ ...btnPrimary, flex: 2, padding: '9px 12px' }}>{savingEditShift ? 'جاري الحفظ...' : 'حفظ التعديل'}</button>
                           <button onClick={() => setEditShift(null)} disabled={savingEditShift}
-                            style={{ flex: 1, padding: '9px 12px', borderRadius: 10, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text2, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
+                            style={{ flex: 1, padding: '9px 12px', borderRadius:999, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text2, fontWeight:600, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
                         </div>
                       </div>
                     )
                   }
                   return (
-                    <div key={sh.id} style={{ border: `1px solid ${colors.border}`, borderRadius: 14, padding: '14px 14px 12px', background: colors.surface, position: 'relative' as const }}>
+                    <div key={sh.id} style={{ border: `1px solid ${colors.border}`, borderRadius:20, padding: '14px 14px 12px', background: colors.surface, position: 'relative' as const }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>{sh.name}</div>
+                        <div style={{ fontSize:17, fontWeight:600, color: colors.text }}>{sh.name}</div>
                         <div style={{ display: 'flex', gap: 6 }}>
                           <button onClick={() => startEditShift(sh)} aria-label={`تعديل ${sh.name}`} title="تعديل الوردية"
-                            style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text3, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Pencil size={13} strokeWidth={2.25}/></button>
+                            style={{ width: 28, height: 28, borderRadius:999, border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text3, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Pencil size={13} strokeWidth={2.25}/></button>
                           <button onClick={() => deleteShift(sh.id)} aria-label={`حذف ${sh.name}`} title="حذف الوردية"
-                            style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text4, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Trash2 size={13} strokeWidth={2.25}/></button>
+                            style={{ width: 28, height: 28, borderRadius:999, border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text4, cursor: 'pointer', fontSize:15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Trash2 size={13} strokeWidth={2.25}/></button>
                         </div>
                       </div>
                       {sh.is_24h ? (
-                        <div style={{ fontSize: 13, color: colors.text2, marginTop: 6, fontWeight: 600 }}>دوام 24 ساعة</div>
+                        <div style={{ fontSize:15, color: colors.text2, marginTop: 6, fontWeight: 600 }}>دوام 24 ساعة</div>
                       ) : (
                         <>
-                          <div style={{ fontSize: 13.5, color: colors.text2, marginTop: 6, fontWeight: 600 }}>من {t12(sh.start_time)} إلى {t12(sh.end_time)}</div>
-                          <div style={{ fontSize: 11.5, color: colors.text4, marginTop: 3 }}>
+                          <div style={{ fontSize:15, color: colors.text2, marginTop: 6, fontWeight: 600 }}>من {t12(sh.start_time)} إلى {t12(sh.end_time)}</div>
+                          <div style={{ fontSize:13, color: colors.text4, marginTop: 3 }}>
                             {durLabel(durMin(sh.start_time, sh.end_time))}{crossesMidnight(sh.start_time, sh.end_time) ? ' · ينتهي اليوم الثاني' : ''}
                           </div>
                         </>
                       )}
-                      <div style={{ marginTop: 10, fontSize: 11.5, fontWeight: 700, color: n ? colors.primary : colors.text4 }}>{n ? `${n} موظف على هذه الوردية` : 'لا يوجد موظفون عليها'}</div>
+                      <div style={{ marginTop: 10, fontSize:13, fontWeight:600, color: n ? colors.primary : colors.text4 }}>{n ? `${n} موظف على هذه الوردية` : 'لا يوجد موظفون عليها'}</div>
                     </div>
                   )
                 })}
@@ -130,8 +130,8 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
             )}
 
             {/* إضافة شفت */}
-            <div style={{ border: `1.5px dashed ${colors.border2}`, borderRadius: 14, padding: 14, background: colors.bg }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10 }}>وردية جديدة</div>
+            <div style={{ border: `1.5px dashed ${colors.border2}`, borderRadius:20, padding: 14, background: colors.bg }}>
+              <div style={{ fontSize:15, fontWeight:600, color: colors.text, marginBottom: 10 }}>وردية جديدة</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10, alignItems: 'end' }}>
                 <div style={{ gridColumn: 'span 2' as const, minWidth: 0 }}>
                   <label style={fieldLabel}>اسم الوردية</label>
@@ -151,13 +151,13 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
                 )}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginTop: 12, flexWrap: 'wrap' as const }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: colors.text2, cursor: 'pointer', fontWeight: 600 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize:13, color: colors.text2, cursor: 'pointer', fontWeight: 600 }}>
                   <input type="checkbox" checked={newShift24h} onChange={e => setNewShift24h(e.target.checked)} style={{ width: 16, height: 16, accentColor: colors.primary }} />
                   دوام 24 ساعة (دون تأخير أو عمل إضافي)
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   {!newShift24h && newShiftStart && newShiftEnd && newDur > 0 && (
-                    <span style={{ fontSize: 12, color: colors.text3 }}>من {t12(newShiftStart)} إلى {t12(newShiftEnd)} · {durLabel(newDur)}{crossesMidnight(newShiftStart, newShiftEnd) ? ' · ينتهي اليوم الثاني' : ''}</span>
+                    <span style={{ fontSize:13, color: colors.text3 }}>من {t12(newShiftStart)} إلى {t12(newShiftEnd)} · {durLabel(newDur)}{crossesMidnight(newShiftStart, newShiftEnd) ? ' · ينتهي اليوم الثاني' : ''}</span>
                   )}
                   <button onClick={addShift} disabled={savingShift} style={{ ...btnPrimary, padding: '10px 18px' }}>{savingShift ? 'جاري الإضافة...' : 'إضافة الوردية'}</button>
                 </div>
@@ -170,16 +170,16 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
             {step(2, 'وردية كل موظف وإجازته', 'اختر لكل موظف ورديته الأساسية، وإذا كانت له وردية مختلفة في يوم معيّن (مثل الجمعة) فحدّدها من «وردية مختلفة لأيام معيّنة». ونظام إجازته: أيام ثابتة، أو أسبوع بعد أسبوع، أو أيام تحددها، أو رصيد شهري. لا يُحتسب يوم إجازته غياباً، وإذا حضر فيه يُحتسب يوماً إضافياً. وتغيير الوردية أثناء دوامه يُطبَّق من دوامه التالي.',
               staffList.length === 0 ? null : withoutShift ? pill(`${withoutShift} بدون وردية`, 'warn') : pill('جميع الموظفين مرتبطون بوردية', 'ok'))}
             {staffList.length === 0 ? (
-              <div style={{ fontSize: 13, color: colors.text4, textAlign: 'center' as const, padding: 16 }}>لا يوجد موظفون نشطون في هذا الفرع</div>
+              <div style={{ fontSize:15, color: colors.text4, textAlign: 'center' as const, padding: 16 }}>لا يوجد موظفون نشطون في هذا الفرع</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
-                {shifts.length === 0 && <div style={{ fontSize: 12.5, color:'#b45309', background:'#fffbeb', border:'1px solid #fde68a', borderRadius: 10, padding: '9px 12px' }}>أضف وردية في الخطوة 1 أولاً، ثم يمكنك ربط الموظفين بها.</div>}
+                {shifts.length === 0 && <div style={{ fontSize:13, color:'#b45309', background:'#fffbeb', border:'1px solid #fde68a', borderRadius:12, padding: '9px 12px' }}>أضف وردية في الخطوة 1 أولاً، ثم يمكنك ربط الموظفين بها.</div>}
                 {staffList.map((x: any) => (
-                  <div key={x.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', border:`1px solid ${x.shift_id ? colors.border : '#fde68a'}`, background: x.shift_id ? colors.surface : '#fffdf5', borderRadius: 12, flexWrap: 'wrap' as const }}>
-                    <span style={{ width: 34, height: 34, borderRadius: 10, background: colors.primaryLight, color: colors.primary, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{(x.name || '?').trim()[0]}</span>
+                  <div key={x.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', border:`1px solid ${x.shift_id ? colors.border : '#fde68a'}`, background: x.shift_id ? colors.surface : '#fffdf5', borderRadius:20, flexWrap: 'wrap' as const }}>
+                    <span style={{ width: 34, height: 34, borderRadius:12, background: colors.primaryLight, color: colors.primary, fontWeight:600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{(x.name || '?').trim()[0]}</span>
                     <div style={{ flex: 1, minWidth: 120 }}>
-                      <div style={{ fontSize: 13.5, fontWeight: 700, color: colors.text }}>{x.name}</div>
-                      {!x.shift_id && <div style={{ fontSize: 11.5, color:'#b45309', marginTop: 2 }}>بدون وردية — لا يُحتسب له تأخير أو عمل إضافي، ويمكنه الانصراف في أي وقت</div>}
+                      <div style={{ fontSize:15, fontWeight:600, color: colors.text }}>{x.name}</div>
+                      {!x.shift_id && <div style={{ fontSize:13, color:'#b45309', marginTop: 2 }}>بدون وردية — لا يُحتسب له تأخير أو عمل إضافي، ويمكنه الانصراف في أي وقت</div>}
                     </div>
                     <select value={x.shift_id || ''} onChange={e => assignShift(x.id, e.target.value)} disabled={shifts.length === 0} style={{ ...inp(), width: 250, maxWidth: '100%' }}>
                       <option value="">بدون وردية</option>
@@ -207,18 +207,18 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
                     <label style={fieldLabel}>وقت السماح</label>
                     <div style={{ position: 'relative' as const }}>
                       <NumberInput min={0} max={120} inputMode="numeric" value={late.grace} onChange={e => setLate({ ...late, grace: e.target.value })} placeholder="0" style={{ ...inp(), paddingInline: 60, textAlign: 'center' }} />
-                      <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>دقيقة</span>
+                      <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize:13, color: colors.text4 }}>دقيقة</span>
                     </div>
                   </div>
                   <div>
                     <label style={fieldLabel}>الخصم لكل ساعة تأخير</label>
                     <div style={{ position: 'relative' as const }}>
                       <NumberInput min={0} step="0.5" inputMode="decimal" value={late.perHour} onChange={e => setLate({ ...late, perHour: e.target.value })} placeholder="فارغ = دون خصم" style={{ ...inp(), paddingInline: 50, textAlign: 'center' }} />
-                      <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>⃁</span>
+                      <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize:13, color: colors.text4 }}>⃁</span>
                     </div>
                   </div>
                 </div>
-                <div style={{ fontSize: 12.5, color: colors.text2, background: colors.bg, borderRadius: 10, padding: '11px 14px', marginTop: 12, lineHeight: 1.8 }}>
+                <div style={{ fontSize:13, color: colors.text2, background: colors.bg, borderRadius:12, padding: '11px 14px', marginTop: 12, lineHeight: 1.8 }}>
                   {g > 0 ? <>لا يُسجَّل التأخير حتى <b>{g} دقيقة</b>. </> : <>يُسجَّل أي تأخير من الدقيقة الأولى. </>}
                   {rate > 0
                     ? <>مثال: تأخر <b>{exLate} دقيقة</b> ← خصم <b style={{ color: colors.danger }}>{exAmount} ⃁</b> ({rate} × {exLate} ÷ 60).</>
@@ -243,11 +243,11 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
                 ['fixed', 'مبلغ ثابت للساعة', 'نفس المبلغ لكل ساعة إضافية لكل الموظفين'],
                 ['off', 'بدون عمل إضافي', 'لا يُحتسب أي وقت إضافي'],
               ] as const).map(([v, title, sub]) => (
-                <label key={v} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px', borderRadius: 12, cursor: 'pointer', border: `1.5px solid ${ot.mode === v ? colors.primary : colors.border}`, background: ot.mode === v ? colors.primaryLight : colors.surface }}>
+                <label key={v} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px', borderRadius:20, cursor: 'pointer', border: `1.5px solid ${ot.mode === v ? colors.primary : colors.border}`, background: ot.mode === v ? colors.primaryLight : colors.surface }}>
                   <input type="radio" name="ot-mode" checked={ot.mode === v} onChange={() => setOt({ ...ot, mode: v })} style={{ marginTop: 3, accentColor: colors.primary }} />
                   <span>
-                    <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: colors.text }}>{title}</span>
-                    <span style={{ display: 'block', fontSize: 11.5, color: colors.text3, marginTop: 3, lineHeight: 1.6 }}>{sub}</span>
+                    <span style={{ display: 'block', fontSize:15, fontWeight:600, color: colors.text }}>{title}</span>
+                    <span style={{ display: 'block', fontSize:13, color: colors.text3, marginTop: 3, lineHeight: 1.6 }}>{sub}</span>
                   </span>
                 </label>
               ))}
@@ -267,7 +267,7 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
                     <label style={fieldLabel}>مبلغ الساعة</label>
                     <div style={{ position: 'relative' as const }}>
                       <NumberInput min="0" step="0.5" value={ot.fixedRate} onChange={e => setOt({ ...ot, fixedRate: e.target.value })} placeholder="مثلاً 25" style={{ ...inp(), paddingInline: 50, textAlign: 'center' }} />
-                      <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>⃁</span>
+                      <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize:13, color: colors.text4 }}>⃁</span>
                     </div>
                   </div>
                 )}
@@ -275,19 +275,19 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
                   <label style={fieldLabel}>أقل مدة تُحتسب في اليوم</label>
                   <div style={{ position: 'relative' as const }}>
                     <NumberInput min="0" max="240" value={ot.minMinutes} onChange={e => setOt({ ...ot, minMinutes: e.target.value })} style={{ ...inp(), paddingInline: 60, textAlign: 'center' }} />
-                    <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: colors.text4 }}>دقيقة</span>
+                    <span style={{ position: 'absolute' as const, insetInlineEnd: 12, top: '50%', transform: 'translateY(-50%)', fontSize:13, color: colors.text4 }}>دقيقة</span>
                   </div>
                 </div>
               </div>
             )}
 
             {ot.mode === 'auto' && (
-              <div style={{ fontSize: 12.5, color: colors.text2, background: colors.bg, borderRadius: 10, padding: '11px 14px', marginBottom: 12, lineHeight: 1.8 }}>
+              <div style={{ fontSize:13, color: colors.text2, background: colors.bg, borderRadius:12, padding: '11px 14px', marginBottom: 12, lineHeight: 1.8 }}>
                 مثال: راتب أساسي 3,000 وبدلات 1,000 ووردية 8 ساعات ← أجر الساعة {Math.round(4000 / 30 / 8 * 100) / 100} ⃁ ← الساعة الإضافية <b>{Math.round((4000 / 30 / 8 + ((Number(ot.multiplier) || 1.5) - 1) * 3000 / 30 / 8) * 100) / 100} ⃁</b>
               </div>
             )}
             {ot.mode !== 'off' && (
-              <div style={{ fontSize: 12, color: colors.text3, marginBottom: 12 }}>إذا انصرف الموظف بعد نهاية ورديته بأقل من {ot.minMinutes || 0} دقيقة، فلا يُحتسب له عمل إضافي في ذلك اليوم.</div>
+              <div style={{ fontSize:13, color: colors.text3, marginBottom: 12 }}>إذا انصرف الموظف بعد نهاية ورديته بأقل من {ot.minMinutes || 0} دقيقة، فلا يُحتسب له عمل إضافي في ذلك اليوم.</div>
             )}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

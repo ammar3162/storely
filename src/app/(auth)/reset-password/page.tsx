@@ -76,14 +76,6 @@ export default function ResetPasswordPage() {
       </header>
 
       <main className="reset-shell">
-        <section className="reset-brand" aria-label="Storely">
-          <div className="reset-brand-inner">
-            <img src="/storely-logo.png" alt="Storely" className="reset-brand-logo" />
-            <div className="reset-brand-image">
-              <img src="/storely-team.jpg" alt="Storely" />
-            </div>
-          </div>
-        </section>
 
         <section className="reset-panel" aria-labelledby="reset-title">
           <div className="reset-card">
@@ -128,9 +120,9 @@ export default function ResetPasswordPage() {
       <style>{`
         .reset-auth {
           min-height: 100vh;
-          background:#fff;
+          background:var(--storely-background);
           color:var(--storely-text);
-          font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+          font-family: var(--storely-font);
         }
 
         .reset-topbar {
@@ -139,8 +131,8 @@ export default function ResetPasswordPage() {
           align-items: center;
           justify-content: flex-start;
           padding: 0 56px;
-          border-bottom:1px solid #e7eaed;
-          background:#fff;
+          border-bottom:none;
+          background:transparent;
         }
 
         .reset-logo {
@@ -148,16 +140,16 @@ export default function ResetPasswordPage() {
           height: 44px;
           display: block;
           object-fit: cover;
-          border-radius: 8px;
+          border-radius:12px;
         }
 
         .reset-shell {
           min-height: calc(100vh - 72px);
           display: grid;
-          grid-template-columns: minmax(0, 1fr) minmax(420px, 45%);
+          grid-template-columns: minmax(0, 1fr);
           align-items: center;
-          gap: 64px;
-          padding: 72px 10.25vw;
+          gap: 0;
+          padding: 32px 16px 56px; justify-items: center;
           direction: ltr;
         }
 
@@ -177,14 +169,14 @@ export default function ResetPasswordPage() {
           height: 82px;
           display: block;
           object-fit: cover;
-          border-radius: 8px;
+          border-radius:12px;
           margin: 0 auto 32px;
         }
 
         .reset-brand-image {
           overflow: hidden;
           border:1px solid #e7eaed;
-          border-radius: 8px;
+          border-radius:12px;
           background:#f8fafb;
         }
 
@@ -202,7 +194,7 @@ export default function ResetPasswordPage() {
         }
 
         .reset-card {
-          width: min(100%, 456px);
+          width: min(100%, 440px); background:#fff; border-radius:22px; padding:32px 28px; box-shadow:0 12px 40px rgba(0,0,0,.06);
         }
 
         .reset-heading {
@@ -215,7 +207,7 @@ export default function ResetPasswordPage() {
           height: 76px;
           display: block;
           object-fit: cover;
-          border-radius: 8px;
+          border-radius:12px;
           margin: 0 auto 22px;
         }
 
@@ -223,7 +215,7 @@ export default function ResetPasswordPage() {
           margin: 0;
           color:var(--storely-text);
           font-size: 28px;
-          font-weight: 900;
+          font-weight:600;
           line-height: 1.45;
           letter-spacing: 0;
         }
@@ -231,12 +223,12 @@ export default function ResetPasswordPage() {
         .reset-error {
           margin-bottom: 18px;
           padding: 12px 15px;
-          border:1px solid #fecaca;
-          border-radius: 6px;
+          border:none;
+          border-radius:12px;
           background:#fef2f2;
           color:#b91c1c;
-          font-size: 13px;
-          font-weight: 700;
+          font-size:15px;
+          font-weight:600;
           line-height: 1.7;
         }
 
@@ -250,8 +242,8 @@ export default function ResetPasswordPage() {
           display: block;
           margin-bottom: 7px;
           color:var(--storely-text);
-          font-size: 13px;
-          font-weight: 700;
+          font-size:15px;
+          font-weight:600;
         }
 
         .reset-field input {
@@ -259,19 +251,19 @@ export default function ResetPasswordPage() {
           height: 48px;
           box-sizing: border-box;
           padding: 0 16px;
-          border:1px solid #d7dee3;
-          border-radius: 6px;
+          border:1px solid var(--storely-control-border);
+          border-radius:12px;
           outline: none;
           background:#fff;
           color:var(--storely-text);
           font: inherit;
-          font-size: 15px;
+          font-size:17px;
           font-weight: 500;
           transition: border-color .18s ease, box-shadow .18s ease;
         }
 
         .reset-field input::placeholder {
-          color:#9aa7b2;
+          color:var(--storely-subtle);
         }
 
         .reset-field input:focus {
@@ -283,11 +275,11 @@ export default function ResetPasswordPage() {
         .reset-secondary {
           width: 100%;
           min-height: 48px;
-          border-radius: 6px;
+          border-radius:999px;
           padding: 12px 22px;
           font: inherit;
-          font-size: 15px;
-          font-weight: 800;
+          font-size:17px;
+          font-weight:500;
           cursor: pointer;
           transition: background .18s ease, border-color .18s ease, opacity .18s ease;
         }
@@ -311,14 +303,14 @@ export default function ResetPasswordPage() {
 
         .reset-secondary {
           margin-top: 4px;
-          border:1px solid #d7dee3;
-          background:#fff;
+          border:1px solid transparent;
+          background:var(--storely-fill);
           color:var(--storely-text);
         }
 
         .reset-secondary:hover {
-          border-color:#8ea0b1;
-          background:#f8fafb;
+          border-color:transparent;
+          background:var(--storely-control-border);
         }
 
         .reset-state {
@@ -332,26 +324,26 @@ export default function ResetPasswordPage() {
           align-items: center;
           justify-content: center;
           margin: 0 auto 18px;
-          border:1px solid #d8d9c6;
-          border-radius: 8px;
-          background:#f8eedf;
-          color:#717553;
+          border:none;
+          border-radius:18px;
+          background:var(--storely-fill);
+          color:#203640;
           font-size: 26px;
-          font-weight: 900;
+          font-weight:600;
         }
 
         .reset-state h2 {
           margin: 0 0 8px;
           color:var(--storely-text);
           font-size: 22px;
-          font-weight: 900;
+          font-weight:600;
           line-height: 1.5;
         }
 
         .reset-state p {
           margin: 0 0 24px;
           color:var(--storely-muted);
-          font-size: 14px;
+          font-size:17px;
           line-height: 1.85;
         }
 
@@ -376,11 +368,11 @@ export default function ResetPasswordPage() {
           .reset-shell {
             min-height: calc(100vh - 68px);
             align-items: start;
-            padding: 44px 36px 56px;
+            padding: 20px 16px 48px;
           }
 
           .reset-card {
-            width: 100%;
+            width: 100%; padding: 24px 18px;
           }
 
           .reset-card-logo {

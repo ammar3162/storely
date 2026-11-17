@@ -11,7 +11,8 @@ const sb = () => createClient(
  * يرفق عدد الإشعارات غير المقروءة لتحديث App Badge — بس فشل حساب هذا الرقم
  * لا يوقف الإرسال الأساسي أبداً (معزول بـ try/catch مستقل تماماً).
  */
-export async function sendPushToOrg(org_id: string, title: string, body: string, url?: string) {
+/** branchId: إشعار يخص فرع → المالك + أجهزة مدير هالفرع فقط. بدون فرع → كل أجهزة المنشأة (مثل الجرس) */
+export async function sendPushToOrg(org_id: string, title: string, body: string, url?: string, branchId?: string | null) {
   try {
     webpush.setVapidDetails(
       process.env.VAPID_EMAIL || 'mailto:support@storely.dev',
@@ -19,7 +20,9 @@ export async function sendPushToOrg(org_id: string, title: string, body: string,
       process.env.VAPID_PRIVATE_KEY!
     )
     const supabase = sb()
-    const { data: subs } = await supabase.from('push_subscriptions').select('id,subscription').eq('org_id', org_id)
+    let q = supabase.from('push_subscriptions').select('id,subscription').eq('org_id', org_id)
+    if (branchId && /^[0-9a-f-]{36}$/i.test(branchId)) q = q.or(`branch_id.is.null,branch_id.eq.${branchId}`)
+    const { data: subs } = await q
     if (!subs || subs.length === 0) return { sent: 0 }
 
     // حساب عدد الإشعارات غير المقروءة — معزول تماماً، فشله لا يوقف الإرسال إطلاقاً

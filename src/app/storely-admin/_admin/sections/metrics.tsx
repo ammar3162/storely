@@ -12,6 +12,7 @@ const EVENTS: Record<string, { label: string; tone: Tone; icon: LucideIcon }> = 
   upgraded: { label: 'رقّى الباقة', tone: 'violet', icon: ArrowUpCircle },
   downgraded: { label: 'خفّض الباقة', tone: 'warning', icon: ArrowDownCircle },
   renewed: { label: 'جدّد الاشتراك', tone: 'primary', icon: RotateCw },
+  resumed: { label: 'استُؤنف بعد إيقاف', tone: 'info', icon: RotateCw },
 }
 
 const money = (n: number) => `${Math.round(n || 0).toLocaleString('en')} ⃁`
@@ -65,10 +66,10 @@ export default function MetricsPage() {
               const Icon = cfg.icon
               return (
                 <Row key={e.id}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: A.muted, color: A.text2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={17} /></div>
+                  <div style={{ width: 36, height: 36, borderRadius:12, background: A.muted, color: A.text2, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={17} /></div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: A.text }}>{e.org_name}</div>
-                    <div style={{ fontSize: 12, color: A.text3, marginTop: 2 }}>
+                    <div style={{ fontSize:17, fontWeight: 600, color: A.text }}>{e.org_name}</div>
+                    <div style={{ fontSize:13, color: A.text3, marginTop: 2 }}>
                       {fmtDate(e.created_at, true)}{e.plan ? ` · ${planLabel(planKeyOf(e.plan))}` : ''}{e.amount ? ` · ${money(e.amount)}` : ''}
                     </div>
                   </div>

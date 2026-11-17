@@ -1,58 +1,56 @@
 'use client'
-import { Check, ArrowLeft, Play } from 'lucide-react'
-import HeroMock from './HeroMock'
+import { useRef, useState } from 'react'
+import { Play } from 'lucide-react'
+import Phone from './Phone'
 import type { LandingState } from './useLanding'
-import { STARTING_PRICE as CUSTOM_MIN_MONTHLY } from '@/lib/planPricing'  // «يبدأ من»: أرخص ميزة لكل فرع
+
+// الواجهة بأسلوب صفحات منتجات أبل: الشعار عنواناً، جملة واحدة، زران، ثم ثلاثة جوالات —
+// في الوسط فيديو «من هي ستورلي»، وعلى الجانبين شاشتا المالك والموظف بزاوية خفيفة.
+// التشغيل داخل نفس الضغطة حتى يشتغل الصوت على الآيفون، وعند التشغيل يظهر الجوال كاملاً.
+const VIDEOS = [
+  { k: 'heroVid1', src: '/videos/storely-brand.mp4', poster: '/videos/storely-brand.jpg', sec: 24 },
+  { k: 'heroVid2', src: '/videos/storely-brand-ad.mp4', poster: '/videos/storely-brand-ad.jpg', sec: 44 },
+]
 
 export default function Hero({ m }: { m: LandingState }) {
-  const { partners, lang, router, top, t } = m
+  const { router, t } = m
+  const [i, setI] = useState(0)
+  const [playing, setPlaying] = useState(false)
+  const ref = useRef<HTMLVideoElement>(null)
+  const v = VIDEOS[i]
+  const other = VIDEOS[1 - i]
+
+  const play = () => {
+    ref.current?.play().catch(() => {})
+    setPlaying(true)
+    requestAnimationFrame(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+  }
+  const switchVideo = () => { setI(1 - i); setPlaying(false) }
+
   return (
-    <>
-      {/* الواجهة */}
-      <header id="top" className="lp-hero" style={{paddingTop:top+120}}>
-        <div className="lp-wrap lp-hero-grid">
-          <div className="lp-hero-text">
-            <div className="lp-pill"><span className="lp-dot"/>{t('heroBadge')}</div>
-            <h1 className="lp-display">
-              {t('heroTitleA')}<br/>{t('heroTitleB')} <em>{t('heroTitleC')}</em>
-            </h1>
-            <p className="lp-lead">{t('heroSub')}</p>
-            <div className="lp-cta-row">
-              <button className="lp-btn lp-btn-dark lp-btn-lg" onClick={()=>router.push('/login?mode=register')}>{t('heroStart')} <ArrowLeft size={18}/></button>
-              <a className="lp-btn lp-btn-soft lp-btn-lg" href="#video"><span className="lp-play"><Play size={12} fill="currentColor"/></span>{t('heroVideo')}</a>
-            </div>
-            <ul className="lp-ticks">
-              {['heroP1','heroP2','heroP3'].map(k=><li key={k}><Check size={16}/>{t(k)}</li>)}
-            </ul>
-          </div>
+    <header id="top" className="ap-hero">
+      <h1>{t('heroTitleA')} {t('heroTitleB')} {t('heroTitleC')}</h1>
+      <p className="ap-lead">{t('heroLine')}</p>
+      <div className="ap-acts">
+        <button className="lp-btn lp-btn-dark lp-btn-lg" onClick={() => router.push('/login?mode=register')}>{t('navStart')}</button>
+        <button className="lp-btn lp-btn-line lp-btn-lg" onClick={play}><Play size={16} fill="currentColor" aria-hidden />{t('heroVideo')}</button>
+      </div>
+      <p className="ap-note">{t('heroNote')}</p>
+      <button className="ap-alt" onClick={switchVideo}>{t('heroOr')} {t(other.k)} ({other.sec} {t('heroSecLong')})</button>
 
-          <div className="lp-hero-media">
-            <HeroMock m={m}/>
-          </div>
-        </div>
-
-        {partners.length > 0 && (
-          <div className="lp-wrap lp-partners">
-            <p>{t('trustedBy')}</p>
-            <ul className="lp-partner-grid">
-              {partners.map((p:any)=>(
-                <li key={p.id} className="lp-partner">
-                  <span className="lp-partner-logo"><img src={p.logo_url} alt={p.name} loading="lazy" decoding="async"/></span>
-                  <span className="lp-partner-name">{p.name}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div className="lp-wrap">
-          <div className="lp-stats">
-            {[[CUSTOM_MIN_MONTHLY+' '+(lang==='ar'?'⃁':'SAR'),t('statStart')],['14 '+(lang==='ar'?'يوماً':'days'),t('statFree')],['7',t('statLangs')],['24/7',t('statAlerts')]].map(([n,l])=>(
-              <div key={l}><strong>{n}</strong><span>{l}</span></div>
-            ))}
-          </div>
-        </div>
-      </header>
-    </>
+      <div className={`ap-stage${playing ? ' is-playing' : ''}`} data-fx="hero">
+        <Phone className="ap-side ap-side-r" src="/landing/dash2.webp" eager />
+        <Phone className="ap-side ap-side-l" src="/landing/staff-home.webp" h={1440} eager />
+        <Phone className="ap-video">
+          <video key={v.src} ref={ref} src={v.src} poster={v.poster} preload="none" controls={playing} playsInline aria-label={t(v.k)} />
+          {!playing && (
+            <button className="ap-cover" onClick={play} aria-label={`${t('heroPlay')}: ${t(v.k)}`}>
+              <img src={v.poster} alt="" width={540} height={960} />
+              <span className="ap-play"><Play size={28} fill="currentColor" aria-hidden /></span>
+            </button>
+          )}
+        </Phone>
+      </div>
+    </header>
   )
 }

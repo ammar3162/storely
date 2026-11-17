@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 export default function TermsPage() {
   const router = useRouter()
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',minHeight:'100vh',background:'#f8fafc'}}>
+    <div style={{fontFamily:'var(--storely-font)',direction:'rtl',minHeight:'100vh',background:'#f8fafc'}}>
       <style>{`*{box-sizing:border-box;margin:0;padding:0}`}</style>
       
       {/* Header */}

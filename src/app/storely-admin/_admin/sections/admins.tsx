@@ -13,6 +13,7 @@ const PERMS: Record<string, string> = {
   manage_packages: 'الباقات والأسعار',
   manage_backups: 'النسخ الاحتياطية',
   send_marketing: 'إعلانات الإيميل للعملاء',
+  danger_accounts: 'حذف الحسابات نهائياً واسترجاعها (حساس)',
 }
 
 type Form = { id?: string; full_name: string; email: string; password: string; permissions: Record<string, boolean> }
@@ -73,16 +74,16 @@ export default function AdminsPage() {
             <Avatar name={a.full_name} size={40} />
             <div style={{ flex: '1 1 260px', minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 14.5, fontWeight: 600 }}>{a.full_name}</span>
+                <span style={{ fontSize:17, fontWeight: 600 }}>{a.full_name}</span>
                 {a.role === 'super_admin' ? <Badge tone="primary"><ShieldCheck size={12} /> مشرف كامل</Badge> : <Badge>مشرف</Badge>}
                 {!a.is_active && <Badge tone="danger">معطّل</Badge>}
                 {a.id === admin.id && <Badge tone="info">أنت</Badge>}
               </div>
-              <div style={{ fontSize: 13, color: A.text3, marginTop: 3, textAlign: 'right' }}><span dir="ltr">{a.email}</span></div>
+              <div style={{ fontSize:15, color: A.text3, marginTop: 3, textAlign: 'right' }}><span dir="ltr">{a.email}</span></div>
               {a.role !== 'super_admin' && (
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
                   {Object.entries(a.permissions || {}).filter(([, v]) => v).map(([k]) => <Badge key={k} tone="neutral">{PERMS[k] || k}</Badge>)}
-                  {!Object.values(a.permissions || {}).some(Boolean) && <span style={{ fontSize: 12.5, color: A.text3 }}>بدون صلاحيات</span>}
+                  {!Object.values(a.permissions || {}).some(Boolean) && <span style={{ fontSize:13, color: A.text3 }}>بدون صلاحيات</span>}
                 </div>
               )}
             </div>
@@ -107,10 +108,10 @@ export default function AdminsPage() {
                 <input type="password" dir="ltr" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} style={inputStyle} />
               </Field>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: A.text, marginBottom: 8 }}>الصلاحيات</div>
+                <div style={{ fontSize:15, fontWeight: 600, color: A.text, marginBottom: 8 }}>الصلاحيات</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {Object.entries(PERMS).map(([k, l]) => (
-                    <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, cursor: 'pointer', fontSize: 13.5,
+                    <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius:12, cursor: 'pointer', fontSize:15,
                       border: `1px solid ${form.permissions[k] ? A.primary + '66' : A.border}`, background: form.permissions[k] ? A.primarySoft : A.surface }}>
                       <input type="checkbox" checked={!!form.permissions[k]} onChange={e => setForm({ ...form, permissions: { ...form.permissions, [k]: e.target.checked } })} />
                       {l}
@@ -118,7 +119,7 @@ export default function AdminsPage() {
                   ))}
                 </div>
               </div>
-              {error && <div style={{ fontSize: 12.5, color: A.danger, fontWeight: 600 }}>{error}</div>}
+              {error && <div style={{ fontSize:13, color: A.danger, fontWeight: 600 }}>{error}</div>}
               <Btn kind="primary" full loading={saving} onClick={save}>{form.id ? 'حفظ التعديلات' : 'إضافة المشرف'}</Btn>
             </div>
           </Card>

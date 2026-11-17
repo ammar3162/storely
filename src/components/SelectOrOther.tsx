@@ -13,7 +13,7 @@ export default function SelectOrOther({ value, onChange, options, style, placeho
   const typed = value === 'أخرى' ? '' : value
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <select value={showInput ? 'أخرى' : value} style={{ ...style, ...(emptyLabel && !value ? { color: '#94a3b8' } : {}) }}
+      <select value={showInput ? 'أخرى' : value} style={{ ...style, ...(emptyLabel && !value ? { color: 'var(--storely-subtle)' } : {}) }}
         onChange={e => {
           const v = e.target.value
           if (v === 'أخرى') { setOther(true); onChange('أخرى') } else { setOther(false); onChange(v) }

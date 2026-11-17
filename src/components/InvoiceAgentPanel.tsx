@@ -93,29 +93,29 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
     load()
   }
 
-  const pill = (bg: string, fg: string): React.CSSProperties => ({ fontSize: 11, fontWeight: 700, background: bg, color: fg, borderRadius: 99, padding: '3px 9px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4 })
-  const opt: React.CSSProperties = { padding: '7px 11px', borderRadius: 9, border: `1px solid ${colors.border}`, background: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: colors.text }
+  const pill = (bg: string, fg: string): React.CSSProperties => ({ fontSize:12, fontWeight:600, background: bg, color: fg, borderRadius: 99, padding: '3px 9px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4 })
+  const opt: React.CSSProperties = { padding: '7px 14px', borderRadius:999, border: `1px solid ${colors.border}`, background: 'white', fontSize:13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: colors.text }
 
   return (
-    <div style={{ background: 'white', borderRadius: 12, border: `1px solid ${colors.border}`, padding: 16, marginBottom: 16 }}>
+    <div style={{ background: 'white', borderRadius:20, border: 'none', padding: 20, marginBottom: 16 }}>
       <style>{`@keyframes ia-spin{to{transform:rotate(360deg)}}.ia-spin{animation:ia-spin .8s linear infinite}`}</style>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
-        <span style={{ width: 36, height: 36, borderRadius: 10, background: colors.primaryLight, color: colors.primary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Sparkles size={18} /></span>
+        <span style={{ width: 36, height: 36, borderRadius:12, background: colors.primaryLight, color: colors.primary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Sparkles size={18} /></span>
         <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>تسجيل المشتريات</div>
-          <div style={{ fontSize: 11.5, color: colors.text3, marginTop: 2 }}>ارفع الفاتورة — يقرأها الوكيل الذكي ويطابق الأصناف مع مخزونك، ويسألك فقط عمّا ليس واضحاً</div>
+          <div style={{ fontSize:17, fontWeight:600, color: colors.text }}>تسجيل المشتريات</div>
+          <div style={{ fontSize:13, color: colors.text3, marginTop: 2 }}>ارفع الفاتورة — يقرأها الوكيل الذكي ويطابق الأصناف مع مخزونك، ويسألك فقط عمّا ليس واضحاً</div>
         </div>
       </div>
 
       {reading ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 12px', background: colors.primaryLight, borderRadius: 10, fontSize: 13, fontWeight: 700, color: colors.primary }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 12px', background: colors.primaryLight, borderRadius:12, fontSize:15, fontWeight:600, color: colors.primary }}>
           <Loader2 size={16} className="ia-spin" /> الوكيل يقرأ الفاتورة ويطابق الأصناف...
         </div>
       ) : (
         <InvoicePickButtons onFile={onFile} primary={colors.primary} primaryL={colors.primaryLight} labels={{ camera: 'صوّر الفاتورة', gallery: 'من الصور', file: 'ملف PDF' }} />
       )}
       {onManual && !manualOpen && !reading && (
-        <button onClick={onManual} style={{ marginTop: 10, border: 'none', background: 'none', color: colors.text3, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>
+        <button onClick={onManual} style={{ marginTop: 10, border: 'none', background: 'none', color: colors.text3, fontSize:13, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>
           ما عندك صورة فاتورة؟ سجّل يدوي
         </button>
       )}
@@ -125,12 +125,12 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
         const saving = d.items.filter(i => i.status === 'matched' || i.status === 'new' || i.status === 'expense')
         const sum = saving.reduce((s, i) => s + (Number(i.total) || 0), 0)
         return (
-          <div key={d.id} style={{ marginTop: 14, border: `1.5px solid ${d.status === 'ready' ? colors.primary : '#fde68a'}`, borderRadius: 12, padding: 14 }}>
+          <div key={d.id} style={{ marginTop: 14, border: 'none', background: d.status === 'ready' ? 'var(--storely-background)' : '#fffbeb', borderRadius:20, padding: 16 }}>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
               <input defaultValue={d.supplier || ''} placeholder="اسم المورد" onBlur={e => { if (e.target.value.trim() !== (d.supplier || '')) patch(d, { supplier: e.target.value }) }}
-                style={{ flex: 1, minWidth: 140, padding: '8px 10px', borderRadius: 8, border: `1px solid ${colors.border}`, fontSize: 13, fontWeight: 700, fontFamily: 'inherit' }} />
+                style={{ flex: 1, minWidth: 140, padding: '8px 10px', borderRadius:12, border: `1px solid ${colors.border}`, fontSize:15, fontWeight:600, fontFamily: 'inherit' }} />
               <input type="date" defaultValue={d.invoice_date || ''} onChange={e => patch(d, { invoice_date: e.target.value })}
-                style={{ padding: '7px 8px', borderRadius: 8, border: `1px solid ${colors.border}`, fontSize: 12, fontFamily: 'inherit' }} />
+                style={{ padding: '7px 8px', borderRadius:12, border: `1px solid ${colors.border}`, fontSize:13, fontFamily: 'inherit' }} />
               <button onClick={() => patch(d, { has_vat: !d.has_vat })} style={{ ...opt, background: d.has_vat ? colors.primaryLight : 'white', color: d.has_vat ? colors.primary : colors.text3 }}>
                 {d.has_vat ? 'شاملة ضريبة 15%' : 'بدون ضريبة'}
               </button>
@@ -139,16 +139,16 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
             {(() => {
               const live = d.items.filter(x => x.status !== 'skip')
               const allExpense = live.length > 0 && live.every(x => x.status === 'expense')
-              const seg = (on: boolean): React.CSSProperties => ({ flex: 1, padding: '9px 8px', borderRadius: 8, border: 'none', cursor: on ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
+              const seg = (on: boolean): React.CSSProperties => ({ flex: 1, padding: '9px 8px', borderRadius:12, border: 'none', cursor: on ? 'default' : 'pointer', fontFamily: 'inherit', fontSize:15, fontWeight:600,
                 background: on ? 'white' : 'transparent', color: on ? colors.text : colors.text3, boxShadow: on ? '0 1px 3px rgba(0,0,0,.08)' : 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 })
               return (
                 <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, color: colors.text2, marginBottom: 6 }}>نوع الفاتورة</div>
-                  <div style={{ display: 'flex', gap: 4, background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: 10, padding: 4 }}>
+                  <div style={{ fontSize:13, fontWeight:600, color: colors.text2, marginBottom: 6 }}>نوع الفاتورة</div>
+                  <div style={{ display: 'flex', gap: 4, background: 'var(--storely-fill)', border: 'none', borderRadius:12, padding: 3 }}>
                     <button onClick={() => allExpense && patch(d, { invoice_type: 'stock' })} disabled={busy === d.id} aria-pressed={!allExpense} style={seg(!allExpense)}><PackageCheck size={15} /> أصناف للمخزون</button>
                     <button onClick={() => !allExpense && patch(d, { invoice_type: 'expense' })} disabled={busy === d.id} aria-pressed={allExpense} style={seg(allExpense)}><Receipt size={15} /> مشتريات بدون مخزون</button>
                   </div>
-                  <div style={{ fontSize: 11.5, color: colors.text3, marginTop: 5 }}>
+                  <div style={{ fontSize:13, color: colors.text3, marginTop: 5 }}>
                     {allExpense ? 'كل الأصناف مصروفات (صيانة، تنظيف، غاز…) ولا تُضاف إلى المخزون.' : 'كل صنف يُضاف إلى مخزونك، وتقدر تحوّل أي صنف منها إلى مشتريات من سطره.'}
                   </div>
                 </div>
@@ -161,7 +161,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
             </div>
 
             {tip && (
-              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: 10, padding: '10px 12px', marginBottom: 10, fontSize: 13, lineHeight: 1.9, color: colors.text }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: 'var(--storely-fill)', border: 'none', borderRadius:12, padding: '10px 12px', marginBottom: 10, fontSize:15, lineHeight: 1.9, color: colors.text }}>
                 <span style={{ flex: 1 }}>
                   <b style={{ color: colors.text }}>مخزون</b> = أصناف تُصرف وتُجرد (سكر، أكواب، حليب…).<br />
                   <b style={{ color: colors.text }}>مشتريات</b> = مصاريف لا تُخزّن (تنظيف، صيانة، غاز…). غيّر أي صنف قبل الحفظ.
@@ -171,34 +171,34 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {d.items.map((it, i) => (
-                <div key={i} style={{ background: it.status === 'ask' ? '#fffbeb' : it.status === 'skip' ? '#f8fafc' : 'white', border: `1px solid ${it.status === 'ask' ? '#fde68a' : colors.border}`, borderRadius: 10, padding: '10px 12px', opacity: it.status === 'skip' ? .6 : 1 }}>
+                <div key={i} style={{ background: it.status === 'ask' ? '#fffbeb' : it.status === 'skip' ? 'var(--storely-background)' : 'white', border: `1px solid ${it.status === 'ask' ? '#fde68a' : colors.border}`, borderRadius:12, padding: '10px 12px', opacity: it.status === 'skip' ? .6 : 1 }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, minWidth: 160 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{it.name}</div>
-                      <div style={{ fontSize: 11.5, color: colors.text3, marginTop: 2 }}>
+                      <div style={{ fontSize:15, fontWeight:600, color: colors.text }}>{it.name}</div>
+                      <div style={{ fontSize:13, color: colors.text3, marginTop: 2 }}>
                         {it.qty ? `${it.qty} ${it.unit || ''} · ` : it.status === 'expense' ? '' : 'الكمية ناقصة · '}{it.total ? `${fmt(it.total)} ${curr}` : 'السعر ناقص'}
                       </div>
                     </div>
                     {it.status === 'matched' && <span style={pill(colors.primaryLight, colors.primary)}><Check size={12} /> مخزون: {it.product_name}{it.learned ? ' (تعلّمها)' : ''}</span>}
                     {(it.status === 'matched' || it.status === 'new') && looksLikeExpense(it.name) && (
-                      <span style={{ flexBasis: '100%', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 13, fontWeight: 600, color: '#92400e', background: '#fffbeb', border: '1.5px solid #f59e0b', borderRadius: 8, padding: '8px 10px' }}>
+                      <span style={{ flexBasis: '100%', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize:15, fontWeight: 600, color: '#92400e', background: '#fffbeb', border: '1.5px solid #f59e0b', borderRadius:12, padding: '8px 10px' }}>
                         <AlertTriangle size={16} /> «{it.name}» يبدو مصروفاً وليس صنف مخزون — لن يُصرف أو يُجرد.
                         <button onClick={() => patch(d, { index: i, action: 'expense' })} disabled={busy === d.id}
-                          style={{ marginInlineStart: 'auto', padding: '5px 10px', borderRadius: 7, border: '1px solid #f59e0b', background: 'white', color: '#92400e', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>اجعله مشتريات</button>
+                          style={{ marginInlineStart: 'auto', padding: '5px 10px', borderRadius:999, border: '1px solid #f59e0b', background: 'white', color: '#92400e', fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: 'inherit' }}>اجعله مشتريات</button>
                       </span>
                     )}
-                    {it.status === 'new' && <span style={pill('#eff6ff', '#1d4ed8')}><Plus size={12} /> مخزون: صنف جديد</span>}
+                    {it.status === 'new' && <span style={pill('var(--storely-fill)', 'var(--storely-navy)')}><Plus size={12} /> مخزون: صنف جديد</span>}
                     {it.status === 'expense' && <span style={pill('#faf5ff', '#7e22ce')}><Receipt size={12} /> مشتريات — لا تُضاف إلى المخزون</span>}
                     {(it.status === 'new' || it.status === 'expense') && (
                       <button onClick={() => patch(d, { index: i, action: it.status === 'new' ? 'expense' : 'new' })} disabled={busy === d.id}
-                        style={{ border: 'none', background: 'none', color: colors.text3, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>
+                        style={{ border: 'none', background: 'none', color: colors.text3, fontSize:13, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>
                         {it.status === 'new' ? 'اجعله مشتريات' : 'اجعله مخزوناً'}
                       </button>
                     )}
-                    {it.status === 'skip' && <span style={pill('#f1f5f9', colors.text3)}>لا يُسجَّل</span>}
+                    {it.status === 'skip' && <span style={pill('var(--storely-fill)', colors.text3)}>لا يُسجَّل</span>}
                     {it.status !== 'ask' && (
                       <button onClick={() => patch(d, { index: i, action: it.status === 'skip' ? 'new' : 'skip' })} disabled={busy === d.id}
-                        style={{ border: 'none', background: 'none', color: colors.text3, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>
+                        style={{ border: 'none', background: 'none', color: colors.text3, fontSize:13, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>
                         {it.status === 'skip' ? 'رجّعه' : 'لا تسجّله'}
                       </button>
                     )}
@@ -206,7 +206,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
 
                   {it.status === 'ask' && it.question === 'which_product' && (
                     <div style={{ marginTop: 10 }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#92400e', marginBottom: 8 }}>
+                      <div style={{ fontSize:13, fontWeight:600, color: '#92400e', marginBottom: 8 }}>
                         {it.candidates.length ? 'ما الصنف المقابل له في مخزونك؟' : 'لم يُعثر عليه في مخزونك — هل هو صنف مخزون جديد، أم مشتريات لا تُحتسب ضمن المخزون؟'}
                       </div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -218,7 +218,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                           <option value="">صنف ثاني من المخزون...</option>
                           {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                         </select>
-                        <button onClick={() => patch(d, { index: i, action: 'new' })} disabled={busy === d.id} style={{ ...opt, color: '#1d4ed8', borderColor: '#bfdbfe', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}><Plus size={12} /> صنف مخزون جديد</button>
+                        <button onClick={() => patch(d, { index: i, action: 'new' })} disabled={busy === d.id} style={{ ...opt, color: 'var(--storely-navy)', borderColor: 'var(--storely-border)', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}><Plus size={12} /> صنف مخزون جديد</button>
                         <button onClick={() => patch(d, { index: i, action: 'expense' })} disabled={busy === d.id} style={{ ...opt, color: '#7e22ce', borderColor: '#e9d5ff', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}><Receipt size={12} /> مشتريات (بدون مخزون)</button>
                         <button onClick={() => patch(d, { index: i, action: 'skip' })} disabled={busy === d.id} style={{ ...opt, color: colors.text3 }}>لا تسجّله</button>
                       </div>
@@ -230,20 +230,20 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                     const unclear = !it.factor && !!it.unit && normUnit(it.unit) !== normUnit(it.stock_unit)
                     return (
                       <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 12.5, fontWeight: 600, color: colors.text }}>يدخل المخزون:</span>
+                        <span style={{ fontSize:13, fontWeight: 600, color: colors.text }}>يدخل المخزون:</span>
                         <NumberInput key={`${d.id}-${i}-${stockQty}`} defaultValue={String(stockQty)} disabled={busy === d.id} aria-label="الكمية التي تدخل المخزون"
-                          style={{ width: 90, padding: '6px 9px', borderRadius: 8, border: `1px solid ${unclear ? '#f59e0b' : colors.border}`, fontSize: 13 }}
+                          style={{ width: 90, padding: '6px 9px', borderRadius:12, border: `1px solid ${unclear ? '#f59e0b' : colors.border}`, fontSize:15 }}
                           onBlur={(e: any) => { const v = Math.round(Number(e.target.value)); if (v > 0 && v !== stockQty) patch(d, { index: i, action: 'set', stock_qty: v }) }} />
-                        <span style={{ fontSize: 12.5, color: colors.text2 }}>{it.stock_unit}</span>
-                        {it.factor && it.factor !== 1 && <span style={{ fontSize: 11.5, color: colors.text3 }}>(محفوظ من فاتورة سابقة)</span>}
-                        {unclear && <span style={{ fontSize: 11.5, color: '#b45309', flexBasis: '100%' }}>الفاتورة بـ{it.unit} والمخزون بـ{it.stock_unit} — اكتب كم {it.stock_unit} دخل فعلاً.</span>}
+                        <span style={{ fontSize:13, color: colors.text2 }}>{it.stock_unit}</span>
+                        {it.factor && it.factor !== 1 && <span style={{ fontSize:13, color: colors.text3 }}>(محفوظ من فاتورة سابقة)</span>}
+                        {unclear && <span style={{ fontSize:13, color: '#b45309', flexBasis: '100%' }}>الفاتورة بـ{it.unit} والمخزون بـ{it.stock_unit} — اكتب كم {it.stock_unit} دخل فعلاً.</span>}
                       </div>
                     )
                   })()}
                   {it.status === 'ask' && (it.question === 'missing_price' || it.question === 'missing_qty') && (
                     <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 12.5, fontWeight: 700, color: '#92400e' }}>{it.question === 'missing_price' ? 'كم سعره شامل الضريبة؟' : 'كم الكمية؟'}</span>
-                      <NumberInput placeholder={it.question === 'missing_price' ? curr : 'الكمية'} style={{ width: 110, padding: '7px 9px', borderRadius: 8, border: `1px solid ${colors.border}`, fontSize: 13 }}
+                      <span style={{ fontSize:13, fontWeight:600, color: '#92400e' }}>{it.question === 'missing_price' ? 'كم سعره شامل الضريبة؟' : 'كم الكمية؟'}</span>
+                      <NumberInput placeholder={it.question === 'missing_price' ? curr : 'الكمية'} style={{ width: 110, padding: '7px 9px', borderRadius:12, border: `1px solid ${colors.border}`, fontSize:15 }}
                         onBlur={(e: any) => { const v = Number(e.target.value); if (v > 0) patch(d, { index: i, action: 'set', ...(it.question === 'missing_price' ? { total: v } : { qty: v }) }) }} />
                     </div>
                   )}
@@ -258,12 +258,12 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
               if (!stock.length && !exp.length) return null
               const qtyOf = (i: Item) => i.status === 'matched' && i.stock_unit ? `${Math.round((i.qty || 0) * (i.factor || 1))} ${i.stock_unit}` : i.qty ? `${i.qty} ${i.unit || ''}` : ''
               const box = (title: string, Icon: any, list: Item[], tone: { bg: string; border: string; text: string }, right: (i: Item) => string) => (
-                <div style={{ flex: '1 1 220px', background: tone.bg, border: `1.5px solid ${tone.border}`, borderRadius: 10, padding: '10px 12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 800, color: tone.text, marginBottom: 6 }}>
+                <div style={{ flex: '1 1 220px', background: tone.bg, border: `1.5px solid ${tone.border}`, borderRadius:12, padding: '10px 12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize:15, fontWeight:600, color: tone.text, marginBottom: 6 }}>
                     <Icon size={16} /> {title} <span style={{ fontWeight: 600 }}>({list.length})</span>
                   </div>
                   {list.map((i, n) => (
-                    <div key={n} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 13, padding: '4px 0', borderTop: n ? `1px solid ${tone.border}` : 'none' }}>
+                    <div key={n} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize:15, padding: '4px 0', borderTop: n ? `1px solid ${tone.border}` : 'none' }}>
                       <span style={{ color: colors.text, fontWeight: 600 }}>{i.status === 'matched' ? (i.product_name || i.name) : i.name}</span>
                       <span style={{ color: colors.text2, whiteSpace: 'nowrap' }}>{right(i)}</span>
                     </div>
@@ -272,23 +272,23 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
               )
               return (
                 <div style={{ marginTop: 14 }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: colors.text, marginBottom: 8 }}>قبل الحفظ، تأكد من التوزيع:</div>
+                  <div style={{ fontSize:17, fontWeight:600, color: colors.text, marginBottom: 8 }}>قبل الحفظ، تأكد من التوزيع:</div>
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     {stock.length > 0 && box('يدخل المخزون', PackageCheck, stock, { bg: colors.primaryLight, border: '#b8c7ce', text: colors.primary }, qtyOf)}
                     {exp.length > 0 && box('مشتريات بدون مخزون', Receipt, exp, { bg: '#faf5ff', border: '#e9d5ff', text: '#7e22ce' }, i => i.total ? `${fmt(Number(i.total))} ${curr}` : '')}
                   </div>
-                  <div style={{ fontSize: 12, color: colors.text3, marginTop: 6 }}>صنف في المكان الخطأ؟ غيّره من سطره فوق قبل الحفظ.</div>
+                  <div style={{ fontSize:13, color: colors.text3, marginTop: 6 }}>صنف في المكان الخطأ؟ غيّره من سطره فوق قبل الحفظ.</div>
                 </div>
               )
             })()}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, fontSize: 12, color: colors.text3 }}>
+              <div style={{ flex: 1, fontSize:13, color: colors.text3 }}>
                 سيُسجَّل {saving.length} صنف · {fmt(sum)} {curr}{d.total ? ` من إجمالي الفاتورة ${fmt(d.total)} ${curr}` : ''}
               </div>
               <button onClick={() => cancel(d)} disabled={busy === d.id} style={{ ...opt, color: colors.danger, borderColor: '#fecaca', display: 'flex', alignItems: 'center', gap: 4 }}><Trash2 size={13} /> إلغاء</button>
               <button onClick={() => confirm(d)} disabled={busy === d.id || d.status !== 'ready'}
-                style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: d.status === 'ready' ? colors.primary : colors.text4, color: 'white', fontSize: 13, fontWeight: 700, cursor: d.status === 'ready' ? 'pointer' : 'not-allowed', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
+                style={{ padding: '11px 24px', minHeight: 44, borderRadius:999, border: 'none', background: d.status === 'ready' ? colors.primary : colors.text4, color: 'white', fontSize:15, fontWeight:600, cursor: d.status === 'ready' ? 'pointer' : 'not-allowed', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
                 {busy === d.id ? <Loader2 size={14} className="ia-spin" /> : <PackageCheck size={15} />} حفظ الفاتورة
               </button>
             </div>

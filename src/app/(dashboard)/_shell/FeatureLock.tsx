@@ -10,16 +10,16 @@ export default function FeatureLock({ feature, otherBranch, owner }: { feature: 
     <div style={{ minHeight: '55vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: font.family, direction: 'rtl' }}>
       <div style={{ textAlign: 'center', maxWidth: 420 }}>
         <div style={{ display: 'flex', justifyContent: 'center', color: colors.text3, marginBottom: 14 }}><Lock size={40} /></div>
-        <div style={{ fontSize: 17, fontWeight: 800, color: colors.text, marginBottom: 8 }}>
+        <div style={{ fontSize: 17, fontWeight:600, color: colors.text, marginBottom: 8 }}>
           «{FEATURE_LABEL[feature]}» {otherBranch ? 'غير مفعّلة لهذا الفرع' : 'غير مشمولة باشتراكك'}
         </div>
-        <div style={{ fontSize: 14, color: colors.text, lineHeight: 1.8, marginBottom: 18 }}>
+        <div style={{ fontSize:17, color: colors.text, lineHeight: 1.8, marginBottom: 18 }}>
           {owner
             ? (otherBranch ? 'يمكنك إضافتها لهذا الفرع من صفحة الإضافات، أو تغيير الفرع من الأعلى.' : 'يمكنك إضافتها إلى اشتراكك من صفحة الإضافات، واختيار الفروع التي تريدها.')
             : 'كلّم مالك المنشأة يضيفها من صفحة الإضافات.'}
         </div>
         {owner && (
-          <Link href="/addons-market" className="hide-in-app" style={{ display: 'inline-block', padding: '12px 26px', borderRadius: 10, background: colors.primary, color: 'white', fontSize: 14, fontWeight: 800, textDecoration: 'none' }}>
+          <Link href="/addons-market" className="hide-in-app" style={{ display: 'inline-block', padding: '12px 26px', borderRadius:12, background: colors.primary, color: 'white', fontSize:17, fontWeight:600, textDecoration: 'none' }}>
             صفحة الإضافات
           </Link>
         )}

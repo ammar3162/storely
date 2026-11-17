@@ -2,41 +2,43 @@ import type { CSSProperties } from 'react'
 
 // تصميم تطبيق الموظف «كاونتر» بألوان نظام Storely الموحّد (الكحلي — src/components/ui/design-tokens): لون ستورلي بس للزر الأساسي والعنصر المختار،
 // والإيصالات (الإقفال وكشف الراتب) بأرقام خط الإيصال وخط متقطع.
+// بأسلوب أبل (2026-11-17): خلفية #F5F5F7 وبطاقات بيضاء بدون حدود، نص أسود، والكحلي للزر الأساسي والمختار
 export const C = {
-  bg: '#F7F9FA',        // خلفية الصفحة
+  bg: '#F5F5F7',        // خلفية الصفحة
   card: '#ffffff',      // البطاقات
-  raised: '#F3F5F6',    // أزرار ثانوية، مسار التبويبات، خلفية الأيقونات
-  line: '#E2E7EA',      // الخطوط الفاصلة
-  t1: '#203640',        // النص الأساسي
-  t2: '#4F6678',        // النص الثانوي
-  t3: '#66737C',        // الوصف والأيقونات
+  raised: '#E8E8ED',    // أزرار ثانوية، مسار التبويبات، خلفية الأيقونات
+  line: '#E3E3E8',      // الخطوط الفاصلة
+  t1: '#1D1D1F',        // النص الأساسي
+  t2: '#424245',        // النص الثانوي
+  t3: '#6E6E73',        // الوصف والأيقونات
   accent: '#203640',    // لون ستورلي: الزر الأساسي والمختار
   accentInk: '#203640', // نص بلون ستورلي على خلفية فاتحة
-  accentSoft: '#EEF2F4',
+  accentSoft: '#E8E8ED',
   neg: '#B91C1C', negSoft: '#FEF2F2',
   pos: '#047857', posSoft: '#ECFDF5',
   warn: '#b45309', warnSoft: '#fffbeb',
-  cut: '#CBD4DC',       // خط الإيصال المتقطع
+  cut: '#D2D2D7',       // خط الإيصال المتقطع
 } as const
 
-export const MONO = "'IBM Plex Mono', ui-monospace, monospace"
+// أرقام الإيصال والرواتب بخط أبل نفسه، وأرقام متساوية العرض (tabular-nums في receiptNum) حتى تصطف الأعمدة
+export const MONO = 'var(--storely-font)'
 
-export const card: CSSProperties = { background: C.card, border: `1px solid ${C.line}`, borderRadius: 12 }
+export const card: CSSProperties = { background: C.card, border: 'none', borderRadius: 20 }
 
 export const btnPrimary: CSSProperties = {
-  width: '100%', height: 48, background: C.accent, color: '#fff', border: 'none', borderRadius: 6,
-  fontSize: 16, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+  width: '100%', height: 50, background: C.accent, color: '#fff', border: 'none', borderRadius: 999,
+  fontSize: 17, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
 }
 
 export const btnSecondary: CSSProperties = {
-  ...btnPrimary, background: C.card, color: C.t1, border: `1px solid ${C.line}`, fontWeight: 500,
+  ...btnPrimary, background: C.raised, color: C.t1, border: 'none', fontWeight: 500,
 }
 
-export const sectionLabel: CSSProperties = { fontSize: 13, fontWeight: 500, color: C.t2, margin: '24px 4px 8px' }
+export const sectionLabel: CSSProperties = { fontSize: 13, fontWeight: 500, color: C.t2, margin: '24px 16px 8px' }
 
 export const iconBox: CSSProperties = {
-  width: 36, height: 36, borderRadius: 6, background: C.raised, color: C.t2,
+  width: 36, height: 36, borderRadius: 10, background: C.raised, color: C.t1,
   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
 }
 

@@ -31,7 +31,7 @@ export default function CustomerEmailCard({ orgId, orgName }: { orgId: string; o
     <Card title="مراسلة بالإيميل" subtitle={info?.email ? `إلى ${info.email} — يصله باسم «فريق Storely» من support@storely.dev، والرد يرجع لنفس البريد` : 'رسالة شخصية لهذا العميل'}
       actions={info?.sendable && !open ? <Btn small kind="primary" onClick={() => setOpen(true)}><Mail size={14} /> إيميل جديد</Btn> : undefined}>
       {msg && <div style={{ marginBottom: 10 }}><Notice tone={msg.bad ? 'danger' : 'primary'}>{msg.t}</Notice></div>}
-      {info && !info.sendable && <div style={{ fontSize: 13, color: A.danger }}>لا يوجد بريد صالح لمالك هذه المنشأة</div>}
+      {info && !info.sendable && <div style={{ fontSize:15, color: A.danger }}>لا يوجد بريد صالح لمالك هذه المنشأة</div>}
       {open && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: sent.length ? 14 : 0 }}>
           <Field label="العنوان"><input style={inputStyle} value={subject} onChange={e => setSubject(e.target.value)} maxLength={150} placeholder="مثال: متابعة تفعيل حسابك" /></Field>
@@ -46,20 +46,20 @@ export default function CustomerEmailCard({ orgId, orgName }: { orgId: string; o
       )}
       {sent.length > 0 ? (
         <div style={{ display: 'grid', gap: 8 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: A.text3 }}>المراسلات</div>
+          <div style={{ fontSize:13, fontWeight: 600, color: A.text3 }}>المراسلات</div>
           {sent.map((m, i) => (
-            <div key={i} style={{ border: `1px solid ${A.border}`, borderRadius: 10, padding: '10px 12px', background: m.in ? A.bg : undefined }}>
+            <div key={i} style={{ border: `1px solid ${A.border}`, borderRadius:12, padding: '10px 12px', background: m.in ? A.bg : undefined }}>
               <button onClick={() => setShown(shown === i ? null : i)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'start' }}>
                 {m.in && <CornerDownLeft size={14} color={A.primary} />}
-                <span style={{ flex: 1, fontSize: 13.5, fontWeight: 600, color: A.text }}>{m.subject || 'بدون عنوان'}</span>
-                <span style={{ fontSize: 12, color: A.text3, whiteSpace: 'nowrap' }}>{m.by} · {fmtDate(m.at, true)}</span>
+                <span style={{ flex: 1, fontSize:15, fontWeight: 600, color: A.text }}>{m.subject || 'بدون عنوان'}</span>
+                <span style={{ fontSize:13, color: A.text3, whiteSpace: 'nowrap' }}>{m.by} · {fmtDate(m.at, true)}</span>
                 {shown === i ? <ChevronUp size={14} color={A.text3} /> : <ChevronDown size={14} color={A.text3} />}
               </button>
-              {shown === i && <div style={{ marginTop: 8, fontSize: 13, color: A.text2, whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{m.body}</div>}
+              {shown === i && <div style={{ marginTop: 8, fontSize:15, color: A.text2, whiteSpace: 'pre-wrap', lineHeight: 1.8 }}>{m.body}</div>}
             </div>
           ))}
         </div>
-      ) : !open && info?.sendable ? <div style={{ fontSize: 13, color: A.text3 }}>لم تُرسل له أي رسالة بعد</div> : null}
+      ) : !open && info?.sendable ? <div style={{ fontSize:15, color: A.text3 }}>لم تُرسل له أي رسالة بعد</div> : null}
     </Card>
   )
 }

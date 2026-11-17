@@ -100,8 +100,9 @@ async function run(body: any) {
     for (const groupKey of Object.keys(bySupplierBranch)) {
       const items = bySupplierBranch[groupKey]
       const supplierId = groupKey.split('::')[0]
-      const { data: supplier } = await supabase.from('suppliers').select('name, phone, notes').eq('id', supplierId).single()
-      if (!supplier?.phone) continue
+      // المورد الموقوف (أوقفه المالك أو تعدّى حد الموردين بعد تخفيض الباقة) ما يوصله طلب تلقائي
+      const { data: supplier } = await supabase.from('suppliers').select('name, phone, notes, is_active').eq('id', supplierId).maybeSingle()
+      if (!supplier?.phone || (supplier as any).is_active === false) continue
 
       const orgName = (items[0] as any).organizations?.name || 'المتجر'
       const messageItems = items.map((p: any) => ({

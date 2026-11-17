@@ -61,8 +61,8 @@ export default function MarqueeMessagesPage() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 880 }}>
         <Card title="معاينة الشريط" subtitle="كما يظهر للزوار الآن">
-          <div style={{ borderRadius: 12, background:'#203640', color: 'white', padding: '9px 16px', overflow: 'hidden', whiteSpace: 'nowrap', display: 'flex', gap: 28, fontSize: 13.5, fontWeight: 500 }}>
-            {active.length ? active.map(m => <span key={m.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}><span style={{ width: 5, height: 5, borderRadius: 99, background:'#5eead4' }} />{m.message}</span>)
+          <div style={{ borderRadius:20, background:'#203640', color: 'white', padding: '9px 16px', overflow: 'hidden', whiteSpace: 'nowrap', display: 'flex', gap: 28, fontSize:15, fontWeight: 500 }}>
+            {active.length ? active.map(m => <span key={m.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}><span style={{ width: 5, height: 5, borderRadius: 99, background:'var(--storely-border)' }} />{m.message}</span>)
               : <span style={{ opacity: .6 }}>لا توجد رسائل مفعّلة، ولن يظهر الشريط في الموقع</span>}
           </div>
         </Card>
@@ -70,11 +70,11 @@ export default function MarqueeMessagesPage() {
         <Card title="إضافة رسالة أو أكثر" subtitle="اكتب كل رسالة في سطر مستقل، وستُضاف جميعها دفعة واحدة">
           <Field label="الرسائل">
             <textarea placeholder={'رسالة 1\nرسالة 2\nرسالة 3'} value={text} onChange={e => setText(e.target.value)} rows={4}
-              style={{ ...inputStyle, resize: 'vertical', fontSize: 14 }} />
+              style={{ ...inputStyle, resize: 'vertical', fontSize:17 }} />
           </Field>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
             <Btn kind="primary" onClick={addMessages} loading={saving}><Plus size={14} /> إضافة</Btn>
-            {msg && <span style={{ fontSize: 13, fontWeight: 600, color: msg.ok ? A.primary : A.danger }}>{msg.t}</span>}
+            {msg && <span style={{ fontSize:15, fontWeight: 600, color: msg.ok ? A.primary : A.danger }}>{msg.t}</span>}
           </div>
         </Card>
 
@@ -83,13 +83,13 @@ export default function MarqueeMessagesPage() {
             <Row key={m.id} style={{ display: 'block' }}>
               {editingId === m.id ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <input value={editText} onChange={e => setEditText(e.target.value)} autoFocus style={{ ...inputStyle, flex: 1, minWidth: 200, fontSize: 14 }} />
+                  <input value={editText} onChange={e => setEditText(e.target.value)} autoFocus style={{ ...inputStyle, flex: 1, minWidth: 200, fontSize:17 }} />
                   <Btn small kind="primary" onClick={() => saveEdit(m.id)} loading={savingEdit}>حفظ</Btn>
                   <Btn small kind="ghost" onClick={() => setEditingId(null)}>إلغاء</Btn>
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <span style={{ flex: 1, minWidth: 200, fontSize: 14, fontWeight: 500, color: m.is_active ? A.text : A.text3 }}>{m.message}</span>
+                  <span style={{ flex: 1, minWidth: 200, fontSize:17, fontWeight: 500, color: m.is_active ? A.text : A.text3 }}>{m.message}</span>
                   <Badge tone={m.is_active ? 'primary' : 'neutral'}>{m.is_active ? 'مفعّلة' : 'موقوفة'}</Badge>
                   <Btn small kind="ghost" onClick={() => { setEditingId(m.id); setEditText(m.message) }} title="تعديل"><Pencil size={14} /></Btn>
                   <Btn small kind="ghost" onClick={() => toggleActive(m.id, m.is_active)} title={m.is_active ? 'إيقاف' : 'تفعيل'}>{m.is_active ? <EyeOff size={14} /> : <Eye size={14} />}</Btn>

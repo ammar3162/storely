@@ -93,10 +93,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <style>{ADMIN_CSS + SHELL_CSS + HUB_CSS}</style>
       {content}
       {newAlert && (
-        <div role="alert" style={{ position: 'fixed', bottom: 20, left: 20, zIndex: 1000, background: A.surface, border: `1px solid ${A.border}`, borderRadius: 14, boxShadow: A.shadowLg, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, maxWidth: 'calc(100vw - 40px)' }}>
+        <div role="alert" style={{ position: 'fixed', bottom: 20, left: 20, zIndex: 1000, background: A.surface, border: 'none', borderRadius: 20, boxShadow: A.shadowLg, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, maxWidth: 'calc(100vw - 40px)' }}>
           <PackagePlus size={20} color={A.primary} />
-          <div style={{ fontSize: 13.5, fontWeight: 600 }}>{newAlert === 'renewal' ? 'وصل طلب تجديد اشتراك — تواصل مع العميل للدفع' : 'وصل طلب جديد (إضافة أو ترقية)'}</div>
-          <button onClick={() => { setNewAlert(false); router.push(newAlert === 'renewal' ? '/storely-admin/requests?tab=renewals' : '/storely-admin/requests?tab=addons') }} style={{ background: A.primary, color: 'white', border: 'none', borderRadius: 10, padding: '7px 14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>عرض</button>
+          <div style={{ fontSize:15, fontWeight: 600 }}>{newAlert === 'renewal' ? 'وصل طلب تجديد اشتراك — تواصل مع العميل للدفع' : 'وصل طلب جديد (إضافة أو ترقية)'}</div>
+          <button onClick={() => { setNewAlert(false); router.push(newAlert === 'renewal' ? '/storely-admin/requests?tab=renewals' : '/storely-admin/requests?tab=addons') }} style={{ background: A.primary, color: 'white', border: 'none', borderRadius:999, padding: '7px 14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>عرض</button>
           <button onClick={() => setNewAlert(false)} aria-label="إغلاق" style={{ background: 'none', border: 'none', cursor: 'pointer', color: A.text3 }}><X size={16} /></button>
         </div>
       )}
@@ -113,16 +113,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const sidebar = (
     <nav style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ height: 64, padding: '0 20px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid rgba(255,255,255,.1)' }}>
-        <img src="/icon-192.png" alt="" width={32} height={32} style={{ borderRadius: 9, boxShadow: A.shadowSm }} />
+        <img src="/icon-192.png" alt="" width={32} height={32} style={{ borderRadius: 10 }} />
         <div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>Storely</div>
-          <div style={{ fontSize: 12, color: '#CBD4DC' }}>لوحة الإدارة</div>
+          <div style={{ fontSize:17, fontWeight:600, color: '#fff', lineHeight: 1.2 }}>Storely</div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,.65)' }}>لوحة الإدارة</div>
         </div>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px 16px' }}>
         {groups.map(g => (
           <div key={g.title} style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,.6)', padding: '0 10px 8px' }}>{g.title}</div>
+            <div style={{ fontSize:13, fontWeight: 500, color: 'rgba(255,255,255,.6)', padding: '0 10px 8px' }}>{g.title}</div>
             {g.items.map(item => {
               const active = isActive(item.href)
               const Icon = item.icon
@@ -134,7 +134,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   {(() => {
                     const n = item.href === '/storely-admin/requests' ? pendingAddons + pendingRenewals + pendingSupport + pendingInbox + (can() ? pendingDemos : 0) : 0
                     return n > 0 && (
-                      <span style={{ marginInlineStart: 'auto', background: A.danger, color: 'white', borderRadius: 99, fontSize: 11, fontWeight: 600, minWidth: 20, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>{n}</span>
+                      <span style={{ marginInlineStart: 'auto', background: A.danger, color: 'white', borderRadius: 99, fontSize:12, fontWeight: 600, minWidth: 20, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>{n}</span>
                     )
                   })()}
                 </a>
@@ -143,16 +143,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         ))}
       </div>
-      <div style={{ margin: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, border: '1px solid rgba(255,255,255,.14)', borderRadius: 14, background: 'rgba(255,255,255,.06)' }}>
+      <div style={{ margin: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, border: '1px solid rgba(255,255,255,.14)', borderRadius:20, background: 'rgba(255,255,255,.06)' }}>
         <div style={{ width: 34, height: 34, borderRadius: 99, background: 'rgba(255,255,255,.14)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: 14, flexShrink: 0 }}>
           {admin.full_name?.[0] || '؟'}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{admin.full_name}</div>
-          <div style={{ fontSize: 12, color: '#CBD4DC' }}>{admin.role === 'super_admin' ? 'مشرف كامل' : 'مشرف'}</div>
+          <div style={{ fontSize:15, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{admin.full_name}</div>
+          <div style={{ fontSize:13, color: '#CBD4DC' }}>{admin.role === 'super_admin' ? 'مشرف كامل' : 'مشرف'}</div>
         </div>
         <button onClick={logout} title="تسجيل الخروج" aria-label="تسجيل الخروج" className="adm-btn adm-side-btn"
-          style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'transparent', color: '#CBD4DC', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          style={{ width: 32, height: 32, borderRadius:999, border: 'none', background: 'transparent', color: '#CBD4DC', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <LogOut size={16} />
         </button>
       </div>
@@ -164,21 +164,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className="adm-side">{sidebar}</aside>
       {menuOpen && (
         <div className="adm-mob-menu">
-          <div onClick={() => setMenuOpen(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(16,24,40,.32)', backdropFilter: 'blur(2px)' }} />
+          <div onClick={() => setMenuOpen(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.35)', backdropFilter: 'blur(2px)' }} />
           <aside style={{ position: 'absolute', top: 0, bottom: 0, right: 0, width: 272, background: A.sidebar, boxShadow: A.shadowLg }}>{sidebar}</aside>
         </div>
       )}
       <header className="adm-topbar">
         <button onClick={() => setMenuOpen(v => !v)} aria-label="القائمة" className="adm-menu-btn"
-          style={{ width: 38, height: 38, borderRadius: 10, border: `1px solid ${A.border}`, background: A.surface, boxShadow: A.shadowSm, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: A.text }}>
+          style={{ width: 40, height: 40, borderRadius: 999, border: 'none', background: 'var(--storely-fill)', boxShadow: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: A.text }}>
           {menuOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize:15, minWidth: 0 }}>
           {current && <span className="adm-crumb-group" style={{ color: A.text3 }}>{current.group}</span>}
           {current && <ChevronLeft size={14} className="adm-crumb-group" color={A.text3} />}
           <span style={{ fontWeight: 600, color: A.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{current?.label || 'لوحة الإدارة'}</span>
         </div>
-        <div style={{ marginInlineStart: 'auto', fontSize: 12.5, color: A.text3 }} className="adm-crumb-group">
+        <div style={{ marginInlineStart: 'auto', fontSize:13, color: A.text3 }} className="adm-crumb-group">
           {new Date().toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', weekday: 'long', day: 'numeric', month: 'long' })}
         </div>
       </header>
@@ -189,12 +189,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
 const SHELL_CSS = `
   .adm-side{position:fixed;top:0;right:0;bottom:0;width:264px;background:${A.sidebar};color-scheme:dark;z-index:50}
-  .adm-topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:40;height:64px;padding:0 32px;margin-right:264px;background:rgba(247,248,250,.85);backdrop-filter:saturate(180%) blur(10px);-webkit-backdrop-filter:saturate(180%) blur(10px);border-bottom:1px solid ${A.border}}
+  .adm-topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:40;height:64px;padding:0 32px;margin-right:264px;background:rgba(245,245,247,.82);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid ${A.border}}
   .adm-menu-btn{display:none!important}
   .adm-main{margin-right:264px;padding:32px 32px 56px;max-width:1440px}
-  .adm-nav{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:9px;color:rgba(255,255,255,.88);font-size:14px;font-weight:500;text-decoration:none;margin-bottom:2px;transition:background .15s,color .15s}
+  .adm-nav{display:flex;align-items:center;gap:10px;min-height:38px;padding:0 10px;border-radius:10px;color:rgba(255,255,255,.9);font-size:15px;font-weight:400;text-decoration:none;margin-bottom:2px;transition:background .15s,color .15s}
   .adm-nav svg{color:rgba(255,255,255,.65);flex-shrink:0;transition:color .15s}
-  .adm-nav:hover{background:rgba(255,255,255,.07);color:#fff}
+  .adm-nav:hover{background:rgba(255,255,255,.08);color:#fff}
+  .adm-side :focus-visible,.adm-mob-menu aside :focus-visible{outline:2px solid #fff!important;outline-offset:2px}
   .adm-nav:hover svg{color:#fff}
   .adm-nav.on{background:#fff;color:${A.primary};font-weight:600}
   .adm-nav.on svg{color:${A.primary}}

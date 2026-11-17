@@ -210,7 +210,7 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
       <style>{`
 .st{display:flex;flex-direction:column;gap:22px;max-width:1140px;margin:0 auto;color:var(--ink)}
 .st-toggle{align-self:center;display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px}
-.st-toggle button{border:0;background:none;border-radius:999px;padding:10px 22px;font:700 15px 'IBM Plex Sans Arabic',sans-serif;color:var(--ink2);cursor:pointer}
+.st-toggle button{border:0;background:none;border-radius:999px;padding:10px 22px;font:700 15px var(--storely-font);color:var(--ink2);cursor:pointer}
 .st-toggle button.on{background:var(--ink);color:#fff}
 .st-toggle em{font-style:normal;font-size:12px;color:var(--teal2);margin-inline-start:6px}
 .st-toggle button.on em{color:var(--mint)}
@@ -225,7 +225,7 @@ export default function StandardPricing({ billing, onBilling }: { billing: Billi
 .st-price strong{font-size:52px;line-height:1;font-weight:800;font-variant-numeric:tabular-nums}
 .st-price span{font-size:13px;color:var(--ink2);line-height:1.4}
 .st-sub{margin:10px 0 0;font-size:12.5px;color:var(--ink2);min-height:20px}
-.st-cta{margin-top:20px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);border-radius:14px;padding:14px;font:800 15px 'IBM Plex Sans Arabic',sans-serif;cursor:pointer}
+.st-cta{margin-top:20px;border:1.5px solid var(--ink);background:#fff;color:var(--ink);border-radius:14px;padding:14px;font:800 15px var(--storely-font);cursor:pointer}
 .st-cta.dark{background:var(--ink);color:#fff}
 .st-list{margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}
 .st-intro{font-size:13.5px;font-weight:800;margin-bottom:10px}
@@ -296,7 +296,7 @@ button.st-cmp-row{cursor:pointer;transition:background-color .15s}
 .st-build-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:16px;font-weight:700}
 .st-build-row small{font-weight:600;color:var(--ink2)}
 .st-br-in{padding:4px}
-.st-better{margin-top:14px;width:100%;text-align:right;border:1.5px solid var(--teal2);background:#F3F5F6;color:var(--teal2);border-radius:12px;padding:12px 14px;font:800 14px 'IBM Plex Sans Arabic',sans-serif;cursor:pointer;line-height:1.7}
+.st-better{margin-top:14px;width:100%;text-align:right;border:1.5px solid var(--teal2);background:#F3F5F6;color:var(--teal2);border-radius:12px;padding:12px 14px;font:800 14px var(--storely-font);cursor:pointer;line-height:1.7}
 .st-build-total{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:16px;border-top:1px solid var(--line);padding-top:16px}
 .st-build-total div{display:flex;flex-direction:column}
 .st-build-total span{font-size:14px;color:var(--ink2);font-weight:700}

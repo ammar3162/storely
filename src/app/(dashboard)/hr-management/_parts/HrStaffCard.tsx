@@ -20,19 +20,19 @@ export default function HrStaffCard({ m, s }: { m: HrPage; s: any }) {
                 <div onClick={()=>toggleExpand(s)} style={{display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer'}}>
                   <div>
                     <div style={{display:'flex',alignItems:'center',gap:8}}>
-                      <div style={{fontSize:font.base,fontWeight:700,color:colors.text}}>{s.name}</div>
+                      <div style={{fontSize:font.base,fontWeight:600,color:colors.text}}>{s.name}</div>
                       {pendingLeaveCounts[s.id] > 0 && (
-                        <span style={{background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,fontSize:11,fontWeight:800,borderRadius:99,padding:'2px 9px'}} title="طلب إجازة بانتظار موافقتك">
+                        <span style={{background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,fontSize:12,fontWeight:600,borderRadius:99,padding:'2px 9px'}} title="طلب إجازة بانتظار موافقتك">
                           إجازة {pendingLeaveCounts[s.id]}
                         </span>
                       )}
                       {pendingAdvanceCounts[s.id] > 0 && (
-                        <span style={{background:colors.warningLight,color:colors.warning,border:`1px solid ${colors.warningBorder}`,fontSize:11,fontWeight:800,borderRadius:99,padding:'2px 9px'}} title="طلب سلفة بانتظار موافقتك">
+                        <span style={{background:colors.warningLight,color:colors.warning,border:`1px solid ${colors.warningBorder}`,fontSize:12,fontWeight:600,borderRadius:99,padding:'2px 9px'}} title="طلب سلفة بانتظار موافقتك">
                           سلفة {pendingAdvanceCounts[s.id]}
                         </span>
                       )}
                     </div>
-                    <div style={{fontSize:11,color:colors.text4,marginTop:2}}>إجمالي الراتب: {savedTotal.toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn'})} {curr}</div>
+                    <div style={{fontSize:12,color:colors.text4,marginTop:2}}>إجمالي الراتب: {savedTotal.toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn'})} {curr}</div>
                   </div>
                   <ChevronDown size={16} color={colors.text3} strokeWidth={2.25} style={{transition:'transform .2s',transform:isOpen?'rotate(180deg)':'none'}}/>
                 </div>
@@ -43,16 +43,16 @@ export default function HrStaffCard({ m, s }: { m: HrPage; s: any }) {
                   if (!p) return null
                   const fmtN = (n:number) => Number(n||0).toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn'})
                   const line = (label:string, value:string, color:string) => (
-                    <div style={{display:'flex',justifyContent:'space-between',fontSize:11}}>
+                    <div style={{display:'flex',justifyContent:'space-between',fontSize:12}}>
                       <span style={{color:colors.text3}}>{label}</span>
-                      <span style={{color,fontWeight:700}}>{value}</span>
+                      <span style={{color,fontWeight:600}}>{value}</span>
                     </div>
                   )
                   const hasAny = p.bonusesTotal>0 || p.overtimePay>0 || p.latePenaltiesTotal>0 || p.otherDeductionsTotal>0 || p.advancesTotal>0 || p.pendingDeficitsTotal>0 || p.absencePendingAmount>0
                   if (!hasAny) return null
                   return (
-                    <div style={{marginTop:10,padding:'10px 12px',background:colors.bg,borderRadius:10,display:'flex',flexDirection:'column' as const,gap:6}}>
-                      <div style={{fontSize:10.5,fontWeight:700,color:colors.text4}}>هذا الشهر</div>
+                    <div style={{marginTop:10,padding:'10px 12px',background:colors.bg,borderRadius:12,display:'flex',flexDirection:'column' as const,gap:6}}>
+                      <div style={{fontSize:10.5,fontWeight:600,color:colors.text4}}>هذا الشهر</div>
                       {p.overtimePay>0 && line('العمل الإضافي', `+${fmtN(p.overtimePay)} ${curr}`, colors.primary)}
                       {p.bonusesTotal>0 && line('تعويض أيام إضافية', `+${fmtN(p.bonusesTotal)} ${curr}`, colors.primary)}
                       {p.latePenaltiesTotal>0 && line(`غرامات تأخير (${p.latePenaltiesCount})`, `−${fmtN(p.latePenaltiesTotal)} ${curr}`, colors.danger)}
@@ -60,15 +60,15 @@ export default function HrStaffCard({ m, s }: { m: HrPage; s: any }) {
                       {p.advancesTotal>0 && line('سلف معتمدة', `−${fmtN(p.advancesTotal)} ${curr}`, colors.warning)}
                       {p.pendingDeficitsTotal>0 && line('عجز كاشير بانتظار قرارك', `${fmtN(p.pendingDeficitsTotal)} ${curr}`, colors.text3)}
                       {p.absencePendingAmount>0 && (
-                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontSize:11}}>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,fontSize:12}}>
                           <span style={{color:colors.text3}}>غياب بدون عذر ({p.absencePendingDates.length} {p.absencePendingDates.length===1?'يوم':'أيام'}) — بانتظار قرارك</span>
                           <span style={{display:'flex',alignItems:'center',gap:8}}>
-                            <span style={{color:colors.text3,fontWeight:700}}>{fmtN(p.absencePendingAmount)} {curr}</span>
-                            <button type="button" onClick={(e)=>{e.stopPropagation(); deductAbsence(s.id, s.name)}} style={{fontSize:11,fontWeight:700,color:colors.danger,background:'transparent',border:`1px solid ${colors.dangerBorder}`,borderRadius:8,padding:'3px 10px',cursor:'pointer',fontFamily:'inherit'}}>خصم</button>
+                            <span style={{color:colors.text3,fontWeight:600}}>{fmtN(p.absencePendingAmount)} {curr}</span>
+                            <button type="button" onClick={(e)=>{e.stopPropagation(); deductAbsence(s.id, s.name)}} style={{fontSize:12,fontWeight:600,color:colors.danger,background:'transparent',border:`1px solid ${colors.dangerBorder}`,borderRadius:999,padding:'3px 10px',cursor:'pointer',fontFamily:'inherit'}}>خصم</button>
                           </span>
                         </div>
                       )}
-                      <div style={{display:'flex',justifyContent:'space-between',fontSize:12,fontWeight:800,paddingTop:6,borderTop:`1px dashed ${colors.border}`}}>
+                      <div style={{display:'flex',justifyContent:'space-between',fontSize:13,fontWeight:600,paddingTop:6,borderTop:`1px dashed ${colors.border}`}}>
                         <span style={{color:colors.text}}>الصافي حتى الآن</span>
                         <span style={{color:colors.primary}}>{fmtN(p.netSalary)} {curr}</span>
                       </div>
@@ -90,12 +90,12 @@ export default function HrStaffCard({ m, s }: { m: HrPage; s: any }) {
                         { k:'leave', l:'الإجازات', n:pend.leave }, { k:'excuse', l:'الاستئذان', n:pend.excuse }, { k:'tasks', l:'المهام', n:pend.tasks },
                       ]
                       return (
-                        <div role="tablist" style={{display:'flex',gap:6,flexWrap:'wrap' as const,background:colors.bg,padding:5,borderRadius:12}}>
+                        <div role="tablist" style={{display:'flex',gap:6,flexWrap:'wrap' as const,background:colors.bg,padding:5,borderRadius:20}}>
                           {TABS.map(t=>(
                             <button key={t.k} role="tab" aria-selected={hrTab===t.k} onClick={()=>setHrTab(t.k)}
-                              style={{flex:'1 1 auto',display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'9px 12px',borderRadius:9,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:700,
+                              style={{flex:'1 1 auto',display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'9px 12px',borderRadius:999,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:15,fontWeight:600,
                                 background:hrTab===t.k?'white':'transparent',color:hrTab===t.k?colors.primary:colors.text3,boxShadow:hrTab===t.k?'0 1px 3px rgba(15,23,42,.1)':'none'}}>
-                              {t.l}{!!t.n && <span style={{background:colors.warning,color:'white',fontSize:11,fontWeight:800,borderRadius:99,minWidth:18,height:18,padding:'0 5px',display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{t.n}</span>}
+                              {t.l}{!!t.n && <span style={{background:colors.warning,color:'white',fontSize:12,fontWeight:600,borderRadius:99,minWidth:18,height:18,padding:'0 5px',display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{t.n}</span>}
                             </button>
                           ))}
                         </div>

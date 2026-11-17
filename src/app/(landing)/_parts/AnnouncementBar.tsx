@@ -1,22 +1,13 @@
 'use client'
 import type { LandingState } from './useLanding'
 
+// شريط الإعلان (من لوحة الإدارة): سطر هادئ فوق القائمة مثل أبل — أول رسالة فقط، بدون رموز تعبيرية
 export default function AnnouncementBar({ m }: { m: LandingState }) {
   const { marqueeMsgs, hasMarquee } = m
+  if (!hasMarquee) return null
   return (
-    <>
-      {/* شريط الإعلانات */}
-      {hasMarquee && (
-        <div className="lp-marquee">
-          <div className="lp-marquee-track">
-            {[...Array(2)].map((_,i)=>(
-              <div key={i} style={{display:'flex',alignItems:'center'}}>
-                {marqueeMsgs.map((m,j)=><span key={j} className="lp-marquee-item">{m}<span style={{opacity:.5}}>•</span></span>)}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </>
+    <div className="lp-ribbon" role="note">
+      <p>{marqueeMsgs[0]}</p>
+    </div>
   )
 }

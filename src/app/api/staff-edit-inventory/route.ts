@@ -27,14 +27,17 @@ export async function POST(req: Request) {
     const supabase = sb()
 
     // تحقق إن الموظف عنده صلاحية "المخزون" فعلاً — مو بس صلاحية الصرف
-    const { data: staffRow } = await supabase.from('staff_members').select('name,permissions').eq('id', staffId).eq('org_id', orgId).maybeSingle()
+    const { data: staffRow } = await supabase.from('staff_members').select('name,permissions,branch_id').eq('id', staffId).eq('org_id', orgId).maybeSingle()
     if (!(staffRow as any)?.permissions?.inventory) {
       return NextResponse.json({ error: 'ليست لديك صلاحية تعديل المخزون' }, { status: 403 })
     }
 
-    const { data: product } = await supabase.from('products').select('id,qty,name,unit,org_id').eq('id', productId).eq('org_id', orgId).maybeSingle()
+    const { data: product } = await supabase.from('products').select('id,qty,name,unit,org_id,branch_id').eq('id', productId).eq('org_id', orgId).maybeSingle()
     if (!product) return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 })
     if ((product as any).org_id !== orgId) return NextResponse.json({ error: 'غير مصرح' }, { status: 403 })
+    // الموظف يعدّل أصناف فرعه فقط (مثل الصرف)
+    const myBranch = (staffRow as any)?.branch_id
+    if (myBranch && (product as any).branch_id && (product as any).branch_id !== myBranch) return NextResponse.json({ error: 'المنتج من فرع آخر' }, { status: 403 })
 
     const qtyNum = Number(newQty)
     const diff = qtyNum - Number(product.qty)

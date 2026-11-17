@@ -59,12 +59,12 @@ export default function RenewalsPage() {
                 const link = wa(e.phone, e.org_name)
                 return (
                   <tr key={e.org_id}>
-                    <td style={td}><div style={{ fontWeight: 600 }}>{e.org_name}</div><div style={{ fontSize: 12, color: A.text3 }}>{e.owner_name || '—'} · {e.sub_type === 'trial' ? 'تجربة' : 'مدفوع'}</div></td>
+                    <td style={td}><div style={{ fontWeight: 600 }}>{e.org_name}</div><div style={{ fontSize:13, color: A.text3 }}>{e.owner_name || '—'} · {e.sub_type === 'trial' ? 'تجربة' : 'مدفوع'}</div></td>
                     <td style={td}>{fmtDate(e.ends_at)}</td>
                     <td style={td}>
                       {e.pending ? <Badge tone="warning">طلب التجديد</Badge> : <>
-                        <div style={{ fontSize: 12.5 }}>تلقائي: {e.auto_at ? fmtDate(e.auto_at, true) : <span style={{ color: A.text3 }}>لم يُرسل بعد</span>}</div>
-                        <div style={{ fontSize: 12.5, color: A.text3 }}>تذكير يدوي: {e.manual_at ? fmtDate(e.manual_at, true) : '—'}</div>
+                        <div style={{ fontSize:13 }}>تلقائي: {e.auto_at ? fmtDate(e.auto_at, true) : <span style={{ color: A.text3 }}>لم يُرسل بعد</span>}</div>
+                        <div style={{ fontSize:13, color: A.text3 }}>تذكير يدوي: {e.manual_at ? fmtDate(e.manual_at, true) : '—'}</div>
                       </>}
                     </td>
                     <td style={td}>{link ? <a href={link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: A.primary, fontWeight: 600, textDecoration: 'none' }}><MessageCircle size={15} /><span dir="ltr">{e.phone}</span></a> : '—'}</td>
@@ -83,9 +83,9 @@ export default function RenewalsPage() {
                 const link = wa(r.phone, r.org_name)
                 return (
                   <tr key={r.id}>
-                    <td style={td}><div style={{ fontWeight: 600 }}>{r.org_name}</div><div style={{ fontSize: 12, color: A.text3 }}>{r.owner_name || '—'}{r.sub_type === 'trial' ? ' · تجربة' : ''}</div></td>
-                    <td style={td}><Badge tone={tone as any}>{label}</Badge>{r.decided_by_name && r.status !== 'pending_payment' && <div style={{ fontSize: 11.5, color: A.text3, marginTop: 4 }}>{r.decided_by_name} · {fmtDate(r.decided_at)}</div>}</td>
-                    <td style={td}>{fmtDate(r.created_at, true)}<div style={{ fontSize: 11.5, color: A.text3 }}>{r.grace_until ? 'كان منتهياً — يوم سماح' : 'قبل الانتهاء'}</div></td>
+                    <td style={td}><div style={{ fontWeight: 600 }}>{r.org_name}</div><div style={{ fontSize:13, color: A.text3 }}>{r.owner_name || '—'}{r.sub_type === 'trial' ? ' · تجربة' : ''}</div></td>
+                    <td style={td}><Badge tone={tone as any}>{label}</Badge>{r.decided_by_name && r.status !== 'pending_payment' && <div style={{ fontSize:13, color: A.text3, marginTop: 4 }}>{r.decided_by_name} · {fmtDate(r.decided_at)}</div>}</td>
+                    <td style={td}>{fmtDate(r.created_at, true)}<div style={{ fontSize:13, color: A.text3 }}>{r.grace_until ? 'كان منتهياً — يوم سماح' : 'قبل الانتهاء'}</div></td>
                     <td style={td}>{fmtDate(r.ends_at, true)}</td>
                     <td style={td}>{link ? <a href={link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: A.primary, fontWeight: 600, textDecoration: 'none' }}><MessageCircle size={15} /><span dir="ltr">{r.phone}</span></a> : '—'}</td>
                     <td style={{ ...td, whiteSpace: 'nowrap' }}>

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { claimAttempt, consumeCode, RACE_ERROR } from '@/lib/codeAttempts'
 import { headers } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 import { getCurrentProfile } from '@/lib/verifyOrgAccess'
@@ -29,12 +30,12 @@ export async function POST(req: Request) {
     const codes = ((data || []) as CodeRow[]).filter(c => (c.device_hash === null || c.device_hash === deviceHash) && c.attempts < CODE_MAX_ATTEMPTS)
     if (!codes.length) return NextResponse.json({ error: 'الرمز انتهى أو استُخدم — اطلب رمز جديد', expired: true }, { status: 400 })
 
+    // كل محاولة تنحجز على أحدث رمز لهالجهاز قبل المقارنة (الطلبات المتزامنة ما تتجاوز الحد)
+    const latest = codes[0]
+    if (!(await claimAttempt(db, 'login_codes', latest.id, latest.attempts))) return NextResponse.json({ error: RACE_ERROR }, { status: 429 })
     const wanted = hashCode(profile.userId, code)
     const match = codes.find(c => sameHash(c.code_hash, wanted))
     if (!match) {
-      // المحاولة الخاطئة تنحسب على أحدث رمز لهالجهاز
-      const latest = codes[0]
-      await db.from('login_codes').update({ attempts: latest.attempts + 1 }).eq('id', latest.id)
       const left = CODE_MAX_ATTEMPTS - latest.attempts - 1
       return NextResponse.json({
         error: left > 0 ? `الرمز غير صحيح — باقي ${left} ${left === 1 ? 'محاولة' : 'محاولات'}` : 'الرمز غير صحيح — اطلب رمز جديد',
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
       }, { status: 400 })
     }
 
-    await db.from('login_codes').update({ used_at: new Date().toISOString() }).eq('id', match.id)
+    if (!(await consumeCode(db, 'login_codes', match.id))) return NextResponse.json({ error: 'الرمز انتهى أو استُخدم — اطلب رمز جديد', expired: true }, { status: 400 })
     await trustDevice(db, profile.userId, deviceId, (await headers()).get('user-agent'))
 
     const res = NextResponse.json({ success: true })

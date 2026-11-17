@@ -14,12 +14,12 @@ export default function StaffCard({ m, s, i }: { m: StaffPage; s: any; i: number
                 <div style={{display:'flex',alignItems:'center',gap:12}}>
                   <Avatar name={s.name} active={s.is_active}/>
                   <div>
-                    <div style={{fontSize:font.base,fontWeight:700,color:colors.text,display:'flex',alignItems:'center',gap:8}}>
+                    <div style={{fontSize:font.base,fontWeight:600,color:colors.text,display:'flex',alignItems:'center',gap:8}}>
                       {s.name}
                       <button onClick={e=>{e.stopPropagation();setEditingNameId(s.id);setEditNameValue(s.name)}} style={{background:'transparent',border:'none',cursor:'pointer',padding:2,display:'flex',alignItems:'center',color:colors.text4,opacity:.7}} title="تعديل الاسم">
                         <svg width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                       </button>
-                      {!s.is_active&&<span style={{fontSize:10,color:colors.danger,background:colors.dangerLight,padding:'2px 8px',borderRadius:20,fontWeight:700,border:`1px solid ${colors.dangerBorder}`}}>موقوف</span>}
+                      {!s.is_active&&<span style={{fontSize:12,color:colors.danger,background:colors.dangerLight,padding:'2px 8px',borderRadius:20,fontWeight:600,border:`1px solid ${colors.dangerBorder}`}}>موقوف</span>}
                     </div>
                     <div style={{fontSize:font.xs,color:colors.text4,marginTop:2,direction:'ltr',textAlign:'right' as const}}>
                       {toLocalPhone(s.phone)}{s.branches?.name?` · ${s.branches.name}`:''}
@@ -50,7 +50,7 @@ export default function StaffCard({ m, s, i }: { m: StaffPage; s: any; i: number
                   )}
                   {s.role==='cashier' && hasCashier && !WHATSAPP_PAUSED && (
                     <button onClick={e=>{e.stopPropagation();toggleSendClosingWA(s.id, s.send_closing_whatsapp!==false)}} className="act-btn"
-                      style={{background:s.send_closing_whatsapp!==false?'#f0fdfa':colors.bg,color:s.send_closing_whatsapp!==false?colors.primary:colors.text3,border:s.send_closing_whatsapp!==false?'none':`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
+                      style={{background:s.send_closing_whatsapp!==false?'var(--storely-fill)':colors.bg,color:s.send_closing_whatsapp!==false?colors.primary:colors.text3,border:s.send_closing_whatsapp!==false?'none':`1.5px solid ${colors.border2}`,display:'flex',alignItems:'center',gap:5}}>
                       {s.send_closing_whatsapp!==false ? (<><Bell size={13} strokeWidth={2.25}/> تفاصيل الإقفال: مفعّل</>) : (<><BellOff size={13} strokeWidth={2.25}/> تفاصيل الإقفال: موقّف</>)}
                     </button>
                   )}
@@ -70,32 +70,32 @@ export default function StaffCard({ m, s, i }: { m: StaffPage; s: any; i: number
                 <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${colors.border}`,animation:'slideUp .2s ease'}}>
                   <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,180px),1fr))',gap:14,marginBottom:14}}>
                     <div style={{minWidth:0,background:colors.bg,borderRadius:radius.md,padding:'12px 14px',border:`1px solid ${colors.border}`}}>
-                      <div style={{fontSize:10,fontWeight:700,color:colors.text4,marginBottom:6,textTransform:'uppercase' as const}}>رقم الجوال</div>
+                      <div style={{fontSize:12,fontWeight:600,color:colors.text4,marginBottom:6,textTransform:'uppercase' as const}}>رقم الجوال</div>
                       {editingStaffPhoneId===s.id ? (
                         <div onClick={e=>e.stopPropagation()} style={{display:'flex',alignItems:'center',gap:6}}>
                           <input value={editStaffPhoneVal} onChange={e=>setEditStaffPhoneVal(e.target.value)} dir="ltr" autoFocus
-                            style={{fontSize:13,padding:'5px 8px',border:`1.5px solid ${colors.primary}`,borderRadius:6,width:120,fontFamily:'inherit'}}/>
-                          <button onClick={()=>saveStaffPhone(s.id)} disabled={savingStaffPhone} style={{fontSize:11,fontWeight:700,color:'white',background:colors.primary,border:'none',borderRadius:6,padding:'5px 10px',cursor:'pointer',fontFamily:'inherit'}}>{savingStaffPhone?'...':'حفظ'}</button>
-                          <button onClick={()=>setEditingStaffPhoneId(null)} style={{fontSize:11,fontWeight:700,color:colors.text3,background:colors.bg,border:'none',borderRadius:6,padding:'5px 10px',cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                            style={{fontSize:15,padding:'5px 8px',border:`1.5px solid ${colors.primary}`,borderRadius:12,width:120,fontFamily:'inherit'}}/>
+                          <button onClick={()=>saveStaffPhone(s.id)} disabled={savingStaffPhone} style={{fontSize:12,fontWeight:600,color:'white',background:colors.primary,border:'none',borderRadius:999,padding:'5px 10px',cursor:'pointer',fontFamily:'inherit'}}>{savingStaffPhone?'...':'حفظ'}</button>
+                          <button onClick={()=>setEditingStaffPhoneId(null)} style={{fontSize:12,fontWeight:600,color:colors.text3,background:colors.bg,border:'none',borderRadius:999,padding:'5px 10px',cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
                         </div>
                       ) : (
-                        <div onClick={e=>{e.stopPropagation();setEditingStaffPhoneId(s.id);setEditStaffPhoneVal(s.phone||'')}} style={{fontSize:font.base,fontWeight:800,color:colors.text,direction:'ltr',textAlign:'right' as const,cursor:'pointer',display:'flex',alignItems:'center',gap:6,justifyContent:'flex-end'}}>
+                        <div onClick={e=>{e.stopPropagation();setEditingStaffPhoneId(s.id);setEditStaffPhoneVal(s.phone||'')}} style={{fontSize:font.base,fontWeight:600,color:colors.text,direction:'ltr',textAlign:'right' as const,cursor:'pointer',display:'flex',alignItems:'center',gap:6,justifyContent:'flex-end'}}>
                           <Pencil size={11} strokeWidth={2.25} style={{opacity:.5}}/>{toLocalPhone(s.phone)}
                         </div>
                       )}
                     </div>
                     <div style={{minWidth:0,background:colors.primaryLight,borderRadius:radius.md,padding:'12px 14px',border:`1px solid ${colors.primaryBorder}`}}>
-                      <div style={{fontSize:10,fontWeight:700,color:colors.primary,marginBottom:6,textTransform:'uppercase' as const}}>رمز PIN الحالي</div>
+                      <div style={{fontSize:12,fontWeight:600,color:colors.primary,marginBottom:6,textTransform:'uppercase' as const}}>رمز PIN الحالي</div>
                       {String(s.pin||'').startsWith('$2') && !s.has_pin_enc ? (
                         <div>
-                          <div style={{fontSize:13,fontWeight:700,color:colors.danger||'#dc2626',marginBottom:6}}>PIN قديم — لا يمكن استرجاعه</div>
-                          <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} style={{fontSize:11,fontWeight:700,color:'white',background:colors.primary,border:'none',borderRadius:6,padding:'6px 12px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:5}}>
+                          <div style={{fontSize:15,fontWeight:600,color:colors.danger||'#dc2626',marginBottom:6}}>PIN قديم — لا يمكن استرجاعه</div>
+                          <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} style={{fontSize:12,fontWeight:600,color:'white',background:colors.primary,border:'none',borderRadius:999,padding:'6px 12px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:5}}>
                             <RefreshCw size={12} strokeWidth={2.25}/> إعادة توليد PIN جديد
                           </button>
                         </div>
                       ) : (
                         <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
-                          <div style={{fontSize:28,fontWeight:900,color:colors.primary,letterSpacing:6,minWidth:0}}>
+                          <div style={{fontSize:28,fontWeight:600,color:colors.primary,letterSpacing:6,minWidth:0}}>
                             {visiblePins[s.id] ? (revealedPins[s.id] || s.pin) : '••••'}
                           </div>
                           <button onClick={e=>{e.stopPropagation();togglePin(s)}} style={{background:'transparent',border:'none',cursor:'pointer',padding:4,lineHeight:1,display:'flex',alignItems:'center'}} title={visiblePins[s.id]?'إخفاء':'إظهار'}>
@@ -111,7 +111,7 @@ export default function StaffCard({ m, s, i }: { m: StaffPage; s: any; i: number
                               </svg>
                             )}
                           </button>
-                          <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} style={{fontSize:11,fontWeight:700,color:colors.primary,background:'transparent',border:`1px solid ${colors.primaryBorder}`,borderRadius:6,padding:'4px 8px',cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',marginInlineStart:'auto'}}>
+                          <button onClick={e=>{e.stopPropagation();regeneratePin(s.id,s.name,s.phone)}} style={{fontSize:12,fontWeight:600,color:colors.primary,background:'transparent',border:`1px solid ${colors.primaryBorder}`,borderRadius:999,padding:'4px 8px',cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap',marginInlineStart:'auto'}}>
                             إعادة توليد
                           </button>
                         </div>
@@ -119,10 +119,10 @@ export default function StaffCard({ m, s, i }: { m: StaffPage; s: any; i: number
                     </div>
                   </div>
                   <div>
-                    <div style={{fontSize:10,fontWeight:700,color:colors.text4,marginBottom:6,textTransform:'uppercase' as const}}>رابط دخول الموظف</div>
+                    <div style={{fontSize:12,fontWeight:600,color:colors.text4,marginBottom:6,textTransform:'uppercase' as const}}>رابط دخول الموظف</div>
                     <div style={{display:'flex',gap:8,alignItems:'center'}}>
-                      <div style={{fontSize:font.xs,color:colors.text,background:colors.bg,padding:'9px 12px',borderRadius:8,border:`1px solid ${colors.border}`,flex:1,direction:'ltr',textAlign:'left' as const,overflowX:'auto',whiteSpace:'nowrap' as const}}>https://storely.dev/staff</div>
-                      <button onClick={()=>{navigator.clipboard.writeText('https://storely.dev/staff');toast('تم نسخ الرابط')}} style={{background:colors.primary,color:'white',border:'none',borderRadius:8,padding:'9px 14px',fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family,whiteSpace:'nowrap' as const,display:'flex',alignItems:'center',gap:5}}>
+                      <div style={{fontSize:font.xs,color:colors.text,background:colors.bg,padding:'9px 12px',borderRadius:12,border:`1px solid ${colors.border}`,flex:1,direction:'ltr',textAlign:'left' as const,overflowX:'auto',whiteSpace:'nowrap' as const}}>https://storely.dev/staff</div>
+                      <button onClick={()=>{navigator.clipboard.writeText('https://storely.dev/staff');toast('تم نسخ الرابط')}} style={{background:colors.primary,color:'white',border:'none',borderRadius:999,padding:'9px 14px',fontSize:font.xs,fontWeight:600,cursor:'pointer',fontFamily:font.family,whiteSpace:'nowrap' as const,display:'flex',alignItems:'center',gap:5}}>
                         <Copy size={13} strokeWidth={2.25}/> نسخ الكل
                       </button>
                     </div>

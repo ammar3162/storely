@@ -13,20 +13,20 @@ export default function AssignProductsModal({ m }: { m: StaffPage }) {
           <div style={{background:colors.surface,borderRadius:radius.xl,padding:26,width:'100%',maxWidth:480,maxHeight:'80vh',display:'flex',flexDirection:'column' as const,boxShadow:'0 32px 80px rgba(0,0,0,.3)'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
               <div>
-                <div style={{fontSize:font.md,fontWeight:800,color:colors.text}}>تخصيص المنتجات</div>
+                <div style={{fontSize:font.md,fontWeight:600,color:colors.text}}>تخصيص المنتجات</div>
                 <div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>اختر المنتجات التي يطّلع عليها هذا الموظف — يمكن أن يُسند المنتج لأكثر من موظف. وإذا لم تختر شيئاً فسيطّلع على جميع منتجات الفرع</div>
               </div>
-              <button onClick={()=>setAssigningId(null)} style={{width:32,height:32,borderRadius:radius.sm,border:`1.5px solid ${colors.border2}`,background:colors.bg,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',color:colors.text3}}>×</button>
+              <button onClick={()=>setAssigningId(null)} style={{width:32,height:32,borderRadius:radius.sm,border:`1.5px solid ${colors.border2}`,background:colors.bg,cursor:'pointer',fontSize:20,display:'flex',alignItems:'center',justifyContent:'center',color:colors.text3}}>×</button>
             </div>
             
             {/* اختيار الكل */}
             <div style={{display:'flex',gap:8,marginBottom:12}}>
               <button onClick={()=>setSelectedProds(products.map((p:any)=>p.id))}
-                style={{padding:'6px 14px',borderRadius:8,border:`1px solid ${colors.border2}`,background:colors.bg,color:colors.text2,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                style={{padding:'6px 14px',borderRadius:999,border:`1px solid ${colors.border2}`,background:colors.bg,color:colors.text2,fontSize:font.xs,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                 اختيار الكل
               </button>
               <button onClick={()=>setSelectedProds([])}
-                style={{padding:'6px 14px',borderRadius:8,border:`1px solid ${colors.border2}`,background:colors.bg,color:colors.text2,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                style={{padding:'6px 14px',borderRadius:999,border:`1px solid ${colors.border2}`,background:colors.bg,color:colors.text2,fontSize:font.xs,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                 إلغاء الكل
               </button>
               <span style={{fontSize:font.xs,color:colors.text4,alignSelf:'center',marginRight:'auto'}}>
@@ -44,18 +44,18 @@ export default function AssignProductsModal({ m }: { m: StaffPage }) {
             {/* قائمة المنتجات */}
             <div style={{overflowY:'auto',flex:1,display:'flex',flexDirection:'column' as const,gap:6,marginBottom:16}}>
               {products.filter((p:any)=>!assignSearch.trim()||p.name.includes(assignSearch.trim())).length===0 ? (
-                <div style={{padding:'20px',textAlign:'center' as const,fontSize:12,color:colors.text4}}>لا توجد منتجات مطابقة</div>
+                <div style={{padding:'20px',textAlign:'center' as const,fontSize:13,color:colors.text4}}>لا توجد منتجات مطابقة</div>
               ) : products.filter((p:any)=>!assignSearch.trim()||p.name.includes(assignSearch.trim())).map((p:any)=>{
                 const selected = selectedProds.includes(p.id)
                 return (
                   <div key={p.id} onClick={()=>setSelectedProds(prev=>selected?prev.filter(id=>id!==p.id):[...prev,p.id])}
-                    style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${selected?colors.primary:colors.border}`,background:selected?colors.primaryLight:colors.bg,cursor:'pointer',transition:'all .15s'}}>
-                    <div style={{width:20,height:20,borderRadius:6,border:`2px solid ${selected?colors.primary:colors.border2}`,background:selected?colors.primary:'white',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'all .15s'}}>
+                    style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:12,border:`1.5px solid ${selected?colors.primary:colors.border}`,background:selected?colors.primaryLight:colors.bg,cursor:'pointer',transition:'all .15s'}}>
+                    <div style={{width:20,height:20,borderRadius:12,border:`2px solid ${selected?colors.primary:colors.border2}`,background:selected?colors.primary:'white',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'all .15s'}}>
                       {selected&&<Check size={13} color="white" strokeWidth={3}/>}
                     </div>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}>{p.name}</div>
-                      <div style={{fontSize:10,color:colors.text4}}>{p.category||'—'} · {p.unit}</div>
+                      <div style={{fontSize:font.sm,fontWeight:600,color:colors.text}}>{p.name}</div>
+                      <div style={{fontSize:12,color:colors.text4}}>{p.category||'—'} · {p.unit}</div>
                       {(()=>{
                         // مين عنده هالمنتج: الموظفين الثانيين + هالموظف لو اخترته
                         const me = staff.find((x:any)=>x.id===assigningId)?.name
@@ -64,7 +64,7 @@ export default function AssignProductsModal({ m }: { m: StaffPage }) {
                         return (
                           <div style={{display:'flex',flexWrap:'wrap' as const,gap:4,marginTop:5}}>
                             {holders.map((n:string,i:number)=>(
-                              <span key={n+i} style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:99,
+                              <span key={n+i} style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:12,fontWeight:600,padding:'2px 8px',borderRadius:99,
                                 background:i===0&&selected?colors.primary:colors.surface,color:i===0&&selected?'white':colors.text2,border:`1px solid ${i===0&&selected?colors.primary:colors.border2}`}}>
                                 <User size={10} strokeWidth={2.5}/>{n}
                               </span>

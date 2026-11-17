@@ -12,7 +12,7 @@ export default function AccountTab({ m }: { m: SettingsState }) {
           {activeTab==='account'&&(
             <div className="su">
               <div style={{...card,padding:'20px',marginBottom:14}}>
-                <div style={{fontSize:font.sm,fontWeight:800,color:colors.text,marginBottom:16}}>معلوماتك الشخصية</div>
+                <div style={{fontSize:font.sm,fontWeight:600,color:colors.text,marginBottom:16}}>معلوماتك الشخصية</div>
                 <div style={{display:'grid',gap:14}}>
                   <div>
                     <label style={lbl}>الاسم الكامل</label>
@@ -33,20 +33,20 @@ export default function AccountTab({ m }: { m: SettingsState }) {
               </div>
 
               <div style={{...card,padding:'20px'}}>
-                <div style={{fontSize:font.sm,fontWeight:800,color:colors.text,marginBottom:16}}>باقتك الحالية</div>
+                <div style={{fontSize:font.sm,fontWeight:600,color:colors.text,marginBottom:16}}>باقتك الحالية</div>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'14px 16px',background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`,borderRadius:radius.md,marginBottom:subEndsAt?12:0}}>
-                  <span style={{fontSize:font.sm,fontWeight:800,color:colors.primary}}>{planLabel}</span>
+                  <span style={{fontSize:font.sm,fontWeight:600,color:colors.primary}}>{planLabel}</span>
                   <FeatureIcon name="💎" size={16} />
                 </div>
                 {bill.lines.length>1&&(
                   <div className="hide-in-app" style={{border:`1px solid ${colors.border}`,borderRadius:radius.md,padding:'12px 14px',marginBottom:12}}>
-                    <div style={{fontSize:font.xs,fontWeight:800,color:colors.text2,marginBottom:8}}>تفاصيل الفاتورة</div>
+                    <div style={{fontSize:font.xs,fontWeight:600,color:colors.text2,marginBottom:8}}>تفاصيل الفاتورة</div>
                     {bill.lines.map((l,i)=>(
                       <div key={i} style={{display:'flex',justifyContent:'space-between',gap:12,fontSize:font.xs,color:colors.text3,padding:'4px 0'}}>
-                        <span>{l.label}</span><span style={{fontWeight:700,color:colors.text,whiteSpace:'nowrap'}}>{l.amount} ⃁</span>
+                        <span>{l.label}</span><span style={{fontWeight:600,color:colors.text,whiteSpace:'nowrap'}}>{l.amount} ⃁</span>
                       </div>
                     ))}
-                    <div style={{display:'flex',justifyContent:'space-between',borderTop:`1px solid ${colors.border}`,marginTop:6,paddingTop:8,fontSize:font.sm,fontWeight:800,color:colors.primary}}>
+                    <div style={{display:'flex',justifyContent:'space-between',borderTop:`1px solid ${colors.border}`,marginTop:6,paddingTop:8,fontSize:font.sm,fontWeight:600,color:colors.primary}}>
                       <span>الإجمالي</span><span>{bill.total} ⃁</span>
                     </div>
                   </div>

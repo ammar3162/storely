@@ -43,9 +43,9 @@ export default function HelpVideosPage() {
       {!loading && (
         <Card style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-            <div style={{ width: 40, height: 40, borderRadius: 11, background: A.primarySoft, color: A.primary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Video size={19} /></div>
+            <div style={{ width: 40, height: 40, borderRadius:20, background: A.primarySoft, color: A.primary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Video size={19} /></div>
             <div style={{ flex: '1 1 240px' }}>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>{count} من {HELP_PAGES.length} صفحة لها فيديو شرح</div>
+              <div style={{ fontSize:17, fontWeight: 600 }}>{count} من {HELP_PAGES.length} صفحة لها فيديو شرح</div>
               <div style={{ height: 8, borderRadius: 99, background: A.muted, overflow: 'hidden', marginTop: 8 }}>
                 <div style={{ width: `${HELP_PAGES.length ? (count / HELP_PAGES.length) * 100 : 0}%`, height: '100%', background: A.primary, borderRadius: 99 }} />
               </div>
@@ -61,17 +61,17 @@ export default function HelpVideosPage() {
               <div key={p.key} style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center', padding: '14px 0', borderTop: i ? `1px solid ${A.border}` : 'none' }}>
                 <div style={{ width: 120, flexShrink: 0 }}>
                   {v ? <a href={`https://www.youtube.com/watch?v=${v.youtube_id}`} target="_blank" rel="noopener noreferrer" style={{ display: 'block', position: 'relative' }}>
-                      <img src={`https://i.ytimg.com/vi/${v.youtube_id}/mqdefault.jpg`} alt="" width={120} height={68} style={{ borderRadius: 10, display: 'block', objectFit: 'cover' }} />
+                      <img src={`https://i.ytimg.com/vi/${v.youtube_id}/mqdefault.jpg`} alt="" width={120} height={68} style={{ borderRadius:12, display: 'block', objectFit: 'cover' }} />
                       <PlayCircle size={22} color="#fff" style={{ position: 'absolute', inset: 0, margin: 'auto' }} /></a>
-                    : <div style={{ width: 120, height: 68, borderRadius: 8, background: A.muted, border: `1px dashed ${A.borderStrong}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: A.text3 }}>بدون فيديو</div>}
+                    : <div style={{ width: 120, height: 68, borderRadius:12, background: A.muted, border: `1px dashed ${A.borderStrong}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize:13, color: A.text3 }}>بدون فيديو</div>}
                 </div>
                 <div style={{ flex: '1 1 200px', minWidth: 0 }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <b style={{ fontSize: 14, fontWeight: 600 }}>{p.label}</b><span dir="ltr" style={{ fontSize: 12, color: A.text3 }}>{p.key}</span>
+                    <b style={{ fontSize:17, fontWeight: 600 }}>{p.label}</b><span dir="ltr" style={{ fontSize:13, color: A.text3 }}>{p.key}</span>
                     {v && <Badge tone="primary">مفعّل</Badge>}
                   </div>
-                  {v && <div style={{ fontSize: 12, color: A.text3, marginTop: 3 }}>{v.title || 'بدون عنوان'} · {fmtDate(v.updated_at)}</div>}
-                  {msg?.key === p.key && <div style={{ fontSize: 12.5, marginTop: 4, color: msg.bad ? A.danger : A.primary }}>{msg.t}</div>}
+                  {v && <div style={{ fontSize:13, color: A.text3, marginTop: 3 }}>{v.title || 'بدون عنوان'} · {fmtDate(v.updated_at)}</div>}
+                  {msg?.key === p.key && <div style={{ fontSize:13, marginTop: 4, color: msg.bad ? A.danger : A.primary }}>{msg.t}</div>}
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', flex: '2 1 360px' }}>
                   <input value={d.url} onChange={e => setDraft(x => ({ ...x, [p.key]: { ...d, url: e.target.value } }))} placeholder={v ? 'رابط جديد لاستبدال الفيديو' : 'رابط يوتيوب'} dir="ltr" style={{ ...inputStyle, flex: '2 1 200px' }} />

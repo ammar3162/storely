@@ -18,8 +18,8 @@ export default function SupplierDashboardShared() {
   const { loading, router, activeTab, toggleVisibility } = m
 
   if (loading) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f4f7f7'}}>
-      <div style={{width:34,height:34,border:'3px solid #ccebe7',borderTopColor:'#203640',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--storely-background)'}}>
+      <div style={{width:34,height:34,border:'3px solid var(--storely-border)',borderTopColor:'var(--storely-navy)',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )

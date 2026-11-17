@@ -43,52 +43,52 @@ export default function SmartOrder() {
     : (r.daysLeft ?? 99) <= 7 ? { fg: C.warning, bg: C.warningLight, bd: C.warningBorder } : { fg: C.primary, bg: C.primaryLight, bd: C.primaryBorder }
 
   return (
-    <div className="fu" style={{ marginTop: 16, background: C.surface, borderRadius: 14, padding: '16px 20px', border: `1px solid ${C.border2}` }}>
+    <div className="fu" style={{ marginTop: 16, background: C.surface, borderRadius:20, padding: '16px 20px', border: `1px solid ${C.border2}` }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-          <span style={{ width: 34, height: 34, borderRadius: 10, background: C.primaryLight, color: C.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><ShoppingCart size={17} /></span>
+          <span style={{ width: 34, height: 34, borderRadius:12, background: C.primaryLight, color: C.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><ShoppingCart size={17} /></span>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>الطلب الذكي</div>
-            <div style={{ fontSize: 11, color: C.text3, marginTop: 2 }}>ماذا تطلب، وكم، ومتى — بناءً على صرفك الفعلي ومدة توريد مورديك</div>
+            <div style={{ fontSize:17, fontWeight:600, color: C.text }}>الطلب الذكي</div>
+            <div style={{ fontSize:12, color: C.text3, marginTop: 2 }}>ماذا تطلب، وكم، ومتى — بناءً على صرفك الفعلي ومدة توريد مورديك</div>
           </div>
         </div>
-        <button onClick={analyze} disabled={loading} style={{ padding: '8px 16px', background: C.primary, color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
+        <button onClick={analyze} disabled={loading} style={{ padding: '8px 16px', background: C.primary, color: '#fff', border: 'none', borderRadius:999, fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
           {loading ? 'جاري التحليل...' : data ? 'حدّث' : 'حلّل الطلب'}
         </button>
       </div>
 
       {data && (
         <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8, marginTop: 14 }}>
-          {data.rows.length === 0 && <div style={{ fontSize: 13, color: C.text3, textAlign: 'center' as const, padding: 14 }}>جميع أصنافك في وضع آمن — لا تحتاج إلى طلب أي شيء الآن</div>}
+          {data.rows.length === 0 && <div style={{ fontSize:15, color: C.text3, textAlign: 'center' as const, padding: 14 }}>جميع أصنافك في وضع آمن — لا تحتاج إلى طلب أي شيء الآن</div>}
           {data.rows.map(r => {
             const t = tone(r)
             return (
-              <div key={r.name} style={{ padding: '12px 14px', borderRadius: 12, border: `1px solid ${t.bd}`, background: C.surface }}>
+              <div key={r.name} style={{ padding: '12px 14px', borderRadius:20, border: `1px solid ${t.bd}`, background: C.surface }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: C.text }}>{r.name}</div>
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99, background: t.bg, color: t.fg, whiteSpace: 'nowrap' as const }}>{runOutText(r.daysLeft)}</span>
+                  <div style={{ fontSize:17, fontWeight:600, color: C.text }}>{r.name}</div>
+                  <span style={{ fontSize:12, fontWeight:600, padding: '3px 10px', borderRadius: 99, background: t.bg, color: t.fg, whiteSpace: 'nowrap' as const }}>{runOutText(r.daysLeft)}</span>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
-                  <div style={{ background: C.bg, borderRadius: 8, padding: '8px 10px' }}>
-                    <div style={{ fontSize: 10, color: C.text4 }}>اطلب</div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: C.text }}>{r.suggestedQty ? `${r.suggestedQty} ${r.unit}` : '—'}</div>
+                  <div style={{ background: C.bg, borderRadius:12, padding: '8px 10px' }}>
+                    <div style={{ fontSize:12, color: C.text4 }}>اطلب</div>
+                    <div style={{ fontSize:17, fontWeight:600, color: C.text }}>{r.suggestedQty ? `${r.suggestedQty} ${r.unit}` : '—'}</div>
                   </div>
-                  <div style={{ background: C.bg, borderRadius: 8, padding: '8px 10px' }}>
-                    <div style={{ fontSize: 10, color: C.text4 }}>متى</div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: (r.orderInDays ?? 1) <= 0 ? C.danger : C.text }}>
+                  <div style={{ background: C.bg, borderRadius:12, padding: '8px 10px' }}>
+                    <div style={{ fontSize:12, color: C.text4 }}>متى</div>
+                    <div style={{ fontSize:15, fontWeight:600, color: (r.orderInDays ?? 1) <= 0 ? C.danger : C.text }}>
                       {r.orderInDays != null ? orderWhenText(r.orderInDays) : r.urgent ? 'اطلب اليوم' : '—'}
                     </div>
                   </div>
                 </div>
-                <div style={{ fontSize: 11, color: C.text3, marginTop: 8, lineHeight: 1.7 }}>
+                <div style={{ fontSize:12, color: C.text3, marginTop: 8, lineHeight: 1.7 }}>
                   {usageReason(r.dailyRate, r.unit, r.currentQty)}
                   {r.leadDays ? ` · المورد يحتاج ${daysAr(r.leadDays)}` : ''}
                   {r.weeklyNeed ? ` · تحتاج تقريباً ${r.weeklyNeed} ${unitFor(r.weeklyNeed, r.unit)} بالأسبوع` : ''}
                 </div>
                 {r.reorder && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 8, padding: '7px 10px', borderRadius: 8, background: C.infoLight, flexWrap: 'wrap' as const }}>
-                    <span style={{ fontSize: 11, color: C.text2 }}>حد التنبيه الحالي {r.reorder.current} — الأنسب {r.reorder.suggested} {unitFor(r.reorder.suggested, r.unit)}</span>
-                    <button onClick={() => applyReorder(r)} disabled={applying === r.productId} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, border: 'none', background: C.info, color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 8, padding: '7px 10px', borderRadius:12, background: C.infoLight, flexWrap: 'wrap' as const }}>
+                    <span style={{ fontSize:12, color: C.text2 }}>حد التنبيه الحالي {r.reorder.current} — الأنسب {r.reorder.suggested} {unitFor(r.reorder.suggested, r.unit)}</span>
+                    <button onClick={() => applyReorder(r)} disabled={applying === r.productId} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius:999, border: 'none', background: C.info, color: '#fff', fontSize:12, fontWeight:600, cursor: 'pointer', fontFamily: font.family }}>
                       <Check size={12} /> {applying === r.productId ? 'جاري...' : 'اعتمد'}
                     </button>
                   </div>
@@ -97,9 +97,9 @@ export default function SmartOrder() {
             )
           })}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginTop: 4, flexWrap: 'wrap' as const }}>
-            <span style={{ fontSize: 11, color: C.text4 }}>{data.safeCount > 0 ? `و${data.safeCount === 1 ? ' صنف واحد' : data.safeCount === 2 ? ' صنفين' : ` ${data.safeCount} أصناف`} وضعها آمن` : ''}</span>
+            <span style={{ fontSize:12, color: C.text4 }}>{data.safeCount > 0 ? `و${data.safeCount === 1 ? ' صنف واحد' : data.safeCount === 2 ? ' صنفين' : ` ${data.safeCount} أصناف`} وضعها آمن` : ''}</span>
             {data.rows.some(r => (r.suggestedQty ?? 0) > 0) && (
-              <button onClick={() => router.push('/suppliers')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: `1px solid ${C.primary}`, background: C.surface, color: C.primary, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
+              <button onClick={() => router.push('/suppliers')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius:999, border: `1px solid ${C.primary}`, background: C.surface, color: C.primary, fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: font.family }}>
                 <Send size={14} /> أرسل الطلب للموردين
               </button>
             )}

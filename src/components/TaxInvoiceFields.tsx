@@ -38,21 +38,21 @@ export default function TaxInvoiceFields({ invoiceNumber, vatNumber, onChange, i
   return (
     <div style={{ marginBottom: 10 }}>
       {onZatca && (zatca ? (
-        <div style={{ background: '#ecfdf5', border: '1.5px solid #6ee7b7', borderRadius: 10, padding: '10px 12px', marginBottom: 10 }}>
+        <div style={{ background: '#ecfdf5', border: '1.5px solid #6ee7b7', borderRadius:12, padding: '10px 12px', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: '#047857' }}>{t.verified}</span>
-            <button type="button" onClick={() => onZatca(null)} style={{ fontSize: 11, fontWeight: 700, color: '#334155', background: 'white', border: '1px solid #e2e8f0', borderRadius: 6, padding: '3px 9px', cursor: 'pointer', fontFamily: 'inherit' }}>{t.remove}</button>
+            <span style={{ fontSize:15, fontWeight:600, color: '#047857' }}>{t.verified}</span>
+            <button type="button" onClick={() => onZatca(null)} style={{ fontSize:12, fontWeight:600, color: 'var(--storely-text)', background: 'white', border: '1px solid var(--storely-border)', borderRadius:999, padding: '3px 9px', cursor: 'pointer', fontFamily: 'inherit' }}>{t.remove}</button>
           </div>
-          <div style={{ fontSize: 12, color: '#065f46', marginTop: 4, lineHeight: 1.7 }}>
+          <div style={{ fontSize:13, color: '#065f46', marginTop: 4, lineHeight: 1.7 }}>
             {zatca.inv.sellerName} · {t.total} <b dir="ltr">{fmt(zatca.inv.total)}</b> · {t.tax} <b dir="ltr">{fmt(zatca.inv.vat)}</b>
           </div>
-          {over && <div style={{ fontSize: 12, fontWeight: 700, color: '#dc2626', marginTop: 4 }}>{t.over} ({fmt(zatca.inv.total)})</div>}
+          {over && <div style={{ fontSize:13, fontWeight:600, color: '#dc2626', marginTop: 4 }}>{t.over} ({fmt(zatca.inv.total)})</div>}
         </div>
       ) : (
         <button type="button" onClick={() => setScanning(true)}
-          style={{ width: '100%', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 2, padding: '10px', borderRadius: 10, border: '1.5px dashed #029FA2', background: '#f0fdfa', color: '#0f766e', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 10 }}>
-          <span style={{ fontSize: 13, fontWeight: 800 }}>{t.scan}</span>
-          <span style={{ fontSize: 10.5, color: '#1e293b' }}>{t.scanHint}</span>
+          style={{ width: '100%', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 2, padding: '10px', borderRadius:999, border: '1.5px dashed #029FA2', background: 'var(--storely-fill)', color: 'var(--storely-navy)', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 10 }}>
+          <span style={{ fontSize:15, fontWeight:600 }}>{t.scan}</span>
+          <span style={{ fontSize: 10.5, color: 'var(--storely-text)' }}>{t.scanHint}</span>
         </button>
       ))}
 
@@ -64,7 +64,7 @@ export default function TaxInvoiceFields({ invoiceNumber, vatNumber, onChange, i
         <div>
           <label style={labelStyle}>{t.vat}</label>
           <input value={zatca ? zatca.inv.vatNumber : vatNumber} readOnly={!!zatca} onChange={e => onChange({ supplier_vat_number: e.target.value })} inputMode="numeric" maxLength={20} dir="ltr" placeholder="3xxxxxxxxxxxxx3"
-            style={{ ...inputStyle, ...(vatBad && !zatca ? { borderColor: '#dc2626' } : {}), ...(zatca ? { background: '#f8fafc' } : {}) }} />
+            style={{ ...inputStyle, ...(vatBad && !zatca ? { borderColor: '#dc2626' } : {}), ...(zatca ? { background: 'var(--storely-background)' } : {}) }} />
           <div style={{ fontSize: 10.5, marginTop: 3, color: vatBad && !zatca ? '#dc2626' : '#98a2b3' }}>
             {zatca ? t.fromQr : vatBad ? t.bad : savedFromSupplier ? t.saved : t.hint}
           </div>

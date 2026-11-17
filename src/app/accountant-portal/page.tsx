@@ -9,8 +9,8 @@ import { PortalShell, PeriodBar, presetRange, OrgLogo, Stat, Badge } from '@/com
 // بوابة المحاسب — الدخول برمز على الإيميل، وبعدها نظرة عامة على كل العملاء
 type Filter = 'all' | 'action' | 'done' | 'missing' | 'replies'
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })
-const inp: React.CSSProperties = { width: '100%', padding: '13px 14px', borderRadius: 12, border: `1.5px solid ${colors.border}`, fontSize: 15, fontFamily: font.family, boxSizing: 'border-box' as const, background:'#fff' }
-const btn: React.CSSProperties = { width: '100%', padding: 13, borderRadius: 12, border: 'none', background: colors.primary, color:'#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: font.family }
+const inp: React.CSSProperties = { width: '100%', padding: '13px 14px', borderRadius:20, border: `1.5px solid ${colors.border}`, fontSize:17, fontFamily: font.family, boxSizing: 'border-box' as const, background:'#fff' }
+const btn: React.CSSProperties = { width: '100%', padding: 13, borderRadius:20, border: 'none', background: colors.primary, color:'#fff', fontSize:17, fontWeight:600, cursor: 'pointer', fontFamily: font.family }
 
 function Login({ onDone }: { onDone: () => void }) {
   const [email, setEmail] = useState('')
@@ -38,24 +38,24 @@ function Login({ onDone }: { onDone: () => void }) {
       <style>{`.ap-login{grid-template-columns:1fr}.ap-brand{display:none}@media(min-width:960px){.ap-login{grid-template-columns:1.05fr 1fr}.ap-brand{display:flex}}`}</style>
       <section className="ap-brand" style={{ background: colors.primary, color:'#fff', flexDirection: 'column', justifyContent: 'space-between', padding: '48px 56px', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
-          <img src="/storely-logo.png" alt="Storely" width={46} height={46} style={{ borderRadius: 12, background:'#fff' }} />
-          <div><div style={{ fontSize: 20, fontWeight: 800 }} dir="ltr">Storely</div><div style={{ fontSize: 13, opacity: .7 }}>بوابة المحاسب</div></div>
+          <img src="/storely-logo.png" alt="Storely" width={46} height={46} style={{ borderRadius:20, background:'#fff' }} />
+          <div><div style={{ fontSize: 20, fontWeight:600 }} dir="ltr">Storely</div><div style={{ fontSize:15, opacity: .7 }}>بوابة المحاسب</div></div>
         </div>
         <div style={{ position: 'relative' }}>
-          <h1 style={{ fontSize: 36, lineHeight: 1.35, fontWeight: 800, margin: '0 0 22px' }}>جميع حسابات عملائك<br /><span style={{ color:'rgba(255,255,255,.75)' }}>في شاشة واحدة</span></h1>
+          <h1 style={{ fontSize: 36, lineHeight: 1.35, fontWeight:600, margin: '0 0 22px' }}>جميع حسابات عملائك<br /><span style={{ color:'rgba(255,255,255,.75)' }}>في شاشة واحدة</span></h1>
           {points.map(([t, Icon]) => (
-            <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, fontSize: 15, opacity: .92 }}>
-              <span style={{ width: 36, height: 36, borderRadius: 11, background: 'rgba(255,255,255,.1)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Icon size={18} /></span>{t}
+            <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, fontSize:17, opacity: .92 }}>
+              <span style={{ width: 36, height: 36, borderRadius:20, background: 'rgba(255,255,255,.1)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><Icon size={18} /></span>{t}
             </div>
           ))}
         </div>
-        <div style={{ fontSize: 12, opacity: .5, position: 'relative' }} dir="ltr">storely.dev</div>
+        <div style={{ fontSize:13, opacity: .5, position: 'relative' }} dir="ltr">storely.dev</div>
       </section>
       <section style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-        <div style={{ width: '100%', maxWidth: 400, background:'#fff', border: `1px solid ${colors.border}`, borderRadius: 20, padding: 28, boxShadow: '0 20px 50px rgba(15,23,42,.08)' }}>
-          <img src="/storely-logo.png" alt="" width={44} height={44} style={{ borderRadius: 12, marginBottom: 14 }} />
-          <div style={{ fontSize: 21, fontWeight: 800, marginBottom: 6 }}>{step === 'email' ? 'الدخول إلى بوابة المحاسب' : 'اكتب الرمز'}</div>
-          <div style={{ fontSize: 13.5, color: colors.text3, lineHeight: 1.7, marginBottom: 18 }}>
+        <div style={{ width: '100%', maxWidth: 400, background:'#fff', border: 'none', borderRadius: 20, padding: 28, boxShadow: '0 20px 50px rgba(15,23,42,.08)' }}>
+          <img src="/storely-logo.png" alt="" width={44} height={44} style={{ borderRadius:20, marginBottom: 14 }} />
+          <div style={{ fontSize: 21, fontWeight:600, marginBottom: 6 }}>{step === 'email' ? 'الدخول إلى بوابة المحاسب' : 'اكتب الرمز'}</div>
+          <div style={{ fontSize:15, color: colors.text3, lineHeight: 1.7, marginBottom: 18 }}>
             {step === 'email' ? 'سنرسل لك رمز دخول إلى بريدك الإلكتروني — دون كلمة مرور.' : <>وصلك رمز من 6 أرقام على <b dir="ltr">{email}</b></>}
           </div>
           {step === 'email' ? (<>
@@ -63,11 +63,11 @@ function Login({ onDone }: { onDone: () => void }) {
             <button onClick={send} disabled={busy || !email} style={{ ...btn, marginTop: 12, opacity: busy || !email ? .6 : 1 }}>{busy ? 'جاري الإرسال...' : 'أرسل رمز الدخول'}</button>
           </>) : (<>
             <input value={code} onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" dir="ltr" placeholder="••••••"
-              style={{ ...inp, textAlign: 'center', letterSpacing: 10, fontSize: 24, fontWeight: 800 }} onKeyDown={e => e.key === 'Enter' && code.length === 6 && verify()} autoFocus />
+              style={{ ...inp, textAlign: 'center', letterSpacing: 10, fontSize: 24, fontWeight:600 }} onKeyDown={e => e.key === 'Enter' && code.length === 6 && verify()} autoFocus />
             <button onClick={verify} disabled={busy || code.length !== 6} style={{ ...btn, marginTop: 12, opacity: busy || code.length !== 6 ? .6 : 1 }}>{busy ? 'جاري الدخول...' : 'دخول'}</button>
-            <button onClick={() => { setStep('email'); setCode(''); setMsg(null) }} style={{ ...btn, background: 'transparent', color: colors.text3, fontSize: 13, marginTop: 4 }}>تغيير البريد الإلكتروني أو طلب رمز جديد</button>
+            <button onClick={() => { setStep('email'); setCode(''); setMsg(null) }} style={{ ...btn, background: 'transparent', color: colors.text3, fontSize:15, marginTop: 4 }}>تغيير البريد الإلكتروني أو طلب رمز جديد</button>
           </>)}
-          {msg && <div style={{ marginTop: 12, fontSize: 13, color: msg.bad ? colors.danger : colors.text3, lineHeight: 1.7 }}>{msg.t}</div>}
+          {msg && <div style={{ marginTop: 12, fontSize:15, color: msg.bad ? colors.danger : colors.text3, lineHeight: 1.7 }}>{msg.t}</div>}
         </div>
       </section>
     </div>
@@ -125,11 +125,11 @@ export default function AccountantPortalPage() {
         <FileSpreadsheet size={16} /><span className="ap-lbl">ملخص كل العملاء</span></a> : undefined}>
 
       {(data?.invites || []).map((v: any) => (
-        <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, background: '#fff', border: `1px solid ${colors.border}`, borderInlineStart: `3px solid ${colors.primary}`, borderRadius: radius.xl, padding: '12px 16px', marginBottom: 12 }}>
+        <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, background: '#fff', border: 'none', borderInlineStart: `3px solid ${colors.primary}`, borderRadius: radius.xl, padding: '12px 16px', marginBottom: 12 }}>
           <OrgLogo name={v.org} url={v.logo_url} size={38} />
           <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ fontSize: 14, fontWeight: 600 }}>{v.org} تدعوك لتكون محاسبها{v.branch ? ` · فرع ${v.branch}` : ''}</div>
-            <div style={{ fontSize: 12.5, color: colors.text3, marginTop: 2 }}>ستطّلع على: {v.sections.join('، ')}</div>
+            <div style={{ fontSize:17, fontWeight: 600 }}>{v.org} تدعوك لتكون محاسبها{v.branch ? ` · فرع ${v.branch}` : ''}</div>
+            <div style={{ fontSize:13, color: colors.text3, marginTop: 2 }}>ستطّلع على: {v.sections.join('، ')}</div>
           </div>
           <button onClick={() => answerInvite(v.id, 'decline')} disabled={!!inviteBusy} className="ap-btn sec">{inviteBusy === v.id + 'decline' ? 'جاري...' : 'رفض'}</button>
           <button onClick={() => answerInvite(v.id, 'accept')} disabled={!!inviteBusy} className="ap-btn pri">{inviteBusy === v.id + 'accept' ? 'جاري...' : 'قبول الدعوة'}</button>
@@ -138,7 +138,7 @@ export default function AccountantPortalPage() {
 
       <PeriodBar from={range.from} to={range.to} onChange={setRange} />
 
-      {error ? <div style={{ color: colors.danger, fontSize: 14, padding: 20 }}>{error}</div>
+      {error ? <div style={{ color: colors.danger, fontSize:17, padding: 20 }}>{error}</div>
         : !data ? <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={24} color={colors.primary} className="spin" /></div>
         : <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,140px),1fr))', gap: 12, marginBottom: 16 }}>
@@ -150,27 +150,27 @@ export default function AccountantPortalPage() {
             <Stat label="العملاء" value={String(clients.length)} hint={`${live.length} نشط`} icon={<Building2 size={16} />} />
           </div>
 
-          {!clients.length ? <div style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: radius.xl, padding: 40, textAlign: 'center', color: colors.text3, fontSize: 14 }}>لا يوجد لديك عملاء مفعّلون بعد — تظهر المنشأة هنا فور قبولك دعوتها</div>
-          : <section style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: radius.xl, overflow: 'hidden' }}>
+          {!clients.length ? <div style={{ background: '#fff', border: 'none', borderRadius: radius.xl, padding: 40, textAlign: 'center', color: colors.text3, fontSize:17 }}>لا يوجد لديك عملاء مفعّلون بعد — تظهر المنشأة هنا فور قبولك دعوتها</div>
+          : <section style={{ background: '#fff', border: 'none', borderRadius: radius.xl, overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const, padding: 12, borderBottom: `1px solid ${colors.border}` }}>
               <div style={{ position: 'relative', flex: '1 1 220px', maxWidth: 340 }}>
                 <Search size={16} color={colors.text3} style={{ position: 'absolute', insetInlineStart: 11, top: '50%', transform: 'translateY(-50%)' }} />
                 <input value={search} onChange={e => setSearch(e.target.value)} placeholder="ابحث باسم المنشأة أو الفرع" aria-label="بحث"
-                  style={{ width: '100%', boxSizing: 'border-box' as const, padding: '9px 36px 9px 12px', borderRadius: 10, border: `1px solid ${colors.border}`, fontSize: 16, fontFamily: font.family, background: '#fff' }} />
+                  style={{ width: '100%', boxSizing: 'border-box' as const, padding: '9px 36px 9px 12px', borderRadius:12, border: `1px solid ${colors.border}`, fontSize:17, fontFamily: font.family, background: '#fff' }} />
               </div>
-              <div style={{ display: 'flex', gap: 2, padding: 3, background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: 10 }}>
+              <div style={{ display: 'flex', gap: 2, padding: 3, background: colors.bg, border: `1px solid ${colors.border}`, borderRadius:12 }}>
                 {FILTERS.map(([k, l, n]) => <button key={k} onClick={() => setFilter(k)} aria-pressed={filter === k}
-                  style={{ padding: '7px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: font.family, fontSize: 12.5, fontWeight: filter === k ? 700 : 600, whiteSpace: 'nowrap' as const,
+                  style={{ padding: '7px 12px', borderRadius:999, border: 'none', cursor: 'pointer', fontFamily: font.family, fontSize:13, fontWeight: filter === k ? 700 : 600, whiteSpace: 'nowrap' as const,
                     background: filter === k ? '#fff' : 'transparent', color: filter === k ? colors.text : colors.text3, boxShadow: filter === k ? '0 1px 2px rgba(15,23,42,.08)' : 'none' }}>{l} <span style={{ color: colors.text4, fontWeight: 500 }}>{n}</span></button>)}
               </div>
             </div>
 
-            {!shown.length ? <div style={{ padding: 32, textAlign: 'center', color: colors.text3, fontSize: 13.5 }}>لا توجد منشآت تطابق البحث</div> : <>
+            {!shown.length ? <div style={{ padding: 32, textAlign: 'center', color: colors.text3, fontSize:15 }}>لا توجد منشآت تطابق البحث</div> : <>
               {/* الكمبيوتر: جدول */}
               <div className="ap-desk" style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13.5, minWidth: 940 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize:15, minWidth: 940 }}>
                   <thead><tr>{['المنشأة', 'الحالة', `إقفال ${data.close_month?.label || 'الشهر'}`, 'المبيعات', 'المشتريات', 'الضريبة المستحقة', 'للموردين', ''].map((h, i) =>
-                    <th key={i} style={{ textAlign: i >= 3 && i <= 6 ? 'left' : 'right', padding: '10px 16px', background: '#F6F8F9', color: colors.text3, fontWeight: 600, fontSize: 12, whiteSpace: 'nowrap' as const, borderBottom: `1px solid ${colors.border}` }}>{h}</th>)}</tr></thead>
+                    <th key={i} style={{ textAlign: i >= 3 && i <= 6 ? 'left' : 'right', padding: '10px 16px', background: 'var(--storely-background)', color: colors.text3, fontWeight: 600, fontSize:13, whiteSpace: 'nowrap' as const, borderBottom: `1px solid ${colors.border}` }}>{h}</th>)}</tr></thead>
                   <tbody>{shown.map(c => {
                     const locked = c.inactive || c.expired, t = c.totals
                     return (
@@ -180,7 +180,7 @@ export default function AccountantPortalPage() {
                             <OrgLogo name={c.name} url={c.logo_url} size={34} />
                             <div style={{ minWidth: 0 }}>
                               <div style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{c.name}</div>
-                              <div style={{ fontSize: 12, color: colors.text3, whiteSpace: 'nowrap' }}>{c.branch || 'كل الفروع'}</div>
+                              <div style={{ fontSize:13, color: colors.text3, whiteSpace: 'nowrap' }}>{c.branch || 'كل الفروع'}</div>
                             </div>
                           </div>
                         </td>
@@ -191,7 +191,7 @@ export default function AccountantPortalPage() {
                         <td style={{ padding: '12px 16px', borderBottom: `1px solid ${colors.border}`, width: 80 }}>
                           {!locked && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
                             <a href={xlsxOf(c)} onClick={e => e.stopPropagation()} title="تحميل إكسل" aria-label={`تحميل إكسل ${c.name}`}
-                              style={{ display: 'inline-flex', padding: 7, borderRadius: 8, border: `1px solid ${colors.border}`, color: colors.text3 }}><Download size={15} /></a>
+                              style={{ display: 'inline-flex', padding: 7, borderRadius:12, border: `1px solid ${colors.border}`, color: colors.text3 }}><Download size={15} /></a>
                             <ChevronLeft size={18} color={colors.text4} />
                           </div>}
                         </td>
@@ -209,15 +209,15 @@ export default function AccountantPortalPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <OrgLogo name={c.name} url={c.logo_url} size={36} />
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, fontSize: 14.5 }}>{c.name}</div>
-                          <div style={{ fontSize: 12, color: colors.text3 }}>{c.branch || 'كل الفروع'}</div>
+                          <div style={{ fontWeight: 600, fontSize:17 }}>{c.name}</div>
+                          <div style={{ fontSize:13, color: colors.text3 }}>{c.branch || 'كل الفروع'}</div>
                         </div>
                         {!locked && <ChevronLeft size={18} color={colors.text4} />}
                       </div>
                       <div style={{ marginTop: 10, display: 'flex', gap: 6, flexWrap: 'wrap' }}><StatusBadges c={c} />{!locked && <LockBadge locked={c.locked} label={data.close_month?.label} />}</div>
-                      {!locked && t && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10, fontSize: 12.5 }}>
+                      {!locked && t && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10, fontSize:13 }}>
                         {[['المبيعات', t.sales], ['المشتريات', t.purchases], ['الضريبة المستحقة', t.vatNet], ['للموردين', t.payables]].filter(([, v]) => v != null).map(([k, v]) => (
-                          <div key={k as string}><div style={{ color: colors.text3 }}>{k}</div><div dir="ltr" style={{ fontWeight: 600, fontSize: 14, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmt(v as number)}</div></div>))}
+                          <div key={k as string}><div style={{ color: colors.text3 }}>{k}</div><div dir="ltr" style={{ fontWeight: 600, fontSize:17, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmt(v as number)}</div></div>))}
                       </div>}
                     </div>
                   )

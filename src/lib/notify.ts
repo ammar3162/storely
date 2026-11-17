@@ -14,7 +14,7 @@ export async function notifyInsert(db: any, rows: Row | Row[], opts: { url?: str
     const list = (Array.isArray(rows) ? rows : [rows]).filter(r => r && r.org_id && r.title)
     if (list.length) {
       const job = async () => {
-        for (const r of list) await sendPushToOrg(String(r.org_id), plain(r.title), plain(r.message), opts.url || '/notifications').catch(() => null)
+        for (const r of list) await sendPushToOrg(String(r.org_id), plain(r.title), plain(r.message), opts.url || '/notifications', r.branch_id || null).catch(() => null)
       }
       try { after(job) } catch { void job() }
     }

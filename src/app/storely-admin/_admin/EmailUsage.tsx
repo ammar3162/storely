@@ -26,8 +26,8 @@ export function EmailUsageBanner() {
   if (!u?.available || u.level === 'ok' || !u.level) return null
   const stop = u.level === 'stop'
   return (
-    <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: 10, margin: '0 0 16px', padding: '12px 16px', borderRadius: 12,
-      background: stop ? '#FDECEC' : '#FFF6E5', border: `1px solid ${stop ? '#F3C2C2' : '#F2D9A6'}`, color: A.text, fontSize: 13.5, lineHeight: 1.8 }}>
+    <div role="alert" style={{ display: 'flex', alignItems: 'flex-start', gap: 10, margin: '0 0 16px', padding: '12px 16px', borderRadius:20,
+      background: stop ? '#FDECEC' : '#FFF6E5', border: `1px solid ${stop ? '#F3C2C2' : '#F2D9A6'}`, color: A.text, fontSize:15, lineHeight: 1.8 }}>
       <AlertTriangle size={18} color={stop ? A.danger : '#B7791F'} style={{ flexShrink: 0, marginTop: 3 }} />
       <div>
         <b>{stop ? `توقف إرسال الإيميلات — وصلت ${u.used} من ${u.limit} خلال آخر 24 ساعة` : `اقتربت من حد الإيميلات — ${u.used} من ${u.limit} خلال آخر 24 ساعة`}</b>
@@ -44,7 +44,7 @@ export function EmailUsageLine() {
   if (!u?.available) return null
   const color = u.level === 'stop' ? A.danger : u.level === 'warn' ? '#B7791F' : A.text3
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize:15, color }}>
       <Mail size={15} />
       <span>إيميلات آخر 24 ساعة: <b>{u.used}</b> من {u.limit} (مرسلة {u.sent}، واردة {u.received}) — الحد في الباقة المجانية من Resend</span>
     </div>

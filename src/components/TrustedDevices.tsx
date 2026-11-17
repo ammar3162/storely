@@ -41,7 +41,7 @@ export default function TrustedDevices() {
         style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, textAlign: 'right' }}>
         <MonitorSmartphone size={18} color={colors.text} />
         <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: 'block', fontSize: font.base, fontWeight: 800, color: colors.text }}>الأجهزة الموثوقة</span>
+          <span style={{ display: 'block', fontSize: font.base, fontWeight:600, color: colors.text }}>الأجهزة الموثوقة</span>
           <span style={{ display: 'block', fontSize: font.xs, color: colors.text3, marginTop: 2 }}>
             {devices === null ? 'جارٍ التحميل…' : devices.length ? `${devices.length} ${devices.length === 1 ? 'جهاز' : devices.length === 2 ? 'جهازان' : devices.length <= 10 ? 'أجهزة' : 'جهاز'} · اضغط للعرض` : 'لا توجد أجهزة مسجّلة'}
           </span>
@@ -58,13 +58,13 @@ export default function TrustedDevices() {
         {devices?.map(d => (
           <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 12px', border: `1px solid ${colors.border}`, borderRadius: radius.md }}>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: font.sm, fontWeight: 700, color: colors.text }}>
-                {d.label}{d.current && <span style={{ marginRight: 8, fontSize: font.xs, fontWeight: 700, color: colors.primary }}>هذا الجهاز</span>}
+              <div style={{ fontSize: font.sm, fontWeight:600, color: colors.text }}>
+                {d.label}{d.current && <span style={{ marginRight: 8, fontSize: font.xs, fontWeight:600, color: colors.primary }}>هذا الجهاز</span>}
               </div>
               <div style={{ fontSize: font.xs, color: colors.text }}>آخر دخول {fmt(d.last_seen_at)} · أضيف {fmt(d.created_at)}</div>
             </div>
             <button onClick={() => remove(d)} disabled={!!busy}
-              style={{ flexShrink: 0, padding: '7px 12px', background: 'none', border: `1px solid ${colors.dangerBorder}`, borderRadius: radius.md, color: colors.danger, fontSize: font.xs, fontWeight: 700, fontFamily: font.family, cursor: busy ? 'not-allowed' : 'pointer' }}>
+              style={{ flexShrink: 0, padding: '7px 12px', background: 'none', border: `1px solid ${colors.dangerBorder}`, borderRadius: radius.md, color: colors.danger, fontSize: font.xs, fontWeight:600, fontFamily: font.family, cursor: busy ? 'not-allowed' : 'pointer' }}>
               {busy === d.id ? 'جارٍ…' : 'إزالة'}
             </button>
           </div>

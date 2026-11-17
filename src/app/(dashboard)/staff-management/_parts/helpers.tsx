@@ -14,10 +14,10 @@ export function Avatar({ name, active }: { name:string; active:boolean }) {
   const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
   return (
     <div style={{
-      width:44,height:44,borderRadius:14,
-      background:active?`#203640`:'linear-gradient(135deg,#94a3b8,#64748b)',
+      width:44,height:44,borderRadius:20,
+      background:active?`#203640`:'linear-gradient(135deg,var(--storely-subtle),var(--storely-muted))',
       display:'flex',alignItems:'center',justifyContent:'center',
-      fontSize:14,fontWeight:900,color:'white',flexShrink:0,
+      fontSize:17,fontWeight:600,color:'white',flexShrink:0,
       boxShadow:active?`0 4px 12px ${colors.primary}33`:'none',
     }}>
       {initials||'؟'}

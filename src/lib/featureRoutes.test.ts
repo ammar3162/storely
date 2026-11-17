@@ -18,12 +18,19 @@ describe('routeFeatureNeed — قفل الميزات على مستوى الخا�
     expect(routeFeatureNeed('/api/waste-report', 'GET')).toEqual(['ai'])
     expect(routeFeatureNeed('/api/smart-insights', 'POST')).toEqual(['ai'])
   })
-  it('الحضور والربحية والكاشير مقفلة حتى للقراءة', () => {
-    expect(routeFeatureNeed('/api/attendance-report', 'GET')).toEqual(['hr'])
-    expect(routeFeatureNeed('/api/shifts', 'PATCH')).toEqual(['hr'])
+  it('الربحية مقفلة حتى للقراءة؛ الحضور والرواتب: السجلات تبقى للاطلاع والتعديل مقفل', () => {
     expect(routeFeatureNeed('/api/fixed-expenses', 'GET')).toEqual(['profitability'])
     expect(routeFeatureNeed('/api/profitability/closed-months', 'GET')).toEqual(['profitability'])
-    expect(routeFeatureNeed('/api/cashier-deficit-decision', 'POST')).toEqual(['cashier'])
+    // بعد إلغاء «الحضور والرواتب»: سجلات الحضور تنقرى (الصفحة تعرضها «قراءة فقط»)
+    expect(routeFeatureNeed('/api/attendance-report', 'GET')).toBeNull()
+    expect(routeFeatureNeed('/api/shifts', 'GET')).toBeNull()
+    expect(routeFeatureNeed('/api/shifts', 'PATCH')).toEqual(['hr'])
+    expect(routeFeatureNeed('/api/staff-tasks', 'POST')).toEqual(['hr'])
+    expect(routeFeatureNeed('/api/staff-payroll-adjustments', 'POST')).toEqual(['hr'])
+    expect(routeFeatureNeed('/api/attendance-permission-request', 'GET')).toEqual(['hr'])
+  })
+  it('قرارات عجز الكاشير ما تنقفل (تحسم إقفالات قديمة والرواتب تعتمد عليها)', () => {
+    expect(routeFeatureNeed('/api/cashier-deficit-decision', 'POST')).toBeNull()
   })
   it('المخزون والمشتريات: التعديل مقفل والقراءة مسموحة', () => {
     expect(routeFeatureNeed('/api/purchases', 'GET')).toBeNull()
@@ -32,6 +39,6 @@ describe('routeFeatureNeed — قفل الميزات على مستوى الخا�
   })
   it('مسار ما يحتاج ميزة', () => {
     expect(routeFeatureNeed('/api/me', 'GET')).toBeNull()
-    expect(routeFeatureNeed('/api/staff-tasks', 'POST')).toBeNull()
+    expect(routeFeatureNeed('/api/staff-tasks', 'GET')).toBeNull()
   })
 })

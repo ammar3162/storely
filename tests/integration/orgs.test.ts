@@ -176,9 +176,14 @@ describe.skipIf(!enabled)('integration (staging) — orgs', async () => {
       process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
       const { generateStaffToken } = await import('@/lib/staffAuth')
       const file = await import('@/app/api/file/route')
-      const path = `${orgId}/invoice-it-${Date.now()}.txt`
-      const { error: upErr } = await db.storage.from('invoices').upload(path, new Blob(['فاتورة']), { contentType: 'text/plain' })
+      const path = `${orgId}/invoice-it-${Date.now()}.png`
+      // صورة PNG حقيقية (المجلد صار يقبل الصور وPDF فقط)
+      const png = Buffer.from('89504e470d0a1a0a0000000d4948445200000001000000010806000000', 'hex')
+      const { error: upErr } = await db.storage.from('invoices').upload(path, png, { contentType: 'image/png' })
       expect(upErr).toBeNull()
+      // ملف HTML ينرفض من المجلد نفسه (حدود نوع الملف)
+      const { error: htmlErr } = await db.storage.from('invoices').upload(`${orgId}/evil-${Date.now()}.html`, Buffer.from('<script>1</script>'), { contentType: 'text/html' })
+      expect(htmlErr).not.toBeNull()
       const stored = `${URL_.replace(/\/+$/, '')}/storage/v1/object/public/invoices/${path}`
       const get = (headers: Record<string, string> = {}, u = stored) => file.GET(new Request(`http://test/api/file?u=${encodeURIComponent(u)}`, { headers }))
       try {
@@ -190,7 +195,8 @@ describe.skipIf(!enabled)('integration (staging) — orgs', async () => {
         const ok = await get()
         expect(ok.status).toBe(200)                                  // المالك: الملف نفسه من رابطنا (بدون رابط ثاني)
         expect(ok.headers.get('location')).toBeNull()
-        expect(await ok.text()).toBe('فاتورة')
+        expect(ok.headers.get('content-type')).toBe('image/png')         // النوع من محتوى الملف نفسه
+        expect(Buffer.from(await ok.arrayBuffer()).equals(png)).toBe(true)
         auth.current = null
         const { data: st } = await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: 'موظف ملفات', phone: uniqPhone(), pin: 'x', is_active: true, role: 'staff' } as any).select('id').single()
         const tok = generateStaffToken((st as any).id, orgId, branchA)

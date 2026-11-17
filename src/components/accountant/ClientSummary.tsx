@@ -10,7 +10,7 @@ type State = 'ok' | 'bad' | 'warn' | 'info' | 'todo'
 type Item = { state: State; title: string; desc: string; actions?: { l: string; on: () => void; primary?: boolean }[] }
 
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-const ICON: Record<State, [any, string]> = { ok: [CheckCircle2, '#067647'], bad: [AlertCircle, '#B42318'], warn: [AlertCircle, '#B54708'], info: [Info, '#175CD3'], todo: [Circle, '#98A2B3'] }
+const ICON: Record<State, [any, string]> = { ok: [CheckCircle2, '#067647'], bad: [AlertCircle, '#B42318'], warn: [AlertCircle, '#B54708'], info: [Info, 'var(--storely-navy)'], todo: [Circle, 'var(--storely-subtle)'] }
 // العدد بالعربية الفصحى: ١ و٢ بصيغتهما، ٣–١٠ جمع، ١١+ مفرد
 const plural = (n: number, one: string, two: string, few: string, eleven = few) => n === 1 ? one : n === 2 ? two : `${n} ${n <= 10 ? few : eleven}`
 
@@ -70,10 +70,10 @@ export default function ClientSummary({ data, requests, go, onRequestMissing }: 
     </div>
 
     <div className="cs-grid">
-      <section style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: radius.xl, minWidth: 0 }}>
+      <section style={{ background: '#fff', border: 'none', borderRadius: radius.xl, minWidth: 0 }}>
         <header style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 18px', borderBottom: `1px solid ${colors.border}` }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, flex: 1 }}>قبل إقفال الشهر</h2>
-          <span style={{ fontSize: 12.5, color: open ? '#B42318' : '#067647', fontWeight: 600 }}>{open ? `${open} يحتاج إجراء` : 'جاهز للمراجعة'}</span>
+          <h2 style={{ fontSize:17, fontWeight:600, margin: 0, flex: 1 }}>قبل إقفال الشهر</h2>
+          <span style={{ fontSize:13, color: open ? '#B42318' : '#067647', fontWeight: 600 }}>{open ? `${open} يحتاج إجراء` : 'جاهز للمراجعة'}</span>
         </header>
         {items.map((it, i) => {
           const [Icon, c] = ICON[it.state]
@@ -81,34 +81,34 @@ export default function ClientSummary({ data, requests, go, onRequestMissing }: 
             <div key={i} style={{ display: 'flex', gap: 12, padding: '14px 18px', borderBottom: i === items.length - 1 ? 'none' : `1px solid ${colors.border}`, flexWrap: 'wrap' }}>
               <Icon size={18} color={c} style={{ flexShrink: 0, marginTop: 2 }} />
               <div style={{ flex: '1 1 220px', minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>{it.title}</div>
-                <div style={{ fontSize: 12.5, color: colors.text3, marginTop: 2, lineHeight: 1.6 }}>{it.desc}</div>
+                <div style={{ fontSize:17, fontWeight: 600 }}>{it.title}</div>
+                <div style={{ fontSize:13, color: colors.text3, marginTop: 2, lineHeight: 1.6 }}>{it.desc}</div>
               </div>
               {it.actions && <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginInlineStart: 30 }}>
-                {it.actions.map(a => <button key={a.l} onClick={a.on} className={`ap-btn ${a.primary ? 'pri' : 'sec'}`} style={{ padding: '7px 12px', fontSize: 12.5 }}>{a.l}</button>)}
+                {it.actions.map(a => <button key={a.l} onClick={a.on} className={`ap-btn ${a.primary ? 'pri' : 'sec'}`} style={{ padding: '7px 12px', fontSize:13 }}>{a.l}</button>)}
               </div>}
             </div>
           )
         })}
       </section>
 
-      {has('vat') && <section style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: radius.xl, padding: 18, alignSelf: 'start' }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 14px' }}>الإقرار الضريبي</h2>
-        {!r.vatRegistered ? <div style={{ fontSize: 13, color: colors.text3 }}>المنشأة غير مسجلة في ضريبة القيمة المضافة</div> : v && <>
-          <div style={{ fontSize: 12.5, color: colors.text3 }}>{v.netDue >= 0 ? 'صافي الضريبة المستحقة' : 'ضريبة مستردة'}</div>
-          <div dir="ltr" style={{ fontSize: 28, fontWeight: 700, textAlign: 'right', fontVariantNumeric: 'tabular-nums', margin: '4px 0 12px' }}>{fmt(Math.abs(v.netDue))}</div>
-          <div style={{ display: 'grid', gap: 8, fontSize: 13, borderTop: `1px solid ${colors.border}`, paddingTop: 12 }}>
+      {has('vat') && <section style={{ background: '#fff', border: 'none', borderRadius: radius.xl, padding: 18, alignSelf: 'start' }}>
+        <h2 style={{ fontSize:17, fontWeight:600, margin: '0 0 14px' }}>الإقرار الضريبي</h2>
+        {!r.vatRegistered ? <div style={{ fontSize:15, color: colors.text3 }}>المنشأة غير مسجلة في ضريبة القيمة المضافة</div> : v && <>
+          <div style={{ fontSize:13, color: colors.text3 }}>{v.netDue >= 0 ? 'صافي الضريبة المستحقة' : 'ضريبة مستردة'}</div>
+          <div dir="ltr" style={{ fontSize: 28, fontWeight:600, textAlign: 'right', fontVariantNumeric: 'tabular-nums', margin: '4px 0 12px' }}>{fmt(Math.abs(v.netDue))}</div>
+          <div style={{ display: 'grid', gap: 8, fontSize:15, borderTop: `1px solid ${colors.border}`, paddingTop: 12 }}>
             {[['ضريبة المبيعات (خانة 6)', v.boxes.find(b => b.no === 6)?.vat || 0], ['ضريبة المشتريات (خانة 12)', v.boxes.find(b => b.no === 12)?.vat || 0]].map(([k, x]) => (
               <div key={k as string} style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><span style={{ color: colors.text3 }}>{k}</span><span dir="ltr" style={{ fontVariantNumeric: 'tabular-nums' }}>{fmt(x as number)}</span></div>
             ))}
           </div>
-          {v.deadline ? <div style={{ marginTop: 14, padding: '10px 12px', borderRadius: 10, background: days != null && days <= 10 ? '#FFFAEB' : colors.bg, fontSize: 12.5, lineHeight: 1.7 }}>
+          {v.deadline ? <div style={{ marginTop: 14, padding: '10px 12px', borderRadius:12, background: days != null && days <= 10 ? '#FFFAEB' : colors.bg, fontSize:13, lineHeight: 1.7 }}>
             <div style={{ color: colors.text3 }}>آخر موعد للتقديم والسداد</div>
             <div style={{ fontWeight: 600, color: days != null && days <= 10 ? '#B54708' : colors.text }}>
               {new Date(`${v.deadline}T12:00:00Z`).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' })}
               {days != null && (days > 0 ? ` · باقي ${plural(days, 'يوم واحد', 'يومان', 'أيام', 'يوماً')}` : days === 0 ? ' · اليوم' : ' · انتهى الموعد')}
             </div>
-          </div> : <div style={{ marginTop: 14, fontSize: 12.5, color: colors.text3, lineHeight: 1.7 }}>اختر شهراً كاملاً أو ربعاً لعرض موعد الإقرار</div>}
+          </div> : <div style={{ marginTop: 14, fontSize:13, color: colors.text3, lineHeight: 1.7 }}>اختر شهراً كاملاً أو ربعاً لعرض موعد الإقرار</div>}
           <button onClick={() => go('vat')} className="ap-btn sec" style={{ width: '100%', justifyContent: 'center', marginTop: 14 }}>افتح نموذج الإقرار <ChevronLeft size={15} /></button>
         </>}
       </section>}

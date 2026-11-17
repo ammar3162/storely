@@ -16,8 +16,8 @@ const weekStart = (d: string) => addDays(d, -weekdayOf(d))
 const shiftMonth = (m: string, n: number) => { const [y, mo] = m.split('-').map(Number); const t = new Date(Date.UTC(y, mo - 1 + n, 1)); return t.toISOString().slice(0, 7) }
 const dayLabel = (d: string) => `${WEEKDAYS_AR[weekdayOf(d)]} ${Number(d.slice(8))}`
 
-const chip = (on: boolean) => ({ padding: '5px 10px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: font.family,
-  border: `1.5px solid ${on ? '#3b82f6' : colors.border}`, background: on ? '#eff6ff' : colors.surface, color: on ? '#1d4ed8' : colors.text3 })
+const chip = (on: boolean) => ({ padding: '5px 10px', borderRadius: 99, fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: font.family,
+  border: `1.5px solid ${on ? 'var(--storely-navy)' : colors.border}`, background: on ? 'var(--storely-fill)' : colors.surface, color: on ? 'var(--storely-navy)' : colors.text3 })
 
 export default function StaffDaysOffEditor({ staff, onPatch }: { staff: any; onPatch: (p: OffPatch) => void }) {
   const today = saudiToday()
@@ -61,8 +61,8 @@ export default function StaffDaysOffEditor({ staff, onPatch }: { staff: any; onP
   return (
     <div style={{ flexBasis: '100%', display: 'flex', flexDirection: 'column' as const, gap: 8, paddingTop: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const }}>
-        <span style={{ fontSize: 11.5, fontWeight: 700, color: colors.text3, marginInlineEnd: 4 }}>الإجازة:</span>
-        <select value={mode} onChange={e => changeMode(e.target.value)} style={{ ...inp(), width: 'auto', padding: '5px 10px', fontSize: 12 }}>
+        <span style={{ fontSize:13, fontWeight:600, color: colors.text3, marginInlineEnd: 4 }}>الإجازة:</span>
+        <select value={mode} onChange={e => changeMode(e.target.value)} style={{ ...inp(), width: 'auto', padding: '5px 10px', fontSize:13 }}>
           <option value="weekly">أيام ثابتة كل أسبوع</option>
           <option value="biweekly">أسبوع وأسبوع</option>
           <option value="dates">أيام أحددها بالتقويم</option>
@@ -77,56 +77,56 @@ export default function StaffDaysOffEditor({ staff, onPatch }: { staff: any; onP
           <>
             <NumberInput min={0} max={15} defaultValue={staff.monthly_off_days ?? 0} key={staff.monthly_off_days ?? 0}
               onBlur={e => { const n = Math.max(0, Math.min(15, Math.round(Number(e.target.value) || 0))); if (n !== Number(staff.monthly_off_days || 0)) onPatch({ monthly_off_days: n }) }}
-              style={{ ...inp(), width: 70, padding: '5px 10px', fontSize: 12 }} />
-            <span style={{ fontSize: 11.5, color: colors.text3 }}>أيام في الشهر — يُحتسب أي يوم لا يحضر فيه إجازةً حتى ينتهي رصيده، ثم يُحتسب غياباً</span>
+              style={{ ...inp(), width: 70, padding: '5px 10px', fontSize:13 }} />
+            <span style={{ fontSize:13, color: colors.text3 }}>أيام في الشهر — يُحتسب أي يوم لا يحضر فيه إجازةً حتى ينتهي رصيده، ثم يُحتسب غياباً</span>
           </>
         )}
       </div>
 
       {mode === 'biweekly' && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const }}>
-          <span style={{ fontSize: 11.5, color: colors.text3 }}>أول إجازة:</span>
+          <span style={{ fontSize:13, color: colors.text3 }}>أول إجازة:</span>
           <button onClick={() => onPatch({ biweekly_anchor: thisWeek })} aria-pressed={anchorIsThis} style={chip(anchorIsThis)}>
             هذا الأسبوع ({dayLabel(addDays(thisWeek, firstDay))})
           </button>
           <button onClick={() => onPatch({ biweekly_anchor: nextWeek })} aria-pressed={!anchorIsThis} style={chip(!anchorIsThis)}>
             الأسبوع القادم ({dayLabel(addDays(nextWeek, firstDay))})
           </button>
-          <span style={{ fontSize: 11.5, color: colors.text4 }}>وبعدها أسبوع دوام وأسبوع إجازة</span>
+          <span style={{ fontSize:13, color: colors.text4 }}>وبعدها أسبوع دوام وأسبوع إجازة</span>
         </div>
       )}
 
       {mode === 'dates' && (
-        <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, padding: 10, maxWidth: 320, background: colors.surface }}>
+        <div style={{ border: `1px solid ${colors.border}`, borderRadius:20, padding: 10, maxWidth: 320, background: colors.surface }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <button onClick={() => setCalMonth(shiftMonth(calMonth, -1))} aria-label="الشهر السابق" style={{ ...chip(false), padding: '3px 10px' }}>→</button>
-            <span style={{ fontSize: 12.5, fontWeight: 800, color: colors.text }}>
+            <span style={{ fontSize:13, fontWeight:600, color: colors.text }}>
               {MONTHS[Number(calMonth.slice(5)) - 1]} {calMonth.slice(0, 4)}
               <span style={{ fontWeight: 600, color: colors.text4 }}> · {calCount ? `${calCount} أيام إجازة` : 'بدون إجازة'}</span>
             </span>
             <button onClick={() => setCalMonth(shiftMonth(calMonth, 1))} aria-label="الشهر القادم" style={{ ...chip(false), padding: '3px 10px' }}>←</button>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, textAlign: 'center' as const }}>
-            {SHORT.map(s => <div key={s} style={{ fontSize: 10, fontWeight: 700, color: colors.text4 }}>{s}</div>)}
+            {SHORT.map(s => <div key={s} style={{ fontSize:12, fontWeight:600, color: colors.text4 }}>{s}</div>)}
             {calDays.map((d, i) => {
               if (!d) return <div key={`e${i}`} />
               const on = offDates.includes(d), isToday = d === today
               return (
                 <button key={d} onClick={() => toggleDate(d)} aria-pressed={on} aria-label={dayLabel(d)}
-                  style={{ height: 32, borderRadius: 8, fontSize: 12, fontWeight: on ? 800 : 600, cursor: 'pointer', fontFamily: font.family,
-                    border: `1.5px solid ${on ? '#3b82f6' : isToday ? colors.text4 : 'transparent'}`, background: on ? '#eff6ff' : 'transparent',
-                    color: on ? '#1d4ed8' : d < today ? colors.text4 : colors.text }}>
+                  style={{ height: 32, borderRadius:999, fontSize:13, fontWeight: on ? 800 : 600, cursor: 'pointer', fontFamily: font.family,
+                    border: `1.5px solid ${on ? 'var(--storely-navy)' : isToday ? colors.text4 : 'transparent'}`, background: on ? 'var(--storely-fill)' : 'transparent',
+                    color: on ? 'var(--storely-navy)' : d < today ? colors.text4 : colors.text }}>
                   {Number(d.slice(8))}
                 </button>
               )
             })}
           </div>
-          <div style={{ fontSize: 11, color: colors.text4, marginTop: 6 }}>اضغط على اليوم لجعله إجازة، واضغط مرة أخرى لإلغائه.</div>
+          <div style={{ fontSize:12, color: colors.text4, marginTop: 6 }}>اضغط على اليوم لجعله إجازة، واضغط مرة أخرى لإلغائه.</div>
         </div>
       )}
 
       {preview && (
-        <div style={{ fontSize: 11.5, color: preview.length ? colors.text3 : colors.text4 }}>
+        <div style={{ fontSize:13, color: preview.length ? colors.text3 : colors.text4 }}>
           {preview.length
             ? <>إجازاته هذا الشهر ({preview.length === 1 ? 'يوم واحد' : preview.length === 2 ? 'يومين' : `${preview.length} أيام`}): <b style={{ color: colors.text2 }}>{preview.map(dayLabel).join('، ')}</b></>
             : mode === 'dates' ? 'لم تحدد له إجازة هذا الشهر' : mode === 'biweekly' ? 'اختر يوم الإجازة' : 'بدون إجازة أسبوعية'}

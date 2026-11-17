@@ -9,14 +9,14 @@ export default function WasteTools({ m }: { m: AiToolsPage }) {
     <>
       {/* أدوات الهدر — الباقة الشاملة أو المتقدمة */}
       {hasAiAddon && (
-      <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:14,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
-        <div id="waste" style={{fontSize:14,fontWeight:800,color:C.text,marginBottom:10,scrollMarginTop:80}}>أين تخسر أموالك؟</div>
+      <div className="fu" style={{marginTop:16,background:C.bg,borderRadius:20,padding:'16px 20px',border:`1px solid ${C.border2}`}}>
+        <div id="waste" style={{fontSize:17,fontWeight:600,color:C.text,marginBottom:10,scrollMarginTop:80}}>أين تخسر أموالك؟</div>
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <FeatureIcon name="🐌" size={18} />
             <div style={{flex:1}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.text}}>مخزون لا يُصرف (راكد)</div>
-              <div style={{fontSize:11,color:C.text3}}>يكتشف ما تشتريه ولا تصرفه (بطيء الحركة)</div>
+              <div style={{fontSize:15,fontWeight:600,color:C.text}}>مخزون لا يُصرف (راكد)</div>
+              <div style={{fontSize:12,color:C.text3}}>يكتشف ما تشتريه ولا تصرفه (بطيء الحركة)</div>
             </div>
             <button onClick={async()=>{
               const orgId=sessionStorage.getItem('s_org_id')
@@ -26,15 +26,15 @@ export default function WasteTools({ m }: { m: AiToolsPage }) {
               const data=await res.json()
               setWasteReport(data.waste||[])
               setWasteLoading(false)
-            }} style={{padding:'6px 14px',background:'#f59e0b',color:'white',border:'none',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
-              {wasteLoading?'⏳ جاري...':'فحص الراكد'}
+            }} style={{padding:'6px 14px',background:'#b45309',color:'white',border:'none',borderRadius:999,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+              {wasteLoading?'جارٍ الفحص…':'فحص الراكد'}
             </button>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <FeatureIcon name="🗑️" size={18} />
             <div style={{flex:1}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.text}}>الهدر: تالف ومنتهي</div>
-              <div style={{fontSize:11,color:C.text3}}>من عمليات الهدر المسجّلة فعلياً (تالف، منتهي، كسر...)</div>
+              <div style={{fontSize:15,fontWeight:600,color:C.text}}>الهدر: تالف ومنتهي</div>
+              <div style={{fontSize:12,color:C.text3}}>من عمليات الهدر المسجّلة فعلياً (تالف، منتهي، كسر...)</div>
             </div>
             <button onClick={async()=>{
               const orgId=sessionStorage.getItem('s_org_id')
@@ -44,8 +44,8 @@ export default function WasteTools({ m }: { m: AiToolsPage }) {
               const data=await res.json()
               setRealWasteReport(data)
               setRealWasteLoading(false)
-            }} style={{padding:'6px 14px',background:'#dc2626',color:'white',border:'none',borderRadius:8,fontSize:11,fontWeight:700,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
-              {realWasteLoading?'⏳ جاري...':'كشف الهدر'}
+            }} style={{padding:'6px 14px',background:'#dc2626',color:'white',border:'none',borderRadius:999,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+              {realWasteLoading?'جارٍ الفحص…':'كشف الهدر'}
             </button>
           </div>
         </div>

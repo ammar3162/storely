@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { claimAttempt, consumeCode, RACE_ERROR } from '@/lib/codeAttempts'
 import { createClient } from '@supabase/supabase-js'
 import { normalizeEmail, hashCode, makeSession, sessionCookie, CODE_MAX_ATTEMPTS } from '@/lib/accountantPortalAuth'
 import { clientIp } from '@/lib/loginThrottle'
@@ -17,11 +18,10 @@ export async function POST(req: Request) {
     const r = row as any
     if (!r || Date.parse(r.expires_at) < Date.now()) return NextResponse.json({ error: 'انتهت صلاحية الرمز — اطلب رمزاً جديداً' }, { status: 400 })
     if (r.attempts >= CODE_MAX_ATTEMPTS) return NextResponse.json({ error: 'محاولات كثيرة — اطلب رمزاً جديداً' }, { status: 429 })
-    if (r.code_hash !== hashCode(email, code)) {
-      await db.from('accountant_login_codes').update({ attempts: r.attempts + 1 } as any).eq('id', r.id)
-      return NextResponse.json({ error: 'الرمز غير صحيح' }, { status: 400 })
-    }
-    await db.from('accountant_login_codes').update({ used_at: new Date().toISOString() } as any).eq('id', r.id)
+    // نحجز المحاولة قبل المقارنة — الطلبات المتزامنة ما تتجاوز الحد
+    if (!(await claimAttempt(db, 'accountant_login_codes', r.id, r.attempts))) return NextResponse.json({ error: RACE_ERROR }, { status: 429 })
+    if (r.code_hash !== hashCode(email, code)) return NextResponse.json({ error: 'الرمز غير صحيح' }, { status: 400 })
+    if (!(await consumeCode(db, 'accountant_login_codes', r.id))) return NextResponse.json({ error: 'انتهت صلاحية الرمز — اطلب رمزاً جديداً' }, { status: 400 })
 
     const { data: invite } = await db.from('accountant_access').select('name').eq('email', email).not('name', 'is', null).limit(1).maybeSingle()
     const { data: user, error } = await db.from('accountant_users').upsert({ email, last_login_at: new Date().toISOString() } as any, { onConflict: 'email' }).select('id,name').single()

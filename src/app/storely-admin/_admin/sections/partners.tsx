@@ -64,15 +64,15 @@ export default function PartnersPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <Field label="اسم المنشأة"><input value={name} onChange={e => setName(e.target.value)} maxLength={80} style={inputStyle} /></Field>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: A.text, marginBottom: 6 }}>الشعار</div>
+              <div style={{ fontSize:15, fontWeight: 600, color: A.text, marginBottom: 6 }}>الشعار</div>
               <button type="button" onClick={() => input.current?.click()} className="adm-hover"
-                style={{ width: '100%', height: 140, borderRadius: 14, border: `1.5px dashed ${A.borderStrong}`, background: A.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6, color: A.text2, fontFamily: 'inherit', fontSize: 13 }}>
+                style={{ width: '100%', height: 140, borderRadius:20, border: `1.5px dashed ${A.borderStrong}`, background: A.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6, color: A.text2, fontFamily: 'inherit', fontSize:15 }}>
                 {preview ? <img src={preview} alt="" style={{ maxHeight: 96, maxWidth: '80%', objectFit: 'contain' }} /> : <><ImagePlus size={24} color={A.text3} /> <span style={{ fontWeight: 500 }}>اختر صورة الشعار</span></>}
               </button>
               <input ref={input} type="file" accept={TYPES.join(',')} hidden onChange={e => pick(e.target.files?.[0] || null)} />
-              <div style={{ fontSize: 12, color: A.text3, marginTop: 6 }}>PNG أو JPG أو WEBP بحجم أقصاه 2 ميجابايت، ويُفضّل أن تكون الخلفية شفافة</div>
+              <div style={{ fontSize:13, color: A.text3, marginTop: 6 }}>PNG أو JPG أو WEBP بحجم أقصاه 2 ميجابايت، ويُفضّل أن تكون الخلفية شفافة</div>
             </div>
-            {error && <div style={{ fontSize: 12.5, color: A.danger, fontWeight: 600 }}>{error}</div>}
+            {error && <div style={{ fontSize:13, color: A.danger, fontWeight: 600 }}>{error}</div>}
             <Btn kind="primary" loading={saving} onClick={add}><Plus size={15} /> إضافة الشريك</Btn>
           </div>
         </Card>
@@ -81,12 +81,12 @@ export default function PartnersPage() {
           {loading ? <Loading /> : partners.length === 0 ? <Empty icon={Handshake} title="لا يوجد شركاء بعد" hint="لا يظهر القسم في الموقع حتى تضيف أول شريك" /> : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 12 }}>
               {partners.map(p => (
-                <div key={p.id} className="adm-hover" style={{ border: `1px solid ${A.border}`, borderRadius: 14, background: A.surface, overflow: 'hidden' }}>
+                <div key={p.id} className="adm-hover" style={{ border: 'none', borderRadius: 20, background: A.surface, overflow: 'hidden' }}>
                   <div style={{ height: 92, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14, borderBottom: `1px solid ${A.border}` }}>
                     <img src={p.logo_url} alt={p.name} style={{ maxWidth: '100%', maxHeight: 60, objectFit: 'contain' }} />
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 8px 8px 12px' }}>
-                    <span style={{ flex: 1, fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                    <span style={{ flex: 1, fontSize:15, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
                     <Btn small kind="ghost" onClick={() => remove(p)} title="حذف الشريك"><Trash2 size={14} /></Btn>
                   </div>
                 </div>

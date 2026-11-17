@@ -50,19 +50,19 @@ export default function BackupsPage() {
                   <Row onClick={() => setOpen(open === i ? null : i)} style={{ borderBottom: 'none' }}>
                     <Avatar name={b.org_name} size={34} />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600 }}>{b.org_name}</div>
-                      <div style={{ fontSize: 12.5, color: A.text3, marginTop: 2 }}>{b.files.length} ملف{last ? ` · آخر نسخة ${fmtDate(last, true)}` : ''}</div>
+                      <div style={{ fontSize:17, fontWeight: 600 }}>{b.org_name}</div>
+                      <div style={{ fontSize:13, color: A.text3, marginTop: 2 }}>{b.files.length} ملف{last ? ` · آخر نسخة ${fmtDate(last, true)}` : ''}</div>
                     </div>
                     <ChevronDown size={16} color={A.text3} style={{ transform: open === i ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
                   </Row>
                   {open === i && (
-                    <div style={{ margin: '0 20px 16px', border: `1px solid ${A.border}`, borderRadius: 12, overflow: 'hidden' }}>
+                    <div style={{ margin: '0 20px 16px', border: `1px solid ${A.border}`, borderRadius:20, overflow: 'hidden' }}>
                       {b.files.map((f: any, j: number) => (
                         <Row key={j} style={{ padding: '10px 14px' }}>
                           <FileSpreadsheet size={18} color={A.text3} />
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 500, color: A.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} dir="ltr">{f.name}</div>
-                            <div style={{ fontSize: 12, color: A.text3, marginTop: 2 }}>{fmtDate(f.created_at, true)} · {fmtSize(f.size)}</div>
+                            <div style={{ fontSize:15, fontWeight: 500, color: A.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} dir="ltr">{f.name}</div>
+                            <div style={{ fontSize:13, color: A.text3, marginTop: 2 }}>{fmtDate(f.created_at, true)} · {fmtSize(f.size)}</div>
                           </div>
                           {f.url && <LinkBtn small href={f.url}><Download size={14} /> تحميل</LinkBtn>}
                         </Row>

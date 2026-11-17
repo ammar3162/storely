@@ -23,10 +23,12 @@ export const LIMITS = {
   aiChatOrg:      { max: 60,  windowSec: 10 * MIN },  // المساعد الذكي
   aiChatOrgDay:   { max: 500, windowSec: DAY },
   aiScanOrg:      { max: 60,  windowSec: HOUR },      // قراءة الفواتير بالصور
+  aiScanOrgDay:   { max: 150, windowSec: DAY },       // سقف يومي آمن (كل قراءة ~0.12 ريال) — سخي للاستخدام الحقيقي
   aiInsightsOrg:  { max: 30,  windowSec: HOUR },
   aiTranslateOrg: { max: 30,  windowSec: HOUR },
-  supplierAddOrg: { max: 20,  windowSec: HOUR },
-  supportTicketOrg: { max: 6, windowSec: HOUR },     // تذاكر الدعم الفني      // إضافة موردين (يمنع إضافة 100 مورد دفعة وحدة)
+  supplierAddOrg: { max: 20,  windowSec: HOUR },      // إضافة موردين (يمنع إضافة 100 مورد دفعة وحدة)
+  supportTicketOrg: { max: 6, windowSec: HOUR },     // تذاكر الدعم الفني
+  accLoginIp:     { max: 20,  windowSec: HOUR },      // طلب رمز بوابة المحاسب من نفس الجهاز — يمنع فحص آلاف الإيميلات لمعرفة المحاسبين المربوطين
 } as const satisfies Record<string, Omit<Limit, 'key'>>
 
 export const limit = (name: keyof typeof LIMITS, id: string): Limit => ({ key: `${name}:${id}`, ...LIMITS[name] })

@@ -9,14 +9,14 @@ export default function MoveBranchModal({ m }: { m: StaffPage }) {
       {moveFor && (
         <div onClick={()=>setMoveFor(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
           <div onClick={e=>e.stopPropagation()} style={{background:colors.surface,borderRadius:radius.xl,padding:24,width:'100%',maxWidth:400,boxShadow:shadow.lg}}>
-            <div style={{fontSize:font.md,fontWeight:800,color:colors.text}}>نقل {moveFor.name} لفرع ثاني</div>
-            <div style={{fontSize:12,color:colors.text3,marginTop:4,marginBottom:14}}>حالياً بفرع «{moveFor.branches?.name || '—'}»</div>
-            <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:6}}>الفرع الجديد</label>
+            <div style={{fontSize:font.md,fontWeight:600,color:colors.text}}>نقل {moveFor.name} لفرع ثاني</div>
+            <div style={{fontSize:13,color:colors.text3,marginTop:4,marginBottom:14}}>حالياً بفرع «{moveFor.branches?.name || '—'}»</div>
+            <label style={{fontSize:font.xs,fontWeight:600,color:colors.text3,display:'block',marginBottom:6}}>الفرع الجديد</label>
             <select value={moveTo} onChange={e=>setMoveTo(e.target.value)} style={inp()}>
               <option value="">اختر الفرع</option>
               {branches.filter((b:any)=>b.id!==moveFor.branch_id).map((b:any)=><option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
-            <div style={{fontSize:11.5,color:colors.text3,background:colors.bg,borderRadius:10,padding:'10px 12px',marginTop:12,lineHeight:1.8}}>
+            <div style={{fontSize:13,color:colors.text3,background:colors.bg,borderRadius:12,padding:'10px 12px',marginTop:12,lineHeight:1.8}}>
               • يحضّر وينصرف من موقع الفرع الجديد<br/>
               • إذا كانت ورديته خاصة بالفرع السابق فسيُفك ارتباطها — حدّد له وردية في الفرع الجديد<br/>
               • المنتجات المخصصة له تنمسح (كانت من الفرع القديم)<br/>

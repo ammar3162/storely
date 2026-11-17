@@ -38,7 +38,7 @@ export default function TodayDecisions({ full, curr, onCount }: { full: boolean;
   const style = {
     urgent: { cls: 'text-[#B91C1C]', Icon: AlertCircle },
     warn: { cls: 'text-[#B45309]', Icon: AlertTriangle },
-    info: { cls: 'text-[#66737C]', Icon: Info },
+    info: { cls: 'text-[var(--storely-muted)]', Icon: Info },
   }
   // رابط داخل أدوات الذكاء (#waste): لو القسم مو بالصفحة الحالية نفتح أدوات الذكاء عليه
   const go = (href: string) => {
@@ -55,15 +55,15 @@ export default function TodayDecisions({ full, curr, onCount }: { full: boolean;
       description={`${DAY_NAMES[today.getUTCDay()]} · أهم ما يجب فعله اليوم بناءً على بياناتك`}
       actions={
         <button type="button" onClick={load} disabled={loading} aria-label="تحديث" title="تحديث"
-          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#DEE6EA] text-[#66737C] hover:bg-[#EEF2F4] hover:text-[#203640] disabled:opacity-60">
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--storely-border)] text-[var(--storely-muted)] hover:bg-[var(--storely-fill)] hover:text-[var(--storely-text)] disabled:opacity-60">
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
         </button>
       }
     >
       {list === null ? (
-        <div className="space-y-2 px-4 py-3 sm:px-[18px]">{[0, 1, 2].map(i => <div key={i} className="h-12 animate-pulse rounded-lg bg-[#EEF2F4]" />)}</div>
+        <div className="space-y-2 px-4 py-3 sm:px-[18px]">{[0, 1, 2].map(i => <div key={i} className="h-12 animate-pulse rounded-[12px] bg-[var(--storely-fill)]" />)}</div>
       ) : list.length === 0 ? (
-        <div className="flex items-center gap-2 px-4 py-4 text-[13.5px] font-semibold text-[#203640] sm:px-[18px]">
+        <div className="flex items-center gap-2 px-4 py-4 text-[15px] font-semibold text-[var(--storely-text)] sm:px-[18px]">
           <CheckCircle2 size={16} className="text-[#047857]" /> كل شيء على ما يرام اليوم، لا توجد قرارات عاجلة
         </div>
       ) : (
@@ -76,12 +76,12 @@ export default function TodayDecisions({ full, curr, onCount }: { full: boolean;
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">
                     <div className="min-w-0 max-w-full">
-                      <div className="text-[14px] font-semibold leading-6 text-[#203640]">{d.title}</div>
-                      <div className="text-[12.5px] leading-5 text-[#66737C]">{d.detail}</div>
+                      <div className="text-[17px] font-semibold leading-6 text-[var(--storely-text)]">{d.title}</div>
+                      <div className="text-[13px] leading-5 text-[var(--storely-muted)]">{d.detail}</div>
                     </div>
                     {d.action && (
                       <button type="button" onClick={() => go(d.action!.href)}
-                        className={'shrink-0 rounded-lg border px-3 py-1.5 text-[12.5px] font-semibold hover:bg-[#EEF2F4] ' + (d.level === 'urgent' ? 'border-[#F1C4C4] text-[#B91C1C]' : 'border-[#DEE6EA] text-[#203640]')}>
+                        className={'shrink-0 rounded-full border px-3 py-1.5 text-[13px] font-semibold hover:bg-[var(--storely-fill)] ' + (d.level === 'urgent' ? 'border-[#F1C4C4] text-[#B91C1C]' : 'border-[var(--storely-border)] text-[var(--storely-text)]')}>
                         {d.action.label}
                       </button>
                     )}
@@ -89,10 +89,10 @@ export default function TodayDecisions({ full, curr, onCount }: { full: boolean;
                   {d.why && (
                     <>
                       <button type="button" onClick={() => setWhyOpen(whyOpen === i ? null : i)} aria-expanded={whyOpen === i}
-                        className="mt-1 text-[12.5px] font-semibold text-[#203640] underline decoration-[#9AA7AE] decoration-dotted underline-offset-4 hover:decoration-[#203640]">
+                        className="mt-1 text-[13px] font-semibold text-[var(--storely-text)] underline decoration-[var(--storely-subtle)] decoration-dotted underline-offset-4 hover:decoration-[var(--storely-text)]">
                         {whyOpen === i ? 'إخفاء' : 'لماذا؟'}
                       </button>
-                      {whyOpen === i && <div className="mt-1.5 rounded-lg bg-[#F4F7F8] px-3 py-2 text-[13px] leading-6 text-[#203640]">{d.why}</div>}
+                      {whyOpen === i && <div className="mt-1.5 rounded-[12px] bg-[var(--storely-fill)] px-3 py-2 text-[15px] leading-6 text-[var(--storely-text)]">{d.why}</div>}
                     </>
                   )}
                 </div>

@@ -29,25 +29,25 @@ export default function PortalLocks({ orgId }: { orgId: string }) {
   }
   const list = (months || []).slice(0, showAll ? 12 : 4)
   return (
-    <section style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: radius.lg, padding: 16, marginBottom: 14, fontFamily: font.family }}>
-      <h2 style={{ fontSize: 15, fontWeight: 800, color: colors.primary, margin: '0 0 4px' }}>إقفال الأشهر</h2>
-      <div style={{ fontSize: 12, color: colors.text4, marginBottom: 10 }}>{canLock ? 'بعد مراجعة الشهر أقفله — ولن يمكن تعديل أي شيء فيه إلا إذا فتحته أنت.' : 'إذنك على فرع واحد — يتولى إقفال الشهر محاسب المنشأة كاملة، ويمكنك الاطلاع على حالة كل شهر.'}</div>
+    <section style={{ background: '#fff', border: 'none', borderRadius: radius.lg, padding: 16, marginBottom: 14, fontFamily: font.family }}>
+      <h2 style={{ fontSize:17, fontWeight:600, color: colors.primary, margin: '0 0 4px' }}>إقفال الأشهر</h2>
+      <div style={{ fontSize:13, color: colors.text4, marginBottom: 10 }}>{canLock ? 'بعد مراجعة الشهر أقفله — ولن يمكن تعديل أي شيء فيه إلا إذا فتحته أنت.' : 'إذنك على فرع واحد — يتولى إقفال الشهر محاسب المنشأة كاملة، ويمكنك الاطلاع على حالة كل شهر.'}</div>
       {!months ? <ListSkeleton/> : list.map(m => (
         <div key={m.month} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 0', borderTop: `1px solid ${colors.border}` }}>
-          <span style={{ width: 30, height: 30, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', background: m.locked ? '#ecfdf5' : '#f8fafc', color: m.locked ? '#047857' : colors.text4 }}>
+          <span style={{ width: 30, height: 30, borderRadius:12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: m.locked ? '#ecfdf5' : 'var(--storely-background)', color: m.locked ? '#047857' : colors.text4 }}>
             {m.locked ? <Lock size={15} /> : <Unlock size={15} />}</span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 800 }}>{m.label}</div>
-            <div style={{ fontSize: 11.5, color: colors.text4 }}>{m.locked ? `مقفل · ${m.locked_by_name || ''} · ${String(m.locked_at).slice(0, 10)}` : 'مفتوح'}</div>
+            <div style={{ fontSize:15, fontWeight:600 }}>{m.label}</div>
+            <div style={{ fontSize:13, color: colors.text4 }}>{m.locked ? `مقفل · ${m.locked_by_name || ''} · ${String(m.locked_at).slice(0, 10)}` : 'مفتوح'}</div>
           </div>
-          {canLock && <button onClick={() => act(m)} disabled={!!busy} style={{ padding: '7px 12px', borderRadius: 9, fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: font.family,
+          {canLock && <button onClick={() => act(m)} disabled={!!busy} style={{ padding: '7px 12px', borderRadius:999, fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: font.family,
             border: `1px solid ${m.locked ? colors.border : colors.primary}`, background: m.locked ? '#fff' : colors.primary, color: m.locked ? colors.text3 : '#fff', opacity: busy === m.month ? .6 : 1 }}>
             {busy === m.month ? '...' : m.locked ? 'افتح' : 'أقفل الشهر'}</button>}
         </div>
       ))}
-      {months && months.length > 4 && <button onClick={() => setShowAll(s => !s)} style={{ marginTop: 6, fontSize: 12.5, color: colors.text3, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, padding: 0 }}>
+      {months && months.length > 4 && <button onClick={() => setShowAll(s => !s)} style={{ marginTop: 6, fontSize:13, color: colors.text3, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, padding: 0 }}>
         {showAll ? 'أقل' : 'أشهر أقدم'}</button>}
-      {err && <div style={{ color: colors.danger, fontSize: 12.5, marginTop: 6 }}>{err}</div>}
+      {err && <div style={{ color: colors.danger, fontSize:13, marginTop: 6 }}>{err}</div>}
     </section>
   )
 }

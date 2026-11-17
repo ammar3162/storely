@@ -60,7 +60,7 @@ export default function DispenseDetail({ period, from, to, onBack, filterBar }: 
         summaryStats: [
           { label: 'كميات مصروفة', value: String(totalQty), color: colors.danger },
           { label: 'عمليات الصرف', value: String(filtered.length), color: colors.info },
-          { label: 'أصناف مختلفة', value: String(Object.keys(productMap).length), color:'#7c3aed' },
+          { label: 'أصناف مختلفة', value: String(Object.keys(productMap).length), color:'var(--storely-navy)' },
         ],
         fileName: `تقرير-الصرف-${new Date().toISOString().slice(0,10)}.pdf`,
       })
@@ -72,7 +72,7 @@ export default function DispenseDetail({ period, from, to, onBack, filterBar }: 
   const productMap:Record<string,number>={}
   filtered.forEach(m=>{const n=(m.products as any)?.name||'—';productMap[n]=(productMap[n]||0)+Math.abs(m.qty_change)})
   const topProducts=Object.entries(productMap).sort((a,b)=>b[1]-a[1]).slice(0,5)
-  const barColors=[colors.primary,colors.info,'#8b5cf6',colors.warning,colors.danger]
+  const barColors=[colors.primary,colors.info,'var(--storely-navy)',colors.warning,colors.danger]
   return (
     <div>
       <BackBtn onClick={onBack}/>
@@ -88,28 +88,28 @@ export default function DispenseDetail({ period, from, to, onBack, filterBar }: 
         {[
           {label:'كميات مصروفة',value:totalQty,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
           {label:'عمليات الصرف',value:filtered.length,color:colors.info,bg:colors.infoLight,border:colors.infoBorder},
-          {label:'أصناف مختلفة',value:Object.keys(productMap).length,color:'#7c3aed',bg:'#f5f3ff',border:'#ddd6fe'},
+          {label:'أصناف مختلفة',value:Object.keys(productMap).length,color:'var(--storely-navy)',bg:'var(--storely-fill)',border:'var(--storely-border)'},
         ].map((s,i)=>(
           <div key={i} style={{...card,padding:'16px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
-            <div style={{fontSize:28,fontWeight:900,color:s.color,letterSpacing:'-1px'}}>{s.value}</div>
-            <div style={{fontSize:font.xs,color:s.color,marginTop:4,fontWeight:700,opacity:.8}}>{s.label}</div>
+            <div style={{fontSize:28,fontWeight:600,color:s.color,letterSpacing:'-1px'}}>{s.value}</div>
+            <div style={{fontSize:font.xs,color:s.color,marginTop:4,fontWeight:600,opacity:.8}}>{s.label}</div>
           </div>
         ))}
       </div>
       {topProducts.length>0&&(
         <div style={{...card,padding:'16px 18px',marginBottom:16}}>
-          <div style={{fontSize:font.base,fontWeight:800,color:colors.text,marginBottom:14,display:'flex',alignItems:'center',gap:6}}><Trophy size={16} strokeWidth={2.25}/> الأكثر صرفاً</div>
+          <div style={{fontSize:font.base,fontWeight:600,color:colors.text,marginBottom:14,display:'flex',alignItems:'center',gap:6}}><Trophy size={16} strokeWidth={2.25}/> الأكثر صرفاً</div>
           {topProducts.map(([name,qty],i)=>{
             const pct=Math.round((qty/topProducts[0][1])*100)
             return(
               <div key={i} style={{display:'flex',alignItems:'center',gap:10,marginBottom:i<topProducts.length-1?12:0}}>
-                <div style={{width:26,height:26,borderRadius:8,background:barColors[i]+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:`1px solid ${barColors[i]}44`}}>
-                  <span style={{fontSize:11,fontWeight:900,color:barColors[i]}}>{i+1}</span>
+                <div style={{width:26,height:26,borderRadius:12,background:barColors[i]+'22',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:`1px solid ${barColors[i]}44`}}>
+                  <span style={{fontSize:12,fontWeight:600,color:barColors[i]}}>{i+1}</span>
                 </div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{display:'flex',justifyContent:'space-between',marginBottom:5}}>
-                    <span style={{fontSize:font.sm,fontWeight:700,color:colors.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const,maxWidth:200}}>{name}</span>
-                    <span style={{fontSize:font.sm,fontWeight:900,color:barColors[i]}}>{qty}</span>
+                    <span style={{fontSize:font.sm,fontWeight:600,color:colors.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const,maxWidth:200}}>{name}</span>
+                    <span style={{fontSize:font.sm,fontWeight:600,color:barColors[i]}}>{qty}</span>
                   </div>
                   <div style={{height:5,background:colors.border,borderRadius:99}}>
                     <div style={{height:'100%',width:pct+'%',background:barColors[i],borderRadius:99,transition:'width .6s'}}/>
@@ -129,7 +129,7 @@ export default function DispenseDetail({ period, from, to, onBack, filterBar }: 
           </button>
         </div>
         {loading?(<ListSkeleton/>
-        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><Inbox size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:700,color:colors.text2}}>لا توجد نتائج</div></div>
+        ):filtered.length===0?(<div style={{padding:56,textAlign:'center'}}><div style={{marginBottom:10,display:'flex',justifyContent:'center',color:colors.text4}}><Inbox size={40} strokeWidth={1.5}/></div><div style={{fontSize:font.base,fontWeight:600,color:colors.text2}}>لا توجد نتائج</div></div>
         ):(
           <>
           <div style={{overflowX:'auto'}}>
@@ -137,7 +137,7 @@ export default function DispenseDetail({ period, from, to, onBack, filterBar }: 
               <thead>
                 <tr style={{background:colors.bg,borderBottom:`1.5px solid ${colors.border}`}}>
                   {['التاريخ','المنتج','الكمية','الموظف','الملاحظة'].map((h,i)=>(
-                    <th key={i} style={{padding:'10px 16px',color:colors.text4,fontSize:font.xs,fontWeight:700,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
+                    <th key={i} style={{padding:'10px 16px',color:colors.text4,fontSize:font.xs,fontWeight:600,textAlign:'right' as const,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -145,9 +145,9 @@ export default function DispenseDetail({ period, from, to, onBack, filterBar }: 
                 {filtered.map((m,i)=>(
                   <tr key={m.id} style={{borderBottom:`1px solid ${colors.border}`,background:i%2===0?colors.surface:colors.bg}}>
                     <td style={{padding:'11px 16px',fontSize:font.xs,color:colors.text3,whiteSpace:'nowrap' as const}}>{new Date(m.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',month:'short',day:'numeric'})}</td>
-                    <td data-label="المنتج" style={{padding:'11px 16px',fontSize:font.sm,fontWeight:700,color:colors.text}}>{(m.products as any)?.name}</td>
-                    <td data-label="الكمية" style={{padding:'11px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:900}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
-                    <td data-label="الموظف" style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'var(--storely-background)',color:'#203640',fontSize:font.xs,fontWeight:700,padding:'3px 8px',borderRadius:99,border:'1px solid var(--storely-border)'}}>
+                    <td data-label="المنتج" style={{padding:'11px 16px',fontSize:font.sm,fontWeight:600,color:colors.text}}>{(m.products as any)?.name}</td>
+                    <td data-label="الكمية" style={{padding:'11px 16px'}}><span style={{...tag(colors.danger,colors.dangerLight,colors.dangerBorder),fontWeight:600}}>▼ {Math.abs(m.qty_change)} {(m.products as any)?.unit}</span></td>
+                    <td data-label="الموظف" style={{padding:'11px 16px'}}><span style={{display:'inline-flex',alignItems:'center',gap:5,background:'var(--storely-background)',color:'#203640',fontSize:font.xs,fontWeight:600,padding:'3px 8px',borderRadius:99,border:'1px solid var(--storely-border)'}}>
 {(m.profiles as any)?.full_name||(m.staff_members as any)?.name||(m.note?.match(/بواسطة[^:]*:\s*(.+)/)?.[1])||'—'}
 </span></td>
                     <td data-label="الملاحظة" style={{padding:'11px 16px',fontSize:font.xs,color:colors.text4}}>
@@ -159,8 +159,8 @@ export default function DispenseDetail({ period, from, to, onBack, filterBar }: 
             </table>
           </div>
           <div style={{padding:'12px 16px',background:colors.dangerLight,borderTop:`1.5px solid ${colors.dangerBorder}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-            <span style={{fontSize:font.sm,fontWeight:700,color:colors.danger}}>{filtered.length} عملية</span>
-            <span style={{fontSize:font.base,fontWeight:900,color:colors.danger}}>{totalQty} وحدة مصروفة</span>
+            <span style={{fontSize:font.sm,fontWeight:600,color:colors.danger}}>{filtered.length} عملية</span>
+            <span style={{fontSize:font.base,fontWeight:600,color:colors.danger}}>{totalQty} وحدة مصروفة</span>
           </div>
           </>
         )}

@@ -80,7 +80,7 @@ export default function AddonsMarketPage() {
       ? (() => { const end = addonPeriodEnd(subEndsAt); return { ...proratedCharge(monthlyDelta, 1, end), endStr: end.toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', month: 'long', day: 'numeric' }) } })()
       : dueNow(addon, qty)
     return (
-      <div style={{ fontSize: 11, color: colors.text3, lineHeight: 1.7, marginBottom: 12 }}>
+      <div style={{ fontSize:12, color: colors.text3, lineHeight: 1.7, marginBottom: 12 }}>
         تدفع الآن <b style={{ color: colors.text }}>{d.amount} ⃁</b> عن {d.days} يوماً حتى تجديد باقتك ({d.endStr})، ثم تتجدد مع الباقة.
       </div>
     )
@@ -113,20 +113,20 @@ export default function AddonsMarketPage() {
   function RequestBtn({ addon, quantity, branchIds, label, link }: { addon: any; quantity: number; branchIds?: string[]; label: string; link?: boolean }) {
     const pend = pendingFor(addon.id)
     if (pend) return (
-      <div style={{ marginTop: link ? 10 : 0, padding: '10px 12px', borderRadius: 10, background: colors.warningLight, border: `1px solid ${colors.warningBorder}`, fontSize: 12, color: colors.warning, fontWeight: 700, textAlign: 'center' as const }}>
+      <div style={{ marginTop: link ? 10 : 0, padding: '10px 12px', borderRadius:12, background: colors.warningLight, border: `1px solid ${colors.warningBorder}`, fontSize:13, color: colors.warning, fontWeight:600, textAlign: 'center' as const }}>
         طلبك قيد المراجعة
-        <button onClick={() => cancelRequest(pend)} style={{ display: 'block', margin: '6px auto 0', border: 'none', background: 'none', color: colors.text3, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>إلغاء الطلب</button>
+        <button onClick={() => cancelRequest(pend)} style={{ display: 'block', margin: '6px auto 0', border: 'none', background: 'none', color: colors.text3, fontSize:12, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>إلغاء الطلب</button>
       </div>
     )
     if (link) return (
       <button onClick={() => requestAddon(addon, quantity, branchIds)} disabled={sending === addon.id}
-        style={{ display: 'inline-block', marginTop: 10, fontSize: 11, fontWeight: 700, color: colors.primary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+        style={{ display: 'inline-block', marginTop: 10, fontSize:12, fontWeight:600, color: colors.primary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
         {sending === addon.id ? 'جاري الإرسال...' : label}
       </button>
     )
     return (
       <button onClick={() => requestAddon(addon, quantity, branchIds)} disabled={sending === addon.id}
-        style={{ display: 'block', width: '100%', textAlign: 'center' as const, padding: '11px', background: colors.primary, color: 'white', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: sending === addon.id ? .7 : 1 }}>
+        style={{ display: 'block', width: '100%', textAlign: 'center' as const, padding: '11px', background: colors.primary, color: 'white', border: 'none', borderRadius:12, fontSize:15, fontWeight:600, cursor: 'pointer', fontFamily: 'inherit', opacity: sending === addon.id ? .7 : 1 }}>
         {sending === addon.id ? 'جاري الإرسال...' : label}
       </button>
     )
@@ -148,8 +148,8 @@ export default function AddonsMarketPage() {
 
   if (inApp) return (
     <div style={{ fontFamily: font.family, direction: 'rtl', maxWidth: 480, margin: '80px auto', textAlign: 'center' as const, ...card, padding: 32 }}>
-      <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 8 }}>الإضافات</div>
-      <div style={{ fontSize: 13, color: colors.text3, lineHeight: 1.8 }}>إدارة الاشتراك والإضافات متاحة من حسابك على الموقع.</div>
+      <div style={{ fontSize:17, fontWeight:600, color: colors.text, marginBottom: 8 }}>الإضافات</div>
+      <div style={{ fontSize:15, color: colors.text3, lineHeight: 1.8 }}>إدارة الاشتراك والإضافات متاحة من حسابك على الموقع.</div>
     </div>
   )
 
@@ -180,23 +180,23 @@ export default function AddonsMarketPage() {
         }
         return (
           <div style={{ ...card, padding: 18, marginBottom: 20 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10 }}>فاتورتك الحالية</div>
+            <div style={{ fontSize:15, fontWeight:600, color: colors.text, marginBottom: 10 }}>فاتورتك الحالية</div>
             {bill.lines.map((l, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, color: colors.text3, padding: '4px 0' }}>
-                <span>{l.label}</span><span style={{ fontWeight: 700, color: colors.text, whiteSpace: 'nowrap' }}>{l.amount} ⃁</span>
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize:13, color: colors.text3, padding: '4px 0' }}>
+                <span>{l.label}</span><span style={{ fontWeight:600, color: colors.text, whiteSpace: 'nowrap' }}>{l.amount} ⃁</span>
               </div>
             ))}
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${colors.border}`, marginTop: 8, paddingTop: 10, fontSize: 14, fontWeight: 900, color: colors.primary }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${colors.border}`, marginTop: 8, paddingTop: 10, fontSize:17, fontWeight:600, color: colors.primary }}>
               <span>الإجمالي</span><span>{bill.total} ⃁</span>
             </div>
             {up && plan.cycle === 'monthly' && bill.total >= upPrice && (
-              <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, fontSize: 12, color: colors.text, lineHeight: 1.8 }}>
-                <b style={{ color: colors.primary }}>باقة «{PLAN_PRICING[up].label}» أوفر لك:</b> {upPrice} ⃁ شهرياً{plan.maxBranches > 1 ? ` لـ ${plan.maxBranches} فروع` : ''}، وفيها {up === 'essential' ? 'المخزون والمشتريات لكل الفروع' : up === 'ops' ? 'المخزون والمشتريات وإقفال الكاشير لكل الفروع' : 'كل المميزات لكل الفروع'}. <a href="/settings" style={{ color: colors.primary, fontWeight: 800 }}>اطلب الترقية</a>
+              <div style={{ marginTop: 12, padding: '10px 12px', borderRadius:12, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, fontSize:13, color: colors.text, lineHeight: 1.8 }}>
+                <b style={{ color: colors.primary }}>باقة «{PLAN_PRICING[up].label}» أوفر لك:</b> {upPrice} ⃁ شهرياً{plan.maxBranches > 1 ? ` لـ ${plan.maxBranches} فروع` : ''}، وفيها {up === 'essential' ? 'المخزون والمشتريات لكل الفروع' : up === 'ops' ? 'المخزون والمشتريات وإقفال الكاشير لكل الفروع' : 'كل المميزات لكل الفروع'}. <a href="/settings" style={{ color: colors.primary, fontWeight:600 }}>اطلب الترقية</a>
               </div>
             )}
             {pk === 'basic' && plan.cycle === 'monthly' && bill.total >= PLAN_PRICING.pro.monthly && (
-              <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, fontSize: 12, color: colors.text, lineHeight: 1.8 }}>
-                <b style={{ color: colors.primary }}>الشاملة أوفر لك:</b> {PLAN_PRICING.pro.monthly} ⃁ شهرياً وفيها كل المميزات و3 فروع و15 موظف. <a href="/settings" style={{ color: colors.primary, fontWeight: 800 }}>اطلب الترقية</a>
+              <div style={{ marginTop: 12, padding: '10px 12px', borderRadius:12, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, fontSize:13, color: colors.text, lineHeight: 1.8 }}>
+                <b style={{ color: colors.primary }}>الشاملة أوفر لك:</b> {PLAN_PRICING.pro.monthly} ⃁ شهرياً وفيها كل المميزات و3 فروع و15 موظف. <a href="/settings" style={{ color: colors.primary, fontWeight:600 }}>اطلب الترقية</a>
               </div>
             )}
           </div>
@@ -215,11 +215,11 @@ export default function AddonsMarketPage() {
               const qty = qtyMap[a.id] || 1
               return (
                 <div key={a.id} style={{ ...card, padding: 20 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--storely-background)', border: '1px solid var(--storely-border)', color: 'var(--storely-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}><FeatureIcon name={a.icon || ''} size={22} /></div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
-                  <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14 }}>{a.description}</div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 14 }}>
-                    {a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text4 }}>⃁ / موظف / شهر — فوق حد باقتك</span>
+                  <div style={{ width: 44, height: 44, borderRadius:12, background: 'var(--storely-background)', border: '1px solid var(--storely-border)', color: 'var(--storely-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}><FeatureIcon name={a.icon || ''} size={22} /></div>
+                  <div style={{ fontSize:17, fontWeight:600, color: colors.text, marginBottom: 6 }}>{a.name}</div>
+                  <div style={{ fontSize:13, color: colors.text3, lineHeight: 1.7, marginBottom: 14 }}>{a.description}</div>
+                  <div style={{ fontSize:20, fontWeight:600, color: colors.primary, marginBottom: 14 }}>
+                    {a.monthly_price} <span style={{ fontSize:12, fontWeight:600, color: colors.text4 }}>⃁ / موظف / شهر — فوق حد باقتك</span>
                   </div>
 
                   {subs.length > 0 && (
@@ -227,12 +227,12 @@ export default function AddonsMarketPage() {
                       {subs.map((s: any) => {
                         const branchName = branches.find(b => b.id === s.branch_id)?.name || 'فرع'
                         return (
-                          <div key={s.branch_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}` }}>
-                            <div style={{ flex: 1, fontSize: 11, color: colors.text }}>
+                          <div key={s.branch_id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius:12, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}` }}>
+                            <div style={{ flex: 1, fontSize:12, color: colors.text }}>
                               {branchName} — مفعّلة لـ{s.quantity} حتى {new Date(s.expires_at).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn' })}
                             </div>
                             <button onClick={() => cancelAddon(a, s.branch_id)} disabled={cancelling === a.id + s.branch_id}
-                              style={{ padding: '4px 10px', borderRadius: 6, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              style={{ padding: '4px 10px', borderRadius:999, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, fontSize:12, fontWeight:600, cursor: 'pointer', fontFamily: 'inherit' }}>
                               {cancelling === a.id + s.branch_id ? '...' : 'إلغاء'}
                             </button>
                           </div>
@@ -246,17 +246,17 @@ export default function AddonsMarketPage() {
                       <DueNote addon={a} qty={qty} />
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                         <select value={selectedBranch} onChange={e => setStaffBranchMap(prev => ({ ...prev, extra_staff_default: e.target.value }))}
-                          style={{ flex: 1, padding: '6px 8px', borderRadius: 8, border: `1px solid ${colors.border2}`, fontSize: 12, fontFamily: 'inherit', background: 'white' }}>
+                          style={{ flex: 1, padding: '6px 8px', borderRadius:12, border: `1px solid ${colors.border2}`, fontSize:13, fontFamily: 'inherit', background: 'white' }}>
                           {branches.map((b: any) => (<option key={b.id} value={b.id}>{b.name}</option>))}
                         </select>
                         <NumberInput min={1} max={20} value={qty}
                           onChange={e => setQtyMap(prev => ({ ...prev, [a.id]: Math.max(1, Math.min(20, Number(e.target.value) || 1)) }))}
-                          style={{ width: 56, padding: '6px 4px', borderRadius: 8, border: `1px solid ${colors.border2}`, fontSize: 12, textAlign: 'center' as const, fontFamily: 'inherit' }} />
+                          style={{ width: 56, padding: '6px 4px', borderRadius:12, border: `1px solid ${colors.border2}`, fontSize:13, textAlign: 'center' as const, fontFamily: 'inherit' }} />
                       </div>
                       <RequestBtn addon={a} quantity={qty} branchIds={selectedBranch ? [selectedBranch] : undefined} label={`اطلب الإضافة (${qty * a.monthly_price} ⃁)`} />
                     </>
                   ) : (
-                    <div style={{ fontSize: 11, color: colors.text4, textAlign: 'center' as const }}>لا توجد فروع نشطة حالياً</div>
+                    <div style={{ fontSize:12, color: colors.text4, textAlign: 'center' as const }}>لا توجد فروع نشطة حالياً</div>
                   )}
                 </div>
               )
@@ -275,25 +275,25 @@ export default function AddonsMarketPage() {
               const delta = monthlyFor(chosen.length) - (active ? monthlyFor(subBranches.length) : 0)
               return (
                 <div key={a.id} style={{ ...card, padding: 20, border: active ? `1.5px solid ${colors.primaryBorder}` : undefined, background: active ? colors.primaryLight : undefined }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
-                  <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14, minHeight: 40 }}>{a.description}</div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 12 }}>
-                    {a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text3 }}>{isMod && a.extra_price !== a.monthly_price ? `⃁ للفرع الأول، و${a.extra_price} ⃁ لكل فرع إضافي` : '⃁ / فرع / شهر'}</span>
+                  <div style={{ fontSize:17, fontWeight:600, color: colors.text, marginBottom: 6 }}>{a.name}</div>
+                  <div style={{ fontSize:13, color: colors.text3, lineHeight: 1.7, marginBottom: 14, minHeight: 40 }}>{a.description}</div>
+                  <div style={{ fontSize:20, fontWeight:600, color: colors.primary, marginBottom: 12 }}>
+                    {a.monthly_price} <span style={{ fontSize:12, fontWeight:600, color: colors.text3 }}>{isMod && a.extra_price !== a.monthly_price ? `⃁ للفرع الأول، و${a.extra_price} ⃁ لكل فرع إضافي` : '⃁ / فرع / شهر'}</span>
                   </div>
                   {active && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize:13, fontWeight:600, color: colors.primary, marginBottom: 10 }}>
                       <Check size={15} /> مفعّلة لـ {subBranches.length} {subBranches.length === 1 ? 'فرع' : 'فروع'} حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn' })}
                     </div>
                   )}
                   {branches.length > 1 && (
                     <>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: colors.text, marginBottom: 6 }}>الفروع المطلوبة:</div>
+                      <div style={{ fontSize:13, fontWeight:600, color: colors.text, marginBottom: 6 }}>الفروع المطلوبة:</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
                         {branches.map((b: any) => {
                           const sel = chosen.includes(b.id)
                           return (
                             <button key={b.id} type="button" onClick={() => setBranchPick(p => ({ ...p, [a.id]: sel ? chosen.filter(x => x !== b.id) : [...chosen, b.id] }))}
-                              style={{ padding: '6px 12px', borderRadius: 99, fontSize: 12, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+                              style={{ padding: '6px 12px', borderRadius: 99, fontSize:13, fontWeight:600, fontFamily: 'inherit', cursor: 'pointer',
                                 border: `1px solid ${sel ? colors.primary : colors.border2}`, background: sel ? colors.primary : 'white', color: sel ? 'white' : colors.text }}>
                               {b.name}
                             </button>
@@ -304,18 +304,18 @@ export default function AddonsMarketPage() {
                   )}
                   {(!active || changed) && chosen.length > 0 && (
                     <>
-                      <div style={{ fontSize: 12, color: colors.text, marginBottom: 8 }}>
+                      <div style={{ fontSize:13, color: colors.text, marginBottom: 8 }}>
                         الشهري: <b>{monthlyFor(chosen.length)} ⃁</b> ({chosen.length} {chosen.length === 1 ? 'فرع' : 'فروع'})
-                        {active && chosen.length < subBranches.length && <span style={{ display: 'block', color: colors.text3, fontSize: 11 }}>الفروع التي تُزيلها تتوقف عند تجديد باقتك القادم.</span>}
+                        {active && chosen.length < subBranches.length && <span style={{ display: 'block', color: colors.text3, fontSize:12 }}>الفروع التي تُزيلها تتوقف عند تجديد باقتك القادم.</span>}
                       </div>
                       {added > 0 && (isMod ? delta > 0 && <DueNote addon={a} qty={added} monthlyDelta={delta} /> : <DueNote addon={a} qty={added} />)}
                       <RequestBtn addon={a} quantity={chosen.length} branchIds={chosen} label={active ? 'اطلب تعديل الفروع' : 'اطلب الإضافة'} />
                     </>
                   )}
-                  {chosen.length === 0 && <div style={{ fontSize: 12, color: colors.danger }}>اختر فرع واحد على الأقل</div>}
+                  {chosen.length === 0 && <div style={{ fontSize:13, color: colors.danger }}>اختر فرع واحد على الأقل</div>}
                   {active && !changed && (
                     <button onClick={() => cancelAddon(a)} disabled={cancelling === a.id}
-                      style={{ marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 6, border: 'none', background: 'none', color: colors.danger, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      style={{ marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 6, border: 'none', background: 'none', color: colors.danger, fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: 'inherit' }}>
                       <Trash2 size={14} /> {cancelling === a.id ? 'جاري الإلغاء…' : 'إلغاء الإضافة'}
                     </button>
                   )}
@@ -327,45 +327,45 @@ export default function AddonsMarketPage() {
                 {active && (
                   <button onClick={() => cancelAddon(a)} disabled={cancelling === a.id}
                     title="إلغاء الاشتراك"
-                    style={{ position: 'absolute' as const, top: 12, left: 12, width: 26, height: 26, borderRadius: 8, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>
+                    style={{ position: 'absolute' as const, top: 12, left: 12, width: 26, height: 26, borderRadius:999, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize:13 }}>
                     {cancelling === a.id ? '…' : <Trash2 size={14} />}
                   </button>
                 )}
-                <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--storely-background)', border: '1px solid var(--storely-border)', color: 'var(--storely-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}><FeatureIcon name={a.icon || ''} size={22} /></div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: colors.text, marginBottom: 6 }}>{a.name}</div>
-                <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginBottom: 14, minHeight: 40 }}>{a.description}</div>
+                <div style={{ width: 44, height: 44, borderRadius:12, background: 'var(--storely-background)', border: '1px solid var(--storely-border)', color: 'var(--storely-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}><FeatureIcon name={a.icon || ''} size={22} /></div>
+                <div style={{ fontSize:17, fontWeight:600, color: colors.text, marginBottom: 6 }}>{a.name}</div>
+                <div style={{ fontSize:13, color: colors.text3, lineHeight: 1.7, marginBottom: 14, minHeight: 40 }}>{a.description}</div>
                 {a.slug === 'extra_branch' ? (
-                  <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 14 }}>
-                    {plan ? branchPriceFor(plan.key) : a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text4 }}>⃁ / فرع / شهر</span>
+                  <div style={{ fontSize:20, fontWeight:600, color: colors.primary, marginBottom: 14 }}>
+                    {plan ? branchPriceFor(plan.key) : a.monthly_price} <span style={{ fontSize:12, fontWeight:600, color: colors.text4 }}>⃁ / فرع / شهر</span>
                   </div>
                 ) : (() => {
                   const isQtyAddon = a.slug === 'extra_suppliers'
                   const qty = qtyMap[a.id] || 1
                   return (
-                    <div style={{ fontSize: 18, fontWeight: 900, color: colors.primary, marginBottom: 14 }}>
-                      {isQtyAddon && !active ? qty * a.monthly_price : a.monthly_price} <span style={{ fontSize: 11, fontWeight: 700, color: colors.text4 }}>⃁ / شهر{isQtyAddon ? ` (${a.monthly_price} ⃁/وحدة)` : ''}</span>
+                    <div style={{ fontSize:20, fontWeight:600, color: colors.primary, marginBottom: 14 }}>
+                      {isQtyAddon && !active ? qty * a.monthly_price : a.monthly_price} <span style={{ fontSize:12, fontWeight:600, color: colors.text4 }}>⃁ / شهر{isQtyAddon ? ` (${a.monthly_price} ⃁/وحدة)` : ''}</span>
                     </div>
                   )
                 })()}
 
                 {active ? (
                   <div style={{ textAlign: 'center' as const }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: colors.primary, marginBottom: 4 }}><Check size={15} /> مفعّلة{(a.slug==='extra_suppliers'||a.slug==='extra_branch') ? ` (${a.subscription?.quantity||1})` : ''}</div>
-                    <div style={{ fontSize: 10, color: colors.text4 }}>حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn' })}</div>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize:13, fontWeight:600, color: colors.primary, marginBottom: 4 }}><Check size={15} /> مفعّلة{(a.slug==='extra_suppliers'||a.slug==='extra_branch') ? ` (${a.subscription?.quantity||1})` : ''}</div>
+                    <div style={{ fontSize:12, color: colors.text4 }}>حتى {new Date(a.subscription.expires_at).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn' })}</div>
                     {a.slug === 'extra_branch' && (
-                      <a href="/branches" style={{ display: 'block', marginTop: 8, fontSize: 12, fontWeight: 700, color: colors.primary, textDecoration: 'none' }}>تحتاج فرع زيادة؟ اطلبه من صفحة الفروع</a>
+                      <a href="/branches" style={{ display: 'block', marginTop: 8, fontSize:13, fontWeight:600, color: colors.primary, textDecoration: 'none' }}>تحتاج فرع زيادة؟ اطلبه من صفحة الفروع</a>
                     )}
                   </div>
                 ) : a.slug === 'extra_branch' ? (
-                  <a href="/branches" style={{ display: 'block', textAlign: 'center' as const, padding: '10px', borderRadius: 10, background: colors.primary, color: 'white', fontSize: 13, fontWeight: 800, textDecoration: 'none' }}>اطلب فرع من صفحة الفروع</a>
+                  <a href="/branches" style={{ display: 'block', textAlign: 'center' as const, padding: '10px', borderRadius:12, background: colors.primary, color: 'white', fontSize:15, fontWeight:600, textDecoration: 'none' }}>اطلب فرع من صفحة الفروع</a>
                 ) : (
                   <>
                     {a.slug === 'extra_suppliers' && (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 10 }}>
-                        <span style={{ fontSize: 11, color: colors.text3, fontWeight: 700 }}>الكمية:</span>
+                        <span style={{ fontSize:12, color: colors.text3, fontWeight:600 }}>الكمية:</span>
                         <NumberInput min={1} max={20} value={qtyMap[a.id] || 1}
                           onChange={e => setQtyMap(prev => ({ ...prev, [a.id]: Math.max(1, Math.min(20, Number(e.target.value) || 1)) }))}
-                          style={{ width: 56, padding: '6px 4px', borderRadius: 8, border: `1px solid ${colors.border2}`, fontSize: 12, textAlign: 'center' as const, fontFamily: 'inherit' }} />
+                          style={{ width: 56, padding: '6px 4px', borderRadius:12, border: `1px solid ${colors.border2}`, fontSize:13, textAlign: 'center' as const, fontFamily: 'inherit' }} />
                       </div>
                     )}
                     <DueNote addon={a} qty={qtyMap[a.id] || 1} />
