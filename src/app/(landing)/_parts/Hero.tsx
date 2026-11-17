@@ -37,7 +37,6 @@ export default function Hero({ m }: { m: LandingState }) {
         <button className="lp-btn lp-btn-line lp-btn-lg" onClick={watch}><Play size={16} fill="currentColor" aria-hidden />{t('heroVideo')}</button>
       </div>
       <p className="ap-note">{t('heroNote')}</p>
-      <button className="ap-alt" onClick={switchVideo}>{t('heroOr')} {t(other.k)} ({other.sec} {t('heroSecLong')})</button>
 
       <div className="ap-stage">
         <div className="ap-side ap-side-r" aria-hidden="true"><img src="/landing/dash2.webp" alt="" width={720} height={1559} /></div>
@@ -52,6 +51,7 @@ export default function Hero({ m }: { m: LandingState }) {
           )}
         </div>
       </div>
+      <button className="ap-alt" onClick={switchVideo}>{t('heroOr')} {t(other.k)} ({other.sec} {t('heroSecLong')})</button>
     </header>
   )
 }

@@ -189,6 +189,7 @@ html,body{overflow-x:clip}
   .lp-demo-form,.lp-demo-side{padding:32px 22px}
   .lp-cta{padding:72px 20px}
   .lp-cta-row .lp-btn{width:100%}
+  .lp-wa-float{width:48px;height:48px;bottom:16px;left:16px}
   .lp-foot-grid{grid-template-columns:minmax(0,1fr)}
 }
 @media (prefers-reduced-motion:reduce){

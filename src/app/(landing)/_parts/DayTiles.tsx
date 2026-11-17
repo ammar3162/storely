@@ -25,9 +25,11 @@ export default function DayTiles({ m }: { m: LandingState }) {
       <div className="ap-grid">
         {TILES.map(x => (
           <article key={x.n} className={`ap-tile ${x.tone === 'navy' ? 'ap-navy' : 'ap-sandt'}${x.wide ? ' ap-wide' : ''}`}>
-            <span className="ap-time"><span className="ap-dot" aria-hidden="true" />{t(`day${x.n}T`)}</span>
-            <h3>{t(`day${x.n}H`)}</h3>
-            <p>{t(`day${x.n}S`)}</p>
+            <div className="ap-txt">
+              <span className="ap-time"><span className="ap-dot" aria-hidden="true" />{t(`day${x.n}T`)}</span>
+              <h3>{t(`day${x.n}H`)}</h3>
+              <p>{t(`day${x.n}S`)}</p>
+            </div>
             <div className="ap-shot"><img src={`/landing/${x.img}.webp`} alt={t(`day${x.n}Alt`)} width={720} height={x.h} loading="lazy" decoding="async" /></div>
           </article>
         ))}
