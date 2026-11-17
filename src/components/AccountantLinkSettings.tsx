@@ -27,10 +27,10 @@ type Form = { name: string; email: string; whatsapp: string; channels: string[];
 const EMPTY: Form = { name: '', email: '', whatsapp: '', channels: ['email'], sections: ['sales', 'purchases', 'vat', 'payables', 'payroll', 'expenses', 'cash_diff'],
   frequency: 'monthly', weekday: 0, month_day: 2, send_hour: 8, branch_id: '', vat_registered: true, is_active: true }
 
-const label: React.CSSProperties = { fontSize: 12.5, fontWeight: 700, color: colors.text2, display: 'block', marginBottom: 6 }
-const chip = (on: boolean): React.CSSProperties => ({ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 99, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+const label: React.CSSProperties = { fontSize:13, fontWeight:600, color: colors.text2, display: 'block', marginBottom: 6 }
+const chip = (on: boolean): React.CSSProperties => ({ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 99, fontSize:15, fontWeight:600, cursor: 'pointer',
   fontFamily: font.family, border: `1px solid ${on ? colors.primary : colors.border}`, background: on ? colors.primary : colors.surface, color: on ? '#fff' : colors.text3 })
-const box: React.CSSProperties = { background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: radius.lg, padding: 16, marginBottom: 12 }
+const box: React.CSSProperties = { background: colors.surface, border: 'none', borderRadius: radius.lg, padding: 16, marginBottom: 12 }
 
 // قسم مطوي: رقم الخطوة + العنوان + ملخص الإعداد الحالي، والضغط يفتح التفاصيل
 function Step({ n, title, summary, open, onToggle, children }: { n: string; title: string; summary: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
@@ -38,10 +38,10 @@ function Step({ n, title, summary, open, onToggle, children }: { n: string; titl
     <div style={{ ...box, padding: 0 }}>
       <button type="button" onClick={onToggle} aria-expanded={open}
         style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, textAlign: 'right' }}>
-        <span style={{ width: 26, height: 26, borderRadius: 8, background: colors.bg, border: `1px solid ${colors.border}`, color: colors.text, fontSize: 13, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n}</span>
+        <span style={{ width: 26, height: 26, borderRadius:12, background: colors.bg, border: `1px solid ${colors.border}`, color: colors.text, fontSize:15, fontWeight:600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n}</span>
         <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: 'block', fontSize: 14, fontWeight: 800, color: colors.text }}>{title}</span>
-          <span style={{ display: 'block', fontSize: 12, color: colors.text3, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{summary}</span>
+          <span style={{ display: 'block', fontSize:17, fontWeight:600, color: colors.text }}>{title}</span>
+          <span style={{ display: 'block', fontSize:13, color: colors.text3, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{summary}</span>
         </span>
         <ChevronDown size={18} color={colors.text3} style={{ flexShrink: 0, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
       </button>
@@ -138,25 +138,25 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
   return (
     <div style={{ fontFamily: font.family }}>
       <div style={box}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: colors.text }}>التقارير التلقائية للمحاسب</div>
-        <div style={{ fontSize: 12.5, color: colors.text3, marginTop: 4, lineHeight: 1.7 }}>
+        <div style={{ fontSize:17, fontWeight:600, color: colors.text }}>التقارير التلقائية للمحاسب</div>
+        <div style={{ fontSize:13, color: colors.text3, marginTop: 4, lineHeight: 1.7 }}>
           يصل إلى محاسبك تقرير تلقائي يتضمن ملف إكسل بالبيانات التي تختارها فقط — عبر البريد الإلكتروني أو واتساب — في الموعد الذي تحدده.
         </div>
         {invite?.status === 'pending' && (
-          <div style={{ marginTop: 10, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
-            <div style={{ flex: 1, minWidth: 200, fontSize: 12.5, lineHeight: 1.7, color: '#92400e' }}>
+          <div style={{ marginTop: 10, background: '#fffbeb', border: '1px solid #fde68a', borderRadius:12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
+            <div style={{ flex: 1, minWidth: 200, fontSize:13, lineHeight: 1.7, color: '#92400e' }}>
               <b>بانتظار قبول المحاسب</b> — أرسلنا إليه بريداً إلكترونياً يتضمن زر «قبول الدعوة» على <span dir="ltr">{saved?.email}</span>. وستبدأ التقارير بالوصول إليه فور قبوله.
             </div>
-            <button onClick={resendInvite} disabled={!!busy} style={{ ...btnSecondary, padding: '6px 12px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Send size={13} /> إعادة إرسال الدعوة</button>
+            <button onClick={resendInvite} disabled={!!busy} style={{ ...btnSecondary, padding: '6px 12px', fontSize:13, display: 'inline-flex', alignItems: 'center', gap: 4 }}><Send size={13} /> إعادة إرسال الدعوة</button>
           </div>
         )}
-        {invite?.status === 'active' && <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize: 12.5, fontWeight: 700, color: '#047857' }}><CheckCircle2 size={14} /> قبل المحاسب الدعوة — يصله التقرير ويمكنه الدخول إلى بوابته</div>}
+        {invite?.status === 'active' && <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize:13, fontWeight:600, color: '#047857' }}><CheckCircle2 size={14} /> قبل المحاسب الدعوة — يصله التقرير ويمكنه الدخول إلى بوابته</div>}
         {upcoming && invite?.status !== 'pending' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize: 12.5, fontWeight: 700, color: colors.primary }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, fontSize:13, fontWeight:600, color: colors.primary }}>
             <Clock size={14} /> التقرير القادم: {dateLabel(upcoming.date)} الساعة {hourLabel(saved.send_hour ?? 8)} — عن {periodLabel(upcoming.period)}
           </div>
         )}
-        {saved && !saved.is_active && <div style={{ marginTop: 10, fontSize: 12.5, fontWeight: 700, color: colors.warning }}>الربط موقوف مؤقتاً — لا يصل إلى المحاسب أي تقرير</div>}
+        {saved && !saved.is_active && <div style={{ marginTop: 10, fontSize:13, fontWeight:600, color: colors.warning }}>الربط موقوف مؤقتاً — لا يصل إلى المحاسب أي تقرير</div>}
       </div>
 
       {/* 1) المحاسب */}
@@ -173,7 +173,7 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
           <button onClick={() => set('channels', toggle(form.channels, 'whatsapp'))} style={chip(form.channels.includes('whatsapp'))}><MessageCircle size={15} /> واتساب + ملف إكسل</button>
         </div>
         {form.channels.includes('whatsapp') && (
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 12.5, color: colors.text2, cursor: 'pointer' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize:13, color: colors.text2, cursor: 'pointer' }}>
             <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /> المحاسب موافق على استلام التقرير عبر واتساب
           </label>
         )}
@@ -182,13 +182,13 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
       {/* 2) وش يوصله */}
       <Step n="2" title="محتوى التقرير" open={openStep === '2'} onToggle={() => setOpenStep(openStep === '2' ? '' : '2')}
         summary={`${form.sections.length} من ${ACC_SECTIONS.length} أقسام${branches.length > 1 ? ` · ${form.branch_id ? (branches.find((b: any) => b.id === form.branch_id)?.name || 'فرع') : 'كل الفروع'}` : ''}`}>
-        <div style={{ border: `1px solid ${colors.border}`, borderRadius: 12, overflow: 'hidden' }}>
+        <div style={{ border: `1px solid ${colors.border}`, borderRadius:20, overflow: 'hidden' }}>
           {ACC_SECTIONS.map((s, i) => {
             const on = form.sections.includes(s.key)
             return (
               <label key={s.key} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '11px 12px', cursor: 'pointer', borderTop: i ? `1px solid ${colors.border}` : 'none', background: on ? colors.surface : colors.bg }}>
                 <input type="checkbox" checked={on} onChange={() => set('sections', toggle(form.sections, s.key))} style={{ marginTop: 3 }} />
-                <span><span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: colors.text }}>{s.label}</span><span style={{ fontSize: 11.5, color: colors.text4 }}>{s.hint}</span></span>
+                <span><span style={{ display: 'block', fontSize:15, fontWeight:600, color: colors.text }}>{s.label}</span><span style={{ fontSize:13, color: colors.text4 }}>{s.hint}</span></span>
               </label>
             )
           })}
@@ -214,7 +214,7 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
           <div style={{ marginTop: 12 }}>
             <label style={label}>يوم الإرسال</label>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
-              {WEEKDAYS.map((d, i) => <button key={i} onClick={() => set('weekday', i)} style={{ ...chip(form.weekday === i), padding: '6px 12px', fontSize: 12.5 }}>{d}</button>)}
+              {WEEKDAYS.map((d, i) => <button key={i} onClick={() => set('weekday', i)} style={{ ...chip(form.weekday === i), padding: '6px 12px', fontSize:13 }}>{d}</button>)}
             </div>
           </div>
         )}
@@ -232,13 +232,13 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
             {Array.from({ length: 24 }, (_, h) => <option key={h} value={h}>{hourLabel(h)}</option>)}
           </select>
         </div>
-        <div style={{ fontSize: 12, color: colors.text4, marginTop: 10, lineHeight: 1.7 }}>
+        <div style={{ fontSize:13, color: colors.text4, marginTop: 10, lineHeight: 1.7 }}>
           {form.frequency === 'daily' && `كل يوم الساعة ${hourLabel(form.send_hour)}، عن اليوم السابق. ولا تظهر الرواتب في التقرير اليومي.`}
           {form.frequency === 'weekly' && `كل ${WEEKDAYS[form.weekday]} الساعة ${hourLabel(form.send_hour)}، عن الأسبوع السابق. ولا تظهر الرواتب في التقرير الأسبوعي.`}
           {form.frequency === 'monthly' && `يوم ${form.month_day} من كل شهر الساعة ${hourLabel(form.send_hour)}، عن الشهر الماضي كاملاً.`}
         </div>
         {saved && (
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize: 12.5, color: colors.text2, cursor: 'pointer' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, fontSize:13, color: colors.text2, cursor: 'pointer' }}>
             <input type="checkbox" checked={form.is_active} onChange={e => set('is_active', e.target.checked)} /> الربط فعّال
           </label>
         )}
@@ -252,10 +252,10 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
 
       {saved && (
         <div style={box}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>إرسال تقرير الآن</div>
-          <div style={{ fontSize: 12, color: colors.text3, marginTop: 2, marginBottom: 12 }}>{dirty ? 'احفظ التعديلات أولاً' : 'يصل إلى المحاسب فوراً بالطريقة المحددة'}</div>
+          <div style={{ fontSize:17, fontWeight:600, color: colors.text }}>إرسال تقرير الآن</div>
+          <div style={{ fontSize:13, color: colors.text3, marginTop: 2, marginBottom: 12 }}>{dirty ? 'احفظ التعديلات أولاً' : 'يصل إلى المحاسب فوراً بالطريقة المحددة'}</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, alignItems: 'center' }}>
-            <select value={nowPeriod} onChange={e => setNowPeriod(e.target.value as ManualPeriodKey)} disabled={!!busy || dirty} style={{ ...inp(), width: 'auto', flex: '1 1 180px', padding: '10px 12px', fontSize: 13 }}>
+            <select value={nowPeriod} onChange={e => setNowPeriod(e.target.value as ManualPeriodKey)} disabled={!!busy || dirty} style={{ ...inp(), width: 'auto', flex: '1 1 180px', padding: '10px 12px', fontSize:15 }}>
               {NOW_PERIODS.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
             {nowPeriod === 'custom' && <>
@@ -272,13 +272,13 @@ export default function AccountantLinkSettings({ orgId, onChange }: { orgId: str
         <div style={{ ...box, padding: 0 }}>
           <button type="button" onClick={() => setShowReports(v => !v)} aria-expanded={showReports}
             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, textAlign: 'right' }}>
-            <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: colors.text }}>آخر التقارير المرسلة <span style={{ fontSize: 12, color: colors.text3, fontWeight: 600 }}>({reports.length})</span></span>
+            <span style={{ flex: 1, fontSize:17, fontWeight:600, color: colors.text }}>آخر التقارير المرسلة <span style={{ fontSize:13, color: colors.text3, fontWeight: 600 }}>({reports.length})</span></span>
             <ChevronDown size={18} color={colors.text3} style={{ transform: showReports ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
           </button>
           {showReports && <div style={{ padding: '0 16px 8px', borderTop: `1px solid ${colors.border}` }}>
           {reports.map(r => (
-            <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: `1px solid ${colors.border}`, fontSize: 12.5, flexWrap: 'wrap' as const }}>
-              <span style={{ fontWeight: 700, color: colors.text, minWidth: 150 }}>{periodLabel({ start: r.period_start, end: r.period_end })}{r.is_test && <span style={{ color: colors.text4, fontWeight: 500 }}> (إرسال يدوي)</span>}</span>
+            <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: `1px solid ${colors.border}`, fontSize:13, flexWrap: 'wrap' as const }}>
+              <span style={{ fontWeight:600, color: colors.text, minWidth: 150 }}>{periodLabel({ start: r.period_start, end: r.period_end })}{r.is_test && <span style={{ color: colors.text4, fontWeight: 500 }}> (إرسال يدوي)</span>}</span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: colors.text3 }}><Mail size={13} /> {status(r.email_status)}</span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: colors.text3 }}><MessageCircle size={13} /> {status(r.whatsapp_status)}</span>
               <span style={{ marginInlineStart: 'auto', color: colors.text4 }}>{new Date(r.created_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'short', year: 'numeric' })}</span>

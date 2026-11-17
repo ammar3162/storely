@@ -21,32 +21,32 @@ export default function PortalDevicesPage() {
   const others = (list || []).filter(d => !d.current).length
   return (
     <PortalShell title="حسابي" subtitle="الإشعارات والأجهزة المسجّلة الدخول إلى حسابك"
-      actions={others ? <button onClick={() => out('others=1')} style={{ padding: '9px 14px', borderRadius: 11, border:'1px solid #fecaca', background:'#fef2f2', color:'#b91c1c', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: font.family }}>إخراج جميع الأجهزة الأخرى</button> : undefined}>
-      <section style={{ background: '#fff', border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-        <span style={{ width: 40, height: 40, borderRadius: 10, background: colors.bg, color: colors.text3, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Mail size={19} /></span>
+      actions={others ? <button onClick={() => out('others=1')} style={{ padding: '9px 14px', borderRadius:20, border:'1px solid #fecaca', background:'#fef2f2', color:'#b91c1c', fontSize:15, fontWeight:600, cursor: 'pointer', fontFamily: font.family }}>إخراج جميع الأجهزة الأخرى</button> : undefined}>
+      <section style={{ background: '#fff', border: 'none', borderRadius:20, padding: 16, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        <span style={{ width: 40, height: 40, borderRadius:12, background: colors.bg, color: colors.text3, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Mail size={19} /></span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14.5, fontWeight: 600 }}>الملخص الأسبوعي بالإيميل</div>
-          <div style={{ fontSize: 12.5, color: colors.text3, marginTop: 2, lineHeight: 1.6 }}>كل أحد صباحاً: الفواتير الناقصة والردود الجديدة وحالة الإقفال لكل عملائك</div>
+          <div style={{ fontSize:17, fontWeight: 600 }}>الملخص الأسبوعي بالإيميل</div>
+          <div style={{ fontSize:13, color: colors.text3, marginTop: 2, lineHeight: 1.6 }}>كل أحد صباحاً: الفواتير الناقصة والردود الجديدة وحالة الإقفال لكل عملائك</div>
         </div>
         {digest !== null && <button role="switch" aria-checked={digest} aria-label="الملخص الأسبوعي" onClick={toggleDigest}
-          style={{ width: 44, height: 26, borderRadius: 99, border: 'none', cursor: 'pointer', background: digest ? colors.primary : '#D0D5DD', position: 'relative', flexShrink: 0, transition: 'background .15s' }}>
+          style={{ width: 44, height: 26, borderRadius: 99, border: 'none', cursor: 'pointer', background: digest ? colors.primary : 'var(--storely-control-border)', position: 'relative', flexShrink: 0, transition: 'background .15s' }}>
           <span style={{ position: 'absolute', top: 3, insetInlineStart: digest ? 21 : 3, width: 20, height: 20, borderRadius: 99, background: '#fff', transition: 'inset-inline-start .15s' }} />
         </button>}
       </section>
-      <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 4px' }}>الأجهزة</h2>
-      <p style={{ fontSize: 12.5, color: colors.text3, margin: '0 0 12px', lineHeight: 1.6 }}>إذا رأيت جهازاً لا تعرفه فأخرجه، وسيحتاج إلى رمز جديد يصل إلى بريدك الإلكتروني للدخول</p>
+      <h2 style={{ fontSize:17, fontWeight:600, margin: '0 0 4px' }}>الأجهزة</h2>
+      <p style={{ fontSize:13, color: colors.text3, margin: '0 0 12px', lineHeight: 1.6 }}>إذا رأيت جهازاً لا تعرفه فأخرجه، وسيحتاج إلى رمز جديد يصل إلى بريدك الإلكتروني للدخول</p>
       {!list ? <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={24} color={colors.primary} className="spin" /></div>
         : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 12 }}>
           {list.map(d => {
             const mobile = /آيفون|أندرويد|آيباد/.test(d.device)
             return (
-              <div key={d.id} style={{ background:'#fff', border: `1.5px solid ${d.current ? colors.primary : colors.border}`, borderRadius: 16, padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ width: 44, height: 44, borderRadius: 12, background: d.current ? colors.primaryLight : '#f1f5f9', color: d.current ? colors.primary : colors.text3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{mobile ? <Smartphone size={21} /> : <Monitor size={21} />}</span>
+              <div key={d.id} style={{ background:'#fff', border: `1.5px solid ${d.current ? colors.primary : colors.border}`, borderRadius:20, padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ width: 44, height: 44, borderRadius:20, background: d.current ? colors.primaryLight : 'var(--storely-fill)', color: d.current ? colors.primary : colors.text3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{mobile ? <Smartphone size={21} /> : <Monitor size={21} />}</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14.5, fontWeight: 800 }}>{d.device}</div>
-                  <div style={{ fontSize: 12, color: d.current ? colors.primary : colors.text4, fontWeight: d.current ? 700 : 500 }}>{d.current ? 'هذا الجهاز' : `آخر استخدام ${ago(d.last_seen_at)}`}</div>
+                  <div style={{ fontSize:17, fontWeight:600 }}>{d.device}</div>
+                  <div style={{ fontSize:13, color: d.current ? colors.primary : colors.text4, fontWeight: d.current ? 700 : 500 }}>{d.current ? 'هذا الجهاز' : `آخر استخدام ${ago(d.last_seen_at)}`}</div>
                 </div>
-                {!d.current && <button onClick={() => out(`id=${d.id}`)} style={{ fontSize: 12.5, fontWeight: 800, color:'#b91c1c', background: 'none', border: `1px solid ${colors.border}`, borderRadius: 9, padding: '6px 11px', cursor: 'pointer', fontFamily: font.family }}>إخراج</button>}
+                {!d.current && <button onClick={() => out(`id=${d.id}`)} style={{ fontSize:13, fontWeight:600, color:'#b91c1c', background: 'none', border: `1px solid ${colors.border}`, borderRadius:999, padding: '6px 11px', cursor: 'pointer', fontFamily: font.family }}>إخراج</button>}
               </div>
             )
           })}

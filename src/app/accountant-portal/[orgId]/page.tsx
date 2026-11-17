@@ -113,7 +113,7 @@ export default function PortalClientPage() {
 
       {dataTab && <>
         {range && <PeriodBar from={range.from} to={range.to} onChange={setRange} />}
-        {error ? <div style={{ color: colors.danger, fontSize: 14, padding: 20 }}>{error}</div>
+        {error ? <div style={{ color: colors.danger, fontSize:17, padding: 20 }}>{error}</div>
           : !data ? <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={24} color={colors.primary} className="spin" /></div>
           : tab === 'summary' ? <ClientSummary data={data} requests={reqCounts} go={(t, o) => setTab(t as Tab, o)} onRequestMissing={requestMissing} />
           : <AccountantReportView key={`${tab}-${missingKey}`} data={data} kicker="بوابة المحاسب" hideHeader downloadHref={xlsx} only={BLOCKS[tab]}

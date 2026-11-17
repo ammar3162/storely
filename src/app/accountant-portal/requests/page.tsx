@@ -7,7 +7,7 @@ import { PortalShell, OrgLogo } from '@/components/accountant/PortalShell'
 import { REQUEST_KINDS, type RequestKind } from '@/lib/accountantRequests'
 
 // كل طلبات المحاسب عند كل المنشآت
-const ST: Record<string, [string, string, string]> = { open: ['بانتظار الرد', '#fffbeb', '#b45309'], answered: ['ردّت المنشأة', '#eff6ff', '#1d4ed8'], resolved: ['تم الحل', '#ecfdf5', '#047857'] }
+const ST: Record<string, [string, string, string]> = { open: ['بانتظار الرد', '#fffbeb', '#b45309'], answered: ['ردّت المنشأة', 'var(--storely-fill)', 'var(--storely-navy)'], resolved: ['تم الحل', '#ecfdf5', '#047857'] }
 const FILTERS = [{ k: 'active', l: 'تحتاج متابعة' }, { k: 'answered', l: 'ردود جديدة' }, { k: 'open', l: 'بانتظار الرد' }, { k: 'resolved', l: 'تم حلها' }]
 const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -26,29 +26,29 @@ export default function PortalRequestsPage() {
   return (
     <PortalShell title="الطلبات" subtitle="طلباتك من كل المنشآت — والردود عليها">
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 16 }}>
-        {FILTERS.map(x => <button key={x.k} onClick={() => setF(x.k)} style={{ padding: '8px 14px', borderRadius: 99, fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: font.family,
+        {FILTERS.map(x => <button key={x.k} onClick={() => setF(x.k)} style={{ padding: '8px 14px', borderRadius: 99, fontSize:15, fontWeight:600, cursor: 'pointer', fontFamily: font.family,
           border: `1.5px solid ${f === x.k ? colors.primary : colors.border}`, background: f === x.k ? colors.primary : '#fff', color: f === x.k ? '#fff' : colors.text3 }}>{x.l} ({count(x.k)})</button>)}
       </div>
       {!list ? <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Loader2 size={24} color={colors.primary} className="spin" /></div>
-        : !shown.length ? <div style={{ background:'#fff', border: `1px solid ${colors.border}`, borderRadius: 18, padding: 40, textAlign: 'center', color: colors.text3, fontSize: 14 }}>
-            {f === 'active' ? 'كل شيء على ما يرام — لا توجد طلبات تحتاج إلى متابعة' : 'لا توجد طلبات هنا'}<div style={{ fontSize: 12.5, color: colors.text4, marginTop: 6 }}>يمكنك الطلب من صفحة أي منشأة، بجانب أي فاتورة ضريبية.</div></div>
+        : !shown.length ? <div style={{ background:'#fff', border: 'none', borderRadius: 18, padding: 40, textAlign: 'center', color: colors.text3, fontSize:17 }}>
+            {f === 'active' ? 'كل شيء على ما يرام — لا توجد طلبات تحتاج إلى متابعة' : 'لا توجد طلبات هنا'}<div style={{ fontSize:13, color: colors.text4, marginTop: 6 }}>يمكنك الطلب من صفحة أي منشأة، بجانب أي فاتورة ضريبية.</div></div>
         : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(360px,1fr))', gap: 12 }}>
           {shown.map(r => (
-            <div key={r.id} style={{ background:'#fff', border:`1px solid ${r.status === 'answered' ? '#bfdbfe' : colors.border}`, borderRadius: 16, padding: 16 }}>
+            <div key={r.id} style={{ background:'#fff', border:`1px solid ${r.status === 'answered' ? 'var(--storely-border)' : colors.border}`, borderRadius:20, padding: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                 <OrgLogo name={r.org_name} url={r.org_logo} size={34} />
-                <button onClick={() => router.push(`/accountant-portal/${r.org_id}?tab=requests`)} style={{ flex: 1, textAlign: 'right', background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, padding: 0, fontSize: 14, fontWeight: 800, color: colors.text }}>{r.org_name}</button>
-                <span style={{ fontSize: 11.5, fontWeight: 800, padding: '3px 10px', borderRadius: 99, background: ST[r.status][1], color: ST[r.status][2] }}>{ST[r.status][0]}</span>
+                <button onClick={() => router.push(`/accountant-portal/${r.org_id}?tab=requests`)} style={{ flex: 1, textAlign: 'right', background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, padding: 0, fontSize:17, fontWeight:600, color: colors.text }}>{r.org_name}</button>
+                <span style={{ fontSize:13, fontWeight:600, padding: '3px 10px', borderRadius: 99, background: ST[r.status][1], color: ST[r.status][2] }}>{ST[r.status][0]}</span>
               </div>
-              <div style={{ fontSize: 14, fontWeight: 800 }}>{REQUEST_KINDS[r.kind as RequestKind]}</div>
-              {r.invoice && <div style={{ fontSize: 12.5, color: colors.text3, marginTop: 3 }}>فاتورة {r.invoice.supplier || '—'} · {r.invoice.date} · <span dir="ltr">{fmt(r.invoice.total)}</span></div>}
-              {r.message && <div style={{ fontSize: 13.5, marginTop: 6 }}>{r.message}</div>}
-              {r.owner_reply && <div style={{ fontSize: 13, marginTop: 8, background:'#f0f9ff', border:'1px solid #bae6fd', borderRadius: 10, padding: '8px 10px', whiteSpace: 'pre-line' as const }}><b>رد المنشأة:</b> {r.owner_reply}</div>}
+              <div style={{ fontSize:17, fontWeight:600 }}>{REQUEST_KINDS[r.kind as RequestKind]}</div>
+              {r.invoice && <div style={{ fontSize:13, color: colors.text3, marginTop: 3 }}>فاتورة {r.invoice.supplier || '—'} · {r.invoice.date} · <span dir="ltr">{fmt(r.invoice.total)}</span></div>}
+              {r.message && <div style={{ fontSize:15, marginTop: 6 }}>{r.message}</div>}
+              {r.owner_reply && <div style={{ fontSize:15, marginTop: 8, background:'var(--storely-fill)', border:'1px solid var(--storely-control-border)', borderRadius:12, padding: '8px 10px', whiteSpace: 'pre-line' as const }}><b>رد المنشأة:</b> {r.owner_reply}</div>}
               <div style={{ display: 'flex', alignItems: 'center', marginTop: 10 }}>
-                <span style={{ fontSize: 11.5, color: colors.text4 }} dir="ltr">{r.created_at.slice(0, 10)}</span>
+                <span style={{ fontSize:13, color: colors.text4 }} dir="ltr">{r.created_at.slice(0, 10)}</span>
                 {r.status !== 'resolved'
-                  ? <button onClick={() => setStatus(r, 'resolved')} style={{ marginInlineStart: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: 800, color:'#047857', background:'#ecfdf5', border:'1px solid #a7f3d0', borderRadius: 9, padding: '6px 11px', cursor: 'pointer', fontFamily: font.family }}><CheckCircle2 size={14} /> تم الحل</button>
-                  : <button onClick={() => setStatus(r, 'open')} style={{ marginInlineStart: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: 700, color: colors.text3, background: 'none', border: `1px solid ${colors.border}`, borderRadius: 9, padding: '6px 11px', cursor: 'pointer', fontFamily: font.family }}><RotateCcw size={13} /> فتح</button>}
+                  ? <button onClick={() => setStatus(r, 'resolved')} style={{ marginInlineStart: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5, fontSize:13, fontWeight:600, color:'#047857', background:'#ecfdf5', border:'1px solid #a7f3d0', borderRadius:999, padding: '6px 11px', cursor: 'pointer', fontFamily: font.family }}><CheckCircle2 size={14} /> تم الحل</button>
+                  : <button onClick={() => setStatus(r, 'open')} style={{ marginInlineStart: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5, fontSize:13, fontWeight:600, color: colors.text3, background: 'none', border: `1px solid ${colors.border}`, borderRadius:999, padding: '6px 11px', cursor: 'pointer', fontFamily: font.family }}><RotateCcw size={13} /> فتح</button>}
               </div>
             </div>
           ))}

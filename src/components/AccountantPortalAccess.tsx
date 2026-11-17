@@ -11,8 +11,8 @@ import { groupLogs, timesAr } from '@/lib/accountantActivity'
 
 // بوابة المحاسب (جهة المالك): يدعو محاسبه، يحدد الأقسام المتاحة، ويسحب الإذن متى ما بغى
 const DEFAULT: AccSection[] = ['sales', 'purchases', 'vat', 'payables', 'expenses', 'cash_diff']
-const box: React.CSSProperties = { background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: radius.lg, padding: 16, marginBottom: 12 }
-const chip = (on: boolean): React.CSSProperties => ({ padding: '5px 11px', borderRadius: 99, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family,
+const box: React.CSSProperties = { background: colors.surface, border: 'none', borderRadius: radius.lg, padding: 16, marginBottom: 12 }
+const chip = (on: boolean): React.CSSProperties => ({ padding: '5px 11px', borderRadius: 99, fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: font.family,
   border: `1px solid ${on ? colors.primary : colors.border}`, background: on ? colors.primary : colors.surface, color: on ? '#fff' : colors.text3 })
 const todaySA = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10)
 const fmtD = (d: string) => d && !isNaN(Date.parse(d)) ? new Date(d.slice(0, 10) + 'T12:00:00').toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'short' }) : d
@@ -81,7 +81,7 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
     const expired = !!a.expires_on && todaySA() > a.expires_on
     return expired ? { t: 'انتهى الإذن', bg: '#fef2f2', c: '#b91c1c' } : a.status === 'active' ? { t: 'مفعّل', bg: '#ecfdf5', c: '#047857' } : { t: 'بانتظار القبول', bg: '#fffbeb', c: '#b45309' }
   }
-  const label: React.CSSProperties = { fontSize: 12, fontWeight: 700, color: colors.text3, marginBottom: 6 }
+  const label: React.CSSProperties = { fontSize:13, fontWeight:600, color: colors.text3, marginBottom: 6 }
   const groups = groupLogs(logs)
 
   return (
@@ -91,8 +91,8 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
           <ShieldCheck size={18} color={colors.text} style={{ flexShrink: 0, marginTop: 2 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: colors.text }}>المحاسبون وصلاحياتهم</div>
-            <div style={{ fontSize: 12.5, color: colors.text3, lineHeight: 1.7, marginTop: 2 }}>
+            <div style={{ fontSize:17, fontWeight:600, color: colors.text }}>المحاسبون وصلاحياتهم</div>
+            <div style={{ fontSize:13, color: colors.text3, lineHeight: 1.7, marginTop: 2 }}>
               يطّلع المحاسب على بيانات منشأتك للقراءة فقط ويحمّلها بصيغة إكسل، ويمكنك سحب الإذن في أي وقت. الخدمة مجانية.
             </div>
           </div>
@@ -106,20 +106,20 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
         <div key={a.id} style={{ ...box, padding: 0, overflow: 'hidden' }}>
           <button type="button" onClick={() => setOpenId(isOpen ? null : a.id)} aria-expanded={isOpen}
             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, textAlign: 'right' as const }}>
-            <span style={{ width: 34, height: 34, borderRadius: 99, background: colors.bg, border: `1px solid ${colors.border}`, color: colors.text, fontSize: 13.5, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{((a.name || a.email || '؟').trim()[0] || '؟').toUpperCase()}</span>
+            <span style={{ width: 34, height: 34, borderRadius: 99, background: colors.bg, border: `1px solid ${colors.border}`, color: colors.text, fontSize:15, fontWeight:600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{((a.name || a.email || '؟').trim()[0] || '؟').toUpperCase()}</span>
             <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: 'block', fontSize: 14, fontWeight: 800, color: colors.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{a.name || a.email}</span>
-              <span style={{ display: 'block', fontSize: 12, color: colors.text3, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+              <span style={{ display: 'block', fontSize:17, fontWeight:600, color: colors.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{a.name || a.email}</span>
+              <span style={{ display: 'block', fontSize:13, color: colors.text3, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
                 {a.team_of ? `من فريق مكتب ${a.team_of} · ` : ''}{a.sections.length} {a.sections.length === 1 ? 'قسم' : a.sections.length === 2 ? 'قسمان' : 'أقسام'} · {a.status !== 'active' ? `الدعوة ${ago(a.invited_at)}` : a.last_view_at ? `آخر دخول ${ago(a.last_view_at)}` : 'لم يدخل بعد'}
               </span>
             </span>
-            <span style={{ fontSize: 11.5, fontWeight: 700, padding: '3px 10px', borderRadius: 99, background: st.bg, color: st.c, flexShrink: 0, whiteSpace: 'nowrap' as const }}>{st.t}</span>
+            <span style={{ fontSize:13, fontWeight:600, padding: '3px 10px', borderRadius: 99, background: st.bg, color: st.c, flexShrink: 0, whiteSpace: 'nowrap' as const }}>{st.t}</span>
             <ChevronDown size={18} color={colors.text3} style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
           </button>
           {isOpen && (
           <div style={{ padding: '14px 16px 16px', borderTop: `1px solid ${colors.border}`, display: 'grid', gap: 14 }}>
-            {a.name && a.email && <div style={{ fontSize: 13, color: colors.text, textAlign: 'right' as const }}><span dir="ltr">{a.email}</span></div>}
-            {a.delegated_from && <div style={{ fontSize: 13, color: colors.text3, lineHeight: 1.7 }}>أسنده محاسبك {a.team_of || ''} من فريق مكتبه. يرى نفس الأقسام المتاحة لمحاسبك وللمدة نفسها، وتتغير صلاحياته معه. يمكنك سحب إذنه في أي وقت.</div>}
+            {a.name && a.email && <div style={{ fontSize:15, color: colors.text, textAlign: 'right' as const }}><span dir="ltr">{a.email}</span></div>}
+            {a.delegated_from && <div style={{ fontSize:15, color: colors.text3, lineHeight: 1.7 }}>أسنده محاسبك {a.team_of || ''} من فريق مكتبه. يرى نفس الأقسام المتاحة لمحاسبك وللمدة نفسها، وتتغير صلاحياته معه. يمكنك سحب إذنه في أي وقت.</div>}
             {!a.delegated_from && <><div>
               <div style={label}>الأقسام المتاحة له</div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
@@ -130,13 +130,13 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
               <div style={label}>مدة الإذن</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
                 <DateField value={a.expires_on || ''} min={todaySA()} onChange={v => setExpiry(a, v)} placeholder="بدون نهاية" ariaLabel="الإذن حتى" width={160} />
-                {a.expires_on ? <button onClick={() => setExpiry(a, '')} style={{ fontSize: 12, fontWeight: 700, color: colors.primary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, padding: 0 }}>بدون نهاية</button>
-                  : <span style={{ fontSize: 12, color: colors.text3 }}>اختر تاريخاً لينتهي الإذن تلقائياً</span>}
+                {a.expires_on ? <button onClick={() => setExpiry(a, '')} style={{ fontSize:13, fontWeight:600, color: colors.primary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, padding: 0 }}>بدون نهاية</button>
+                  : <span style={{ fontSize:13, color: colors.text3 }}>اختر تاريخاً لينتهي الإذن تلقائياً</span>}
               </div>
             </div></>}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, paddingTop: 12, borderTop: `1px solid ${colors.border}` }}>
-              {a.status !== 'active' && <button onClick={() => resend(a)} disabled={busy} style={{ ...btnSecondary, padding: '8px 12px', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13 }}><Send size={14} /> إعادة إرسال الدعوة</button>}
-              <button onClick={() => revoke(a)} style={{ padding: '8px 12px', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, color: colors.danger, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, marginInlineStart: 'auto' }}><Trash2 size={14} /> سحب الإذن</button>
+              {a.status !== 'active' && <button onClick={() => resend(a)} disabled={busy} style={{ ...btnSecondary, padding: '8px 12px', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize:15 }}><Send size={14} /> إعادة إرسال الدعوة</button>}
+              <button onClick={() => revoke(a)} style={{ padding: '8px 12px', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize:15, fontWeight:600, color: colors.danger, background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, marginInlineStart: 'auto' }}><Trash2 size={14} /> سحب الإذن</button>
             </div>
           </div>
           )}
@@ -147,7 +147,7 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
       {/* دعوة محاسب */}
       {adding ? (
         <div style={box}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: colors.text, marginBottom: 12 }}>دعوة محاسب</div>
+          <div style={{ fontSize:17, fontWeight:600, color: colors.text, marginBottom: 12 }}>دعوة محاسب</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 10 }}>
             <label><div style={label}>البريد الإلكتروني</div><input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="name@example.com" type="email" dir="ltr" style={inp()} /></label>
             <label><div style={label}>الاسم (اختياري)</div><input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="اسم المحاسب" maxLength={80} style={inp()} /></label>
@@ -169,14 +169,14 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
               <DateField value={form.expires_on} min={todaySA()} onChange={v => setForm(f => ({ ...f, expires_on: v }))} placeholder="بدون نهاية" ariaLabel="الإذن حتى" width={160} />
             </div>
           </div>
-          <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7, marginTop: 12 }}>يصل المحاسب رابط «قبول الدعوة» على بريده، ويتفعّل الإذن فور قبوله.</div>
+          <div style={{ fontSize:13, color: colors.text3, lineHeight: 1.7, marginTop: 12 }}>يصل المحاسب رابط «قبول الدعوة» على بريده، ويتفعّل الإذن فور قبوله.</div>
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             <button onClick={invite} disabled={busy || !form.email || !form.sections.length} style={{ ...btnPrimary, padding: '10px 18px', opacity: busy || !form.email ? .6 : 1 }}>{busy ? 'جارٍ الإرسال...' : 'أرسل الدعوة'}</button>
             <button onClick={() => setAdding(false)} style={{ ...btnSecondary, padding: '10px 16px' }}>إلغاء</button>
           </div>
         </div>
       ) : list.filter(a => !a.delegated_from).length < 3 && (
-        <button onClick={() => setAdding(true)} style={{ width: '100%', marginBottom: 12, padding: '13px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: colors.surface, border: `1.5px dashed ${colors.border}`, borderRadius: radius.lg, color: colors.text, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
+        <button onClick={() => setAdding(true)} style={{ width: '100%', marginBottom: 12, padding: '13px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: colors.surface, border: `1.5px dashed ${colors.border}`, borderRadius: radius.lg, color: colors.text, fontSize:17, fontWeight:600, cursor: 'pointer', fontFamily: font.family }}>
           <UserPlus size={16} /> {list.length ? 'دعوة محاسب آخر' : 'دعوة محاسب'}
         </button>
       )}
@@ -188,8 +188,8 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: font.family, textAlign: 'right' as const }}>
             <Clock size={18} color={colors.text} style={{ flexShrink: 0 }} />
             <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: 'block', fontSize: 14, fontWeight: 800, color: colors.text }}>آخر نشاط <span style={{ fontSize: 12, color: colors.text3, fontWeight: 600 }}>({groups.length})</span></span>
-              <span style={{ display: 'block', fontSize: 12, color: colors.text3, marginTop: 2 }}>آخر عملية {ago(groups[0].created_at)}</span>
+              <span style={{ display: 'block', fontSize:17, fontWeight:600, color: colors.text }}>آخر نشاط <span style={{ fontSize:13, color: colors.text3, fontWeight: 600 }}>({groups.length})</span></span>
+              <span style={{ display: 'block', fontSize:13, color: colors.text3, marginTop: 2 }}>آخر عملية {ago(groups[0].created_at)}</span>
             </span>
             <ChevronDown size={18} color={colors.text3} style={{ flexShrink: 0, transform: allLogs ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
           </button>
@@ -197,10 +197,10 @@ export default function AccountantPortalAccess({ orgId, onChange }: { orgId: str
             {groups.map((l, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 0', borderTop: i ? `1px solid ${colors.border}` : 'none' }}>
                 <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: 'block', fontSize: 13, fontWeight: 700, color: colors.text }}>{l.accountant_users?.name || l.accountant_users?.email} {l.action === 'download' ? 'حمّل ملفاً' : 'اطّلع على التقرير'}</span>
-                  <span style={{ display: 'block', fontSize: 12, color: colors.text3, marginTop: 2 }}>فترة {fmtD(l.period_start)} – {fmtD(l.period_end)} · {ago(l.created_at)}</span>
+                  <span style={{ display: 'block', fontSize:15, fontWeight:600, color: colors.text }}>{l.accountant_users?.name || l.accountant_users?.email} {l.action === 'download' ? 'حمّل ملفاً' : 'اطّلع على التقرير'}</span>
+                  <span style={{ display: 'block', fontSize:13, color: colors.text3, marginTop: 2 }}>فترة {fmtD(l.period_start)} – {fmtD(l.period_end)} · {ago(l.created_at)}</span>
                 </span>
-                {l.count > 1 && <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, color: colors.text2, background: colors.bg, borderRadius: 999, padding: '2px 8px' }}>{timesAr(l.count)}</span>}
+                {l.count > 1 && <span style={{ flexShrink: 0, fontSize:12, fontWeight:600, color: colors.text2, background: colors.bg, borderRadius: 999, padding: '2px 8px' }}>{timesAr(l.count)}</span>}
               </div>
             ))}
           </div>}

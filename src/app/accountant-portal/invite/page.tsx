@@ -7,7 +7,7 @@ import { OrgLogo } from '@/components/accountant/PortalShell'
 
 // صفحة قبول دعوة المحاسب (من زر «قبول الدعوة» في الإيميل)
 type State = 'loading' | 'pending' | 'accepted' | 'expired' | 'invalid' | 'gone' | 'declined' | 'error'
-const btn: React.CSSProperties = { width: '100%', padding: 13, borderRadius: 12, border: 'none', background: colors.primary, color:'#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: font.family }
+const btn: React.CSSProperties = { width: '100%', padding: 13, borderRadius:20, border: 'none', background: colors.primary, color:'#fff', fontSize:17, fontWeight:600, cursor: 'pointer', fontFamily: font.family }
 
 export default function AcceptInvitePage() {
   const router = useRouter()
@@ -50,39 +50,39 @@ export default function AcceptInvitePage() {
     <div dir="rtl" style={{ minHeight: '100vh', fontFamily: font.family, background:`linear-gradient(180deg,${colors.primary} 0,${colors.primary} 260px,${colors.bg} 260px)`, padding: '36px 16px' }}>
       <div style={{ maxWidth: 460, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, color:'#fff', marginBottom: 22 }}>
-          <img src="/storely-logo.png" alt="Storely" width={38} height={38} style={{ borderRadius: 10, background:'#fff' }} />
-          <div><div style={{ fontSize: 17, fontWeight: 800 }} dir="ltr">Storely</div><div style={{ fontSize: 12, opacity: .7 }}>بوابة المحاسب</div></div>
+          <img src="/storely-logo.png" alt="Storely" width={38} height={38} style={{ borderRadius:12, background:'#fff' }} />
+          <div><div style={{ fontSize: 17, fontWeight:600 }} dir="ltr">Storely</div><div style={{ fontSize:13, opacity: .7 }}>بوابة المحاسب</div></div>
         </div>
-        <div style={{ background:'#fff', border: `1px solid ${colors.border}`, borderRadius: 20, padding: 26, boxShadow: '0 20px 50px rgba(15,23,42,.10)' }}>
+        <div style={{ background:'#fff', border: 'none', borderRadius: 20, padding: 26, boxShadow: '0 20px 50px rgba(15,23,42,.10)' }}>
           {state === 'loading' ? <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Loader2 size={26} color={colors.primary} style={{ animation: 'spin .8s linear infinite' }} /><style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style></div>
           : state === 'pending' && inv ? (<>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
               <OrgLogo name={inv.org} url={inv.logo_url} size={52} />
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 12.5, color: colors.text3 }}>دعوة من</div>
-                <div style={{ fontSize: 19, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis' }}>{inv.org}</div>
-                {inv.branch && <div style={{ fontSize: 12, color: colors.text4 }}>فرع {inv.branch}</div>}
+                <div style={{ fontSize:13, color: colors.text3 }}>دعوة من</div>
+                <div style={{ fontSize:22, fontWeight:600, overflow: 'hidden', textOverflow: 'ellipsis' }}>{inv.org}</div>
+                {inv.branch && <div style={{ fontSize:13, color: colors.text4 }}>فرع {inv.branch}</div>}
               </div>
             </div>
-            <div style={{ fontSize: 14.5, lineHeight: 1.8, color: colors.text2, marginBottom: 14 }}>
+            <div style={{ fontSize:17, lineHeight: 1.8, color: colors.text2, marginBottom: 14 }}>
               {inv.name ? `مرحباً ${inv.name}، ` : ''}تدعوك المنشأة لتكون محاسبها في Storely. بعد القبول يمكنك الاطلاع على بياناتها وتحميلها بصيغة إكسل لأي فترة.
             </div>
-            <div style={{ background:'#f8fafa', border: `1px solid ${colors.border}`, borderRadius: 14, padding: '12px 14px', marginBottom: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 800, color: colors.text2, marginBottom: 8 }}><Eye size={14} /> ما ستطّلع عليه</div>
+            <div style={{ background:'var(--storely-background)', border: `1px solid ${colors.border}`, borderRadius:20, padding: '12px 14px', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize:13, fontWeight:600, color: colors.text2, marginBottom: 8 }}><Eye size={14} /> ما ستطّلع عليه</div>
               <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6 }}>
-                {inv.sections.map((s: string) => <span key={s} style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 99, background: colors.primaryLight, color: colors.primary }}>{s}</span>)}
+                {inv.sections.map((s: string) => <span key={s} style={{ fontSize:13, fontWeight:600, padding: '4px 10px', borderRadius: 99, background: colors.primaryLight, color: colors.primary }}>{s}</span>)}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: colors.text4, marginTop: 10 }}><ShieldCheck size={13} /> للقراءة فقط — لا يمكنك تعديل أي شيء، ويمكن للمنشأة سحب الإذن في أي وقت</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize:13, color: colors.text4, marginTop: 10 }}><ShieldCheck size={13} /> للقراءة فقط — لا يمكنك تعديل أي شيء، ويمكن للمنشأة سحب الإذن في أي وقت</div>
             </div>
             <button onClick={() => act('accept')} disabled={!!busy} style={{ ...btn, opacity: busy ? .7 : 1 }}>{busy === 'accept' ? 'جاري القبول...' : 'قبول الدعوة والدخول'}</button>
-            <button onClick={() => act('decline')} disabled={!!busy} style={{ ...btn, background: 'transparent', color: colors.text3, fontSize: 13.5, marginTop: 6 }}>{busy === 'decline' ? 'جاري الرفض...' : 'رفض الدعوة'}</button>
-            {err && <div style={{ marginTop: 10, fontSize: 13, color: colors.danger, lineHeight: 1.7, textAlign: 'center' as const }}>{err}</div>}
-            <div style={{ fontSize: 11.5, color: colors.text4, textAlign: 'center' as const, marginTop: 10 }} dir="ltr">{inv.email}</div>
+            <button onClick={() => act('decline')} disabled={!!busy} style={{ ...btn, background: 'transparent', color: colors.text3, fontSize:15, marginTop: 6 }}>{busy === 'decline' ? 'جاري الرفض...' : 'رفض الدعوة'}</button>
+            {err && <div style={{ marginTop: 10, fontSize:15, color: colors.danger, lineHeight: 1.7, textAlign: 'center' as const }}>{err}</div>}
+            <div style={{ fontSize:13, color: colors.text4, textAlign: 'center' as const, marginTop: 10 }} dir="ltr">{inv.email}</div>
           </>) : m && (
             <div style={{ textAlign: 'center' as const, padding: '10px 0' }}>
               <m.icon size={40} color={m.tone} />
-              <div style={{ fontSize: 19, fontWeight: 800, margin: '10px 0 6px' }}>{m.title}</div>
-              <div style={{ fontSize: 14, color: colors.text3, lineHeight: 1.8, marginBottom: 18 }}>{m.text}</div>
+              <div style={{ fontSize:22, fontWeight:600, margin: '10px 0 6px' }}>{m.title}</div>
+              <div style={{ fontSize:17, color: colors.text3, lineHeight: 1.8, marginBottom: 18 }}>{m.text}</div>
               {state !== 'declined' && <a href="/accountant-portal" style={{ ...btn, display: 'block', textDecoration: 'none', boxSizing: 'border-box' as const }}>الدخول إلى بوابة المحاسب</a>}
             </div>
           )}
