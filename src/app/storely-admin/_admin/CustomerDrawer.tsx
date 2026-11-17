@@ -647,7 +647,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
       {c.org_id && <ActivityCard orgId={c.org_id} />}
 
       {/* مراسلة بالإيميل */}
-      {c.org_id && <CustomerEmailCard orgId={c.org_id} orgName={c.org_name} />}
+      {c.org_id && <CustomerEmailCard orgId={c.org_id} orgName={c.org_name} customer={c} />}
 
       </>}
       {tab === 'account' && <>

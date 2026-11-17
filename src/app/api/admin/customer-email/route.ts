@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { sendEmail } from '@/lib/email'
-import { brandEmail } from '@/lib/emailTemplates'
+import { customerMessageEmail } from '@/lib/emailTemplates'
+import { EMAIL_BUTTONS, isEmailButton, type EmailButtonKey } from '@/lib/customerEmailTemplates'
 import { personalize, isSendableEmail } from '@/lib/marketing'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -38,7 +39,7 @@ export async function GET(req: Request) {
     received: ((inbox || []) as any[]).map(m => ({ from: m.from_email, at: m.received_at, subject: m.subject || '', body: m.body || '' })) })
 }
 
-// { org_id, subject, body } — {الاسم} و{المنشأة} تتبدل
+// { org_id, subject, body, button? } — {الاسم} و{المنشأة} تتبدل، والزر من الأزرار المسموحة فقط (تجديد/تفعيل الاشتراك، الدخول)
 export async function POST(req: Request) {
   const admin = await requirePermission(req.headers.get('x-admin-key'), PERM)
   if (!admin) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
@@ -52,12 +53,10 @@ export async function POST(req: Request) {
   if (!o?.email || !isSendableEmail(o.email)) return NextResponse.json({ error: 'لا يوجد بريد صالح لمالك هذه المنشأة' }, { status: 400 })
   const who = { name: o.name, orgName: o.orgName }
   const paragraphs = personalize(body, who).split('\n').map(s => s.trim()).filter(Boolean)
-  const html = brandEmail({
-    title: personalize(subject, who), paragraphs,
-    small: 'فريق Storely — يمكنك الرد على هذا البريد مباشرة.',
-  })
+  const button: EmailButtonKey | null = isEmailButton(b.button) ? (b.button as EmailButtonKey) : null
+  const html = customerMessageEmail({ subject: personalize(subject, who), paragraphs, button: button ? EMAIL_BUTTONS[button] : null })
   const r = await sendEmail({ to: o.email, subject: personalize(subject, who), html, fromName: 'فريق Storely', fromAddress: 'support@storely.dev', replyTo: 'support@storely.dev' })
   if (!r.success) return NextResponse.json({ error: 'تعذّر إرسال البريد' }, { status: 502 })
-  await logAdminAction(admin, 'customer_email', orgId, o.orgName || null, { subject: personalize(subject, who), body: body.slice(0, 1000) })
+  await logAdminAction(admin, 'customer_email', orgId, o.orgName || null, { subject: personalize(subject, who), body: body.slice(0, 1000), ...(button ? { button } : {}) })
   return NextResponse.json({ success: true })
 }
