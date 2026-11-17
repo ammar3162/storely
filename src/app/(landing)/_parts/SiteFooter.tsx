@@ -11,7 +11,7 @@ export default function SiteFooter({ m }: { m: LandingState }) {
         <div className="lp-wrap">
           <div className="lp-foot-grid">
             <div>
-              <div className="lp-brand" style={{color:'#fff'}}><img src="/storely-logo.png" alt=""/><span>Storely</span></div>
+              <div className="lp-brand st-foot-brand"><img src="/storely-logo.png" alt=""/><span>Storely</span></div>
               <p className="lp-foot-tag">{t('footerTagline')}</p>
               <div className="lp-foot-social">
                 {SOCIAL_LINKS.map(s=>(

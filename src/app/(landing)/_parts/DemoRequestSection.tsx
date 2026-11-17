@@ -15,7 +15,7 @@ export default function DemoRequestSection({ m }: { m: LandingState }) {
             <h3>{t('demoSideTitle')}</h3>
             <p>{t('demoSideSub')}</p>
             <a href="https://wa.me/966594351667" target="_blank" rel="noreferrer" className="lp-btn lp-btn-wa">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d={WA_ICON}/></svg>{t('ctaContact')}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={WA_ICON}/></svg>{t('ctaContact')}
             </a>
           </div>
           <form onSubmit={submitDemoRequest} className="lp-demo-form">

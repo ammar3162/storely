@@ -17,7 +17,8 @@ export default function Hero({ m }: { m: LandingState }) {
   const ref = useRef<HTMLVideoElement>(null)
   const v = VIDEOS[i]
   const pick = (n: number) => { setI(n); setPlaying(false) }
-  const play = () => { setPlaying(true); requestAnimationFrame(() => ref.current?.play().catch(() => {})) }
+  // التشغيل داخل نفس الضغطة (سفاري الجوال يمنع الصوت لو تأخر)، والغلاف يختفي بعدها
+  const play = () => { ref.current?.play().catch(() => {}); setPlaying(true) }
 
   return (
     <header id="top" className="st-hero" style={{ paddingTop: top + 104 }}>
@@ -36,12 +37,13 @@ export default function Hero({ m }: { m: LandingState }) {
 
         <div id="video" className="st-hero-media">
           <div className="st-player">
-            {playing
-              ? <video key={v.src} ref={ref} src={v.src} poster={v.poster} controls playsInline autoPlay aria-label={t(v.k)} />
-              : <button className="st-player-cover" onClick={play} aria-label={`${t('heroPlay')}: ${t(v.k)}`}>
-                  <img src={v.poster} alt="" width={540} height={960} />
-                  <span className="st-player-btn"><Play size={24} fill="currentColor" aria-hidden /></span>
-                </button>}
+            <video key={v.src} ref={ref} src={v.src} poster={v.poster} preload="none" controls={playing} playsInline aria-label={t(v.k)} />
+            {!playing && (
+              <button className="st-player-cover" onClick={play} aria-label={`${t('heroPlay')}: ${t(v.k)}`}>
+                <img src={v.poster} alt="" width={540} height={960} />
+                <span className="st-player-btn"><Play size={24} fill="currentColor" aria-hidden /></span>
+              </button>
+            )}
           </div>
           <div className="st-vid-tabs" role="tablist" aria-label={t('heroVid1')}>
             {VIDEOS.map((x, n) => (
