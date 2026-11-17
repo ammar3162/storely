@@ -14,7 +14,7 @@ export default function RenewPage() {
       .catch(() => setInfo('error'))
   }, [])
   const card: React.CSSProperties = { width: '100%', maxWidth: 440, background: 'var(--storely-surface)', border: 'none', borderRadius: 22, padding: '32px 24px', boxShadow: '0 12px 40px rgba(0,0,0,.06)', textAlign: 'center' }
-  const link: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 48, background: 'var(--storely-navy)', color: '#fff', borderRadius: 'var(--radius-sm)', fontSize:17, fontWeight: 600, textDecoration: 'none' }
+  const link: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 48, background: 'var(--storely-navy)', color: '#fff', borderRadius: 999, fontSize:17, fontWeight: 500, textDecoration: 'none' }
   return (
     <div dir="rtl" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--storely-background)', padding: 20 }}>
       <div style={card}>

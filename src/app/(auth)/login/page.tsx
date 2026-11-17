@@ -18,7 +18,7 @@ function LoginPage() {
         *{box-sizing:border-box}
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
         @keyframes spin{to{transform:rotate(360deg)}}
-        .inp{width:100%;min-height:44px;padding:11px 14px;border:1px solid var(--storely-control-border);border-radius:12px;font-size:17px;outline:none;background:white;color:var(--storely-text);font-family:inherit;transition:border-color .2s}
+        .inp{width:100%;min-width:0;min-height:44px;padding:11px 14px;border:1px solid var(--storely-control-border);border-radius:12px;font-size:17px;outline:none;background:white;color:var(--storely-text);font-family:inherit;transition:border-color .2s}
         .inp:focus{border-color:#203640;box-shadow:0 0 0 3px rgba(32,54,64,.15)}
         .inp::placeholder{color:var(--storely-subtle)}
         .btn-main{width:100%;min-height:50px;padding:13px;background:#203640;color:white;border:none;border-radius:999px;font-size:17px;font-weight:500;cursor:pointer;font-family:inherit;transition:background-color .2s}
@@ -35,7 +35,7 @@ function LoginPage() {
 
       <div style={{flex:1,display:'flex'}}>
         <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:'40px 16px'}}>
-          <div style={{width:'100%',maxWidth:420,animation:'fadeUp .4s ease'}}>
+          <div style={{width:'100%',maxWidth:420,minWidth:0,animation:'fadeUp .4s ease'}}>
             {/* الشعار والجملة فوق البطاقة */}
             <a href="/" style={{display:'flex',flexDirection:'column',alignItems:'center',gap:10,marginBottom:22,textDecoration:'none'}}>
               <img src="/storely-logo.png" alt="Storely" style={{width:52,height:52,objectFit:'contain'}}/>

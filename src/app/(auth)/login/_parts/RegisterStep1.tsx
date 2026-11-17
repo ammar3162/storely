@@ -57,16 +57,16 @@ export default function RegisterStep1({ m }: { m: LoginState }) {
                   </div>}
                   <div>
                     <label style={{fontSize:15,fontWeight:600,color:'var(--storely-text)',display:'block',marginBottom:6}}>{t('login.whatsappLabel')}</label>
-                    <div style={{display:'flex',border:'1.5px solid var(--storely-border)',borderRadius:12,overflow:'hidden',background:'white',transition:'border-color .2s'}}
+                    <div style={{display:'flex',minHeight:44,border:'1px solid var(--storely-control-border)',borderRadius:12,overflow:'hidden',background:'white',transition:'border-color .2s'}}
                       onFocusCapture={e=>(e.currentTarget as HTMLElement).style.borderColor='#203640'}
-                      onBlurCapture={e=>(e.currentTarget as HTMLElement).style.borderColor='var(--storely-border)'}>
+                      onBlurCapture={e=>(e.currentTarget as HTMLElement).style.borderColor='var(--storely-control-border)'}>
                       <select value={countryCode} onChange={e=>setCountryCode(e.target.value)}
-                        style={{background:'transparent',border:'none',borderLeft:'1.5px solid var(--storely-border)',padding:'12px 8px',fontSize:15,fontFamily:'inherit',outline:'none',cursor:'pointer',direction:'ltr',color:'var(--storely-text)',minWidth:100}}>
+                        style={{background:'transparent',border:'none',borderLeft:'1px solid var(--storely-control-border)',padding:'10px 8px',fontSize:15,fontFamily:'inherit',outline:'none',cursor:'pointer',direction:'ltr',color:'var(--storely-text)',minWidth:100}}>
                         {COUNTRY_CODES.map(c=><option key={c.code} value={c.code}>{c.name} {'\u2066'+c.code+'\u2069'}</option>)}
                       </select>
                       <input type="tel" required value={phone} onChange={e=>{setPhone(e.target.value);setOtpSent(false);setOtpVerified(false);setOtp('')}}
                         placeholder={phonePlaceholder} dir="ltr"
-                        style={{background:'transparent',border:'none',padding:'12px 14px',fontSize:17,color:'var(--storely-text)',flex:1,outline:'none',fontFamily:'inherit'}}/>
+                        style={{background:'transparent',border:'none',padding:'10px 14px',fontSize:17,color:'var(--storely-text)',flex:1,width:0,minWidth:0,outline:'none',fontFamily:'inherit'}}/>
                     </div>
                     <div style={{fontSize:12,color:'var(--storely-subtle)',marginTop:4}}>
                       {PHONE_RULES[countryCode] ? `${PHONE_RULES[countryCode].length} أرقام${PHONE_RULES[countryCode].prefix ? ` · يبدأ بـ ${PHONE_RULES[countryCode].prefix}` : ''}` : ''}

@@ -52,7 +52,7 @@ export default function ExpiredPage() {
             style={{fontSize:15,color:'var(--storely-muted)',textDecoration:'underline',textUnderlineOffset:3}}>لديك سؤال؟ تواصل معنا عبر واتساب</a>}
 
           <button onClick={logout}
-            style={{minHeight:40,padding:'8px 16px',background:'var(--storely-surface)',border:'1px solid var(--storely-border)',borderRadius:'var(--radius-sm)',fontSize:17,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:'var(--storely-muted)'}}>
+            style={{minHeight:44,padding:'8px 18px',background:'var(--storely-fill)',border:'none',borderRadius:999,fontSize:17,fontWeight:500,cursor:'pointer',fontFamily:'inherit',color:'var(--storely-muted)'}}>
             تسجيل الخروج
           </button>
         </div>

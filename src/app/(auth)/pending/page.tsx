@@ -27,7 +27,7 @@ export default function PendingPage() {
 
           {/* الأيقونة */}
           <div style={{marginBottom:28}}>
-            <div style={{width:88,height:88,background:'var(--storely-background)',borderRadius:'var(--radius)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 0',border:'2px solid var(--storely-border)'}}>
+            <div style={{width:88,height:88,background:'var(--storely-background)',borderRadius:'var(--radius)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 0',border:'none'}}>
               <svg width="44" height="44" fill="none" viewBox="0 0 24 24">
                 <path d="M9 12l2 2 4-4" stroke="#0C213B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="#0C213B" strokeWidth="2" fill="none"/>
@@ -37,7 +37,7 @@ export default function PendingPage() {
           </div>
 
           {/* Storely badge */}
-          <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'var(--storely-background)',border:'1px solid var(--storely-border)',borderRadius:'var(--radius)',padding:'4px 14px',marginBottom:20}}>
+          <div style={{display:'inline-flex',alignItems:'center',gap:6,background:'var(--storely-fill)',border:'none',borderRadius:999,padding:'4px 14px',marginBottom:20}}>
             <div style={{width:6,height:6,borderRadius:'50%',background:'var(--storely-navy)'}}/>
             <span style={{fontSize:13,fontWeight:600,color:'var(--storely-navy)'}}>Storely</span>
           </div>
