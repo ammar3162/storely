@@ -20,7 +20,8 @@ export const C = {
   cut: '#D2D2D7',       // خط الإيصال المتقطع
 } as const
 
-export const MONO = "'IBM Plex Mono', ui-monospace, monospace"
+// أرقام الإيصال والرواتب بخط أبل نفسه، وأرقام متساوية العرض (tabular-nums في receiptNum) حتى تصطف الأعمدة
+export const MONO = 'var(--storely-font)'
 
 export const card: CSSProperties = { background: C.card, border: 'none', borderRadius: 20 }
 

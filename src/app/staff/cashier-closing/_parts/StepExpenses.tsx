@@ -42,7 +42,7 @@ export default function StepExpenses({ m }: { m: CashierClosing }) {
                         )}
                       </div>
                     ))}
-                    <button onClick={addPurchaseRow} style={{width:'100%',padding:'11px',borderRadius:999,border:'1px dashed var(--storely-control-border)',background:'transparent',color:'#1f2937',fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit',marginTop:2}}>
+                    <button onClick={addPurchaseRow} style={{width:'100%',padding:'11px',borderRadius:999,border:'1px dashed var(--storely-control-border)',background:'transparent',color:'var(--storely-text)',fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit',marginTop:2}}>
                       {ct('addExpenseRow',lang)}
                     </button>
                     {totalPurchasesNow>0 && (

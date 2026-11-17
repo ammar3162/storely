@@ -82,7 +82,7 @@ export default function StepReview({ m }: { m: CashierClosing }) {
                     </div>
                     {deficitChoice && (
                       <>
-                        <label style={{display:'block',fontSize:13,fontWeight:600,color:'#1f2937',marginBottom:6}}>{ct(deficitChoice==='other'?'deficitOtherLbl':'deficitNoteLbl',lang)}</label>
+                        <label style={{display:'block',fontSize:13,fontWeight:600,color:'var(--storely-text)',marginBottom:6}}>{ct(deficitChoice==='other'?'deficitOtherLbl':'deficitNoteLbl',lang)}</label>
                         <textarea value={deficitNote} onChange={e=>setDeficitNote(e.target.value.slice(0,400))} rows={2}
                           placeholder={ct('deficitReasonPh',lang)}
                           style={{width:'100%',padding:'11px 12px',border:`1px solid ${deficitChoice==='other'&&!deficitReasonOk?'#fca5a5':'var(--storely-border)'}`,borderRadius:20,fontSize:17,fontFamily:'inherit',boxSizing:'border-box' as const,resize:'vertical' as const,background:'white',outline:'none'}}/>

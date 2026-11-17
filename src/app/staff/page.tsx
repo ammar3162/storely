@@ -157,7 +157,7 @@ function StaffLoginInner() {
                     <ChevronDown size={14} style={{transform:showCountryPicker?'rotate(180deg)':'none',color:'var(--storely-muted)'}}/>
                   </button>
                   <div style={{width:1,height:24,background:'var(--storely-border)'}}/>
-                  <div style={{flex:1,padding:'12px 12px',fontSize:20,fontWeight:500,fontFamily:"'IBM Plex Mono',ui-monospace,monospace",color:'var(--storely-text)',textAlign:'left' as const,direction:'ltr' as const,minHeight:24,letterSpacing:'1px'}}>
+                  <div style={{flex:1,padding:'12px 12px',fontSize:20,fontWeight:500,fontFamily:'var(--storely-font)',fontVariantNumeric:'tabular-nums',color:'var(--storely-text)',textAlign:'left' as const,direction:'ltr' as const,minHeight:24,letterSpacing:'0.5px'}}>
                     {phone ? groupDigits(phone) : <span style={{color:'var(--storely-subtle)',fontWeight:400}}>{phonePlaceholder}</span>}
                   </div>
                 </div>

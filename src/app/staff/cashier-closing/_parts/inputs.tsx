@@ -31,7 +31,7 @@ export function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconCol
 export function AmountTile({ label, value, onChange, error }: { label: string; value: string; onChange: (v: string) => void; error?: boolean }) {
   const filled = Number(value) > 0
   return (
-    <label className="amt-tile" style={{display:'block',minWidth:0,border:`1px solid ${error?'#dc2626':filled?'#9ca3af':'var(--storely-border)'}`,borderRadius:12,background:error?'#fef7f7':'white',padding:'8px 12px 6px',cursor:'text',transition:'background .15s,border-color .15s'}}>
+    <label className="amt-tile" style={{display:'block',minWidth:0,border:`1px solid ${error?'#dc2626':filled?'var(--storely-control-border)':'var(--storely-border)'}`,borderRadius:12,background:error?'#fef7f7':'white',padding:'8px 12px 6px',cursor:'text',transition:'background .15s,border-color .15s'}}>
       <span style={{display:'block',fontSize:15,color:'var(--storely-muted)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{label}</span>
       <NumberInput value={value} onChange={e=>onChange(e.target.value)} placeholder="0.00"
         style={{display:'block',width:'100%',border:'none',outline:'none',background:'transparent',fontSize:17,fontWeight:500,fontVariantNumeric:'tabular-nums',padding:'2px 0',direction:'ltr',textAlign:'right',fontFamily:'inherit',color:'var(--storely-text)',boxSizing:'border-box'}}/>

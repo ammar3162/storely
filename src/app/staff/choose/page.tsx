@@ -280,7 +280,7 @@ export default function ChoosePage() {
   // أقسام العمل — صفوف قائمة بأيقونة رمادية (تصميم «كاونتر»)
   const workActions = [
     canDispense && hasInvFeature && { key:'d', icon:<PackageMinus size={18} strokeWidth={1.75}/>, title:t('dispense'), sub:t('dispenseSub'), c:'#203640', bg:'var(--storely-fill)', go:()=>router.push('/staff/dispense') },
-    isCashier && hasCashierFeature && { key:'c', icon:<Receipt size={18} strokeWidth={1.75}/>, title:t('cashierClosing'), sub:t('cashierSub'), c:'#1f2937', bg:'var(--storely-fill)', go:()=>router.push('/staff/cashier-closing') },
+    isCashier && hasCashierFeature && { key:'c', icon:<Receipt size={18} strokeWidth={1.75}/>, title:t('cashierClosing'), sub:t('cashierSub'), c:'var(--storely-text)', bg:'var(--storely-fill)', go:()=>router.push('/staff/cashier-closing') },
     canInventory && hasInvFeature && { key:'i', icon:<Boxes size={18} strokeWidth={1.75}/>, title:t('inventory'), sub:t('inventorySub'), c:C.t2, bg:C.raised, go:()=>router.push('/staff/inventory') },
     canPurchases && hasPurFeature && { key:'p', icon:<ShoppingCart size={18} strokeWidth={1.75}/>, title:t('purchases'), sub:t('purchasesSub'), c:C.t2, bg:C.raised, go:()=>router.push('/staff/purchases') },
     !(canDispense && hasInvFeature) && !(isCashier && hasCashierFeature) && hasInvFeature && { key:'e', icon:<PackageMinus size={18} strokeWidth={1.75}/>, title:t('enterSystem'), sub:t('dispenseSub'), c:'#203640', bg:'var(--storely-fill)', go:()=>router.push('/staff/dispense') },
@@ -576,7 +576,7 @@ export default function ChoosePage() {
                 })}
               </div>
             )}
-            <button onClick={()=>setShowNotifications(false)} style={{width:'100%',padding:'12px',marginTop:16,background:'var(--storely-fill)',color:'#1f2937',border:'none',borderRadius:20,fontSize:17,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
+            <button onClick={()=>setShowNotifications(false)} style={{width:'100%',padding:'12px',marginTop:16,background:'var(--storely-fill)',color:'var(--storely-text)',border:'none',borderRadius:20,fontSize:17,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
           </div>
         </div>
       )}

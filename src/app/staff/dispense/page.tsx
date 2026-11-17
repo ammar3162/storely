@@ -22,11 +22,11 @@ function StaffPageInner() {
   if (!hasAnyPermission) {
     return (
       <div style={{minHeight:'100vh',display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',background:'var(--storely-background)',fontFamily:'var(--storely-font)',direction:'rtl',padding:20,textAlign:'center' as const}}>
-        <div style={{display:'flex',justifyContent:'center',marginBottom:16,color:'#1f2937'}}><Lock size={44} strokeWidth={1.5}/></div>
+        <div style={{display:'flex',justifyContent:'center',marginBottom:16,color:'var(--storely-text)'}}><Lock size={44} strokeWidth={1.5}/></div>
         <div style={{fontSize:17,fontWeight:600,color:'var(--storely-text)',marginBottom:8}}>{T('noPerm',lang)}</div>
-        <div style={{fontSize:15,color:'#1f2937',marginBottom:20}}>{T('noPermSub',lang)}</div>
+        <div style={{fontSize:15,color:'var(--storely-text)',marginBottom:20}}>{T('noPermSub',lang)}</div>
         <button onClick={()=>{localStorage.removeItem('staff_session');localStorage.removeItem('staff_token');router.push('/staff')}}
-          style={{padding:'10px 24px',borderRadius:999,border:'1px solid #e5e5e3',background:'white',fontSize:15,fontWeight:600,cursor:'pointer',color:'#1f2937'}}>
+          style={{padding:'10px 24px',borderRadius:999,border:'none',background:'var(--storely-fill)',fontSize:15,fontWeight:600,cursor:'pointer',color:'var(--storely-text)'}}>
           خروج
         </button>
       </div>

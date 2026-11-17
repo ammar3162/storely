@@ -32,7 +32,7 @@ const C = {
   primary:'#203640', primaryD:'#203640', primaryL:'var(--storely-fill)', primaryB:'var(--storely-control-border)',
   danger:'#dc2626', dangerL:'#fef2f2',
   warning:'#b45309', warningL:'#fffbeb',
-  text:'var(--storely-text)', text2:'var(--storely-text)', text3:'var(--storely-muted)', text4:'#1f2937',   // تصميم «كاونتر»: نص غامق واضح
+  text:'var(--storely-text)', text2:'var(--storely-text)', text3:'var(--storely-muted)', text4:'var(--storely-text)',   // تصميم «كاونتر»: نص غامق واضح
   bg:'var(--storely-background)', surface:'#ffffff', border:'var(--storely-border)', border2:'var(--storely-border)',
 }
 
@@ -428,7 +428,7 @@ export default function StaffPurchasesPage() {
           </div>
 
           {!multi&&<button type="submit" disabled={loading||uploading}
-            style={{width:'100%',padding:'14px',background:loading?'#9ca3af':C.primary,color:'white',border:'none',borderRadius:20,fontSize:17,fontWeight:600,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:`0 4px 14px rgba(22,163,74,.3)`}}>
+            style={{width:'100%',padding:'14px',background:C.primary,opacity:loading?.55:1,color:'white',border:'none',borderRadius:20,fontSize:17,fontWeight:600,cursor:loading?'not-allowed':'pointer',fontFamily:'inherit',boxShadow:`0 4px 14px rgba(22,163,74,.3)`}}>
             {loading?pt('submitting',lang):pt('submitBtn',lang)}
           </button>}
         </form>

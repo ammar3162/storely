@@ -15,7 +15,7 @@ export default function AddProductModal({ m }: { m: StaffDispense }) {
   const matches = (products || []).filter((p: any) => !q || String(p.name || '').toLowerCase().includes(q)).slice(0, 8)
   const canSave = !savingProduct && !!newProduct.qty && (existing ? !!picked : !!newProduct.name.trim())
   const tabBtn = (on: boolean) => ({ flex: 1, padding: '10px', borderRadius:12, border: 'none', fontSize:17, fontWeight:600, cursor: 'pointer', fontFamily: 'inherit',
-    background: on ? 'white' : 'transparent', color: on ? '#203640' : '#374151', boxShadow: on ? '0 1px 4px rgba(0,0,0,.08)' : 'none' })
+    background: on ? 'white' : 'transparent', color: on ? '#203640' : 'var(--storely-text)', boxShadow: on ? '0 1px 4px rgba(0,0,0,.08)' : 'none' })
   return (
     <>
       {/* Add product modal */}

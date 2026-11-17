@@ -78,7 +78,7 @@ export default function StepData({ m }: { m: CashierClosing }) {
                         </div>
                       )}
                       <button type="button" onClick={()=>{setAppPickerOpen(false);setOtherAppOpen(false);setOtherAppName('')}}
-                        style={{display:'block',margin:'10px auto 0',border:'none',background:'none',color:'#1f2937',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{ct('cancelPick',lang)}</button>
+                        style={{display:'block',margin:'10px auto 0',border:'none',background:'none',color:'var(--storely-text)',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{ct('cancelPick',lang)}</button>
                     </div>
                   )}
                   {deliveryApps.length>0 && <div style={{fontSize:15,color:'var(--storely-muted)',marginTop:8}}>{ct('deliveryHint',lang)}</div>}
