@@ -30,7 +30,7 @@ export default function PriceComparisonModal({ m }: { m: SuppliersPageState }) {
                   </div>
                   <div style={{display:'flex',flexDirection:'column' as const,gap:6}}>
                     {c.suppliers.map((s:any,si:number)=>(
-                      <div key={si} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 10px',background:si===0?'#F7F9FA':'#F7F9FA',borderRadius:12,border:si===0?'1px solid #E2E7EA':'1px solid #E2E7EA'}}>
+                      <div key={si} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 10px',background:si===0?'var(--storely-background)':'var(--storely-background)',borderRadius:12,border:si===0?'1px solid #E2E7EA':'1px solid #E2E7EA'}}>
                         <span style={{fontSize:13,fontWeight:600,color:'var(--storely-text)'}}>{s.supplier}{si===0&&<span className="storely-badge" data-status="success" style={{marginInlineStart:6,minHeight:22,padding:'0 6px'}}>الأرخص</span>}</span>
                         <span style={{fontSize:13,fontWeight:600,color:si===0?'#203640':'#66737C'}}>{s.unitPrice} {curr||'⃁'} / {s.unit||'وحدة'}</span>
                       </div>

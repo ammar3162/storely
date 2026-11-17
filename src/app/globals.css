@@ -779,3 +779,13 @@ html[dir="ltr"] body { font-family: -apple-system, BlinkMacSystemFont, "SF Arabi
 [data-theme="dark"] .storely-button[data-variant=primary]:hover:not(:disabled) { background: #4a7a90; border-color: #4a7a90; }
 [data-theme="dark"] .storely-button[data-variant=ghost] { color: #a9c6d4; }
 [data-theme="dark"] .iv-tab.on { background: #48484a !important; color: #f5f5f7 !important; }
+/* أزرار الصفحات اللي نصها كحلي صريح (T.color.navy) — نص كحلي فاتح وإطار رمادي غامق */
+[data-theme="dark"] :is(.ui-button, .br-button, .ts-button) { color: #a9c6d4 !important; border-color: #48484a !important; }
+/* الأحمر الغامق ما يبان على الأسود — أحمر فاتح بدرجة أبل الداكنة */
+[data-theme="dark"] :is(.br-danger, .ts-history-quantity) { color: #f28b82 !important; }
+[data-theme="dark"] [style^="color:#b91c1c" i], [data-theme="dark"] [style*=";color:#b91c1c" i],
+[data-theme="dark"] [style^="color: rgb(185, 28, 28)"], [data-theme="dark"] [style*="; color: rgb(185, 28, 28)"],
+[data-theme="dark"] [style^="color:#dc2626" i], [data-theme="dark"] [style*=";color:#dc2626" i],
+[data-theme="dark"] [style^="color: rgb(220, 38, 38)"], [data-theme="dark"] [style*="; color: rgb(220, 38, 38)"],
+[data-theme="dark"] [style^="color:#991b1b" i], [data-theme="dark"] [style*=";color:#991b1b" i],
+[data-theme="dark"] [style^="color: rgb(153, 27, 27)"], [data-theme="dark"] [style*="; color: rgb(153, 27, 27)"] { color: #f28b82 !important; }
