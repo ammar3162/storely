@@ -200,9 +200,6 @@ export default function SupplierPortalAuthPage() {
               استلم طلبات التوريد فورياً، حدّث أسعارك وأصنافك بضغطة، وتابع حالة كل طلب مع كل فرع من مكان واحد
             </p>
 
-            <div style={{position:'relative',borderRadius:20,overflow:'hidden',boxShadow:'0 16px 40px rgba(0,0,0,.12)',marginBottom:24}}>
-              <img src="/supplier-team.jpg" alt="Storely" style={{width:'100%',display:'block',objectFit:'cover'}}/>
-            </div>
 
             <div style={{display:'flex',flexDirection:'column',gap:11,marginTop:24}}>
               {[
