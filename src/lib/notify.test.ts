@@ -10,11 +10,12 @@ describe('notifyInsert — كل إشعار بالجرس يوصل كإشعار ج
   it('saves then pushes each org row, riyal sign as ر.س', async () => {
     sent.length = 0
     const db = fakeDb()
-    const res = await notifyInsert(db, [{ org_id: 'o1', title: 'عجز 50 ⃁', message: 'خالد' }, { org_id: 'o2', title: 'طلب إجازة', message: 'سارة' }], { url: '/reports' })
+    const res = await notifyInsert(db, [{ org_id: 'o1', title: 'عجز 50 ⃁', message: 'خالد', branch_id: 'b1' }, { org_id: 'o2', title: 'طلب إجازة', message: 'سارة' }], { url: '/reports' })
     await new Promise(r => setTimeout(r, 0))
     expect(res.error).toBeNull()
     expect(db.inserted).toHaveLength(1)
-    expect(sent).toEqual([['o1', 'عجز 50 ر.س', 'خالد', '/reports'], ['o2', 'طلب إجازة', 'سارة', '/reports']])
+    // إشعار فرع → يوصل لأجهزة هالفرع (والمالك)؛ بدون فرع → كل أجهزة المنشأة
+    expect(sent).toEqual([['o1', 'عجز 50 ر.س', 'خالد', '/reports', 'b1'], ['o2', 'طلب إجازة', 'سارة', '/reports', null]])
   })
   it('no push when the insert failed or push:false', async () => {
     sent.length = 0
