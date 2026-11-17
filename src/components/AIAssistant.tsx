@@ -400,7 +400,12 @@ export default function AIAssistant() {
     const t = setTimeout(()=>dismissBubble(bubble), 15000)
     return ()=>clearTimeout(t)
   },[bubble])
-  useEffect(()=>{ if (open) setBubble(null) },[open])
+  // فتح الشات = شاف الاقتراحات كلها بالترحيب: ما ترجع نفسها كفقاعة لما يقفله
+  useEffect(()=>{
+    if (!open) return
+    setBubble(null)
+    if (sugs?.length) { try { const seen = JSON.parse(sessionStorage.getItem(BUBBLE_SEEN)||'[]'); sessionStorage.setItem(BUBBLE_SEEN, JSON.stringify([...new Set([...seen, ...sugs.map(x=>x.id)])])) } catch {} }
+  },[open, sugs])
   const dragRef = useRef<{ sx:number; sy:number; ox:number; oy:number; moved:boolean }|null>(null)
   const fabLimits = () => {
     const mobile = window.innerWidth < 768, size = mobile ? 46 : 50
