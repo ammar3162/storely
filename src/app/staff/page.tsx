@@ -181,7 +181,7 @@ function StaffLoginInner() {
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:16,direction:'ltr' as const}}>
                 {keypadKeys.map((k,i)=> k==='' ? <div key={i}/> : (
                   <button key={i} className="kp-btn" onClick={()=>pressPhoneKey(k)}
-                    style={{height:56,borderRadius:20,border:k==='⌫'?'none':'1px solid var(--storely-border)',background:k==='⌫'?'transparent':'#ffffff',fontSize:22,fontWeight:500,fontFamily:"'IBM Plex Mono',ui-monospace,monospace",color:k==='⌫'?'var(--storely-muted)':'var(--storely-text)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    style={{height:56,borderRadius:20,border:k==='⌫'?'none':'1px solid var(--storely-border)',background:k==='⌫'?'transparent':'#ffffff',fontSize:22,fontWeight:500,fontFamily:'var(--storely-font)',fontVariantNumeric:'tabular-nums',color:k==='⌫'?'var(--storely-muted)':'var(--storely-text)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
                     {keyContent(k)}
                   </button>
                 ))}
@@ -206,7 +206,7 @@ function StaffLoginInner() {
               </button>
 
               <p style={{fontSize:17,color:'var(--storely-muted)',marginBottom:4}}>{t('staffLogin.enterPin')}</p>
-              <p style={{fontSize:17,color:'var(--storely-text)',marginBottom:24,direction:'ltr' as const,textAlign:dir==='rtl'?'right':'left',fontFamily:"'IBM Plex Mono',ui-monospace,monospace"}}>+{selectedCountry.code} {groupDigits(phone)}</p>
+              <p style={{fontSize:17,color:'var(--storely-text)',marginBottom:24,direction:'ltr' as const,textAlign:dir==='rtl'?'right':'left',fontFamily:'var(--storely-font)',fontVariantNumeric:'tabular-nums'}}>+{selectedCountry.code} {groupDigits(phone)}</p>
 
               {/* نقاط عرض PIN */}
               <div className={shake?'shake':''} style={{display:'flex',justifyContent:'center',gap:14,marginBottom:32,direction:'ltr' as const}}>
@@ -229,7 +229,7 @@ function StaffLoginInner() {
               <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginBottom:24,direction:'ltr' as const}}>
                 {keypadKeys.map((k,i)=> k==='' ? <div key={i}/> : (
                   <button key={i} className="kp-btn" disabled={loading} onClick={()=>pressPinKey(k)}
-                    style={{height:56,borderRadius:20,border:k==='⌫'?'none':'1px solid var(--storely-border)',background:k==='⌫'?'transparent':'#ffffff',fontSize:22,fontWeight:500,fontFamily:"'IBM Plex Mono',ui-monospace,monospace",color:k==='⌫'?'var(--storely-muted)':'var(--storely-text)',cursor:loading?'default':'pointer',opacity:loading?.5:1,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    style={{height:56,borderRadius:20,border:k==='⌫'?'none':'1px solid var(--storely-border)',background:k==='⌫'?'transparent':'#ffffff',fontSize:22,fontWeight:500,fontFamily:'var(--storely-font)',fontVariantNumeric:'tabular-nums',color:k==='⌫'?'var(--storely-muted)':'var(--storely-text)',cursor:loading?'default':'pointer',opacity:loading?.5:1,display:'flex',alignItems:'center',justifyContent:'center'}}>
                     {keyContent(k)}
                   </button>
                 ))}
