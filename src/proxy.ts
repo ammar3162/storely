@@ -1,4 +1,5 @@
 import { managerPageAllowed } from '@/lib/managerPerms'
+import { skipScheduledCron } from '@/lib/deployEnv'
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
@@ -24,6 +25,10 @@ export async function proxy(request: NextRequest) {
   // طلبات /api ما تحتاج فحص الجلسة هنا — كل API يتحقق بنفسه (verifyOrgAccess / توكن الموظف / مفتاح الأدمن).
   // كان هذا الفحص رحلة إضافية لخادم Supabase مع كل طلب بيانات.
   if (request.nextUrl.pathname.startsWith('/api')) {
+    // المهام المجدولة: تشتغل من الموقع الأساسي فقط (الاستيجنق كان يشغّلها على قاعدته ويرسل واتساب حقيقي)
+    if (skipScheduledCron(request.headers.get('user-agent'))) {
+      return NextResponse.json({ skipped: 'scheduled jobs run on production only' })
+    }
     // المسار والطريقة لـ verifyOrgAccess (حارس صلاحيات مدير الفرع) — نكتبها دايماً فوق أي قيمة من العميل
     const reqHeaders = new Headers(request.headers)
     reqHeaders.set('x-storely-path', request.nextUrl.pathname)

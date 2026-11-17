@@ -5,6 +5,9 @@ import { combineBranchLimit, EXTRA_BRANCH_SLUG } from '@/lib/branchLimit'
 import { orgFeatures, branchFeaturesMap, featuresFrom, activeAddonSlugs, orgOnTrial, type Feature } from '@/lib/planFeatures'
 import { DEVICE_UNVERIFIED_ERROR, DEVICE_UNVERIFIED_REASON } from '@/lib/deviceMessages'
 import { readDeviceId, deviceCookie } from '@/lib/deviceTrust'
+import { normalizePhone } from '@/lib/deployEnv'
+import { sendEmail } from '@/lib/email'
+import { phoneChangedEmail } from '@/lib/emailTemplates'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -108,6 +111,12 @@ export async function PATCH(req: Request) {
 
     const body = await req.json()
     const db = sb()
+    // تغيير الجوال أو موافقة واتساب أو إلغاء الحذف = من جهاز موثوق فقط (رمز الإيميل).
+    // كان يمر من جهاز غير موثوق: بكلمة مرور مسروقة يغيّر الرقم لرقمه ويدخل من بوت واتساب بدون تحقق الجهاز
+    const sensitive = 'phone' in body || body.whatsapp_consent === true || body.cancel_org_deletion === true
+    if (sensitive && profile.deviceTrusted === false) {
+      return NextResponse.json({ error: DEVICE_UNVERIFIED_ERROR, reason: DEVICE_UNVERIFIED_REASON }, { status: 403 })
+    }
     const profileUpdate: Record<string, unknown> = {}
     if (body.whatsapp_consent === true) {
       profileUpdate.whatsapp_consent = true
@@ -115,15 +124,37 @@ export async function PATCH(req: Request) {
     }
     if (body.whatsapp_first_contact_confirmed === true) profileUpdate.whatsapp_first_contact_confirmed = true
     if ('full_name' in body) profileUpdate.full_name = String(body.full_name || '').trim()
-    if ('phone' in body) profileUpdate.phone = String(body.phone || '').trim()
+    let notifyPhoneChange: (() => Promise<unknown>) | null = null
+    if ('phone' in body) {
+      // صفحة الإعدادات ترسل الاسم والجوال مع بعض — نفحص ونحدّث الجوال بس لو تغيّر فعلاً
+      const phone = String(body.phone || '').trim()
+      const digits = normalizePhone(phone)
+      const { data: cur } = await db.from('profiles').select('phone,full_name').eq('id', profile.userId).maybeSingle()
+      if (digits !== normalizePhone((cur as any)?.phone)) {
+        if (phone) {
+          if (!/^\d{9,15}$/.test(digits)) return NextResponse.json({ error: 'رقم الجوال غير صحيح' }, { status: 400 })
+          // الرقم ما يتكرر بين الحسابات — بوت واتساب يتعرف على صاحب الحساب من رقمه
+          const variants = [...new Set([phone, digits, '+' + digits, digits.startsWith('966') ? '0' + digits.slice(3) : digits, digits.startsWith('966') ? digits.slice(3) : digits])]
+          const { data: taken } = await db.from('profiles').select('id').in('phone', variants).neq('id', profile.userId).limit(1)
+          if (taken?.length) return NextResponse.json({ error: 'رقم الجوال هذا مرتبط بحساب آخر' }, { status: 409 })
+          if (profile.email) {
+            const mail = phoneChangedEmail({ name: (cur as any)?.full_name, maskedPhone: digits.replace(/\d(?=\d{3})/g, '•') })
+            // تنبيه أمني لإيميل الحساب بعد الحفظ
+            notifyPhoneChange = () => sendEmail({ to: profile.email!, subject: mail.subject, html: mail.html }).catch(() => null)
+          }
+        }
+        profileUpdate.phone = phone
+      }
+    }
 
     if (Object.keys(profileUpdate).length) {
       const { error } = await db.from('profiles').update(profileUpdate as any).eq('id', profile.userId)
       if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
+      if (notifyPhoneChange) await notifyPhoneChange()
     }
 
-    // تسجيل الدخول يعتبر تراجع عن طلب حذف الحساب المجدول
-    if (body.cancel_org_deletion === true && profile.orgId) {
+    // تسجيل الدخول يعتبر تراجع عن طلب حذف الحساب المجدول — للمالك فقط (المدير ما يلغي حذف طلبه المالك)
+    if (body.cancel_org_deletion === true && profile.orgId && profile.role === 'owner') {
       const { error } = await db.from('organizations').update({ deletion_scheduled_at: null } as any).eq('id', profile.orgId)
       if (error) return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
     }

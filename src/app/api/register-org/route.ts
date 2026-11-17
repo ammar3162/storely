@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { trialEndsFromNow } from '@/lib/subscription'
 import { PLAN_CAPS, CUSTOM_MODULE_ORDER, CUSTOM_MIN_STAFF_PER_BRANCH, isCustomPlan, isNewPlan, isPerBranchAddon, signupAddonsFor, type PlanKey } from '@/lib/planPricing'
 import { activateAddon } from '@/lib/addonActivation'
 import { normalizeWhatsapp } from '@/lib/phoneNormalize'
@@ -30,7 +31,9 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    let { orgName, fullPhone, businessType, branchCount, billing, phone, trialEnds, countryCode, termsAcceptedAt, agentCode, plan: chosenPlan, addons: chosenAddons } = body
+    let { orgName, fullPhone, businessType, branchCount, billing, phone, countryCode, termsAcceptedAt, agentCode, plan: chosenPlan, addons: chosenAddons } = body
+    // نهاية التجربة من الخادم دايماً — أي قيمة trialEnds من المتصفح تُتجاهل
+    const trialEnds = trialEndsFromNow()
     const userId = authedUser.id
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null
     const userAgent = req.headers.get('user-agent') || null

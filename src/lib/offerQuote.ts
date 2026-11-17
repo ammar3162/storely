@@ -1,5 +1,7 @@
 // عرض السعر الخاص (ملف العميل في لوحة الإدارة): مدة صلاحية العرض وتاريخها بصيغة الفاتورة
 export const OFFER_VALID_DAYS = 7
+// رابط ملف الفاتورة/العرض (مجلد خاص): موقّع وصالح سنة — يكفي للواتساب والإيميل، وما ينخمّن
+export const INVOICE_LINK_TTL_SECONDS = 365 * 24 * 3600
 
 export const arInvoiceDate = (d: Date) =>
   d.toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', year: 'numeric', month: 'long', day: 'numeric' })

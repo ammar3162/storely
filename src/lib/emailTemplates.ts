@@ -176,6 +176,22 @@ export function resetPasswordEmail(o: { name?: string; link: string }) {
   }
 }
 
+// تنبيه أمني: تغيّر رقم الجوال المرتبط بالحساب (يستخدمه بوت واتساب للتعرف على صاحب الحساب)
+export function phoneChangedEmail(o: { name?: string | null; maskedPhone: string }) {
+  return {
+    subject: 'تنبيه أمني: تغيّر رقم الجوال في حسابك — Storely',
+    html: brandEmail({
+      title: 'تغيّر رقم الجوال في حسابك',
+      preheader: 'تم تغيير رقم الجوال المرتبط بحسابك في Storely',
+      eyebrow: 'أمان الحساب',
+      greeting: `مرحباً${o.name ? ` ${o.name}` : ''}،`,
+      paragraphs: [`تم تغيير رقم الجوال المرتبط بحسابك إلى ${o.maskedPhone}. هذا الرقم يستخدمه بوت واتساب للتعرف عليك.`],
+      note: 'إذا لم تقم بهذا التغيير، فغيّر كلمة المرور فوراً وتواصل معنا على support@storely.dev.',
+      minimal: true,
+    }),
+  }
+}
+
 // رمز الدخول: عند التسجيل (أول جهاز) أو الدخول من جهاز جديد
 export function deviceCodeEmail(o: { name?: string; code: string; device: string; firstTime: boolean }) {
   return {

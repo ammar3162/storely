@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { INVOICE_TYPES, INVOICE_MAX_BYTES, invoiceType, invoiceExt } from '@/lib/invoiceFile'
 import { staffFeatureError } from '@/lib/featureRoutes'
+import { sniffSafeType } from '@/lib/fileSniff'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,14 +28,16 @@ export async function POST(req: Request) {
     const type = invoiceType(file)
     if (!(INVOICE_TYPES as readonly string[]).includes(type)) return NextResponse.json({ error: 'يجب أن يكون الملف صورة أو PDF' }, { status: 400 })
     if (file.size > INVOICE_MAX_BYTES) return NextResponse.json({ error: 'الملف أكبر من ٤ ميجا' }, { status: 400 })
-    const path = `invoices/${orgId}-${Date.now()}.${invoiceExt(type)}`
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
+    const buffer = Buffer.from(await file.arrayBuffer())
+    // النوع الحقيقي من محتوى الملف (المتصفح يقدر يكذب في النوع)
+    const real = sniffSafeType(new Uint8Array(buffer.subarray(0, 16)))
+    if (!real) return NextResponse.json({ error: 'يجب أن يكون الملف صورة أو PDF' }, { status: 400 })
+    const path = `invoices/${orgId}-${Date.now()}.${invoiceExt(real)}`
 
     const supabase = sb()
     const { error: upErr } = await supabase.storage.from('invoices').upload(path, buffer, {
       upsert: true,
-      contentType: type,
+      contentType: real,
     })
     if (upErr) return NextResponse.json({ error: 'فشل رفع الصورة — حاول مرة أخرى' }, { status: 500 })
 

@@ -1,5 +1,6 @@
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
+import { subStateFromOwner } from '@/lib/subscription'
 
 /**
  * نظام "تذكرة موظف موقّعة" (Signed Staff Token)
@@ -48,6 +49,13 @@ export function generateStaffToken(staff_id: string, org_id: string, branch_id: 
 // رسالة واحدة واضحة للموظف — بدون مصطلحات تقنية. الواجهة تطلب منه رمز PIN وتكمل العملية
 export const SESSION_ENDED = 'انتهت جلستك — أدخل رمزك من جديد'
 
+/** رسالة الموظف لما تكون المنشأة منتهية أو موقوفة (فيها «اشتراك المنشأة» عشان شاشة الإيقاف تطلع) */
+export function staffBlockedMessage(reason: 'expired' | 'suspended' | null): string {
+  return reason === 'suspended'
+    ? 'اشتراك المنشأة موقوف حالياً — يرجى إبلاغ صاحب العمل'
+    : 'انتهت صلاحية اشتراك المنشأة — يرجى إبلاغ صاحب العمل لتجديد الاشتراك'
+}
+
 export async function verifyStaffToken(token: string | null): Promise<{ valid: boolean; data?: StaffPayload; error?: string; reason?: 'subscription_expired' }> {
   if (!token) return { valid: false, error: SESSION_ENDED }
 
@@ -84,11 +92,13 @@ export async function verifyStaffToken(token: string | null): Promise<{ valid: b
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
     const [{ data: org }, { data: staff, error: staffErr }] = await Promise.all([
-      supabase.from('profiles').select('subscription_ends_at').eq('org_id', payload.org_id).eq('role', 'owner').maybeSingle(),
+      supabase.from('profiles').select('status,subscription_type,subscription_ends_at').eq('org_id', payload.org_id).eq('role', 'owner').maybeSingle(),
       supabase.from('staff_members').select('is_active,branch_id').eq('id', payload.staff_id).eq('org_id', payload.org_id).maybeSingle(),
     ])
-    if ((org as any)?.subscription_ends_at && new Date((org as any).subscription_ends_at) < new Date()) {
-      return { valid: false, error: 'انتهت صلاحية اشتراك المنشأة — يرجى إبلاغ صاحب العمل لتجديد الاشتراك', reason: 'subscription_expired' }
+    // منتهي أو موقوف من الإدارة (الإيقاف كان يمر — الموظفين يكملون إقفال ومشتريات وهو موقوف)
+    const sub = subStateFromOwner(org as any)
+    if (sub.blocked) {
+      return { valid: false, error: staffBlockedMessage(sub.reason), reason: 'subscription_expired' }
     }
     // الموظف انوقف/انحذف أو انتقل لفرع ثاني بعد ما دخل: الجلسة تنتهي فوراً (يدخل رمزه من جديد بفرعه الجديد)
     if (!staffErr && (!staff || (staff as any).is_active === false || ((staff as any).branch_id ?? null) !== (payload.branch_id ?? null))) {

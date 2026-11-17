@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeAll } from 'vitest'
 
 // فحص الاشتراك داخل verifyStaffToken يقرأ من قاعدة البيانات — نرجّع "لا يوجد تاريخ انتهاء"
 // وحالة الموظف (فعّال + فرعه) — نتحكم فيها من الاختبار عن طريق staffRow
-const db: { staffRow: any } = { staffRow: { is_active: true, branch_id: 'branch-1' } }
+const db: { staffRow: any; ownerRow: any } = { staffRow: { is_active: true, branch_id: 'branch-1' }, ownerRow: null }
 vi.mock('@supabase/supabase-js', () => {
   const make = (table: string) => {
-    const chain: any = { select: () => chain, eq: () => chain, maybeSingle: async () => ({ data: table === 'staff_members' ? db.staffRow : null }) }
+    const chain: any = { select: () => chain, eq: () => chain, maybeSingle: async () => ({ data: table === 'staff_members' ? db.staffRow : table === 'profiles' ? db.ownerRow : null }) }
     return chain
   }
   return { createClient: () => ({ from: (t: string) => make(t) }) }
@@ -71,5 +71,26 @@ describe('staff token vs current staff state', () => {
     db.staffRow = null
     expect((await verifyStaffToken(generateStaffToken('staff-1', 'org-1', 'branch-1'))).valid).toBe(false)
     db.staffRow = { is_active: true, branch_id: 'branch-1' }
+  })
+})
+
+
+describe('staff blocked when the org is not active', () => {
+  it('suspended org (admin suspension) blocks every staff call', async () => {
+    const { generateStaffToken, verifyStaffToken } = await load()
+    db.ownerRow = { status: 'suspended', subscription_type: 'paid', subscription_ends_at: new Date(Date.now() + 30 * 86400000).toISOString() }
+    const res = await verifyStaffToken(generateStaffToken('staff-1', 'org-1', 'branch-1'))
+    expect(res.valid).toBe(false)
+    expect(res.reason).toBe('subscription_expired')
+    expect(res.error).toContain('اشتراك المنشأة')
+    db.ownerRow = null
+  })
+  it('expired org blocks; active org passes', async () => {
+    const { generateStaffToken, verifyStaffToken } = await load()
+    db.ownerRow = { status: 'active', subscription_type: 'paid', subscription_ends_at: new Date(Date.now() - 86400000).toISOString() }
+    expect((await verifyStaffToken(generateStaffToken('staff-1', 'org-1', 'branch-1'))).valid).toBe(false)
+    db.ownerRow = { status: 'active', subscription_type: 'paid', subscription_ends_at: new Date(Date.now() + 86400000).toISOString() }
+    expect((await verifyStaffToken(generateStaffToken('staff-1', 'org-1', 'branch-1'))).valid).toBe(true)
+    db.ownerRow = null
   })
 })

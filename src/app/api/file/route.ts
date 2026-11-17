@@ -5,6 +5,7 @@ import { getCurrentProfile } from '@/lib/verifyOrgAccess'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { currentAccountant, accessFor } from '@/lib/accountantPortalAuth'
 import { isSubscriptionActive } from '@/lib/subscription'
+import { sniffSafeType, storedFileHeaders } from '@/lib/fileSniff'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -68,11 +69,7 @@ export async function GET(req: Request) {
   // نرجّع الملف نفسه من رابطنا (بدون تحويل لرابط مؤقت) — عشان أي نسخة للرابط تمر بالتحقق دايماً
   const { data: blob, error } = await db.storage.from('invoices').download(path)
   if (error || !blob) return deny(req, 404, 'الملف غير موجود')
-  return new NextResponse(blob.stream(), { status: 200, headers: {
-    'Content-Type': blob.type || 'application/octet-stream',
-    'Content-Length': String(blob.size),
-    'Content-Disposition': 'inline',
-    'Cache-Control': 'private, no-store',
-    'X-Content-Type-Options': 'nosniff',
-  } })
+  // النوع من محتوى الملف نفسه (مو النوع المخزّن): صورة/PDF تنعرض، وأي شي ثاني (HTML، SVG…) ينزل بدون ما يشتغل
+  const safe = sniffSafeType(new Uint8Array(await blob.slice(0, 16).arrayBuffer()))
+  return new NextResponse(blob.stream(), { status: 200, headers: storedFileHeaders(safe, blob.size) })
 }

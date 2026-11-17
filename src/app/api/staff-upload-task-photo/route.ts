@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
+import { sniffSafeType, extForSafeType, SAFE_IMAGE_TYPES } from '@/lib/fileSniff'
 import { createClient } from '@supabase/supabase-js'
 import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
+
+const TASK_PHOTO_MAX_BYTES = 8 * 1024 * 1024
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,15 +20,17 @@ export async function POST(req: Request) {
     const file = formData.get('file') as File | null
     if (!file) return NextResponse.json({ error: 'لا يوجد ملف' }, { status: 400 })
 
-    const ext = file.name.split('.').pop() || 'jpg'
-    const path = `task-photos/${orgId}-${Date.now()}.${ext}`
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
+    // صورة حقيقية فقط (من محتوى الملف) — الامتداد والنوع من المتصفح ما نعتمد عليهم
+    if (file.size > TASK_PHOTO_MAX_BYTES) return NextResponse.json({ error: 'الصورة كبيرة — صوّرها مرة ثانية' }, { status: 400 })
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const type = sniffSafeType(new Uint8Array(buffer.subarray(0, 16)))
+    if (!type || !(SAFE_IMAGE_TYPES as readonly string[]).includes(type)) return NextResponse.json({ error: 'يجب أن يكون الملف صورة' }, { status: 400 })
+    const path = `task-photos/${orgId}-${Date.now()}.${extForSafeType(type)}`
 
     const supabase = sb()
     const { error: upErr } = await supabase.storage.from('invoices').upload(path, buffer, {
       upsert: true,
-      contentType: file.type || 'image/jpeg',
+      contentType: type,
     })
     if (upErr) return NextResponse.json({ error: 'فشل رفع الصورة — حاول مرة أخرى' }, { status: 500 })
 

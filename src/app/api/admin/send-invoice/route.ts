@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
+import { randomUUID } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { sendWhatsAppDocument, formatPhone } from '@/lib/whatsapp'
 import { generateInvoicePdf } from '@/lib/generateInvoicePdf'
 import { sendEmail } from '@/lib/email'
 import { invoiceEmail } from '@/lib/emailTemplates'
-import { offerValidUntil, OFFER_VALID_DAYS } from '@/lib/offerQuote'
+import { offerValidUntil, OFFER_VALID_DAYS, INVOICE_LINK_TTL_SECONDS } from '@/lib/offerQuote'
 
 export async function POST(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
@@ -53,14 +54,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'فشل توليد ملف الفاتورة: ' + String(err?.message || err) }, { status: 500 })
   }
 
-  // رفع الملف للتخزين وجلب رابط عام
-  const fileName = `invoice-${invoiceNumber}.pdf`
-  const { error: upErr } = await supabase.storage.from('invoice-pdfs').upload(fileName, pdfBuffer, {
-    contentType: 'application/pdf', upsert: true,
+  // رفع الملف لمجلد خاص باسم عشوائي، ورابط موقّع صالح سنة (للواتساب والإيميل) — ما ينخمّن ولا ينفتح بدونه
+  const fileName = `invoice-${invoiceNumber}.pdf`                       // الاسم اللي يشوفه العميل
+  const storagePath = `invoice-${invoiceNumber}-${randomUUID()}.pdf`     // مكان الملف الفعلي
+  const { error: upErr } = await supabase.storage.from('invoice-pdfs').upload(storagePath, pdfBuffer, {
+    contentType: 'application/pdf', upsert: false,
   })
   if (upErr) return NextResponse.json({ error: 'فشل رفع ملف الفاتورة' }, { status: 500 })
 
-  const { data: { publicUrl } } = supabase.storage.from('invoice-pdfs').getPublicUrl(fileName)
+  const { data: signed, error: signErr } = await supabase.storage.from('invoice-pdfs').createSignedUrl(storagePath, INVOICE_LINK_TTL_SECONDS)
+  if (signErr || !signed?.signedUrl) return NextResponse.json({ error: 'فشل إنشاء رابط الفاتورة' }, { status: 500 })
+  const publicUrl = signed.signedUrl
 
   const result = await sendWhatsAppDocument(phone, publicUrl, fileName, status === 'due' ? `عرض سعر #${invoiceNumber} — ${orgName || ''} — ${total} ر.س` : `فاتورة اشتراك #${invoiceNumber} — ${orgName || ''}`)
   if (!result.ok) {
