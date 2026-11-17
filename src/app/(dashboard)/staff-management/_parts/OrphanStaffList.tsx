@@ -19,7 +19,7 @@ export default function OrphanStaffList({ m }: { m: StaffPage }) {
                 </div>
                 <div style={{display:'flex',gap:6}}>
                   <button onClick={()=>moveOrphanHere(o)} style={{...btnPrimary,padding:'7px 14px',fontSize:13}}>نقل لهذا الفرع</button>
-                  <button onClick={()=>deleteStaff(o.id)} style={{padding:'7px 14px',fontSize:13,fontWeight:600,borderRadius:12,border:`1px solid ${colors.dangerBorder}`,background:colors.dangerLight,color:colors.danger,cursor:'pointer',fontFamily:'inherit'}}>حذف</button>
+                  <button onClick={()=>deleteStaff(o.id)} style={{padding:'7px 14px',fontSize:13,fontWeight:600,borderRadius:999,border:`1px solid ${colors.dangerBorder}`,background:colors.dangerLight,color:colors.danger,cursor:'pointer',fontFamily:'inherit'}}>حذف</button>
                 </div>
               </div>
             ))}

@@ -15,7 +15,7 @@ const T = {
     to: 'Add to', newItem: 'New item', matched: 'In stock', sum: 'Selected total', inv: 'Invoice total', save: 'Save invoice', saving: 'Saving...' },
 }
 
-export default function InvoiceItemsPicker({ items, products, invoiceTotal, lang = 'ar', saving, onSave, color = '#0f766e', error }: {
+export default function InvoiceItemsPicker({ items, products, invoiceTotal, lang = 'ar', saving, onSave, color = 'var(--storely-navy)', error }: {
   items: OcrItem[]; products: { id: string; name: string; unit?: string | null }[]; invoiceTotal?: number | null
   lang?: 'ar' | 'en'; saving?: boolean; onSave: (rows: PickedItem[]) => void; color?: string; error?: string
 }) {
@@ -65,7 +65,7 @@ export default function InvoiceItemsPicker({ items, products, invoiceTotal, lang
       <button type="button" disabled={saving || !picked}
         onClick={() => onSave(rows.map((r, i) => ({ r, it: items[i] })).filter(x => x.r.on).map(({ r, it }) => ({
           name: it.name, qty: Number(r.qty) || 0, unit: it.unit || 'قطعة', total: Number(r.price) || 0, product_id: r.target })))}
-        style={{ width: '100%', marginTop: 10, padding: 12, borderRadius:12, border: 'none', background: saving || !picked ? '#9ca3af' : color, color: 'white', fontSize:17, fontWeight:600, cursor: saving ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+        style={{ width: '100%', marginTop: 10, padding: 12, borderRadius:999, border: 'none', background: saving || !picked ? '#9ca3af' : color, color: 'white', fontSize:17, fontWeight:600, cursor: saving ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
         {saving ? t.saving : `${t.save} (${picked})`}
       </button>
     </div>

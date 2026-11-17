@@ -18,7 +18,7 @@ export default function StepNav({ m }: { m: CashierClosing }) {
                   {ct('next',lang)}
                 </button>
               ) : (
-                <button onClick={saveClosing} disabled={submitting||!deficitReasonOk} style={{flex:2,height:48,background:deficitReasonOk?'#203640':'#eceef1',color:deficitReasonOk?'white':'#6b7487',border:'none',borderRadius:999,fontSize:17,fontWeight:600,cursor:deficitReasonOk?'pointer':'not-allowed',fontFamily:'inherit',opacity:submitting?.7:1}}>
+                <button onClick={saveClosing} disabled={submitting||!deficitReasonOk} style={{flex:2,height:48,background:deficitReasonOk?'#203640':'var(--storely-fill)',color:deficitReasonOk?'white':'var(--storely-muted)',border:'none',borderRadius:999,fontSize:17,fontWeight:600,cursor:deficitReasonOk?'pointer':'not-allowed',fontFamily:'inherit',opacity:submitting?.7:1}}>
                   {submitting ? ct('saving',lang) : ct('confirmSave',lang)}
                 </button>
               )}

@@ -232,7 +232,7 @@ export default function AddonsMarketPage() {
                               {branchName} — مفعّلة لـ{s.quantity} حتى {new Date(s.expires_at).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn' })}
                             </div>
                             <button onClick={() => cancelAddon(a, s.branch_id)} disabled={cancelling === a.id + s.branch_id}
-                              style={{ padding: '4px 10px', borderRadius:12, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, fontSize:12, fontWeight:600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              style={{ padding: '4px 10px', borderRadius:999, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, fontSize:12, fontWeight:600, cursor: 'pointer', fontFamily: 'inherit' }}>
                               {cancelling === a.id + s.branch_id ? '...' : 'إلغاء'}
                             </button>
                           </div>
@@ -327,7 +327,7 @@ export default function AddonsMarketPage() {
                 {active && (
                   <button onClick={() => cancelAddon(a)} disabled={cancelling === a.id}
                     title="إلغاء الاشتراك"
-                    style={{ position: 'absolute' as const, top: 12, left: 12, width: 26, height: 26, borderRadius:12, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize:13 }}>
+                    style={{ position: 'absolute' as const, top: 12, left: 12, width: 26, height: 26, borderRadius:999, border: `1px solid ${colors.dangerBorder}`, background: colors.dangerLight, color: colors.danger, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize:13 }}>
                     {cancelling === a.id ? '…' : <Trash2 size={14} />}
                   </button>
                 )}

@@ -19,12 +19,12 @@ export default function InventoryTab({ m }: { m: StaffDispense }) {
         <div style={{padding:16,maxWidth:560,margin:'0 auto'}}>
           <div style={{display:'flex',gap:8,alignItems:'center'}}>
             <div style={{position:'relative' as const,flex:1}}>
-              <Search size={16} strokeWidth={1.75} style={{position:'absolute',top:'50%',transform:'translateY(-50%)',insetInlineStart:12,color:'#6b7487',pointerEvents:'none'}}/>
+              <Search size={16} strokeWidth={1.75} style={{position:'absolute',top:'50%',transform:'translateY(-50%)',insetInlineStart:12,color:'var(--storely-muted)',pointerEvents:'none'}}/>
               <input value={invSearch} onChange={e=>setInvSearch(e.target.value)} placeholder={T('searchProduct',lang)}
                 style={{width:'100%',height:44,paddingInlineStart:36,paddingInlineEnd:12,border:'1px solid var(--storely-border)',borderRadius:12,fontSize:17,background:'white',color:'var(--storely-text)',fontFamily:'inherit',boxSizing:'border-box' as const}}/>
             </div>
             <button onClick={()=>setShowAddProduct(true)}
-              style={{height:44,padding:'0 14px',background:'#e7f3f1',color:'#0b5d56',border:'none',borderRadius:12,fontSize:17,fontWeight:500,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
+              style={{height:44,padding:'0 14px',background:'var(--storely-fill)',color:'var(--storely-navy)',border:'none',borderRadius:999,fontSize:17,fontWeight:500,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4,flexShrink:0}}>
               <Plus size={16} strokeWidth={1.75}/>{T('product',lang)}
             </button>
           </div>
@@ -42,22 +42,22 @@ export default function InventoryTab({ m }: { m: StaffDispense }) {
           </div>
 
           {shown.length===0 ? (
-            <div className="card" style={{padding:40,textAlign:'center',color:'#4b5565',fontSize:17}}>{T('noProducts',lang)}</div>
+            <div className="card" style={{padding:40,textAlign:'center',color:'var(--storely-muted)',fontSize:17}}>{T('noProducts',lang)}</div>
           ) : (
             <div className="card" style={{overflow:'hidden'}}>
               {shown.map(p=>(
                 <div key={p.id} className="list-row" style={{cursor:'default',minHeight:64}}>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:17,fontWeight:500,color:'var(--storely-text)',lineHeight:'22px'}}>{tx(p.name)}</div>
-                    <div style={{fontSize:15,color:'#6b7487',lineHeight:'18px'}}>{p.category ? tx(p.category) : '—'}</div>
+                    <div style={{fontSize:15,color:'var(--storely-muted)',lineHeight:'18px'}}>{p.category ? tx(p.category) : '—'}</div>
                   </div>
                   <div style={{textAlign:'end' as const,flexShrink:0}}>
                     <span style={{fontSize:20,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{p.qty}</span>
-                    <span style={{fontSize:13,color:'#6b7487',marginInlineStart:4}}>{p.unit}</span>
+                    <span style={{fontSize:13,color:'var(--storely-muted)',marginInlineStart:4}}>{p.unit}</span>
                     {isLow(p) && <div style={{fontSize:13,color:'#dc2626',display:'flex',alignItems:'center',gap:4,justifyContent:'flex-end'}}><span style={{width:6,height:6,borderRadius:3,background:'#dc2626'}}/>{T('lowShort',lang)}</div>}
                   </div>
                   <button onClick={()=>{setEditingProduct(p);setEditQty(String(p.qty))}} aria-label={T('edit',lang)}
-                    style={{width:36,height:36,flexShrink:0,border:'none',background:'transparent',borderRadius:12,color:'#6b7487',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+                    style={{width:36,height:36,flexShrink:0,border:'none',background:'transparent',borderRadius:999,color:'var(--storely-muted)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
                     <Pencil size={16} strokeWidth={1.75}/>
                   </button>
                 </div>

@@ -153,7 +153,7 @@ export default function PricingSwitchModal({ m }: { m: DashboardShell }) {
                           const bOn = (branchMap[f.slug] || []).includes(b.id)
                           return (
                             <button key={b.id} type="button" onClick={() => toggleBranch(f.slug, b.id)} aria-pressed={bOn}
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 30, padding: '0 10px', borderRadius:12, cursor: 'pointer', fontFamily: 'inherit', fontSize:13, fontWeight: 600,
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 30, padding: '0 10px', borderRadius:999, cursor: 'pointer', fontFamily: 'inherit', fontSize:13, fontWeight: 600,
                                 border: `1px solid ${bOn ? C.primary : C.border}`, background: bOn ? C.primary : C.surface, color: bOn ? '#fff' : C.text2 }}>
                               {bOn && <Check size={12} strokeWidth={2.5} />}{b.name || 'فرع'}
                             </button>

@@ -12,7 +12,7 @@ export default function StepData({ m }: { m: CashierClosing }) {
             {step===1 && (
               <div className="fu" style={{background:'white',borderRadius:20,padding:16,marginBottom:16,border:'1px solid var(--storely-border)'}}>
                 <div style={{fontSize:17,fontWeight:600,color:'var(--storely-text)',marginBottom:16,display:'flex',alignItems:'center',gap:8}}>
-                  <span style={{width:28,height:28,borderRadius:12,background:'#eceef1',display:'flex',alignItems:'center',justifyContent:'center',color:'#4b5565'}}><BarChart3 size={16} strokeWidth={1.75}/></span>
+                  <span style={{width:28,height:28,borderRadius:12,background:'var(--storely-fill)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--storely-muted)'}}><BarChart3 size={16} strokeWidth={1.75}/></span>
                   {ct('step1Title',lang)}
                 </div>
                 <div style={{marginBottom:16}}>
@@ -27,20 +27,20 @@ export default function StepData({ m }: { m: CashierClosing }) {
                     <AmountTile label={ct('mastercard',lang)} value={mastercardAmount} onChange={setMastercardAmount} error={!!networkError}/>
                   </div>
                   {anyNetworkEntered && (
-                    <div style={{display:'flex',justifyContent:'space-between',marginTop:8,padding:'8px 10px',background:'#f4f5f6',borderRadius:12,fontSize:15}}>
-                      <span style={{color:'#4b5565'}}>{ct('networkTotal',lang)}</span>
+                    <div style={{display:'flex',justifyContent:'space-between',marginTop:8,padding:'8px 10px',background:'var(--storely-fill)',borderRadius:12,fontSize:15}}>
+                      <span style={{color:'var(--storely-muted)'}}>{ct('networkTotal',lang)}</span>
                       <span style={{color:'var(--storely-text)',fontVariantNumeric:'tabular-nums',direction:'ltr' as const}}>{fmt(network)} {curr}</span>
                     </div>
                   )}
                   {networkError && <div style={{fontSize:15,color:'#dc2626',marginTop:6,display:'flex',alignItems:'center',gap:4}}><AlertTriangle size={13}/> {networkError}</div>}
                 </div>
-                <div style={{marginBottom:16,paddingTop:14,borderTop:'1px dashed #eceef1'}}>
+                <div style={{marginBottom:16,paddingTop:14,borderTop:'1px dashed var(--storely-fill)'}}>
                   <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',gap:8,marginBottom:8}}>
                     <label style={{fontSize:17,fontWeight:500,color:'var(--storely-text)'}}>{ct('deliveryLabel',lang)}</label>
                     {delivery>0 && <span style={{fontSize:15,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums',direction:'ltr' as const,whiteSpace:'nowrap' as const}}>{fmt(delivery)} {curr}</span>}
                   </div>
                   {deliveryApps.length>0 && (
-                    <div style={{border:'1px solid #eceef1',borderRadius:20,overflow:'hidden',marginBottom:8}}>
+                    <div style={{border:'1px solid var(--storely-fill)',borderRadius:20,overflow:'hidden',marginBottom:8}}>
                       {deliveryApps.map((name,i)=>(
                         <DeliveryRow key={name} name={name} value={deliveryAmounts[name]||''} currency={curr} last={i===deliveryApps.length-1}
                           onChange={v=>setDeliveryAmounts(prev=>({...prev,[name]:v}))} onRemove={()=>removeDeliveryApp(name)}/>
@@ -49,21 +49,21 @@ export default function StepData({ m }: { m: CashierClosing }) {
                   )}
                   {!appPickerOpen ? (
                     <button type="button" onClick={()=>setAppPickerOpen(true)}
-                      style={{display:'block',width:'100%',padding:'12px',borderRadius:20,border:'1.5px dashed #6b7487',background:'white',color:'var(--storely-text)',fontSize:17,fontWeight:500,cursor:'pointer',fontFamily:'inherit'}}>
+                      style={{display:'block',width:'100%',padding:'12px',borderRadius:20,border:'1.5px dashed var(--storely-muted)',background:'white',color:'var(--storely-text)',fontSize:17,fontWeight:500,cursor:'pointer',fontFamily:'inherit'}}>
                       + {ct('addDeliveryApp',lang)}
                     </button>
                   ) : (
-                    <div style={{border:'1px solid #203640',borderRadius:20,padding:12,background:'#f4f5f6'}}>
+                    <div style={{border:'1px solid #203640',borderRadius:20,padding:12,background:'var(--storely-fill)'}}>
                       <div style={{display:'flex',flexWrap:'wrap' as const,gap:6}}>
                         {deliveryChoices.filter(n=>!deliveryApps.includes(n)).map(name=>(
                           <button key={name} type="button" onClick={()=>addDeliveryApp(name)}
-                            style={{padding:'9px 14px',borderRadius:12,border:'1px solid var(--storely-border)',background:'white',color:'var(--storely-text)',fontSize:17,fontWeight:500,cursor:'pointer',fontFamily:'inherit'}}>
+                            style={{padding:'9px 14px',borderRadius:999,border:'1px solid var(--storely-border)',background:'white',color:'var(--storely-text)',fontSize:17,fontWeight:500,cursor:'pointer',fontFamily:'inherit'}}>
                             {name}
                           </button>
                         ))}
                         {!otherAppOpen && (
                           <button type="button" onClick={()=>setOtherAppOpen(true)}
-                            style={{padding:'9px 14px',borderRadius:12,border:'1.5px dashed #6b7487',background:'transparent',color:'var(--storely-text)',fontSize:17,fontWeight:500,cursor:'pointer',fontFamily:'inherit'}}>
+                            style={{padding:'9px 14px',borderRadius:999,border:'1.5px dashed var(--storely-muted)',background:'transparent',color:'var(--storely-text)',fontSize:17,fontWeight:500,cursor:'pointer',fontFamily:'inherit'}}>
                             + {ct('otherApp',lang)}
                           </button>
                         )}
@@ -81,15 +81,15 @@ export default function StepData({ m }: { m: CashierClosing }) {
                         style={{display:'block',margin:'10px auto 0',border:'none',background:'none',color:'#1f2937',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{ct('cancelPick',lang)}</button>
                     </div>
                   )}
-                  {deliveryApps.length>0 && <div style={{fontSize:15,color:'#4b5565',marginTop:8}}>{ct('deliveryHint',lang)}</div>}
+                  {deliveryApps.length>0 && <div style={{fontSize:15,color:'var(--storely-muted)',marginTop:8}}>{ct('deliveryHint',lang)}</div>}
                 </div>
                 <div style={{marginBottom: (totalSales && anyNetworkEntered && !networkError) ? 16 : 0}}>
                   <label style={{fontSize:17,fontWeight:500,color:'var(--storely-text)',display:'block',marginBottom:7}}>{ct('cashInDrawer',lang)}</label>
                   <MoneyInput value={cashAmount} onChange={setCashAmount} placeholder="0.00" icon={<Banknote size={16} strokeWidth={1.75}/>} currency={curr}/>
                 </div>
                 {totalSales && anyNetworkEntered && !networkError && (
-                  <div style={{display:'flex',justifyContent:'space-between',padding:'12px 14px',background:'#f4f5f6',borderRadius:12,fontSize:17}}>
-                    <span style={{color:'#4b5565'}}>{ct('expectedCashPreview',lang)}</span>
+                  <div style={{display:'flex',justifyContent:'space-between',padding:'12px 14px',background:'var(--storely-fill)',borderRadius:12,fontSize:17}}>
+                    <span style={{color:'var(--storely-muted)'}}>{ct('expectedCashPreview',lang)}</span>
                     <span style={{color:'var(--storely-text)',direction:'ltr' as const}}>{fmt(expectedCash)} {curr}</span>
                   </div>
                 )}

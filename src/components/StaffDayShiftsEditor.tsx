@@ -115,7 +115,7 @@ export default function StaffDayShiftsEditor({ staff, shifts, onPatch }: { staff
                 <option value="">اختر الوردية</option>
                 {shifts.map(sh => <option key={sh.id} value={sh.id}>{shiftLabel(sh)}</option>)}
               </select>
-              <button onClick={addDate} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius:12, fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: font.family, border: `1px solid ${colors.primary}`, background: colors.primary, color: '#fff' }}>
+              <button onClick={addDate} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px', borderRadius:999, fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: font.family, border: `1px solid ${colors.primary}`, background: colors.primary, color: '#fff' }}>
                 <Plus size={14} /> إضافة
               </button>
             </div>

@@ -45,7 +45,7 @@ export default function ProductSheet({ m }: { m: InventoryState }) {
                       <label style={lbl}>باركود</label>
                       <div style={{display:'flex',gap:5}}>
                         <input value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} style={{...inp(),flex:1}} placeholder="اختياري"/>
-                        <button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 10px',background:C.primaryL,color:C.primary,border:`1px solid ${C.primaryB}`,borderRadius:12,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><Camera size={15} strokeWidth={2.25}/></button>
+                        <button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 10px',background:C.primaryL,color:C.primary,border:`1px solid ${C.primaryB}`,borderRadius:999,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><Camera size={15} strokeWidth={2.25}/></button>
                       </div>
                     </div>
                     <div>
@@ -77,12 +77,12 @@ export default function ProductSheet({ m }: { m: InventoryState }) {
                 </div>
                 {editItem && (
                   <button type="button" onClick={()=>{setConfirm({id:editItem.id,name:editItem.name});setShowAdd(false)}}
-                    style={{width:'100%',padding:'10px',marginTop:16,background:C.dangerL,color:C.danger,border:`1px solid ${C.dangerB}`,borderRadius:12,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                    style={{width:'100%',padding:'10px',marginTop:16,background:C.dangerL,color:C.danger,border:`1px solid ${C.dangerB}`,borderRadius:999,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                     <Trash2 size={13} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> حذف هذا المنتج
                   </button>
                 )}
                 <div style={{display:'flex',gap:8,marginTop:editItem?8:16}}>
-                  <button type="button" onClick={()=>{setShowAdd(false);setEditItem(null)}} style={{flex:1,padding:'11px',background:C.bg,color:C.text2,border:`1px solid ${C.border2}`,borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                  <button type="button" onClick={()=>{setShowAdd(false);setEditItem(null)}} style={{flex:1,padding:'11px',background:C.bg,color:C.text2,border:`1px solid ${C.border2}`,borderRadius:999,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
                   <button type="submit" disabled={saving} style={{flex:2,padding:'11px',background:C.primary,color:'white',border:'none',borderRadius:999,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit',opacity:saving?.7:1}}>
                     {saving?'جاري الحفظ...':editItem?'حفظ التعديلات':'إضافة المنتج'}
                   </button>

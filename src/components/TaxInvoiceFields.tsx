@@ -41,7 +41,7 @@ export default function TaxInvoiceFields({ invoiceNumber, vatNumber, onChange, i
         <div style={{ background: '#ecfdf5', border: '1.5px solid #6ee7b7', borderRadius:12, padding: '10px 12px', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
             <span style={{ fontSize:15, fontWeight:600, color: '#047857' }}>{t.verified}</span>
-            <button type="button" onClick={() => onZatca(null)} style={{ fontSize:12, fontWeight:600, color: 'var(--storely-text)', background: 'white', border: '1px solid var(--storely-border)', borderRadius:12, padding: '3px 9px', cursor: 'pointer', fontFamily: 'inherit' }}>{t.remove}</button>
+            <button type="button" onClick={() => onZatca(null)} style={{ fontSize:12, fontWeight:600, color: 'var(--storely-text)', background: 'white', border: '1px solid var(--storely-border)', borderRadius:999, padding: '3px 9px', cursor: 'pointer', fontFamily: 'inherit' }}>{t.remove}</button>
           </div>
           <div style={{ fontSize:13, color: '#065f46', marginTop: 4, lineHeight: 1.7 }}>
             {zatca.inv.sellerName} · {t.total} <b dir="ltr">{fmt(zatca.inv.total)}</b> · {t.tax} <b dir="ltr">{fmt(zatca.inv.vat)}</b>
@@ -50,7 +50,7 @@ export default function TaxInvoiceFields({ invoiceNumber, vatNumber, onChange, i
         </div>
       ) : (
         <button type="button" onClick={() => setScanning(true)}
-          style={{ width: '100%', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 2, padding: '10px', borderRadius:12, border: '1.5px dashed #029FA2', background: '#f0fdfa', color: '#0f766e', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 10 }}>
+          style={{ width: '100%', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 2, padding: '10px', borderRadius:999, border: '1.5px dashed #029FA2', background: 'var(--storely-fill)', color: 'var(--storely-navy)', cursor: 'pointer', fontFamily: 'inherit', marginBottom: 10 }}>
           <span style={{ fontSize:15, fontWeight:600 }}>{t.scan}</span>
           <span style={{ fontSize: 10.5, color: 'var(--storely-text)' }}>{t.scanHint}</span>
         </button>

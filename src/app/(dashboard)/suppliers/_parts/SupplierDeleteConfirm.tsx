@@ -12,7 +12,7 @@ export default function SupplierDeleteConfirm({ m }: { m: SupplierCardState }) {
             <div style={{fontSize:17,fontWeight:600,color:'var(--storely-text)',marginBottom:6,textAlign:'center'}}>حذف المورد "{s.name}"؟</div>
             <div style={{fontSize:13,color:'var(--storely-muted)',textAlign:'center',marginBottom:16,lineHeight:1.6}}>سيتم فك ارتباطه بكل المنتجات المرتبطة به. لا يمكن التراجع عن هذا الإجراء.</div>
             <div style={{display:'flex',gap:8}}>
-              <button onClick={()=>setConfirmDelete(false)} style={{flex:1,padding:'10px',background:'var(--storely-background)',color:'var(--storely-text)',border:'1px solid var(--storely-border)',borderRadius:12,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+              <button onClick={()=>setConfirmDelete(false)} style={{flex:1,padding:'10px',background:'var(--storely-background)',color:'var(--storely-text)',border:'1px solid var(--storely-border)',borderRadius:999,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
               <button onClick={deleteSupplier} style={{flex:1,padding:'10px',background:'#ef4444',color:'white',border:'none',borderRadius:999,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>حذف</button>
             </div>
           </div>

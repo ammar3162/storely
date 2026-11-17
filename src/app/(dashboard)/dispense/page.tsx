@@ -141,7 +141,7 @@ export default function DispensePage() {
         .chip:active{transform:scale(.95)}
         .qbtn{width:44px;height:44px;border-radius:12px;border:1.5px solid var(--storely-border);background:var(--storely-background);font-size:20px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit}
         .qbtn:active{background:var(--storely-background);border-color:#203640;color:#203640}
-        input:focus{border-color:#203640!important;box-shadow:0 0 0 3px #f0fdfa!important;outline:none!important}
+        input:focus{border-color:#203640!important;box-shadow:0 0 0 3px var(--storely-fill)!important;outline:none!important}
         /* Product card */
         .pcard{
           background:white;border-radius:20px;padding:10px 8px;
@@ -177,7 +177,7 @@ export default function DispensePage() {
           </p>
         </div>
         <button onClick={()=>setShowHistory(true)}
-          style={{display:'flex',alignItems:'center',gap:5,padding:'7px 12px',background:'white',border:`1.5px solid ${C.border2}`,borderRadius:12,fontSize:12,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>
+          style={{display:'flex',alignItems:'center',gap:5,padding:'7px 12px',background:'white',border:`1.5px solid ${C.border2}`,borderRadius:999,fontSize:12,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>
           <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           السجل ({history.length})
         </button>
@@ -294,11 +294,11 @@ export default function DispensePage() {
 
               <div style={{display:'flex',gap:6,marginBottom:14,background:C.bg,padding:4,borderRadius:20}}>
                 <button onClick={()=>{setWasteMode(false);setWasteReason('')}}
-                  style={{flex:1,padding:'9px',borderRadius:12,border:'none',background:!wasteMode?'white':'transparent',color:!wasteMode?C.danger:C.text3,fontWeight:600,fontSize:15,cursor:'pointer',fontFamily:'inherit',boxShadow:!wasteMode?'0 1px 4px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
+                  style={{flex:1,padding:'9px',borderRadius:999,border:'none',background:!wasteMode?'white':'transparent',color:!wasteMode?C.danger:C.text3,fontWeight:600,fontSize:15,cursor:'pointer',fontFamily:'inherit',boxShadow:!wasteMode?'0 1px 4px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
                   <span style={{display:'inline-flex',alignItems:'center',gap:6}}><ArrowUpRight size={15}/>صرف عادي</span>
                 </button>
                 <button onClick={()=>setWasteMode(true)}
-                  style={{flex:1,padding:'9px',borderRadius:12,border:'none',background:wasteMode?'white':'transparent',color:wasteMode?'#b45309':C.text3,fontWeight:600,fontSize:15,cursor:'pointer',fontFamily:'inherit',boxShadow:wasteMode?'0 1px 4px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
+                  style={{flex:1,padding:'9px',borderRadius:999,border:'none',background:wasteMode?'white':'transparent',color:wasteMode?'#b45309':C.text3,fontWeight:600,fontSize:15,cursor:'pointer',fontFamily:'inherit',boxShadow:wasteMode?'0 1px 4px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
                   <span style={{display:'inline-flex',alignItems:'center',gap:6}}><Trash2 size={15}/>تسجيل هدر</span>
                 </button>
               </div>

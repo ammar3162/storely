@@ -27,8 +27,8 @@ export default function StaffHeader({ title, subtitle, end, rtl = true, backTo =
           <ChevronRight size={20} strokeWidth={1.75} style={{ transform: rtl ? 'none' : 'scaleX(-1)' }}/>
         </button>
         <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ fontSize:17, fontWeight:600, lineHeight:'24px', color:'#111827', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{title}</div>
-          {subtitle && <div style={{ fontSize:15, lineHeight:'20px', color:'#4b5565', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{subtitle}</div>}
+          <div style={{ fontSize:17, fontWeight:600, lineHeight:'24px', color:'var(--storely-text)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{title}</div>
+          {subtitle && <div style={{ fontSize:15, lineHeight:'20px', color:'var(--storely-muted)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{subtitle}</div>}
         </div>
         {end}
       </div>
@@ -38,6 +38,6 @@ export default function StaffHeader({ title, subtitle, end, rtl = true, backTo =
 
 // زر فاتح بنفس شكل زر الرجوع — للاستخدام داخل `end`
 export const staffHeaderBtn: React.CSSProperties = {
-  height:36, minWidth:36, padding:'0 10px', flexShrink:0, background:'#eceef1', border:'none',
-  borderRadius:12, color:'#111827', display:'flex', alignItems:'center', justifyContent:'center', gap:4, cursor:'pointer', fontFamily:'inherit', fontSize:15, fontWeight:500,
+  height:36, minWidth:36, padding:'0 10px', flexShrink:0, background:'var(--storely-fill)', border:'none',
+  borderRadius:12, color:'var(--storely-text)', display:'flex', alignItems:'center', justifyContent:'center', gap:4, cursor:'pointer', fontFamily:'inherit', fontSize:15, fontWeight:500,
 }

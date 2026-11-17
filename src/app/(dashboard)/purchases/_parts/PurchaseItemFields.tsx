@@ -28,7 +28,7 @@ export default function PurchaseItemFields({ m }: { m: PurchasesState }) {
               <div style={{display:'grid',gridTemplateColumns:`repeat(${cats.length},1fr)`,gap:6}}>
                 {cats.map(c=>(
                   <button key={c} type="button" onClick={()=>setForm({...form,category:c,name:'',sku:'',unit:'قطعة'})}
-                    style={{padding:'10px 6px',borderRadius:12,fontSize:13,fontWeight:600,cursor:'pointer',border:`1px solid ${form.category===c?C.primary:C.border2}`,background:form.category===c?C.primaryL:'white',color:form.category===c?C.primary:C.text3,fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:4,transition:'all .15s'}}>
+                    style={{padding:'10px 6px',borderRadius:999,fontSize:13,fontWeight:600,cursor:'pointer',border:`1px solid ${form.category===c?C.primary:C.border2}`,background:form.category===c?C.primaryL:'white',color:form.category===c?C.primary:C.text3,fontFamily:'inherit',display:'flex',flexDirection:'column',alignItems:'center',gap:4,transition:'all .15s'}}>
                     {(()=>{ const Ic=CAT_ICONS[c]; return Ic ? <Ic size={18}/> : null })()}
                     <span>{c}</span>
                   </button>
@@ -57,7 +57,7 @@ export default function PurchaseItemFields({ m }: { m: PurchasesState }) {
               <div style={{display:'flex',gap:6,marginBottom:12}}>
                 {[{v:true,l:'صنف موجود'},{v:false,l:'صنف جديد'}].map(b=>(
                   <button key={String(b.v)} type="button" onClick={()=>setIsExisting(b.v)}
-                    style={{flex:1,padding:'9px',borderRadius:12,border:`1.5px solid ${isExisting===b.v?C.primary:C.border2}`,background:isExisting===b.v?C.primaryL:'white',color:isExisting===b.v?C.primary:C.text3,fontWeight:600,cursor:'pointer',fontFamily:'inherit',fontSize:13,transition:'all .15s'}}>
+                    style={{flex:1,padding:'9px',borderRadius:999,border:`1.5px solid ${isExisting===b.v?C.primary:C.border2}`,background:isExisting===b.v?C.primaryL:'white',color:isExisting===b.v?C.primary:C.text3,fontWeight:600,cursor:'pointer',fontFamily:'inherit',fontSize:13,transition:'all .15s'}}>
                     {b.l}
                   </button>
                 ))}
@@ -94,7 +94,7 @@ export default function PurchaseItemFields({ m }: { m: PurchasesState }) {
               <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',fontSize:15,fontWeight:600,color:'#92400e',background:'#fffbeb',border:'1.5px solid #f59e0b',borderRadius:12,padding:'9px 11px',marginBottom:10}}>
                 «{form.name}» يبدو مصروفاً وليس صنف مخزون — لن يُصرف أو يُجرد.
                 <button type="button" onClick={()=>setForm({...form,category:'مشتريات'})}
-                  style={{marginInlineStart:'auto',padding:'5px 10px',borderRadius:12,border:'1px solid #f59e0b',background:'white',color:'#92400e',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>اجعله مشتريات</button>
+                  style={{marginInlineStart:'auto',padding:'5px 10px',borderRadius:999,border:'1px solid #f59e0b',background:'white',color:'#92400e',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>اجعله مشتريات</button>
               </div>
             )}
 
@@ -105,7 +105,7 @@ export default function PurchaseItemFields({ m }: { m: PurchasesState }) {
                   <label style={lbl}>باركود (اختياري)</label>
                   <div style={{display:'flex',gap:5}}>
                     <input value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})} style={{...inp,flex:1}} placeholder="امسح أو أدخل يدوياً"/>
-                    <button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 10px',background:C.primaryL,color:C.primary,border:`1px solid ${C.primaryB}`,borderRadius:12,fontSize:17,cursor:'pointer',display:'flex',alignItems:'center'}} aria-label="مسح الباركود"><ScanLine size={16}/></button>
+                    <button type="button" onClick={()=>setShowScan(true)} style={{padding:'0 10px',background:C.primaryL,color:C.primary,border:`1px solid ${C.primaryB}`,borderRadius:999,fontSize:17,cursor:'pointer',display:'flex',alignItems:'center'}} aria-label="مسح الباركود"><ScanLine size={16}/></button>
                   </div>
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:picked&&qtyNum>0?8:10}}>

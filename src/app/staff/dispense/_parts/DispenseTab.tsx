@@ -5,19 +5,19 @@ import { T } from './strings'
 import type { StaffDispense, PageVals } from './useStaffDispense'
 
 // تصميم «كاونتر»: كل شي قوائم بيضاء بخطوط فاصلة، والأيقونات رمادية، والكمية رقم واضح على الطرف
-const label: React.CSSProperties = { fontSize:15, fontWeight:500, color:'#4b5565', margin:'0 4px 8px' }
-const iconBox: React.CSSProperties = { width:36, height:36, borderRadius:12, background:'#eceef1', color:'#4b5565', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }
+const label: React.CSSProperties = { fontSize:15, fontWeight:500, color:'var(--storely-muted)', margin:'0 4px 8px' }
+const iconBox: React.CSSProperties = { width:36, height:36, borderRadius:12, background:'var(--storely-fill)', color:'var(--storely-muted)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }
 
 export default function DispenseTab({ m, v }: { m: StaffDispense; v: PageVals }) {
   const { lang, tab, loading, search, setSearch, activeCategory, setActiveCategory, mostUsed, todayCount, setSelected, categoriesMap, categories, searchResults, categoryProducts, tx } = m
   const { session, isRTL } = v
-  const Chev = () => <ChevronLeft size={16} strokeWidth={1.75} color="#6b7487" style={{flexShrink:0,transform:isRTL?'none':'scaleX(-1)'}}/>
+  const Chev = () => <ChevronLeft size={16} strokeWidth={1.75} color="var(--storely-muted)" style={{flexShrink:0,transform:isRTL?'none':'scaleX(-1)'}}/>
   const Qty = ({ p }: { p: any }) => {
     const low = Number(p.qty) <= Number(p.reorder_point)
     return (
       <span style={{textAlign:'end' as const,flexShrink:0}}>
-        <span style={{fontSize:17,fontWeight:500,color:low?'#dc2626':'#111827',fontVariantNumeric:'tabular-nums'}}>{p.qty}</span>
-        <span style={{fontSize:13,color:'#6b7487',marginInlineStart:4}}>{p.unit}</span>
+        <span style={{fontSize:17,fontWeight:500,color:low?'#dc2626':'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{p.qty}</span>
+        <span style={{fontSize:13,color:'var(--storely-muted)',marginInlineStart:4}}>{p.unit}</span>
       </span>
     )
   }
@@ -27,7 +27,7 @@ export default function DispenseTab({ m, v }: { m: StaffDispense; v: PageVals })
         <button key={p.id} className="list-row" onClick={()=>setSelected(p)}>
           <span style={{flex:1,minWidth:0}}>
             <span style={{display:'block',fontSize:17,fontWeight:500,color:'var(--storely-text)',lineHeight:'22px'}}>{tx(p.name)}</span>
-            {lang!=='ar'&&<span style={{display:'block',fontSize:15,color:'#6b7487'}}>{p.name}</span>}
+            {lang!=='ar'&&<span style={{display:'block',fontSize:15,color:'var(--storely-muted)'}}>{p.name}</span>}
           </span>
           <Qty p={p}/>
         </button>
@@ -39,17 +39,17 @@ export default function DispenseTab({ m, v }: { m: StaffDispense; v: PageVals })
       {/* ═══ DISPENSE TAB ═══ */}
       <div style={{display:tab==='dispense'&&session.permissions?.dispense?'block':'none',padding:'16px 16px 32px',maxWidth:560,margin:'0 auto'}}>
         <div style={{position:'relative' as const,marginBottom:16}}>
-          <Search size={16} strokeWidth={1.75} style={{position:'absolute',top:'50%',transform:'translateY(-50%)',insetInlineStart:12,color:'#6b7487',pointerEvents:'none'}}/>
+          <Search size={16} strokeWidth={1.75} style={{position:'absolute',top:'50%',transform:'translateY(-50%)',insetInlineStart:12,color:'var(--storely-muted)',pointerEvents:'none'}}/>
           <input value={search} onChange={e=>{setSearch(e.target.value);setActiveCategory(null)}}
             style={{width:'100%',height:44,paddingInlineStart:36,paddingInlineEnd:12,border:'1px solid var(--storely-border)',borderRadius:12,fontSize:17,background:'white',color:'var(--storely-text)',fontFamily:'inherit',boxSizing:'border-box' as const}}
             placeholder={T('search',lang)}/>
         </div>
 
         {loading ? (
-          <div style={{textAlign:'center',padding:60,color:'#4b5565',fontSize:17}}>{T('loading',lang)}</div>
+          <div style={{textAlign:'center',padding:60,color:'var(--storely-muted)',fontSize:17}}>{T('loading',lang)}</div>
         ) : search.trim() ? (
           searchResults.length===0
-            ? <div className="card" style={{padding:32,textAlign:'center',color:'#4b5565',fontSize:17}}>{T('noResults',lang)}</div>
+            ? <div className="card" style={{padding:32,textAlign:'center',color:'var(--storely-muted)',fontSize:17}}>{T('noResults',lang)}</div>
             : productRows(searchResults)
         ) : !activeCategory ? (
           <div>
@@ -60,12 +60,12 @@ export default function DispenseTab({ m, v }: { m: StaffDispense; v: PageVals })
             )}
             {mostUsed.length>0 && (
               <div style={{marginBottom:24}}>
-                <div style={label}>{T('mostUsed',lang)} <span style={{color:'#6b7487',fontWeight:400}}>· {T('last14',lang)}</span></div>
+                <div style={label}>{T('mostUsed',lang)} <span style={{color:'var(--storely-muted)',fontWeight:400}}>· {T('last14',lang)}</span></div>
                 <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4,scrollbarWidth:'none' as const}}>
                   {mostUsed.map((p:any)=>(
                     <button key={p.id} onClick={()=>setSelected(p)} style={{flexShrink:0,background:'white',border:'1px solid var(--storely-border)',borderRadius:12,padding:'10px 12px',cursor:'pointer',fontFamily:'inherit',minWidth:120,maxWidth:160,textAlign:'start' as const}}>
                       <div style={{fontSize:17,fontWeight:500,color:'var(--storely-text)',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{tx(p.name)}</div>
-                      <div style={{fontSize:13,color:'#6b7487',marginTop:2,whiteSpace:'nowrap' as const}}>{lang==='ar'?`صُرف ${p.dispense_count} ${p.dispense_count>=3&&p.dispense_count<=10?'مرات':'مرة'}`:T('timesUsed',lang,{n:p.dispense_count})}</div>
+                      <div style={{fontSize:13,color:'var(--storely-muted)',marginTop:2,whiteSpace:'nowrap' as const}}>{lang==='ar'?`صُرف ${p.dispense_count} ${p.dispense_count>=3&&p.dispense_count<=10?'مرات':'مرة'}`:T('timesUsed',lang,{n:p.dispense_count})}</div>
                     </button>
                   ))}
                 </div>
@@ -78,9 +78,9 @@ export default function DispenseTab({ m, v }: { m: StaffDispense; v: PageVals })
                   <span style={iconBox}>{iconFor(cat)}</span>
                   <span style={{flex:1,minWidth:0}}>
                     <span style={{display:'block',fontSize:17,fontWeight:500,color:'var(--storely-text)',lineHeight:'22px'}}>{tx(cat)}</span>
-                    {lang!=='ar'&&<span style={{display:'block',fontSize:13,color:'#6b7487'}}>{cat}</span>}
+                    {lang!=='ar'&&<span style={{display:'block',fontSize:13,color:'var(--storely-muted)'}}>{cat}</span>}
                   </span>
-                  <span style={{fontSize:15,color:'#6b7487',flexShrink:0}}><span style={{fontVariantNumeric:'tabular-nums'}}>{categoriesMap[cat]}</span> {T('items',lang)}</span>
+                  <span style={{fontSize:15,color:'var(--storely-muted)',flexShrink:0}}><span style={{fontVariantNumeric:'tabular-nums'}}>{categoriesMap[cat]}</span> {T('items',lang)}</span>
                   <Chev/>
                 </button>
               ))}
@@ -89,12 +89,12 @@ export default function DispenseTab({ m, v }: { m: StaffDispense; v: PageVals })
         ) : (
           <div>
             <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
-              <button onClick={()=>setActiveCategory(null)} aria-label={T('back',lang)} style={{width:36,height:36,flexShrink:0,background:'#eceef1',border:'none',borderRadius:12,color:'var(--storely-text)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <button onClick={()=>setActiveCategory(null)} aria-label={T('back',lang)} style={{width:36,height:36,flexShrink:0,background:'var(--storely-fill)',border:'none',borderRadius:999,color:'var(--storely-text)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
                 <ChevronRight size={18} strokeWidth={1.75} style={{transform:isRTL?'none':'scaleX(-1)'}}/>
               </button>
               <div style={{minWidth:0}}>
                 <div style={{fontSize:17,fontWeight:600,color:'var(--storely-text)'}}>{tx(activeCategory)}</div>
-                <div style={{fontSize:15,color:'#6b7487'}}>{lang!=='ar'?`${activeCategory} · `:''}{categoryProducts.length} {T('items',lang)}</div>
+                <div style={{fontSize:15,color:'var(--storely-muted)'}}>{lang!=='ar'?`${activeCategory} · `:''}{categoryProducts.length} {T('items',lang)}</div>
               </div>
             </div>
             {productRows(categoryProducts)}

@@ -86,7 +86,7 @@ export default function PlanUpgrade({ orgId, plan, maxBranches, activeSlugs = []
         </div>
         <div style={{ fontSize:13, color: colors.text3, lineHeight: 1.7 }}>خصم 20% على كل فرع من الفرع الثالث، و6 موظفين مشمولين لكل فرع. لن تدفع أكثر من فاتورتك الحالية.</div>
         <button type="button" onClick={() => window.dispatchEvent(new Event('pricing-switch-open'))}
-          style={{ alignSelf: 'flex-start', padding: '9px 16px', borderRadius:12, border: 'none', background: colors.primary, color: 'white', fontSize:15, fontWeight:600, cursor: 'pointer', fontFamily: font.family }}>
+          style={{ alignSelf: 'flex-start', padding: '9px 16px', borderRadius:999, border: 'none', background: colors.primary, color: 'white', fontSize:15, fontWeight:600, cursor: 'pointer', fontFamily: font.family }}>
           اختر مزاياك بالأسعار الجديدة
         </button>
       </div>
@@ -109,7 +109,7 @@ export default function PlanUpgrade({ orgId, plan, maxBranches, activeSlugs = []
             <div style={{ fontSize:12, color: colors.text3, marginTop: 2 }}>{desc(k)}</div>
           </div>
           <button type="button" onClick={() => request(k)} disabled={!!sending}
-            style={{ padding: '8px 14px', borderRadius:12, border: 'none', background: colors.primary, color: 'white', fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
+            style={{ padding: '8px 14px', borderRadius:999, border: 'none', background: colors.primary, color: 'white', fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
             {sending === k ? '...' : 'اطلب الترقية'}
           </button>
         </div>

@@ -30,7 +30,7 @@ export default function OrgTab({ m }: { m: SettingsState }) {
                     <input type="file" accept="image/*" id="logoInput" style={{display:'none'}}
                       onChange={e=>{ const f=e.target.files?.[0]; if(f) uploadLogo(f) }}/>
                     <label htmlFor="logoInput" style={{cursor:'pointer',flexShrink:0}}>
-                      <div style={{position:'relative',width:64,height:64,borderRadius:'50%',overflow:'hidden',background:logoUrl?'transparent':'linear-gradient(135deg,#f0fdfa,#ccfbf1)',border:`2px solid ${colors.primaryBorder}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                      <div style={{position:'relative',width:64,height:64,borderRadius:'50%',overflow:'hidden',background:logoUrl?'transparent':'linear-gradient(135deg,var(--storely-fill),var(--storely-fill))',border:`2px solid ${colors.primaryBorder}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
                         {logoUrl ? (
                           <img src={logoUrl} alt="شعار" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
                         ) : (

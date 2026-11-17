@@ -228,7 +228,7 @@ export default function BranchManagersPage() {
                     </div>
                     {!editing && <div style={{ display: 'flex', gap: 6 }}>
                       <button onClick={() => startEdit(m)} style={{ ...btnSecondary, padding: '7px 12px', fontSize:15, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Pencil size={14} /> تعديل</button>
-                      <button onClick={() => deleteManager(m)} aria-label="حذف" style={{ background:'#fff', border: `1px solid ${colors.dangerBorder}`, color: colors.danger, borderRadius:12, padding: '7px 10px', cursor: 'pointer', display: 'inline-flex' }}><Trash2 size={15} /></button>
+                      <button onClick={() => deleteManager(m)} aria-label="حذف" style={{ background:'#fff', border: `1px solid ${colors.dangerBorder}`, color: colors.danger, borderRadius:999, padding: '7px 10px', cursor: 'pointer', display: 'inline-flex' }}><Trash2 size={15} /></button>
                     </div>}
                   </div>
                   {!editing ? (

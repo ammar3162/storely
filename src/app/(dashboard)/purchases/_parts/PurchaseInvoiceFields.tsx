@@ -40,11 +40,11 @@ export default function PurchaseInvoiceFields({ m }: { m: PurchasesState }) {
               <label style={lbl}>حالة الدفع</label>
               <div style={{display:'flex',gap:8}}>
                 <button type="button" onClick={()=>setForm({...form,payment_status:'unpaid'})}
-                  style={{flex:1,padding:'9px',borderRadius:12,border:`1.5px solid ${form.payment_status==='unpaid'?C.danger:C.border}`,background:form.payment_status==='unpaid'?C.dangerL:'white',color:form.payment_status==='unpaid'?C.danger:C.text2,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                  style={{flex:1,padding:'9px',borderRadius:999,border:`1.5px solid ${form.payment_status==='unpaid'?C.danger:C.border}`,background:form.payment_status==='unpaid'?C.dangerL:'white',color:form.payment_status==='unpaid'?C.danger:C.text2,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                   <Clock size={13} strokeWidth={2.3}/> غير مدفوعة
                 </button>
                 <button type="button" onClick={()=>setForm({...form,payment_status:'paid'})}
-                  style={{flex:1,padding:'9px',borderRadius:12,border:`1.5px solid ${form.payment_status==='paid'?C.primary:C.border}`,background:form.payment_status==='paid'?C.primaryL:'white',color:form.payment_status==='paid'?C.primary:C.text2,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                  style={{flex:1,padding:'9px',borderRadius:999,border:`1.5px solid ${form.payment_status==='paid'?C.primary:C.border}`,background:form.payment_status==='paid'?C.primaryL:'white',color:form.payment_status==='paid'?C.primary:C.text2,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                   <CheckCircle2 size={13} strokeWidth={2.3}/> مدفوعة
                 </button>
               </div>
@@ -69,7 +69,7 @@ export default function PurchaseInvoiceFields({ m }: { m: PurchasesState }) {
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
                 {[{v:'no',l:'بدون ضريبة',c:C.primary,Icon:Ban},{v:'yes',l:'شاملة 15%',c:C.warning,Icon:Percent}].map(b=>(
                   <button key={b.v} type="button" onClick={()=>{ if(b.v==='no') setZatca(null); setForm({...form,hasVat:b.v,invoice_image:b.v==='no'?'':form.invoice_image}) }}
-                    style={{padding:'10px',borderRadius:12,fontSize:13,fontWeight:600,cursor:'pointer',border:`1px solid ${form.hasVat===b.v?b.c:C.border2}`,background:form.hasVat===b.v?b.v==='no'?C.primaryL:C.warningL:'white',color:form.hasVat===b.v?b.c:C.text3,fontFamily:'inherit',transition:'all .15s',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                    style={{padding:'10px',borderRadius:999,fontSize:13,fontWeight:600,cursor:'pointer',border:`1px solid ${form.hasVat===b.v?b.c:C.border2}`,background:form.hasVat===b.v?b.v==='no'?C.primaryL:C.warningL:'white',color:form.hasVat===b.v?b.c:C.text3,fontFamily:'inherit',transition:'all .15s',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                     <b.Icon size={13} strokeWidth={2.3}/> {b.l}
                   </button>
                 ))}

@@ -234,7 +234,7 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
                       <div style={{fontWeight:600,color:colors.text}}>{new Date(c.closing_date+'T12:00:00Z').toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',calendar:'gregory',timeZone:'UTC'})}</div>
                       {c.edited_at && (()=>{ const acc = c.edited_source==='accountant'
                         return <button onClick={()=>isOwner&&setHistory(c)} title={`عدّله ${c.edited_by||'المالك'} — ${new Date(c.edited_at).toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn',timeZone:'Asia/Riyadh'})}${isOwner?' — اضغط لعرض السجل':''}`}
-                          style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:12,fontWeight:600,color:acc?'var(--storely-navy)':colors.warning,background:acc?'var(--storely-fill)':colors.warningLight,border:'none',borderRadius:5,padding:'2px 7px',marginTop:3,cursor:isOwner?'pointer':'default',fontFamily:'inherit'}}>
+                          style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:12,fontWeight:600,color:acc?'var(--storely-navy)':colors.warning,background:acc?'var(--storely-fill)':colors.warningLight,border:'none',borderRadius:999,padding:'2px 7px',marginTop:3,cursor:isOwner?'pointer':'default',fontFamily:'inherit'}}>
                           <Pencil size={10} strokeWidth={2.5}/> {acc?'معدّل من المحاسب':'معدّل'}{c.edit_count>1?` (${c.edit_count})`:''}</button> })()}
                       {c.created_at && (
                         <div style={{fontSize:12,color:colors.text4,marginTop:2,whiteSpace:'nowrap' as const}}>
@@ -285,9 +285,9 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
                         isOwner ? (
                           <div className="cc-btns" style={{display:'flex',gap:6,marginTop:6}}>
                             <button onClick={()=>decideDeficit(c.id,'approved')} disabled={deciding===c.id}
-                              style={{padding:'4px 10px',borderRadius:12,border:'none',background:colors.danger,color:'white',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>خصم من الراتب</button>
+                              style={{padding:'4px 10px',borderRadius:999,border:'none',background:colors.danger,color:'white',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>خصم من الراتب</button>
                             <button onClick={()=>decideDeficit(c.id,'rejected')} disabled={deciding===c.id}
-                              style={{padding:'4px 10px',borderRadius:12,border:`1px solid ${colors.border2}`,background:colors.surface,color:colors.text2,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>رفض</button>
+                              style={{padding:'4px 10px',borderRadius:999,border:`1px solid ${colors.border2}`,background:colors.surface,color:colors.text2,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>رفض</button>
                           </div>
                         ) : <div style={{fontSize:12,fontWeight:600,color:colors.warning,marginTop:4}}>بانتظار قرار المالك</div>
                       )}
@@ -311,11 +311,11 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
                     <td data-label="إجراء" style={{padding:'12px 16px'}}>
                       {isOwner ? (<div style={{display:'flex',gap:6}}>
                       <button onClick={()=>setEditing(c)}
-                        style={{background:colors.primaryLight,color:colors.primary,border:`1px solid ${colors.primaryBorder}`,borderRadius:12,padding:'4px 10px',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
+                        style={{background:colors.primaryLight,color:colors.primary,border:`1px solid ${colors.primaryBorder}`,borderRadius:999,padding:'4px 10px',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
                         <Pencil size={12} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> تعديل
                       </button>
                       <button onClick={()=>{setConfirmDelete(c);setDeletePassword('');setDeleteError('')}}
-                        style={{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:12,padding:'4px 10px',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
+                        style={{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:999,padding:'4px 10px',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
                         <Trash2 size={12} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> حذف
                       </button>
                       </div>) : <span style={{fontSize:12,color:colors.text4}}>—</span>}
@@ -356,7 +356,7 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
                 <span style={{fontSize:17,fontWeight:strong?800:600,color:color||colors.text}}>{value}</span>
               </div>)
             const chip = (k:'all'|'deficit'|'pending', l:string, n:number)=>(
-              <button key={k} onClick={()=>{setMFilter(k);setOpenRow(null)}} style={{flex:1,padding:'8px 6px',borderRadius:12,border:`1px solid ${mFilter===k?colors.primary:colors.border}`,background:mFilter===k?colors.primary:colors.surface,color:mFilter===k?'#fff':colors.text2,fontSize:15,fontWeight:600,fontFamily:'inherit',cursor:'pointer'}}>{l} <span style={{opacity:.75}}>{n}</span></button>)
+              <button key={k} onClick={()=>{setMFilter(k);setOpenRow(null)}} style={{flex:1,padding:'8px 6px',borderRadius:999,border:`1px solid ${mFilter===k?colors.primary:colors.border}`,background:mFilter===k?colors.primary:colors.surface,color:mFilter===k?'#fff':colors.text2,fontSize:15,fontWeight:600,fontFamily:'inherit',cursor:'pointer'}}>{l} <span style={{opacity:.75}}>{n}</span></button>)
             return (
               <div className="cc-mobile" style={{padding:'12px 12px 4px'}}>
                 <div style={{background:colors.bg,border:`1px solid ${colors.border}`,borderRadius:20,padding:'10px 14px',marginBottom:12}}>
@@ -401,8 +401,8 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
                               <div style={{fontSize:15,lineHeight:1.7,color:c.deficit_reason?colors.text2:colors.text4,background:colors.dangerLight,borderRadius:12,padding:'8px 10px'}}>{c.deficit_reason?<>السبب: {c.deficit_reason}</>:'بدون سبب (إقفال قديم)'}</div>
                               {pending(c) && (isOwner ? (
                                 <div style={{display:'flex',gap:8,marginTop:8}}>
-                                  <button onClick={()=>decideDeficit(c.id,'approved')} disabled={deciding===c.id} style={{flex:1,padding:'10px',borderRadius:12,border:'none',background:colors.danger,color:'#fff',fontSize:15,fontWeight:600,fontFamily:'inherit',cursor:'pointer'}}>خصم من الراتب</button>
-                                  <button onClick={()=>decideDeficit(c.id,'rejected')} disabled={deciding===c.id} style={{flex:1,padding:'10px',borderRadius:12,border:`1px solid ${colors.border2}`,background:colors.surface,color:colors.text2,fontSize:15,fontWeight:600,fontFamily:'inherit',cursor:'pointer'}}>رفض</button>
+                                  <button onClick={()=>decideDeficit(c.id,'approved')} disabled={deciding===c.id} style={{flex:1,padding:'10px',borderRadius:999,border:'none',background:colors.danger,color:'#fff',fontSize:15,fontWeight:600,fontFamily:'inherit',cursor:'pointer'}}>خصم من الراتب</button>
+                                  <button onClick={()=>decideDeficit(c.id,'rejected')} disabled={deciding===c.id} style={{flex:1,padding:'10px',borderRadius:999,border:`1px solid ${colors.border2}`,background:colors.surface,color:colors.text2,fontSize:15,fontWeight:600,fontFamily:'inherit',cursor:'pointer'}}>رفض</button>
                                 </div>) : <div style={{fontSize:13,fontWeight:600,color:colors.warning,marginTop:6}}>بانتظار قرار المالك</div>)}
                               {c.deficit_decision==='approved' && <div style={{fontSize:13,fontWeight:600,color:colors.danger,marginTop:6}}>خُصم من الراتب</div>}
                               {c.deficit_decision==='rejected' && <div style={{fontSize:13,fontWeight:600,color:colors.text4,marginTop:6}}>رُفض الخصم</div>}
@@ -412,8 +412,8 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
                             {c.sales_image && <a href={fileLink(c.sales_image)} target="_blank" rel="noopener noreferrer" style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:13,fontWeight:600,color:colors.info,background:colors.infoLight,borderRadius:12,padding:'7px 10px',textDecoration:'none'}}><BarChart3 size={14}/> تقرير المبيعات</a>}
                             {c.network_image && <a href={fileLink(c.network_image)} target="_blank" rel="noopener noreferrer" style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:13,fontWeight:600,color:colors.primary,background:colors.bg,border:`1px solid ${colors.border}`,borderRadius:12,padding:'7px 10px',textDecoration:'none'}}><CreditCard size={14}/> موازنة الشبكة</a>}
                             {isOwner && <>
-                              <button onClick={()=>setEditing(c)} style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:13,fontWeight:600,color:colors.primary,background:colors.surface,border:`1px solid ${colors.border2}`,borderRadius:12,padding:'7px 12px',fontFamily:'inherit',cursor:'pointer',marginInlineStart:'auto'}}><Pencil size={13}/> تعديل</button>
-                              <button onClick={()=>{setConfirmDelete(c);setDeletePassword('');setDeleteError('')}} style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:13,fontWeight:600,color:'#dc2626',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:12,padding:'7px 12px',fontFamily:'inherit',cursor:'pointer'}}><Trash2 size={13}/> حذف</button>
+                              <button onClick={()=>setEditing(c)} style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:13,fontWeight:600,color:colors.primary,background:colors.surface,border:`1px solid ${colors.border2}`,borderRadius:999,padding:'7px 12px',fontFamily:'inherit',cursor:'pointer',marginInlineStart:'auto'}}><Pencil size={13}/> تعديل</button>
+                              <button onClick={()=>{setConfirmDelete(c);setDeletePassword('');setDeleteError('')}} style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:13,fontWeight:600,color:'#dc2626',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:999,padding:'7px 12px',fontFamily:'inherit',cursor:'pointer'}}><Trash2 size={13}/> حذف</button>
                             </>}
                           </div>
                           <div style={{fontSize:13,color:colors.text4,marginTop:8}}>
@@ -453,11 +453,11 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
             {deleteError && <div style={{fontSize:13,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><AlertTriangle size={13} strokeWidth={2.25}/> {deleteError}</div>}
             <div style={{display:'flex',gap:8}}>
               <button onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}
-                style={{flex:1,padding:'11px',background:colors.bg,color:colors.text3,border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                style={{flex:1,padding:'11px',background:colors.bg,color:colors.text3,border:'none',borderRadius:999,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                 إلغاء
               </button>
               <button onClick={confirmDeleteClosing} disabled={!deletePassword||deleting}
-                style={{flex:2,padding:'11px',background:!deletePassword||deleting?colors.border2:'#dc2626',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:!deletePassword||deleting?'not-allowed':'pointer',fontFamily:'inherit'}}>
+                style={{flex:2,padding:'11px',background:!deletePassword||deleting?colors.border2:'#dc2626',color:'white',border:'none',borderRadius:999,fontSize:15,fontWeight:600,cursor:!deletePassword||deleting?'not-allowed':'pointer',fontFamily:'inherit'}}>
                 {deleting?'جاري الحذف...':'تأكيد الحذف'}
               </button>
             </div>

@@ -19,7 +19,7 @@ export default function AddonSuspendedList({ m }: { m: StaffPage }) {
                   <div style={{fontSize:15,fontWeight:600,color:colors.text}}>{o.name}</div>
                   <div style={{fontSize:13,color:colors.text3,marginTop:2}} dir="auto">{o.phone}</div>
                 </div>
-                <button onClick={()=>deleteStaff(o.id)} style={{padding:'7px 14px',fontSize:13,fontWeight:600,borderRadius:12,border:`1px solid ${colors.dangerBorder}`,background:colors.dangerLight,color:colors.danger,cursor:'pointer',fontFamily:'inherit'}}>حذف</button>
+                <button onClick={()=>deleteStaff(o.id)} style={{padding:'7px 14px',fontSize:13,fontWeight:600,borderRadius:999,border:`1px solid ${colors.dangerBorder}`,background:colors.dangerLight,color:colors.danger,cursor:'pointer',fontFamily:'inherit'}}>حذف</button>
               </div>
             ))}
           </div>

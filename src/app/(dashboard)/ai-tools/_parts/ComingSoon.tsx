@@ -25,7 +25,7 @@ export default function ComingSoon({ m }: { m: AiToolsPage }) {
               setWeeklyReport(data)
               setReportLoading(false)
             }}
-              style={{padding:'6px 14px',background:C.primary,color:'white',border:'none',borderRadius:12,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+              style={{padding:'6px 14px',background:C.primary,color:'white',border:'none',borderRadius:999,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
               {reportLoading?'⏳ جاري التحميل...':'عرض التقرير'}
             </button>
           </div>

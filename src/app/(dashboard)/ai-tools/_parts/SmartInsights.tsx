@@ -51,7 +51,7 @@ export default function SmartInsights({ m }: { m: AiToolsPage }) {
 
             {insights.savings?.length>0 && (
               <div style={{background:'rgba(255,255,255,.06)',borderRadius:20,padding:16}}>
-                <div style={{fontSize:13,fontWeight:600,color:'#5eead4',marginBottom:10}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><FeatureIcon name="💰" size={15} /></span> فرص توفير التكلفة</div>
+                <div style={{fontSize:13,fontWeight:600,color:'var(--storely-border)',marginBottom:10}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><FeatureIcon name="💰" size={15} /></span> فرص توفير التكلفة</div>
                 <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
                   {insights.savings.map((s:any,i:number)=>(
                     <div key={i} style={{fontSize:12,color:'rgba(255,255,255,.85)',lineHeight:1.7}}>

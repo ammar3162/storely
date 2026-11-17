@@ -61,7 +61,7 @@ export function FilterBar({ period, setPeriod, from, setFrom, to, setTo }: any) 
           return (
             <button key={p.key} onClick={()=>setPeriod(p.key as FilterPeriod)} aria-pressed={active}
               style={{
-                flex:'1 1 auto',padding:'8px 6px',borderRadius:12,fontFamily:font.family,border:'none',
+                flex:'1 1 auto',padding:'8px 6px',borderRadius:999,fontFamily:font.family,border:'none',
                 background:active?colors.surface:'transparent',boxShadow:active?'0 1px 2px rgba(15,23,42,.08)':'none',
                 color:active?colors.text:colors.text3,fontSize:13,fontWeight:active?800:600,cursor:'pointer',
                 display:'inline-flex',alignItems:'center',justifyContent:'center',gap:5,whiteSpace:'nowrap' as const,

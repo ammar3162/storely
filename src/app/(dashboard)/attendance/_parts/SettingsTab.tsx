@@ -96,7 +96,7 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
                         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                           <button onClick={saveEditShift} disabled={savingEditShift} style={{ ...btnPrimary, flex: 2, padding: '9px 12px' }}>{savingEditShift ? 'جاري الحفظ...' : 'حفظ التعديل'}</button>
                           <button onClick={() => setEditShift(null)} disabled={savingEditShift}
-                            style={{ flex: 1, padding: '9px 12px', borderRadius:12, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text2, fontWeight:600, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
+                            style={{ flex: 1, padding: '9px 12px', borderRadius:999, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text2, fontWeight:600, cursor: 'pointer', fontFamily: 'inherit' }}>إلغاء</button>
                         </div>
                       </div>
                     )
@@ -107,9 +107,9 @@ export default function SettingsTab({ m }: { m: AttendancePage }) {
                         <div style={{ fontSize:17, fontWeight:600, color: colors.text }}>{sh.name}</div>
                         <div style={{ display: 'flex', gap: 6 }}>
                           <button onClick={() => startEditShift(sh)} aria-label={`تعديل ${sh.name}`} title="تعديل الوردية"
-                            style={{ width: 28, height: 28, borderRadius:12, border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text3, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Pencil size={13} strokeWidth={2.25}/></button>
+                            style={{ width: 28, height: 28, borderRadius:999, border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text3, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Pencil size={13} strokeWidth={2.25}/></button>
                           <button onClick={() => deleteShift(sh.id)} aria-label={`حذف ${sh.name}`} title="حذف الوردية"
-                            style={{ width: 28, height: 28, borderRadius:12, border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text4, cursor: 'pointer', fontSize:15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Trash2 size={13} strokeWidth={2.25}/></button>
+                            style={{ width: 28, height: 28, borderRadius:999, border: `1px solid ${colors.border}`, background: colors.surface, color: colors.text4, cursor: 'pointer', fontSize:15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Trash2 size={13} strokeWidth={2.25}/></button>
                         </div>
                       </div>
                       {sh.is_24h ? (

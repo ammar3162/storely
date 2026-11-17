@@ -13,7 +13,7 @@ export default function EditQtyModal({ m }: { m: StaffDispense }) {
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:200,backdropFilter:'blur(4px)'}} onClick={()=>setEditingProduct(null)}>
           <div style={sheetStyle} onClick={e=>e.stopPropagation()}>
             <SheetTop lang={lang} onBack={()=>setEditingProduct(null)} title={editingProduct.name}>
-              <div style={{fontSize:15,color:'#4b5565',marginTop:4}}>{T('currentQty',lang)}: <b>{editingProduct.qty}</b> {editingProduct.unit}</div>
+              <div style={{fontSize:15,color:'var(--storely-muted)',marginTop:4}}>{T('currentQty',lang)}: <b>{editingProduct.qty}</b> {editingProduct.unit}</div>
             </SheetTop>
             <div style={{fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:8}}>{T('newQty',lang)}</div>
             <NumberInput value={editQty} onChange={e=>setEditQty(e.target.value)} min="0" autoFocus
@@ -21,11 +21,11 @@ export default function EditQtyModal({ m }: { m: StaffDispense }) {
             <SheetFoot>
             <div style={{display:'flex',gap:8}}>
               <button onClick={updateQty} disabled={savingQty}
-                style={{flex:2,height:48,background:'#203640',color:'white',border:'none',borderRadius:12,fontSize:17,fontWeight:600,cursor:'pointer',fontFamily:'inherit',boxShadow:'none'}}>
+                style={{flex:2,height:48,background:'#203640',color:'white',border:'none',borderRadius:999,fontSize:17,fontWeight:600,cursor:'pointer',fontFamily:'inherit',boxShadow:'none'}}>
                 {savingQty?T('saving',lang):T('saveQty',lang)}
               </button>
               <button onClick={()=>setEditingProduct(null)}
-                style={{flex:1,height:48,background:'#f4f5f6',color:'var(--storely-text)',border:'none',borderRadius:12,fontSize:17,cursor:'pointer',fontFamily:'inherit'}}>
+                style={{flex:1,height:48,background:'var(--storely-fill)',color:'var(--storely-text)',border:'none',borderRadius:999,fontSize:17,cursor:'pointer',fontFamily:'inherit'}}>
                 {T('cancel',lang)}
               </button>
             </div>

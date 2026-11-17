@@ -184,7 +184,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                       <span style={{ flexBasis: '100%', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize:15, fontWeight: 600, color: '#92400e', background: '#fffbeb', border: '1.5px solid #f59e0b', borderRadius:12, padding: '8px 10px' }}>
                         <AlertTriangle size={16} /> «{it.name}» يبدو مصروفاً وليس صنف مخزون — لن يُصرف أو يُجرد.
                         <button onClick={() => patch(d, { index: i, action: 'expense' })} disabled={busy === d.id}
-                          style={{ marginInlineStart: 'auto', padding: '5px 10px', borderRadius:12, border: '1px solid #f59e0b', background: 'white', color: '#92400e', fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: 'inherit' }}>اجعله مشتريات</button>
+                          style={{ marginInlineStart: 'auto', padding: '5px 10px', borderRadius:999, border: '1px solid #f59e0b', background: 'white', color: '#92400e', fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: 'inherit' }}>اجعله مشتريات</button>
                       </span>
                     )}
                     {it.status === 'new' && <span style={pill('var(--storely-fill)', 'var(--storely-navy)')}><Plus size={12} /> مخزون: صنف جديد</span>}

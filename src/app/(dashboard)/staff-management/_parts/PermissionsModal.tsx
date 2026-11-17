@@ -19,7 +19,7 @@ export default function PermissionsModal({ m }: { m: StaffPage }) {
                 {key:'reports',    label:'التقارير',   Icon:BarChart3, locked:false},
                 {key:'cashier',    label:'إقفال الكاشير', Icon:Wallet, locked:editingRole==='cashier'},
               ].filter(p=>(p.key==='cashier'&&editingRole==='cashier')||permOkFor(p.key, staff.find(s=>s.id===editingPerms)?.branch_id)).map(p=>(
-                <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'12px',background:(editPerms as any)[p.key]?'#f0fdfa':'var(--storely-background)',borderRadius:12,border:`1.5px solid ${(editPerms as any)[p.key]?'#203640':'var(--storely-border)'}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
+                <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'12px',background:(editPerms as any)[p.key]?'var(--storely-fill)':'var(--storely-background)',borderRadius:12,border:`1.5px solid ${(editPerms as any)[p.key]?'#203640':'var(--storely-border)'}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                   <input type="checkbox" checked={(editPerms as any)[p.key]} disabled={p.locked}
                     onChange={e=>!p.locked&&setEditPerms(prev=>({...prev,[p.key]:e.target.checked}))}
                     style={{accentColor:'#203640',width:16,height:16}}/>
@@ -31,8 +31,8 @@ export default function PermissionsModal({ m }: { m: StaffPage }) {
               ))}
             </div>
             <div style={{display:'flex',gap:8}}>
-              <button onClick={()=>savePermissions(editingPerms)} style={{flex:2,padding:'12px',background:'#203640',color:'white',border:'none',borderRadius:12,fontSize:17,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Save size={15} strokeWidth={2.25}/> حفظ الصلاحيات</button>
-              <button onClick={()=>setEditingPerms(null)} style={{flex:1,padding:'12px',background:'var(--storely-fill)',color:'var(--storely-text)',border:'none',borderRadius:12,fontSize:17,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+              <button onClick={()=>savePermissions(editingPerms)} style={{flex:2,padding:'12px',background:'#203640',color:'white',border:'none',borderRadius:999,fontSize:17,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Save size={15} strokeWidth={2.25}/> حفظ الصلاحيات</button>
+              <button onClick={()=>setEditingPerms(null)} style={{flex:1,padding:'12px',background:'var(--storely-fill)',color:'var(--storely-text)',border:'none',borderRadius:999,fontSize:17,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
             </div>
           </div>
         </div>

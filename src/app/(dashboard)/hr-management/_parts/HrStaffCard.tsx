@@ -64,7 +64,7 @@ export default function HrStaffCard({ m, s }: { m: HrPage; s: any }) {
                           <span style={{color:colors.text3}}>غياب بدون عذر ({p.absencePendingDates.length} {p.absencePendingDates.length===1?'يوم':'أيام'}) — بانتظار قرارك</span>
                           <span style={{display:'flex',alignItems:'center',gap:8}}>
                             <span style={{color:colors.text3,fontWeight:600}}>{fmtN(p.absencePendingAmount)} {curr}</span>
-                            <button type="button" onClick={(e)=>{e.stopPropagation(); deductAbsence(s.id, s.name)}} style={{fontSize:12,fontWeight:600,color:colors.danger,background:'transparent',border:`1px solid ${colors.dangerBorder}`,borderRadius:12,padding:'3px 10px',cursor:'pointer',fontFamily:'inherit'}}>خصم</button>
+                            <button type="button" onClick={(e)=>{e.stopPropagation(); deductAbsence(s.id, s.name)}} style={{fontSize:12,fontWeight:600,color:colors.danger,background:'transparent',border:`1px solid ${colors.dangerBorder}`,borderRadius:999,padding:'3px 10px',cursor:'pointer',fontFamily:'inherit'}}>خصم</button>
                           </span>
                         </div>
                       )}
@@ -93,7 +93,7 @@ export default function HrStaffCard({ m, s }: { m: HrPage; s: any }) {
                         <div role="tablist" style={{display:'flex',gap:6,flexWrap:'wrap' as const,background:colors.bg,padding:5,borderRadius:20}}>
                           {TABS.map(t=>(
                             <button key={t.k} role="tab" aria-selected={hrTab===t.k} onClick={()=>setHrTab(t.k)}
-                              style={{flex:'1 1 auto',display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'9px 12px',borderRadius:12,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:15,fontWeight:600,
+                              style={{flex:'1 1 auto',display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'9px 12px',borderRadius:999,border:'none',cursor:'pointer',fontFamily:'inherit',fontSize:15,fontWeight:600,
                                 background:hrTab===t.k?'white':'transparent',color:hrTab===t.k?colors.primary:colors.text3,boxShadow:hrTab===t.k?'0 1px 3px rgba(15,23,42,.1)':'none'}}>
                               {t.l}{!!t.n && <span style={{background:colors.warning,color:'white',fontSize:12,fontWeight:600,borderRadius:99,minWidth:18,height:18,padding:'0 5px',display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{t.n}</span>}
                             </button>

@@ -21,8 +21,8 @@ export default function ExcuseTab({ m, s }: { m: HrPage; s: any }) {
                             <div key={e.id} style={{background:colors.warningLight,border:`1.5px solid ${colors.warningBorder}`,borderRadius:radius.md,padding:'12px 14px'}}>
                               <div style={{fontSize:13,color:colors.text3,marginBottom:10}}>{e.reason || 'بدون سبب محدد'}</div>
                               <div style={{display:'flex',gap:8}}>
-                                <button onClick={()=>reviewExcuse(s.id,e.id,'approve')} style={{flex:1,padding:'7px',background:colors.primary,color:'white',border:'none',borderRadius:12,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><ThumbsUp size={13} strokeWidth={2.25}/> موافقة</button>
-                                <button onClick={()=>reviewExcuse(s.id,e.id,'reject')} style={{flex:1,padding:'7px',background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:12,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><ThumbsDown size={13} strokeWidth={2.25}/> رفض</button>
+                                <button onClick={()=>reviewExcuse(s.id,e.id,'approve')} style={{flex:1,padding:'7px',background:colors.primary,color:'white',border:'none',borderRadius:999,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><ThumbsUp size={13} strokeWidth={2.25}/> موافقة</button>
+                                <button onClick={()=>reviewExcuse(s.id,e.id,'reject')} style={{flex:1,padding:'7px',background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:999,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><ThumbsDown size={13} strokeWidth={2.25}/> رفض</button>
                               </div>
                             </div>
                           ))}

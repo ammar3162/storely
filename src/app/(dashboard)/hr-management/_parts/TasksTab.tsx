@@ -46,12 +46,12 @@ export default function TasksTab({ m, s }: { m: HrPage; s: any }) {
                                 )}
                                 {t.status==='completed' && (
                                   <div style={{display:'flex',gap:8,marginTop:6,marginBottom:6}}>
-                                    <button onClick={()=>reviewTask(s.id,t.id,'confirmed')} style={{flex:1,padding:'7px',background:colors.primary,color:'white',border:'none',borderRadius:12,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>تأكيد الإتمام</button>
-                                    <button onClick={()=>reviewTask(s.id,t.id,'rejected')} style={{flex:1,padding:'7px',background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:12,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>رفض</button>
+                                    <button onClick={()=>reviewTask(s.id,t.id,'confirmed')} style={{flex:1,padding:'7px',background:colors.primary,color:'white',border:'none',borderRadius:999,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>تأكيد الإتمام</button>
+                                    <button onClick={()=>reviewTask(s.id,t.id,'rejected')} style={{flex:1,padding:'7px',background:colors.dangerLight,color:colors.danger,border:`1px solid ${colors.dangerBorder}`,borderRadius:999,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>رفض</button>
                                   </div>
                                 )}
                                 {!t.template_id && (
-                                  <button onClick={()=>toggleDaily(s.id,t.id)} style={{width:'100%',padding:'6px',marginTop:4,background:'transparent',border:`1px dashed ${t.is_daily?colors.primary:colors.border2}`,borderRadius:12,fontSize:12,fontWeight:600,color:t.is_daily?colors.primary:colors.text4,cursor:'pointer',fontFamily:'inherit'}}>
+                                  <button onClick={()=>toggleDaily(s.id,t.id)} style={{width:'100%',padding:'6px',marginTop:4,background:'transparent',border:`1px dashed ${t.is_daily?colors.primary:colors.border2}`,borderRadius:999,fontSize:12,fontWeight:600,color:t.is_daily?colors.primary:colors.text4,cursor:'pointer',fontFamily:'inherit'}}>
                                     {t.is_daily ? 'إيقاف التكرار اليومي' : 'اجعلها مهمة يومية '}
                                   </button>
                                 )}

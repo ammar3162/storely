@@ -15,11 +15,11 @@ export default function ImportSheet({ m }: { m: InventoryState }) {
 
             {importPreview.length===0 ? (
               <>
-                <button onClick={downloadImportTemplate} type="button" style={{width:'100%',padding:10,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:12,fontSize:13,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit',marginBottom:10}}>
+                <button onClick={downloadImportTemplate} type="button" style={{width:'100%',padding:10,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:999,fontSize:13,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit',marginBottom:10}}>
                   تحميل نموذج فارغ (CSV)
                 </button>
                 <input ref={importFileRef} type="file" accept=".csv" style={{display:'none'}} onChange={e=>{if(e.target.files?.[0])handleImportFile(e.target.files[0])}}/>
-                <button onClick={()=>importFileRef.current?.click()} type="button" style={{width:'100%',padding:14,background:C.primaryL,border:`1.5px dashed ${C.primaryB}`,borderRadius:12,fontSize:15,fontWeight:600,color:C.primary,cursor:'pointer',fontFamily:'inherit'}}>
+                <button onClick={()=>importFileRef.current?.click()} type="button" style={{width:'100%',padding:14,background:C.primaryL,border:`1.5px dashed ${C.primaryB}`,borderRadius:999,fontSize:15,fontWeight:600,color:C.primary,cursor:'pointer',fontFamily:'inherit'}}>
                   <Paperclip size={13} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> اختر ملف CSV للاستيراد
                 </button>
               </>
@@ -56,7 +56,7 @@ export default function ImportSheet({ m }: { m: InventoryState }) {
                   </table>
                 </div>
                 <div style={{display:'flex',gap:8}}>
-                  <button onClick={()=>setImportPreview([])} type="button" style={{flex:1,padding:11,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:12,fontSize:13,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                  <button onClick={()=>setImportPreview([])} type="button" style={{flex:1,padding:11,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:999,fontSize:13,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
                   <button onClick={confirmImport} disabled={importing} type="button" style={{flex:2,padding:11,background:C.primary,border:'none',borderRadius:999,fontSize:13,fontWeight:600,color:'white',cursor:importing?'not-allowed':'pointer',fontFamily:'inherit',opacity:importing?.7:1}}>
                     {importing?'جاري الاستيراد...':<span style={{display:'inline-flex',alignItems:'center',gap:6}}><CheckCircle2 size={14} strokeWidth={2.25}/> تأكيد استيراد {importPreview.length} صنف</span>}
                   </button>

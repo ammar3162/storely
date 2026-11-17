@@ -33,7 +33,7 @@ export default function SupplierCardDetails({ m }: { m: SupplierCardState }) {
                       </div>
                     </div>
                     <button onClick={()=>unlinkProduct(p.id)}
-                      style={{ background:'none', border:'1.5px solid var(--storely-border)', color:'var(--storely-subtle)', borderRadius:12, padding:'5px 10px', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginRight:8 }}>
+                      style={{ background:'none', border:'1.5px solid var(--storely-border)', color:'var(--storely-subtle)', borderRadius:999, padding:'5px 10px', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginRight:8 }}>
                       فك
                     </button>
                   </div>

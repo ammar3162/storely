@@ -88,7 +88,7 @@ export default function SmartOrder() {
                 {r.reorder && (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 8, padding: '7px 10px', borderRadius:12, background: C.infoLight, flexWrap: 'wrap' as const }}>
                     <span style={{ fontSize:12, color: C.text2 }}>حد التنبيه الحالي {r.reorder.current} — الأنسب {r.reorder.suggested} {unitFor(r.reorder.suggested, r.unit)}</span>
-                    <button onClick={() => applyReorder(r)} disabled={applying === r.productId} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius:12, border: 'none', background: C.info, color: '#fff', fontSize:12, fontWeight:600, cursor: 'pointer', fontFamily: font.family }}>
+                    <button onClick={() => applyReorder(r)} disabled={applying === r.productId} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius:999, border: 'none', background: C.info, color: '#fff', fontSize:12, fontWeight:600, cursor: 'pointer', fontFamily: font.family }}>
                       <Check size={12} /> {applying === r.productId ? 'جاري...' : 'اعتمد'}
                     </button>
                   </div>
@@ -99,7 +99,7 @@ export default function SmartOrder() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginTop: 4, flexWrap: 'wrap' as const }}>
             <span style={{ fontSize:12, color: C.text4 }}>{data.safeCount > 0 ? `و${data.safeCount === 1 ? ' صنف واحد' : data.safeCount === 2 ? ' صنفين' : ` ${data.safeCount} أصناف`} وضعها آمن` : ''}</span>
             {data.rows.some(r => (r.suggestedQty ?? 0) > 0) && (
-              <button onClick={() => router.push('/suppliers')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius:12, border: `1px solid ${C.primary}`, background: C.surface, color: C.primary, fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: font.family }}>
+              <button onClick={() => router.push('/suppliers')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius:999, border: `1px solid ${C.primary}`, background: C.surface, color: C.primary, fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: font.family }}>
                 <Send size={14} /> أرسل الطلب للموردين
               </button>
             )}

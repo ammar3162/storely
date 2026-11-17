@@ -23,7 +23,7 @@ export default function ManualCheckoutModal({ m }: { m: AttendancePage }) {
             </label>
             <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
               <button onClick={submitManualCheckout} disabled={savingCo || !coTime} style={{ ...btnPrimary, flex: 2, padding: '10px 14px' }}>{savingCo ? 'جاري التسجيل...' : 'تسجيل الانصراف'}</button>
-              <button onClick={() => setCheckoutFor(null)} disabled={savingCo} style={{ flex: 1, padding: '10px 14px', borderRadius:12, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text2, fontWeight:600, cursor: 'pointer', fontFamily: font.family }}>إلغاء</button>
+              <button onClick={() => setCheckoutFor(null)} disabled={savingCo} style={{ flex: 1, padding: '10px 14px', borderRadius:999, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text2, fontWeight:600, cursor: 'pointer', fontFamily: font.family }}>إلغاء</button>
             </div>
           </div>
         </div>

@@ -25,7 +25,7 @@ export default function StarterProducts({ m }: { m: InventoryState }) {
           </div>
           <div style={{display:'flex',gap:10,alignItems:'center',flexWrap:'wrap' as const}}>
             <button onClick={addTemplateProducts} disabled={addingTemplate||Object.values(selectedTemplate).every(v=>!v)}
-              style={{padding:'10px 20px',background:Object.values(selectedTemplate).every(v=>!v)?C.border2:(C.primary),color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:Object.values(selectedTemplate).every(v=>!v)?'not-allowed':'pointer',fontFamily:'inherit'}}>
+              style={{padding:'10px 20px',background:Object.values(selectedTemplate).every(v=>!v)?C.border2:(C.primary),color:'white',border:'none',borderRadius:999,fontSize:15,fontWeight:600,cursor:Object.values(selectedTemplate).every(v=>!v)?'not-allowed':'pointer',fontFamily:'inherit'}}>
               {addingTemplate?'جاري الإضافة...':<span style={{display:'inline-flex',alignItems:'center',gap:6}}><CheckCircle2 size={14} strokeWidth={2.25}/> أضف المحدد ({Object.values(selectedTemplate).filter(Boolean).length})</span>}
             </button>
             <button onClick={()=>{
@@ -33,7 +33,7 @@ export default function StarterProducts({ m }: { m: InventoryState }) {
                 for(const p of (STARTER_PRODUCTS[businessType]||[])) all[p.name]=true
                 setSelectedTemplate(all)
               }}
-              style={{padding:'10px 16px',background:'none',color:C.primary,border:`1.5px solid ${C.primaryB}`,borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+              style={{padding:'10px 16px',background:'none',color:C.primary,border:`1.5px solid ${C.primaryB}`,borderRadius:999,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
               تحديد الكل
             </button>
             <button onClick={()=>setTemplateDismissed(true)}

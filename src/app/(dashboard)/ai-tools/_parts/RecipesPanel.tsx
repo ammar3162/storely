@@ -20,7 +20,7 @@ export default function RecipesPanel({ m }: { m: AiToolsPage }) {
           </div>
           <div style={{display:'flex',background:C.surface,border:`1px solid ${C.border2}`,borderRadius:12,padding:3,gap:3}}>
             {([['count','حسب الجرد (الأدق)'],['dispense','حسب الصرف المسجّل']] as const).map(([k,l])=>(
-              <button key={k} onClick={()=>{setReconMethod(k);setRecipeReconReport(null)}} style={{flex:1,padding:'7px',border:'none',borderRadius:12,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',background:reconMethod===k?'var(--storely-navy)':'transparent',color:reconMethod===k?'white':C.text3}}>{l}</button>
+              <button key={k} onClick={()=>{setReconMethod(k);setRecipeReconReport(null)}} style={{flex:1,padding:'7px',border:'none',borderRadius:999,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',background:reconMethod===k?'var(--storely-navy)':'transparent',color:reconMethod===k?'white':C.text3}}>{l}</button>
             ))}
           </div>
           <div style={{fontSize:12,color:C.text3,lineHeight:1.6}}>
@@ -51,7 +51,7 @@ export default function RecipesPanel({ m }: { m: AiToolsPage }) {
               const j=await api.get('/api/products',{org_id:orgId,branch_id:bid2,full:1})
               setRawMaterials(j.products||[])
               setShowRecipeModal(true)
-            }} style={{flex:1,padding:'8px 14px',background:'white',color:'var(--storely-navy)',border:'1.5px solid var(--storely-border)',borderRadius:12,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+            }} style={{flex:1,padding:'8px 14px',background:'white',color:'var(--storely-navy)',border:'1.5px solid var(--storely-border)',borderRadius:999,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
               + وصفة جديدة
             </button>
             <button onClick={async()=>{
@@ -62,7 +62,7 @@ export default function RecipesPanel({ m }: { m: AiToolsPage }) {
               const data=await res.json()
               setRecipeReconReport(data)
               setReconLoading(false)
-            }} style={{flex:1,padding:'8px 14px',background:'var(--storely-navy)',color:'white',border:'none',borderRadius:12,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+            }} style={{flex:1,padding:'8px 14px',background:'var(--storely-navy)',color:'white',border:'none',borderRadius:999,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
               {reconLoading?'جاري الحساب...':'تقدير الإنتاج'}
             </button>
           </div>
@@ -78,8 +78,8 @@ export default function RecipesPanel({ m }: { m: AiToolsPage }) {
                 <div key={r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'white',border:`1px solid ${C.border2}`,borderRadius:12,padding:'8px 12px'}}>
                   <span style={{fontSize:13,fontWeight:600,color:C.text}}>{r.name}</span>
                   <div style={{display:'flex',gap:6}}>
-                    <button onClick={()=>openEditRecipe(r.id)} style={{padding:'4px 10px',background:'var(--storely-fill)',color:'var(--storely-navy)',border:'1px solid var(--storely-border)',borderRadius:12,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}><Pencil size={11} style={{verticalAlign:'-2px',marginLeft:3}}/>تعديل</button>
-                    <button onClick={()=>deleteRecipe(r.id)} disabled={deletingRecipeId===r.id} style={{padding:'4px 10px',background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:12,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',opacity:deletingRecipeId===r.id?.6:1}}>{deletingRecipeId===r.id?'...':<><Trash2 size={11} style={{verticalAlign:'-2px',marginLeft:3}}/>حذف</>}</button>
+                    <button onClick={()=>openEditRecipe(r.id)} style={{padding:'4px 10px',background:'var(--storely-fill)',color:'var(--storely-navy)',border:'1px solid var(--storely-border)',borderRadius:999,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}><Pencil size={11} style={{verticalAlign:'-2px',marginLeft:3}}/>تعديل</button>
+                    <button onClick={()=>deleteRecipe(r.id)} disabled={deletingRecipeId===r.id} style={{padding:'4px 10px',background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:999,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',opacity:deletingRecipeId===r.id?.6:1}}>{deletingRecipeId===r.id?'...':<><Trash2 size={11} style={{verticalAlign:'-2px',marginLeft:3}}/>حذف</>}</button>
                   </div>
                 </div>
               ))}

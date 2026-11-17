@@ -17,7 +17,7 @@ export default function SupplierThanksModal({ m }: { m: PurchasesState }) {
               عند التأكيد، سنرسل له رسالة شكر تلقائية عبر واتساب.
             </div>
             <div style={{display:'flex',gap:8}}>
-              <button onClick={()=>setPendingThanks(null)} style={{flex:1,padding:11,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:12,fontSize:13,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>
+              <button onClick={()=>setPendingThanks(null)} style={{flex:1,padding:11,background:C.bg,border:`1px solid ${C.border2}`,borderRadius:999,fontSize:13,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>
                 لا، تجاهل
               </button>
               <button onClick={confirmSupplierThanks} style={{flex:1,padding:11,background:C.primary,border:'none',borderRadius:999,fontSize:13,fontWeight:600,color:'white',cursor:'pointer',fontFamily:'inherit'}}>

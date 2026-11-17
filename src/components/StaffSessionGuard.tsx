@@ -140,7 +140,7 @@ export default function StaffSessionGuard({ children }: { children: React.ReactN
       {open && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(15,23,42,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, fontFamily: 'var(--storely-font)', direction: 'rtl' }}>
           <div style={{ background: 'white', borderRadius: 20, width: '100%', maxWidth: 340, padding: 26, textAlign: 'center', boxShadow: '0 20px 50px rgba(15,23,42,.25)' }}>
-            <div style={{ width: 52, height: 52, borderRadius:20, background: '#f0fdfa', color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}><Lock size={24} /></div>
+            <div style={{ width: 52, height: 52, borderRadius:20, background: 'var(--storely-fill)', color: 'var(--storely-navy)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}><Lock size={24} /></div>
             <div style={{ fontSize:17, fontWeight:600, color: 'var(--storely-text)' }}>أدخل رمزك للمتابعة</div>
             <div style={{ fontSize:13, color: 'var(--storely-muted)', marginTop: 4, marginBottom: 16 }}>{name ? `${name}، ` : ''}انتهت جلستك لدواعٍ أمنية — بعد إدخال الرمز نكمل طلبك تلقائياً</div>
             <input type="password" inputMode="numeric" autoFocus maxLength={6} value={pin}
@@ -150,7 +150,7 @@ export default function StaffSessionGuard({ children }: { children: React.ReactN
               style={{ width: '100%', height: 54, fontSize: 24, fontWeight:600, textAlign: 'center', letterSpacing: 8, border: `1.5px solid ${err ? '#fca5a5' : 'var(--storely-border)'}`, borderRadius:20, boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none' }} />
             {err && <div style={{ fontSize:13, color: '#dc2626', fontWeight: 600, marginTop: 8 }}>{err}</div>}
             <button onClick={submit} disabled={!pin || busy}
-              style={{ width: '100%', height: 48, marginTop: 14, background: !pin || busy ? 'var(--storely-subtle)' : '#0f766e', color: 'white', border: 'none', borderRadius:20, fontSize:17, fontWeight:600, cursor: !pin || busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+              style={{ width: '100%', height: 48, marginTop: 14, background: !pin || busy ? 'var(--storely-subtle)' : 'var(--storely-navy)', color: 'white', border: 'none', borderRadius:20, fontSize:17, fontWeight:600, cursor: !pin || busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
               {busy ? 'جاري التحقق...' : 'متابعة'}
             </button>
             <button onClick={logout} style={{ width: '100%', marginTop: 8, padding: 10, background: 'none', border: 'none', color: 'var(--storely-subtle)', fontSize:15, cursor: 'pointer', fontFamily: 'inherit' }}>تسجيل خروج</button>

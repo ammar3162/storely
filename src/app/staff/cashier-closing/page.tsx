@@ -18,30 +18,30 @@ export default function CashierClosingPage() {
   const { lang, session, step, saved, locked, toast, rtl, router, businessDateLabel, logout } = m
 
   if(!session) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f4f5f6',fontFamily:'var(--storely-font)'}}>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--storely-fill)',fontFamily:'var(--storely-font)'}}>
       <div style={{width:32,height:32,border:'3px solid var(--storely-border)',borderTopColor:'#203640',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 
   if(locked) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f4f5f6',fontFamily:'var(--storely-font)',direction:rtl?'rtl':'ltr',padding:20,textAlign:'center' as const}}>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--storely-fill)',fontFamily:'var(--storely-font)',direction:rtl?'rtl':'ltr',padding:20,textAlign:'center' as const}}>
       <div>
-        <div style={{display:'flex',justifyContent:'center',marginBottom:12,color:'#4b5565'}}><Lock size={40}/></div>
+        <div style={{display:'flex',justifyContent:'center',marginBottom:12,color:'var(--storely-muted)'}}><Lock size={40}/></div>
         <div style={{fontSize:17,fontWeight:600,color:'var(--storely-text)',marginBottom:8}}>{ct('lockedTitle',lang)}</div>
-        <div style={{fontSize:17,color:'#4b5565'}}>{ct('lockedSub',lang)}</div>
-        <button onClick={()=>router.push('/staff/choose')} style={{marginTop:20,height:44,padding:'0 22px',background:'#203640',color:'white',border:'none',borderRadius:12,fontSize:17,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{ct('backHome',lang)}</button>
+        <div style={{fontSize:17,color:'var(--storely-muted)'}}>{ct('lockedSub',lang)}</div>
+        <button onClick={()=>router.push('/staff/choose')} style={{marginTop:20,height:44,padding:'0 22px',background:'#203640',color:'white',border:'none',borderRadius:999,fontSize:17,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{ct('backHome',lang)}</button>
       </div>
     </div>
   )
 
   const v: PageVals = { session }
   return (
-    <div style={{minHeight:'100vh',background:'#f4f5f6',fontFamily:'var(--storely-font)',direction:rtl?'rtl':'ltr',paddingBottom:50}}>
+    <div style={{minHeight:'100vh',background:'var(--storely-fill)',fontFamily:'var(--storely-font)',direction:rtl?'rtl':'ltr',paddingBottom:50}}>
       <style>{`.amt-tile:focus-within{border-color:#203640!important;background:white!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)} .dl-row:focus-within .dl-field{border-color:#203640!important;background:white!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)} @keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}} .fu{animation:fadeUp .3s cubic-bezier(.22,1,.36,1) both} @media (prefers-reduced-motion:reduce){.fu{animation:none}}`}</style>
 
       {toast && (
-        <div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:9999,background:toast.type==='success'?'#111827':'#dc2626',color:'white',padding:'12px 20px',borderRadius:12,fontSize:17,fontWeight:500,boxShadow:'0 8px 24px rgba(0,0,0,.12)',whiteSpace:'nowrap'}}>
+        <div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:9999,background:toast.type==='success'?'var(--storely-text)':'#dc2626',color:'white',padding:'12px 20px',borderRadius:12,fontSize:17,fontWeight:500,boxShadow:'0 8px 24px rgba(0,0,0,.12)',whiteSpace:'nowrap'}}>
           {toast.msg}
         </div>
       )}

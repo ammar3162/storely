@@ -23,7 +23,7 @@ export default function ManualPurchaseForm({ m }: { m: PurchasesState }) {
 
             <button type="submit" disabled={loading||uploading} style={{
               width:'100%',padding:'12px',background:loading||uploading?C.text4:C.primary,
-              color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,
+              color:'white',border:'none',borderRadius:999,fontSize:15,fontWeight:600,
               cursor:loading||uploading?'not-allowed':'pointer',fontFamily:'inherit',
               opacity:loading||uploading?.7:1,transition:'all .15s',
             }}>

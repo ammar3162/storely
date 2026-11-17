@@ -22,7 +22,7 @@ export default function Seasonality({ m }: { m: AiToolsPage }) {
             const data=await res.json()
             setSeasonality(data)
             setSeasonLoading(false)
-          }} style={{padding:'8px 16px',background:'var(--storely-navy)',color:'white',border:'none',borderRadius:12,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+          }} style={{padding:'8px 16px',background:'var(--storely-navy)',color:'white',border:'none',borderRadius:999,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
             {seasonLoading?'⏳ جاري...':'تحليل الموسمية'}
           </button>
         </div>

@@ -52,14 +52,14 @@ export default function ExtraDayDecision({ item, orgId, canDecide = true, onDone
             <NumberInput min="1" step="0.5" value={amount} onChange={e => setAmount(e.target.value)} style={{ ...inp(), width: 150, paddingInline: 44, textAlign: 'center' }} />
             <span style={{ position: 'absolute' as const, insetInlineEnd: 10, top: '50%', transform: 'translateY(-50%)', fontSize:13, color: colors.text4 }}>⃁</span>
           </div>
-          <button onClick={() => decide('paid')} disabled={busy || !(Number(amount) > 0)} style={{ padding: '9px 14px', borderRadius:12, border: 'none', background: colors.primary, color: 'white', fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: font.family, opacity: busy || !(Number(amount) > 0) ? .6 : 1 }}>اعتماد المبلغ</button>
+          <button onClick={() => decide('paid')} disabled={busy || !(Number(amount) > 0)} style={{ padding: '9px 14px', borderRadius:999, border: 'none', background: colors.primary, color: 'white', fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: font.family, opacity: busy || !(Number(amount) > 0) ? .6 : 1 }}>اعتماد المبلغ</button>
           {item.suggested_amount ? <span style={{ fontSize:12, color: colors.text4 }}>المقترح: أجر يوم ({item.suggested_amount} ⃁ = الراتب ÷ 30)</span> : null}
         </div>
       )}
       {mode === 'comp' && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' as const }}>
           <input type="date" value={compDate} onChange={e => setCompDate(e.target.value)} style={{ ...inp(), width: 170 }} />
-          <button onClick={() => decide('comp')} disabled={busy || !compDate} style={{ padding: '9px 14px', borderRadius:12, border: 'none', background: colors.primary, color: 'white', fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: font.family, opacity: busy ? .6 : 1 }}>اعتماد اليوم البديل</button>
+          <button onClick={() => decide('comp')} disabled={busy || !compDate} style={{ padding: '9px 14px', borderRadius:999, border: 'none', background: colors.primary, color: 'white', fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: font.family, opacity: busy ? .6 : 1 }}>اعتماد اليوم البديل</button>
           <span style={{ fontSize:12, color: colors.text4 }}>ولا يُحتسب عليه غياب في ذلك اليوم</span>
         </div>
       )}

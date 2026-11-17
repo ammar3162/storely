@@ -48,7 +48,7 @@ export default function AddStaffModal({ m }: { m: StaffPage }) {
               <div>
                 <label style={{fontSize:font.xs,fontWeight:600,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>نوع الموظف</label>
                 <div style={{display:'grid',gridTemplateColumns:permOkFor('cashier', newBranch)?'1fr 1fr':'1fr',gap:8}}>
-                  <button type="button" onClick={()=>setNewRole('staff')} style={{padding:'12px 10px',borderRadius:12,border:`1.5px solid ${newRole==='staff'?colors.primary:colors.border}`,background:newRole==='staff'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='staff'?`0 2px 8px ${colors.primary}22`:'none'}}>
+                  <button type="button" onClick={()=>setNewRole('staff')} style={{padding:'12px 10px',borderRadius:999,border:`1.5px solid ${newRole==='staff'?colors.primary:colors.border}`,background:newRole==='staff'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='staff'?`0 2px 8px ${colors.primary}22`:'none'}}>
                     <div style={{fontWeight:600,fontSize:font.sm,color:newRole==='staff'?colors.primary:colors.text2,marginBottom:3,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><User size={14} strokeWidth={2.25}/> موظف عادي</div>
                     <div style={{fontSize:12,color:newRole==='staff'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>{permOk('dispense')?'يستخدم نظام الصرف والمخزون':permOk('purchases')?'يسجّل المشتريات':'يسجّل حضوره ومهامه'}</div>
                   </button>
@@ -56,7 +56,7 @@ export default function AddStaffModal({ m }: { m: StaffPage }) {
                   <button type="button" onClick={()=>{
                       if(!hasCashier){toast('الكاشير يحتاج باقة فيها إقفال الكاشير أو إضافة «إقفال الكاشير» لهذا الفرع من صفحة الإضافات','warning');return}
                       setNewRole('cashier')
-                    }} style={{padding:'12px 10px',borderRadius:12,border:`1.5px solid ${newRole==='cashier'?colors.primary:colors.border}`,background:newRole==='cashier'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='cashier'?`0 2px 8px ${colors.primary}22`:'none',opacity:!hasCashier?.55:1,position:'relative' as const}}>
+                    }} style={{padding:'12px 10px',borderRadius:999,border:`1.5px solid ${newRole==='cashier'?colors.primary:colors.border}`,background:newRole==='cashier'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='cashier'?`0 2px 8px ${colors.primary}22`:'none',opacity:!hasCashier?.55:1,position:'relative' as const}}>
                     {!hasCashier && (
                       <div style={{position:'absolute',top:-8,left:-6,background:'#1c1c1a',color:'white',fontSize:12,fontWeight:600,padding:'2px 8px',borderRadius:99,display:'flex',alignItems:'center',gap:4}}><Lock size={9} strokeWidth={2.5}/> إضافة</div>
                     )}

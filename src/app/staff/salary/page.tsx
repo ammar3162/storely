@@ -106,7 +106,7 @@ export default function PayslipPage() {
   const deductionLabel = (src: string) => src === 'cashier_deficit' ? t('deficit') : src === 'late_bundle' ? t('lateBundle') : t('manual')
 
   return (
-    <div style={{ minHeight: '100vh', background:'#f4f5f6', fontFamily: 'var(--storely-font)', direction: rtl ? 'rtl' : 'ltr', paddingBottom: 40 }}>
+    <div style={{ minHeight: '100vh', background:'var(--storely-fill)', fontFamily: 'var(--storely-font)', direction: rtl ? 'rtl' : 'ltr', paddingBottom: 40 }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <StaffHeader title={t('title')} subtitle={name} rtl={rtl} backLabel={t('back')} end={
         <div style={{ position: 'relative' }}>
@@ -117,7 +117,7 @@ export default function PayslipPage() {
             <div style={{ position: 'absolute', top: '100%', insetInlineEnd: 0, marginTop: 6, background: 'white', borderRadius:20, border:'1px solid var(--storely-border)', boxShadow: '0 12px 28px rgba(15,23,42,.16)', overflow: 'hidden', minWidth: 150, zIndex: 50 }}>
               {PAYSLIP_LANGS.map(l => (
                 <button key={l.code} onClick={() => chooseLang(l.code)}
-                  style={{ width: '100%', padding: '11px 14px', border: 'none', borderBottom:'1px solid #eceef1', background: lang === l.code ? '#e7f3f1' : 'white', color: lang === l.code ? '#203640' : '#111827', fontSize:15, fontWeight: lang === l.code ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'start', display: 'block' }}>
+                  style={{ width: '100%', padding: '11px 14px', border: 'none', borderBottom:'1px solid var(--storely-fill)', background: lang === l.code ? 'var(--storely-fill)' : 'white', color: lang === l.code ? '#203640' : 'var(--storely-text)', fontSize:15, fontWeight: lang === l.code ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'start', display: 'block' }}>
                   {l.label}
                 </button>
               ))}

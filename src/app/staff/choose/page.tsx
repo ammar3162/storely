@@ -275,15 +275,15 @@ export default function ChoosePage() {
   const todayLabel = new Date().toLocaleDateString(locale, { numberingSystem:'latn', weekday:'long', day:'numeric', month:'long', calendar:'gregory', timeZone:'Asia/Riyadh' })
   const offToday = !!dayOff && !isCheckedIn && !lastCheckOut
   const statusTxt = isCheckedIn ? t('checkedIn') : lastCheckOut ? t('checkedOutToday') : offToday ? t(dayOff === 'leave' ? 'dayOffLeave' : dayOff === 'comp' ? 'dayOffComp' : 'dayOff') : t('notCheckedIn')
-  const statusClr = isCheckedIn ? { c:C.accentInk, bg:C.accentSoft, dot:'#15803d' } : lastCheckOut ? { c:'#4b5565', bg:'#eceef1', dot:'#6b7487' } : offToday ? { c:C.t2, bg:C.raised, dot:'var(--storely-navy)' } : { c:C.t2, bg:C.raised, dot:'#d97706' }
+  const statusClr = isCheckedIn ? { c:C.accentInk, bg:C.accentSoft, dot:'#15803d' } : lastCheckOut ? { c:'var(--storely-muted)', bg:'var(--storely-fill)', dot:'var(--storely-muted)' } : offToday ? { c:C.t2, bg:C.raised, dot:'var(--storely-navy)' } : { c:C.t2, bg:C.raised, dot:'#d97706' }
 
   // أقسام العمل — صفوف قائمة بأيقونة رمادية (تصميم «كاونتر»)
   const workActions = [
-    canDispense && hasInvFeature && { key:'d', icon:<PackageMinus size={18} strokeWidth={1.75}/>, title:t('dispense'), sub:t('dispenseSub'), c:'#203640', bg:'#e7f3f1', go:()=>router.push('/staff/dispense') },
-    isCashier && hasCashierFeature && { key:'c', icon:<Receipt size={18} strokeWidth={1.75}/>, title:t('cashierClosing'), sub:t('cashierSub'), c:'#1f2937', bg:'#eceef1', go:()=>router.push('/staff/cashier-closing') },
+    canDispense && hasInvFeature && { key:'d', icon:<PackageMinus size={18} strokeWidth={1.75}/>, title:t('dispense'), sub:t('dispenseSub'), c:'#203640', bg:'var(--storely-fill)', go:()=>router.push('/staff/dispense') },
+    isCashier && hasCashierFeature && { key:'c', icon:<Receipt size={18} strokeWidth={1.75}/>, title:t('cashierClosing'), sub:t('cashierSub'), c:'#1f2937', bg:'var(--storely-fill)', go:()=>router.push('/staff/cashier-closing') },
     canInventory && hasInvFeature && { key:'i', icon:<Boxes size={18} strokeWidth={1.75}/>, title:t('inventory'), sub:t('inventorySub'), c:C.t2, bg:C.raised, go:()=>router.push('/staff/inventory') },
     canPurchases && hasPurFeature && { key:'p', icon:<ShoppingCart size={18} strokeWidth={1.75}/>, title:t('purchases'), sub:t('purchasesSub'), c:C.t2, bg:C.raised, go:()=>router.push('/staff/purchases') },
-    !(canDispense && hasInvFeature) && !(isCashier && hasCashierFeature) && hasInvFeature && { key:'e', icon:<PackageMinus size={18} strokeWidth={1.75}/>, title:t('enterSystem'), sub:t('dispenseSub'), c:'#203640', bg:'#e7f3f1', go:()=>router.push('/staff/dispense') },
+    !(canDispense && hasInvFeature) && !(isCashier && hasCashierFeature) && hasInvFeature && { key:'e', icon:<PackageMinus size={18} strokeWidth={1.75}/>, title:t('enterSystem'), sub:t('dispenseSub'), c:'#203640', bg:'var(--storely-fill)', go:()=>router.push('/staff/dispense') },
   ].filter(Boolean) as { key:string; icon:any; title:string; sub:string; c:string; bg:string; go:()=>void }[]
 
   const sectionTitle = (txt: string) => (
@@ -294,7 +294,7 @@ export default function ChoosePage() {
   const listRow = (i: number, n: number): React.CSSProperties => ({ width:'100%',minHeight:60,background:'white',border:'none',borderTop:i>0?`1px solid ${C.line}`:'none',padding:'10px 16px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12,textAlign:isAr?'right':'left' })
 
   return (
-    <div style={{minHeight:'100vh',background:'#f4f5f6',display:'flex',justifyContent:'center',fontFamily:'var(--storely-font)',direction:isAr?'rtl':'ltr'}}>
+    <div style={{minHeight:'100vh',background:'var(--storely-fill)',display:'flex',justifyContent:'center',fontFamily:'var(--storely-font)',direction:isAr?'rtl':'ltr'}}>
       <div style={{maxWidth:480,width:'100%',minHeight:'100vh',boxSizing:'border-box' as const,padding:'0 0 32px'}}>
 
         {/* الهيدر */}
@@ -317,7 +317,7 @@ export default function ChoosePage() {
                 style={{...staffHeaderBtn,position:'relative' as const,padding:0}}>
                 <Bell size={16} strokeWidth={1.75}/>
                 {notifications.some((n:any)=>!n.is_read) && (
-                  <span style={{position:'absolute' as const,top:7,insetInlineEnd:8,width:8,height:8,borderRadius:'50%',background:C.neg,border:'2px solid #eceef1'}}/>
+                  <span style={{position:'absolute' as const,top:7,insetInlineEnd:8,width:8,height:8,borderRadius:'50%',background:C.neg,border:'2px solid var(--storely-fill)'}}/>
                 )}
               </button>
               <StaffLangButton/>
@@ -355,9 +355,9 @@ export default function ChoosePage() {
               </div>
 
               {offToday && (
-                <div style={{background:'#f4f5f6',borderRadius:12,padding:'12px 14px',marginBottom:12}}>
+                <div style={{background:'var(--storely-fill)',borderRadius:12,padding:'12px 14px',marginBottom:12}}>
                   <div style={{fontSize:17,fontWeight:600,color:'var(--storely-text)'}}>{t(dayOff === 'leave' ? 'offLeaveTitle' : dayOff === 'comp' ? 'offCompTitle' : dayOff === 'monthly' ? 'offMonthlyTitle' : 'offTitle')}</div>
-                  <div style={{fontSize:15,color:'#4b5565',marginTop:4,lineHeight:1.6}}>{t('offNote')}</div>
+                  <div style={{fontSize:15,color:'var(--storely-muted)',marginTop:4,lineHeight:1.6}}>{t('offNote')}</div>
                 </div>
               )}
               {!lastCheckOut && (
@@ -372,7 +372,7 @@ export default function ChoosePage() {
                 ) : (
                   <>
                     <button onClick={()=>markAttendance('check_out')} disabled={marking!==null || !canCheckOut}
-                      style={{width:'100%',height:48,background:canCheckOut?C.t1:C.raised,color:canCheckOut?'white':C.t2,border:'none',borderRadius:12,fontSize:canCheckOut?16:14,fontWeight:canCheckOut?600:500,cursor:canCheckOut?'pointer':'not-allowed',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:canCheckOut?'0 6px 14px rgba(220,38,38,.22)':'none'}}>
+                      style={{width:'100%',height:48,background:canCheckOut?C.t1:C.raised,color:canCheckOut?'white':C.t2,border:'none',borderRadius:999,fontSize:canCheckOut?16:14,fontWeight:canCheckOut?600:500,cursor:canCheckOut?'pointer':'not-allowed',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:canCheckOut?'0 6px 14px rgba(220,38,38,.22)':'none'}}>
                       {canCheckOut ? <MapPin size={18} strokeWidth={1.75}/> : <Clock size={16} strokeWidth={1.75}/>}
                       {marking==='check_out' ? t('markingLocation') : canCheckOut ? t('checkOut') : (checkOutHint || t('checkOut'))}
                     </button>
@@ -390,7 +390,7 @@ export default function ChoosePage() {
                               style={{flex:1,height:42,background:'#203640',color:'white',border:'none',borderRadius:20,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                               {submittingPerm ? t('sending') : t('sendRequest')}
                             </button>
-                            <button onClick={()=>setShowPermForm(false)} style={{height:42,padding:'0 16px',background:'#eceef1',color:'#4b5565',border:'none',borderRadius:20,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{t('cancel')}</button>
+                            <button onClick={()=>setShowPermForm(false)} style={{height:42,padding:'0 16px',background:'var(--storely-fill)',color:'var(--storely-muted)',border:'none',borderRadius:20,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{t('cancel')}</button>
                           </div>
                         </div>
                       ) : (
@@ -403,9 +403,9 @@ export default function ChoosePage() {
                 )
               )}
               {lastCheckOut && (
-                <div style={{textAlign:'center' as const,fontSize:13,color:'#203640',fontWeight:600,background:'#e7f3f1',borderRadius:20,padding:'11px 0',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Check size={15}/>{t('dayDone')}</div>
+                <div style={{textAlign:'center' as const,fontSize:13,color:'#203640',fontWeight:600,background:'var(--storely-fill)',borderRadius:20,padding:'11px 0',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><Check size={15}/>{t('dayDone')}</div>
               )}
-              {locatingHint && <div style={{fontSize:13,color:'#4b5565',marginTop:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:4}}><MapPin size={13}/>{locatingHint}</div>}
+              {locatingHint && <div style={{fontSize:13,color:'var(--storely-muted)',marginTop:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:4}}><MapPin size={13}/>{locatingHint}</div>}
               {attError && <div style={{fontSize:13,color:'#dc2626',marginTop:10,lineHeight:1.6,textAlign:'center' as const,background:'#fef2f2',borderRadius:12,padding:'8px 10px'}}>{attError}</div>}
             </div>
           )}
@@ -465,26 +465,26 @@ export default function ChoosePage() {
             <div style={{fontSize:17,fontWeight:600,color:'var(--storely-text)',marginBottom:16}}>{t('myRequests')}</div>
             <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>
               <button onClick={()=>setShowAdvanceForm(true)}
-                style={{width:'100%',padding:'16px',background:'#f4f5f6',border:'1.5px solid var(--storely-border)',borderRadius:20,fontSize:17,fontWeight:600,color:'var(--storely-text)',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
+                style={{width:'100%',padding:'16px',background:'var(--storely-fill)',border:'1.5px solid var(--storely-border)',borderRadius:20,fontSize:17,fontWeight:600,color:'var(--storely-text)',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
                 <Wallet size={18} strokeWidth={2}/> {t('requestAdvance')}
               </button>
               <button onClick={()=>{setShowRequests(false);router.push('/staff/leave')}}
-                style={{width:'100%',padding:'16px',background:'#f4f5f6',border:'1.5px solid var(--storely-border)',borderRadius:20,fontSize:17,fontWeight:600,color:'var(--storely-text)',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
+                style={{width:'100%',padding:'16px',background:'var(--storely-fill)',border:'1.5px solid var(--storely-border)',borderRadius:20,fontSize:17,fontWeight:600,color:'var(--storely-text)',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
                 <Plane size={18} strokeWidth={2}/> {t('requestLeave')}
               </button>
               <button onClick={()=>{setShowRequests(false);setShowPermRequestModal(true)}}
-                style={{width:'100%',padding:'16px',background:'#f4f5f6',border:'1.5px solid var(--storely-border)',borderRadius:20,fontSize:17,fontWeight:600,color:'var(--storely-text)',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
+                style={{width:'100%',padding:'16px',background:'var(--storely-fill)',border:'1.5px solid var(--storely-border)',borderRadius:20,fontSize:17,fontWeight:600,color:'var(--storely-text)',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12}}>
                 <UserCheck size={18} strokeWidth={2}/> {t('requestExcuse')}
               </button>
             </div>
 
             {/* سجل الطلبات السابقة -- كل الأنواع الثلاثة مع حالتها */}
-            <div style={{marginTop:18,paddingTop:16,borderTop:'1px solid #eceef1'}}>
-              <div style={{fontSize:13,fontWeight:600,color:'#4b5565',marginBottom:10}}>{t('history')}</div>
+            <div style={{marginTop:18,paddingTop:16,borderTop:'1px solid var(--storely-fill)'}}>
+              <div style={{fontSize:13,fontWeight:600,color:'var(--storely-muted)',marginBottom:10}}>{t('history')}</div>
               {loadingHistory ? (
-                <div style={{fontSize:13,color:'#4b5565',textAlign:'center' as const,padding:'12px 0'}}>{t('loading')}</div>
+                <div style={{fontSize:13,color:'var(--storely-muted)',textAlign:'center' as const,padding:'12px 0'}}>{t('loading')}</div>
               ) : requestHistory.length===0 ? (
-                <div style={{fontSize:13,color:'#4b5565',textAlign:'center' as const,padding:'12px 0'}}>{t('noHistory')}</div>
+                <div style={{fontSize:13,color:'var(--storely-muted)',textAlign:'center' as const,padding:'12px 0'}}>{t('noHistory')}</div>
               ) : (
                 <div style={{display:'flex',flexDirection:'column' as const,gap:6,maxHeight:220,overflowY:'auto' as const}}>
                   {requestHistory.map((r:any)=>{
@@ -492,10 +492,10 @@ export default function ChoosePage() {
                       : r.status==='rejected'||r.status==='reject' ? {bg:'#fef2f2',color:'#dc2626',label:t('rejected')}
                       : {bg:'#fffbeb',color:'#d97706',label:t('pending')}
                     return (
-                      <div key={r.kind+r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 10px',background:'#f4f5f6',borderRadius:12}}>
+                      <div key={r.kind+r.id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 10px',background:'var(--storely-fill)',borderRadius:12}}>
                         <div>
                           <div style={{fontSize:13,fontWeight:600,color:'var(--storely-text)'}}>{r.label}</div>
-                          <div style={{fontSize:12,color:'#4b5565',marginTop:1}}>{new Date(r.date).toLocaleDateString(locale,{numberingSystem:'latn',day:'numeric',month:'short'})}</div>
+                          <div style={{fontSize:12,color:'var(--storely-muted)',marginTop:1}}>{new Date(r.date).toLocaleDateString(locale,{numberingSystem:'latn',day:'numeric',month:'short'})}</div>
                         </div>
                         <span style={{fontSize:13,fontWeight:500,color:statusStyle.color,background:statusStyle.bg,padding:'2px 8px',borderRadius:12}}>{statusStyle.label}</span>
                       </div>
@@ -505,7 +505,7 @@ export default function ChoosePage() {
               )}
             </div>
 
-            <button onClick={()=>setShowRequests(false)} style={{width:'100%',padding:'12px',marginTop:14,background:'none',border:'none',color:'#4b5565',fontSize:15,cursor:'pointer',fontFamily:'inherit'}}>{t('cancel')}</button>
+            <button onClick={()=>setShowRequests(false)} style={{width:'100%',padding:'12px',marginTop:14,background:'none',border:'none',color:'var(--storely-muted)',fontSize:15,cursor:'pointer',fontFamily:'inherit'}}>{t('cancel')}</button>
           </div>
         </div>
       )}
@@ -515,18 +515,18 @@ export default function ChoosePage() {
         <div onClick={()=>{setShowAdvanceForm(false);setShowRequests(false)}} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:210,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
           <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:360,textAlign:'start' as const}}>
             <div style={{fontSize:17,fontWeight:600,color:'var(--storely-text)',marginBottom:16}}>{t('advanceTitle')}</div>
-            <label style={{fontSize:13,color:'#4b5565',display:'block',marginBottom:6}}>{t('amount')}</label>
+            <label style={{fontSize:13,color:'var(--storely-muted)',display:'block',marginBottom:6}}>{t('amount')}</label>
             <NumberInput value={advanceAmount} onChange={e=>setAdvanceAmount(e.target.value)} placeholder="0"
               style={{width:'100%',padding:'12px',border:'1.5px solid var(--storely-border)',borderRadius:12,fontSize:17,fontFamily:'inherit',boxSizing:'border-box' as const,marginBottom:12}}/>
-            <label style={{fontSize:13,color:'#4b5565',display:'block',marginBottom:6}}>{t('reasonOptional')}</label>
+            <label style={{fontSize:13,color:'var(--storely-muted)',display:'block',marginBottom:6}}>{t('reasonOptional')}</label>
             <textarea value={advanceReason} onChange={e=>setAdvanceReason(e.target.value)} placeholder={t('advanceReasonPh')}
               style={{width:'100%',padding:'12px',border:'1.5px solid var(--storely-border)',borderRadius:12,fontSize:15,fontFamily:'inherit',boxSizing:'border-box' as const,minHeight:60,resize:'none' as const,marginBottom:12}}/>
             {advanceMsg && <div style={{fontSize:13,color:'#dc2626',marginBottom:10}}>{advanceMsg}</div>}
             <button onClick={submitAdvanceRequest} disabled={submittingAdvance||!advanceAmount}
-              style={{width:'100%',padding:'12px',background:(submittingAdvance||!advanceAmount)?'#6b7487':'#203640',color:'white',border:'none',borderRadius:20,fontSize:17,fontWeight:600,cursor:(submittingAdvance||!advanceAmount)?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
+              style={{width:'100%',padding:'12px',background:(submittingAdvance||!advanceAmount)?'var(--storely-muted)':'#203640',color:'white',border:'none',borderRadius:20,fontSize:17,fontWeight:600,cursor:(submittingAdvance||!advanceAmount)?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
               {submittingAdvance?t('sending'):t('sendRequest')}
             </button>
-            <button onClick={()=>setShowAdvanceForm(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#4b5565',fontSize:15,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
+            <button onClick={()=>setShowAdvanceForm(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'var(--storely-muted)',fontSize:15,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
           </div>
         </div>
       )}
@@ -536,7 +536,7 @@ export default function ChoosePage() {
         <div onClick={()=>setShowPermRequestModal(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:210,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
           <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:20,padding:24,width:'100%',maxWidth:360,textAlign:'start' as const}}>
             <div style={{fontSize:17,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}>{t('excuseTitle')}</div>
-            <p style={{fontSize:13,color:'#4b5565',marginBottom:16}}>{t('excuseDesc')}</p>
+            <p style={{fontSize:13,color:'var(--storely-muted)',marginBottom:16}}>{t('excuseDesc')}</p>
             {permReq?.status === 'pending' ? (
               <div style={{textAlign:'center' as const,fontSize:15,color:'#d97706',fontWeight:600,background:'#fffbeb',border:'1px solid #fde68a',borderRadius:12,padding:'12px'}}>{t('excusePending')}</div>
             ) : (
@@ -545,12 +545,12 @@ export default function ChoosePage() {
                   style={{width:'100%',padding:'12px',border:'1.5px solid var(--storely-border)',borderRadius:12,fontSize:15,fontFamily:'inherit',resize:'none' as const,marginBottom:12,boxSizing:'border-box' as const}}/>
                 {attError && <div style={{fontSize:13,color:'#dc2626',marginBottom:10}}>{attError}</div>}
                 <button onClick={async ()=>{ await submitPermissionRequest(); setShowPermRequestModal(false) }} disabled={submittingPerm}
-                  style={{width:'100%',padding:'12px',background:submittingPerm?'#6b7487':'#203640',color:'white',border:'none',borderRadius:20,fontSize:17,fontWeight:600,cursor:submittingPerm?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
+                  style={{width:'100%',padding:'12px',background:submittingPerm?'var(--storely-muted)':'#203640',color:'white',border:'none',borderRadius:20,fontSize:17,fontWeight:600,cursor:submittingPerm?'not-allowed':'pointer',fontFamily:'inherit',marginBottom:8}}>
                   {submittingPerm?t('sending'):t('sendRequest')}
                 </button>
               </>
             )}
-            <button onClick={()=>setShowPermRequestModal(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'#4b5565',fontSize:15,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
+            <button onClick={()=>setShowPermRequestModal(false)} style={{width:'100%',padding:'10px',background:'none',border:'none',color:'var(--storely-muted)',fontSize:15,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
           </div>
         </div>
       )}
@@ -561,22 +561,22 @@ export default function ChoosePage() {
           <div onClick={e=>e.stopPropagation()} style={{background:'white',borderRadius:'24px 24px 0 0',padding:'24px 20px 32px',width:'100%',maxWidth:420,maxHeight:'75vh',overflowY:'auto' as const,textAlign:'start' as const}}>
             <div style={{fontSize:17,fontWeight:600,color:'var(--storely-text)',marginBottom:16}}>{t('notifications')}</div>
             {notifications.length===0 ? (
-              <div style={{textAlign:'center' as const,padding:'30px 0',fontSize:15,color:'#4b5565'}}>{t('noNotifications')}</div>
+              <div style={{textAlign:'center' as const,padding:'30px 0',fontSize:15,color:'var(--storely-muted)'}}>{t('noNotifications')}</div>
             ) : (
               <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
                 {notifications.map((n:any)=>{
-                  const bg = n.type==='success'?'#e7f3f1':n.type==='danger'?'#fef2f2':n.type==='warning'?'#fffbeb':'#f4f5f6'
+                  const bg = n.type==='success'?'var(--storely-fill)':n.type==='danger'?'#fef2f2':n.type==='warning'?'#fffbeb':'var(--storely-fill)'
                   const border = n.type==='success'?'#b9dcd7':n.type==='danger'?'#fecaca':n.type==='warning'?'#fde68a':'var(--storely-border)'
                   return (
                     <div key={n.id} style={{background:bg,border:`1px solid ${border}`,borderRadius:20,padding:'12px 14px'}}>
                       <div style={{fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}>{n.title}</div>
-                      <div style={{fontSize:13,color:'#4b5565',lineHeight:1.6}}>{n.message}</div>
+                      <div style={{fontSize:13,color:'var(--storely-muted)',lineHeight:1.6}}>{n.message}</div>
                     </div>
                   )
                 })}
               </div>
             )}
-            <button onClick={()=>setShowNotifications(false)} style={{width:'100%',padding:'12px',marginTop:16,background:'#eceef1',color:'#1f2937',border:'none',borderRadius:20,fontSize:17,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
+            <button onClick={()=>setShowNotifications(false)} style={{width:'100%',padding:'12px',marginTop:16,background:'var(--storely-fill)',color:'#1f2937',border:'none',borderRadius:20,fontSize:17,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>{t('back')}</button>
           </div>
         </div>
       )}

@@ -226,7 +226,7 @@ export function useAttendance() {
     if (!r.check_out && r.check_in && r.attendance_id && isOwner) {
       return (
         <button onClick={() => openManualCheckout(r, name)} title="غادر الموظف دون تسجيل انصرافه — سجّله نيابةً عنه"
-          style={{ padding: '4px 10px', borderRadius:12, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text2, fontSize:12, fontWeight:600, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
+          style={{ padding: '4px 10px', borderRadius:999, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text2, fontSize:12, fontWeight:600, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
           تسجيل انصراف
         </button>
       )
@@ -251,7 +251,7 @@ export function useAttendance() {
         {r.penalty_waived && <span style={{ fontSize:12, fontWeight:600, color: colors.text3 }}>ملغاة</span>}
         {canToggle && (
           <button onClick={() => toggleWaive(r.attendance_id, !r.penalty_waived)} disabled={waiving === r.attendance_id}
-            style={{ padding: '2px 8px', borderRadius:12, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text3, fontSize: 10.5, fontWeight:600, cursor: 'pointer', fontFamily: font.family }}>
+            style={{ padding: '2px 8px', borderRadius:999, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text3, fontSize: 10.5, fontWeight:600, cursor: 'pointer', fontFamily: font.family }}>
             {waiving === r.attendance_id ? '...' : r.penalty_waived ? 'إرجاع' : 'إلغاء'}
           </button>
         )}

@@ -34,7 +34,7 @@ export default function SupplierCardHeader({ m }: { m: SupplierCardState }) {
                   <input value={editPhoneVal} onChange={e=>setEditPhoneVal(e.target.value)} dir="ltr" autoFocus
                     style={{fontSize:12,padding:'3px 6px',border:'1.5px solid #203640',borderRadius:5,width:110,fontFamily:'inherit'}}/>
                   <button onClick={savePhone} disabled={savingPhone} style={{fontSize:12,fontWeight:600,color:'white',background:'#203640',border:'none',borderRadius:999,padding:'3px 8px',cursor:'pointer',fontFamily:'inherit'}}>{savingPhone?'...':'حفظ'}</button>
-                  <button onClick={()=>{setEditingPhone(false);setEditPhoneVal(s.phone||'')}} style={{fontSize:12,fontWeight:600,color:'var(--storely-muted)',background:'var(--storely-background)',border:'none',borderRadius:5,padding:'3px 8px',cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                  <button onClick={()=>{setEditingPhone(false);setEditPhoneVal(s.phone||'')}} style={{fontSize:12,fontWeight:600,color:'var(--storely-muted)',background:'var(--storely-background)',border:'none',borderRadius:999,padding:'3px 8px',cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
                 </span>
               ) : (
                 <span onClick={e=>{e.stopPropagation();setEditingPhone(true)}} style={{ fontSize:13, color:'var(--storely-muted)', cursor:'pointer', display:'flex', alignItems:'center', gap:3 }}>
@@ -49,7 +49,7 @@ export default function SupplierCardHeader({ m }: { m: SupplierCardState }) {
                   <input value={editVatVal} onChange={e=>setEditVatVal(e.target.value)} dir="ltr" autoFocus inputMode="numeric" placeholder="3xxxxxxxxxxxxx3"
                     style={{fontSize:12,padding:'3px 6px',border:'1.5px solid #203640',borderRadius:5,width:140,fontFamily:'inherit'}}/>
                   <button onClick={saveVat} disabled={savingPhone} style={{fontSize:12,fontWeight:600,color:'white',background:'#203640',border:'none',borderRadius:999,padding:'3px 8px',cursor:'pointer',fontFamily:'inherit'}}>{savingPhone?'...':'حفظ'}</button>
-                  <button onClick={()=>{setEditingVat(false);setEditVatVal(s.vat_number||'')}} style={{fontSize:12,fontWeight:600,color:'var(--storely-muted)',background:'var(--storely-background)',border:'none',borderRadius:5,padding:'3px 8px',cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+                  <button onClick={()=>{setEditingVat(false);setEditVatVal(s.vat_number||'')}} style={{fontSize:12,fontWeight:600,color:'var(--storely-muted)',background:'var(--storely-background)',border:'none',borderRadius:999,padding:'3px 8px',cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
                 </span>
               ) : (
                 <span onClick={e=>{e.stopPropagation();setEditingVat(true)}} style={{ fontSize:13, color:s.vat_number?'#66737C':'#203640', cursor:'pointer', display:'flex', alignItems:'center', gap:3 }}>
@@ -61,15 +61,15 @@ export default function SupplierCardHeader({ m }: { m: SupplierCardState }) {
         </div>
         <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
           <button onClick={sendNow} disabled={sending} title="إرسال طلب توريد الآن"
-            style={{ background:'var(--storely-background)', color:'var(--storely-text)', border:'1.5px solid var(--storely-border)', borderRadius:12, padding:'7px 12px', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            style={{ background:'var(--storely-background)', color:'var(--storely-text)', border:'1.5px solid var(--storely-border)', borderRadius:999, padding:'7px 12px', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
             {sending ? '...' : <Send size={14} strokeWidth={2.3}/>}
           </button>
           <button onClick={openTimeline} title="سجل التواصل"
-            style={{ background:'var(--storely-fill)', color:'var(--storely-navy)', border:'1.5px solid var(--storely-border)', borderRadius:12, padding:'7px 12px', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            style={{ background:'var(--storely-fill)', color:'var(--storely-navy)', border:'1.5px solid var(--storely-border)', borderRadius:999, padding:'7px 12px', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
             <Clock size={14} strokeWidth={2.3}/>
           </button>
           <button onClick={()=>setConfirmDelete(true)} title="حذف المورد"
-            style={{ background:'#fef2f2', color:'#ef4444', border:'1.5px solid #fecaca', borderRadius:12, padding:'7px 12px', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            style={{ background:'#fef2f2', color:'#ef4444', border:'1.5px solid #fecaca', borderRadius:999, padding:'7px 12px', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
             <Trash2 size={14} strokeWidth={2.3}/>
           </button>
           <span style={{ color:'var(--storely-subtle)', fontSize:17, transform:open?'rotate(180deg)':'none', transition:'transform .2s', cursor:'pointer' }} onClick={()=>setOpen(o=>!o)}>⌄</span>

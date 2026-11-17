@@ -11,7 +11,7 @@ export default function StepPhotos({ m }: { m: CashierClosing }) {
             {step===3 && (
               <div className="fu" style={{background:'white',borderRadius:20,padding:16,marginBottom:16,border:'1px solid var(--storely-border)'}}>
                 <div style={{fontSize:17,fontWeight:600,color:'var(--storely-text)',marginBottom:16,display:'flex',alignItems:'center',gap:8}}>
-                  <span style={{width:28,height:28,borderRadius:12,background:'#eceef1',display:'flex',alignItems:'center',justifyContent:'center',color:'#4b5565'}}><Camera size={16} strokeWidth={1.75}/></span>
+                  <span style={{width:28,height:28,borderRadius:12,background:'var(--storely-fill)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--storely-muted)'}}><Camera size={16} strokeWidth={1.75}/></span>
                   {ct('step3Title',lang)}
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:12}}>
@@ -20,11 +20,11 @@ export default function StepPhotos({ m }: { m: CashierClosing }) {
                     {salesImage ? (
                       <div style={{position:'relative'}}>
                         <img src={salesPreview || salesImage} alt="sales report" style={{width:'100%',aspectRatio:'3 / 4',borderRadius:12,objectFit:'cover',display:'block',border:'1px solid var(--storely-border)'}}/>
-                        <button type="button" onClick={()=>setSalesImage('')} aria-label="حذف" style={{position:'absolute',top:8,insetInlineEnd:8,background:'rgba(17,24,39,.72)',color:'white',border:'none',borderRadius:12,width:32,height:32,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><X size={16} strokeWidth={1.75}/></button>
+                        <button type="button" onClick={()=>setSalesImage('')} aria-label="حذف" style={{position:'absolute',top:8,insetInlineEnd:8,background:'rgba(17,24,39,.72)',color:'white',border:'none',borderRadius:999,width:32,height:32,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><X size={16} strokeWidth={1.75}/></button>
                       </div>
                     ):(
                       <label style={{display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',gap:10,aspectRatio:'3 / 4',border:'1px dashed #c9cdd3',borderRadius:12,cursor:'pointer',background:'var(--storely-background)',textAlign:'center' as const,padding:8}}>
-                        <span style={{width:48,height:48,borderRadius:20,background:'white',border:'1px solid var(--storely-border)',display:'flex',alignItems:'center',justifyContent:'center',color:'#4b5565'}}><Camera size={20} strokeWidth={1.75}/></span>
+                        <span style={{width:48,height:48,borderRadius:20,background:'white',border:'1px solid var(--storely-border)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--storely-muted)'}}><Camera size={20} strokeWidth={1.75}/></span>
                         <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>e.target.files?.[0]&&uploadImage(e.target.files[0],'sales')}/>
                         <span style={{fontSize:17,fontWeight:500,color:'var(--storely-text)'}}>{uploadingSales?ct('uploadingImg',lang):ct('tapSalesUpload',lang)}</span>
                       </label>
@@ -35,11 +35,11 @@ export default function StepPhotos({ m }: { m: CashierClosing }) {
                     {networkImage ? (
                       <div style={{position:'relative'}}>
                         <img src={networkPreview || networkImage} alt="network balance" style={{width:'100%',aspectRatio:'3 / 4',borderRadius:12,objectFit:'cover',display:'block',border:'1px solid var(--storely-border)'}}/>
-                        <button type="button" onClick={()=>setNetworkImage('')} aria-label="حذف" style={{position:'absolute',top:8,insetInlineEnd:8,background:'rgba(17,24,39,.72)',color:'white',border:'none',borderRadius:12,width:32,height:32,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><X size={16} strokeWidth={1.75}/></button>
+                        <button type="button" onClick={()=>setNetworkImage('')} aria-label="حذف" style={{position:'absolute',top:8,insetInlineEnd:8,background:'rgba(17,24,39,.72)',color:'white',border:'none',borderRadius:999,width:32,height:32,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><X size={16} strokeWidth={1.75}/></button>
                       </div>
                     ):(
                       <label style={{display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',gap:10,aspectRatio:'3 / 4',border:'1px dashed #c9cdd3',borderRadius:12,cursor:'pointer',background:'var(--storely-background)',textAlign:'center' as const,padding:8}}>
-                        <span style={{width:48,height:48,borderRadius:20,background:'white',border:'1px solid var(--storely-border)',display:'flex',alignItems:'center',justifyContent:'center',color:'#4b5565'}}><Camera size={20} strokeWidth={1.75}/></span>
+                        <span style={{width:48,height:48,borderRadius:20,background:'white',border:'1px solid var(--storely-border)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--storely-muted)'}}><Camera size={20} strokeWidth={1.75}/></span>
                         <input type="file" accept="image/*" style={{display:'none'}} onChange={e=>e.target.files?.[0]&&uploadImage(e.target.files[0],'network')}/>
                         <span style={{fontSize:17,fontWeight:500,color:'var(--storely-text)'}}>{uploadingNetwork?ct('uploadingImg',lang):ct('tapNetworkUpload',lang)}</span>
                       </label>

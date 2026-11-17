@@ -29,14 +29,14 @@ interface StaffSession {
 }
 
 const C = {
-  primary:'#203640', primaryD:'#203640', primaryL:'#e7f3f1', primaryB:'#b9dcd7',
+  primary:'#203640', primaryD:'#203640', primaryL:'var(--storely-fill)', primaryB:'#b9dcd7',
   danger:'#dc2626', dangerL:'#fef2f2',
   warning:'#b45309', warningL:'#fffbeb',
-  text:'#111827', text2:'#111827', text3:'#4b5565', text4:'#1f2937',   // تصميم «كاونتر»: نص غامق واضح
-  bg:'#f4f5f6', surface:'#ffffff', border:'var(--storely-border)', border2:'var(--storely-border)',
+  text:'var(--storely-text)', text2:'var(--storely-text)', text3:'var(--storely-muted)', text4:'#1f2937',   // تصميم «كاونتر»: نص غامق واضح
+  bg:'var(--storely-fill)', surface:'#ffffff', border:'var(--storely-border)', border2:'var(--storely-border)',
 }
 
-const inp: React.CSSProperties = {width:'100%',padding:'11px 12px',border:`1.5px solid #d1d5db`,borderRadius:12,fontSize:17,outline:'none',boxSizing:'border-box' as const,background:'white',color:C.text,fontFamily:'inherit'}
+const inp: React.CSSProperties = {width:'100%',padding:'11px 12px',border:`1.5px solid var(--storely-control-border)`,borderRadius:12,fontSize:17,outline:'none',boxSizing:'border-box' as const,background:'white',color:C.text,fontFamily:'inherit'}
 const lbl: React.CSSProperties = {fontSize:17,fontWeight:500,color:'var(--storely-text)',display:'block',marginBottom:8}
 
 
@@ -330,7 +330,7 @@ export default function StaffPurchasesPage() {
             <div style={{display:'flex',gap:8}}>
               {([['مخزون',pt('catInventory',lang),Package],['مشتريات',pt('catPurchases',lang),ShoppingCart],['أخرى',pt('catOther',lang),FileText]] as [string,string,typeof Package][]).filter(([cat])=>invOn||cat!=='مخزون').map(([cat,label,Icon])=>(
                 <button key={cat} type="button" onClick={()=>setForm(f=>({...f,category:cat}))}
-                  style={{flex:1,padding:'9px',borderRadius:12,border:`1.5px solid ${form.category===cat?C.primary:C.border2}`,background:form.category===cat?C.primaryL:'white',color:form.category===cat?C.primary:C.text2,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                  style={{flex:1,padding:'9px',borderRadius:999,border:`1.5px solid ${form.category===cat?C.primary:C.border2}`,background:form.category===cat?C.primaryL:'white',color:form.category===cat?C.primary:C.text2,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                   <span style={{display:'inline-flex',alignItems:'center',gap:6,justifyContent:'center'}}><Icon size={15} strokeWidth={2.25}/>{label}</span>
                 </button>
               ))}
@@ -375,7 +375,7 @@ export default function StaffPurchasesPage() {
             <div style={{display:'flex',gap:8}}>
               {[{v:'yes',l:pt('vatYes',lang)},{v:'no',l:pt('vatNo',lang)}].map(o=>(
                 <button key={o.v} type="button" onClick={()=>{ if(o.v==='no') setZatca(null); setForm(f=>({...f,hasVat:o.v})) }}
-                  style={{flex:1,padding:'9px',borderRadius:12,border:`1.5px solid ${form.hasVat===o.v?C.primary:C.border2}`,background:form.hasVat===o.v?C.primaryL:'white',color:form.hasVat===o.v?C.primary:C.text2,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                  style={{flex:1,padding:'9px',borderRadius:999,border:`1.5px solid ${form.hasVat===o.v?C.primary:C.border2}`,background:form.hasVat===o.v?C.primaryL:'white',color:form.hasVat===o.v?C.primary:C.text2,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                   {o.l}
                 </button>
               ))}

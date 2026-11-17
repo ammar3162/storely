@@ -22,11 +22,11 @@ export default function AssignProductsModal({ m }: { m: StaffPage }) {
             {/* اختيار الكل */}
             <div style={{display:'flex',gap:8,marginBottom:12}}>
               <button onClick={()=>setSelectedProds(products.map((p:any)=>p.id))}
-                style={{padding:'6px 14px',borderRadius:12,border:`1px solid ${colors.border2}`,background:colors.bg,color:colors.text2,fontSize:font.xs,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                style={{padding:'6px 14px',borderRadius:999,border:`1px solid ${colors.border2}`,background:colors.bg,color:colors.text2,fontSize:font.xs,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                 اختيار الكل
               </button>
               <button onClick={()=>setSelectedProds([])}
-                style={{padding:'6px 14px',borderRadius:12,border:`1px solid ${colors.border2}`,background:colors.bg,color:colors.text2,fontSize:font.xs,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                style={{padding:'6px 14px',borderRadius:999,border:`1px solid ${colors.border2}`,background:colors.bg,color:colors.text2,fontSize:font.xs,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                 إلغاء الكل
               </button>
               <span style={{fontSize:font.xs,color:colors.text4,alignSelf:'center',marginRight:'auto'}}>

@@ -75,7 +75,7 @@ export default function StepReview({ m }: { m: CashierClosing }) {
                             <span style={{width:18,height:18,borderRadius:'50%',border:`2px solid ${on?'#dc2626':'#d4d4d0'}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                               {on && <span style={{width:8,height:8,borderRadius:'50%',background:'#dc2626'}}/>}
                             </span>
-                            <span style={{fontSize:17,fontWeight:on?600:400,color:on?'#991b1b':'#111827'}}>{lang==='en'?r.en:lang==='ar'?r.ar:((CASHIER_EXTRA['r_'+r.key] as any)?.[lang]||r.en)}</span>
+                            <span style={{fontSize:17,fontWeight:on?600:400,color:on?'#991b1b':'var(--storely-text)'}}>{lang==='en'?r.en:lang==='ar'?r.ar:((CASHIER_EXTRA['r_'+r.key] as any)?.[lang]||r.en)}</span>
                           </button>
                         )
                       })}
@@ -92,13 +92,13 @@ export default function StepReview({ m }: { m: CashierClosing }) {
                   </div>
                 )}
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                  <div style={{padding:8,borderRadius:12,background:'#f4f5f6',textAlign:'center' as const}}>
+                  <div style={{padding:8,borderRadius:12,background:'var(--storely-fill)',textAlign:'center' as const}}>
                     <img src={salesPreview || salesImage} alt="" style={{width:'100%',height:60,borderRadius:12,objectFit:'cover',marginBottom:4}}/>
-                    <span style={{fontSize:13,color:'#4b5565'}}>{ct('salesReportCheck',lang)}</span>
+                    <span style={{fontSize:13,color:'var(--storely-muted)'}}>{ct('salesReportCheck',lang)}</span>
                   </div>
-                  <div style={{padding:8,borderRadius:12,background:'#f4f5f6',textAlign:'center' as const}}>
+                  <div style={{padding:8,borderRadius:12,background:'var(--storely-fill)',textAlign:'center' as const}}>
                     <img src={networkPreview || networkImage} alt="" style={{width:'100%',height:60,borderRadius:12,objectFit:'cover',marginBottom:4}}/>
-                    <span style={{fontSize:13,color:'#4b5565'}}>{ct('networkBalanceCheck',lang)}</span>
+                    <span style={{fontSize:13,color:'var(--storely-muted)'}}>{ct('networkBalanceCheck',lang)}</span>
                   </div>
                 </div>
               </div>

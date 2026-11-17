@@ -52,7 +52,7 @@ export default function PayablesPanel({ m }: { m: PurchasesState }) {
                               <div style={{display:'flex',alignItems:'center',gap:8}}>
                                 <span style={{fontWeight:600,color:C.text}}>{(p.total_amount||0).toLocaleString('ar-SA-u-ca-gregory', {numberingSystem:'latn',maximumFractionDigits:0})} {curr}</span>
                                 <button onClick={()=>markPaid(p.id)} disabled={payingId===p.id}
-                                  style={{padding:'4px 10px',borderRadius:12,border:`1px solid ${C.primaryB}`,background:C.primaryL,color:C.primary,fontSize:12,fontWeight:600,cursor:payingId===p.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:payingId===p.id?.6:1}}>
+                                  style={{padding:'4px 10px',borderRadius:999,border:`1px solid ${C.primaryB}`,background:C.primaryL,color:C.primary,fontSize:12,fontWeight:600,cursor:payingId===p.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:payingId===p.id?.6:1}}>
                                   {payingId===p.id?'...':'دُفعت'}
                                 </button>
                               </div>

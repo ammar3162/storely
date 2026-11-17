@@ -22,7 +22,7 @@ export default function BranchCompare({ m }: { m: AiToolsPage }) {
             const data=await res.json()
             setBranchComp(data.comparison||[])
             setBranchLoading(false)
-          }} style={{padding:'8px 16px',background:'var(--storely-navy)',color:'white',border:'none',borderRadius:12,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+          }} style={{padding:'8px 16px',background:'var(--storely-navy)',color:'white',border:'none',borderRadius:999,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
             {branchLoading?'⏳ جاري...':'قارن الفروع'}
           </button>
         </div>
@@ -34,7 +34,7 @@ export default function BranchCompare({ m }: { m: AiToolsPage }) {
             ) : (
               <div style={{display:'flex',flexDirection:'column',gap:10}}>
                 {branchComp.map((b:any,i:number)=>(
-                  <div key={b.id} style={{padding:'14px',borderRadius:20,background:i===0?'#f0fdfa':'var(--storely-background)',border:`1.5px solid ${i===0?'#203640':'var(--storely-border)'}`}}>
+                  <div key={b.id} style={{padding:'14px',borderRadius:20,background:i===0?'var(--storely-fill)':'var(--storely-background)',border:`1.5px solid ${i===0?'#203640':'var(--storely-border)'}`}}>
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
                       <div style={{display:'flex',alignItems:'center',gap:8}}>
                                                                                                 <span style={{fontSize:17,fontWeight:600,color:C.text}}>{b.name}</span>

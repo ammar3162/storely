@@ -16,7 +16,7 @@ export default function ReportTab({ m }: { m: AttendancePage }) {
               <div style={{ display: 'flex', gap: 2, padding: 3, background: colors.bg, border: `1px solid ${colors.border}`, borderRadius:12 }}>
               {[{ id: 'day', label: 'يوم واحد' }, { id: 'range', label: 'فترة مخصصة' }].map(m => (
                 <button key={m.id} onClick={() => setPeriodMode(m.id as any)} aria-pressed={periodMode === m.id}
-                  style={{ padding: '7px 14px', whiteSpace: 'nowrap', borderRadius:12, border: 'none', background: periodMode === m.id ? colors.surface : 'transparent', boxShadow: periodMode === m.id ? '0 1px 2px rgba(15,23,42,.08)' : 'none', color: periodMode === m.id ? colors.text : colors.text3, fontSize:15, fontWeight: periodMode === m.id ? 800 : 600, cursor: 'pointer', fontFamily: font.family }}>
+                  style={{ padding: '7px 14px', whiteSpace: 'nowrap', borderRadius:999, border: 'none', background: periodMode === m.id ? colors.surface : 'transparent', boxShadow: periodMode === m.id ? '0 1px 2px rgba(15,23,42,.08)' : 'none', color: periodMode === m.id ? colors.text : colors.text3, fontSize:15, fontWeight: periodMode === m.id ? 800 : 600, cursor: 'pointer', fontFamily: font.family }}>
                   {m.label}
                 </button>
               ))}

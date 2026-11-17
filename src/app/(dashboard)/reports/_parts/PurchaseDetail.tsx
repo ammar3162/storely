@@ -220,7 +220,7 @@ export default function PurchaseDetail({ period, from, to, onBack, filterBar }: 
                     </td>
                     <td data-label="إجراء" style={{padding:'11px 12px',textAlign:'center' as const}}>
                       <button onClick={()=>{setConfirmDelete(p);setDeletePassword('');setDeleteError('')}}
-                        style={{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:12,padding:'4px 10px',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                        style={{background:'#fef2f2',color:'#dc2626',border:'1px solid #fecaca',borderRadius:999,padding:'4px 10px',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                         <Trash2 size={12} strokeWidth={2.25} style={{display:'inline',verticalAlign:'-2px',marginLeft:4}}/> حذف
                       </button>
                     </td>
@@ -271,7 +271,7 @@ export default function PurchaseDetail({ period, from, to, onBack, filterBar }: 
                       </div>
                     </div>
                     <button onClick={()=>restorePurchase(d)} disabled={restoringId===d.id}
-                      style={{padding:'6px 14px',background:'white',color:'#203640',border:'1.5px solid var(--storely-border)',borderRadius:12,fontSize:12,fontWeight:600,cursor:restoringId===d.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:restoringId===d.id?.6:1,whiteSpace:'nowrap' as const}}>
+                      style={{padding:'6px 14px',background:'white',color:'#203640',border:'1.5px solid var(--storely-border)',borderRadius:999,fontSize:12,fontWeight:600,cursor:restoringId===d.id?'not-allowed':'pointer',fontFamily:'inherit',opacity:restoringId===d.id?.6:1,whiteSpace:'nowrap' as const}}>
                       {restoringId===d.id?'...':'↩️ استعادة'}
                     </button>
                   </div>
@@ -298,11 +298,11 @@ export default function PurchaseDetail({ period, from, to, onBack, filterBar }: 
             {deleteError && <div style={{fontSize:13,color:'#dc2626',fontWeight:600,marginBottom:10,textAlign:'center' as const,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><AlertTriangle size={13} strokeWidth={2.25}/> {deleteError}</div>}
             <div style={{display:'flex',gap:8}}>
               <button onClick={()=>{if(!deleting){setConfirmDelete(null);setDeletePassword('');setDeleteError('')}}}
-                style={{flex:1,padding:'11px',background:colors.bg,color:colors.text3,border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
+                style={{flex:1,padding:'11px',background:colors.bg,color:colors.text3,border:'none',borderRadius:999,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                 إلغاء
               </button>
               <button onClick={confirmDeletePurchase} disabled={!deletePassword||deleting}
-                style={{flex:2,padding:'11px',background:!deletePassword||deleting?colors.border2:'#dc2626',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:600,cursor:!deletePassword||deleting?'not-allowed':'pointer',fontFamily:'inherit'}}>
+                style={{flex:2,padding:'11px',background:!deletePassword||deleting?colors.border2:'#dc2626',color:'white',border:'none',borderRadius:999,fontSize:15,fontWeight:600,cursor:!deletePassword||deleting?'not-allowed':'pointer',fontFamily:'inherit'}}>
                 {deleting?'جاري الحذف...':'تأكيد الحذف'}
               </button>
             </div>

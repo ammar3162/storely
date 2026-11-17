@@ -113,7 +113,7 @@ export default function StaffDaysOffEditor({ staff, onPatch }: { staff: any; onP
               const on = offDates.includes(d), isToday = d === today
               return (
                 <button key={d} onClick={() => toggleDate(d)} aria-pressed={on} aria-label={dayLabel(d)}
-                  style={{ height: 32, borderRadius:12, fontSize:13, fontWeight: on ? 800 : 600, cursor: 'pointer', fontFamily: font.family,
+                  style={{ height: 32, borderRadius:999, fontSize:13, fontWeight: on ? 800 : 600, cursor: 'pointer', fontFamily: font.family,
                     border: `1.5px solid ${on ? 'var(--storely-navy)' : isToday ? colors.text4 : 'transparent'}`, background: on ? 'var(--storely-fill)' : 'transparent',
                     color: on ? 'var(--storely-navy)' : d < today ? colors.text4 : colors.text }}>
                   {Number(d.slice(8))}

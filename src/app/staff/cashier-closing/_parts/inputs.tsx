@@ -12,7 +12,7 @@ export function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconCol
   return (
     <div>
       <div style={{position:'relative'}}>
-        <div style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',width:32,height:32,borderRadius:12,background:'#eceef1',color:'#4b5565',display:'flex',alignItems:'center',justifyContent:'center',fontSize:17}}>
+        <div style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',width:32,height:32,borderRadius:12,background:'var(--storely-fill)',color:'var(--storely-muted)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:17}}>
           {icon}
         </div>
         <NumberInput value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
@@ -20,7 +20,7 @@ export function MoneyInput({ value, onChange, placeholder, icon, iconBg, iconCol
           onFocus={e=>{if(!error)e.target.style.borderColor='#203640'}}
           onBlur={e=>{if(!error)e.target.style.borderColor='var(--storely-border)'}}
         />
-        <span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:15,color:'#6b7487'}}>{currency || '⃁'}</span>
+        <span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:15,color:'var(--storely-muted)'}}>{currency || '⃁'}</span>
       </div>
       {error && <div style={{fontSize:15,color:'#dc2626',marginTop:6,display:'flex',alignItems:'center',gap:4}}><AlertTriangle size={13}/> {error}</div>}
     </div>
@@ -32,7 +32,7 @@ export function AmountTile({ label, value, onChange, error }: { label: string; v
   const filled = Number(value) > 0
   return (
     <label className="amt-tile" style={{display:'block',minWidth:0,border:`1px solid ${error?'#dc2626':filled?'#9ca3af':'var(--storely-border)'}`,borderRadius:12,background:error?'#fef7f7':'white',padding:'8px 12px 6px',cursor:'text',transition:'background .15s,border-color .15s'}}>
-      <span style={{display:'block',fontSize:15,color:'#4b5565',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{label}</span>
+      <span style={{display:'block',fontSize:15,color:'var(--storely-muted)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{label}</span>
       <NumberInput value={value} onChange={e=>onChange(e.target.value)} placeholder="0.00"
         style={{display:'block',width:'100%',border:'none',outline:'none',background:'transparent',fontSize:17,fontWeight:500,fontVariantNumeric:'tabular-nums',padding:'2px 0',direction:'ltr',textAlign:'right',fontFamily:'inherit',color:'var(--storely-text)',boxSizing:'border-box'}}/>
     </label>
@@ -45,13 +45,13 @@ export function DeliveryRow({ name, value, onChange, onRemove, currency, last }:
   return (
     <label className="dl-row" style={{display:'flex',alignItems:'center',gap:10,padding:'8px 12px',borderBottom:last?'none':'1px solid var(--storely-border)',background:'white',cursor:'text',transition:'background .15s'}}>
       <span style={{flex:1,minWidth:0,fontSize:17,fontWeight:500,color:'var(--storely-text)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{name}</span>
-      <span className="dl-field" style={{display:'flex',alignItems:'center',gap:6,width:'46%',flexShrink:0,background:'#f4f5f6',border:'1px solid transparent',borderRadius:12,padding:'0 10px',transition:'all .15s'}}>
+      <span className="dl-field" style={{display:'flex',alignItems:'center',gap:6,width:'46%',flexShrink:0,background:'var(--storely-fill)',border:'1px solid transparent',borderRadius:12,padding:'0 10px',transition:'all .15s'}}>
         <NumberInput value={value} onChange={e=>onChange(e.target.value)}
           style={{flex:1,minWidth:0,border:'none',outline:'none',background:'transparent',fontSize:17,fontWeight:500,fontVariantNumeric:'tabular-nums',padding:'9px 0',direction:'ltr',textAlign:'right',fontFamily:'inherit',color:'var(--storely-text)'}}/>
-        <span style={{fontSize:13,color:'#6b7487'}}>{currency}</span>
+        <span style={{fontSize:13,color:'var(--storely-muted)'}}>{currency}</span>
       </span>
       <button type="button" onClick={e=>{e.preventDefault(); onRemove()}} aria-label="حذف"
-        style={{width:32,height:32,flexShrink:0,borderRadius:12,border:'none',background:'transparent',color:'#6b7487',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><X size={16} strokeWidth={1.75}/></button>
+        style={{width:32,height:32,flexShrink:0,borderRadius:999,border:'none',background:'transparent',color:'var(--storely-muted)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><X size={16} strokeWidth={1.75}/></button>
     </label>
   )
 }
@@ -65,9 +65,9 @@ export function ProgressBar({ step, lang }: { step: number; lang: string }) {
       <div style={{maxWidth:520,margin:'0 auto',padding:'12px 16px',display:'flex',alignItems:'center',gap:6}}>
         {STEPS.map((s, i) => (
           <div key={s.key} style={{display:'flex',alignItems:'center',gap:6,flex:i<STEPS.length-1?1:'unset',minWidth:0}}>
-            <span style={{display:'flex',alignItems:'center',gap:6,fontSize:13,fontWeight:step===s.key?600:400,color:step===s.key?'#111827':'#6b7487',whiteSpace:'nowrap'}}>
+            <span style={{display:'flex',alignItems:'center',gap:6,fontSize:13,fontWeight:step===s.key?600:400,color:step===s.key?'var(--storely-text)':'var(--storely-muted)',whiteSpace:'nowrap'}}>
               <span style={{width:22,height:22,borderRadius:20,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:13,fontVariantNumeric:'tabular-nums',flexShrink:0,
-                background: step===s.key ? '#111827' : '#eceef1', color: step===s.key ? 'white' : step>s.key ? '#203640' : '#4b5565'}}>
+                background: step===s.key ? 'var(--storely-text)' : 'var(--storely-fill)', color: step===s.key ? 'white' : step>s.key ? '#203640' : 'var(--storely-muted)'}}>
                 {step>s.key ? <Check size={13} strokeWidth={2.25}/> : s.key}
               </span>
               {s.label}
