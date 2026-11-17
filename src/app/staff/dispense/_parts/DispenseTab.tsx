@@ -10,6 +10,10 @@ const iconBox: React.CSSProperties = { width:36, height:36, borderRadius:12, bac
 
 export default function DispenseTab({ m, v }: { m: StaffDispense; v: PageVals }) {
   const { lang, tab, loading, search, setSearch, activeCategory, setActiveCategory, mostUsed, todayCount, setSelected, categoriesMap, categories, searchResults, categoryProducts, tx } = m
+  // العدد مع المعدود بالعربية الفصحى: صنف واحد، صنفان، 3–10 أصناف، 11 فأكثر صنفاً
+  const itemsLabel = (n: number) => lang === 'ar'
+    ? (n === 1 ? 'صنف واحد' : n === 2 ? 'صنفان' : n >= 3 && n <= 10 ? `${n} أصناف` : `${n} صنفاً`)
+    : `${n} ${T('items', lang)}`
   const { session, isRTL } = v
   const Chev = () => <ChevronLeft size={16} strokeWidth={1.75} color="var(--storely-muted)" style={{flexShrink:0,transform:isRTL?'none':'scaleX(-1)'}}/>
   const Qty = ({ p }: { p: any }) => {
@@ -80,7 +84,7 @@ export default function DispenseTab({ m, v }: { m: StaffDispense; v: PageVals })
                     <span style={{display:'block',fontSize:17,fontWeight:500,color:'var(--storely-text)',lineHeight:'22px'}}>{tx(cat)}</span>
                     {lang!=='ar'&&<span style={{display:'block',fontSize:13,color:'var(--storely-muted)'}}>{cat}</span>}
                   </span>
-                  <span style={{fontSize:15,color:'var(--storely-muted)',flexShrink:0}}><span style={{fontVariantNumeric:'tabular-nums'}}>{categoriesMap[cat]}</span> {T('items',lang)}</span>
+                  <span style={{fontSize:15,color:'var(--storely-muted)',flexShrink:0,fontVariantNumeric:'tabular-nums'}}>{itemsLabel(categoriesMap[cat])}</span>
                   <Chev/>
                 </button>
               ))}
@@ -94,7 +98,7 @@ export default function DispenseTab({ m, v }: { m: StaffDispense; v: PageVals })
               </button>
               <div style={{minWidth:0}}>
                 <div style={{fontSize:17,fontWeight:600,color:'var(--storely-text)'}}>{tx(activeCategory)}</div>
-                <div style={{fontSize:15,color:'var(--storely-muted)'}}>{lang!=='ar'?`${activeCategory} · `:''}{categoryProducts.length} {T('items',lang)}</div>
+                <div style={{fontSize:15,color:'var(--storely-muted)'}}>{lang!=='ar'?`${activeCategory} · `:''}{itemsLabel(categoryProducts.length)}</div>
               </div>
             </div>
             {productRows(categoryProducts)}
