@@ -790,3 +790,5 @@ html[dir="ltr"] body { font-family: -apple-system, BlinkMacSystemFont, "SF Arabi
 [data-theme="dark"] [style^="color:#991b1b" i], [data-theme="dark"] [style*=";color:#991b1b" i],
 [data-theme="dark"] [style^="color: rgb(153, 27, 27)"], [data-theme="dark"] [style*="; color: rgb(153, 27, 27)"] { color: #f28b82 !important; }
 [data-theme="dark"] .branches-page header b { color: #a9c6d4 !important; }
+/* القائمة الجانبية تبقى بنفس شكلها: العنصر المختار حبة بيضاء، فرقم الشارة فيه يبقى على رمادي فاتح بنص كحلي */
+[data-theme="dark"] .desk-sidebar .sh-nav.on .sh-count { background: #e8e8ed !important; color: #203640 !important; }
