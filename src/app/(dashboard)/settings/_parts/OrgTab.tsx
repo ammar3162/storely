@@ -62,7 +62,7 @@ export default function OrgTab({ m }: { m: SettingsState }) {
                     </select>
                     <input value={form.whatsapp_number} onChange={e=>setForm({...form,whatsapp_number:e.target.value})}
                       placeholder={countryCode==='+966'?'5xxxxxxxx':countryCode==='+20'?'1xxxxxxxxx':'xxxxxxxxxx'} dir="ltr"
-                      style={{background:'transparent',border:'none',padding:'12px',fontSize:17,color:'var(--storely-text)',flex:1,outline:'none',fontFamily:'inherit'}}/>
+                      style={{background:'transparent',border:'none',padding:'12px',fontSize:17,color:'var(--storely-text)',flex:1,width:0,minWidth:0,outline:'none',fontFamily:'inherit'}}/>
                   </div>
                   <div style={{fontSize:12,color:colors.text4,marginTop:6,display:'flex',alignItems:'center',gap:4}}><span></span> يصل إليه التقرير الصباحي وتنبيهات النظام</div>
                 </div>
