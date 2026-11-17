@@ -234,7 +234,7 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
                       <div style={{fontWeight:600,color:colors.text}}>{new Date(c.closing_date+'T12:00:00Z').toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',calendar:'gregory',timeZone:'UTC'})}</div>
                       {c.edited_at && (()=>{ const acc = c.edited_source==='accountant'
                         return <button onClick={()=>isOwner&&setHistory(c)} title={`عدّله ${c.edited_by||'المالك'} — ${new Date(c.edited_at).toLocaleString('ar-SA-u-ca-gregory',{numberingSystem:'latn',timeZone:'Asia/Riyadh'})}${isOwner?' — اضغط لعرض السجل':''}`}
-                          style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:12,fontWeight:600,color:acc?'var(--storely-navy)':colors.warning,background:acc?'#f5f3ff':colors.warningLight,border:'none',borderRadius:5,padding:'2px 7px',marginTop:3,cursor:isOwner?'pointer':'default',fontFamily:'inherit'}}>
+                          style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:12,fontWeight:600,color:acc?'var(--storely-navy)':colors.warning,background:acc?'var(--storely-fill)':colors.warningLight,border:'none',borderRadius:5,padding:'2px 7px',marginTop:3,cursor:isOwner?'pointer':'default',fontFamily:'inherit'}}>
                           <Pencil size={10} strokeWidth={2.5}/> {acc?'معدّل من المحاسب':'معدّل'}{c.edit_count>1?` (${c.edit_count})`:''}</button> })()}
                       {c.created_at && (
                         <div style={{fontSize:12,color:colors.text4,marginTop:2,whiteSpace:'nowrap' as const}}>

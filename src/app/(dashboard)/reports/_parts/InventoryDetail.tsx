@@ -114,7 +114,7 @@ export default function InventoryDetail({ period, from, to, onBack, filterBar }:
       </div>
       <div style={{display:'grid',gridTemplateColumns:(totalTransferredOut+totalTransferredIn)>0?'repeat(5,1fr)':'repeat(4,1fr)',gap:10,marginBottom:16,marginTop:12}}>
         {[
-          {label:'إجمالي الأصناف',value:products.length,color:'var(--storely-navy)',bg:'#f5f3ff',border:'#ddd6fe',clickable:false},
+          {label:'إجمالي الأصناف',value:products.length,color:'var(--storely-navy)',bg:'var(--storely-fill)',border:'var(--storely-border)',clickable:false},
           {label:'وحدات مصروفة',value:totalDispensed,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder,clickable:false},
           {label:'وحدات مشتراة',value:totalPurchased,color:colors.primary,bg:colors.primaryLight,border:colors.primaryBorder,clickable:false},
           {label:'أصناف ناقصة',value:lowCount+outCount,color:colors.warning,bg:colors.warningLight,border:colors.warningBorder,clickable:false},

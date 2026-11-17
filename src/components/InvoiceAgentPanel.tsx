@@ -94,10 +94,10 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
   }
 
   const pill = (bg: string, fg: string): React.CSSProperties => ({ fontSize:12, fontWeight:600, background: bg, color: fg, borderRadius: 99, padding: '3px 9px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4 })
-  const opt: React.CSSProperties = { padding: '7px 11px', borderRadius:12, border: `1px solid ${colors.border}`, background: 'white', fontSize:13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: colors.text }
+  const opt: React.CSSProperties = { padding: '7px 14px', borderRadius:999, border: `1px solid ${colors.border}`, background: 'white', fontSize:13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', color: colors.text }
 
   return (
-    <div style={{ background: 'white', borderRadius:20, border: `1px solid ${colors.border}`, padding: 16, marginBottom: 16 }}>
+    <div style={{ background: 'white', borderRadius:20, border: 'none', padding: 20, marginBottom: 16 }}>
       <style>{`@keyframes ia-spin{to{transform:rotate(360deg)}}.ia-spin{animation:ia-spin .8s linear infinite}`}</style>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
         <span style={{ width: 36, height: 36, borderRadius:12, background: colors.primaryLight, color: colors.primary, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Sparkles size={18} /></span>
@@ -125,7 +125,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
         const saving = d.items.filter(i => i.status === 'matched' || i.status === 'new' || i.status === 'expense')
         const sum = saving.reduce((s, i) => s + (Number(i.total) || 0), 0)
         return (
-          <div key={d.id} style={{ marginTop: 14, border: `1.5px solid ${d.status === 'ready' ? colors.primary : '#fde68a'}`, borderRadius:20, padding: 14 }}>
+          <div key={d.id} style={{ marginTop: 14, border: 'none', background: d.status === 'ready' ? 'var(--storely-background)' : '#fffbeb', borderRadius:20, padding: 16 }}>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
               <input defaultValue={d.supplier || ''} placeholder="اسم المورد" onBlur={e => { if (e.target.value.trim() !== (d.supplier || '')) patch(d, { supplier: e.target.value }) }}
                 style={{ flex: 1, minWidth: 140, padding: '8px 10px', borderRadius:12, border: `1px solid ${colors.border}`, fontSize:15, fontWeight:600, fontFamily: 'inherit' }} />
@@ -144,7 +144,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
               return (
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ fontSize:13, fontWeight:600, color: colors.text2, marginBottom: 6 }}>نوع الفاتورة</div>
-                  <div style={{ display: 'flex', gap: 4, background: colors.bg, border: `1px solid ${colors.border}`, borderRadius:12, padding: 4 }}>
+                  <div style={{ display: 'flex', gap: 4, background: 'var(--storely-fill)', border: 'none', borderRadius:12, padding: 3 }}>
                     <button onClick={() => allExpense && patch(d, { invoice_type: 'stock' })} disabled={busy === d.id} aria-pressed={!allExpense} style={seg(!allExpense)}><PackageCheck size={15} /> أصناف للمخزون</button>
                     <button onClick={() => !allExpense && patch(d, { invoice_type: 'expense' })} disabled={busy === d.id} aria-pressed={allExpense} style={seg(allExpense)}><Receipt size={15} /> مشتريات بدون مخزون</button>
                   </div>
@@ -161,7 +161,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
             </div>
 
             {tip && (
-              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius:12, padding: '10px 12px', marginBottom: 10, fontSize:15, lineHeight: 1.9, color: colors.text }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: 'var(--storely-fill)', border: 'none', borderRadius:12, padding: '10px 12px', marginBottom: 10, fontSize:15, lineHeight: 1.9, color: colors.text }}>
                 <span style={{ flex: 1 }}>
                   <b style={{ color: colors.text }}>مخزون</b> = أصناف تُصرف وتُجرد (سكر، أكواب، حليب…).<br />
                   <b style={{ color: colors.text }}>مشتريات</b> = مصاريف لا تُخزّن (تنظيف، صيانة، غاز…). غيّر أي صنف قبل الحفظ.
@@ -187,7 +187,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                           style={{ marginInlineStart: 'auto', padding: '5px 10px', borderRadius:12, border: '1px solid #f59e0b', background: 'white', color: '#92400e', fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: 'inherit' }}>اجعله مشتريات</button>
                       </span>
                     )}
-                    {it.status === 'new' && <span style={pill('#eff6ff', '#1d4ed8')}><Plus size={12} /> مخزون: صنف جديد</span>}
+                    {it.status === 'new' && <span style={pill('var(--storely-fill)', 'var(--storely-navy)')}><Plus size={12} /> مخزون: صنف جديد</span>}
                     {it.status === 'expense' && <span style={pill('#faf5ff', '#7e22ce')}><Receipt size={12} /> مشتريات — لا تُضاف إلى المخزون</span>}
                     {(it.status === 'new' || it.status === 'expense') && (
                       <button onClick={() => patch(d, { index: i, action: it.status === 'new' ? 'expense' : 'new' })} disabled={busy === d.id}
@@ -218,7 +218,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
                           <option value="">صنف ثاني من المخزون...</option>
                           {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                         </select>
-                        <button onClick={() => patch(d, { index: i, action: 'new' })} disabled={busy === d.id} style={{ ...opt, color: '#1d4ed8', borderColor: '#bfdbfe', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}><Plus size={12} /> صنف مخزون جديد</button>
+                        <button onClick={() => patch(d, { index: i, action: 'new' })} disabled={busy === d.id} style={{ ...opt, color: 'var(--storely-navy)', borderColor: 'var(--storely-border)', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}><Plus size={12} /> صنف مخزون جديد</button>
                         <button onClick={() => patch(d, { index: i, action: 'expense' })} disabled={busy === d.id} style={{ ...opt, color: '#7e22ce', borderColor: '#e9d5ff', display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}><Receipt size={12} /> مشتريات (بدون مخزون)</button>
                         <button onClick={() => patch(d, { index: i, action: 'skip' })} disabled={busy === d.id} style={{ ...opt, color: colors.text3 }}>لا تسجّله</button>
                       </div>
@@ -288,7 +288,7 @@ export default function InvoiceAgentPanel({ orgId, branchId, products, curr, onS
               </div>
               <button onClick={() => cancel(d)} disabled={busy === d.id} style={{ ...opt, color: colors.danger, borderColor: '#fecaca', display: 'flex', alignItems: 'center', gap: 4 }}><Trash2 size={13} /> إلغاء</button>
               <button onClick={() => confirm(d)} disabled={busy === d.id || d.status !== 'ready'}
-                style={{ padding: '9px 18px', borderRadius:12, border: 'none', background: d.status === 'ready' ? colors.primary : colors.text4, color: 'white', fontSize:15, fontWeight:600, cursor: d.status === 'ready' ? 'pointer' : 'not-allowed', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
+                style={{ padding: '11px 24px', minHeight: 44, borderRadius:999, border: 'none', background: d.status === 'ready' ? colors.primary : colors.text4, color: 'white', fontSize:15, fontWeight:600, cursor: d.status === 'ready' ? 'pointer' : 'not-allowed', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6 }}>
                 {busy === d.id ? <Loader2 size={14} className="ia-spin" /> : <PackageCheck size={15} />} حفظ الفاتورة
               </button>
             </div>

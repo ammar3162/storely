@@ -88,7 +88,7 @@ export default function WasteDetail({ period, from, to, onBack, filterBar }: { p
         {[
           {label:'كميات مهدورة',value:totalQty,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
           {label:'عمليات الهدر',value:filtered.length,color:colors.info,bg:colors.infoLight,border:colors.infoBorder},
-          {label:'أصناف مختلفة',value:Object.keys(productMap).length,color:'var(--storely-navy)',bg:'#f5f3ff',border:'#ddd6fe'},
+          {label:'أصناف مختلفة',value:Object.keys(productMap).length,color:'var(--storely-navy)',bg:'var(--storely-fill)',border:'var(--storely-border)'},
         ].map((s,i)=>(
           <div key={i} style={{...card,padding:'16px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
             <div style={{fontSize:28,fontWeight:600,color:s.color,letterSpacing:'-1px'}}>{s.value}</div>

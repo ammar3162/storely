@@ -215,7 +215,7 @@ export default function PurchaseDetail({ period, from, to, onBack, filterBar }: 
                     <td data-label="المورد" style={{padding:'11px 12px',fontSize:font.xs,color:colors.text4,maxWidth:100,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' as const}}>{p.supplier||'—'}</td>
                     <td data-label="فاتورة" style={{padding:'11px 12px',textAlign:'center' as const}}>
                       {p.invoice_image
-                        ? <a href={fileLink(p.invoice_image)} target="_blank" rel="noreferrer" style={{background:'#eff6ff',color:'#2563eb',border:'1px solid #bfdbfe',borderRadius:12,padding:'3px 10px',fontSize:12,fontWeight:600,textDecoration:'none',whiteSpace:'nowrap' as const,display:'inline-flex',alignItems:'center',gap:4}}><Paperclip size={11} strokeWidth={2.25}/> عرض</a>
+                        ? <a href={fileLink(p.invoice_image)} target="_blank" rel="noreferrer" style={{background:'var(--storely-fill)',color:'var(--storely-navy)',border:'1px solid var(--storely-border)',borderRadius:12,padding:'3px 10px',fontSize:12,fontWeight:600,textDecoration:'none',whiteSpace:'nowrap' as const,display:'inline-flex',alignItems:'center',gap:4}}><Paperclip size={11} strokeWidth={2.25}/> عرض</a>
                         : <span style={{color:colors.border2}}>—</span>}
                     </td>
                     <td data-label="إجراء" style={{padding:'11px 12px',textAlign:'center' as const}}>
