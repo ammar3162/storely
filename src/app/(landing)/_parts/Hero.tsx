@@ -1,58 +1,57 @@
 'use client'
-import { Check, ArrowLeft, Play } from 'lucide-react'
-import HeroMock from './HeroMock'
+import { useRef, useState } from 'react'
+import { ArrowLeft, Check, Play } from 'lucide-react'
 import type { LandingState } from './useLanding'
-import { STARTING_PRICE as CUSTOM_MIN_MONTHLY } from '@/lib/planPricing'  // «يبدأ من»: أرخص ميزة لكل فرع
+
+// الواجهة: الشعار عنواناً، جملة واحدة تقول وش يسوي النظام، زر واحد رئيسي، والفيديو «من هي ستورلي» بجانبها.
+// الفيديو يبدأ بصورة وزر تشغيل بالصوت (ما يحمّل إلا عند الضغط)، مع جولة المزايا كخيار ثاني.
+const VIDEOS = [
+  { k: 'heroVid1', src: '/videos/storely-brand.mp4', poster: '/videos/storely-brand.jpg', sec: 24 },
+  { k: 'heroVid2', src: '/videos/storely-brand-ad.mp4', poster: '/videos/storely-brand-ad.jpg', sec: 44 },
+]
 
 export default function Hero({ m }: { m: LandingState }) {
-  const { partners, lang, router, top, t } = m
-  return (
-    <>
-      {/* الواجهة */}
-      <header id="top" className="lp-hero" style={{paddingTop:top+120}}>
-        <div className="lp-wrap lp-hero-grid">
-          <div className="lp-hero-text">
-            <div className="lp-pill"><span className="lp-dot"/>{t('heroBadge')}</div>
-            <h1 className="lp-display">
-              {t('heroTitleA')}<br/>{t('heroTitleB')} <em>{t('heroTitleC')}</em>
-            </h1>
-            <p className="lp-lead">{t('heroSub')}</p>
-            <div className="lp-cta-row">
-              <button className="lp-btn lp-btn-dark lp-btn-lg" onClick={()=>router.push('/login?mode=register')}>{t('heroStart')} <ArrowLeft size={18}/></button>
-              <a className="lp-btn lp-btn-soft lp-btn-lg" href="#video"><span className="lp-play"><Play size={12} fill="currentColor"/></span>{t('heroVideo')}</a>
-            </div>
-            <ul className="lp-ticks">
-              {['heroP1','heroP2','heroP3'].map(k=><li key={k}><Check size={16}/>{t(k)}</li>)}
-            </ul>
-          </div>
+  const { router, top, t } = m
+  const [i, setI] = useState(0)
+  const [playing, setPlaying] = useState(false)
+  const ref = useRef<HTMLVideoElement>(null)
+  const v = VIDEOS[i]
+  const pick = (n: number) => { setI(n); setPlaying(false) }
+  const play = () => { setPlaying(true); requestAnimationFrame(() => ref.current?.play().catch(() => {})) }
 
-          <div className="lp-hero-media">
-            <HeroMock m={m}/>
+  return (
+    <header id="top" className="st-hero" style={{ paddingTop: top + 104 }}>
+      <div className="lp-wrap st-hero-grid">
+        <div className="st-hero-text">
+          <h1 className="st-display">{t('heroTitleA')} {t('heroTitleB')} {t('heroTitleC')}</h1>
+          <p className="st-lead">{t('heroLine')}</p>
+          <div className="st-actions">
+            <button className="lp-btn lp-btn-dark lp-btn-lg" onClick={() => router.push('/login?mode=register')}>{t('heroStart')} <ArrowLeft size={18} aria-hidden /></button>
+            <a className="st-textlink" href="#demo">{t('navDemo')}</a>
           </div>
+          <ul className="st-ticks">
+            {['heroP1', 'heroP3'].map(k => <li key={k}><Check size={16} aria-hidden />{t(k)}</li>)}
+          </ul>
         </div>
 
-        {partners.length > 0 && (
-          <div className="lp-wrap lp-partners">
-            <p>{t('trustedBy')}</p>
-            <ul className="lp-partner-grid">
-              {partners.map((p:any)=>(
-                <li key={p.id} className="lp-partner">
-                  <span className="lp-partner-logo"><img src={p.logo_url} alt={p.name} loading="lazy" decoding="async"/></span>
-                  <span className="lp-partner-name">{p.name}</span>
-                </li>
-              ))}
-            </ul>
+        <div id="video" className="st-hero-media">
+          <div className="st-player">
+            {playing
+              ? <video key={v.src} ref={ref} src={v.src} poster={v.poster} controls playsInline autoPlay aria-label={t(v.k)} />
+              : <button className="st-player-cover" onClick={play} aria-label={`${t('heroPlay')}: ${t(v.k)}`}>
+                  <img src={v.poster} alt="" width={540} height={960} />
+                  <span className="st-player-btn"><Play size={24} fill="currentColor" aria-hidden /></span>
+                </button>}
           </div>
-        )}
-
-        <div className="lp-wrap">
-          <div className="lp-stats">
-            {[[CUSTOM_MIN_MONTHLY+' '+(lang==='ar'?'⃁':'SAR'),t('statStart')],['14 '+(lang==='ar'?'يوماً':'days'),t('statFree')],['7',t('statLangs')],['24/7',t('statAlerts')]].map(([n,l])=>(
-              <div key={l}><strong>{n}</strong><span>{l}</span></div>
+          <div className="st-vid-tabs" role="tablist" aria-label={t('heroVid1')}>
+            {VIDEOS.map((x, n) => (
+              <button key={x.k} role="tab" aria-selected={n === i} className={n === i ? 'on' : ''} onClick={() => pick(n)}>
+                <span>{t(x.k)}</span><span className="st-num">{x.sec} {t('heroSecShort')}</span>
+              </button>
             ))}
           </div>
         </div>
-      </header>
-    </>
+      </div>
+    </header>
   )
 }

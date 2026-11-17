@@ -1,6 +1,8 @@
 export const LP_CSS = `
+/* hallmark v2.0.0 · custom direction via unslop (calm, precise, close to the shop floor; world: back-of-house before opening) · shape: video hero → customers → day → chain → roles → about → start → faq → cta + demo · signature: cashier-closing receipt in code · genre: modern-minimal */
+/* critique: one bright moment besides the video (the receipt); headings start-aligned; no eyebrows, no stats row, no AI photos; figures tabular */
 .lp{--ink:#203640;--ink2:#4F6678;--ink3:#66737C;--line:#E2E7EA;--cream:#F7F9FA;--sand:#EEF2F4;--teal:#203640;--teal2:#203640;--mint:#A3917F;
-  font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:var(--cream);color:var(--ink);overflow-x:hidden}
+  font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:var(--cream);color:var(--ink);overflow-x:clip}
 .lp *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 .lp a{color:inherit}
