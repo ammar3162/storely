@@ -17,8 +17,8 @@ html,body{overflow-x:clip}
 .lp a{color:inherit;text-decoration:none}
 .lp img{display:block;max-width:100%}
 .lp a:focus-visible,.lp button:focus-visible,.lp input:focus-visible,.lp select:focus-visible,.lp textarea:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
-.lp-cta :focus-visible,.lp-demo-side :focus-visible,.ap-navy :focus-visible,.ap-about :focus-visible,.ap-video :focus-visible{outline-color:var(--white)}
-.ap-cover:focus-visible{outline-offset:-6px}
+.lp .lp-cta :focus-visible,.lp .lp-demo-side :focus-visible,.lp .ap-navy :focus-visible,.lp .ap-about :focus-visible,.lp .ap-video :focus-visible{outline-color:var(--white)}
+.lp .ap-cover:focus-visible{outline-offset:-6px}
 .lp h1,.lp h2,.lp h3{text-wrap:balance;letter-spacing:0}
 .lp p{text-wrap:pretty}
 .lp-wrap{max-width:1180px;margin:0 auto;padding:0 24px}
