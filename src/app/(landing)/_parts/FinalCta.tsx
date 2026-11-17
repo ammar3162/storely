@@ -1,7 +1,9 @@
 'use client'
 import type { LandingState } from './useLanding'
 
-// الدعوة الأخيرة: بلاطة كحلية كاملة (مشتركة مع صفحة الأسعار)
+// الدعوة الأخيرة: بلاطة كحلية كاملة (مشتركة مع صفحة الأسعار)، وتحتها صف من شاشات ستورلي الحقيقية
+// (على الجوال تظهر أول ثلاث فقط)
+const CTA_SHOTS: [string, number][] = [['pur_draft', 1559], ['closing', 1440], ['dash2', 1559], ['staff-home', 1440], ['ssal', 1559]]
 export default function FinalCta({ m }: { m: LandingState }) {
   const { router, t } = m
   return (
@@ -13,7 +15,7 @@ export default function FinalCta({ m }: { m: LandingState }) {
         <a className="lp-btn lp-btn-glass lp-btn-lg" href="https://wa.me/966594351667" target="_blank" rel="noreferrer">{t('ctaContact')}</a>
       </div>
       <div className="lp-cta-shots" aria-hidden="true">
-        {['closing', 'dash2', 'staff-home'].map(n => <div key={n}><img src={`/landing/${n}.webp`} alt="" width={720} height={n === 'dash2' ? 1559 : 1440} loading="lazy" decoding="async" /></div>)}
+        {CTA_SHOTS.map(([n, h]) => <div key={n}><img src={`/landing/${n}.webp`} alt="" width={720} height={h} loading="lazy" decoding="async" /></div>)}
       </div>
     </section>
   )

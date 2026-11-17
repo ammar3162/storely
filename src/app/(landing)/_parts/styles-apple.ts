@@ -10,7 +10,7 @@ export const AP_CSS = `
 .ap-note{font-size:14.5px;color:var(--ink2);margin-top:16px}
 .ap-alt{border:0;background:none;font:500 15px var(--font);color:var(--navy);cursor:pointer;margin-top:4px;min-height:44px;padding:0 8px;text-decoration:underline;text-decoration-color:var(--hair);text-underline-offset:6px}
 .ap-alt:hover{text-decoration-color:var(--navy)}
-.ap-stage{--vw:clamp(256px,24vw,336px);--sw:clamp(200px,19vw,268px);--ov:70px;position:relative;max-width:1000px;margin:28px auto 0;height:clamp(360px,30vw,430px);overflow:hidden;display:flex;justify-content:center;align-items:flex-start}
+.ap-stage{--vw:clamp(256px,24vw,336px);--sw:clamp(200px,19vw,268px);--ov:70px;position:relative;max-width:1000px;margin:28px auto 0;height:clamp(340px,27vw,400px);overflow:hidden;display:flex;justify-content:center;align-items:flex-start}
 .ap-stage.is-playing{height:auto;overflow:visible;padding-bottom:40px}
 .ap-stage.is-playing .ap-side{display:none}
 .ap-video,.ap-side{border-radius:34px 34px 0 0;overflow:hidden;box-shadow:var(--shot-shadow)}
@@ -27,7 +27,7 @@ export const AP_CSS = `
 .ap-side-l{left:calc(50% - var(--vw)/2 + var(--ov) - var(--sw))}
 
 /* عملاء حقيقيون */
-.ap-cust{padding:56px 0 8px;text-align:center}
+.ap-cust{padding:72px 0 8px;text-align:center}
 .ap-cust h2{font-size:15px;font-weight:500;color:var(--ink2)}
 .ap-logos{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:28px 40px;margin-top:24px}
 .ap-logos li{display:flex;flex-direction:column;align-items:center;gap:8px;width:96px}
@@ -55,7 +55,7 @@ export const AP_CSS = `
 .ap-shot img{width:100%}
 
 /* السلسلة: خمس حلقات تربطها النقطة النعناعية، والنتيجة شاشة المالك */
-.ap-chain{padding:104px 0 96px}
+.ap-chain{padding:120px 0}
 .ap-flow{list-style:none;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:24px;position:relative;margin-top:8px}
 .ap-flow::before{content:'';position:absolute;top:7px;right:10%;left:10%;height:2px;background:var(--hair)}
 .ap-flow li{position:relative;text-align:center;padding-top:34px}
@@ -76,7 +76,7 @@ export const AP_CSS = `
 .ap-role .ap-shot{margin-top:28px;width:min(220px,80%);height:300px;border-radius:28px 28px 0 0}
 
 /* من نحن: بلاطة كحلية */
-.ap-about{background:var(--navy);color:var(--on-navy);padding:104px 0}
+.ap-about{background:var(--navy);color:var(--on-navy);padding:120px 0}
 .ap-about .lp-h2{color:var(--on-navy)}
 .ap-about-body{max-width:780px;margin:0 auto;text-align:center}
 .ap-about-body p{font-size:clamp(18px,1.7vw,22px);line-height:1.85;color:var(--on-navy2);margin-top:18px}
@@ -86,7 +86,7 @@ export const AP_CSS = `
 .ap-principles dd{font-size:15.5px;line-height:1.7;color:var(--on-navy2);margin-top:8px}
 
 /* ابدأ: بلاطة رملية بالسعر المعلن */
-.ap-start{background:var(--sand);text-align:center;padding:96px 24px}
+.ap-start{background:var(--sand);text-align:center;padding:120px 24px}
 .ap-price{display:flex;align-items:baseline;justify-content:center;gap:10px;margin-top:26px;color:var(--navy)}
 .ap-price b{font-size:clamp(72px,9vw,120px);font-weight:700;line-height:1}
 .ap-price span{font-size:20px;color:var(--ink2)}

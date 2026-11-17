@@ -63,7 +63,7 @@ html,body{overflow-x:clip}
 .lp-mob-menu .lp-btn{margin-top:14px;width:100%}
 
 /* أقسام وعناوين مشتركة */
-.lp-section{padding:96px 0}
+.lp-section{padding:120px 0}
 .lp-sand{background:var(--sand)}
 .lp-head{text-align:center;max-width:760px;margin:0 auto 48px}
 .lp-h2{font-size:clamp(32px,4.4vw,56px);font-weight:700;line-height:1.18;color:var(--navy)}
@@ -119,13 +119,14 @@ html,body{overflow-x:clip}
 .lp-faq-a{padding:0 0 24px;font-size:17px;line-height:1.85;color:var(--ink2);max-width:720px}
 
 /* الدعوة الأخيرة: بلاطة كحلية كاملة */
-.lp-cta{background:var(--navy);color:var(--on-navy);text-align:center;padding:104px 24px 0;overflow:hidden}
+.lp-cta{background:var(--navy);color:var(--on-navy);text-align:center;padding:120px 24px 0;overflow:hidden}
 .lp-cta h2{font-size:clamp(34px,5vw,64px);font-weight:700;line-height:1.15}
 .lp-cta p{font-size:clamp(18px,1.7vw,22px);color:var(--on-navy2);margin-top:14px}
 .lp-cta-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:32px}
 .lp-cta-shots{display:flex;justify-content:center;align-items:flex-start;gap:20px;margin:56px auto 0;height:300px;overflow:hidden}
-.lp-cta-shots div{width:min(240px,30vw);border-radius:28px 28px 0 0;overflow:hidden;background:var(--white);box-shadow:var(--shot-shadow)}
-.lp-cta-shots div:nth-child(2){margin-top:-28px}
+.lp-cta-shots div{width:min(236px,17vw);flex-shrink:0;border-radius:28px 28px 0 0;overflow:hidden;background:var(--white);box-shadow:var(--shot-shadow)}
+.lp-cta-shots div:nth-child(2),.lp-cta-shots div:nth-child(4){margin-top:-28px}
+.lp-cta-shots div:nth-child(3){margin-top:-52px}
 .lp-cta-shots img{width:100%}
 
 /* طلب العرض */
@@ -194,6 +195,9 @@ html,body{overflow-x:clip}
   .lp-cta{padding:80px 20px 0}
   .lp-cta-shots{height:220px;gap:10px;margin-top:44px}
   .lp-cta-shots div{width:31vw;border-radius:20px 20px 0 0}
+  .lp-cta-shots div:nth-child(n+4){display:none}
+  .lp-cta-shots div:nth-child(3){margin-top:0}
+  .lp-cta-shots div:nth-child(2){margin-top:-24px}
   .lp-cta-row .lp-btn{width:100%}
   .lp-wa-float{width:48px;height:48px;bottom:16px;left:16px}
   .lp-foot-grid{grid-template-columns:minmax(0,1fr)}
