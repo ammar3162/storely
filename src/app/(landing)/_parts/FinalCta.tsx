@@ -1,4 +1,5 @@
 'use client'
+import Phone from './Phone'
 import type { LandingState } from './useLanding'
 
 // الدعوة الأخيرة: بلاطة كحلية كاملة (مشتركة مع صفحة الأسعار)، وتحتها صف من شاشات ستورلي الحقيقية
@@ -15,7 +16,7 @@ export default function FinalCta({ m }: { m: LandingState }) {
         <a className="lp-btn lp-btn-glass lp-btn-lg" href="https://wa.me/966594351667" target="_blank" rel="noreferrer">{t('ctaContact')}</a>
       </div>
       <div className="lp-cta-shots" aria-hidden="true">
-        {CTA_SHOTS.map(([n, h]) => <div key={n}><img src={`/landing/${n}.webp`} alt="" width={720} height={h} loading="lazy" decoding="async" /></div>)}
+        {CTA_SHOTS.map(([n, h]) => <Phone key={n} src={`/landing/${n}.webp`} h={h} />)}
       </div>
     </section>
   )

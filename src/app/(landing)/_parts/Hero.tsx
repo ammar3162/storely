@@ -1,10 +1,12 @@
 'use client'
 import { useRef, useState } from 'react'
 import { Play } from 'lucide-react'
+import Phone from './Phone'
 import type { LandingState } from './useLanding'
 
-// الواجهة بأسلوب أبل: الشعار عنواناً، جملة واحدة، زران، ثم فيديو «من هي ستورلي» في الوسط
-// وبجانبه شاشتان حقيقيتان (المالك والموظف). التشغيل داخل نفس الضغطة حتى يشتغل الصوت على الآيفون.
+// الواجهة بأسلوب صفحات منتجات أبل: الشعار عنواناً، جملة واحدة، زران، ثم ثلاثة جوالات —
+// في الوسط فيديو «من هي ستورلي»، وعلى الجانبين شاشتا المالك والموظف بزاوية خفيفة.
+// التشغيل داخل نفس الضغطة حتى يشتغل الصوت على الآيفون، وعند التشغيل يظهر الجوال كاملاً.
 const VIDEOS = [
   { k: 'heroVid1', src: '/videos/storely-brand.mp4', poster: '/videos/storely-brand.jpg', sec: 24 },
   { k: 'heroVid2', src: '/videos/storely-brand-ad.mp4', poster: '/videos/storely-brand-ad.jpg', sec: 44 },
@@ -23,7 +25,6 @@ export default function Hero({ m }: { m: LandingState }) {
     setPlaying(true)
     requestAnimationFrame(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
   }
-  const watch = () => play()
   const switchVideo = () => { setI(1 - i); setPlaying(false) }
 
   return (
@@ -32,15 +33,15 @@ export default function Hero({ m }: { m: LandingState }) {
       <p className="ap-lead">{t('heroLine')}</p>
       <div className="ap-acts">
         <button className="lp-btn lp-btn-dark lp-btn-lg" onClick={() => router.push('/login?mode=register')}>{t('navStart')}</button>
-        <button className="lp-btn lp-btn-line lp-btn-lg" onClick={watch}><Play size={16} fill="currentColor" aria-hidden />{t('heroVideo')}</button>
+        <button className="lp-btn lp-btn-line lp-btn-lg" onClick={play}><Play size={16} fill="currentColor" aria-hidden />{t('heroVideo')}</button>
       </div>
       <p className="ap-note">{t('heroNote')}</p>
       <button className="ap-alt" onClick={switchVideo}>{t('heroOr')} {t(other.k)} ({other.sec} {t('heroSecLong')})</button>
 
       <div className={`ap-stage${playing ? ' is-playing' : ''}`}>
-        <div className="ap-side ap-side-r" aria-hidden="true"><img src="/landing/dash2.webp" alt="" width={720} height={1559} /></div>
-        <div className="ap-side ap-side-l" aria-hidden="true"><img src="/landing/staff-home.webp" alt="" width={720} height={1440} /></div>
-        <div className="ap-video">
+        <Phone className="ap-side ap-side-r" src="/landing/dash2.webp" eager />
+        <Phone className="ap-side ap-side-l" src="/landing/staff-home.webp" h={1440} eager />
+        <Phone className="ap-video">
           <video key={v.src} ref={ref} src={v.src} poster={v.poster} preload="none" controls={playing} playsInline aria-label={t(v.k)} />
           {!playing && (
             <button className="ap-cover" onClick={play} aria-label={`${t('heroPlay')}: ${t(v.k)}`}>
@@ -48,7 +49,7 @@ export default function Hero({ m }: { m: LandingState }) {
               <span className="ap-play"><Play size={28} fill="currentColor" aria-hidden /></span>
             </button>
           )}
-        </div>
+        </Phone>
       </div>
     </header>
   )

@@ -1,4 +1,5 @@
 'use client'
+import Phone from './Phone'
 import type { LandingState } from './useLanding'
 
 // لكل شخص شاشته — بأسلوب «قارن الطرازات» في أبل: عمود لكل دور، شاشته الحقيقية، وثلاث نقاط.
@@ -26,7 +27,7 @@ export default function RolesSection({ m }: { m: LandingState }) {
               <ul>
                 {r.points.map(p => <li key={p}><span className="ap-dot" aria-hidden="true" />{t(p)}</li>)}
               </ul>
-              <div className="ap-shot"><img src={`/landing/${r.img}.webp`} alt={`${t('rolesShotAlt')} ${t(r.label)}`} width={720} height={r.h} loading="lazy" decoding="async" /></div>
+              <div className="ap-shot rv ap-rise"><Phone src={`/landing/${r.img}.webp`} alt={`${t('rolesShotAlt')} ${t(r.label)}`} h={r.h} /></div>
             </article>
           ))}
         </div>

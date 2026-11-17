@@ -12,13 +12,13 @@ export default function ChainFlow({ m }: { m: LandingState }) {
           <h2 id="chain-title" className="lp-h2">{t('chainTitle')}</h2>
           <p className="lp-sub">{t('chainSub')}</p>
         </div>
-        <ol className="ap-flow">
+        <ol className="ap-flow rv">
           {[1, 2, 3, 4, 5].map(n => (
-            <li key={n}><b>{t(`chain${n}T`)}</b><span>{t(`chain${n}D`)}</span></li>
+            <li key={n} style={{ ['--i' as string]: n - 1 }}><b>{t(`chain${n}T`)}</b><span>{t(`chain${n}D`)}</span></li>
           ))}
         </ol>
         <figure>
-          <div className="ap-desk"><img src="/landing/profit-desktop.webp" alt={t('chainShotAlt')} width={1920} height={1080} loading="lazy" decoding="async" /></div>
+          <div className="ap-desk rv ap-rise"><div className="ap-desk-screen"><img src="/landing/profit-desktop.webp" alt={t('chainShotAlt')} width={1920} height={1080} loading="lazy" decoding="async" /></div></div>
           <figcaption className="ap-cap">{t('chainShotCap')}</figcaption>
         </figure>
       </div>

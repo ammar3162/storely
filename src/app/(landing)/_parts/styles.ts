@@ -8,7 +8,7 @@ export const LP_CSS = `
   --teal:#203640;--teal2:#203640;--mint-a25:rgba(95,196,184,.25);
   --ink-a06:rgba(32,54,64,.06);--ink-a08:rgba(32,54,64,.08);--ink-a10:rgba(32,54,64,.1);--ink-a40:rgba(32,54,64,.4);--ink-a70:rgba(32,54,64,.7);--white-a14:rgba(255,255,255,.14);
   --ok:#047857;--ok-bg:#ECFDF5;--err:#B91C1C;--err-bg:#FEF2F2;--wa-ink:#0E7A6E;
-  --shot-shadow:0 30px 60px -30px rgba(16,30,36,.45);--desk-shadow:0 50px 100px -50px rgba(16,30,36,.45);--play-shadow:0 10px 30px -10px rgba(16,30,36,.5);--float-shadow:0 12px 28px -10px rgba(16,30,36,.6);--nav-glass:rgba(255,255,255,.82);--white-a60:rgba(255,255,255,.6);
+  --shot-shadow:0 30px 60px -30px rgba(16,30,36,.45);--desk-shadow:0 50px 100px -50px rgba(16,30,36,.45);--play-shadow:0 10px 30px -10px rgba(16,30,36,.5);--float-shadow:0 12px 28px -10px rgba(16,30,36,.6);--nav-glass:rgba(255,255,255,.82);--white-a60:rgba(255,255,255,.6);--bezel:#16262D;--bezel-edge:rgba(255,255,255,.16);--island:#0C161A;--phone-shadow:0 44px 70px -34px rgba(10,20,25,.55);
   --font:'IBM Plex Sans Arabic',system-ui,sans-serif;--ease:cubic-bezier(.2,.7,.2,1);
   font-family:var(--font);background:var(--white);color:var(--ink);overflow-x:clip;-webkit-font-smoothing:antialiased}
 .lp *{box-sizing:border-box;margin:0;padding:0}
@@ -44,6 +44,15 @@ html,body{overflow-x:clip}
 .lp-btn-wa:hover{background:var(--light-2)}
 .lp-link{display:inline-flex;align-items:center;gap:4px;font-size:17px;color:var(--navy);border-bottom:1px solid transparent;transition:border-color .2s var(--ease)}
 .lp-link:hover{border-color:currentColor}
+
+/* جوال بإطار رفيع وفتحة كاميرا، وبداخله لقطة حقيقية من ستورلي */
+.ap-phone{--r:46px;--b:9px;position:relative;width:100%;aspect-ratio:1179/2556;background:var(--bezel);border-radius:var(--r);padding:var(--b);box-shadow:inset 0 0 0 1.5px var(--bezel-edge),var(--phone-shadow)}
+.ap-phone-screen{position:relative;width:100%;height:100%;border-radius:calc(var(--r) - var(--b));overflow:hidden;background:var(--white)}
+.ap-phone-screen>img{width:100%;height:100%;object-fit:cover;object-position:top}
+.ap-island{position:absolute;top:calc(var(--b) + 2.1%);left:50%;transform:translateX(-50%);width:29%;height:2.5%;min-height:12px;border-radius:999px;background:var(--island)}
+.ap-shot{flex-shrink:0}
+.lp-anim .rv.ap-rise{transform:translateY(72px) scale(.97);transition:opacity 1s var(--ease),transform 1.2s var(--ease)}
+.lp-anim .rv.ap-rise.in{transform:none}
 
 /* شريط الإعلان (من لوحة الإدارة): سطر هادئ فوق القائمة مثل أبل */
 .lp-ribbon{background:var(--light);color:var(--navy);text-align:center;padding:12px 20px;font-size:14px;line-height:1.6}
@@ -124,11 +133,13 @@ html,body{overflow-x:clip}
 .lp-cta h2{font-size:clamp(34px,5vw,64px);font-weight:700;line-height:1.15}
 .lp-cta p{font-size:clamp(18px,1.7vw,22px);color:var(--on-navy2);margin-top:14px}
 .lp-cta-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:32px}
-.lp-cta-shots{display:flex;justify-content:center;align-items:flex-start;gap:20px;margin:56px auto 0;height:300px;overflow:hidden}
-.lp-cta-shots div{width:min(236px,17vw);flex-shrink:0;border-radius:28px 28px 0 0;overflow:hidden;background:var(--white);box-shadow:var(--shot-shadow)}
-.lp-cta-shots div:nth-child(2),.lp-cta-shots div:nth-child(4){margin-top:-28px}
-.lp-cta-shots div:nth-child(3){margin-top:-52px}
-.lp-cta-shots img{width:100%}
+.lp-cta-shots{display:flex;justify-content:center;align-items:flex-start;gap:0;margin:64px auto 0;height:340px;overflow:hidden;padding-top:24px}
+.lp-cta-shots .ap-phone{--r:36px;--b:7px;width:min(210px,16vw);flex-shrink:0;margin:0 -10px;transform-origin:50% 100%}
+.lp-cta-shots .ap-phone:nth-child(1){transform:rotate(-9deg) translateY(56px)}
+.lp-cta-shots .ap-phone:nth-child(2){transform:rotate(-4deg) translateY(18px);z-index:1}
+.lp-cta-shots .ap-phone:nth-child(3){z-index:2}
+.lp-cta-shots .ap-phone:nth-child(4){transform:rotate(4deg) translateY(18px);z-index:1}
+.lp-cta-shots .ap-phone:nth-child(5){transform:rotate(9deg) translateY(56px)}
 
 /* طلب العرض */
 .lp-demo{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);background:var(--white);border-radius:28px;overflow:hidden;border:1px solid var(--hair)}
@@ -194,11 +205,9 @@ html,body{overflow-x:clip}
   .lp-demo{border-radius:22px}
   .lp-demo-form,.lp-demo-side{padding:32px 22px}
   .lp-cta{padding:80px 20px 0}
-  .lp-cta-shots{height:220px;gap:10px;margin-top:44px}
-  .lp-cta-shots div{width:31vw;border-radius:20px 20px 0 0}
-  .lp-cta-shots div:nth-child(n+4){display:none}
-  .lp-cta-shots div:nth-child(3){margin-top:0}
-  .lp-cta-shots div:nth-child(2){margin-top:-24px}
+  .lp-cta-shots{height:250px;margin-top:48px}
+  .lp-cta-shots .ap-phone{--r:28px;--b:6px;width:34vw;margin:0 -8px}
+  .lp-cta-shots .ap-phone:nth-child(1),.lp-cta-shots .ap-phone:nth-child(5){display:none}
   .lp-cta-row .lp-btn{width:100%}
   .lp-wa-float{width:48px;height:48px;bottom:16px;left:16px}
   .lp-foot-grid{grid-template-columns:minmax(0,1fr)}

@@ -1,4 +1,5 @@
 'use client'
+import Phone from './Phone'
 import type { LandingState } from './useLanding'
 
 // يوم واحد في مطعمك بأسلوب بلاطات أبل: لكل لحظة بلاطة (كحلي / رمادي النظام الفاتح بالتناوب)
@@ -25,12 +26,12 @@ export default function DayTiles({ m }: { m: LandingState }) {
       <div className="ap-grid">
         {TILES.map(x => (
           <article key={x.n} className={`ap-tile ${x.tone === 'navy' ? 'ap-navy' : 'ap-light'}${x.wide ? ' ap-wide' : ''}`}>
-            <div className="ap-txt">
+            <div className="ap-txt rv">
               <span className="ap-time"><span className="ap-dot" aria-hidden="true" />{t(`day${x.n}T`)}</span>
               <h3>{t(`day${x.n}H`)}</h3>
               <p>{t(`day${x.n}S`)}</p>
             </div>
-            <div className="ap-shot"><img src={`/landing/${x.img}.webp`} alt={t(`day${x.n}Alt`)} width={720} height={x.h} loading="lazy" decoding="async" /></div>
+            <div className="ap-shot rv ap-rise"><Phone src={`/landing/${x.img}.webp`} alt={t(`day${x.n}Alt`)} h={x.h} /></div>
           </article>
         ))}
       </div>
