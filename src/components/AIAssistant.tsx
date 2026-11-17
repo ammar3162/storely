@@ -40,7 +40,10 @@ const SUGGEST_ICON: Record<SuggestIcon, React.ComponentType<{ size?: number; str
 const SUGGEST_TTL = 2 * 60 * 1000   // نحدّث الاقتراحات لو صار لها أكثر من دقيقتين
 
 const SUPPORT_TIP_KEY = 'support_tip_seen'
-interface Msg { role:'user'|'ai'; text:string; time:string; kind?:'support'|'ticket' }
+// suggest = ترحيب المساعد بأهم أشياء اليوم، والاقتراحات أزرار تحت الرسالة
+interface Msg { role:'user'|'ai'; text:string; time:string; kind?:'support'|'ticket'|'suggest'; sugs?: Suggestion[] }
+const greeting = () => (new Date().getHours() < 12 ? 'صباح الخير' : 'مساء الخير')
+const BUBBLE_SEEN = 'ai_bubble_seen'   // الاقتراحات اللي طلعت كفقاعة بهالجلسة (ما تتكرر)
 
 // الروابط بالرد تنضغط: يوتيوب يطلع زر «مشاهدة فيديو الشرح»، والباقي الرابط نفسه — تفتح بتبويب جديد
 const URL_RE = /(https?:\/\/[^\s)<>»«"']+)/g
@@ -214,7 +217,7 @@ export default function AIAssistant() {
   async function loadSuggestions(force = false) {
     if (!force && Date.now() - sugsAt.current < SUGGEST_TTL) return
     const org_id = typeof window!=='undefined' ? sessionStorage.getItem('s_org_id') : null
-    if (!org_id) return
+    if (!org_id) { setSugs([]); return }
     sugsAt.current = Date.now()
     try {
       const branch_id = sessionStorage.getItem('s_branch_id') || ''
@@ -277,13 +280,17 @@ export default function AIAssistant() {
   },[open])
 
   useEffect(()=>{
-    if(open && msgs.length===0) {
-      setMsgs([{role:'ai', text: hasAi===false ? WELCOME_BASIC : WELCOME_AI, time:now()}])
+    // الترحيب: لو المساعد يحلل البيانات ننتظر الاقتراحات، فيرحّب بأهم أشياء اليوم كأزرار
+    if(open && msgs.length===0 && hasAi!==null && !(hasAi && sugs===null)) {
+      const live = hasAi ? (sugs||[]).filter(x=>!asked.includes(x.id)) : []
+      setMsgs([live.length
+        ? {role:'ai', kind:'suggest', text:`${greeting()}، هذه أهم الأشياء الآن في منشأتك. اضغط أي منها وأعرض لك التفاصيل، أو اسألني عن أي شيء.`, sugs: live.slice(0, 5), time:now()}
+        : {role:'ai', text: hasAi===false ? WELCOME_BASIC : WELCOME_AI, time:now()}])
     }
     if(open && !minimized) {
       setTimeout(()=>inputRef.current?.focus(), 300)
     }
-  },[open, minimized, hasAi])
+  },[open, minimized, hasAi, sugs])
 
   useEffect(()=>{
     if(!minimized) bottomRef.current?.scrollIntoView({behavior:'smooth'})
@@ -347,6 +354,18 @@ export default function AIAssistant() {
 
   // نقطة على زر المساعد: فيه شي يحتاج انتباهه (عجز ينتظر قراره، إقفال ناقص، اشتراك ينتهي...)
   const urgentSug = (sugs || []).find(s=>s.urgent && !asked.includes(s.id))
+  // فقاعة من زر المساعد بأهم اقتراح (بدون فتح الشات) — مرة لكل اقتراح بالجلسة، وتختفي بعد 15 ثانية
+  const [bubble, setBubble] = useState<Suggestion|null>(null)
+  function dismissBubble(b: Suggestion|null = bubble) {
+    if (b) { try { const seen = JSON.parse(sessionStorage.getItem(BUBBLE_SEEN)||'[]'); sessionStorage.setItem(BUBBLE_SEEN, JSON.stringify([...new Set([...seen, b.id])])) } catch {} }
+    setBubble(null)
+  }
+  function openBubble(b: Suggestion) {
+    dismissBubble(b)
+    setOpen(true); setMinimized(false)
+    setAsked(a=>[...a, b.id])
+    send(b.prompt, b.label)
+  }
 
   // زر المساعد: العميل يسحبه لأي مكان (يلتصق بأقرب طرف يمين/يسار) ويُحفظ مكانه بالجهاز
   const FAB_KEY = 'storely_ai_fab'
@@ -375,6 +394,22 @@ export default function AIAssistant() {
   const [supportTip, setSupportTip] = useState(false)
   useEffect(()=>{ try { if(!localStorage.getItem(SUPPORT_TIP_KEY)) setTimeout(()=>setSupportTip(true), 2500) } catch {} },[])
   const hideSupportTip = () => { setSupportTip(false); try { localStorage.setItem(SUPPORT_TIP_KEY,'1') } catch {} }
+  // الفقاعة: أعلى اقتراح ما طلع قبل بهالجلسة، بعد ثانيتين من التحميل (وما تطلع مع إعلان الدعم ولا والشات مفتوح)
+  useEffect(()=>{
+    if (open || !mounted || supportTip || !sugs?.length) return
+    let seen: string[] = []
+    try { seen = JSON.parse(sessionStorage.getItem(BUBBLE_SEEN)||'[]') } catch {}
+    const next = sugs.find(x=>!seen.includes(x.id) && !asked.includes(x.id))
+    if (!next) return
+    const t = setTimeout(()=>setBubble(next), 2500)
+    return ()=>clearTimeout(t)
+  },[sugs, open, mounted, supportTip])
+  useEffect(()=>{
+    if (!bubble) return
+    const t = setTimeout(()=>dismissBubble(bubble), 15000)
+    return ()=>clearTimeout(t)
+  },[bubble])
+  useEffect(()=>{ if (open) setBubble(null) },[open])
   const dragRef = useRef<{ sx:number; sy:number; ox:number; oy:number; moved:boolean }|null>(null)
   const fabLimits = () => {
     const mobile = window.innerWidth < 768, size = mobile ? 46 : 50
@@ -441,6 +476,24 @@ export default function AIAssistant() {
       )}
 
       {/* إعلان الدعم الجديد — فوق زر المساعد، مرة وحدة */}
+      {/* فقاعة اقتراح من زر المساعد: ضغطة تفتح الشات ويجاوب المساعد مباشرة */}
+      {bubble && !open && mounted && !drag && !supportTip && (()=>{
+        const fs = fabStyle() as any, side = fs.left !== undefined ? 'left' : 'right'
+        const Icon = SUGGEST_ICON[bubble.icon] || Sparkles
+        return (
+          <div role="status" aria-live="polite" style={{position:'fixed', [side]: fs[side], bottom: (Number(fs.bottom)||24)+58, zIndex:999, width:280, maxWidth:'calc(100vw - 28px)', background:C.surface, border:`1px solid ${bubble.urgent?uiTokens.color.warningBorder:C.border}`, borderRadius:uiTokens.radius.card, boxShadow:'0 12px 32px rgba(32,54,64,.18)', animation:'aiFadeUp .2s ease'}}>
+            <button onClick={()=>openBubble(bubble)} style={{display:'flex',alignItems:'flex-start',gap:10,width:'100%',padding:'12px 14px',paddingInlineEnd:40,background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',textAlign:'start',color:C.text}}>
+              <span style={{width:32,height:32,borderRadius:10,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',background:bubble.urgent?uiTokens.color.warningBg:C.bg,color:bubble.urgent?uiTokens.color.warning:C.primary}}><Icon size={17} strokeWidth={2}/></span>
+              <span style={{flex:1,minWidth:0}}>
+                <span style={{display:'block',fontSize:uiTokens.typography.body,fontWeight:700,lineHeight:1.5}}>{bubble.label}{bubble.count ? ` (${bubble.count})` : ''}</span>
+                <span style={{display:'block',fontSize:uiTokens.typography.supporting,color:C.text3,marginTop:2}}>اضغط لأعرض لك التفاصيل</span>
+              </span>
+            </button>
+            <button onClick={()=>dismissBubble(bubble)} aria-label="إخفاء الاقتراح" style={{position:'absolute',top:8,insetInlineEnd:8,width:28,height:28,borderRadius:999,border:'none',background:'transparent',color:C.text3,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,lineHeight:1}}>×</button>
+          </div>
+        )
+      })()}
+
       {supportTip && !open && mounted && !drag && (()=>{
         const fs = fabStyle() as any, side = fs.left !== undefined ? 'left' : 'right'
         return (
@@ -532,6 +585,21 @@ export default function AIAssistant() {
                 {msgs.map((m,i)=>(
                   <React.Fragment key={i}>
                     <MsgBubble msg={m}/>
+                    {m.kind==='suggest' && !!m.sugs?.length && (
+                      <div style={{alignSelf:'flex-end',marginRight:38,width:'78%',display:'flex',flexDirection:'column',gap:6}}>
+                        {m.sugs.map(x=>{
+                          const Icon = SUGGEST_ICON[x.icon] || Sparkles, done = asked.includes(x.id)
+                          return (
+                            <button key={x.id} className="quick-btn" disabled={loading} onClick={()=>{ setAsked(a=>[...a, x.id]); send(x.prompt, x.label) }}
+                              style={{display:'flex',alignItems:'center',gap:8,width:'100%',minHeight:42,padding:'8px 12px',borderRadius:uiTokens.radius.control,border:`1px solid ${x.urgent?uiTokens.color.warningBorder:C.border2}`,background:x.urgent?uiTokens.color.warningBg:C.surface,color:x.urgent?uiTokens.color.warning:C.text,opacity:done?.55:1,fontSize:uiTokens.typography.supporting,fontWeight:600,cursor:loading?'default':'pointer',fontFamily:'inherit',textAlign:'start'}}>
+                              <Icon size={16} strokeWidth={2}/>
+                              <span style={{flex:1,minWidth:0}}>{x.label}</span>
+                              {x.count!=null && x.count>0 && <span style={{minWidth:22,height:22,padding:'0 7px',borderRadius:999,background:x.urgent?uiTokens.color.warning:C.primary,color:'white',fontSize:12,fontWeight:700,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{x.count}</span>}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
                     {m.kind==='support' && msgs.some(x=>x.role==='user') && (
                       <button onClick={sendTicket} disabled={ticketBusy}
                         style={{alignSelf:'flex-end',marginRight:38,display:'inline-flex',alignItems:'center',gap:6,padding:'9px 14px',background:C.primary,color:'white',border:'none',borderRadius:uiTokens.radius.control,fontSize:uiTokens.typography.body,fontWeight:700,cursor:ticketBusy?'wait':'pointer',fontFamily:'inherit',opacity:ticketBusy?.7:1}}>
@@ -578,6 +646,8 @@ export default function AIAssistant() {
 
           {/* اقتراحات (مثل Siri وGemini): من بيانات المنشأة الحين، وإلا الأسئلة الثابتة — ضغطة وحدة ترسل السؤال */}
               {(()=>{
+                // الترحيب فيه الاقتراحات كأزرار: الصف يطلع بعد أول سؤال (اقتراحات متابعة)
+                if (msgs.length===1 && msgs[0].kind==='suggest') return null
                 const live = (sugs || []).filter(x=>!asked.includes(x.id))
                 const fallback = msgs.length<=1 ? (hasAi===false ? QUICK_BASIC : QUICK_AI).map((q,k)=>({ id:`q${k}`, label:q.text, prompt:q.text })) : []
                 const list: (Partial<Suggestion> & { id:string; label:string; prompt:string })[] = live.length ? live : (hasAi && sugs===null ? [] : fallback)
