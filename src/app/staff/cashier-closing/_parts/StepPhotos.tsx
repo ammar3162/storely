@@ -9,7 +9,7 @@ export default function StepPhotos({ m }: { m: CashierClosing }) {
     <>
             {/* خطوة 3: الصور */}
             {step===3 && (
-              <div className="fu" style={{background:'white',borderRadius:20,padding:16,marginBottom:16,border:'1px solid var(--storely-border)'}}>
+              <div className="fu" style={{background:'white',borderRadius:20,padding:16,marginBottom:16,border:'none'}}>
                 <div style={{fontSize:17,fontWeight:600,color:'var(--storely-text)',marginBottom:16,display:'flex',alignItems:'center',gap:8}}>
                   <span style={{width:28,height:28,borderRadius:12,background:'var(--storely-fill)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--storely-muted)'}}><Camera size={16} strokeWidth={1.75}/></span>
                   {ct('step3Title',lang)}

@@ -337,7 +337,7 @@ export default function ChoosePage() {
                 </span>
               </div>
 
-              <div style={{display:'grid',gridTemplateColumns:shift && !shift.is_24h && shift.start_time ? '1fr 1fr 1fr' : '1fr 1fr',border:`1px solid ${C.line}`,borderRadius:12,marginBottom:16,overflow:'hidden'}}>
+              <div style={{display:'grid',gridTemplateColumns:shift && !shift.is_24h && shift.start_time ? '1fr 1fr 1fr' : '1fr 1fr',background:'var(--storely-background)',border:'none',borderRadius:14,marginBottom:16,overflow:'hidden'}}>
                 {shift && !shift.is_24h && shift.start_time && (
                   <div style={{padding:12,borderInlineStart:`1px solid ${C.line}`,marginInlineStart:-1}}>
                     <div style={{fontSize:13,color:C.t3,marginBottom:4}}>{t('shift')}</div>

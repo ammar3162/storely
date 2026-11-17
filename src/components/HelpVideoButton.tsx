@@ -26,7 +26,7 @@ export default function HelpVideoButton({ variant = 'icon' }: { variant?: 'icon'
       ) : (
         <button onClick={() => setOpen(true)} aria-label={label}
           style={{ position: 'fixed', insetInlineEnd: 14, bottom: 'calc(env(safe-area-inset-bottom) + 18px)', zIndex: 60, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 99, border: 'none',
-            background: 'var(--storely-navy)', color: '#fff', fontSize:15, fontWeight:600, fontFamily: 'inherit', boxShadow: '0 8px 20px rgba(15,118,110,.35)', cursor: 'pointer' }}>
+            background: 'var(--storely-navy)', color: '#fff', fontSize:15, fontWeight:600, fontFamily: 'inherit', boxShadow: '0 8px 20px rgba(32,54,64,.35)', cursor: 'pointer' }}>
           <PlayCircle size={17} /> شرح الصفحة
         </button>
       )}

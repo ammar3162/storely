@@ -46,22 +46,22 @@ function StaffPageInner() {
       <style>{`
         @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-        .card{background:white;border-radius:20px;border:1px solid var(--storely-border)}
+        .card{background:white;border-radius:20px;border:none}
         .tab-btn{border:none;font-size:17px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;transition:background-color .15s,color .15s}
         .lang-btn{padding:6px 12px;border-radius:12px;border:none;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0}
         .list-row{background:white;border:none;width:100%;min-height:60px;padding:10px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;font-family:inherit;text-align:start;transition:background-color .15s}
         .list-row+.list-row{border-top:1px solid var(--storely-border)}
         .list-row:active{background:var(--storely-fill)}
-        input:focus,select:focus{border-color:#203640!important;outline:none!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)!important}
-        .chip{height:32px;padding:0 12px;border-radius:12px;border:1px solid var(--storely-border);background:white;font-size:15px;color:var(--storely-muted);display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0}
-        .chip.on{background:var(--storely-text);color:white;border-color:var(--storely-text)}
+        input:focus,select:focus{border-color:#203640!important;outline:none!important;box-shadow:0 0 0 3px rgba(32,54,64,.15)!important}
+        .chip{height:32px;padding:0 14px;border-radius:999px;border:1px solid transparent;background:white;font-size:15px;color:var(--storely-text);display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0}
+        .chip.on{background:var(--storely-navy);color:white;border-color:var(--storely-navy)}
       `}</style>
 
       <AccountGate m={m} v={v}/>
 
       {/* Toast */}
       {toast && (
-        <div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:9999,background:toast.type==='success'?'var(--storely-text)':'#dc2626',color:'white',padding:'12px 20px',borderRadius:12,fontSize:17,fontWeight:500,boxShadow:'0 8px 24px rgba(0,0,0,.12)',animation:'slideUp .3s ease',whiteSpace:'nowrap'}}>
+        <div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:9999,background:toast.type==='success'?'var(--storely-navy)':'#dc2626',color:'white',padding:'12px 20px',borderRadius:12,fontSize:17,fontWeight:500,boxShadow:'0 8px 24px rgba(0,0,0,.12)',animation:'slideUp .3s ease',whiteSpace:'nowrap'}}>
           {toast.msg}
         </div>
       )}

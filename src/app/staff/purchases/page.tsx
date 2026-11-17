@@ -309,7 +309,7 @@ export default function StaffPurchasesPage() {
 
       <div style={{padding:'16px 20px',maxWidth:520,margin:'0 auto'}}>
         {/* صوّر الفاتورة — كاميرا أو من الصور */}
-        <div style={{background:'white',border:`1px solid ${previewUrl?C.primary:C.border2}`,borderRadius:20,padding:16,marginBottom:16}}>
+        <div style={{background:'white',border:`1px solid ${previewUrl?C.primary:'transparent'}`,borderRadius:20,padding:16,marginBottom:16}}>
           <div style={{fontSize:17,fontWeight:600,color:C.text,marginBottom:12}}>{pt('snapTitle',lang)}</div>
           {previewUrl && <img src={previewUrl} alt="invoice" style={{width:'100%',maxHeight:180,objectFit:'cover' as const,borderRadius:12,marginBottom:10}}/>}
           {pdfName && <div style={{background:C.primaryL,color:C.primary,borderRadius:12,padding:'10px 12px',marginBottom:10,fontSize:15,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{pt('pdfAttached',lang)} · {pdfName}</div>}

@@ -63,7 +63,7 @@ export default function DispenseTab({ m, v }: { m: StaffDispense; v: PageVals })
                 <div style={label}>{T('mostUsed',lang)} <span style={{color:'var(--storely-muted)',fontWeight:400}}>· {T('last14',lang)}</span></div>
                 <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4,scrollbarWidth:'none' as const}}>
                   {mostUsed.map((p:any)=>(
-                    <button key={p.id} onClick={()=>setSelected(p)} style={{flexShrink:0,background:'white',border:'1px solid var(--storely-border)',borderRadius:12,padding:'10px 12px',cursor:'pointer',fontFamily:'inherit',minWidth:120,maxWidth:160,textAlign:'start' as const}}>
+                    <button key={p.id} onClick={()=>setSelected(p)} style={{flexShrink:0,background:'white',border:'none',borderRadius:12,padding:'10px 12px',cursor:'pointer',fontFamily:'inherit',minWidth:120,maxWidth:160,textAlign:'start' as const}}>
                       <div style={{fontSize:17,fontWeight:500,color:'var(--storely-text)',whiteSpace:'nowrap' as const,overflow:'hidden',textOverflow:'ellipsis'}}>{tx(p.name)}</div>
                       <div style={{fontSize:13,color:'var(--storely-muted)',marginTop:2,whiteSpace:'nowrap' as const}}>{lang==='ar'?`صُرف ${p.dispense_count} ${p.dispense_count>=3&&p.dispense_count<=10?'مرات':'مرة'}`:T('timesUsed',lang,{n:p.dispense_count})}</div>
                     </button>

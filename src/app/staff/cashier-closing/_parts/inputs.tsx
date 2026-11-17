@@ -67,7 +67,7 @@ export function ProgressBar({ step, lang }: { step: number; lang: string }) {
           <div key={s.key} style={{display:'flex',alignItems:'center',gap:6,flex:i<STEPS.length-1?1:'unset',minWidth:0}}>
             <span style={{display:'flex',alignItems:'center',gap:6,fontSize:13,fontWeight:step===s.key?600:400,color:step===s.key?'var(--storely-text)':'var(--storely-muted)',whiteSpace:'nowrap'}}>
               <span style={{width:22,height:22,borderRadius:20,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:13,fontVariantNumeric:'tabular-nums',flexShrink:0,
-                background: step===s.key ? 'var(--storely-text)' : 'var(--storely-fill)', color: step===s.key ? 'white' : step>s.key ? '#203640' : 'var(--storely-muted)'}}>
+                background: step===s.key ? 'var(--storely-navy)' : 'var(--storely-fill)', color: step===s.key ? 'white' : step>s.key ? '#203640' : 'var(--storely-muted)'}}>
                 {step>s.key ? <Check size={13} strokeWidth={2.25}/> : s.key}
               </span>
               {s.label}

@@ -38,7 +38,7 @@ export default function CashierClosingPage() {
   const v: PageVals = { session }
   return (
     <div style={{minHeight:'100vh',background:'var(--storely-background)',fontFamily:'var(--storely-font)',direction:rtl?'rtl':'ltr',paddingBottom:50}}>
-      <style>{`.amt-tile:focus-within{border-color:#203640!important;background:white!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)} .dl-row:focus-within .dl-field{border-color:#203640!important;background:white!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)} @keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}} .fu{animation:fadeUp .3s cubic-bezier(.22,1,.36,1) both} @media (prefers-reduced-motion:reduce){.fu{animation:none}}`}</style>
+      <style>{`.amt-tile:focus-within{border-color:#203640!important;background:white!important;box-shadow:0 0 0 3px rgba(32,54,64,.15)} .dl-row:focus-within .dl-field{border-color:#203640!important;background:white!important;box-shadow:0 0 0 3px rgba(32,54,64,.15)} @keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}} .fu{animation:fadeUp .3s cubic-bezier(.22,1,.36,1) both} @media (prefers-reduced-motion:reduce){.fu{animation:none}}`}</style>
 
       {toast && (
         <div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:9999,background:toast.type==='success'?'var(--storely-text)':'#dc2626',color:'white',padding:'12px 20px',borderRadius:12,fontSize:17,fontWeight:500,boxShadow:'0 8px 24px rgba(0,0,0,.12)',whiteSpace:'nowrap'}}>

@@ -7,7 +7,7 @@ export default function SavedScreen({ m }: { m: CashierClosing }) {
   const { lang, thankYouMsg, resetForm } = m
   return (
     <>
-          <div className="fu" style={{background:'white',borderRadius:20,padding:'32px 20px',textAlign:'center',border:'1px solid var(--storely-border)'}}>
+          <div className="fu" style={{background:'white',borderRadius:20,padding:'32px 20px',textAlign:'center',border:'none'}}>
             <div style={{width:64,height:64,borderRadius:'50%',background:'var(--storely-fill)',display:'flex',alignItems:'center',justifyContent:'center',color:'#203640',margin:'0 auto 16px'}}><CheckCircle2 size={34}/></div>
             <div style={{fontSize:20,fontWeight:600,color:'var(--storely-text)',marginBottom:10}}>{ct('savedTitle',lang)}</div>
             <div style={{padding:'0 8px',marginBottom:8}}>

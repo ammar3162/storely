@@ -101,13 +101,13 @@ export default function StaffLeavePage() {
 
       <div style={{maxWidth:520,margin:'0 auto',padding:'20px 16px'}}>
         {balance !== null && (
-          <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:20,padding:16,marginBottom:16,display:'flex',justifyContent:'space-between',alignItems:'baseline'}}>
+          <div style={{background:'white',border:'none',borderRadius:20,padding:16,marginBottom:16,display:'flex',justifyContent:'space-between',alignItems:'baseline'}}>
             <div style={{fontSize:17,color:'var(--storely-muted)'}}>{t('balance')}</div>
             <div><span style={{fontSize:28,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{balance}</span> <span style={{fontSize:15,color:'var(--storely-muted)'}}>{t('days')}</span></div>
           </div>
         )}
 
-        <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:20,padding:'16px',marginBottom:20}}>
+        <div style={{background:'white',border:'none',borderRadius:20,padding:'16px',marginBottom:20}}>
           <div style={{fontSize:17,fontWeight:600,color:'var(--storely-text)',marginBottom:12}}>{t('newRequest')}</div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:10}}>
             <div>
