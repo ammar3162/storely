@@ -32,7 +32,7 @@ html,body{overflow-x:clip}
 .lp-btn-white{background:var(--white);color:var(--teal)}
 .lp-btn-glass{background:var(--white-a10);color:var(--white);border-color:var(--white-a28)}
 .lp-btn-glass:hover{background:var(--white-a16)}
-.lp-btn-wa{background:var(--white);color:var(--ink);margin-top:22px}
+.lp-btn-wa,.lp a.lp-btn-wa{background:var(--white);color:var(--ink);margin-top:22px}
 .lp-btn-wa svg{color:var(--wa-ink)}
 .lp-btn-wa:hover{background:var(--cream)}
 
