@@ -212,7 +212,7 @@ export default function SupplierPortalAuthPage() {
                 {icon:'📊',text:'تتبّع كل طلباتك ومدفوعاتك'},
               ].map((f,i)=>(
                 <div key={i} style={{display:'flex',alignItems:'center',gap:11}}>
-                  <div style={{width:32,height:32,borderRadius:12,background:'white',border:'1px solid var(--storely-border)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:17,flexShrink:0}}>{f.icon}</div>
+                  <div style={{width:32,height:32,borderRadius:10,background:'white',border:'none',color:'var(--storely-navy)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><FeatureIcon name={f.icon} size={17}/></div>
                   <span style={{fontSize:15,color:'var(--storely-text)',fontWeight:500}}>{f.text}</span>
                 </div>
               ))}
