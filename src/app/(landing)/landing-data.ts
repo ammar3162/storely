@@ -192,7 +192,7 @@ export const LS: Record<string, {ar:string, en:string}> = {
   demoPrivacy:   { ar:'سياسة الخصوصية', en:'Privacy Policy' },
   demoSending:   { ar:'جاري الإرسال...', en:'Sending...' },
   demoSubmit:    { ar:'إرسال الطلب', en:'Send request' },
-  demoSideTitle: { ar:'اطلب تجربة Storely مجاناً — نظام واحد يربط كل أعمال منشأتك', en:'Request a free Storely trial — one system for your whole business' },
+  demoSideTitle: { ar:'نعرض لك النظام على طريقة عمل منشأتك', en:'We walk you through it on your own setup' },
   demoSideSub:   { ar:'سنساعدك على اختيار الباقة الأنسب لمنشأتك، ونجيب عن جميع أسئلتك مباشرة', en:"We'll help you pick the right plan for your business and answer all your questions directly" },
 
   pricingTag:    { ar:'الأسعار', en:'PRICING' },

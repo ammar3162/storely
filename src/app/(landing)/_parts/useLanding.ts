@@ -5,6 +5,9 @@ import { isInApp } from '@/lib/inApp'
 import { Billing, LS } from '../landing-data'
 
 /** حالة صفحة الهبوط ودوالها — منقولة كما هي من LandingPageClient.tsx */
+const EMOJI = new RegExp('[\\p{Extended_Pictographic}\\p{Emoji_Modifier}\\p{Regional_Indicator}\\uFE0F\\u200D\\u20E3]', 'gu')
+const cleanMsg = (m: string) => m.replace(EMOJI, '').replace(/\s+/g, ' ').trim()
+
 export function useLanding(initialMarquee?: string[]) {
   const router = useRouter()
   const rootRef = useRef<HTMLDivElement>(null)
@@ -26,7 +29,9 @@ export function useLanding(initialMarquee?: string[]) {
       if (saved === 'ar' || saved === 'en') setLangState(saved)
     } catch {}
   }, [])
-  const [marqueeMsgs, setMarqueeMsgs] = useState<string[]>(initialMarquee || [])
+  const [rawMarquee, setMarqueeMsgs] = useState<string[]>(initialMarquee || [])
+  // الرسائل تُكتب من لوحة الإدارة وقد تحتوي رموزاً تعبيرية — الصفحة بلا رموز تعبيرية
+  const marqueeMsgs = rawMarquee.map(cleanMsg).filter(Boolean)
   const hasMarquee = marqueeMsgs.length>0
 
   useEffect(()=>{
