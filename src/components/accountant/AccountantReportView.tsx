@@ -27,9 +27,9 @@ function Lines({ rows }: { rows: [string, number, boolean?][] }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 8 }}>
       {rows.map(([k, v, strong]) => (
-        <div key={k} style={{ borderRadius:20, padding: '10px 12px', background: strong ? colors.primaryLight : '#fff', border: `1px solid ${colors.border}` }}>
+        <div key={k} style={{ borderRadius: 14, padding: '10px 12px', background: strong ? 'var(--storely-fill)' : 'var(--storely-background)', border: 'none' }}>
           <div style={{ fontSize:13, color: colors.text3, fontWeight: 600 }}>{k}</div>
-          <div dir="ltr" style={{ fontSize: strong ? 19 : 16, fontWeight:600, color: colors.text, marginTop: 3, fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>{fmt(v)}</div>
+          <div dir="ltr" style={{ fontSize: strong ? 22 : 17, fontWeight:600, color: colors.text, marginTop: 3, fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>{fmt(v)}</div>
         </div>
       ))}
     </div>
