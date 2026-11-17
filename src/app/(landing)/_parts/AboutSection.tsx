@@ -1,22 +1,23 @@
 'use client'
 import type { LandingState } from './useLanding'
 
-// من نحن: المنشأة، والفكرة من الخبرة الميدانية ودراسة يوم التشغيل — بدون أرقام أو أسماء غير مؤكدة
+// من نحن: بلاطة كحلية — المنشأة والفكرة من الخبرة الميدانية ودراسة يوم التشغيل، ثم أربعة مبادئ.
+// بدون أرقام أو أسماء غير مؤكدة (اسم المؤسسة الرسمي في التذييل).
 const PRINCIPLES = [1, 2, 3, 4]
 
 export default function AboutSection({ m }: { m: LandingState }) {
   const { t } = m
   return (
-    <section id="about" className="st-section st-band" aria-labelledby="about-title">
-      <div className="lp-wrap st-about">
-        <div className="st-about-text">
-          <h2 id="about-title" className="st-h2">{t('aboutTitle')}</h2>
+    <section id="about" className="ap-about" aria-labelledby="about-title">
+      <div className="lp-wrap">
+        <div className="ap-about-body">
+          <h2 id="about-title" className="lp-h2">{t('aboutTitle')}</h2>
           <p>{t('aboutBody1')}</p>
           <p>{t('aboutBody2')}</p>
         </div>
-        <dl className="st-principles">
+        <dl className="ap-principles">
           {PRINCIPLES.map(n => (
-            <div key={n}><dt>{t(`aboutP${n}`)}</dt><dd>{t(`aboutP${n}D`)}</dd></div>
+            <div key={n}><dt><span className="ap-dot" aria-hidden="true" />{t(`aboutP${n}`)}</dt><dd>{t(`aboutP${n}D`)}</dd></div>
           ))}
         </dl>
       </div>

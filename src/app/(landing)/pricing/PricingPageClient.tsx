@@ -15,7 +15,7 @@ export default function PricingPageClient() {
     <div ref={m.rootRef} className="lp" dir="rtl">
       <style>{LP_CSS}</style>
       <TopNav m={m}/>
-      <div style={{paddingTop:72}}><PricingSection m={m}/></div>
+      <PricingSection m={m}/>
       <FaqSection m={m}/>
       <FinalCta m={m}/>
       <SiteFooter m={m}/>
