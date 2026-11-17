@@ -297,4 +297,68 @@ describe.skipIf(!enabled)('integration (staging) — menu', async () => {
       expect(new Set(all.map(r => r.email.toLowerCase())).size).toBe(all.length)
     })
   })
+
+  describe('custom plan: one request for a branch and its services', () => {
+    it('the owner names the branch and picks its services, the admin approves once: branch created, limit +1 for free, services extended, prorated due', async () => {
+      const extra = await import('@/app/api/branches/extra/route')
+      const adminReqs = await import('@/app/api/admin/addon-requests/route')
+      const admin = async (body: any) => {
+        const res = await adminReqs.POST(new Request('http://test/api/admin/addon-requests', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify(body) }))
+        return { status: res.status, json: await res.json() as any }
+      }
+      auth.current = { userId, orgId, role: 'owner', branchId: null }
+      // البداية: فرع واحد على «باقتك المخصصة»، المخزون لكل الفروع والكاشير لفرع A، واشتراكه باقي له 10 أيام
+      await db.from('addon_requests').delete().eq('org_id', orgId)
+      await db.from('org_addon_subscriptions').delete().eq('org_id', orgId)
+      await db.from('branches').update({ is_active: false, plan_locked_at: null } as any).eq('org_id', orgId).neq('id', branchA)
+      await db.from('branches').update({ is_active: true } as any).eq('id', branchA)
+      await db.from('organizations').update({ plan: 'custom', max_branches: 1, billing_cycle: 'monthly' } as any).eq('id', orgId)
+      const until = new Date(Date.now() + 10 * 864e5).toISOString()
+      await db.from('profiles').update({ subscription_ends_at: until } as any).eq('id', userId)
+      const { data: ads } = await db.from('marketplace_addons').select('id,slug').in('slug', ['mod_inventory', 'cashier_closing', 'mod_purchases', 'hr_full', 'extra_branch'])
+      const aid = (slug: string) => ((ads || []) as any[]).find(a => a.slug === slug)!.id as string
+      const { error: sErr } = await db.from('org_addon_subscriptions').insert([
+        { org_id: orgId, addon_id: aid('mod_inventory'), status: 'active', quantity: 1, branch_ids: null, expires_at: until, activated_at: new Date().toISOString() },
+        { org_id: orgId, addon_id: aid('cashier_closing'), status: 'active', quantity: 1, branch_ids: [branchA], expires_at: until, activated_at: new Date().toISOString() },
+      ] as any)
+      if (sErr) throw sErr
+
+      const offer = (await call(extra.GET, 'GET', `/api/branches/extra?org_id=${orgId}`)).json.offer
+      expect(offer).toMatchObject({ plan: 'custom', custom: true, price: 0, canAdd: true, total: 1, pending: 0 })
+      const svc = Object.fromEntries((offer.services as any[]).map(s => [s.slug, s]))
+      expect(svc.mod_inventory).toMatchObject({ state: 'all', price: 59 })
+      expect(svc.cashier_closing).toMatchObject({ state: 'some', price: 49 })
+      expect(svc.mod_purchases).toMatchObject({ state: 'none', price: 35 })
+
+      // بدون اسم يرفض، والطلب الصحيح يحسب المخزون (لكل الفروع) + الكاشير + المشتريات
+      expect((await call(extra.POST, 'POST', '/api/branches/extra', { org_id: orgId, branch_name: ' ' })).status).toBe(400)
+      const asked = await call(extra.POST, 'POST', '/api/branches/extra', { org_id: orgId, branch_name: 'فرع العليا', location: 'حي العليا', services: ['cashier_closing', 'mod_purchases'] })
+      expect(asked.status).toBe(200)
+      expect(asked.json.monthly).toBe(59 + 49 + 35)
+      expect((await call(extra.POST, 'POST', '/api/branches/extra', { org_id: orgId, branch_name: 'فرع العليا' })).status).toBe(409)
+      const { data: req } = await db.from('addon_requests').select('id,details,quantity').eq('org_id', orgId).eq('status', 'pending').single()
+      expect((req as any).details).toEqual({ branch_name: 'فرع العليا', location: 'حي العليا', services: ['mod_inventory', 'mod_purchases', 'cashier_closing'] })
+      const list = await adminReqs.GET(new Request('http://test/api/admin/addon-requests', { headers: { 'x-admin-key': 'it-admin' } }))
+      expect(((await list.json()) as any).requests.find((r: any) => r.id === (req as any).id).service_names).toHaveLength(3)
+
+      // موافقة وحدة: الفرع ينشأ، الحد يزيد بدون رسوم، والخدمات تنضاف له
+      const ok = await admin({ id: (req as any).id, action: 'approve' })
+      expect(ok.status).toBe(200)
+      expect(ok.json.branchName).toBe('فرع العليا')
+      expect(ok.json.proratedAmount).toBe(Math.round(59 * 10 / 30) + Math.round(49 * 10 / 30) + Math.round(35 * 10 / 30))
+      const { data: nb } = await db.from('branches').select('id,is_active,location').eq('org_id', orgId).eq('name', 'فرع العليا').single()
+      expect(nb).toMatchObject({ is_active: true, location: 'حي العليا' })
+      const subs = ((await db.from('org_addon_subscriptions').select('addon_id,quantity,branch_ids,locked_price,status').eq('org_id', orgId)).data || []) as any[]
+      const sub = (slug: string) => subs.find(s => s.addon_id === aid(slug))
+      expect(sub('extra_branch')).toMatchObject({ quantity: 1, status: 'active', locked_price: null })
+      expect(sub('mod_inventory')).toMatchObject({ quantity: 2, branch_ids: null })
+      expect([...sub('cashier_closing').branch_ids].sort()).toEqual([branchA, (nb as any).id].sort())
+      expect(sub('mod_purchases')).toMatchObject({ quantity: 1, branch_ids: [(nb as any).id] })
+      expect(sub('hr_full')).toBeUndefined()
+      expect((await db.from('addon_requests').select('status').eq('id', (req as any).id).single()).data).toMatchObject({ status: 'approved' })
+      expect((await call(extra.GET, 'GET', `/api/branches/extra?org_id=${orgId}`)).json.offer).toMatchObject({ total: 2, pending: 0 })
+      // نفس الطلب ما ينوافق عليه مرتين
+      expect((await admin({ id: (req as any).id, action: 'approve' })).status).toBe(409)
+    })
+  })
 })

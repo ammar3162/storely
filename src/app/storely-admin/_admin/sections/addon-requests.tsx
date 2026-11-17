@@ -53,7 +53,16 @@ export default function AddonRequestsPage() {
     setMsg({ t: 'تم حذف الطلب' })
   }
 
+  // طلب فرع بخدماته («باقتك المخصصة»): اسم الفرع والخدمات بنفس الطلب
+  const branchReq = (r: any) => r.marketplace_addons?.slug === 'extra_branch' && r.details?.branch_name ? r.details : null
   async function approve(r: any, kind: 'addon' | 'plan') {
+    const b = kind === 'addon' ? branchReq(r) : null
+    if (b) {
+      const ok = await confirmDialog({ title: 'الموافقة على الفرع', type: 'success', confirmText: 'موافقة وإنشاء الفرع',
+        message: `يُنشأ فرع «${b.branch_name}» للمنشأة ${r.organizations?.name}${r.service_names?.length ? `، وتتفعّل له: ${r.service_names.join('، ')}` : ' بدون خدمات'}.\n\nيصل العميل إشعار بأن الفرع جاهز، ومعه المبلغ المستحق عن الأيام المتبقية.` })
+      if (ok) await decide(r, kind, 'approve', '')
+      return
+    }
     const ok = await confirmDialog(kind === 'addon'
       ? { title: 'الموافقة على الإضافة', message: `تفعيل «${r.marketplace_addons?.name}» للمنشأة ${r.organizations?.name}؟ سيصل العميل إشعار بالتفعيل.`, confirmText: 'موافقة وتفعيل', type: 'success' }
       : { title: 'الموافقة على الترقية', message: `ترقية «${r.organizations?.name}» إلى ${PLAN_AR[r.target_plan]}؟ تُلغى الإضافات المضمّنة في الباقة الجديدة تلقائياً.`, confirmText: 'موافقة وترقية', type: 'success' })
@@ -69,6 +78,7 @@ export default function AddonRequestsPage() {
     setRejecting(null)
     setMsg({ t: action === 'reject' ? 'تم رفض الطلب وإشعار العميل'
       : kind === 'plan' ? `تمت الترقية إلى ${PLAN_AR[r.target_plan]} وإشعار العميل`
+      : j.branchName ? `أُنشئ فرع «${j.branchName}»${j.services?.length ? ` مع ${j.services.join('، ')}` : ''} وأُبلغ العميل${j.proratedAmount > 0 ? `، والمبلغ المستحق ${j.proratedAmount} ⃁` : ''}`
       : `تم التفعيل وإشعار العميل${j.proratedAmount > 0 ? `، والمبلغ المستحق ${j.proratedAmount} ⃁` : ''}` })
     load()
   }
@@ -160,7 +170,10 @@ export default function AddonRequestsPage() {
                 <Card key={r.id} style={r.status === 'pending' ? { borderColor:'#fedf89' } : undefined}>
                   {head(r, <>{r.marketplace_addons?.name} <span style={{ color: A.text2, fontWeight: 500, fontSize:15 }}>· {r.organizations?.name}</span></>, fmtDate(r.created_at, true), 'addon')}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(220px,100%),1fr))', gap: 10, marginTop: 14 }}>
-                    <Info label="المطلوب">{r.branch_names?.length && r.marketplace_addons?.slug !== 'extra_staff' ? `${r.branch_names.length} فرع` : `${r.quantity} وحدة`} <span style={{ color: A.text3, fontWeight: 400 }}>({addonQty(r) * (r.marketplace_addons?.monthly_price || 0)} ⃁ شهرياً)</span></Info>
+{branchReq(r) ? <>
+                      <Info label="الفرع الجديد">{branchReq(r).branch_name}{branchReq(r).location ? <span style={{ color: A.text3, fontWeight: 400 }}> · {branchReq(r).location}</span> : null}</Info>
+                      <Info label="خدمات الفرع">{r.service_names?.length ? r.service_names.join('، ') : 'بدون خدمات'}</Info>
+                    </> :                     <Info label="المطلوب">{r.branch_names?.length && r.marketplace_addons?.slug !== 'extra_staff' ? `${r.branch_names.length} فرع` : `${r.quantity} وحدة`} <span style={{ color: A.text3, fontWeight: 400 }}>({addonQty(r) * (r.marketplace_addons?.monthly_price || 0)} ⃁ شهرياً)</span></Info>}
                     {r.branch_names?.length > 0 && <Info label="الفروع">{r.branch_names.join('، ')}</Info>}
                     <Info label="الاشتراك الحالي">{r.current ? (r.current.branch_names?.length ? r.current.branch_names.join('، ') : `${r.current.quantity} وحدة`) : 'غير مشترك'}</Info>
                     {r.owner_name && <Info label="المالك"><span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Phone size={13} color={A.text3} />{r.owner_name} <span dir="ltr">{r.owner_phone}</span></span></Info>}

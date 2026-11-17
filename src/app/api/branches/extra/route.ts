@@ -16,18 +16,19 @@ export async function GET(req: Request) {
 }
 
 // طلب فرع إضافي لين حد باقته — يوصل للأدمن يوافق عليه (طلبات الإضافات)
+// «باقتك المخصصة»: الطلب فيه اسم الفرع وموقعه وخدماته، والموافقة تنشئه جاهز
 export async function POST(req: Request) {
   try {
-    const { org_id } = await req.json()
+    const { org_id, branch_name, location, services } = await req.json()
     const access = await verifyOrgAccess(org_id)
     if (!access.authorized) return NextResponse.json({ error: access.error }, { status: access.status })
     if (access.role !== 'owner') return NextResponse.json({ error: 'هذه الصلاحية للمالك فقط' }, { status: 403 })
     const db = sb()
-    const res = await requestExtraBranch(db, org_id, access.userId || null)
+    const res = await requestExtraBranch(db, org_id, access.userId || null, { branch_name, location, services })
     if (!res.ok) return NextResponse.json({ error: res.error, code: res.code }, { status: res.status })
     // إيميل للإدارة بعد الرد على العميل
-    notifyAdminsLater(db, org_id, { kind: 'addon', addonName: 'فرع إضافي', quantity: res.pending })
-    return NextResponse.json({ success: true, pending: res.pending })
+    notifyAdminsLater(db, org_id, { kind: 'addon', addonName: typeof branch_name === 'string' && branch_name.trim() ? `فرع إضافي «${branch_name.trim().slice(0, 60)}»` : 'فرع إضافي', quantity: res.pending })
+    return NextResponse.json({ success: true, pending: res.pending, monthly: res.monthly })
   } catch {
     return NextResponse.json({ error: 'حدث خطأ' }, { status: 500 })
   }
