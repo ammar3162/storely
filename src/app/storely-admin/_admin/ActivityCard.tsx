@@ -54,30 +54,30 @@ export default function ActivityCard({ orgId }: { orgId: string }) {
         <Btn small kind="ghost" onClick={load} disabled={loading} title="تحديث"><RefreshCw size={13} /></Btn>
       </div>}>
       {loading && !a ? <Loading label="جارٍ جلب النشاط..." /> : error ? (
-        <div style={{ fontSize: 13, color: A.danger }}>{error}</div>
+        <div style={{ fontSize:15, color: A.danger }}>{error}</div>
       ) : a && (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 14 }}>
             {items.map(([k, v]) => (
               <div key={k} style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 11.5, color: A.text3, fontWeight: 600 }}>{k}</div>
-                <div style={{ fontSize: 13.5, fontWeight: 600, marginTop: 3 }}>{v}</div>
+                <div style={{ fontSize:13, color: A.text3, fontWeight: 600 }}>{k}</div>
+                <div style={{ fontSize:15, fontWeight: 600, marginTop: 3 }}>{v}</div>
               </div>
             ))}
           </div>
           {a.reasons?.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 14 }}>
               {a.reasons.map((r: any, i: number) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 600, color: r.tone === 'danger' ? A.danger : A.warning, background: r.tone === 'danger' ? A.dangerSoft : A.warningSoft, borderRadius: 8, padding: '7px 10px' }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize:13, fontWeight: 600, color: r.tone === 'danger' ? A.danger : A.warning, background: r.tone === 'danger' ? A.dangerSoft : A.warningSoft, borderRadius:12, padding: '7px 10px' }}>
                   <AlertTriangle size={14} style={{ flexShrink: 0 }} /> {r.text}
                 </div>
               ))}
             </div>
           )}
           {a.unused_included?.length > 0 && (
-            <div style={{ fontSize: 12, color: A.text2, marginTop: 10 }}>مزايا لديه لا يستخدمها: {a.unused_included.join('، ')}</div>
+            <div style={{ fontSize:13, color: A.text2, marginTop: 10 }}>مزايا لديه لا يستخدمها: {a.unused_included.join('، ')}</div>
           )}
-          <button onClick={() => router.push('/storely-admin/customers?tab=health')} style={{ marginTop: 12, background: 'none', border: 'none', padding: 0, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600, color: A.primary, cursor: 'pointer' }}>
+          <button onClick={() => router.push('/storely-admin/customers?tab=health')} style={{ marginTop: 12, background: 'none', border: 'none', padding: 0, fontFamily: 'inherit', fontSize:13, fontWeight: 600, color: A.primary, cursor: 'pointer' }}>
             كل الحسابات في «صحة الحسابات»
           </button>
         </>

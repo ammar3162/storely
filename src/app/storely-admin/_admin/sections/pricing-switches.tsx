@@ -76,31 +76,31 @@ export default function PricingSwitchesPage() {
                         <Avatar name={r.name} size={32} />
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontWeight: 600 }}>{r.name}</div>
-                          {r.phone && <div style={{ fontSize: 12, color: A.text3, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}><Phone size={11} /> {r.owner} <span dir="ltr">{r.phone}</span></div>}
+                          {r.phone && <div style={{ fontSize:13, color: A.text3, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}><Phone size={11} /> {r.owner} <span dir="ltr">{r.phone}</span></div>}
                         </div>
                       </div>
                     </td>
                     <td style={td}>{r.plan}</td>
                     <td style={td}>
-                      <Badge tone={tone}>{label}</Badge>{r.chosen_at && <div style={{ fontSize: 11.5, color: A.text3, marginTop: 4 }}>اختار {fmtDate(r.chosen_at)}</div>}
+                      <Badge tone={tone}>{label}</Badge>{r.chosen_at && <div style={{ fontSize:13, color: A.text3, marginTop: 4 }}>اختار {fmtDate(r.chosen_at)}</div>}
                       {r.chosen_at && !r.applied_at && r.modules.length > 0 && (
                         <button onClick={() => applyNow(r)} disabled={busy === r.org_id}
-                          style={{ marginTop: 6, height: 30, padding: '0 10px', borderRadius: 8, border: `1px solid ${A.border}`, background: 'white', color: A.text, fontSize: 12.5, fontWeight: 600, cursor: busy === r.org_id ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+                          style={{ marginTop: 6, height: 30, padding: '0 10px', borderRadius: 999, border: 'none', background: 'var(--storely-fill)', color: A.text, fontSize: 13, fontWeight: 500, cursor: busy === r.org_id ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
                           {busy === r.org_id ? 'جارٍ التطبيق…' : 'طبّق الآن'}
                         </button>
                       )}
-                      {msg?.id === r.org_id && <div style={{ fontSize: 11.5, marginTop: 4, color: msg.ok ? A.primary : A.danger, maxWidth: 220 }}>{msg.text}</div>}
+                      {msg?.id === r.org_id && <div style={{ fontSize:13, marginTop: 4, color: msg.ok ? A.primary : A.danger, maxWidth: 220 }}>{msg.text}</div>}
                     </td>
                     <td style={{ ...td, maxWidth: 240 }}>
                       {r.modules.length ? r.modules.map(m => { const n = r.branch_counts?.[m]; return (FEATURE_NAMES[m]?.ar || m) + (n ? ` (${n === 1 ? 'فرع واحد' : n === 2 ? 'فرعين' : `${n} فروع`})` : '') }).join('، ') : '—'}
-                      {r.branches ? <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>{r.branches === 1 ? 'فرع واحد' : `${r.branches} فروع`}</div> : null}
+                      {r.branches ? <div style={{ fontSize:13, color: A.text3, marginTop: 2 }}>{r.branches === 1 ? 'فرع واحد' : `${r.branches} فروع`}</div> : null}
                     </td>
                     <td style={{ ...td, fontVariantNumeric: 'tabular-nums' }}>{money(r.current_monthly ?? r.bill_now)}</td>
                     <td style={{ ...td, fontVariantNumeric: 'tabular-nums', fontWeight: r.status === 'will_switch' || r.status === 'applied' ? 600 : 400 }}>
                       {r.status === 'will_keep' || r.status === 'kept' ? money(r.current_monthly) : money(r.new_monthly)}
-                      {(r.status === 'will_keep' || r.status === 'kept') && r.new_monthly != null && <div style={{ fontSize: 11.5, color: A.text3 }}>المزايا المختارة {money(r.new_monthly)}</div>}
+                      {(r.status === 'will_keep' || r.status === 'kept') && r.new_monthly != null && <div style={{ fontSize:13, color: A.text3 }}>المزايا المختارة {money(r.new_monthly)}</div>}
                     </td>
-                    <td style={td}>{r.applied_at ? `طُبّق ${fmtDate(r.applied_at)}` : r.renews_at ? <>{fmtDate(r.renews_at)}{d != null && <div style={{ fontSize: 11.5, color: d < 0 ? A.danger : A.text3 }}>{d < 0 ? `منتهٍ منذ ${-d} يوم` : `بعد ${d} يوم`}</div>}</> : '—'}</td>
+                    <td style={td}>{r.applied_at ? `طُبّق ${fmtDate(r.applied_at)}` : r.renews_at ? <>{fmtDate(r.renews_at)}{d != null && <div style={{ fontSize:13, color: d < 0 ? A.danger : A.text3 }}>{d < 0 ? `منتهٍ منذ ${-d} يوم` : `بعد ${d} يوم`}</div>}</> : '—'}</td>
                   </tr>
                 )
               })}

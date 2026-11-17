@@ -41,7 +41,7 @@ export default function HealthPage() {
       {latest && (
         <StatGrid>
           <Stat icon={latest.issues_count > 0 ? AlertTriangle : ShieldCheck} label="الحالة الحالية" value={latest.issues_count > 0 ? `${latest.issues_count} مشكلة` : 'سليم'} tone={latest.issues_count > 0 ? 'danger' : 'primary'} />
-          <Stat icon={Clock} label="آخر فحص" value={<span style={{ fontSize: 18 }}>{fmtDate(latest.checked_at, true)}</span>} />
+          <Stat icon={Clock} label="آخر فحص" value={<span style={{ fontSize:20 }}>{fmtDate(latest.checked_at, true)}</span>} />
           <Stat icon={ListChecks} label="الفحوصات المسجّلة" value={logs.length} hint={`${logs.filter(l => l.issues_count > 0).length} منها فيها مشكلات`} />
         </StatGrid>
       )}
@@ -55,10 +55,10 @@ export default function HealthPage() {
                   {log.issues_count > 0 ? <AlertTriangle size={16} color={A.danger} /> : <CheckCircle2 size={16} color={A.primary} />}
                   <Badge tone={log.issues_count > 0 ? 'danger' : 'primary'}>{log.issues_count > 0 ? `${log.issues_count} مشكلة` : 'سليم'}</Badge>
                 </span>
-                <span style={{ fontSize: 12.5, color: A.text3 }}>{fmtDate(log.checked_at, true)}</span>
+                <span style={{ fontSize:13, color: A.text3 }}>{fmtDate(log.checked_at, true)}</span>
               </div>
               {(log.issues || []).map((issue: any, i: number) => (
-                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12.5, color: A.text, padding: '10px 12px', background: A.muted, borderRadius: 10, marginTop: 8, lineHeight: 1.7 }}>
+                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize:13, color: A.text, padding: '10px 12px', background: A.muted, borderRadius:12, marginTop: 8, lineHeight: 1.7 }}>
                   <Badge tone={issue.severity === 'critical' ? 'danger' : 'warning'}>{issue.severity === 'critical' ? 'حرج' : 'تنبيه'}</Badge>
                   <span><b style={{ fontWeight: 600 }}>{issue.type}:</b> {issue.detail}</span>
                 </div>

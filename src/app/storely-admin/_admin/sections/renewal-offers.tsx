@@ -65,10 +65,10 @@ export default function RenewalOffers({ onMsg }: { onMsg: (m: { t: string; bad?:
               const link = waLink(f.phone, `مرحباً، نتواصل معك من Storely بخصوص عرض ${offerMonthsLabel(f.months)} بـ ${Number(f.amount)} ريال لاشتراك ${f.org_name}. هل تحتاج أي مساعدة في الدفع؟`)
               return (
                 <tr key={f.id}>
-                  <td style={td}><div style={{ fontWeight: 600 }}>{f.org_name}</div><div style={{ fontSize: 12, color: A.text3 }}>{f.owner_name || '—'}</div></td>
+                  <td style={td}><div style={{ fontWeight: 600 }}>{f.org_name}</div><div style={{ fontSize:13, color: A.text3 }}>{f.owner_name || '—'}</div></td>
                   <td style={td}>
                     <div style={{ fontWeight: 600 }}>{f.kind === 'renewal' ? 'تجديد' : 'عرض'} {offerMonthsLabel(f.months)} · {Number(f.amount)} ⃁</div>
-                    <div style={{ marginTop: 4 }}>{expired ? <Badge tone="neutral">انتهت صلاحيته {fmtDate(f.valid_until)}</Badge> : <span style={{ fontSize: 12, color: A.text3 }}>صالح حتى {fmtDate(f.valid_until)}</span>}</div>
+                    <div style={{ marginTop: 4 }}>{expired ? <Badge tone="neutral">انتهت صلاحيته {fmtDate(f.valid_until)}</Badge> : <span style={{ fontSize:13, color: A.text3 }}>صالح حتى {fmtDate(f.valid_until)}</span>}</div>
                   </td>
                   <td style={td}>{fmtDate(f.created_at)}</td>
                   <td style={td}>{link ? <a href={link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: A.primary, fontWeight: 600, textDecoration: 'none' }}><MessageCircle size={15} /><span dir="ltr">{f.phone}</span></a> : '—'}</td>
@@ -87,7 +87,7 @@ export default function RenewalOffers({ onMsg }: { onMsg: (m: { t: string; bad?:
 
       <Card title={`تنتهي خلال ${RENEWAL_WINDOW_DAYS} يوماً (${data.upcoming.length})`} subtitle="عرض تجديد مقترح: 6 أشهر بخصم 10% من فاتورته الحالية — عدّل المدة أو السعر ثم أرسل" pad={0}>
         {!data.upcoming.length ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 20, fontSize: 13, color: A.text3 }}><BellRing size={16} /> لا توجد اشتراكات تنتهي خلال {RENEWAL_WINDOW_DAYS} يوماً</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 20, fontSize:15, color: A.text3 }}><BellRing size={16} /> لا توجد اشتراكات تنتهي خلال {RENEWAL_WINDOW_DAYS} يوماً</div>
         ) : (
           <Table head={['المنشأة', 'ينتهي', 'الفاتورة الشهرية', 'العرض', '']} minWidth={900}>
             {data.upcoming.map(u => {
@@ -96,8 +96,8 @@ export default function RenewalOffers({ onMsg }: { onMsg: (m: { t: string; bad?:
               const dl = daysLeft(u.ends_at)
               return (
                 <tr key={u.org_id}>
-                  <td style={td}><div style={{ fontWeight: 600 }}>{u.org_name}</div><div style={{ fontSize: 12, color: A.text3 }}>{u.owner_name || '—'} · {u.sub_type === 'trial' ? 'تجربة' : 'مدفوع'}</div></td>
-                  <td style={td}>{fmtDate(u.ends_at)}<div style={{ fontSize: 12, color: dl !== null && dl <= 3 ? A.danger : A.text3 }}>بعد {dl} {dl === 1 ? 'يوم' : 'أيام'}</div></td>
+                  <td style={td}><div style={{ fontWeight: 600 }}>{u.org_name}</div><div style={{ fontSize:13, color: A.text3 }}>{u.owner_name || '—'} · {u.sub_type === 'trial' ? 'تجربة' : 'مدفوع'}</div></td>
+                  <td style={td}>{fmtDate(u.ends_at)}<div style={{ fontSize:13, color: dl !== null && dl <= 3 ? A.danger : A.text3 }}>بعد {dl} {dl === 1 ? 'يوم' : 'أيام'}</div></td>
                   <td style={td}>{u.monthly_bill ? `${u.monthly_bill} ⃁` : '—'}</td>
                   <td style={td}>
                     {u.offer_open ? <Badge tone="warning">عرض مرسل بانتظار الدفع</Badge> : (
@@ -108,7 +108,7 @@ export default function RenewalOffers({ onMsg }: { onMsg: (m: { t: string; bad?:
                         <NumberInput min={0} value={f.price} placeholder="السعر" aria-label="سعر العرض"
                           onChange={e => setForm(p => ({ ...p, [u.org_id]: { ...f, price: String(e.target.value ?? '') } }))}
                           style={{ ...inputStyle, width: 86, padding: '6px 8px', textAlign: 'center' }} />
-                        <span style={{ fontSize: 12, color: A.text3, whiteSpace: 'nowrap' }}>{f.price ? `من ${s.list}` : `مقترح ${s.amount} (من ${s.list})`}</span>
+                        <span style={{ fontSize:13, color: A.text3, whiteSpace: 'nowrap' }}>{f.price ? `من ${s.list}` : `مقترح ${s.amount} (من ${s.list})`}</span>
                       </div>
                     )}
                   </td>

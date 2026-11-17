@@ -49,20 +49,20 @@ export default function SupportPage() {
             <div style={{ padding: '16px 20px', display: 'flex', gap: 14, alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <div style={{ flex: '1 1 420px', minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
-                  <span style={{ fontSize: 13, color: A.text3, fontWeight: 600 }}>#{t.number}</span>
+                  <span style={{ fontSize:15, color: A.text3, fontWeight: 600 }}>#{t.number}</span>
                   <Badge tone={tone}>{sl}</Badge>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: A.text }}>{t.org_name}</span>
-                  {t.plan && <span style={{ fontSize: 12.5, color: A.text3 }}>{planLabel(t.plan)}</span>}
+                  <span style={{ fontSize:17, fontWeight:600, color: A.text }}>{t.org_name}</span>
+                  {t.plan && <span style={{ fontSize:13, color: A.text3 }}>{planLabel(t.plan)}</span>}
                 </div>
-                <div style={{ fontSize: 15, color: A.text, lineHeight: 1.8, marginBottom: 6 }}>{t.subject}</div>
-                <div style={{ fontSize: 12.5, color: A.text3, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ fontSize:17, color: A.text, lineHeight: 1.8, marginBottom: 6 }}>{t.subject}</div>
+                <div style={{ fontSize:13, color: A.text3, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   <span>{t.requester_name || '—'}{t.branch_name ? ` · ${t.branch_name}` : ''}</span>
                   <span>الصفحة: {pageName(t.page)}</span>
                   <span>{fmtDate(t.created_at, true)}</span>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {link && <a href={link} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 12px', borderRadius: 9, border: `1px solid ${A.border}`, color: A.text, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}><MessageCircle size={15} /> واتساب</a>}
+                {link && <a href={link} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 12px', borderRadius:12, border: `1px solid ${A.border}`, color: A.text, fontSize:15, fontWeight: 600, textDecoration: 'none' }}><MessageCircle size={15} /> واتساب</a>}
                 <Btn small onClick={() => setOpenId(expanded ? null : t.id)}>{expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />} المحادثة ({(t.conversation || []).length})</Btn>
                 {t.status === 'resolved'
                   ? <Btn small onClick={() => act(t, 'reopen')} loading={busy === t.id + 'reopen'}>إعادة فتح</Btn>
@@ -73,17 +73,17 @@ export default function SupportPage() {
               <div style={{ borderTop: `1px solid ${A.border}`, background: A.bg, padding: '14px 20px', display: 'grid', gap: 10, maxHeight: 360, overflowY: 'auto' }}>
                 {(t.conversation || []).map((m: any, i: number) => (
                   <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                    <span style={{ width: 26, height: 26, borderRadius: 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: m.role === 'user' ? A.primary : A.surface, color: m.role === 'user' ? '#fff' : A.text3, border: `1px solid ${A.border}` }}>{m.role === 'user' ? <User size={14} /> : <Bot size={14} />}</span>
-                    <div style={{ fontSize: 13.5, lineHeight: 1.8, color: A.text, whiteSpace: 'pre-wrap', background: A.surface, border: `1px solid ${A.border}`, borderRadius: 10, padding: '8px 12px', flex: 1, minWidth: 0 }}>{m.text}</div>
+                    <span style={{ width: 26, height: 26, borderRadius:12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: m.role === 'user' ? A.primary : A.surface, color: m.role === 'user' ? '#fff' : A.text3, border: `1px solid ${A.border}` }}>{m.role === 'user' ? <User size={14} /> : <Bot size={14} />}</span>
+                    <div style={{ fontSize:15, lineHeight: 1.8, color: A.text, whiteSpace: 'pre-wrap', background: A.bg, border: 'none', borderRadius: 14, padding: '8px 12px', flex: 1, minWidth: 0 }}>{m.text}</div>
                   </div>
                 ))}
-                {!(t.conversation || []).length && <span style={{ fontSize: 13, color: A.text3 }}>بدون محادثة</span>}
+                {!(t.conversation || []).length && <span style={{ fontSize:15, color: A.text3 }}>بدون محادثة</span>}
               </div>
             )}
             <div style={{ borderTop: `1px solid ${A.border}`, padding: '14px 20px', display: 'grid', gap: 10 }}>
               {t.admin_reply && (
-                <div style={{ fontSize: 13.5, lineHeight: 1.8, background: A.muted, borderRadius: 10, padding: '10px 12px' }}>
-                  <div style={{ fontSize: 12, color: A.text3, marginBottom: 2 }}>ردّ {t.replied_by_name || 'الدعم'} · {fmtDate(t.replied_at, true)}</div>{t.admin_reply}
+                <div style={{ fontSize:15, lineHeight: 1.8, background: A.muted, borderRadius:12, padding: '10px 12px' }}>
+                  <div style={{ fontSize:13, color: A.text3, marginBottom: 2 }}>ردّ {t.replied_by_name || 'الدعم'} · {fmtDate(t.replied_at, true)}</div>{t.admin_reply}
                 </div>
               )}
               {t.status !== 'resolved' && (

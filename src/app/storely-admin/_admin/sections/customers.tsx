@@ -86,12 +86,12 @@ function CustomersPage() {
                   <td style={td}><div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}><Badge tone={PLAN_TONE[u.plan]}>{planLabel(u.plan, u.max_branches)}</Badge>{u.monthly_bill != null && upgradeCandidate(u.plan, u.monthly_bill) && <span title={`فاتورته ${u.monthly_bill} ⃁ شهرياً، والباقة الشاملة ${PLAN_PRICING.pro.monthly} ⃁ وتشمل كل المزايا و3 فروع`}><Badge tone="warning">مرشّح للترقية</Badge></span>}</div></td>
                   <td style={td}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
-                      <span style={{ fontSize: 13, fontWeight: 500 }}>{u.subscription_type === 'paid' ? 'مدفوع' : 'تجربة'} · {u.billing_cycle === 'yearly' ? 'سنوي' : 'شهري'}</span>
-                      {d !== null && <span style={{ fontSize: 12, fontWeight: 500, color: d <= 0 ? A.danger : d <= 7 ? A.warning : A.text3 }}>{d <= 0 ? 'منتهٍ' : `متبقٍ ${d} يوم`}</span>}
+                      <span style={{ fontSize:15, fontWeight: 500 }}>{u.subscription_type === 'paid' ? 'مدفوع' : 'تجربة'} · {u.billing_cycle === 'yearly' ? 'سنوي' : 'شهري'}</span>
+                      {d !== null && <span style={{ fontSize:13, fontWeight: 500, color: d <= 0 ? A.danger : d <= 7 ? A.warning : A.text3 }}>{d <= 0 ? 'منتهٍ' : `متبقٍ ${d} يوم`}</span>}
                     </div>
                   </td>
                   <td style={td}><Badge tone={st.tone}>{st.label}</Badge></td>
-                  <td style={{ ...td, color: A.text3, fontSize: 12.5 }}>{fmtDate(u.created_at)}</td>
+                  <td style={{ ...td, color: A.text3, fontSize:13 }}>{fmtDate(u.created_at)}</td>
                 </tr>
               )
             })}

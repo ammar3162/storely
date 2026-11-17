@@ -92,7 +92,7 @@ export default function SettingsPage() {
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                 <Field label="الرمز الحالي من تطبيق المصادقة" hint="لتأكيد إلغاء التحقق بخطوتين">
                   <input value={disableCode} onChange={e => setDisableCode(e.target.value.replace(/\D/g, ''))} maxLength={6} inputMode="numeric" dir="ltr" placeholder="000000" autoFocus
-                    style={{ ...inputStyle, fontSize: 18, letterSpacing: 6, textAlign: 'center', maxWidth: 200 }} />
+                    style={{ ...inputStyle, fontSize:20, letterSpacing: 6, textAlign: 'center', maxWidth: 200 }} />
                 </Field>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 23 }}>
                   <Btn kind="danger" loading={busy === '2fa-off'} disabled={disableCode.length !== 6} onClick={disable2FA}>تأكيد الإلغاء</Btn>
@@ -102,9 +102,9 @@ export default function SettingsPage() {
             ) : <Btn kind="danger" onClick={() => setDisabling(true)}>إلغاء التحقق بخطوتين</Btn>
           ) : qr ? (
             <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-              <img src={qr} alt="رمز QR" width={168} height={168} style={{ borderRadius: 12, border: `1px solid ${A.border}` }} />
+              <img src={qr} alt="رمز QR" width={168} height={168} style={{ borderRadius:20, border: `1px solid ${A.border}` }} />
               <div style={{ flex: '1 1 220px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ fontSize: 13.5, color: A.text2, lineHeight: 1.8 }}>امسح الرمز بتطبيق المصادقة (مثل Google Authenticator)، ثم أدخل الرمز المكوّن من 6 أرقام.</div>
+                <div style={{ fontSize:15, color: A.text2, lineHeight: 1.8 }}>امسح الرمز بتطبيق المصادقة (مثل Google Authenticator)، ثم أدخل الرمز المكوّن من 6 أرقام.</div>
                 <input value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} maxLength={6} inputMode="numeric" dir="ltr" placeholder="000000"
                   style={{ ...inputStyle, fontSize: 20, letterSpacing: 8, textAlign: 'center', maxWidth: 220 }} />
                 <div><Btn kind="primary" loading={busy === '2fa'} disabled={code.length !== 6} onClick={confirm2FA}>تأكيد وتفعيل</Btn></div>

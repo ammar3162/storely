@@ -88,7 +88,7 @@ export default function ConsentLogsPage() {
                     <td style={td}>{l.profile_name}</td>
                     <td style={{ ...td, direction: 'ltr', textAlign: 'right' }}>{l.profile_phone}</td>
                     <td style={td}><Badge tone={l.terms_version === currentVersion ? 'primary' : 'neutral'}>{l.terms_version}</Badge></td>
-                    <td style={{ ...td, color: A.text3, fontSize: 12, direction: 'ltr', textAlign: 'right' }}>{l.ip_address || '—'}</td>
+                    <td style={{ ...td, color: A.text3, fontSize:13, direction: 'ltr', textAlign: 'right' }}>{l.ip_address || '—'}</td>
                   </tr>
                 ))}
               </Table>

@@ -54,11 +54,11 @@ export default function InboxPage() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
                   <Badge tone={tone}>{sl}</Badge>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: A.text }}>{e.org_name || e.from_name || e.from_email}</span>
-                  {!e.org_name && <span style={{ fontSize: 12.5, color: A.text3 }}>ليس عميلاً مسجلاً</span>}
+                  <span style={{ fontSize:17, fontWeight:600, color: A.text }}>{e.org_name || e.from_name || e.from_email}</span>
+                  {!e.org_name && <span style={{ fontSize:13, color: A.text3 }}>ليس عميلاً مسجلاً</span>}
                 </div>
-                <div style={{ fontSize: 15, color: A.text, lineHeight: 1.8, marginBottom: 4, fontWeight: e.status === 'new' ? 700 : 400 }}>{e.subject || 'بدون عنوان'}</div>
-                <div style={{ fontSize: 12.5, color: A.text3, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ fontSize:17, color: A.text, lineHeight: 1.8, marginBottom: 4, fontWeight: e.status === 'new' ? 700 : 400 }}>{e.subject || 'بدون عنوان'}</div>
+                <div style={{ fontSize:13, color: A.text3, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   <span dir="ltr">{e.from_email}</span>
                   <span>{fmtDate(e.received_at, true)}</span>
                 </div>
@@ -67,12 +67,12 @@ export default function InboxPage() {
             </button>
             {expanded && (
               <div style={{ borderTop: `1px solid ${A.border}`, padding: '14px 20px', display: 'grid', gap: 10 }}>
-                <div style={{ fontSize: 14, lineHeight: 1.9, color: A.text, whiteSpace: 'pre-wrap', background: A.bg, border: `1px solid ${A.border}`, borderRadius: 10, padding: '10px 14px' }}>
+                <div style={{ fontSize:17, lineHeight: 1.9, color: A.text, whiteSpace: 'pre-wrap', background: A.bg, border: 'none', borderRadius: 14, padding: '10px 14px' }}>
                   {e.body || 'تعذّر قراءة نص الرسالة — افتحها من بريدك'}
                 </div>
                 {e.reply_body && (
-                  <div style={{ fontSize: 13.5, lineHeight: 1.8, background: A.muted, borderRadius: 10, padding: '10px 12px', whiteSpace: 'pre-wrap' }}>
-                    <div style={{ fontSize: 12, color: A.text3, marginBottom: 2 }}>ردّ {e.replied_by_name || 'الدعم'} · {fmtDate(e.replied_at, true)}</div>{e.reply_body}
+                  <div style={{ fontSize:15, lineHeight: 1.8, background: A.muted, borderRadius:12, padding: '10px 12px', whiteSpace: 'pre-wrap' }}>
+                    <div style={{ fontSize:13, color: A.text3, marginBottom: 2 }}>ردّ {e.replied_by_name || 'الدعم'} · {fmtDate(e.replied_at, true)}</div>{e.reply_body}
                   </div>
                 )}
                 <textarea value={reply[e.id] || ''} onChange={ev => setReply(r => ({ ...r, [e.id]: ev.target.value }))} rows={3} placeholder={`اكتب الرد — يوصل ${e.from_email} بالإيميل، ثم تنتقل الرسالة إلى الأرشيف`}

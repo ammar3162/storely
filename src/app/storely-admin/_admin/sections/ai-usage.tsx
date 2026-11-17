@@ -62,7 +62,7 @@ export default function AiUsagePage() {
                 ))}
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: A.text3, marginTop: 8, direction: 'ltr', fontVariantNumeric: 'tabular-nums' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize:13, color: A.text3, marginTop: 8, direction: 'ltr', fontVariantNumeric: 'tabular-nums' }}>
               <span>{d.daily[0]?.day}</span><span>الأعلى {sar(maxDay)}</span><span>{d.daily[d.daily.length - 1]?.day}</span>
             </div>
           </Card>
@@ -80,7 +80,7 @@ export default function AiUsagePage() {
                     <td style={{ ...td, minWidth: 140 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <div style={{ flex: 1, height: 6, borderRadius: 99, background: A.muted, overflow: 'hidden' }}><div style={{ width: `${pct}%`, height: '100%', background: A.primary, borderRadius: 99 }} /></div>
-                        <span style={{ fontSize: 12.5, color: A.text2, fontVariantNumeric: 'tabular-nums', minWidth: 32 }}>{pct}%</span>
+                        <span style={{ fontSize:13, color: A.text2, fontVariantNumeric: 'tabular-nums', minWidth: 32 }}>{pct}%</span>
                       </div>
                     </td>
                   </tr>

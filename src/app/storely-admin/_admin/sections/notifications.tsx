@@ -15,7 +15,7 @@ const TC: Record<NType, { label: string; tone: Tone; color: string; bg: string; 
   warning: { label: 'تنبيه', tone: 'warning', color: A.warning, bg: A.warningSoft, icon: AlertTriangle },
   danger: { label: 'هام', tone: 'danger', color: A.danger, bg: A.dangerSoft, icon: OctagonAlert },
 }
-const BANNER_COLOR: Record<NType, string> = { danger: '#ef4444', warning: '#f59e0b', success: '#203640', info: '#7c3aed' }
+const BANNER_COLOR: Record<NType, string> = { danger: '#ef4444', warning: '#f59e0b', success: '#203640', info: 'var(--storely-navy)' }
 
 const TEMPLATES: { name: string; type: NType; title: string; message: string }[] = [
   { name: 'ميزة جديدة', type: 'success', title: 'ميزة جديدة في Storely', message: 'أضفنا ميزة جديدة تساعدك في إدارة منشأتك بسهولة أكبر. اطّلع عليها من القائمة، وتواصل معنا إن كان لديك أي سؤال.' },
@@ -126,14 +126,14 @@ export default function AdminNotificationsPage() {
             </div>}>
             <Stack gap={18}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: A.text, marginBottom: 8 }}>طريقة الإرسال</div>
+                <div style={{ fontSize:15, fontWeight: 600, color: A.text, marginBottom: 8 }}>طريقة الإرسال</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <Choice on={deliveryType === 'internal'} onClick={() => setDeliveryType('internal')} icon={<Bell size={16} />} title="إشعار داخلي" sub="يظهر في جرس الإشعارات" />
                   <Choice on={deliveryType === 'banner'} onClick={() => setDeliveryType('banner')} icon={<Megaphone size={16} />} title="بانر عام" sub="شريط أعلى لوحة التحكم" />
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: A.text, marginBottom: 8 }}>النوع</div>
+                <div style={{ fontSize:15, fontWeight: 600, color: A.text, marginBottom: 8 }}>النوع</div>
                 <Tabs items={(Object.keys(TC) as NType[]).map(k => ({ k, l: TC[k].label }))} value={type} onChange={setType} />
               </div>
               <Field label="العنوان" hint={`${title.length} / 120`}>
@@ -144,24 +144,24 @@ export default function AdminNotificationsPage() {
               </Field>
 
               <div>
-                <div style={{ fontSize: 12.5, color: A.text3, marginBottom: 8 }}>المعاينة كما تظهر للعميل</div>
+                <div style={{ fontSize:13, color: A.text3, marginBottom: 8 }}>المعاينة كما تظهر للعميل</div>
                 {deliveryType === 'banner' ? (
-                  <div style={{ borderRadius: 12, background: BANNER_COLOR[type], color: 'white', padding: '12px 16px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <div style={{ borderRadius:20, background: BANNER_COLOR[type], color: 'white', padding: '12px 16px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                     <Megaphone size={17} style={{ flexShrink: 0, marginTop: 2 }} />
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600 }}>{title || 'العنوان'}</div>
-                      <div style={{ fontSize: 13, opacity: .92, marginTop: 2, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{message || 'نص الرسالة'}</div>
+                      <div style={{ fontSize:17, fontWeight: 600 }}>{title || 'العنوان'}</div>
+                      <div style={{ fontSize:15, opacity: .92, marginTop: 2, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{message || 'نص الرسالة'}</div>
                     </div>
                   </div>
                 ) : (
-                  <div style={{ border: `1px solid ${A.border}`, borderRadius: 14, background: A.surface, boxShadow: A.shadowLg, padding: 14, display: 'flex', gap: 12, alignItems: 'flex-start', maxWidth: 380 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: tc.bg, color: tc.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><TIcon size={17} /></div>
+                  <div style={{ border: 'none', borderRadius: 20, background: A.surface, boxShadow: A.shadowLg, padding: 14, display: 'flex', gap: 12, alignItems: 'flex-start', maxWidth: 380 }}>
+                    <div style={{ width: 36, height: 36, borderRadius:12, background: tc.bg, color: tc.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><TIcon size={17} /></div>
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: A.text }}>{title || 'العنوان'}</span>
-                        <span style={{ fontSize: 11.5, color: A.text3, whiteSpace: 'nowrap' }}>الآن</span>
+                        <span style={{ fontSize:17, fontWeight: 600, color: A.text }}>{title || 'العنوان'}</span>
+                        <span style={{ fontSize:13, color: A.text3, whiteSpace: 'nowrap' }}>الآن</span>
                       </div>
-                      <div style={{ fontSize: 13, color: A.text2, marginTop: 3, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{message || 'نص الرسالة'}</div>
+                      <div style={{ fontSize:15, color: A.text2, marginTop: 3, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{message || 'نص الرسالة'}</div>
                     </div>
                   </div>
                 )}
@@ -171,7 +171,7 @@ export default function AdminNotificationsPage() {
                 <Btn kind="primary" full loading={sending} disabled={!title.trim() || !message.trim() || (seg !== 'all' && !selected.length)} onClick={sendNotification}>
                   <Send size={15} /> {`إرسال إلى ${targetCount} منشأة`}
                 </Btn>
-                <div style={{ fontSize: 12.5, color: A.text3, marginTop: 8, textAlign: 'center' }}>المستلمون: {targetLabel}</div>
+                <div style={{ fontSize:13, color: A.text3, marginTop: 8, textAlign: 'center' }}>المستلمون: {targetLabel}</div>
               </div>
             </Stack>
           </Card>
@@ -179,15 +179,15 @@ export default function AdminNotificationsPage() {
           <Card title="المستلمون" subtitle={selected.length === 0 ? `كل المنشآت (${orgs.length})` : `${selected.length} منشأة محددة`} pad={0}
             actions={selected.length > 0 && <Btn small kind="ghost" onClick={() => pickSeg('all')}>إلغاء التحديد</Btn>}>
             <div style={{ padding: '14px 16px', borderBottom: `1px solid ${A.border}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: A.text3, marginBottom: 8 }}><Users size={13} /> اختر فئة، أو حدّد منشآت بعينها من القائمة</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize:13, color: A.text3, marginBottom: 8 }}><Users size={13} /> اختر فئة، أو حدّد منشآت بعينها من القائمة</div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {SEGMENTS.map(s => {
                   const on = seg === s.k
                   return (
                     <button key={s.k} type="button" onClick={() => pickSeg(s.k)} className="adm-btn"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 30, padding: '0 10px', borderRadius: 99, fontSize: 12.5, fontWeight: on ? 600 : 500, fontFamily: 'inherit', cursor: 'pointer',
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 30, padding: '0 10px', borderRadius: 99, fontSize:13, fontWeight: on ? 600 : 500, fontFamily: 'inherit', cursor: 'pointer',
                         border: `1px solid ${on ? A.primary : A.border}`, background: on ? A.primarySoft : A.surface, color: on ? A.primaryHover : A.text2 }}>
-                      {s.l}<span style={{ fontSize: 11.5, color: on ? A.primary : A.text3, fontVariantNumeric: 'tabular-nums' }}>{loading ? '…' : segCount[s.k]}</span>
+                      {s.l}<span style={{ fontSize:13, color: on ? A.primary : A.text3, fontVariantNumeric: 'tabular-nums' }}>{loading ? '…' : segCount[s.k]}</span>
                     </button>
                   )
                 })}
@@ -207,7 +207,7 @@ export default function AdminNotificationsPage() {
                         {on && <Check size={12} color="white" strokeWidth={3} />}
                       </span>
                       <Avatar name={org.name} size={30} />
-                      <span style={{ fontSize: 13.5, fontWeight: 500, color: A.text, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{org.name}</span>
+                      <span style={{ fontSize:15, fontWeight: 500, color: A.text, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{org.name}</span>
                       {c && c.status === 'active' ? <Badge tone={c.subscription_type === 'paid' ? 'primary' : 'info'}>{c.subscription_type === 'paid' ? 'مدفوع' : 'تجربة'}</Badge> : st && <Badge tone={st.tone}>{st.label}</Badge>}
                     </Row>
                   )
@@ -227,14 +227,14 @@ export default function AdminNotificationsPage() {
               const Icon = t.icon
               return (
                 <Row key={n.id} style={{ alignItems: 'flex-start' }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: t.bg, color: t.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={16} /></div>
+                  <div style={{ width: 36, height: 36, borderRadius:12, background: t.bg, color: t.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={16} /></div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: A.text }}>{n.title}</span>
+                      <span style={{ fontSize:17, fontWeight: 600, color: A.text }}>{n.title}</span>
                       <Badge tone={t.tone}>{t.label}</Badge>
                     </div>
-                    <div style={{ fontSize: 13, color: A.text2, marginTop: 3, lineHeight: 1.7 }}>{n.message}</div>
-                    <div style={{ fontSize: 12, color: A.text3, marginTop: 4 }}>{fmtDate(n.created_at, true)} · أُرسل إلى {n.sent_to_count} منشأة</div>
+                    <div style={{ fontSize:15, color: A.text2, marginTop: 3, lineHeight: 1.7 }}>{n.message}</div>
+                    <div style={{ fontSize:13, color: A.text3, marginTop: 4 }}>{fmtDate(n.created_at, true)} · أُرسل إلى {n.sent_to_count} منشأة</div>
                   </div>
                   <Btn small kind="ghost" onClick={() => reuse(n)} title="استخدامه نموذجاً لإشعار جديد"><Copy size={14} /> إعادة استخدام</Btn>
                 </Row>
@@ -249,9 +249,9 @@ export default function AdminNotificationsPage() {
 function Choice({ on, onClick, icon, title, sub }: { on: boolean; onClick: () => void; icon: React.ReactNode; title: string; sub: string }) {
   return (
     <button type="button" onClick={onClick} className="adm-hover"
-      style={{ textAlign: 'right', padding: '12px 14px', borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit', border: `1px solid ${on ? A.primary : A.border}`, background: on ? A.primarySoft : A.surface, boxShadow: on ? `0 0 0 3px ${A.primary}1a` : A.shadowSm }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 600, color: on ? A.primaryHover : A.text }}>{icon}{title}</div>
-      <div style={{ fontSize: 12, color: A.text3, marginTop: 3 }}>{sub}</div>
+      style={{ textAlign: 'right', padding: '12px 14px', borderRadius:20, cursor: 'pointer', fontFamily: 'inherit', border: `1px solid ${on ? A.primary : A.border}`, background: on ? A.primarySoft : A.surface, boxShadow: on ? `0 0 0 3px ${A.primary}1a` : A.shadowSm }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize:15, fontWeight: 600, color: on ? A.primaryHover : A.text }}>{icon}{title}</div>
+      <div style={{ fontSize:13, color: A.text3, marginTop: 3 }}>{sub}</div>
     </button>
   )
 }

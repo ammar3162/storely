@@ -43,8 +43,8 @@ export default function Hub(props: { title: string; subtitle: string; tabs: HubT
 export const HUB_CSS = `
   .adm-hubtabs{display:flex;gap:4px;border-bottom:1px solid ${A.border};margin:-8px 0 24px;overflow-x:auto;scrollbar-width:none}
   .adm-hubtabs::-webkit-scrollbar{display:none}
-  .adm-hubtab{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 14px;border:none;background:none;font-family:inherit;font-size:14px;font-weight:500;color:${A.text2};cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .adm-hubtab{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 14px;border:none;background:none;font-family:inherit;font-size:17px;font-weight:500;color:${A.text2};cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px}
   .adm-hubtab:hover{color:${A.text}}
   .adm-hubtab.on{color:${A.primary};font-weight:600;border-bottom-color:${A.primary}}
-  .adm-hubtab-n{min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:${A.danger};color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+  .adm-hubtab-n{min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:${A.danger};color:#fff;font-size:12px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
 `

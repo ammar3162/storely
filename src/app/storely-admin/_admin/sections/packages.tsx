@@ -34,26 +34,26 @@ export default function PackagesPage() {
               <Card key={k} style={isCustomPlan(k) ? { borderColor: `${A.primary}66`, boxShadow: `0 0 0 3px ${A.primary}14` } : undefined}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                   <Badge tone={PLAN_TONE[k]}>{planLabel(k)}</Badge>
-                  {isCustomPlan(k) && <span style={{ fontSize: 12, color: A.primary, fontWeight: 600 }}>للمشتركين الجدد</span>}
+                  {isCustomPlan(k) && <span style={{ fontSize:13, color: A.primary, fontWeight: 600 }}>للمشتركين الجدد</span>}
                 </div>
                 {isCustomPlan(k) ? (<>
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 12 }}>
-                    <span style={{ fontSize: 13, color: A.text2 }}>يبدأ من</span>
-                    <span style={{ fontSize: 32, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{STARTING_PRICE}</span>
-                    <span style={{ fontSize: 13, color: A.text2 }}>⃁ للفرع شهرياً</span>
+                    <span style={{ fontSize:15, color: A.text2 }}>يبدأ من</span>
+                    <span style={{ fontSize: 32, fontWeight:600, fontVariantNumeric: 'tabular-nums' }}>{STARTING_PRICE}</span>
+                    <span style={{ fontSize:15, color: A.text2 }}>⃁ للفرع شهرياً</span>
                   </div>
-                  <div style={{ fontSize: 12.5, color: A.text3, marginTop: 2 }}>بدون حد أدنى، ولكل ميزة سعرها (الفرع الأول / كل فرع بعده)</div>
-                  <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${A.border}`, fontSize: 13.5, color: A.text }}>
+                  <div style={{ fontSize:13, color: A.text3, marginTop: 2 }}>بدون حد أدنى، ولكل ميزة سعرها (الفرع الأول / كل فرع بعده)</div>
+                  <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${A.border}`, fontSize:15, color: A.text }}>
                     {CUSTOM_MODULE_ORDER.map(sl => <Li key={sl}><span style={{ flex: 1 }}>{MOD_AR[sl]}</span><span style={{ color: A.text2, fontVariantNumeric: 'tabular-nums' }}>{CUSTOM_MODULES[sl].first} ⃁{CUSTOM_MODULES[sl].perBranch ? ` / ${CUSTOM_MODULES[sl].extra} ⃁` : ' للمنشأة'}</span></Li>)}
                     <Li>{PLAN_CAPS.custom.staff} موظفين مشمولين لكل فرع</Li>
                   </ul>
                 </>) : (<>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 12 }}>
-                  <span style={{ fontSize: 32, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{p.monthly}</span>
-                  <span style={{ fontSize: 13, color: A.text2 }}>⃁ شهرياً{isNewPlan(k) ? ' للفرع الأول' : ''}</span>
+                  <span style={{ fontSize: 32, fontWeight:600, fontVariantNumeric: 'tabular-nums' }}>{p.monthly}</span>
+                  <span style={{ fontSize:15, color: A.text2 }}>⃁ شهرياً{isNewPlan(k) ? ' للفرع الأول' : ''}</span>
                 </div>
-                <div style={{ fontSize: 12.5, color: A.text3, marginTop: 2 }}>{p.yearly} ⃁ سنوياً</div>
-                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${A.border}`, fontSize: 13.5, color: A.text }}>
+                <div style={{ fontSize:13, color: A.text3, marginTop: 2 }}>{p.yearly} ⃁ سنوياً</div>
+                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16, paddingTop: 16, borderTop: `1px solid ${A.border}`, fontSize:15, color: A.text }}>
                   {isNewPlan(k) ? (<>
                     <Li>كل فرع إضافي {PLAN_CAPS[k].branchPrice} ⃁، وحتى {PLAN_CAPS[k].maxBranches} فروع</Li>
                     <Li>{PLAN_CAPS[k].staff} موظفين و{PLAN_CAPS[k].suppliers} مورداً لكل فرع</Li>
@@ -67,7 +67,7 @@ export default function PackagesPage() {
                 </ul>
                 </>)}
                 {can('manage_users') && (
-                  <div style={{ borderTop: `1px solid ${A.border}`, marginTop: 16, paddingTop: 12, display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                  <div style={{ borderTop: `1px solid ${A.border}`, marginTop: 16, paddingTop: 12, display: 'flex', justifyContent: 'space-between', fontSize:15 }}>
                     <span style={{ color: A.text2 }}>المشتركون المفعّلون</span>
                     <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{paid} مدفوع · {active.length - paid} تجربة</span>
                   </div>

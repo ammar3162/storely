@@ -45,12 +45,12 @@ export default function DuplicateRegistrationsPage() {
             <Card key={g.ip_address} pad={0}
               title={`${g.organizations.length} منشآت من نفس الشبكة`}
               subtitle={`من ${fmtDate(g.first_seen)} إلى ${fmtDate(g.last_seen)}`}
-              actions={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: A.text2, padding: '4px 10px', borderRadius: 8, background: A.muted }}><Wifi size={13} /><span style={{ fontFamily: 'ui-monospace, Menlo, monospace', direction: 'ltr' }}>{g.ip_address}</span></span>}>
+              actions={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize:13, color: A.text2, padding: '4px 10px', borderRadius:12, background: A.muted }}><Wifi size={13} /><span style={{ fontFamily: 'ui-monospace, Menlo, monospace', direction: 'ltr' }}>{g.ip_address}</span></span>}>
               {g.organizations.map(o => (
                 <Row key={o.id}>
                   <Avatar name={o.name} size={32} />
-                  <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: A.text }}>{o.name}</span>
-                  <span style={{ fontSize: 12.5, color: A.text3 }}>{fmtDate(o.created_at)}</span>
+                  <span style={{ flex: 1, fontSize:17, fontWeight: 600, color: A.text }}>{o.name}</span>
+                  <span style={{ fontSize:13, color: A.text3 }}>{fmtDate(o.created_at)}</span>
                   <Badge tone="info">{planLabel(planKeyOf(o.plan))}</Badge>
                 </Row>
               ))}

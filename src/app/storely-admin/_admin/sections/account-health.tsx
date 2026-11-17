@@ -74,7 +74,7 @@ export default function AccountHealthPage() {
                       <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap', alignItems: 'center' }}>
                         <Badge tone="neutral">{r.plan_label}</Badge>
                         {r.subscription_type === 'trial' && <Badge tone="info">تجربة</Badge>}
-                        <span style={{ fontSize: 12, color: A.text3 }}>{r.owner_name || ''}</span>
+                        <span style={{ fontSize:13, color: A.text3 }}>{r.owner_name || ''}</span>
                       </div>
                     </div>
                   </div>
@@ -83,18 +83,18 @@ export default function AccountHealthPage() {
                 <td style={td}>{ago(r.last_login)}</td>
                 <td style={td}>
                   <b style={{ fontWeight: 600, color: r.ops7 ? A.text : A.danger }}>{r.ops7}</b>
-                  <div style={{ fontSize: 11.5, color: A.text3 }}>آخر عملية: {ago(r.last_op)}</div>
+                  <div style={{ fontSize:13, color: A.text3 }}>آخر عملية: {ago(r.last_op)}</div>
                 </td>
                 <td style={td}>{r.closing_days7 === null ? <span style={{ color: A.text3 }}>غير مفعّل</span> : <b style={{ fontWeight: 600, color: r.closing_days7 >= 5 ? A.primary : r.closing_days7 >= 3 ? A.warning : A.danger }}>{r.closing_days7} / 7</b>}</td>
-                <td style={td}>{r.attendance7 === null ? <span style={{ color: A.text3 }}>غير مفعّل</span> : <>{r.attendance7} <span style={{ fontSize: 11.5, color: A.text3 }}>تسجيل · {r.staff} موظف</span></>}</td>
-                <td style={td}>{r.wa_sent7 + r.wa_failed7 === 0 ? <span style={{ color: A.text3 }}>—</span> : <>{r.wa_sent7} <span style={{ fontSize: 11.5, color: A.text3 }}>وصلت</span>{r.wa_failed7 > 0 && <div style={{ fontSize: 12, color: A.danger, fontWeight: 600 }}>{r.wa_failed7} فشلت</div>}</>}</td>
+                <td style={td}>{r.attendance7 === null ? <span style={{ color: A.text3 }}>غير مفعّل</span> : <>{r.attendance7} <span style={{ fontSize:13, color: A.text3 }}>تسجيل · {r.staff} موظف</span></>}</td>
+                <td style={td}>{r.wa_sent7 + r.wa_failed7 === 0 ? <span style={{ color: A.text3 }}>—</span> : <>{r.wa_sent7} <span style={{ fontSize:13, color: A.text3 }}>وصلت</span>{r.wa_failed7 > 0 && <div style={{ fontSize:13, color: A.danger, fontWeight: 600 }}>{r.wa_failed7} فشلت</div>}</>}</td>
                 <td style={{ ...td, maxWidth: 340 }}>
                   {r.reasons.length === 0 ? <span style={{ color: A.primary, fontWeight: 600 }}>لا توجد ملاحظات</span> : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      {r.reasons.map((x: any, i: number) => <div key={i} style={{ fontSize: 12.5, color: x.tone === 'danger' ? A.danger : A.warning, lineHeight: 1.5 }}>• {x.text}</div>)}
+                      {r.reasons.map((x: any, i: number) => <div key={i} style={{ fontSize:13, color: x.tone === 'danger' ? A.danger : A.warning, lineHeight: 1.5 }}>• {x.text}</div>)}
                     </div>
                   )}
-                  {r.unused_included.length > 0 && <div style={{ fontSize: 11.5, color: A.text3, marginTop: 4 }}>مزايا في باقته لا يستخدمها: {r.unused_included.join('، ')}</div>}
+                  {r.unused_included.length > 0 && <div style={{ fontSize:13, color: A.text3, marginTop: 4 }}>مزايا في باقته لا يستخدمها: {r.unused_included.join('، ')}</div>}
                 </td>
               </tr>
             ))}

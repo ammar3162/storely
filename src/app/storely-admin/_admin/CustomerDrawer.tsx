@@ -339,13 +339,13 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
             ['الفاتورة الشهرية', `${monthlyBill} ⃁ · ${c.max_branches} ${c.max_branches === 1 ? 'فرع' : 'فروع'}`],
           ].map(([k, v]) => (
             <div key={k}>
-              <div style={{ fontSize: 11.5, color: A.text3, fontWeight: 600 }}>{k}</div>
-              <div style={{ fontSize: 13.5, fontWeight: 600, marginTop: 3 }}>{v}</div>
+              <div style={{ fontSize:13, color: A.text3, fontWeight: 600 }}>{k}</div>
+              <div style={{ fontSize:15, fontWeight: 600, marginTop: 3 }}>{v}</div>
             </div>
           ))}
         </div>
         {hasPhone && (
-          <a href={waLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize: 13, fontWeight: 600, color: A.primary, textDecoration: 'none' }}>
+          <a href={waLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize:15, fontWeight: 600, color: A.primary, textDecoration: 'none' }}>
             <MessageCircle size={15} /> مراسلة على واتساب
           </a>
         )}
@@ -359,13 +359,13 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginBottom: 12 }}>
           {DURATIONS.map(x => (
             <button key={x.d} onClick={() => setDays(x.d)} className="adm-btn"
-              style={{ padding: '8px 4px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+              style={{ padding: '8px 4px', borderRadius:999, fontSize:13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
                 border: `1px solid ${days === x.d ? A.primary : A.borderStrong}`, background: days === x.d ? A.primarySoft : A.surface, color: days === x.d ? A.primary : A.text2 }}>
               {x.l}
             </button>
           ))}
         </div>
-        <div style={{ fontSize: 12.5, color: A.text2, marginBottom: 10 }}>
+        <div style={{ fontSize:13, color: A.text2, marginBottom: 10 }}>
           ينتهي المدفوع في <b style={{ color: A.text }}>{fmtDate(paidPreview.end.toISOString())}</b>
           {c.status === 'suspended' && ' · ويُستأنف الحساب الموقوف'}
         </div>
@@ -380,20 +380,20 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginBottom: 12 }}>
           {OFFER_MONTHS.map(x => (
             <button key={x.m} onClick={() => setOffer(o => ({ ...o, months: x.m }))} className="adm-btn"
-              style={{ padding: '8px 4px', borderRadius: 8, fontSize: 12.5, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+              style={{ padding: '8px 4px', borderRadius:999, fontSize:13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
                 border: `1px solid ${offer.months === x.m ? A.primary : A.borderStrong}`, background: offer.months === x.m ? A.primarySoft : A.surface, color: offer.months === x.m ? A.primary : A.text2 }}>
               {x.l}
             </button>
           ))}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 8 }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 600, color: A.text2 }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize:13, fontWeight: 600, color: A.text2 }}>
             السعر المتفق عليه (ر.س)
             <NumberInput min={0} value={offer.price} aria-label="سعر العرض"
               onChange={e => setOffer(o => ({ ...o, price: String(e.target.value ?? '') }))}
-              style={{ ...inputStyle, textAlign: 'center', fontWeight: 700 }} />
+              style={{ ...inputStyle, textAlign: 'center', fontWeight:600 }} />
           </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 600, color: A.text2 }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize:13, fontWeight: 600, color: A.text2 }}>
             ملاحظة في الفاتورة (اختياري)
             <input value={offer.note} maxLength={60} placeholder="مثال: عرض الافتتاح" onChange={e => setOffer(o => ({ ...o, note: e.target.value }))} style={inputStyle} />
           </label>
@@ -405,7 +405,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
               const sel = offerPrice === v
               return (
                 <button key={pct} type="button" onClick={() => setOffer(o => ({ ...o, price: String(v) }))} className="adm-btn"
-                  style={{ padding: '5px 10px', borderRadius: 99, fontSize: 12, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+                  style={{ padding: '5px 10px', borderRadius: 99, fontSize:13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
                     border: `1px solid ${sel ? A.primary : A.border}`, background: sel ? A.primarySoft : A.surface, color: sel ? A.primary : A.text2 }}>
                   {pct ? `−${pct}% · ${v}` : `السعر العادي · ${v}`}
                 </button>
@@ -413,7 +413,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
             })}
           </div>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, padding: '10px 12px', borderRadius: 10, background: A.muted, fontSize: 12.5, color: A.text2, lineHeight: 1.7 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, padding: '10px 12px', borderRadius:12, background: A.muted, fontSize:13, color: A.text2, lineHeight: 1.7 }}>
           <BadgePercent size={16} style={{ flexShrink: 0 }} />
           <span>
             السعر العادي لـ{offerLabel}: <b style={{ color: A.text }}>{listPrice} ⃁</b>
@@ -427,10 +427,10 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
           <Btn full loading={busy === 'invoice'} disabled={!hasPhone || (!!busy && busy !== 'invoice')} onClick={sendOfferNow}><Send size={14} /> إرسال العرض</Btn>
           <Btn kind="primary" full loading={busy === 'offer'} disabled={!!busy && busy !== 'offer'} onClick={() => offerValid() && payOffer({ months: offer.months, amount: offerPrice, note: offer.note, list: listPrice })}>دفع العميل: تفعيل</Btn>
         </div>
-        <div style={{ fontSize: 11.5, color: A.text3, marginTop: 8, lineHeight: 1.7 }}>
+        <div style={{ fontSize:13, color: A.text3, marginTop: 8, lineHeight: 1.7 }}>
           «إرسال العرض» يرسل له عرض سعر مستحق الدفع، صالحاً 7 أيام، عبر واتساب والإيميل. وبعد ما يدفع، «تفعيل» يفعّل اشتراكه للمدة ويرسل له فاتورة مدفوعة.
         </div>
-        {!hasPhone && <div style={{ fontSize: 12, color: A.danger, marginTop: 6 }}>لا يوجد رقم جوال مسجّل لهذا العميل</div>}
+        {!hasPhone && <div style={{ fontSize:13, color: A.danger, marginTop: 6 }}>لا يوجد رقم جوال مسجّل لهذا العميل</div>}
       </Card>
 
       {/* سجل العروض */}
@@ -442,13 +442,13 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
               const tone = stt === 'paid' ? 'primary' : stt === 'sent' ? 'warning' : 'neutral'
               const sttLabel = { paid: 'مدفوع', sent: 'بانتظار الدفع', expired: 'انتهت صلاحيته', cancelled: 'ملغى' }[stt]
               return (
-                <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: `1px solid ${A.border}` }}>
+                <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius:12, border: `1px solid ${A.border}` }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>
+                    <div style={{ fontSize:15, fontWeight: 600 }}>
                       {o.kind === 'renewal' ? 'عرض تجديد' : 'عرض'} {offerMonthsLabel(o.months)} · {Number(o.amount)} ⃁
                       {o.list_amount && Number(o.list_amount) > Number(o.amount) && <span style={{ color: A.text3, fontWeight: 500 }}> (بدلاً من {Number(o.list_amount)})</span>}
                     </div>
-                    <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>
+                    <div style={{ fontSize:13, color: A.text3, marginTop: 2 }}>
                       أُرسل {fmtDate(o.created_at)}{o.invoice_number ? ` · #${o.invoice_number}` : ''}{stt === 'sent' ? ` · صالح حتى ${fmtDate(o.valid_until)}` : ''}{o.paid_at ? ` · دُفع ${fmtDate(o.paid_at)}` : ''}{o.note ? ` · ${o.note}` : ''}
                     </div>
                   </div>
@@ -468,11 +468,11 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
       <Card title="الفاتورة الدورية" subtitle="الباقة + الإضافات المفعّلة">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {bill.lines.map((l, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 13, color: A.text2 }}>
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize:15, color: A.text2 }}>
               <span>{l.label}</span><span style={{ fontWeight: 600, color: A.text, whiteSpace: 'nowrap' }}>{l.amount} ⃁</span>
             </div>
           ))}
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${A.border}`, paddingTop: 8, marginTop: 4, fontSize: 14, fontWeight: 600 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${A.border}`, paddingTop: 8, marginTop: 4, fontSize:17, fontWeight: 600 }}>
             <span>الإجمالي</span><span>{bill.total} ⃁</span>
           </div>
         </div>
@@ -480,7 +480,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
           <Btn full loading={busy === 'invoice'} disabled={!hasPhone || (!!busy && busy !== 'invoice')} onClick={() => sendInvoice()}>
             <Send size={14} /> إرسال الفاتورة عبر واتساب
           </Btn>
-          {!hasPhone && <div style={{ fontSize: 12, color: A.danger, marginTop: 6 }}>لا يوجد رقم جوال مسجّل لهذا العميل</div>}
+          {!hasPhone && <div style={{ fontSize:13, color: A.danger, marginTop: 6 }}>لا يوجد رقم جوال مسجّل لهذا العميل</div>}
         </div>
       </Card>
 
@@ -488,10 +488,10 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
       {tab === 'plan' && <>
       {/* الباقة */}
       <Card title="الباقة" actions={
-        <div style={{ display: 'inline-flex', border: `1px solid ${A.borderStrong}`, borderRadius: 8, overflow: 'hidden' }}>
+        <div style={{ display: 'inline-flex', border: `1px solid ${A.borderStrong}`, borderRadius:12, overflow: 'hidden' }}>
           {(['monthly', 'yearly'] as const).map(cy => (
             <button key={cy} onClick={() => changeCycle(cy)} disabled={!!busy}
-              style={{ padding: '5px 12px', border: 'none', fontSize: 12, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', background: c.billing_cycle === cy ? A.primary : A.surface, color: c.billing_cycle === cy ? 'white' : A.text2 }}>
+              style={{ padding: '5px 12px', border: 'none', fontSize:13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', background: c.billing_cycle === cy ? A.primary : A.surface, color: c.billing_cycle === cy ? 'white' : A.text2 }}>
               {cy === 'monthly' ? 'شهري' : 'سنوي'}
             </button>
           ))}
@@ -507,47 +507,47 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
             const price = k === 'custom' ? (on ? `${bill.total} ⃁${c.billing_cycle === 'yearly' ? '/سنة' : '/شهر'}` : 'حسب المزايا') : c.billing_cycle === 'yearly' ? `${pp.yearly} ⃁/سنة` : `${pp.monthly} ⃁/شهر`
             return (
               <button key={k} onClick={() => changePlan(k)} disabled={!!busy} className="adm-hover"
-                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10, textAlign: 'right', fontFamily: 'inherit', cursor: on ? 'default' : 'pointer',
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius:12, textAlign: 'right', fontFamily: 'inherit', cursor: on ? 'default' : 'pointer',
                   border: `1.5px solid ${on ? A.primary : A.border}`, background: on ? A.primarySoft : A.surface }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, color: on ? A.primary : A.text }}>{planLabel(k)} {on && '· الحالية'}</div>
-                  <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>{PLAN_LIMITS[k].desc}{k !== 'custom' && ' · للمشتركين الحاليين فقط'}</div>
+                  <div style={{ fontSize:15, fontWeight: 600, color: on ? A.primary : A.text }}>{planLabel(k)} {on && '· الحالية'}</div>
+                  <div style={{ fontSize:13, color: A.text3, marginTop: 2 }}>{PLAN_LIMITS[k].desc}{k !== 'custom' && ' · للمشتركين الحاليين فقط'}</div>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: on ? A.primary : A.text2, whiteSpace: 'nowrap' }}>{price}</div>
+                <div style={{ fontSize:15, fontWeight: 600, color: on ? A.primary : A.text2, whiteSpace: 'nowrap' }}>{price}</div>
               </button>
             )
           })}
           {c.plan === 'custom' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 10, border: `1px solid ${A.border}` }}>
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>عدد الموظفين <span style={{ fontSize: 11.5, fontWeight: 600, color: A.text3 }}>({6 * planBranches} مشمولين، 6 لكل فرع، وكل موظف إضافي 10 ⃁)</span></span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius:12, border: `1px solid ${A.border}` }}>
+              <span style={{ flex: 1, fontSize:15, fontWeight: 600 }}>عدد الموظفين <span style={{ fontSize:13, fontWeight: 600, color: A.text3 }}>({6 * planBranches} مشمولين، 6 لكل فرع، وكل موظف إضافي 10 ⃁)</span></span>
               <Btn small disabled={!!busy || Math.max(c.staff_included ?? 0, 6 * planBranches) <= 6 * planBranches} onClick={() => setStaffIncluded(Math.max(c.staff_included ?? 0, 6 * planBranches) - 1)}>−</Btn>
               <b style={{ minWidth: 24, textAlign: 'center' }}>{Math.max(c.staff_included ?? 0, 6 * planBranches)}</b>
               <Btn small disabled={!!busy} onClick={() => setStaffIncluded(Math.max(c.staff_included ?? 0, 6 * planBranches) + 1)}>+</Btn>
             </div>
           )}
           {newPlan && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 10, border: `1px solid ${A.border}` }}>
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>فروع الباقة <span style={{ fontSize: 11.5, fontWeight: 600, color: A.text3 }}>(الفرع الإضافي {PLAN_CAPS[c.plan].branchPrice} ⃁)</span></span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius:12, border: `1px solid ${A.border}` }}>
+              <span style={{ flex: 1, fontSize:15, fontWeight: 600 }}>فروع الباقة <span style={{ fontSize:13, fontWeight: 600, color: A.text3 }}>(الفرع الإضافي {PLAN_CAPS[c.plan].branchPrice} ⃁)</span></span>
               <Btn small disabled={!!busy || planBranches <= 1} onClick={() => changePlan(c.plan, planBranches - 1)}>−</Btn>
               <b style={{ minWidth: 20, textAlign: 'center' }}>{planBranches}</b>
               <Btn small disabled={!!busy || planBranches >= 10} onClick={() => changePlan(c.plan, planBranches + 1)}>+</Btn>
             </div>
           )}
-          <div style={{ border: `1.5px dashed ${A.border}`, borderRadius: 10, padding: '11px 14px' }}>
-            <div style={{ fontSize: 13.5, fontWeight: 600, color: A.text }}>{ENTERPRISE_LABEL} <span style={{ fontSize: 11.5, fontWeight: 600, color: A.text3 }}>— أكثر من {PLAN_CAPS.advanced.maxBranches} فروع، بسعر متفق عليه</span></div>
+          <div style={{ border: `1.5px dashed ${A.border}`, borderRadius:12, padding: '11px 14px' }}>
+            <div style={{ fontSize:15, fontWeight: 600, color: A.text }}>{ENTERPRISE_LABEL} <span style={{ fontSize:13, fontWeight: 600, color: A.text3 }}>— أكثر من {PLAN_CAPS.advanced.maxBranches} فروع، بسعر متفق عليه</span></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginTop: 8 }}>
               {([['branches', 'فروع'], ['staff', 'موظفين'], ['suppliers', 'موردين'], ['price', '⃁ شهرياً']] as const).map(([k, l]) => (
                 <input key={k} inputMode="numeric" placeholder={l} value={ent[k]} onChange={e => setEnt(v => ({ ...v, [k]: e.target.value.replace(/[^0-9]/g, '') }))}
-                  style={{ padding: '7px 8px', borderRadius: 8, border: `1px solid ${A.border}`, fontSize: 12.5, fontFamily: 'inherit', textAlign: 'center' }} />
+                  style={{ padding: '7px 8px', borderRadius:12, border: `1px solid ${A.border}`, fontSize:13, fontFamily: 'inherit', textAlign: 'center' }} />
               ))}
             </div>
-            <button onClick={setEnterprise} disabled={!!busy} style={{ marginTop: 8, width: '100%', padding: '8px', borderRadius: 8, border: 'none', background: A.primary, color: 'white', fontSize: 12.5, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>تفعيل باقة {ENTERPRISE_LABEL}</button>
+            <button onClick={setEnterprise} disabled={!!busy} style={{ marginTop: 8, width: '100%', padding: '8px', borderRadius:999, border: 'none', background: A.primary, color: 'white', fontSize:13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}>تفعيل باقة {ENTERPRISE_LABEL}</button>
           </div>
         </div>
       </Card>
 
       {staffUsage && staffUsage.active > staffUsage.limit && staffUsage.limit < 999 && (
-        <div style={{ padding: '12px 14px', borderRadius: 10, background:'#fef3c7', border:'1px solid #fcd34d', fontSize: 12.5, color:'#92400e', lineHeight: 1.8 }}>
+        <div style={{ padding: '12px 14px', borderRadius:12, background:'#fef3c7', border:'1px solid #fcd34d', fontSize:13, color:'#92400e', lineHeight: 1.8 }}>
           <b>الموظفون فوق حد الباقة:</b> عنده {staffUsage.active} موظف نشط والحد {staffUsage.limit}.
           فعّل له «موظف إضافي» × {staffUsage.active - staffUsage.limit}، أو رقّ باقته — أو لو ألغيت/قلّلت إضافة يتوقف الأحدث تلقائياً.
         </div>
@@ -555,8 +555,8 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
 
       {/* الإضافات */}
       <Card title="الإضافات" subtitle="تنتهي وتتجدد مع الباقة، والدفع بالتناسب">
-        {loadingAddons ? <div style={{ fontSize: 12.5, color: A.text3 }}>جارٍ التحميل...</div>
-          : addons.length === 0 ? <div style={{ fontSize: 12.5, color: A.text3 }}>لا توجد إضافات متاحة</div>
+        {loadingAddons ? <div style={{ fontSize:13, color: A.text3 }}>جارٍ التحميل...</div>
+          : addons.length === 0 ? <div style={{ fontSize:13, color: A.text3 }}>لا توجد إضافات متاحة</div>
           : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {addons.map(a => {
@@ -570,11 +570,11 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
                 const chosen: string[] = pick[a.id] || subBranches
                 const branchesChanged = on && a.per_branch && (chosen.length !== subBranches.length || chosen.some(id => !subBranches.includes(id)))
                 return (
-                  <div key={a.id} style={{ padding: '10px 12px', borderRadius: 10, border: `1px solid ${on ? A.primary + '55' : A.border}`, background: on ? A.primarySoft : A.surface }}>
+                  <div key={a.id} style={{ padding: '10px 12px', borderRadius:12, border: `1px solid ${on ? A.primary + '55' : A.border}`, background: on ? A.primarySoft : A.surface }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{a.name}</div>
-                      <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>
+                      <div style={{ fontSize:15, fontWeight: 600 }}>{a.name}</div>
+                      <div style={{ fontSize:13, color: A.text3, marginTop: 2 }}>
                         {on ? `مفعّلة${isQty ? ` (${a.subscription?.quantity || 1})` : a.per_branch ? ` لـ ${a.subscription?.quantity || 1} ${(a.subscription?.quantity || 1) === 1 ? 'فرع' : 'فروع'}` : ''} حتى ${fmtDate(a.subscription.expires_at)}` : `${a.monthly_price} ⃁${isQty ? ' للوحدة' : a.per_branch ? ' لكل فرع' : ''} / شهر`}
                       </div>
                     </div>
@@ -596,7 +596,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
                         return (
                           <button key={b.id} type="button" disabled={!!busy}
                             onClick={() => setPick(p => ({ ...p, [a.id]: sel ? chosen.filter(x => x !== b.id) : [...chosen, b.id] }))}
-                            style={{ padding: '4px 10px', borderRadius: 99, fontSize: 12, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+                            style={{ padding: '4px 10px', borderRadius: 99, fontSize:13, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
                               border: `1px solid ${sel ? A.primary : A.border}`, background: sel ? A.primary : A.surface, color: sel ? 'white' : A.text2 }}>
                             {b.name}
                           </button>
@@ -614,11 +614,11 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
       {/* الخصم */}
       <Card title="الخصم" subtitle="خصم خاص لهذا العميل، ويظهر سطراً في فاتورته وفي صفحتي الإضافات والإعدادات لديه">
         {curDiscount && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: A.primarySoft, border: `1px solid ${A.primary}55`, marginBottom: 10, fontSize: 13 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius:12, background: A.primarySoft, border: `1px solid ${A.primary}55`, marginBottom: 10, fontSize:15 }}>
             <div style={{ flex: 1 }}>
               <b>{curDiscount.type === 'percent' ? `${curDiscount.value}%` : `${curDiscount.value} ⃁ شهرياً`}</b>
               {curDiscount.note && ` — ${curDiscount.note}`}
-              <div style={{ fontSize: 11.5, color: A.text3, marginTop: 2 }}>{curDiscount.until ? `حتى ${fmtDate(curDiscount.until)}` : 'بدون تاريخ انتهاء'}</div>
+              <div style={{ fontSize:13, color: A.text3, marginTop: 2 }}>{curDiscount.until ? `حتى ${fmtDate(curDiscount.until)}` : 'بدون تاريخ انتهاء'}</div>
             </div>
             <Btn small kind="danger" loading={busy === 'discount'} disabled={!!busy && busy !== 'discount'} onClick={() => saveDiscount(true)}>إلغاء الخصم</Btn>
           </div>
@@ -634,7 +634,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
           <input placeholder="سبب الخصم (يظهر في الفاتورة)" value={disc.note} maxLength={60} onChange={e => setDisc(d => ({ ...d, note: e.target.value }))} style={{ ...inputStyle, flex: 1, minWidth: 140 }} />
           <input type="date" value={disc.until} onChange={e => setDisc(d => ({ ...d, until: e.target.value }))} title="ينتهي في (اختياري)" style={{ ...inputStyle, width: 150 }} />
         </div>
-        <div style={{ fontSize: 11.5, color: A.text3, marginTop: 6 }}>النسبة من إجمالي الفاتورة (الباقة والإضافات)، والمبلغ شهري (×12 في الاشتراك السنوي)، وتاريخ الانتهاء اختياري.</div>
+        <div style={{ fontSize:13, color: A.text3, marginTop: 6 }}>النسبة من إجمالي الفاتورة (الباقة والإضافات)، والمبلغ شهري (×12 في الاشتراك السنوي)، وتاريخ الانتهاء اختياري.</div>
         <div style={{ marginTop: 10 }}>
           <Btn kind="primary" full loading={busy === 'discount'} disabled={!!busy && busy !== 'discount'} onClick={() => saveDiscount()}>{curDiscount ? 'تغيير الخصم' : 'حفظ الخصم'}</Btn>
         </div>
@@ -659,16 +659,16 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
           <Btn kind="danger" loading={busy === 'delete'} disabled={!!busy} onClick={remove}><Trash2 size={15} /> حذف نهائي</Btn>
         </div>
         {c.status === 'suspended' && (
-          <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: A.muted, fontSize: 12.5, color: A.text2, lineHeight: 1.8 }}>
+          <div style={{ marginTop: 12, padding: '10px 12px', borderRadius:12, background: A.muted, fontSize:13, color: A.text2, lineHeight: 1.8 }}>
             {resumeInfo.expired
               ? <>انتهى اشتراكه أثناء الإيقاف ({fmtDate(resumeInfo.endsAt)}). بعد الاستئناف جدّد له من تبويب «الاشتراك والدفع».</>
               : <>الاستئناف يكمل اشتراكه نفسه حتى <b style={{ color: A.text }}>{fmtDate(resumeInfo.endsAt)}</b> (متبقٍ {resumeInfo.daysLeft} يوم) — بدون مدة جديدة.</>}
           </div>
         )}
         {deviceCode && (
-          <div style={{ marginTop: 12, padding: '12px 14px', borderRadius: 10, background: A.primarySoft, fontSize: 13, color: A.text }}>
+          <div style={{ marginTop: 12, padding: '12px 14px', borderRadius:12, background: A.primarySoft, fontSize:15, color: A.text }}>
             رمز الدخول: <b dir="ltr" style={{ fontSize: 20, letterSpacing: 4, color: A.primary }}>{deviceCode}</b>
-            <div style={{ fontSize: 12, color: A.text2, marginTop: 4 }}>صالح لمدة 10 دقائق ولمرة واحدة، ويُدخله العميل في صفحة «تحقق من جهازك».</div>
+            <div style={{ fontSize:13, color: A.text2, marginTop: 4 }}>صالح لمدة 10 دقائق ولمرة واحدة، ويُدخله العميل في صفحة «تحقق من جهازك».</div>
           </div>
         )}
       </Card>
