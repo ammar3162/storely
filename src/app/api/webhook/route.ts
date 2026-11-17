@@ -4,6 +4,9 @@ import { fetchExternal } from '@/lib/fetchExternal'
 import { CUSTOM_MODULES, PLAN_CAPS } from '@/lib/planPricing'
 import { validWasenderWebhook } from '@/lib/webhookAuth'
 import { unitFor } from '@/lib/arabicCount'
+import { orgSubscriptionState } from '@/lib/subscription'
+import { branchFeatureError } from '@/lib/planFeatures'
+import { botMayAct, botBranch, managerWithoutBranch, botBlockedText, ACTION_FEATURE, BOT_NO_PERMISSION, BOT_NO_BRANCH, type BotAction } from '@/lib/botAccess'
 const API_KEY      = process.env.WASENDER_API_KEY!
 const SESSION      = process.env.WASENDER_SESSION_ID!
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -72,7 +75,7 @@ async function findUser(phone: string) {
   try {
     const clean = phone.replace(/^\+/,'')
     for (const p of [clean, '0'+clean.slice(3), '+'+clean]) {
-      const { data } = await sb().from('profiles').select('id,full_name,org_id,status,whatsapp_consent,organizations(name)').eq('phone',p).maybeSingle()
+      const { data } = await sb().from('profiles').select('id,full_name,org_id,role,branch_id,permissions,status,whatsapp_consent,organizations(name,plan)').eq('phone',p).maybeSingle()
       if (data) return data
     }
   } catch {}
@@ -181,7 +184,7 @@ async function setSelectedBranch(phone: string, branchId: string) {
 }
 
 // ── 3. تسجيل صرف من واتساب ──
-async function handleDispense(to: string, user: any, text: string) {
+async function handleDispense(to: string, user: any, text: string, dispenseBranchId: string | null) {
   // صيغة: "صرف سكر 5"
   const match = text.match(/^صرف\s+(.+?)\s+(\d+(?:\.\d+)?)$/)
   if (!match) {
@@ -190,7 +193,6 @@ async function handleDispense(to: string, user: any, text: string) {
   }
   const productName = match[1].trim()
   const qty = Number(match[2])
-  const dispenseBranchId = await getSelectedBranch(to)
   const products = await getProducts(user.org_id, dispenseBranchId)
   const product = products.find((p:any) => p.name.includes(productName) || productName.includes(p.name))
   if (!product) {
@@ -225,8 +227,8 @@ async function handleDispense(to: string, user: any, text: string) {
 }
 
 // ── 2. بحث عن منتج ──
-async function searchProduct(to: string, orgId: string, query: string) {
-  const products = await getProducts(orgId)
+async function searchProduct(to: string, orgId: string, query: string, branchId: string | null = null) {
+  const products = await getProducts(orgId, branchId)
   const results = products.filter((p:any) => p.name.includes(query))
   if (!results.length) {
     await send(to, `🔍 لم أجد منتجاً باسم "${query}"\n\nاكتب 0 للقائمة`)
@@ -319,6 +321,22 @@ export async function POST(req: Request) {
       }
 
       if (user?.status==='active') {
+        // اشتراك المنشأة منتهي أو موقوف → البوت يخدم التواصل مع الدعم فقط
+        const sub = await orgSubscriptionState(user.org_id)
+        if (sub.blocked) {
+          if (t==='4') { await pauseBot(to, 5); await send(to,'👋 تم استلام طلبك\n\nسيتواصل معك أحد أعضاء فريقنا خلال دقائق\n\nاكتب 0 في أي وقت للرجوع للقائمة') }
+          else await send(to, botBlockedText(sub.reason))
+          continue
+        }
+        if (managerWithoutBranch(user as any)) { await send(to, BOT_NO_BRANCH); continue }
+        // صلاحية المدير + الميزة مفعّلة للفرع — نفس قواعد لوحة التحكم
+        const can = async (action: BotAction, branchId: string | null): Promise<boolean> => {
+          if (!botMayAct(user as any, action)) { await send(to, BOT_NO_PERMISSION); return false }
+          const err = await branchFeatureError(sb() as any, user.org_id, ACTION_FEATURE[action], (user as any).organizations?.plan, branchId)
+          if (err) { await send(to, `${err}\n\nاكتب 0 للقائمة`); return false }
+          return true
+        }
+        const isManager = (user as any).role === 'manager'
         const state = await getState(to)
 
         // رجوع للقائمة
@@ -330,13 +348,18 @@ export async function POST(req: Request) {
 
         // صرف مباشر
         if (t.startsWith('صرف ')) {
-          await handleDispense(to, user, t)
+          const br = botBranch(user as any, await getSelectedBranch(to))
+          if (!(await can('dispense', br))) continue
+          await handleDispense(to, user, t, br)
           continue
         }
 
         // ── القائمة الرئيسية ──
         if (state==='main') {
           if (t==='1') {
+            if (!(await can('stock', botBranch(user as any, null)))) continue
+            // المدير: فرعه مباشرة بدون اختيار
+            if (isManager) { await setSelectedBranch(to, (user as any).branch_id); await setState(to,'stock'); await send(to,STOCK_MENU); continue }
             const { data: branches } = await sb().from('branches').select('id,name').eq('org_id',user.org_id).eq('is_active',true).order('created_at')
             if (!branches || branches.length <= 1) {
               await setState(to,'stock'); await send(to,STOCK_MENU); continue
@@ -347,7 +370,9 @@ export async function POST(req: Request) {
             continue
           }
           if (t==='2') {
-            const p = await getProducts(user.org_id)
+            const br = botBranch(user as any, null)
+            if (!(await can('stock', br))) continue
+            const p = await getProducts(user.org_id, br)
             const low = p.filter((x:any)=>x.qty<=x.reorder_point)
             if (!low.length) { await send(to,'✅ جميع المنتجات كافية\n\nاكتب 0 للقائمة'); continue }
             const list = low.slice(0,15).map((x:any)=>`🔴 ${x.name}: ${x.qty}/${x.reorder_point} ${unitFor(x.reorder_point, x.unit)}`).join('\n')
@@ -358,7 +383,9 @@ export async function POST(req: Request) {
           if (t==='4') { await pauseBot(to, 5); await send(to,'👋 تم استلام طلبك\n\nسيتواصل معك أحد أعضاء فريقنا خلال دقائق\n\nاكتب 0 في أي وقت للرجوع للقائمة'); continue }
           // بحث عن منتج
           if (t.length>1 && isNaN(Number(t))) {
-            await searchProduct(to, user.org_id, t)
+            const br = botBranch(user as any, null)
+            if (!(await can('stock', br))) continue
+            await searchProduct(to, user.org_id, t, br)
             continue
           }
           const orgNameForGreet = (user as any).organizations?.name
@@ -367,6 +394,8 @@ export async function POST(req: Request) {
 
         // ── اختيار الفرع ──
         else if (state==='select_branch') {
+          // المدير ما يختار فرع غير فرعه
+          if (isManager) { await setSelectedBranch(to, (user as any).branch_id); await setState(to,'stock'); await send(to,STOCK_MENU); continue }
           const { data: branches } = await sb().from('branches').select('id,name').eq('org_id',user.org_id).eq('is_active',true).order('created_at')
           const idx = Number(t) - 1
           if (!branches || isNaN(idx) || idx < 0 || idx >= branches.length) {
@@ -384,6 +413,7 @@ export async function POST(req: Request) {
         else if (state==='stock') {
           if (t==='8') { await send(to,STOCK_MENU); continue }
           if (t==='9') {
+            if (isManager) { await send(to,'حسابك مرتبط بفرعك فقط\n\nاكتب 0 للقائمة'); continue }
             const { data: branches } = await sb().from('branches').select('id,name').eq('org_id',user.org_id).eq('is_active',true).order('created_at')
             if (!branches || branches.length <= 1) { await send(to,'لدى منشأتك فرع واحد فقط\n\nاكتب 0 للقائمة'); continue }
             const list = branches.map((b:any,i:number)=>`${i+1}️⃣ ${b.name}`).join('\n')
@@ -391,9 +421,11 @@ export async function POST(req: Request) {
             await setState(to,'select_branch')
             continue
           }
-          const branchId = await getSelectedBranch(to)
+          const branchId = botBranch(user as any, await getSelectedBranch(to))
           const { data: userBranches } = await sb().from('branches').select('id').eq('org_id',user.org_id).eq('is_active',true)
-          const branchHint = (userBranches||[]).length > 1 ? ' | اكتب 9 لتغيير الفرع' : ''
+          const branchHint = !isManager && (userBranches||[]).length > 1 ? ' | اكتب 9 لتغيير الفرع' : ''
+          if (['1','2','3'].includes(t) && !(await can('stock', branchId))) continue
+          if (t==='4' && !(await can('purchases', branchId))) continue
           if (t==='1') {
             const p = await getProducts(user.org_id, branchId)
             const low = p.filter((x:any)=>x.qty<=x.reorder_point)
