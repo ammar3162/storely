@@ -42,7 +42,7 @@ export default function AgentsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 34 }}>
             <img src="/storely-logo.png" alt="Storely" width={40} height={40} style={{ borderRadius:12, background:'#fff' }} />
             <div><div style={{ fontSize:20, fontWeight:600 }} dir="ltr">Storely</div><div style={{ fontSize:13, opacity: .7 }}>برنامج السفراء</div></div>
-            <a href="/agents/wallet" style={{ marginInlineStart: 'auto', color:'#fff', fontSize:15, fontWeight:600, textDecoration: 'none', border: '1px solid rgba(255,255,255,.3)', borderRadius:12, padding: '8px 14px' }}>محفظتي</a>
+            <a href="/agents/wallet" style={{ marginInlineStart: 'auto', color:'#fff', fontSize:15, fontWeight:500, textDecoration: 'none', border: 'none', background: 'rgba(255,255,255,.14)', borderRadius:999, padding: '8px 16px' }}>محفظتي</a>
           </div>
           <h1 style={{ fontSize: 'clamp(26px,5vw,40px)', lineHeight: 1.4, fontWeight:600, margin: '0 0 12px' }}>عرّف المحلات على Storely<br /><span style={{ color:'var(--storely-border)' }}>واكسب على كل اشتراك</span></h1>
           <p style={{ fontSize:17, opacity: .85, lineHeight: 1.8, margin: 0, maxWidth: 560 }}>سجّل مجاناً، خذ رابطك الخاص، وكل منشأة تشترك عن طريقك تنضاف مكافأتك في محفظتك ويوصلك إشعار.</p>
@@ -58,7 +58,7 @@ export default function AgentsPage() {
             <div style={{ fontSize:15, color: colors.text3, marginBottom: 14 }}>حسب قيمة اشتراكها الشهري — العميل يختار الخدمات اللي يحتاجها</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 10 }}>
               {[...AGENT_REWARD_TIERS].reverse().map(({ label: l, amount: v }) => (
-                <div key={l} style={{ background:'var(--storely-background)', border: `1px solid ${colors.primaryBorder}`, borderRadius:20, padding: '14px 10px', textAlign: 'center' }}>
+                <div key={l} style={{ background:'var(--storely-background)', border: 'none', borderRadius:16, padding: '14px 10px', textAlign: 'center' }}>
                   <div style={{ fontSize:13, color: colors.text3, lineHeight: 1.5, minHeight: 36 }}>اشتراك {l}</div>
                   <div style={{ fontSize: 24, fontWeight:600, color: colors.primary, margin: '4px 0' }}>{v}</div>
                   <div style={{ fontSize:13, color: colors.text3 }}>ريال</div>
