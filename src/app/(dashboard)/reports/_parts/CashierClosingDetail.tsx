@@ -91,7 +91,7 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
           reason: c.status === 'deficit' ? (c.deficit_reason || '—') : '',
         })),
         summaryStats: [
-          { label: 'إجمالي التقارير', value: String(closings.length), color:'#0891b2' },
+          { label: 'إجمالي التقارير', value: String(closings.length), color:'var(--storely-navy)' },
           { label: 'إجمالي العجز', value: totalDeficit.toFixed(0) + ' ' + curr, color: colors.danger },
           { label: 'إجمالي الزيادة', value: totalSurplus.toFixed(0) + ' ' + curr, color: colors.info },
         ],
@@ -163,9 +163,9 @@ export default function CashierClosingDetail({ period, from, to, onBack, filterB
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16,marginTop:12}}>
         {[
-          {label:'إجمالي التقارير',value:closings.length,color:'#0891b2',bg:'#ecfeff',border:'#a5f3fc'},
-          {label:'إجمالي العجز',value:totalDeficit.toFixed(0)+' '+curr,color:colors.danger,bg:colors.dangerLight,border:colors.dangerBorder},
-          {label:'إجمالي الزيادة',value:totalSurplus.toFixed(0)+' '+curr,color:colors.info,bg:colors.infoLight,border:colors.infoBorder},
+          {label:'إجمالي التقارير',value:closings.length,color:colors.text,bg:colors.surface,border:'transparent'},
+          {label:'إجمالي العجز',value:totalDeficit.toFixed(0)+' '+curr,color:colors.danger,bg:colors.surface,border:'transparent'},
+          {label:'إجمالي الزيادة',value:totalSurplus.toFixed(0)+' '+curr,color:'#047857',bg:colors.surface,border:'transparent'},
         ].map((s,i)=>(
           <div key={i} style={{...card,padding:'16px',textAlign:'center' as const,background:s.bg,border:`1.5px solid ${s.border}`}}>
             <div style={{fontSize:22,fontWeight:600,color:s.color,letterSpacing:'-1px'}}>{s.value}</div>

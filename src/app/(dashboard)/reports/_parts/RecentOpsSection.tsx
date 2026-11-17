@@ -13,7 +13,7 @@ export default function RecentOpsSection({ recentOps, colors }: { recentOps:any[
       <div style={{position:'fixed',inset:0,zIndex:1000,display:'flex',alignItems:'flex-end'}}>
         <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)'}} onClick={onClose}/>
         <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxHeight:'80vh',display:'flex',flexDirection:'column' as const,position:'relative',fontFamily:'inherit',direction:'rtl'}}>
-          <div style={{padding:'14px 20px',borderBottom:`1px solid #f0f0f0`,display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
+          <div style={{padding:'14px 20px',borderBottom:`1px solid var(--storely-border)`,display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
             <div style={{width:32,height:3,borderRadius:99,background:'var(--storely-border)',position:'absolute',top:8,left:'50%',transform:'translateX(-50%)'}}/>
             <span style={{fontSize:17,fontWeight:600,color:'var(--storely-text)'}}>{title}</span>
             <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:'var(--storely-subtle)',padding:4,display:'flex',alignItems:'center'}}><X size={18} strokeWidth={2.25}/></button>
@@ -22,7 +22,7 @@ export default function RecentOpsSection({ recentOps, colors }: { recentOps:any[
             {items.length===0?(
               <div style={{padding:'40px',textAlign:'center',color:'var(--storely-subtle)',fontSize:15}}>لا توجد عمليات</div>
             ):items.map((m:any,i:number)=>(
-              <div key={m.id} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 20px',borderBottom:i<items.length-1?'1px solid #f3f4f6':'none'}}>
+              <div key={m.id} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 20px',borderBottom:i<items.length-1?'1px solid var(--storely-fill)':'none'}}>
                 <div style={{width:36,height:36,borderRadius:12,background:bg,border:`1px solid ${border}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                   <span style={{fontSize:17,fontWeight:600,color}}>{Math.abs(m.qty_change)}</span>
                 </div>
