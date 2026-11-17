@@ -13,7 +13,7 @@ function LoginPage() {
   const m = useLogin()
 
   return (
-    <div style={{minHeight:'100vh',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',background:'radial-gradient(900px 420px at 50% -10%,#d9f4f2 0%,rgba(217,244,242,0) 70%),#f7faf9',display:'flex',flexDirection:'column'}}>
+    <div style={{minHeight:'100vh',fontFamily:'var(--storely-font)',direction:'rtl',background:'radial-gradient(900px 420px at 50% -10%,#d9f4f2 0%,rgba(217,244,242,0) 70%),#f7faf9',display:'flex',flexDirection:'column'}}>
       <style>{`
         *{box-sizing:border-box}
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}

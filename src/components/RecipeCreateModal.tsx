@@ -95,13 +95,13 @@ export default function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,br
   }
 
   if(loadingEdit) return (
-    <div onClick={(e:any)=>e.stopPropagation()} style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,padding:40,textAlign:'center' as const,fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
+    <div onClick={(e:any)=>e.stopPropagation()} style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,padding:40,textAlign:'center' as const,fontFamily:'var(--storely-font)'}}>
       <div style={{fontSize:13,color:'#6b7280'}}>جاري تحميل بيانات الوصفة...</div>
     </div>
   )
 
   return (
-    <div onClick={(e:any)=>e.stopPropagation()} style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,maxHeight:'85vh',overflowY:'auto',padding:20,fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl' as const}}>
+    <div onClick={(e:any)=>e.stopPropagation()} style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,maxHeight:'85vh',overflowY:'auto',padding:20,fontFamily:'var(--storely-font)',direction:'rtl' as const}}>
       <div style={{fontSize:15,fontWeight:800,marginBottom:14,display:'flex',alignItems:'center',gap:8}}><ClipboardList size={18} color="#7c3aed"/>{editingRecipeId?'تعديل الوصفة':'وصفة جديدة'}</div>
       <label style={{fontSize:11,fontWeight:700,color:'#6b7280',display:'block',marginBottom:5}}>اسم الوصفة *</label>
       <input value={name} onChange={(e:any)=>setName(e.target.value)} placeholder="مثال: اسم المنتج النهائي" style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e7eb',borderRadius:9,fontSize:13,marginBottom:14,fontFamily:'inherit'}}/>

@@ -41,7 +41,7 @@ export default function PermissionPage() {
   }
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f7fa',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',padding:20}}>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f5f7fa',fontFamily:'var(--storely-font)',direction:'rtl',padding:20}}>
       <div style={{width:'100%',maxWidth:420,background:'white',borderRadius:20,padding:'32px 28px',boxShadow:'0 4px 24px rgba(0,0,0,.08)',textAlign:'center' as const}}>
         {loading ? (
           <div style={{color:'var(--storely-subtle)',fontSize:13}}>جاري التحميل...</div>

@@ -40,13 +40,14 @@ export const colors = {
 }
 
 // زوايا متدرجة حسب كثافة العنصر -- مو زاوية واحدة موحّدة على كل شي
+// زوايا أبل: الحقول 12، البطاقات 20، النوافذ 22، والأزرار حبوب كاملة
 export const radius = {
-  xs:  '6px',   // صفوف الجداول، الوسوم الصغيرة، عناصر داخل الجدول
-  sm:  '8px',   // الأزرار والحقول
-  md:  '10px',
-  lg:  '12px',  // البطاقات
-  xl:  '14px',  // النوافذ المنبثقة
-  full:'999px',
+  xs:  '8px',   // صفوف الجداول، الوسوم الصغيرة، عناصر داخل الجدول
+  sm:  '12px',  // الحقول
+  md:  '14px',
+  lg:  '20px',  // البطاقات
+  xl:  '22px',  // النوافذ المنبثقة
+  full:'999px', // الأزرار
 }
 
 export const shadow = {
@@ -59,21 +60,22 @@ export const numeric: React.CSSProperties = {
   fontVariantNumeric: 'tabular-nums',
 }
 
+// خط أبل من النظام (الآيفون والماك) ثم خط ستورلي، ومقاسات أبل: 12 تعليق، 13 ملاحظة، 17 نص، 20 قسم، 28 عنوان، 34 عنوان كبير
 export const font = {
-  family: "'IBM Plex Sans Arabic', system-ui, sans-serif",
-  xs:  '10px',
-  sm:  '12px',
-  base:'14px',
-  md:  '15px',
-  lg:  '18px',
-  xl:  '22px',
-  xxl: '26px',
+  family: storelyTokens.typography.family,
+  xs:  '12px',
+  sm:  '13px',
+  base:'17px',
+  md:  '17px',
+  lg:  '20px',
+  xl:  '28px',
+  xxl: '34px',
 }
 
 // Common styles
 export const inp = (extra?: object): React.CSSProperties => ({
-  width:'100%', padding:'11px 14px',
-  border:`1px solid ${colors.border2}`,
+  width:'100%', padding:'11px 16px', minHeight:44,
+  border:`1px solid ${storelyTokens.color.controlBorder}`,
   borderRadius:radius.sm, fontSize:font.base,
   outline:'none', boxSizing:'border-box',
   background:colors.surface, color:colors.text,
@@ -83,45 +85,45 @@ export const inp = (extra?: object): React.CSSProperties => ({
 
 export const card: React.CSSProperties = {
   background: colors.surface,
-  borderRadius: '14px',
-  border: `1px solid ${colors.border}`,
+  borderRadius: radius.lg,
+  border: 'none',
   boxShadow: storelyTokens.shadow.surface,
   overflow: 'hidden',
 }
 
 export const btnPrimary: React.CSSProperties = {
   display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-  padding:'10px 18px',
+  padding:'11px 22px', minHeight:44,
   background:colors.primary,
-  color:'white', border:'none', borderRadius:radius.sm,
-  fontSize:font.base, fontWeight:700, cursor:'pointer',
+  color:'white', border:'none', borderRadius:radius.full,
+  fontSize:font.base, fontWeight:500, cursor:'pointer',
   fontFamily:font.family,
   transition:'background .15s',
 }
 
 export const btnSecondary: React.CSSProperties = {
   display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-  padding:'10px 18px',
-  background:colors.surface, color:colors.text2,
-  border:`1px solid ${colors.border2}`,
-  borderRadius:radius.sm, fontSize:font.base,
-  fontWeight:600, cursor:'pointer', fontFamily:font.family,
-  transition:'all .15s',
+  padding:'11px 22px', minHeight:44,
+  background:storelyTokens.color.fill, color:colors.text2,
+  border:'none',
+  borderRadius:radius.full, fontSize:font.base,
+  fontWeight:500, cursor:'pointer', fontFamily:font.family,
+  transition:'background-color .15s',
 }
 
 export const btnDanger: React.CSSProperties = {
   display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-  padding:'10px 18px',
+  padding:'11px 22px', minHeight:44,
   background:colors.dangerLight, color:colors.danger,
   border:`1px solid ${colors.dangerBorder}`,
-  borderRadius:radius.sm, fontSize:font.base,
-  fontWeight:700, cursor:'pointer', fontFamily:font.family,
+  borderRadius:radius.full, fontSize:font.base,
+  fontWeight:500, cursor:'pointer', fontFamily:font.family,
 }
 
 export const tag = (color:string, bg:string, border:string): React.CSSProperties => ({
   display:'inline-flex', alignItems:'center', gap:4,
   padding:'3px 10px', borderRadius:radius.full,
-  fontSize:font.xs, fontWeight:700,
+  fontSize:font.xs, fontWeight:600,
   color, background:bg, border:`1px solid ${border}`,
   whiteSpace:'nowrap',
 })
@@ -135,11 +137,11 @@ export const pageHeader: React.CSSProperties = {
 // العنوان صف مرن عشان أيقونة الصفحة (<PageIcon/>) تجي بجانبه
 export const pageTitle: React.CSSProperties = {
   display:'flex', alignItems:'center', gap:12,
-  fontSize:font.xl, fontWeight:700,
-  color:colors.text, letterSpacing:'-0.2px',
+  fontSize:font.xl, fontWeight:600,
+  color:colors.text, letterSpacing:0,
   marginBottom:3,
 }
 
 export const pageSub: React.CSSProperties = {
-  fontSize:'13px', color:colors.text3,
+  fontSize:'15px', color:colors.text3,
 }

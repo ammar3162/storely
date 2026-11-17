@@ -119,7 +119,7 @@ export default function FeaturePricing({ billing, onBilling }: { billing: Billin
 .fp{display:flex;flex-direction:column;gap:14px;max-width:1080px;margin:0 auto;color:var(--ink)}
 .fp-top{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
 .fp-toggle{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:10px;padding:4px}
-.fp-toggle button{border:0;background:none;border-radius:8px;padding:10px 22px;font:600 15px 'IBM Plex Sans Arabic',sans-serif;color:var(--ink2);cursor:pointer}
+.fp-toggle button{border:0;background:none;border-radius:8px;padding:10px 22px;font:600 15px var(--storely-font);color:var(--ink2);cursor:pointer}
 .fp-toggle button.on{background:var(--ink);color:#fff}
 .fp-toggle em{font-style:normal;font-size:12px;color:var(--teal2);margin-inline-start:6px}
 .fp-toggle button.on em{color:var(--mint)}
@@ -158,7 +158,7 @@ export default function FeaturePricing({ billing, onBilling }: { billing: Billin
 .fp-total-in strong{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
 .fp-total-in strong i{font-style:normal;font-size:14px;font-weight:400;opacity:.8}
 .fp-total-in small{font-size:12.5px;opacity:.8}
-.fp-cta{flex-shrink:0;height:52px;padding:0 22px;border:0;border-radius:10px;background:#fff;color:var(--ink);font:700 16px 'IBM Plex Sans Arabic',sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.fp-cta{flex-shrink:0;height:52px;padding:0 22px;border:0;border-radius:10px;background:#fff;color:var(--ink);font:700 16px var(--storely-font);cursor:pointer;display:inline-flex;align-items:center;gap:8px}
 .fp-cta:disabled{opacity:.5;cursor:default}
 .fp-note{text-align:center;font-size:13.5px;color:var(--ink2);margin:4px 0 0}
 .fp-sec{margin-top:18px}

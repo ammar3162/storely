@@ -15,7 +15,7 @@ export default function ProductSheet({ m }: { m: InventoryState }) {
       {/* Add/Edit Sheet */}
       {showAdd&&(
         <div className="iv-sheet-wrap" style={{position:'fixed',inset:0,background:'rgba(16,24,40,.45)',zIndex:500,display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
-          <div className="iv-sheet" style={{background:'white',borderRadius:'14px 14px 0 0',padding:'0 0 env(safe-area-inset-bottom)',width:'100%',maxWidth:520,maxHeight:'92vh',display:'flex',flexDirection:'column',animation:'slideUp .25s ease',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
+          <div className="iv-sheet" style={{background:'white',borderRadius:'14px 14px 0 0',padding:'0 0 env(safe-area-inset-bottom)',width:'100%',maxWidth:520,maxHeight:'92vh',display:'flex',flexDirection:'column',animation:'slideUp .25s ease',fontFamily:'var(--storely-font)',direction:'rtl'}}>
             <div style={{padding:'10px 18px 0',flexShrink:0}}>
               <div style={{width:36,height:4,borderRadius:99,background:C.border2,margin:'0 auto 14px'}}/>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>

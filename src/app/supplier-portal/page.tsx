@@ -70,7 +70,7 @@ export default function SupplierPortalAuthPage() {
   }
 
   return (
-    <div style={{minHeight:'100vh',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',background:'#ffffff',display:'flex',flexDirection:'column'}}>
+    <div style={{minHeight:'100vh',fontFamily:'var(--storely-font)',direction:'rtl',background:'#ffffff',display:'flex',flexDirection:'column'}}>
       <style>{`
         *{box-sizing:border-box}
         @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}

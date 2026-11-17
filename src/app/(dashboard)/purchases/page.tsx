@@ -20,7 +20,7 @@ export default function PurchasesPage() {
   const { editLog, setEditLog, payables, products, orgId, curr, showManual, setShowManual, showScan, setShowScan, setForm, loadProducts, loadHistory } = m
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
+    <div style={{fontFamily:'var(--storely-font)',direction:'rtl'}}>
       <SupplierThanksModal m={m}/>
       <style>{`
         @keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}

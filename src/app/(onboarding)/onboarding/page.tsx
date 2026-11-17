@@ -214,7 +214,7 @@ export default function OnboardingPage() {
   const back = (to: Step) => <button onClick={()=>setStep(to)} style={{...btnSecondary,flex:1,padding:'13px',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><ArrowRight size={16} strokeWidth={1.75}/>السابق</button>
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:'rtl',minHeight:'100vh',background:'#f4f5f6',opacity:visible?1:0,transition:'opacity .3s ease'}}>
+    <div style={{fontFamily:'var(--storely-font)',direction:'rtl',minHeight:'100vh',background:'#f4f5f6',opacity:visible?1:0,transition:'opacity .3s ease'}}>
       <style>{`
         @keyframes su{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
         .su{animation:su .3s cubic-bezier(.22,1,.36,1) both}

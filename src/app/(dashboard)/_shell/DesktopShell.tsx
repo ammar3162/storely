@@ -15,7 +15,7 @@ export default function DesktopShell({ m, banners, children }: { m: DashboardShe
             <div style={{padding:'16px 14px 12px'}}>
               <div style={{display:'flex',alignItems:'center',gap:10}}>
                 <img src={orgLogo||'/storely-logo.png'} alt="" className="sh-logo"/>
-                <div style={{fontSize:14,fontWeight:700,color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}}>{orgName||'Storely'}</div>
+                <div style={{fontSize:17,fontWeight:600,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}}>{orgName||'Storely'}</div>
               </div>
               {branchName&&(
                 <button className="sh-branch" onClick={()=>branches.length>1&&openBranchSelector()} disabled={branches.length<2}>
@@ -48,9 +48,9 @@ export default function DesktopShell({ m, banners, children }: { m: DashboardShe
               ))}
             </nav>
 
-            <div style={{padding:'10px 12px',borderTop:'1px solid rgba(255,255,255,.1)',display:'flex',alignItems:'center',gap:10}}>
+            <div style={{padding:'10px 12px',borderTop:`1px solid ${C.border}`,display:'flex',alignItems:'center',gap:10}}>
               <div className="sh-avatar">{userInit}</div>
-              <div style={{flex:1,minWidth:0,fontSize:13,fontWeight:600,color:'#fff',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{userName}</div>
+              <div style={{flex:1,minWidth:0,fontSize:15,fontWeight:500,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{userName}</div>
               <button className="sh-icon-btn sh-icon-sm" title={theme==='light'?'الوضع الداكن':'الوضع الفاتح'} onClick={toggleTheme}>{theme==='light'?<Moon size={16}/>:<Sun size={16}/>}</button>
               <button className="sh-icon-btn sh-icon-sm" title="تسجيل الخروج" onClick={signOut}><LogOut size={16}/></button>
             </div>

@@ -18,14 +18,14 @@ export default function CashierClosingPage() {
   const { lang, session, step, saved, locked, toast, rtl, router, businessDateLabel, logout } = m
 
   if(!session) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f4f5f6',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f4f5f6',fontFamily:'var(--storely-font)'}}>
       <div style={{width:32,height:32,border:'3px solid var(--storely-border)',borderTopColor:'#203640',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 
   if(locked) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f4f5f6',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:rtl?'rtl':'ltr',padding:20,textAlign:'center' as const}}>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f4f5f6',fontFamily:'var(--storely-font)',direction:rtl?'rtl':'ltr',padding:20,textAlign:'center' as const}}>
       <div>
         <div style={{display:'flex',justifyContent:'center',marginBottom:12,color:'#4b5565'}}><Lock size={40}/></div>
         <div style={{fontSize:16,fontWeight:600,color:'var(--storely-text)',marginBottom:8}}>{ct('lockedTitle',lang)}</div>
@@ -37,7 +37,7 @@ export default function CashierClosingPage() {
 
   const v: PageVals = { session }
   return (
-    <div style={{minHeight:'100vh',background:'#f4f5f6',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:rtl?'rtl':'ltr',paddingBottom:50}}>
+    <div style={{minHeight:'100vh',background:'#f4f5f6',fontFamily:'var(--storely-font)',direction:rtl?'rtl':'ltr',paddingBottom:50}}>
       <style>{`.amt-tile:focus-within{border-color:#203640!important;background:white!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)} .dl-row:focus-within .dl-field{border-color:#203640!important;background:white!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)} @keyframes spin{to{transform:rotate(360deg)}} @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}} .fu{animation:fadeUp .3s cubic-bezier(.22,1,.36,1) both} @media (prefers-reduced-motion:reduce){.fu{animation:none}}`}</style>
 
       {toast && (

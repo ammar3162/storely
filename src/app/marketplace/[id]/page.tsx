@@ -149,7 +149,7 @@ export default function SupplierStorefrontPage() {
   )
 
   if (notFound || !supplier) return (
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',background:'#f0f4f8',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:20}}>
+    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',background:'#f0f4f8',fontFamily:'var(--storely-font)',direction:'rtl',padding:20}}>
       <div style={{display:'flex',justifyContent:'center',marginBottom:12,color:'var(--storely-muted)'}}><FeatureIcon name="🔍" size={40} /></div>
       <div style={{fontSize:16,fontWeight:700,color:'var(--storely-text)'}}>هذا المورد غير موجود</div>
       <button onClick={()=>router.push('/marketplace')} style={{marginTop:16,padding:'10px 20px',background:'#203640',color:'white',border:'none',borderRadius:10,fontSize:13,fontWeight:700,cursor:'pointer'}}>← رجوع للموردين</button>
@@ -157,7 +157,7 @@ export default function SupplierStorefrontPage() {
   )
 
   return (
-    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
+    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:'var(--storely-font)',direction:'rtl'}}>
       <style>{`*{box-sizing:border-box}`}</style>
 
       {/* Header */}

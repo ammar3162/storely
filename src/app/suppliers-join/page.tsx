@@ -80,7 +80,7 @@ export default function SuppliersJoinPage() {
   }
 
   return (
-    <div dir="rtl" style={{ minHeight: '100vh', fontFamily: "'IBM Plex Sans Arabic',system-ui,sans-serif", color: C.ink,
+    <div dir="rtl" style={{ minHeight: '100vh', fontFamily: 'var(--storely-font)', color: C.ink,
       background:'#f6faf9' }}>
       <style>{`*{box-sizing:border-box}.sj-inp:focus{border-color:${C.teal2}!important;box-shadow:0 0 0 3px rgba(2,159,162,.12)}
         .sj-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}

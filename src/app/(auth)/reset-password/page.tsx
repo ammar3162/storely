@@ -130,7 +130,7 @@ export default function ResetPasswordPage() {
           min-height: 100vh;
           background:#fff;
           color:var(--storely-text);
-          font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+          font-family: var(--storely-font);
         }
 
         .reset-topbar {

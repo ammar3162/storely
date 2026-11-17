@@ -294,7 +294,7 @@ export default function ChoosePage() {
   const listRow = (i: number, n: number): React.CSSProperties => ({ width:'100%',minHeight:60,background:'white',border:'none',borderTop:i>0?`1px solid ${C.line}`:'none',padding:'10px 16px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12,textAlign:isAr?'right':'left' })
 
   return (
-    <div style={{minHeight:'100vh',background:'#f4f5f6',display:'flex',justifyContent:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:isAr?'rtl':'ltr'}}>
+    <div style={{minHeight:'100vh',background:'#f4f5f6',display:'flex',justifyContent:'center',fontFamily:'var(--storely-font)',direction:isAr?'rtl':'ltr'}}>
       <div style={{maxWidth:480,width:'100%',minHeight:'100vh',boxSizing:'border-box' as const,padding:'0 0 32px'}}>
 
         {/* الهيدر */}

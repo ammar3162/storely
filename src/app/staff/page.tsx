@@ -105,7 +105,7 @@ function StaffLoginInner() {
   const keyContent = (k: string) => k === '⌫' ? <Delete size={22} strokeWidth={1.75} /> : k
 
   return (
-    <div style={{minHeight:'100vh',background:'#f4f5f6',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:dir}}>
+    <div style={{minHeight:'100vh',background:'#f4f5f6',display:'flex',flexDirection:'column' as const,alignItems:'center',fontFamily:'var(--storely-font)',direction:dir}}>
       <style>{`
         *{box-sizing:border-box}
         @keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}

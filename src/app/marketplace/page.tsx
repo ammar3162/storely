@@ -61,7 +61,7 @@ export default function MarketplacePage() {
   // الصفحة مقفلة مؤقتاً لين يتجمع موردون معتمدون فعليون
   const COMING_SOON = false
   if (COMING_SOON) return (
-    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
+    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:'var(--storely-font)',direction:'rtl'}}>
       <style>{`*{box-sizing:border-box}`}</style>
       <div style={{background:'linear-gradient(135deg,#203640,#0C213B)',padding:'32px 20px 24px'}}>
         <div style={{maxWidth:900,margin:'0 auto'}}>
@@ -80,7 +80,7 @@ export default function MarketplacePage() {
   )
 
   return (
-    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
+    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:'var(--storely-font)',direction:'rtl'}}>
       <style>{`*{box-sizing:border-box}`}</style>
 
       {/* Header */}

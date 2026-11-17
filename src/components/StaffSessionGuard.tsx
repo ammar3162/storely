@@ -126,7 +126,7 @@ export default function StaffSessionGuard({ children }: { children: React.ReactN
       {children}
       {expired && (
         <div role="alertdialog" aria-modal="true" aria-labelledby="sub-exp-t" dir={isRtlLang(lang) ? 'rtl' : 'ltr'}
-          style={{ position: 'fixed', inset: 0, zIndex: 9500, background: '#203640', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center', fontFamily: "'IBM Plex Sans Arabic',system-ui" }}>
+          style={{ position: 'fixed', inset: 0, zIndex: 9500, background: '#203640', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center', fontFamily: 'var(--storely-font)' }}>
           <div style={{ maxWidth: 340 }}>
             <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(255,255,255,.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}><CalendarX2 size={30} /></div>
             <div id="sub-exp-t" style={{ fontSize: 19, fontWeight: 700, color: '#fff', marginBottom: 10, lineHeight: 1.5 }}>{pick(SUB_DICT, 'title', lang)}</div>
@@ -138,7 +138,7 @@ export default function StaffSessionGuard({ children }: { children: React.ReactN
         </div>
       )}
       {open && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(15,23,42,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, fontFamily: "'IBM Plex Sans Arabic',system-ui", direction: 'rtl' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(15,23,42,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, fontFamily: 'var(--storely-font)', direction: 'rtl' }}>
           <div style={{ background: 'white', borderRadius: 20, width: '100%', maxWidth: 340, padding: 26, textAlign: 'center', boxShadow: '0 20px 50px rgba(15,23,42,.25)' }}>
             <div style={{ width: 52, height: 52, borderRadius: 16, background: '#f0fdfa', color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}><Lock size={24} /></div>
             <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>أدخل رمزك للمتابعة</div>

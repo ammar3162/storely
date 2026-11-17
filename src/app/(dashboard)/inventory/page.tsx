@@ -25,7 +25,7 @@ export default function InventoryPage() {
   const { products, page, setPage, loading, search, setSearch, setStatusFilter, catFilter, setCatFilter, setForm, showScan, setShowScan, showJardScan, setShowJardScan, countSheet, setCountSheet, jardNotFound, setJardNotFound, businessType, templateDismissed, PER, filtered, load, openEdit } = m
 
   if(loading) return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
+    <div style={{fontFamily:'var(--storely-font)',direction:'rtl'}}>
       <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.4s ease infinite}`}</style>
       <div style={{display:'flex',justifyContent:'space-between',marginBottom:16}}>
         <div className="sk" style={{height:24,width:100,background:C.border2,borderRadius:6}}/>
@@ -39,7 +39,7 @@ export default function InventoryPage() {
   )
 
   return (
-    <div className="iv" style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
+    <div className="iv" style={{fontFamily:'var(--storely-font)',direction:'rtl'}}>
       <style>{IV_CSS}</style>
       <style>{`
         @keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}

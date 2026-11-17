@@ -106,7 +106,7 @@ export default function PayslipPage() {
   const deductionLabel = (src: string) => src === 'cashier_deficit' ? t('deficit') : src === 'late_bundle' ? t('lateBundle') : t('manual')
 
   return (
-    <div style={{ minHeight: '100vh', background:'#f4f5f6', fontFamily: "'IBM Plex Sans Arabic',system-ui", direction: rtl ? 'rtl' : 'ltr', paddingBottom: 40 }}>
+    <div style={{ minHeight: '100vh', background:'#f4f5f6', fontFamily: 'var(--storely-font)', direction: rtl ? 'rtl' : 'ltr', paddingBottom: 40 }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <StaffHeader title={t('title')} subtitle={name} rtl={rtl} backLabel={t('back')} end={
         <div style={{ position: 'relative' }}>

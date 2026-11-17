@@ -298,7 +298,7 @@ export default function StaffPurchasesPage() {
   if(!session) return null
 
   return (
-    <div style={{minHeight:'100vh',background:C.bg,fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif",direction:rtl?'rtl':'ltr'}}>
+    <div style={{minHeight:'100vh',background:C.bg,fontFamily:'var(--storely-font)',direction:rtl?'rtl':'ltr'}}>
       {showScan&&<Suspense fallback={null}><BarcodeScanner onScan={(code:string)=>{setShowScan(false);setForm(f=>({...f,sku:code}))}} onClose={()=>setShowScan(false)}/></Suspense>}
 
       {/* Header */}

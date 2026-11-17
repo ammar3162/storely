@@ -122,7 +122,7 @@ export default function DispensePage() {
   const lowCount=products.filter(p=>p.qty>0&&p.qty<=p.reorder_point).length
 
   if(loading) return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',padding:'0 4px'}}>
+    <div style={{fontFamily:'var(--storely-font)',direction:'rtl',padding:'0 4px'}}>
       <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.4s ease infinite}`}</style>
       <div style={{height:24,width:120,background:'#e5e7eb',borderRadius:6,marginBottom:14}} className="sk"/>
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(100px,1fr))',gap:8}}>
@@ -132,7 +132,7 @@ export default function DispensePage() {
   )
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',opacity:visible?1:0,transition:'opacity .3s'}}>
+    <div style={{fontFamily:'var(--storely-font)',direction:'rtl',opacity:visible?1:0,transition:'opacity .3s'}}>
       <style>{`
         *{box-sizing:border-box}
         @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}
@@ -243,7 +243,7 @@ export default function DispensePage() {
       {showHistory && (
         <div style={{position:'fixed',inset:0,zIndex:900,display:'flex',alignItems:'flex-end'}}>
           <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.45)',backdropFilter:'blur(4px)'}} onClick={()=>setShowHistory(false)}/>
-          <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxHeight:'75vh',display:'flex',flexDirection:'column',position:'relative',animation:'slideUp .3s ease',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
+          <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxHeight:'75vh',display:'flex',flexDirection:'column',position:'relative',animation:'slideUp .3s ease',fontFamily:'var(--storely-font)',direction:'rtl'}}>
             <div style={{padding:'14px 20px',borderBottom:`1px solid ${C.border}`,display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
               <div style={{width:32,height:3,borderRadius:99,background:C.border2,position:'absolute',top:8,left:'50%',transform:'translateX(-50%)'}}/>
               <span style={{fontSize:14,fontWeight:700,color:C.text}}>آخر الصرف</span>
@@ -281,7 +281,7 @@ export default function DispensePage() {
       {selected && (
         <div style={{position:'fixed',inset:0,zIndex:1000,display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
           <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,.5)',backdropFilter:'blur(6px)'}} onClick={()=>{setSelected(null);setQty('')}}/>
-          <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxWidth:480,position:'relative',animation:'slideUp .25s ease',paddingBottom:'env(safe-area-inset-bottom)',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl'}}>
+          <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxWidth:480,position:'relative',animation:'slideUp .25s ease',paddingBottom:'env(safe-area-inset-bottom)',fontFamily:'var(--storely-font)',direction:'rtl'}}>
             <div style={{width:32,height:3,borderRadius:99,background:C.border2,margin:'10px auto 0'}}/>
             <div style={{padding:'14px 20px 0'}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>

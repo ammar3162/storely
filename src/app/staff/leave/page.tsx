@@ -89,14 +89,14 @@ export default function StaffLeavePage() {
   }
 
   if (!session) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f4f5f6',fontFamily:"'IBM Plex Sans Arabic',system-ui"}}>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f4f5f6',fontFamily:'var(--storely-font)'}}>
       <div style={{width:32,height:32,border:'3px solid var(--storely-border)',borderTopColor:'#203640',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 
   return (
-    <div style={{minHeight:'100vh',background:'#f4f5f6',fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:dir,paddingBottom:40}}>
+    <div style={{minHeight:'100vh',background:'#f4f5f6',fontFamily:'var(--storely-font)',direction:dir,paddingBottom:40}}>
       <StaffHeader title={t('title')} subtitle={session.name} rtl={rtl} end={<StaffLangButton/>} />
 
       <div style={{maxWidth:520,margin:'0 auto',padding:'20px 16px'}}>

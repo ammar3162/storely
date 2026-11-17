@@ -75,7 +75,7 @@ export default function VerifyDevicePage() {
     <div className="vd">
       <style>{`
         .vd{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;direction:rtl;
-          font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;background:radial-gradient(900px 420px at 50% -10%,#d9f4f2 0%,rgba(217,244,242,0) 70%),#f7faf9}
+          font-family:var(--storely-font);background:radial-gradient(900px 420px at 50% -10%,#d9f4f2 0%,rgba(217,244,242,0) 70%),#f7faf9}
         .vd-card{width:100%;max-width:420px;background:#fff;border:1px solid var(--storely-border);border-radius:20px;padding:32px 26px;box-shadow:0 20px 50px -30px rgba(11,59,58,.35);text-align:center}
         .vd-icon{width:60px;height:60px;border-radius:18px;background:var(--storely-background);color:#203640;display:grid;place-items:center;margin:0 auto 16px}
         .vd h1{font-size:22px;font-weight:700;color:var(--storely-text);margin:0 0 8px}

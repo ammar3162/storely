@@ -1,7 +1,7 @@
 // تصميم بوابة المورد: قائمة كحلية ثابتة، محتوى فاتح، وحدة ألوان ستورلي
 export const SD_CSS = `
 .sd{--ink:#13294b;--teal:#0f766e;--teal2:#029FA2;--line:#e2ebea;--muted:#62728a;--bg:#f4f7f7;--mint:#e8f5f2;
-  display:flex;min-height:100vh;background:var(--bg);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:var(--ink)}
+  display:flex;min-height:100vh;background:var(--bg);font-family:var(--storely-font);color:var(--ink)}
 .sd *{box-sizing:border-box}
 .sd-side{width:248px;flex-shrink:0;background:var(--ink);color:#d6e2ec;display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh}
 .sd-brand{display:flex;gap:10px;align-items:center;padding:4px 6px 20px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:14px}

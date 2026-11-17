@@ -32,7 +32,7 @@ export const A = {
   shadowSm: '0 1px 2px rgba(32,54,64,.04)',
   shadow: '0 1px 2px rgba(32,54,64,.04)',
   shadowLg: '0 12px 32px rgba(32,54,64,.12)',
-  font: "'IBM Plex Sans Arabic', system-ui, sans-serif",
+  font: 'var(--storely-font)',
 }
 
 

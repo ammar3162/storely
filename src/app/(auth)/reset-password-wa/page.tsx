@@ -50,7 +50,7 @@ function ResetPasswordWaPage() {
   const inp: React.CSSProperties = { width:'100%', padding:'12px 14px', border:'1.5px solid var(--storely-border)', borderRadius:10, fontSize:14, fontFamily:'inherit', outline:'none', boxSizing:'border-box' }
 
   return (
-    <div style={{ fontFamily:"'IBM Plex Sans Arabic',system-ui,sans-serif", direction:'rtl', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--storely-background)', padding:20 }}>
+    <div style={{ fontFamily:'var(--storely-font)', direction:'rtl', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--storely-background)', padding:20 }}>
       <div style={{ background:'white', borderRadius:'var(--radius)', padding:32, width:'100%', maxWidth:400, boxShadow:'var(--storely-shadow)' }}>
 
         {checking && (

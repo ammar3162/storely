@@ -22,7 +22,7 @@ export default function AIToolsPage() {
   const { visible, hasAiAddon } = m
 
   return (
-    <div style={{fontFamily:"'IBM Plex Sans Arabic',system-ui",direction:'rtl',opacity:visible?1:0,transition:'opacity .3s'}}>
+    <div style={{fontFamily:'var(--storely-font)',direction:'rtl',opacity:visible?1:0,transition:'opacity .3s'}}>
       <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}.fu{animation:fadeUp .35s ease both}`}</style>
 
       {/* Header */}

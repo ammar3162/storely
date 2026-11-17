@@ -7,7 +7,7 @@
   --bg: var(--storely-background); --surface: var(--storely-surface);
   --border: var(--storely-border); --text: var(--storely-text);
   --text-2: var(--storely-muted); --text-3: var(--storely-muted);
-  --radius: 16px; --radius-sm: 10px;
+  --radius: 20px; --radius-sm: 12px;
   --shadow: var(--storely-shadow); --shadow-md: var(--storely-shadow); --shadow-lg: var(--storely-panel-shadow);
 }
 
@@ -25,8 +25,11 @@ html { -webkit-tap-highlight-color: transparent; }
 /* أي عنصر أعرض من الشاشة ما يسحب الصفحة كلها جانبياً (clip ما يكسر position:sticky) */
 html, body { overflow-x: clip; }
 
+/* خط أبل نفسه على الآيفون والماك (من النظام)، وخط ستورلي على باقي الأجهزة — ومقاس النص 17 مثل أبل */
 body {
-  font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Arabic", "SF Pro Text", "SF Pro Display", "IBM Plex Sans Arabic", "Segoe UI", system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.47;
   direction: rtl;
   background: var(--bg);
   color: var(--text);
@@ -123,6 +126,7 @@ a:active { opacity: .8; }
   --storely-surface: #292e31;
   --storely-border: #41494e;
   --storely-control-border: #536068;
+  --storely-fill: #353c40;
   --storely-text: #e9edef;
   --storely-muted: #b2bdc4;
   --storely-subtle: #a6b3bb;
@@ -735,10 +739,10 @@ html[dir="ltr"] .text-left { text-align: right !important; }
 html[dir="ltr"] .lucide-chevron-left, html[dir="ltr"] .lucide-chevron-right,
 html[dir="ltr"] .lucide-arrow-left, html[dir="ltr"] .lucide-arrow-right,
 html[dir="ltr"] .lucide-arrow-up-right, html[dir="ltr"] .lucide-chevrons-left, html[dir="ltr"] .lucide-chevrons-right { transform: scaleX(-1); }
-html[dir="ltr"] body { font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif; }
+html[dir="ltr"] body { font-family: -apple-system, BlinkMacSystemFont, "SF Arabic", "SF Pro Text", "SF Pro Display", "IBM Plex Sans Arabic", "Segoe UI", system-ui, sans-serif; }
 @media (min-width: 768px) {
   html[dir="ltr"] .desk-sidebar { right: auto !important; left: 0; }
-  html[dir="ltr"] .desk-topbar { right: 0 !important; left: 244px !important; }
+  html[dir="ltr"] .desk-topbar { right: 0 !important; left: 248px !important; }
   html[dir="ltr"] .desk-content { margin-right: 0 !important; margin-left: 244px; }
   html[dir="ltr"] .sh-nav.on::before { right: auto; left: -10px; border-radius: 0 3px 3px 0; }
 }
