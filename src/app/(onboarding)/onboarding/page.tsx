@@ -205,38 +205,38 @@ export default function OnboardingPage() {
   const stepIdx = flow.indexOf(step)
   const head = (Icon: typeof Store, title: string, sub: React.ReactNode) => (
     <div style={{marginBottom:28}}>
-      <span style={{width:48,height:48,borderRadius:14,background:'#eceef1',color:'#4b5565',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:16}}><Icon size={22} strokeWidth={1.75}/></span>
+      <span style={{width:48,height:48,borderRadius:20,background:'var(--storely-fill)',color:'var(--storely-muted)',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:16}}><Icon size={22} strokeWidth={1.75}/></span>
       <h1 style={{fontSize:24,fontWeight:600,lineHeight:'34px',color:'var(--storely-text)',marginBottom:6}}>{title}</h1>
-      <p style={{fontSize:15,color:'#4b5565',lineHeight:1.7}}>{sub}</p>
+      <p style={{fontSize:17,color:'var(--storely-muted)',lineHeight:1.7}}>{sub}</p>
     </div>
   )
-  const lbl: React.CSSProperties = { fontSize:14, fontWeight:500, color:'var(--storely-text)', display:'block', marginBottom:8 }
+  const lbl: React.CSSProperties = { fontSize:17, fontWeight:500, color:'var(--storely-text)', display:'block', marginBottom:8 }
   const back = (to: Step) => <button onClick={()=>setStep(to)} style={{...btnSecondary,flex:1,padding:'13px',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}><ArrowRight size={16} strokeWidth={1.75}/>السابق</button>
 
   return (
-    <div style={{fontFamily:'var(--storely-font)',direction:'rtl',minHeight:'100vh',background:'#f4f5f6',opacity:visible?1:0,transition:'opacity .3s ease'}}>
+    <div style={{fontFamily:'var(--storely-font)',direction:'rtl',minHeight:'100vh',background:'var(--storely-background)',opacity:visible?1:0,transition:'opacity .3s ease'}}>
       <style>{`
         @keyframes su{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
         .su{animation:su .3s cubic-bezier(.22,1,.36,1) both}
         @media (prefers-reduced-motion:reduce){.su{animation:none}}
-        input:focus,select:focus{border-color:${colors.primary}!important;box-shadow:0 0 0 3px rgba(15,118,110,.12)!important;outline:none!important}
-        .biz-card{border-radius:14px;padding:18px 12px;cursor:pointer;transition:border-color .15s,background-color .15s;border:1.5px solid var(--storely-border);background:white;font-family:inherit;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--storely-text)}
-        @media(hover:hover){.biz-card:hover{border-color:#9ca3af}}
-        .biz-card.active{border-color:${colors.primary};background:#f3faf8}
+        input:focus,select:focus{border-color:${colors.primary}!important;box-shadow:0 0 0 3px rgba(32,54,64,.15)!important;outline:none!important}
+        .biz-card{border-radius:20px;padding:18px 12px;cursor:pointer;transition:border-color .15s,background-color .15s;border:1.5px solid var(--storely-border);background:white;font-family:inherit;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--storely-text)}
+        @media(hover:hover){.biz-card:hover{border-color:var(--storely-control-border)}}
+        .biz-card.active{border-color:${colors.primary};background:var(--storely-background)}
         .prod-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:white;transition:background-color .15s}
         .prod-item+.prod-item{border-top:1px solid var(--storely-border)}
-        .check{width:22px;height:22px;border-radius:6px;border:1.5px solid #c9cdd3;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;color:white}
+        .check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--storely-control-border);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;color:white}
         .check.on{background:${colors.primary};border-color:${colors.primary}}
       `}</style>
 
       {/* الرأس: الشعار والخطوات */}
-      <div style={{background:'white',borderBottom:'1px solid var(--storely-border)',position:'sticky',top:0,zIndex:100}}>
+      <div style={{background:'rgba(255,255,255,.86)',WebkitBackdropFilter:'saturate(1.8) blur(20px)',backdropFilter:'saturate(1.8) blur(20px)',borderBottom:'1px solid var(--storely-border)',position:'sticky',top:0,zIndex:100}}>
         <div style={{maxWidth:640,margin:'0 auto',padding:'12px 20px',display:'flex',justifyContent:'space-between',alignItems:'center',gap:12}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <img src="/storely-logo.png" alt="Storely" style={{width:36,height:36,borderRadius:10,border:'1px solid var(--storely-border)',background:'white',padding:3,objectFit:'contain'}}/>
-            <span style={{fontSize:16,fontWeight:600,color:'var(--storely-text)'}}>Storely</span>
+            <img src="/storely-logo.png" alt="Storely" style={{width:36,height:36,borderRadius:12,border:'1px solid var(--storely-border)',background:'white',padding:3,objectFit:'contain'}}/>
+            <span style={{fontSize:17,fontWeight:600,color:'var(--storely-text)'}}>Storely</span>
           </div>
-          {step!=='done'&&<button onClick={skipToDashboard} style={{fontSize:14,color:'#4b5565',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>تخطّي الإعداد<ArrowLeft size={15} strokeWidth={1.75}/></button>}
+          {step!=='done'&&<button onClick={skipToDashboard} style={{fontSize:17,color:'var(--storely-muted)',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:4}}>تخطّي الإعداد<ArrowLeft size={15} strokeWidth={1.75}/></button>}
         </div>
         {step!=='done' && (
           <div style={{maxWidth:640,margin:'0 auto',padding:'0 20px 12px',display:'flex',alignItems:'center',gap:8}}>
@@ -244,19 +244,19 @@ export default function OnboardingPage() {
               const done = i < stepIdx, on = i === stepIdx
               return (
                 <div key={st} style={{display:'flex',alignItems:'center',gap:8,flex:i<visibleSteps.length-1?1:'unset',minWidth:0}}>
-                  <span style={{display:'flex',alignItems:'center',gap:6,fontSize:13,fontWeight:on?600:400,color:on?'#111827':'#6b7487',whiteSpace:'nowrap'}}>
-                    <span style={{width:22,height:22,borderRadius:11,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:12,flexShrink:0,background:on?'#111827':'#eceef1',color:on?'white':done?colors.primary:'#4b5565'}}>
+                  <span style={{display:'flex',alignItems:'center',gap:6,fontSize:15,fontWeight:on?600:400,color:on?'var(--storely-text)':'var(--storely-muted)',whiteSpace:'nowrap'}}>
+                    <span style={{width:22,height:22,borderRadius:20,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:13,flexShrink:0,background:on?'var(--storely-text)':'var(--storely-fill)',color:on?'white':done?colors.primary:'var(--storely-muted)'}}>
                       {done ? <Check size={13} strokeWidth={2.25}/> : i+1}
                     </span>
                     {STEP_LABEL[st]}
                   </span>
-                  {i<visibleSteps.length-1 && <span style={{flex:1,height:1,minWidth:8,background:'#e5e7eb'}}/>}
+                  {i<visibleSteps.length-1 && <span style={{flex:1,height:1,minWidth:8,background:'var(--storely-border)'}}/>}
                 </div>
               )
             })}
           </div>
         )}
-        <div style={{height:2,background:'#eceef1'}}><div style={{height:'100%',width:progress+'%',background:colors.primary,transition:'width .4s cubic-bezier(.22,1,.36,1)'}}/></div>
+        <div style={{height:2,background:'var(--storely-fill)'}}><div style={{height:'100%',width:progress+'%',background:colors.primary,transition:'width .4s cubic-bezier(.22,1,.36,1)'}}/></div>
       </div>
 
       <div style={{maxWidth:640,margin:'0 auto',padding:'32px 20px 48px'}}>
@@ -265,21 +265,21 @@ export default function OnboardingPage() {
         {step==='business'&&(
           <div className="su">
             <div style={{marginBottom:28}}>
-              <img src="/storely-logo.png" alt="" style={{width:56,height:56,borderRadius:14,border:'1px solid var(--storely-border)',background:'white',padding:5,objectFit:'contain',marginBottom:16}}/>
+              <img src="/storely-logo.png" alt="" style={{width:56,height:56,borderRadius:20,border:'1px solid var(--storely-border)',background:'white',padding:5,objectFit:'contain',marginBottom:16}}/>
               <h1 style={{fontSize:26,fontWeight:600,lineHeight:'36px',color:'var(--storely-text)',marginBottom:6}}>أهلاً بك في Storely</h1>
-              <p style={{fontSize:15,color:'#4b5565',lineHeight:1.7}}>دقيقتان ويصبح حسابك جاهزاً. ما نوع نشاطك؟</p>
+              <p style={{fontSize:17,color:'var(--storely-muted)',lineHeight:1.7}}>دقيقتان ويصبح حسابك جاهزاً. ما نوع نشاطك؟</p>
             </div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:10,marginBottom:28}}>
               {BUSINESS_TYPES.map(b=>(
                 <button key={b.id} className={`biz-card${businessType===b.id?' active':''}`} onClick={()=>setBusinessType(b.id)}>
-                  <span style={{width:44,height:44,borderRadius:12,background:businessType===b.id?'white':'#f4f5f6',color:businessType===b.id?colors.primary:'#4b5565',display:'flex',alignItems:'center',justifyContent:'center'}}><b.Icon size={22} strokeWidth={1.75}/></span>
-                  <span style={{fontSize:15,fontWeight:600}}>{b.id}</span>
-                  <span style={{fontSize:12,color:'#6b7487',lineHeight:1.4}}>{b.desc}</span>
+                  <span style={{width:44,height:44,borderRadius:20,background:businessType===b.id?'white':'var(--storely-background)',color:businessType===b.id?colors.primary:'var(--storely-muted)',display:'flex',alignItems:'center',justifyContent:'center'}}><b.Icon size={22} strokeWidth={1.75}/></span>
+                  <span style={{fontSize:17,fontWeight:600}}>{b.id}</span>
+                  <span style={{fontSize:13,color:'var(--storely-muted)',lineHeight:1.4}}>{b.desc}</span>
                 </button>
               ))}
             </div>
             <button disabled={!businessType} onClick={()=>setStep('setup')}
-              style={{...btnPrimary,width:'100%',padding:'14px',fontSize:16,opacity:!businessType?.5:1,cursor:!businessType?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+              style={{...btnPrimary,width:'100%',padding:'14px',fontSize:17,opacity:!businessType?.5:1,cursor:!businessType?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
               التالي<ArrowLeft size={17} strokeWidth={1.75}/>
             </button>
           </div>
@@ -289,21 +289,21 @@ export default function OnboardingPage() {
         {step==='setup'&&(
           <div className="su">
             {head(Store, 'بيانات منشأتك', 'اسم منشأتك ورقم الواتساب الذي تصل إليه التنبيهات')}
-            <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:20,display:'flex',flexDirection:'column' as const,gap:18,marginBottom:24}}>
+            <div style={{background:'white',border:'none',borderRadius:20,padding:20,display:'flex',flexDirection:'column' as const,gap:18,marginBottom:24}}>
               <div>
                 <label style={lbl}>اسم المنشأة</label>
-                <input value={orgName} onChange={e=>setOrgName(e.target.value)} style={{...inp(),fontSize:16}} placeholder={`مثال: ${businessType || 'مطعم'} الأصيل`}/>
+                <input value={orgName} onChange={e=>setOrgName(e.target.value)} style={{...inp(),fontSize:17}} placeholder={`مثال: ${businessType || 'مطعم'} الأصيل`}/>
               </div>
               <div>
                 <label style={lbl}>رقم واتساب التنبيهات</label>
-                <input value={whatsapp} onChange={e=>setWhatsapp(e.target.value)} style={{...inp(),direction:'ltr' as const,fontSize:16}} placeholder="+966500000000"/>
-                <div style={{fontSize:13,color:'#6b7487',marginTop:6}}>تصلك عليه تنبيهات نقص المخزون والتقرير الصباحي</div>
+                <input value={whatsapp} onChange={e=>setWhatsapp(e.target.value)} style={{...inp(),direction:'ltr' as const,fontSize:17}} placeholder="+966500000000"/>
+                <div style={{fontSize:15,color:'var(--storely-muted)',marginTop:6}}>تصلك عليه تنبيهات نقص المخزون والتقرير الصباحي</div>
               </div>
             </div>
             <div style={{display:'flex',gap:10}}>
               {back('business')}
               <button onClick={saveSetup} disabled={saving||!orgName.trim()}
-                style={{...btnPrimary,flex:2,padding:'13px',fontSize:16,opacity:saving||!orgName.trim()?.5:1,cursor:saving||!orgName.trim()?'not-allowed':'pointer'}}>
+                style={{...btnPrimary,flex:2,padding:'13px',fontSize:17,opacity:saving||!orgName.trim()?.5:1,cursor:saving||!orgName.trim()?'not-allowed':'pointer'}}>
                 {saving?'جارٍ الحفظ...':'التالي'}
               </button>
             </div>
@@ -315,17 +315,17 @@ export default function OnboardingPage() {
           <div className="su">
             {head(Package, known ? 'أهلاً بك في Storely، لنبدأ بمنتجاتك' : 'منتجاتك الأساسية', <>جهّزنا منتجات شائعة لـ<b style={{color:'var(--storely-text)',fontWeight:600}}> {businessType}</b>. اختر ما لديك واكتب الكمية الموجودة الآن، ويمكنك إضافة البقية لاحقاً</>)}
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-              <span style={{fontSize:14,color:'var(--storely-text)',fontWeight:500}}>{selectedCount} منتج مختار</span>
+              <span style={{fontSize:17,color:'var(--storely-text)',fontWeight:500}}>{selectedCount} منتج مختار</span>
               <div style={{display:'flex',gap:14}}>
-                <button onClick={()=>setSelectedProducts(p=>p.map(x=>({...x,selected:true})))} style={{fontSize:13,color:colors.primary,background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontWeight:500}}>تحديد الكل</button>
-                <button onClick={()=>setSelectedProducts(p=>p.map(x=>({...x,selected:false})))} style={{fontSize:13,color:'#4b5565',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>إلغاء الكل</button>
+                <button onClick={()=>setSelectedProducts(p=>p.map(x=>({...x,selected:true})))} style={{fontSize:15,color:colors.primary,background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',fontWeight:500}}>تحديد الكل</button>
+                <button onClick={()=>setSelectedProducts(p=>p.map(x=>({...x,selected:false})))} style={{fontSize:15,color:'var(--storely-muted)',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>إلغاء الكل</button>
               </div>
             </div>
             <div style={{maxHeight:420,overflowY:'auto',marginBottom:20}}>
               {categories.map(cat=>(
                 <div key={cat} style={{marginBottom:16}}>
-                  <div style={{fontSize:13,fontWeight:500,color:'#4b5565',margin:'0 4px 8px'}}>{cat}</div>
-                  <div style={{border:'1px solid var(--storely-border)',borderRadius:14,overflow:'hidden'}}>
+                  <div style={{fontSize:15,fontWeight:500,color:'var(--storely-muted)',margin:'0 4px 8px'}}>{cat}</div>
+                  <div style={{border:'1px solid var(--storely-border)',borderRadius:20,overflow:'hidden'}}>
                   {selectedProducts.filter(p=>p.category===cat).map((p,i)=>{
                     const idx=selectedProducts.findIndex(x=>x.name===p.name&&x.category===p.category)
                     return (
@@ -334,15 +334,15 @@ export default function OnboardingPage() {
                           {p.selected&&<Check size={14} strokeWidth={3}/>}
                         </div>
                         <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:15,fontWeight:500,color:'var(--storely-text)'}}>{p.name}</div>
-                          <div style={{fontSize:12,color:'#6b7487'}}>{p.unit} · تنبيه عند أقل من {p.reorder}</div>
+                          <div style={{fontSize:17,fontWeight:500,color:'var(--storely-text)'}}>{p.name}</div>
+                          <div style={{fontSize:13,color:'var(--storely-muted)'}}>{p.unit} · تنبيه عند أقل من {p.reorder}</div>
                         </div>
                         {p.selected&&(
                           <div style={{display:'flex',alignItems:'center',gap:6,flexShrink:0}}>
-                            <button onClick={()=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:Math.max(0,x.qty-1)}:x))} aria-label="نقص" style={{width:30,height:30,borderRadius:8,border:'none',background:'#eceef1',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--storely-text)'}}><Minus size={14}/></button>
+                            <button onClick={()=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:Math.max(0,x.qty-1)}:x))} aria-label="نقص" style={{width:30,height:30,borderRadius:999,border:'none',background:'var(--storely-fill)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--storely-text)'}}><Minus size={14}/></button>
                             <NumberInput min="0" value={p.qty||''} onChange={e=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:Number(e.target.value)||0}:x))}
-                              style={{width:52,textAlign:'center',border:'1px solid var(--storely-border)',borderRadius:8,padding:'5px',fontSize:16,fontWeight:500,color:'var(--storely-text)',fontFamily:'inherit',outline:'none'}} placeholder="0"/>
-                            <button onClick={()=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:x.qty+1}:x))} aria-label="زيادة" style={{width:30,height:30,borderRadius:8,border:'none',background:'#eceef1',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--storely-text)'}}><Plus size={14}/></button>
+                              style={{width:52,textAlign:'center',border:'1px solid var(--storely-border)',borderRadius:12,padding:'5px',fontSize:17,fontWeight:500,color:'var(--storely-text)',fontFamily:'inherit',outline:'none'}} placeholder="0"/>
+                            <button onClick={()=>setSelectedProducts(prev=>prev.map((x,j)=>j===idx?{...x,qty:x.qty+1}:x))} aria-label="زيادة" style={{width:30,height:30,borderRadius:999,border:'none',background:'var(--storely-fill)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--storely-text)'}}><Plus size={14}/></button>
                           </div>
                         )}
                       </div>
@@ -355,7 +355,7 @@ export default function OnboardingPage() {
             <div style={{display:'flex',gap:10}}>
               {!known && back('setup')}
               <button onClick={saveProducts} disabled={saving}
-                style={{...btnPrimary,flex:2,padding:'13px',fontSize:16,opacity:saving?.7:1,cursor:saving?'not-allowed':'pointer'}}>
+                style={{...btnPrimary,flex:2,padding:'13px',fontSize:17,opacity:saving?.7:1,cursor:saving?'not-allowed':'pointer'}}>
                 {saving?'جارٍ الحفظ...':'التالي'}
               </button>
             </div>
@@ -366,22 +366,22 @@ export default function OnboardingPage() {
         {step==='staff'&&(
           <div className="su">
             {head(Users, 'أضف موظفيك', 'يدخل كل موظف من جواله برقم جواله ورمز سري يُنشأ تلقائياً. هذه الخطوة اختيارية')}
-            <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:16,display:'flex',flexDirection:'column' as const,gap:10,marginBottom:20}}>
+            <div style={{background:'white',border:'none',borderRadius:20,padding:16,display:'flex',flexDirection:'column' as const,gap:10,marginBottom:20}}>
               {staffList.map((s,i)=>(
                 <div key={i} style={{display:'grid',gridTemplateColumns:staffList.length>1?'1fr 1fr 36px':'1fr 1fr',gap:8,alignItems:'center'}}>
-                  <input value={s.name} onChange={e=>setStaffList(prev=>prev.map((x,j)=>j===i?{...x,name:e.target.value}:x))} style={{...inp(),fontSize:16}} placeholder="اسم الموظف"/>
-                  <input value={s.phone} onChange={e=>setStaffList(prev=>prev.map((x,j)=>j===i?{...x,phone:e.target.value}:x))} style={{...inp(),direction:'ltr' as const,fontSize:16}} placeholder="05xxxxxxxx"/>
-                  {staffList.length>1&&<button onClick={()=>setStaffList(prev=>prev.filter((_,j)=>j!==i))} aria-label="حذف" style={{width:36,height:36,borderRadius:8,background:'transparent',color:'#6b7487',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><X size={16} strokeWidth={1.75}/></button>}
+                  <input value={s.name} onChange={e=>setStaffList(prev=>prev.map((x,j)=>j===i?{...x,name:e.target.value}:x))} style={{...inp(),fontSize:17}} placeholder="اسم الموظف"/>
+                  <input value={s.phone} onChange={e=>setStaffList(prev=>prev.map((x,j)=>j===i?{...x,phone:e.target.value}:x))} style={{...inp(),direction:'ltr' as const,fontSize:17}} placeholder="05xxxxxxxx"/>
+                  {staffList.length>1&&<button onClick={()=>setStaffList(prev=>prev.filter((_,j)=>j!==i))} aria-label="حذف" style={{width:36,height:36,borderRadius:999,background:'transparent',color:'var(--storely-muted)',border:'none',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}><X size={16} strokeWidth={1.75}/></button>}
                 </div>
               ))}
-              <button onClick={()=>setStaffList(prev=>[...prev,{name:'',phone:''}])} style={{height:44,borderRadius:10,border:'1px dashed #9ca3af',background:'transparent',color:'var(--storely-text)',fontSize:15,fontWeight:500,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+              <button onClick={()=>setStaffList(prev=>[...prev,{name:'',phone:''}])} style={{height:44,borderRadius:999,border:'1px dashed var(--storely-control-border)',background:'transparent',color:'var(--storely-text)',fontSize:17,fontWeight:500,cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                 <Plus size={16} strokeWidth={1.75}/>موظف آخر
               </button>
             </div>
             <div style={{display:'flex',gap:10}}>
               {(hasInventory || !known) && back(hasInventory ? 'products' : 'setup')}
               <button onClick={saveStaff} disabled={saving}
-                style={{...btnPrimary,flex:2,padding:'13px',fontSize:16,opacity:saving?.7:1,cursor:saving?'not-allowed':'pointer'}}>
+                style={{...btnPrimary,flex:2,padding:'13px',fontSize:17,opacity:saving?.7:1,cursor:saving?'not-allowed':'pointer'}}>
                 {saving?'جارٍ الحفظ...':'إنهاء الإعداد'}
               </button>
             </div>
@@ -392,30 +392,30 @@ export default function OnboardingPage() {
         {step==='done'&&(
           <div className="su">
             <div style={{marginBottom:24}}>
-              <span style={{width:56,height:56,borderRadius:16,background:'#f3faf8',color:colors.primary,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:16,border:'1px solid #cfe8e4'}}><Check size={28} strokeWidth={2}/></span>
+              <span style={{width:56,height:56,borderRadius:20,background:'var(--storely-fill)',color:colors.primary,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:16,border:'none'}}><Check size={28} strokeWidth={2}/></span>
               <h1 style={{fontSize:26,fontWeight:600,lineHeight:'36px',color:'var(--storely-text)',marginBottom:6}}>منشأتك جاهزة</h1>
-              <p style={{fontSize:15,color:'#4b5565',lineHeight:1.7}}>كل شيء جاهز للبدء، ويمكنك تعديل أي إعداد لاحقاً من صفحة الإعدادات</p>
+              <p style={{fontSize:17,color:'var(--storely-muted)',lineHeight:1.7}}>كل شيء جاهز للبدء، ويمكنك تعديل أي إعداد لاحقاً من صفحة الإعدادات</p>
             </div>
-            <div style={{display:'grid',gridTemplateColumns:hasInventory?'1fr 1fr':'1fr',background:'white',border:'1px solid var(--storely-border)',borderRadius:14,marginBottom:16}}>
-              {hasInventory && <div style={{padding:16}}><div style={{fontSize:26,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{selectedCount}</div><div style={{fontSize:13,color:'#6b7487'}}>منتجات مُضافة</div></div>}
-              <div style={{padding:16,borderInlineStart:hasInventory?'1px solid #e5e7eb':'none'}}><div style={{fontSize:26,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{createdStaff.length}</div><div style={{fontSize:13,color:'#6b7487'}}>موظفون مُضافون</div></div>
+            <div style={{display:'grid',gridTemplateColumns:hasInventory?'1fr 1fr':'1fr',background:'white',border:'none',borderRadius:20,marginBottom:16}}>
+              {hasInventory && <div style={{padding:16}}><div style={{fontSize:26,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{selectedCount}</div><div style={{fontSize:15,color:'var(--storely-muted)'}}>منتجات مُضافة</div></div>}
+              <div style={{padding:16,borderInlineStart:hasInventory?'1px solid var(--storely-border)':'none'}}><div style={{fontSize:26,fontWeight:500,color:'var(--storely-text)',fontVariantNumeric:'tabular-nums'}}>{createdStaff.length}</div><div style={{fontSize:15,color:'var(--storely-muted)'}}>موظفون مُضافون</div></div>
             </div>
             {createdStaff.length>0&&(
-              <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:16,marginBottom:16}}>
-                <div style={{display:'flex',alignItems:'center',gap:8,fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}><KeyRound size={16} strokeWidth={1.75}/>أرسل لموظفيك رموز الدخول</div>
-                <p style={{fontSize:13,color:'#4b5565',lineHeight:1.7,marginBottom:10}}>اضغط «إرسال واتساب» عند كل موظف، فتُفتح محادثته برسالة جاهزة فيها رابط التطبيق ورقمه ورمزه. يمكنك الاطلاع على الرموز لاحقاً من صفحة الموظفين.</p>
+              <div style={{background:'white',border:'none',borderRadius:20,padding:16,marginBottom:16}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,fontSize:17,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}><KeyRound size={16} strokeWidth={1.75}/>أرسل لموظفيك رموز الدخول</div>
+                <p style={{fontSize:15,color:'var(--storely-muted)',lineHeight:1.7,marginBottom:10}}>اضغط «إرسال واتساب» عند كل موظف، فتُفتح محادثته برسالة جاهزة فيها رابط التطبيق ورقمه ورمزه. يمكنك الاطلاع على الرموز لاحقاً من صفحة الموظفين.</p>
                 {createdStaff.map((c,i)=>(
                   <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 0',borderTop:'1px solid var(--storely-border)',flexWrap:'wrap'}}>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:15,color:'var(--storely-text)'}}>{c.name}</div>
-                      <div style={{fontSize:13,color:'#6b7487'}}>الرمز <span style={{fontFamily:"'IBM Plex Mono',ui-monospace,monospace",fontWeight:500,letterSpacing:2,color:'var(--storely-text)',direction:'ltr',display:'inline-block'}}>{c.pin}</span></div>
+                      <div style={{fontSize:17,color:'var(--storely-text)'}}>{c.name}</div>
+                      <div style={{fontSize:15,color:'var(--storely-muted)'}}>الرمز <span style={{fontFamily:"'IBM Plex Mono',ui-monospace,monospace",fontWeight:500,letterSpacing:2,color:'var(--storely-text)',direction:'ltr',display:'inline-block'}}>{c.pin}</span></div>
                     </div>
                     <button type="button" aria-label={`نسخ رسالة ${c.name}`} title="نسخ الرسالة"
                       onClick={()=>{ navigator.clipboard?.writeText(staffWelcome(orgName, c)).then(()=>toast('نُسخت الرسالة')).catch(()=>{}) }}
                       style={{...btnSecondary,padding:'9px 10px',display:'inline-flex',alignItems:'center'}}><Copy size={16} strokeWidth={1.75}/></button>
                     <a href={`https://wa.me/${waNumber(c.phone)}?text=${encodeURIComponent(staffWelcome(orgName, c))}`} target="_blank" rel="noopener noreferrer"
                       onClick={()=>setSentTo(prev=>new Set(prev).add(i))}
-                      style={{...btnSecondary,padding:'9px 12px',display:'inline-flex',alignItems:'center',gap:6,fontSize:14,textDecoration:'none',color:sentTo.has(i)?'#067647':'var(--storely-text)'}}>
+                      style={{...btnSecondary,padding:'9px 12px',display:'inline-flex',alignItems:'center',gap:6,fontSize:17,textDecoration:'none',color:sentTo.has(i)?'#067647':'var(--storely-text)'}}>
                       {sentTo.has(i) ? <Check size={16} strokeWidth={2}/> : <MessageCircle size={16} strokeWidth={1.75}/>}{sentTo.has(i) ? 'فُتحت المحادثة' : 'إرسال واتساب'}
                     </a>
                   </div>
@@ -423,19 +423,19 @@ export default function OnboardingPage() {
               </div>
             )}
             {!pushEnabled ? (
-              <div style={{background:'white',border:'1px solid var(--storely-border)',borderRadius:14,padding:16,marginBottom:20}}>
-                <div style={{display:'flex',alignItems:'center',gap:8,fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}><Bell size={16} strokeWidth={1.75}/>فعّل الإشعارات</div>
-                <p style={{fontSize:13,color:'#4b5565',lineHeight:1.7,marginBottom:12}}>تصلك تنبيهات نقص المخزون وإقفال الكاشير وتوريد الموردين أولاً بأول، حتى لو كان التطبيق مغلقاً</p>
+              <div style={{background:'white',border:'none',borderRadius:20,padding:16,marginBottom:20}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,fontSize:17,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}><Bell size={16} strokeWidth={1.75}/>فعّل الإشعارات</div>
+                <p style={{fontSize:15,color:'var(--storely-muted)',lineHeight:1.7,marginBottom:12}}>تصلك تنبيهات نقص المخزون وإقفال الكاشير وتوريد الموردين أولاً بأول، حتى لو كان التطبيق مغلقاً</p>
                 <button onClick={enablePushOnboarding} disabled={pushLoading}
-                  style={{...btnSecondary,width:'100%',padding:'12px',fontSize:15}}>
+                  style={{...btnSecondary,width:'100%',padding:'12px',fontSize:17}}>
                   {pushLoading?'جارٍ التفعيل...':'تفعيل الإشعارات'}
                 </button>
               </div>
             ) : (
-              <div style={{display:'flex',alignItems:'center',gap:8,fontSize:14,color:'#15803d',marginBottom:20}}><Check size={16} strokeWidth={2}/>تم تفعيل الإشعارات</div>
+              <div style={{display:'flex',alignItems:'center',gap:8,fontSize:17,color:'#15803d',marginBottom:20}}><Check size={16} strokeWidth={2}/>تم تفعيل الإشعارات</div>
             )}
             <button onClick={()=>router.push('/dashboard')}
-              style={{...btnPrimary,width:'100%',padding:'15px',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+              style={{...btnPrimary,width:'100%',padding:'15px',fontSize:17,display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
               ادخل لوحة التحكم<ArrowLeft size={17} strokeWidth={1.75}/>
             </button>
           </div>
