@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, RefreshCw, Wallet, Building2, CircleCheck, Hourglass, CalendarClock, UserPlus } from 'lucide-react'
-import { A, Avatar, Badge, Btn, Card, Empty, Loading, Notice, PageHeader, Row, Stack, Stat, StatGrid, adminFetch, daysLeft, fmtDate, useAdmin } from './_admin/kit'
+import { A, Avatar, Badge, Btn, Card, Empty, Loading, Notice, PageHeader, Row, Stack, Stat, StatGrid, adminFetch, daysLeft, fmtDate, useAdmin, daysAr } from './_admin/kit'
 import { type Customer, PLAN_KEYS, PLAN_TONE, STATUS, mapCustomer, monthlyRevenue, planLabel } from './_admin/customers'
 import CustomerDrawer from './_admin/CustomerDrawer'
 
@@ -102,7 +102,7 @@ export default function OverviewPage() {
             <Card title="اشتراكات تنتهي قريباً" subtitle="خلال 7 أيام" pad={0}>
               {s.expiring.length === 0 ? <Empty icon={CalendarClock} title="لا توجد اشتراكات تنتهي هذا الأسبوع" /> : s.expiring.slice(0, 6).map(({ u, d }) => (
                 <ListRow key={u.id} onClick={() => setSelectedId(u.id)} title={u.org_name} sub={`${planLabel(u.plan)} · ${u.subscription_type === 'paid' ? 'مدفوع' : 'تجربة'}`}
-                  end={<Badge tone={d! <= 3 ? 'danger' : 'warning'}>متبقٍ {d} يوم</Badge>} />
+                  end={<Badge tone={d! <= 3 ? 'danger' : 'warning'}>متبقٍ {daysAr(d!)}</Badge>} />
               ))}
             </Card>
 

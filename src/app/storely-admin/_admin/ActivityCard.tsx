@@ -16,7 +16,7 @@ const STATUS: Record<Status, { label: string; tone: Tone }> = {
 export const ago = (d?: string | null) => {
   if (!d) return 'أبداً'
   const n = Math.floor((Date.now() - new Date(d).getTime()) / 86400000)
-  return n <= 0 ? 'اليوم' : n === 1 ? 'أمس' : n === 2 ? 'قبل يومين' : n <= 10 ? `قبل ${n} أيام` : `قبل ${n} يوم`
+  return n <= 0 ? 'اليوم' : n === 1 ? 'أمس' : n === 2 ? 'قبل يومين' : n <= 10 ? `قبل ${n} أيام` : `قبل ${n} يوماً`
 }
 
 export default function ActivityCard({ orgId }: { orgId: string }) {

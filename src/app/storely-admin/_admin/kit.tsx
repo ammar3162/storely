@@ -71,6 +71,9 @@ export async function adminFetch(path: string, opts: { method?: string; body?: u
 export const fmtDate = (d?: string | null, withTime = false) =>
   d ? new Date(d).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', year: 'numeric', month: 'short', day: 'numeric', ...(withTime ? { hour: '2-digit', minute: '2-digit' } : {}) }) : '—'
 
+/** العدد مع «يوم» بالفصحى: يوم واحد، يومان، 3–10 أيام، 11 فأكثر يوماً */
+export const daysAr = (n: number | null | undefined) => n == null ? '—' : n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : n >= 3 && n <= 10 ? `${n} أيام` : `${n} يوماً`
+
 export const daysLeft = (d?: string | null) => (d ? Math.ceil((new Date(d).getTime() - Date.now()) / 86400000) : null)
 
 // ── عناصر ──

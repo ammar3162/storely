@@ -5,7 +5,7 @@ import { MessageCircle, Send, Trash2, PauseCircle, PlayCircle, KeyRound, BadgePe
 import { confirmDialog } from '@/components/ConfirmDialog'
 import { toast } from '@/components/toast'
 import { billLines, activeDiscount, PLAN_CAPS, ENTERPRISE_LABEL, addonPeriodEnd, proratedCharge, planPriceFor, unitPrice, isNewPlan, type PlanKey } from '@/lib/planPricing'
-import { A, Badge, Btn, Card, Drawer, Tabs, adminFetch, daysLeft, fmtDate, inputStyle } from './kit'
+import { A, Badge, Btn, Card, Drawer, Tabs, adminFetch, daysLeft, fmtDate, inputStyle, daysAr } from './kit'
 import { type Customer, STATUS, PLAN_KEYS, PLAN_LIMITS, planLabel } from './customers'
 import ActivityCard from './ActivityCard'
 import { addMonths, offerItems as buildOfferItems, sendOffer, activateOffer, offerStart } from './offerFlow'
@@ -123,7 +123,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
     const r = resumeOutcome({ type: c!.subscription_type, endsAt: c!.subscription_ends_at })
     const msg = r.expired
       ? `انتهى اشتراك «${c!.org_name}» أثناء الإيقاف (${fmtDate(r.endsAt)}).\n\nبعد الاستئناف يدخل على صفحة «انتهى الاشتراك» حتى تجدّد له من تبويب «الاشتراك والدفع».`
-      : `يكمل «${c!.org_name}» اشتراكه نفسه حتى ${fmtDate(r.endsAt)} (متبقٍ ${r.daysLeft} يوم).\n\nيرجع دخول المالك والمديرين والموظفين وكل المزايا كما كانت.`
+      : `يكمل «${c!.org_name}» اشتراكه نفسه حتى ${fmtDate(r.endsAt)} (متبقٍ ${daysAr(r.daysLeft)}).\n\nيرجع دخول المالك والمديرين والموظفين وكل المزايا كما كانت.`
     if (!(await confirmDialog({ title: 'استئناف الاشتراك', message: msg, type: r.expired ? 'warning' : 'success', confirmText: 'استئناف' }))) return
     setBusy('resume')
     const j = await adminFetch('/api/admin/resume-user', { method: 'POST', body: { userId: c!.id } })
@@ -284,7 +284,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         ? `\n\nتنخفض الكمية من ${oldQty} إلى ${q}.${a.slug === 'extra_staff' ? ' وإن كان موظفوه أكثر من الحد الجديد، يتوقف أحدثهم مؤقتاً.' : a.slug === 'extra_branch' ? ' وإن كانت فروعه أكثر من الحد الجديد، يتوقف أحدثها مؤقتاً مع موظفيها.' : ''}`
         : ''
       if (!(await confirmDialog({ title: `${wasActive ? 'تغيير كمية' : 'تفعيل'} «${a.name}»${q > 1 ? ` × ${q}` : ''}`, type: lessNote ? 'warning' : 'success', confirmText: 'تأكيد', message:
-        `تنتهي مع الباقة بتاريخ ${fmtDate(end.toISOString())}.\n\nالمستحق الآن: ${pr.amount} ر.س (${pr.days} يوم)\nومن التجديد: ${q * unit} ر.س شهرياً${lessNote}` }))) return
+        `تنتهي مع الباقة بتاريخ ${fmtDate(end.toISOString())}.\n\nالمستحق الآن: ${pr.amount} ر.س (${daysAr(pr.days)})\nومن التجديد: ${q * unit} ر.س شهرياً${lessNote}` }))) return
     } else if (!(await confirmDialog({ title: `إلغاء «${a.name}»`, message: 'تتوقف الإضافة فوراً، وتتوقف مؤقتاً أي فروع أو موظفين يتجاوزون الحد.' }))) return
     setBusy('addon:' + a.id)
     const j = await adminFetch('/api/admin/addon-subscriptions', { method: on ? 'POST' : 'DELETE', body: { org_id: c!.org_id, addon_id: a.id, org_name: c!.org_name, addon_name: a.name, quantity: q, ...(branchIds ? { branch_ids: branchIds } : {}) } })
@@ -292,7 +292,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
     if (!j.success) { toast(j.error || 'تعذّر تنفيذ الإجراء', 'error'); return }
     await loadAddons(c!.org_id)
     if (on && j.proratedAmount > 0 && hasPhone) {
-      await sendInvoice([{ label: `إضافة «${a.name}»${q > 1 ? ` × ${q}` : ''} — ${j.proratedDays} يوم حتى تجديد الباقة`, amount: j.proratedAmount }], 'إرسال فاتورة الإضافة؟')
+      await sendInvoice([{ label: `إضافة «${a.name}»${q > 1 ? ` × ${q}` : ''} — ${daysAr(j.proratedDays)} حتى تجديد الباقة`, amount: j.proratedAmount }], 'إرسال فاتورة الإضافة؟')
     }
   }
 
@@ -328,7 +328,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
         <Badge tone={st.tone}>{st.label}</Badge>
         <Badge tone={c.subscription_type === 'paid' ? 'info' : 'violet'}>{c.subscription_type === 'paid' ? 'مدفوع' : 'تجربة'}</Badge>
         <Badge tone="neutral">{planLabel(c.plan, c.max_branches)} · {c.billing_cycle === 'yearly' ? 'سنوي' : 'شهري'}</Badge>
-        {dl !== null && <Badge tone={dl <= 0 ? 'danger' : dl <= 7 ? 'warning' : 'neutral'}>{dl <= 0 ? 'الاشتراك منتهي' : `متبقٍ ${dl} يوم`}</Badge>}
+        {dl !== null && <Badge tone={dl <= 0 ? 'danger' : dl <= 7 ? 'warning' : 'neutral'}>{dl <= 0 ? 'الاشتراك منتهي' : `متبقٍ ${daysAr(dl)}`}</Badge>}
       </div>
       <Card pad={16}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
@@ -662,7 +662,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
           <div style={{ marginTop: 12, padding: '10px 12px', borderRadius:12, background: A.muted, fontSize:13, color: A.text2, lineHeight: 1.8 }}>
             {resumeInfo.expired
               ? <>انتهى اشتراكه أثناء الإيقاف ({fmtDate(resumeInfo.endsAt)}). بعد الاستئناف جدّد له من تبويب «الاشتراك والدفع».</>
-              : <>الاستئناف يكمل اشتراكه نفسه حتى <b style={{ color: A.text }}>{fmtDate(resumeInfo.endsAt)}</b> (متبقٍ {resumeInfo.daysLeft} يوم) — بدون مدة جديدة.</>}
+              : <>الاستئناف يكمل اشتراكه نفسه حتى <b style={{ color: A.text }}>{fmtDate(resumeInfo.endsAt)}</b> (متبقٍ {daysAr(resumeInfo.daysLeft)}) — بدون مدة جديدة.</>}
           </div>
         )}
         {deviceCode && (

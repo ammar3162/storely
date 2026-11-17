@@ -19,7 +19,7 @@ const STAT_ICON = { dormant: Moon, attention: AlertTriangle, active: CircleCheck
 const ago = (d?: string | null) => {
   if (!d) return '—'
   const n = Math.floor((Date.now() - new Date(d).getTime()) / 86400000)
-  return n <= 0 ? 'اليوم' : n === 1 ? 'أمس' : n === 2 ? 'قبل يومين' : n <= 10 ? `قبل ${n} أيام` : `قبل ${n} يوم`
+  return n <= 0 ? 'اليوم' : n === 1 ? 'أمس' : n === 2 ? 'قبل يومين' : n <= 10 ? `قبل ${n} أيام` : `قبل ${n} يوماً`
 }
 
 export default function AccountHealthPage() {

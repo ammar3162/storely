@@ -2,7 +2,7 @@
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { RefreshCw, SearchX } from 'lucide-react'
-import { A, Avatar, Badge, Btn, Card, Empty, Loading, PageHeader, SearchBox, Table, Tabs, Toolbar, adminFetch, daysLeft, fmtDate, td } from '../kit'
+import { A, Avatar, Badge, Btn, Card, Empty, Loading, PageHeader, SearchBox, Table, Tabs, Toolbar, adminFetch, daysLeft, fmtDate, td, daysAr } from '../kit'
 import { type Customer, STATUS, PLAN_TONE, mapCustomer, planLabel } from '../customers'
 import { upgradeCandidate, PLAN_PRICING } from '@/lib/planPricing'
 import CustomerDrawer from '../CustomerDrawer'
@@ -86,8 +86,8 @@ function CustomersPage() {
                   <td style={td}><div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}><Badge tone={PLAN_TONE[u.plan]}>{planLabel(u.plan, u.max_branches)}</Badge>{u.monthly_bill != null && upgradeCandidate(u.plan, u.monthly_bill) && <span title={`فاتورته ${u.monthly_bill} ⃁ شهرياً، والباقة الشاملة ${PLAN_PRICING.pro.monthly} ⃁ وتشمل كل المزايا و3 فروع`}><Badge tone="warning">مرشّح للترقية</Badge></span>}</div></td>
                   <td style={td}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
-                      <span style={{ fontSize:15, fontWeight: 500 }}>{u.subscription_type === 'paid' ? 'مدفوع' : 'تجربة'} · {u.billing_cycle === 'yearly' ? 'سنوي' : 'شهري'}</span>
-                      {d !== null && <span style={{ fontSize:13, fontWeight: 500, color: d <= 0 ? A.danger : d <= 7 ? A.warning : A.text3 }}>{d <= 0 ? 'منتهٍ' : `متبقٍ ${d} يوم`}</span>}
+                      <span style={{ fontSize:15, fontWeight: 500, whiteSpace: 'nowrap' }}>{u.subscription_type === 'paid' ? 'مدفوع' : 'تجربة'} · {u.billing_cycle === 'yearly' ? 'سنوي' : 'شهري'}</span>
+                      {d !== null && <span style={{ fontSize:13, fontWeight: 500, whiteSpace: 'nowrap', color: d <= 0 ? A.danger : d <= 7 ? A.warning : A.text3 }}>{d <= 0 ? 'منتهٍ' : `متبقٍ ${daysAr(d)}`}</span>}
                     </div>
                   </td>
                   <td style={td}><Badge tone={st.tone}>{st.label}</Badge></td>
