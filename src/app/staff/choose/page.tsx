@@ -294,7 +294,7 @@ export default function ChoosePage() {
   const listRow = (i: number, n: number): React.CSSProperties => ({ width:'100%',minHeight:60,background:'white',border:'none',borderTop:i>0?`1px solid ${C.line}`:'none',padding:'10px 16px',cursor:'pointer',fontFamily:'inherit',display:'flex',alignItems:'center',gap:12,textAlign:isAr?'right':'left' })
 
   return (
-    <div style={{minHeight:'100vh',background:'var(--storely-fill)',display:'flex',justifyContent:'center',fontFamily:'var(--storely-font)',direction:isAr?'rtl':'ltr'}}>
+    <div style={{minHeight:'100vh',background:'var(--storely-background)',display:'flex',justifyContent:'center',fontFamily:'var(--storely-font)',direction:isAr?'rtl':'ltr'}}>
       <div style={{maxWidth:480,width:'100%',minHeight:'100vh',boxSizing:'border-box' as const,padding:'0 0 32px'}}>
 
         {/* الهيدر */}
@@ -566,7 +566,7 @@ export default function ChoosePage() {
               <div style={{display:'flex',flexDirection:'column' as const,gap:8}}>
                 {notifications.map((n:any)=>{
                   const bg = n.type==='success'?'var(--storely-fill)':n.type==='danger'?'#fef2f2':n.type==='warning'?'#fffbeb':'var(--storely-fill)'
-                  const border = n.type==='success'?'#b9dcd7':n.type==='danger'?'#fecaca':n.type==='warning'?'#fde68a':'var(--storely-border)'
+                  const border = n.type==='success'?'var(--storely-border)':n.type==='danger'?'#fecaca':n.type==='warning'?'#fde68a':'var(--storely-border)'
                   return (
                     <div key={n.id} style={{background:bg,border:`1px solid ${border}`,borderRadius:20,padding:'12px 14px'}}>
                       <div style={{fontSize:15,fontWeight:600,color:'var(--storely-text)',marginBottom:4}}>{n.title}</div>

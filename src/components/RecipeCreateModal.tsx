@@ -95,18 +95,18 @@ export default function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,br
   }
 
   if(loadingEdit) return (
-    <div onClick={(e:any)=>e.stopPropagation()} style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,padding:40,textAlign:'center' as const,fontFamily:'var(--storely-font)'}}>
-      <div style={{fontSize:13,color:'#6b7280'}}>جاري تحميل بيانات الوصفة...</div>
+    <div onClick={(e:any)=>e.stopPropagation()} style={{background:'white',borderRadius:20,width:'100%',maxWidth:400,padding:40,textAlign:'center' as const,fontFamily:'var(--storely-font)'}}>
+      <div style={{fontSize:15,color:'#6b7280'}}>جاري تحميل بيانات الوصفة...</div>
     </div>
   )
 
   return (
-    <div onClick={(e:any)=>e.stopPropagation()} style={{background:'white',borderRadius:16,width:'100%',maxWidth:400,maxHeight:'85vh',overflowY:'auto',padding:20,fontFamily:'var(--storely-font)',direction:'rtl' as const}}>
-      <div style={{fontSize:15,fontWeight:800,marginBottom:14,display:'flex',alignItems:'center',gap:8}}><ClipboardList size={18} color="#7c3aed"/>{editingRecipeId?'تعديل الوصفة':'وصفة جديدة'}</div>
-      <label style={{fontSize:11,fontWeight:700,color:'#6b7280',display:'block',marginBottom:5}}>اسم الوصفة *</label>
-      <input value={name} onChange={(e:any)=>setName(e.target.value)} placeholder="مثال: اسم المنتج النهائي" style={{width:'100%',padding:'10px 12px',border:'1.5px solid #e5e7eb',borderRadius:9,fontSize:13,marginBottom:14,fontFamily:'inherit'}}/>
+    <div onClick={(e:any)=>e.stopPropagation()} style={{background:'white',borderRadius:20,width:'100%',maxWidth:400,maxHeight:'85vh',overflowY:'auto',padding:20,fontFamily:'var(--storely-font)',direction:'rtl' as const}}>
+      <div style={{fontSize:17,fontWeight:600,marginBottom:14,display:'flex',alignItems:'center',gap:8}}><ClipboardList size={18} color="var(--storely-navy)"/>{editingRecipeId?'تعديل الوصفة':'وصفة جديدة'}</div>
+      <label style={{fontSize:12,fontWeight:600,color:'#6b7280',display:'block',marginBottom:5}}>اسم الوصفة *</label>
+      <input value={name} onChange={(e:any)=>setName(e.target.value)} placeholder="مثال: اسم المنتج النهائي" style={{width:'100%',padding:'10px 12px',border:'1.5px solid var(--storely-border)',borderRadius:12,fontSize:15,marginBottom:14,fontFamily:'inherit'}}/>
 
-      <div style={{fontSize:12,fontWeight:700,marginBottom:8}}>مكوّنات الوصفة</div>
+      <div style={{fontSize:13,fontWeight:600,marginBottom:8}}>مكوّنات الوصفة</div>
       {components.length>0 && (
         <div style={{display:'flex',flexDirection:'column' as const,gap:6,marginBottom:8}}>
           {components.map(c=>{
@@ -114,10 +114,10 @@ export default function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,br
             const unitPrice = comp ? (priceMap[comp.name]||0) : 0
             const compCost = unitPrice * Number(c.qty)
             return (
-              <div key={c.component_product_id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'#f9fafb',border:'1px solid #e5e7eb',borderRadius:8,padding:'6px 10px'}}>
-                <span style={{fontSize:11}}>{comp?.name||'—'} — {formatQty(Number(c.qty),comp)}</span>
+              <div key={c.component_product_id} style={{display:'flex',justifyContent:'space-between',alignItems:'center',background:'var(--storely-background)',border:'1px solid var(--storely-border)',borderRadius:12,padding:'6px 10px'}}>
+                <span style={{fontSize:12}}>{comp?.name||'—'} — {formatQty(Number(c.qty),comp)}</span>
                 <div style={{display:'flex',alignItems:'center',gap:8}}>
-                  {unitPrice>0 && <span style={{fontSize:10,color:'#029FA2',fontWeight:700}}>{compCost.toFixed(2)} ⃁</span>}
+                  {unitPrice>0 && <span style={{fontSize:12,color:'#029FA2',fontWeight:600}}>{compCost.toFixed(2)} ⃁</span>}
                   <button onClick={()=>setComponents(prev=>prev.filter(x=>x.component_product_id!==c.component_product_id))} aria-label="حذف المكوّن" style={{background:'none',border:'none',color:'#ef4444',cursor:'pointer',display:'flex'}}><X size={14}/></button>
                 </div>
               </div>
@@ -126,7 +126,7 @@ export default function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,br
         </div>
       )}
       <div style={{display:'flex',gap:6,marginBottom:6}}>
-        <select value={newCompId} onChange={(e:any)=>{const id=e.target.value;setNewCompId(id);const r=rawMaterials.find(x=>x.id===id);const opts=subUnitOptions(r);setNewCompSubUnit(opts[0].factor)}} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}>
+        <select value={newCompId} onChange={(e:any)=>{const id=e.target.value;setNewCompId(id);const r=rawMaterials.find(x=>x.id===id);const opts=subUnitOptions(r);setNewCompSubUnit(opts[0].factor)}} style={{flex:1,padding:'8px',border:'1.5px solid var(--storely-border)',borderRadius:12,fontSize:12}}>
           <option value="">اختر مكوّن...</option>
           {rawMaterials.filter(r=>!components.some(c=>c.component_product_id===r.id)).map(r=>(
             <option key={r.id} value={r.id}>{r.name} ({r.unit})</option>
@@ -134,24 +134,24 @@ export default function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,br
         </select>
       </div>
       {newCompId && !hasKnownConversion(rawMaterials.find(x=>x.id===newCompId)) && (
-        <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:8,padding:8,marginBottom:8}}>
-          <div style={{fontSize:10,color:'#92400e',marginBottom:6}}>كم قطعة/وحدة بكل {rawMaterials.find(x=>x.id===newCompId)?.unit} واحد؟ — مطلوب لضمان صحة الحساب</div>
+        <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:12,padding:8,marginBottom:8}}>
+          <div style={{fontSize:12,color:'#92400e',marginBottom:6}}>كم قطعة/وحدة بكل {rawMaterials.find(x=>x.id===newCompId)?.unit} واحد؟ — مطلوب لضمان صحة الحساب</div>
           <div style={{display:'flex',gap:6}}>
-            <input value={customSubLabel} onChange={(e:any)=>setCustomSubLabel(e.target.value)} placeholder="اسم الوحدة (مثال: رغيف)" style={{flex:2,padding:'7px',border:'1.5px solid #fde68a',borderRadius:7,fontSize:10}}/>
-            <NumberInput min="1" value={customSubCount} onChange={(e:any)=>setCustomSubCount(e.target.value)} placeholder="العدد" style={{flex:1,padding:'7px',border:'1.5px solid #fde68a',borderRadius:7,fontSize:10}}/>
+            <input value={customSubLabel} onChange={(e:any)=>setCustomSubLabel(e.target.value)} placeholder="اسم الوحدة (مثال: رغيف)" style={{flex:2,padding:'7px',border:'1.5px solid #fde68a',borderRadius:12,fontSize:12}}/>
+            <NumberInput min="1" value={customSubCount} onChange={(e:any)=>setCustomSubCount(e.target.value)} placeholder="العدد" style={{flex:1,padding:'7px',border:'1.5px solid #fde68a',borderRadius:12,fontSize:12}}/>
           </div>
         </div>
       )}
       <div style={{display:'flex',gap:6,marginBottom:16}}>
-        <NumberInput step="0.01" min="0" value={newCompQty} onChange={(e:any)=>setNewCompQty(e.target.value)} placeholder={customSubCount?`الكمية بـ${customSubLabel||'وحدة'}`:'الكمية'} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}/>
+        <NumberInput step="0.01" min="0" value={newCompQty} onChange={(e:any)=>setNewCompQty(e.target.value)} placeholder={customSubCount?`الكمية بـ${customSubLabel||'وحدة'}`:'الكمية'} style={{flex:1,padding:'8px',border:'1.5px solid var(--storely-border)',borderRadius:12,fontSize:12}}/>
         {newCompId && (()=>{const r=rawMaterials.find(x=>x.id===newCompId);const opts=subUnitOptions(r);return opts.length>1 ? (
-          <select value={newCompSubUnit} onChange={(e:any)=>setNewCompSubUnit(Number(e.target.value))} style={{flex:1,padding:'8px',border:'1.5px solid #e5e7eb',borderRadius:8,fontSize:11}}>
+          <select value={newCompSubUnit} onChange={(e:any)=>setNewCompSubUnit(Number(e.target.value))} style={{flex:1,padding:'8px',border:'1.5px solid var(--storely-border)',borderRadius:12,fontSize:12}}>
             {opts.map(o=>(<option key={o.label} value={o.factor}>{o.label}</option>))}
           </select>
         ) : (
-          <div style={{flex:1,padding:'8px',fontSize:11,color:'#6b7280',display:'flex',alignItems:'center',justifyContent:'center'}}>{customSubLabel||opts[0].label}</div>
+          <div style={{flex:1,padding:'8px',fontSize:12,color:'#6b7280',display:'flex',alignItems:'center',justifyContent:'center'}}>{customSubLabel||opts[0].label}</div>
         )})()}
-        <button onClick={addComp} style={{padding:'0 12px',background:'#029FA2',color:'white',border:'none',borderRadius:8,fontSize:16,fontWeight:700,cursor:'pointer'}}>+</button>
+        <button onClick={addComp} style={{padding:'0 12px',background:'#029FA2',color:'white',border:'none',borderRadius:999,fontSize:17,fontWeight:600,cursor:'pointer'}}>+</button>
       </div>
 
       {(()=>{
@@ -163,33 +163,33 @@ export default function RecipeCreateModal({onClose,onSaved,rawMaterials,orgId,br
         const hasCostData = totalCost>0
         const foodCostPct = hasCostData && sellPrice && Number(sellPrice)>0 ? (totalCost/Number(sellPrice))*100 : null
         return (
-          <div style={{background:'#f0fdfa',border:'1px solid #99f6e4',borderRadius:10,padding:12,marginBottom:16}}>
+          <div style={{background:'var(--storely-fill)',borderRadius:12,padding:12,marginBottom:16}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:hasCostData?10:0}}>
-              <span style={{fontSize:11,fontWeight:700,color:'#115e59',display:'flex',alignItems:'center',gap:5}}><Wallet size={13}/>تكلفة الوصفة</span>
-              <span style={{fontSize:15,fontWeight:900,color:'#029FA2'}}>{hasCostData ? totalCost.toFixed(2)+' ⃁' : 'لا توجد بيانات أسعار'}</span>
+              <span style={{fontSize:12,fontWeight:600,color:'var(--storely-navy)',display:'flex',alignItems:'center',gap:5}}><Wallet size={13}/>تكلفة الوصفة</span>
+              <span style={{fontSize:17,fontWeight:600,color:'#029FA2'}}>{hasCostData ? totalCost.toFixed(2)+' ⃁' : 'لا توجد بيانات أسعار'}</span>
             </div>
             {hasCostData && (
               <div style={{display:'flex',gap:8,alignItems:'center'}}>
                 <div style={{flex:1}}>
-                  <label style={{fontSize:10,color:'#115e59',display:'block',marginBottom:4}}>سعر البيع (اختياري)</label>
-                  <NumberInput min="0" step="0.01" value={sellPrice} onChange={(e:any)=>setSellPrice(e.target.value)} placeholder="مثال: 25" style={{width:'100%',padding:'7px 10px',border:'1px solid #99f6e4',borderRadius:7,fontSize:12}}/>
+                  <label style={{fontSize:12,color:'var(--storely-navy)',display:'block',marginBottom:4}}>سعر البيع (اختياري)</label>
+                  <NumberInput min="0" step="0.01" value={sellPrice} onChange={(e:any)=>setSellPrice(e.target.value)} placeholder="مثال: 25" style={{width:'100%',padding:'7px 10px',border:'1px solid var(--storely-border)',borderRadius:12,fontSize:13}}/>
                 </div>
                 {foodCostPct!==null && (
                   <div style={{textAlign:'center' as const,padding:'4px 12px'}}>
-                    <div style={{fontSize:16,fontWeight:900,color:foodCostPct<=30?'#029FA2':foodCostPct<=35?'#d97706':'#dc2626'}}>{foodCostPct.toFixed(0)}%</div>
-                    <div style={{fontSize:9,color:'#6b7280'}}>Food Cost</div>
+                    <div style={{fontSize:17,fontWeight:600,color:foodCostPct<=30?'#029FA2':foodCostPct<=35?'#d97706':'#dc2626'}}>{foodCostPct.toFixed(0)}%</div>
+                    <div style={{fontSize:12,color:'#6b7280'}}>Food Cost</div>
                   </div>
                 )}
               </div>
             )}
-            {!hasCostData && <div style={{fontSize:10,color:'#6b7280'}}>سجّل مشتريات لهذه المكوّنات لتظهر التكلفة تلقائياً</div>}
+            {!hasCostData && <div style={{fontSize:12,color:'#6b7280'}}>سجّل مشتريات لهذه المكوّنات لتظهر التكلفة تلقائياً</div>}
           </div>
         )
       })()}
 
       <div style={{display:'flex',gap:8}}>
-        <button onClick={onClose} style={{flex:1,padding:'11px',background:'#f9fafb',color:'#374151',border:'1px solid #e5e7eb',borderRadius:9,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
-        <button onClick={save} disabled={saving||!name.trim()} style={{flex:2,padding:'11px',background:'#7c3aed',color:'white',border:'none',borderRadius:9,fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',opacity:saving||!name.trim()?.6:1}}>
+        <button onClick={onClose} style={{flex:1,padding:'11px',background:'var(--storely-background)',color:'#374151',border:'1px solid var(--storely-border)',borderRadius:999,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>إلغاء</button>
+        <button onClick={save} disabled={saving||!name.trim()} style={{flex:2,padding:'11px',background:'var(--storely-navy)',color:'white',border:'none',borderRadius:999,fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit',opacity:saving||!name.trim()?.6:1}}>
           {saving?'جاري الحفظ...':(editingRecipeId?'حفظ التعديلات':'حفظ الوصفة')}
         </button>
       </div>

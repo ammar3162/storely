@@ -43,32 +43,32 @@ export default function SetupChecklist() {
   const hide = () => { try { localStorage.setItem(`setup_hide_${state.orgId}`, '1') } catch {} setHidden(true) }
 
   return (
-    <section style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 16, padding: '18px 18px 8px', marginBottom: 16 }}>
+    <section style={{ background: 'white', border: '1px solid var(--storely-border)', borderRadius:20, padding: '18px 18px 8px', marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 16, fontWeight: 600, color: '#111827' }}>جهّز حسابك</div>
-          <div style={{ fontSize: 13, color: '#4b5565', marginTop: 2 }}>خطوات قليلة لتلمس فائدة Storely من الأسبوع الأول</div>
+          <div style={{ fontSize:17, fontWeight: 600, color: 'var(--storely-text)' }}>جهّز حسابك</div>
+          <div style={{ fontSize:15, color: 'var(--storely-muted)', marginTop: 2 }}>خطوات قليلة لتلمس فائدة Storely من الأسبوع الأول</div>
         </div>
-        <span style={{ fontSize: 13, color: '#4b5565', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{doneCount} من {steps.length}</span>
-        <button type="button" onClick={hide} aria-label="إخفاء" style={{ width: 28, height: 28, border: 'none', background: 'transparent', color: '#6b7487', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: -4 }}><X size={16} strokeWidth={1.75} /></button>
+        <span style={{ fontSize:15, color: 'var(--storely-muted)', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{doneCount} من {steps.length}</span>
+        <button type="button" onClick={hide} aria-label="إخفاء" style={{ width: 28, height: 28, border: 'none', background: 'transparent', color: 'var(--storely-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: -4 }}><X size={16} strokeWidth={1.75} /></button>
       </div>
-      <div style={{ height: 4, borderRadius: 2, background: '#eceef1', margin: '12px 0 6px', overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${(doneCount / steps.length) * 100}%`, background: '#0f766e', borderRadius: 2, transition: 'width .4s cubic-bezier(.22,1,.36,1)' }} />
+      <div style={{ height: 4, borderRadius: 2, background: 'var(--storely-fill)', margin: '12px 0 6px', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${(doneCount / steps.length) * 100}%`, background: 'var(--storely-navy)', borderRadius: 2, transition: 'width .4s cubic-bezier(.22,1,.36,1)' }} />
       </div>
       {steps.map((s, i) => {
         const ok = !!state.done[s.key], isNext = s.key === next
         return (
           <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderTop: i ? '1px solid #eef0f2' : 'none' }}>
-            <span style={{ width: 24, height: 24, borderRadius: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, background: ok ? '#e7f3f1' : isNext ? '#111827' : '#eceef1', color: ok ? '#0f766e' : isNext ? 'white' : '#4b5565' }}>
+            <span style={{ width: 24, height: 24, borderRadius:20, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize:13, background: ok ? 'var(--storely-fill)' : isNext ? 'var(--storely-navy)' : 'var(--storely-fill)', color: ok ? 'var(--storely-navy)' : isNext ? 'white' : 'var(--storely-muted)' }}>
               {ok ? <Check size={14} strokeWidth={2.5} /> : i + 1}
             </span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: ok ? 400 : 500, color: ok ? '#6b7487' : '#111827', textDecoration: ok ? 'line-through' : 'none' }}>{s.title}</div>
-              {!ok && <div style={{ fontSize: 12, color: '#6b7487', marginTop: 1 }}>{s.hint}</div>}
+              <div style={{ fontSize:17, fontWeight: ok ? 400 : 500, color: ok ? 'var(--storely-muted)' : 'var(--storely-text)', textDecoration: ok ? 'line-through' : 'none' }}>{s.title}</div>
+              {!ok && <div style={{ fontSize:13, color: 'var(--storely-muted)', marginTop: 1 }}>{s.hint}</div>}
             </div>
             {!ok && (
               <button type="button" onClick={() => router.push(s.href)}
-                style={{ height: 34, padding: '0 12px', borderRadius: 8, border: isNext ? 'none' : '1px solid #e5e7eb', background: isNext ? '#0f766e' : 'white', color: isNext ? 'white' : '#111827', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                style={{ height: 34, padding: '0 12px', borderRadius:999, border: 'none', background: isNext ? 'var(--storely-navy)' : 'var(--storely-fill)', color: isNext ? 'white' : 'var(--storely-text)', fontSize:15, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                 {s.cta}<ArrowLeft size={14} strokeWidth={1.75} />
               </button>
             )}

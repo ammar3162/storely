@@ -29,11 +29,11 @@ interface StaffSession {
 }
 
 const C = {
-  primary:'#203640', primaryD:'#203640', primaryL:'var(--storely-fill)', primaryB:'#b9dcd7',
+  primary:'#203640', primaryD:'#203640', primaryL:'var(--storely-fill)', primaryB:'var(--storely-control-border)',
   danger:'#dc2626', dangerL:'#fef2f2',
   warning:'#b45309', warningL:'#fffbeb',
   text:'var(--storely-text)', text2:'var(--storely-text)', text3:'var(--storely-muted)', text4:'#1f2937',   // تصميم «كاونتر»: نص غامق واضح
-  bg:'var(--storely-fill)', surface:'#ffffff', border:'var(--storely-border)', border2:'var(--storely-border)',
+  bg:'var(--storely-background)', surface:'#ffffff', border:'var(--storely-border)', border2:'var(--storely-border)',
 }
 
 const inp: React.CSSProperties = {width:'100%',padding:'11px 12px',border:`1.5px solid var(--storely-control-border)`,borderRadius:12,fontSize:17,outline:'none',boxSizing:'border-box' as const,background:'white',color:C.text,fontFamily:'inherit'}

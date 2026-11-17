@@ -21,7 +21,7 @@ function StaffPageInner() {
   const hasAnyPermission = !!(session.permissions?.dispense || session.permissions?.inventory || session.permissions?.purchases || session.permissions?.reports)
   if (!hasAnyPermission) {
     return (
-      <div style={{minHeight:'100vh',display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',background:'var(--storely-fill)',fontFamily:'var(--storely-font)',direction:'rtl',padding:20,textAlign:'center' as const}}>
+      <div style={{minHeight:'100vh',display:'flex',flexDirection:'column' as const,alignItems:'center',justifyContent:'center',background:'var(--storely-background)',fontFamily:'var(--storely-font)',direction:'rtl',padding:20,textAlign:'center' as const}}>
         <div style={{display:'flex',justifyContent:'center',marginBottom:16,color:'#1f2937'}}><Lock size={44} strokeWidth={1.5}/></div>
         <div style={{fontSize:17,fontWeight:600,color:'var(--storely-text)',marginBottom:8}}>{T('noPerm',lang)}</div>
         <div style={{fontSize:15,color:'#1f2937',marginBottom:20}}>{T('noPermSub',lang)}</div>
@@ -42,7 +42,7 @@ function StaffPageInner() {
   const v: PageVals = { session, isRTL, tabs }
 
   return (
-    <div style={{minHeight:'100vh',background:'var(--storely-fill)',fontFamily:'var(--storely-font)',direction:isRTL?'rtl':'ltr'}}>
+    <div style={{minHeight:'100vh',background:'var(--storely-background)',fontFamily:'var(--storely-font)',direction:isRTL?'rtl':'ltr'}}>
       <style>{`
         @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}

@@ -140,14 +140,14 @@ export default function StaffTasksPage() {
   const otherTasks = tasks.filter((t:any)=>t.status!=='pending' && t.status!=='confirmed')
 
   if (!session) return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--storely-fill)',fontFamily:'var(--storely-font)'}}>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--storely-background)',fontFamily:'var(--storely-font)'}}>
       <div style={{width:32,height:32,border:'3px solid var(--storely-border)',borderTopColor:'#203640',borderRadius:'50%',animation:'spin .7s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   )
 
   return (
-    <div style={{minHeight:'100vh',background:'var(--storely-fill)',fontFamily:'var(--storely-font)',direction:isRtlLang(lang as any)?'rtl':'ltr',paddingBottom:40}}>
+    <div style={{minHeight:'100vh',background:'var(--storely-background)',fontFamily:'var(--storely-font)',direction:isRtlLang(lang as any)?'rtl':'ltr',paddingBottom:40}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       <StaffHeader title={t('myTasks')} subtitle={session.name} rtl={isRtlLang(lang as any)} end={
