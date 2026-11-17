@@ -28,6 +28,13 @@ export async function POST(req: Request) {
 
     const supabase = sb()
 
+    // الفرع لازم يكون من نفس المنشأة وشغّال
+    if (effectiveBranchId) {
+      const { data: br } = await supabase.from('branches').select('is_active').eq('id', effectiveBranchId).eq('org_id', org_id).maybeSingle()
+      if (!br) return NextResponse.json({ error: 'الفرع غير موجود' }, { status: 404 })
+      if ((br as any).is_active === false) return NextResponse.json({ error: 'الفرع موقوف — فعّله أولاً من صفحة الفروع' }, { status: 403 })
+    }
+
     const { data: org } = await supabase.from('organizations').select('plan').eq('id', org_id).single()
     if (role === 'cashier') {
       const locked = await branchFeatureError(supabase, org_id, 'cashier', (org as any)?.plan, effectiveBranchId)

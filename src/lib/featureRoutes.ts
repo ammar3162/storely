@@ -26,6 +26,10 @@ export const FEATURE_ROUTES: Record<string, Feature[]> = {
   '/api/add-supplier': ['inventory', 'purchases'],
   '/api/notify-supplier': ['inventory'],
   '/api/marketplace': ['inventory', 'purchases'],
+  // الحضور والرواتب: بعد إلغاء الميزة السجلات تبقى للاطلاع (القراءة مسموحة)، والتسجيل والتعديل مقفول
+  '/api/attendance-report': ['hr'], '/api/shifts': ['hr'], '/api/staff-shifts': ['hr'], '/api/extra-days': ['hr'],
+  '/api/attendance-penalty': ['hr'], '/api/attendance-manual-checkout': ['hr'],
+  '/api/staff-tasks': ['hr'], '/api/staff-payroll-adjustments': ['hr'],
 }
 
 /** مسارات مقفلة حتى للقراءة (GET) — قيمتها هي البيانات نفسها (أدوات الذكاء، الحضور، الربحية، الكاشير) */
@@ -36,14 +40,12 @@ export const FEATURE_ROUTES_ANY: Record<string, Feature[]> = {
   // توقعات الطلب والمخزون (قرارات اليوم) — تعتمد على بيانات المخزون
   '/api/stock-forecast': ['inventory'], '/api/purchase-suggestion': ['inventory'], '/api/smart-reorder-timing': ['inventory'],
   '/api/seasonality': ['inventory'], '/api/reorder-optimizer': ['inventory'],
-  // الحضور والرواتب
-  '/api/attendance-report': ['hr'], '/api/shifts': ['hr'], '/api/staff-shifts': ['hr'], '/api/extra-days': ['hr'],
-  '/api/attendance-penalty': ['hr'], '/api/attendance-manual-checkout': ['hr'], '/api/attendance-permission-request': ['hr'],
+  // طلبات الاستئذان (رابط الموافقة) — مقفلة كاملة مع الميزة
+  '/api/attendance-permission-request': ['hr'],
   // الربحية
   '/api/fixed-expenses': ['profitability'], '/api/monthly-fixed-expenses': ['profitability'], '/api/delivery-income': ['profitability'],
   '/api/profitability/closed-months': ['profitability'],
-  // إقفال الكاشير
-  '/api/cashier-deficit-decision': ['cashier'],
+  // قرارات عجز الكاشير ما تنقفل: تحسم إقفالات قديمة والرواتب تعتمد عليها (لو انقفلت يعلق العجز للأبد)
 }
 
 const lookup = (map: Record<string, Feature[]>, path: string): Feature[] | null => {

@@ -90,7 +90,7 @@ export async function POST(req: Request) {
     }
     if ((product as any).supplier_id && supplierDue && !alreadyOrdered) {
       const { data: supplier } = await (db as any).from('suppliers')
-        .select('name,phone,whatsapp_consent,marketplace_supplier_id').eq('id', (product as any).supplier_id).single()
+        .select('name,phone,whatsapp_consent,marketplace_supplier_id,is_active').eq('id', (product as any).supplier_id).eq('is_active', true).maybeSingle()
 
       if ((supplier as any)?.marketplace_supplier_id && (product as any).marketplace_catalog_item_id) {
         const { data: catalogItem } = await (db as any).from('supplier_catalog_items')

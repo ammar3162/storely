@@ -1,4 +1,5 @@
 import { notifyInsert } from '@/lib/notify'
+import { isSubscriptionActive } from '@/lib/subscription'
 import { NextResponse } from 'next/server'
 import { isCronRequest } from '@/lib/cronAuth'
 import { createClient } from '@supabase/supabase-js'
@@ -19,6 +20,8 @@ export async function POST(req: Request) {
     if(!orgs?.length) return NextResponse.json({done:0})
     let done = 0
     for(const org of orgs) {
+      // منشأة منتهي أو موقوف اشتراكها: ما نسجل لها ولا نرسل إشعارات «فاتورة مستحقة»
+      if (!(await isSubscriptionActive(db, org.id))) continue
       const { data: products } = await db.from('products')
         .select('id,name,qty,unit,category,reorder_point,avg_cost')
         .eq('org_id', org.id).eq('is_active', true)

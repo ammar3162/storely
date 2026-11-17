@@ -604,6 +604,33 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
     })
   })
 
+  describe('branch pause takes its staff with it (capacity chain)', () => {
+    it('pausing a branch locks its active staff; reactivating brings them back within the staff limit', async () => {
+      const { pauseBranchStaff, restoreLockedBranches } = await import('@/lib/branchLimit')
+      const { data: br } = await db.from('branches').insert({ org_id: orgId, name: 'فرع مؤقت', is_active: true } as any).select('id').single()
+      const branchB = (br as any).id
+      const mk = (n: number) => ({ org_id: orgId, branch_id: branchB, name: `موظف ب${n}`, phone: `9665${String(stamp).slice(-6)}${n}${n}`, pin: 'x', is_active: true })
+      const { data: staff } = await db.from('staff_members').insert([mk(1), mk(2)] as any).select('id')
+      const ids = ((staff || []) as any[]).map(x => x.id)
+      try {
+        expect(await pauseBranchStaff(db as any, orgId, branchB)).toBe(2)
+        const paused = ((await db.from('staff_members').select('is_active,plan_locked_at').in('id', ids)).data || []) as any[]
+        expect(paused.every(x => x.is_active === false && x.plan_locked_at)).toBe(true)
+
+        await db.from('branches').update({ is_active: false } as any).eq('id', branchB)
+        const r = await restoreLockedBranches(db as any, orgId, [branchB])
+        expect(r.staffRestored + r.staffStillLocked).toBe(2)
+        const back = ((await db.from('staff_members').select('is_active,plan_locked_at').in('id', ids)).data || []) as any[]
+        expect(back.filter(x => x.is_active).length).toBe(r.staffRestored)
+        expect(back.filter(x => x.is_active).every(x => x.plan_locked_at === null)).toBe(true)
+        expect(((await db.from('branches').select('is_active').eq('id', branchB).single()).data as any).is_active).toBe(true)
+      } finally {
+        await db.from('staff_members').delete().in('id', ids)
+        await db.from('branches').delete().eq('id', branchB)
+      }
+    })
+  })
+
   describe('suspend → resume → renew keeps one consistent subscription', () => {
     const admin = (route: any, path: string, body: unknown) => route.POST(new Request(`http://test${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify(body) }))
     it('resume keeps the same end date; renewing a paid subscription continues from its end', async () => {

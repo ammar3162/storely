@@ -122,17 +122,16 @@ export async function PATCH(req: Request) {
     if ('is_active' in body) {
       const activating = !!body.is_active
       if (activating && !staff.is_active) {
-        if (staff.addon_subscription_id) {
-          // مرتبط بإضافة "موظف إضافي" — لازم تكون سارية
-          const { data: sub } = await db.from('org_addon_subscriptions').select('status,expires_at').eq('id', staff.addon_subscription_id).maybeSingle()
-          const active = !!sub && (sub as any).status === 'active' && new Date((sub as any).expires_at) > new Date()
-          if (!active) return NextResponse.json({ error: 'هذا الموظف مرتبط بإضافة "موظف إضافي" ملغاة — جدّد الاشتراك من صفحة الإضافات أولاً لتتمكن من تفعيله مجدداً' }, { status: 403 })
-        } else {
-          // إعادة التفعيل تخضع لنفس حد الباقة مثل الإضافة
-          const capacity = await checkStaffCapacity(db, org_id, staff.branch_id)
-          if (!capacity.ok) return NextResponse.json({ error: capacity.error }, { status: 403 })
-          if (capacity.addonSubscriptionId) update.addon_subscription_id = capacity.addonSubscriptionId
+        // فرعه موقوف؟ يتفعّل مع الفرع، مو لحاله
+        if (staff.branch_id) {
+          const { data: br } = await db.from('branches').select('is_active').eq('id', staff.branch_id).eq('org_id', org_id).maybeSingle()
+          if (br && (br as any).is_active === false) return NextResponse.json({ error: 'فرع هذا الموظف موقوف — فعّل الفرع أولاً من صفحة الفروع' }, { status: 403 })
         }
+        // إعادة التفعيل = نفس قاعدة إضافة موظف: مكان في حد الباقة، وإلا رصيد «موظف إضافي» فاضي.
+        // (كان المرتبط بإضافة سارية يرجع بدون عدّ — يوقف موظف ويضيف غيره ثم يرجّعه فيتعدّى الحد)
+        const capacity = await checkStaffCapacity(db, org_id, staff.branch_id)
+        if (!capacity.ok) return NextResponse.json({ error: capacity.error }, { status: 403 })
+        update.addon_subscription_id = capacity.addonSubscriptionId
       }
       update.is_active = activating
       // تفعيل يدوي لموظف موقوف بسبب الحد: يطلع من قائمة "الموقوفين بسبب الحد" (ما يرجعه/يوقفه النظام تلقائياً كأنه منها)

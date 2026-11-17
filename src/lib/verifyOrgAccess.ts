@@ -67,6 +67,22 @@ export async function getCurrentProfile() {
  *   const check = await verifyOrgAccess(org_id)
  *   if (!check.authorized) return NextResponse.json({error: check.error}, {status: check.status})
  */
+const branchActiveCache = new Map<string, { at: number; v: boolean }>()
+/** هل الفرع شغّال؟ (محفوظ 30 ثانية) — عند خطأ القراءة ما نقفل أحد */
+async function branchIsActive(branchId: string): Promise<boolean> {
+  const hit = branchActiveCache.get(branchId)
+  if (hit && Date.now() - hit.at < 30_000) return hit.v
+  try {
+    const { createClient } = await import('@supabase/supabase-js')
+    const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const { data, error } = await db.from('branches').select('is_active').eq('id', branchId).maybeSingle()
+    if (error) return true
+    const v = (data as any)?.is_active !== false
+    branchActiveCache.set(branchId, { at: Date.now(), v })
+    return v
+  } catch { return true }
+}
+
 export async function verifyOrgAccess(requestedOrgId: string) {
   if (!requestedOrgId) {
     return { authorized: false, error: 'org_id مطلوب', status: 400 as const }
@@ -96,6 +112,10 @@ export async function verifyOrgAccess(requestedOrgId: string) {
   const path = h.get('x-storely-path'), method = h.get('x-storely-method') || 'GET'
   // مدير الفرع: نفس صلاحيات صفحاته على مستوى الـ API (المسار يجي من proxy)
   if (profile.role === 'manager') {
+    // فرعه موقوف (من المالك أو لأن الفروع تعدّت حد الباقة) → يتوقف مثل موظفين الفرع
+    if (profile.branchId && !(await branchIsActive(profile.branchId))) {
+      return { authorized: false, error: 'فرعك موقوف حالياً — تواصل مع مالك المنشأة', status: 403 as const }
+    }
     if (path && !managerApiAllowed(path, method, profile.permissions)) {
       return { authorized: false, error: 'ليست لديك صلاحية على هذا القسم — تواصل مع مالك المنشأة', status: 403 as const }
     }

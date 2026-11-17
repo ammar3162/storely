@@ -290,13 +290,13 @@ export default function BranchesPage() {
 
   async function deleteBranch(id:string) {
     if(branches.length<=1){toast('لا يمكن حذف الفرع الوحيد','warning');return}
-    if(!(await confirmDialog({ title: 'إيقاف الفرع', message: 'إيقاف هذا الفرع؟ بياناته تبقى محفوظة ويمكن تفعيله لاحقاً.', type: 'warning' }))) return
+    if(!(await confirmDialog({ title: 'إيقاف الفرع', message: 'إيقاف هذا الفرع؟ يتوقف معه موظفوه ومدير الفرع، وتبقى بياناته محفوظة. عند تفعيله يرجع موظفوه معه.', type: 'warning' }))) return
     const r=await api.patch('/api/branches',{org_id:orgId,id,is_active:false})
     if(!r.success){toast(r.error||'فشل إيقاف الفرع — حاول مرة أخرى','error');return}
     const stopped = branches.find((b:any)=>b.id===id)
     setBranches(prev=>prev.filter((b:any)=>b.id!==id))
     if (stopped) setInactiveBranches(prev=>[...prev, stopped])
-    toast('تم إيقاف الفرع')
+    toast(r.note ? `تم إيقاف الفرع — ${r.note}` : 'تم إيقاف الفرع')
   }
 
   async function reactivateBranch(id:string) {
@@ -307,7 +307,7 @@ export default function BranchesPage() {
     setInactiveBranches(prev=>prev.filter((x:any)=>x.id!==id))
     if (b) setBranches(prev=>[...prev, b])
     setReactivatingId(null)
-    toast('تم إعادة تفعيل الفرع')
+    toast(r.note ? `تم إعادة تفعيل الفرع — ${r.note}` : 'تم إعادة تفعيل الفرع', r.note && r.note.includes('موقوفين') ? 'warning' : undefined)
   }
 
   function resetPhoneEdit() {

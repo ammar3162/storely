@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { clearFeatureCache } from '@/lib/featureRoutes'
 import { createClient } from '@supabase/supabase-js'
 import { addonsForPlan } from '@/lib/planPricing'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
@@ -43,6 +44,7 @@ export async function DELETE(req: Request) {
     .eq('org_id', org_id).eq('addon_id', addon_id)
 
   if (error) return NextResponse.json({ error: 'فشل الإلغاء' }, { status: 500 })
+  clearFeatureCache(org_id)
 
   const { data: addonRow } = await supabase.from('marketplace_addons').select('slug').eq('id', addon_id).single()
   const slug = (addonRow as any)?.slug

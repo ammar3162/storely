@@ -1,4 +1,5 @@
 import { notifyInsert } from '@/lib/notify'
+import { isSubscriptionActive } from '@/lib/subscription'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { currentAccountant, accessFor, accessExpired } from '@/lib/accountantPortalAuth'
@@ -12,6 +13,8 @@ async function guard(req: Request, orgId: unknown) {
   if (!me) return { error: NextResponse.json({ error: 'سجّل الدخول' }, { status: 401 }) }
   const access = await accessFor(db, me.id, String(orgId || ''))
   if (!access) return { error: NextResponse.json({ error: 'ليست لديك صلاحية على هذه المنشأة' }, { status: 403 }) }
+  // اشتراك المنشأة منتهي أو موقوف → المحاسب يتوقف مثل التقرير (ما يقفل شهور ولا يرسل طلبات)
+  if (!(await isSubscriptionActive(db, (access as any).org_id))) return { error: NextResponse.json({ error: 'اشتراك المنشأة متوقف حالياً' }, { status: 403 }) }
   return { db, me, access }
 }
 

@@ -329,6 +329,11 @@ export async function POST(req: Request) {
           continue
         }
         if (managerWithoutBranch(user as any)) { await send(to, BOT_NO_BRANCH); continue }
+        // فرع المدير موقوف (من المالك أو بسبب حد الباقة) → نفس حكم لوحة التحكم
+        if ((user as any).role === 'manager') {
+          const { data: br } = await sb().from('branches').select('is_active').eq('id', (user as any).branch_id).maybeSingle()
+          if ((br as any)?.is_active === false) { await send(to, 'فرعك موقوف حالياً. تواصل مع مالك المنشأة.'); continue }
+        }
         // صلاحية المدير + الميزة مفعّلة للفرع — نفس قواعد لوحة التحكم
         const can = async (action: BotAction, branchId: string | null): Promise<boolean> => {
           if (!botMayAct(user as any, action)) { await send(to, BOT_NO_PERMISSION); return false }

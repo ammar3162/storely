@@ -1,4 +1,5 @@
 import { notifyInsert } from '@/lib/notify'
+import { staffFeatureError } from '@/lib/featureRoutes'
 import { managerMay } from '@/lib/managerPerms'
 import { orgHasFeature, lockedMessage, branchFeatureError } from '@/lib/planFeatures'
 import { NextResponse } from 'next/server'
@@ -98,6 +99,9 @@ export async function POST(req: Request) {
       const auth = await verifyStaffToken(extractStaffToken(req))
       if (!auth.valid) return NextResponse.json({ error: auth.error }, { status: auth.reason==='subscription_expired'?403:401 })
       const { org_id, staff_id } = auth.data!
+      // السلفة من «الحضور والرواتب» — لو الميزة مو مفعّلة لفرعه ما تنطلب (ولا يوصل المالك إشعار)
+      const hrLocked = await staffFeatureError(auth.data as any, 'hr')
+      if (hrLocked) return NextResponse.json({ error: hrLocked }, { status: 403 })
 
       const { data: staffRow } = await supabase.from('staff_members').select('name,branch_id,monthly_salary,housing_allowance,transport_allowance,food_allowance').eq('id', staff_id).eq('org_id', org_id).maybeSingle()
       if (!staffRow) return NextResponse.json({ error: 'الموظف غير موجود' }, { status: 404 })

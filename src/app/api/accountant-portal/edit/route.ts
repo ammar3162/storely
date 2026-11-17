@@ -1,4 +1,5 @@
 import { notifyInsert } from '@/lib/notify'
+import { isSubscriptionActive } from '@/lib/subscription'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { currentAccountant, accessFor } from '@/lib/accountantPortalAuth'
@@ -20,6 +21,8 @@ export async function POST(req: Request) {
     if (!me) return NextResponse.json({ error: 'سجّل الدخول' }, { status: 401 })
     const access = await accessFor(db, me.id, String(b.org_id || ''))
     if (!access) return NextResponse.json({ error: 'ليست لديك صلاحية على هذه المنشأة' }, { status: 403 })
+    // منشأة منتهي أو موقوف اشتراكها → ما فيه تعديل من المحاسب (التقرير أصلاً مقفول)
+    if (!(await isSubscriptionActive(db, (access as any).org_id))) return NextResponse.json({ error: 'اشتراك المنشأة متوقف حالياً' }, { status: 403 })
     if (b.kind === 'bulk_purchase') return bulkPurchase(db, b, access, me)
     if (!UUID.test(String(b.id || ''))) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
     const sections: string[] = Array.isArray(access.sections) ? access.sections : []
