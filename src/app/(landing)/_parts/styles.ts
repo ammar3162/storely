@@ -1,14 +1,14 @@
 export const LP_CSS = `
-/* hallmark v2.0.0 · direction: apple.com structure in Storely's identity (2026-11-17, owner's call) · tones: white page, sand tiles (logo ring), navy tiles (logo field), mint only as the logo's dot · type: IBM Plex Sans Arabic · signature: real Storely screens rising from the tiles */
-/* critique: colour comes from the logo's three colours and the real screens, nothing else; one idea per tile; no eyebrows, no invented numbers, no gradients */
+/* hallmark v2.0.0 · direction: apple.com structure in Storely's identity (2026-11-17, owner's call) · tones: white page, light-grey tiles (the app's own #F3F5F6, Apple's #F5F5F7), navy tiles (logo field), mint only as the logo's dot · type: IBM Plex Sans Arabic · signature: real Storely screens rising from the tiles */
+/* critique: colour is navy + the app's greys + the logo's mint dot, and the real screens; no beige; one idea per tile; no eyebrows, no invented numbers, no gradients */
 /* waive: 39b FAQ rows are full-width disclosure rows (72px from the question text) · 77 the FAQ keeps a reading measure · sloplint 2026-11-17: 0 FAIL; two 40px buttons and 10px text it reports were not found on the live page with the same walker */
-.lp{--navy:#203640;--navy-deep:#16262D;--sand:#F4EFE6;--sand-2:#EBE3D5;--mint:#5FC4B8;--white:#FFFFFF;--cream:#F7F9FA;
+.lp{--navy:#203640;--navy-deep:#16262D;--light:#F3F5F6;--light-2:#EEF2F4;--mint:#5FC4B8;--white:#FFFFFF;--cream:#F7F9FA;
   --ink:#203640;--ink2:#56656D;--ink3:#66727A;--hair:rgba(32,54,64,.12);--hair-dark:rgba(255,255,255,.16);--on-navy:#FFFFFF;--on-navy2:rgba(255,255,255,.74);
   --line:#E2E7EA;--line2:#CBD4DC;--field-edge:#80909B;--focus:#203640;--no:#CBD5E1;
   --teal:#203640;--teal2:#203640;--mint-a25:rgba(95,196,184,.25);
   --ink-a06:rgba(32,54,64,.06);--ink-a08:rgba(32,54,64,.08);--ink-a10:rgba(32,54,64,.1);--ink-a40:rgba(32,54,64,.4);--ink-a70:rgba(32,54,64,.7);--white-a14:rgba(255,255,255,.14);
   --ok:#047857;--ok-bg:#ECFDF5;--err:#B91C1C;--err-bg:#FEF2F2;--wa-ink:#0E7A6E;
-  --shot-shadow:0 30px 60px -30px rgba(16,30,36,.45);--desk-shadow:0 50px 100px -50px rgba(16,30,36,.45);--play-shadow:0 10px 30px -10px rgba(16,30,36,.5);--float-shadow:0 12px 28px -10px rgba(16,30,36,.6);--nav-glass:rgba(255,255,255,.82);--sand-a60:rgba(244,239,230,.6);
+  --shot-shadow:0 30px 60px -30px rgba(16,30,36,.45);--desk-shadow:0 50px 100px -50px rgba(16,30,36,.45);--play-shadow:0 10px 30px -10px rgba(16,30,36,.5);--float-shadow:0 12px 28px -10px rgba(16,30,36,.6);--nav-glass:rgba(255,255,255,.82);--white-a60:rgba(255,255,255,.6);
   --font:'IBM Plex Sans Arabic',system-ui,sans-serif;--ease:cubic-bezier(.2,.7,.2,1);
   font-family:var(--font);background:var(--white);color:var(--ink);overflow-x:clip;-webkit-font-smoothing:antialiased}
 .lp *{box-sizing:border-box;margin:0;padding:0}
@@ -22,7 +22,7 @@ html,body{overflow-x:clip}
 .lp-wrap{max-width:1180px;margin:0 auto;padding:0 24px}
 .lp-num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
 
-/* الأزرار: حبوب مثل أبل — كحلي على الفاتح، ورملي على الكحلي */
+/* الأزرار: حبوب مثل أبل — كحلي على الفاتح، وأبيض على الكحلي */
 .lp-btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 22px;border-radius:999px;font:500 16px/1 var(--font);border:1.5px solid transparent;cursor:pointer;white-space:nowrap;transition:background-color .2s var(--ease),color .2s var(--ease),border-color .2s var(--ease),transform .15s var(--ease)}
 .lp-btn:active{transform:scale(.97)}
 .lp .lp-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
@@ -35,18 +35,18 @@ html,body{overflow-x:clip}
 .lp-btn-ghost:hover{background:var(--ink-a06)}
 .lp-btn-soft,.lp a.lp-btn-soft{border-color:var(--hair);background:var(--white);color:var(--ink)}
 .lp-btn-soft:hover{border-color:var(--navy)}
-.lp-btn-white,.lp a.lp-btn-white{background:var(--sand);color:var(--navy)}
-.lp-btn-white:hover{background:var(--white)}
-.lp-btn-glass,.lp a.lp-btn-glass{border-color:var(--sand-a60);color:var(--sand);background:transparent}
-.lp-btn-glass:hover{background:var(--sand);color:var(--navy)}
-.lp-btn-wa,.lp a.lp-btn-wa{background:var(--sand);color:var(--navy);margin-top:24px}
+.lp-btn-white,.lp a.lp-btn-white{background:var(--white);color:var(--navy)}
+.lp-btn-white:hover{background:var(--light-2)}
+.lp-btn-glass,.lp a.lp-btn-glass{border-color:var(--white-a60);color:var(--white);background:transparent}
+.lp-btn-glass:hover{background:var(--white);color:var(--navy)}
+.lp-btn-wa,.lp a.lp-btn-wa{background:var(--white);color:var(--navy);margin-top:24px}
 .lp-btn-wa svg{color:var(--wa-ink)}
-.lp-btn-wa:hover{background:var(--white)}
+.lp-btn-wa:hover{background:var(--light-2)}
 .lp-link{display:inline-flex;align-items:center;gap:4px;font-size:17px;color:var(--navy);border-bottom:1px solid transparent;transition:border-color .2s var(--ease)}
 .lp-link:hover{border-color:currentColor}
 
 /* شريط الإعلان (من لوحة الإدارة): سطر هادئ فوق القائمة مثل أبل */
-.lp-ribbon{background:var(--sand);color:var(--navy);text-align:center;padding:12px 20px;font-size:14px;line-height:1.6}
+.lp-ribbon{background:var(--light);color:var(--navy);text-align:center;padding:12px 20px;font-size:14px;line-height:1.6}
 
 /* القائمة: شريط رفيع شفاف يبقى أعلى الصفحة */
 .lp-nav{position:sticky;top:0;z-index:1000;background:var(--nav-glass);backdrop-filter:saturate(1.8) blur(20px);-webkit-backdrop-filter:saturate(1.8) blur(20px);border-bottom:1px solid var(--hair)}
@@ -65,7 +65,7 @@ html,body{overflow-x:clip}
 
 /* أقسام وعناوين مشتركة */
 .lp-section{padding:120px 0}
-.lp-sand{background:var(--sand)}
+.lp-light{background:var(--light)}
 .lp-head{text-align:center;max-width:760px;margin:0 auto 48px}
 .lp-h2{font-size:clamp(32px,4.4vw,56px);font-weight:700;line-height:1.18;color:var(--navy)}
 .lp-sub{font-size:clamp(18px,1.7vw,22px);line-height:1.6;color:var(--ink2);margin-top:14px}
@@ -90,10 +90,10 @@ html,body{overflow-x:clip}
 .lp-compare td{padding:12px;text-align:center;border-bottom:1px solid var(--line)}
 .lp-compare .pop{background:var(--ink-a06)}
 .lp-compare th.pop{color:var(--navy)}
-.lp-compare tr.grp td{background:var(--sand);font-weight:500;font-size:13px;color:var(--ink2);text-align:right;padding:10px 22px}
+.lp-compare tr.grp td{background:var(--light);font-weight:500;font-size:13px;color:var(--ink2);text-align:right;padding:10px 22px}
 .lp-compare .yes{color:var(--navy)}
 .lp-compare .no{color:var(--no)}
-.lp-compare .addon{font-size:12px;font-weight:500;color:var(--ink2);background:var(--sand);padding:3px 10px;border-radius:99px}
+.lp-compare .addon{font-size:12px;font-weight:500;color:var(--ink2);background:var(--light);padding:3px 10px;border-radius:99px}
 .lp-plans-foot{text-align:center;font-size:14px;color:var(--ink2);margin-top:26px}
 .lp-plan{position:relative;background:var(--white);border:1px solid var(--line);border-radius:18px;padding:26px}
 .lp-plan.pop{background:var(--navy);color:var(--white);border-color:var(--navy);box-shadow:0 40px 70px -40px var(--ink-a70)}
@@ -108,8 +108,8 @@ html,body{overflow-x:clip}
 .lp-plan li{display:flex;gap:9px;align-items:flex-start;font-size:14px;line-height:1.5}
 .lp-plan li svg{color:var(--navy);flex-shrink:0;margin-top:2px}
 .lp-plan.pop li svg{color:var(--mint)}
-.lp-plan.pop .lp-btn-dark{background:var(--sand);color:var(--navy)}
-.lp-plan-note{margin-top:20px;background:var(--sand);border-radius:14px;padding:12px 14px;font-size:12.5px;line-height:1.7;color:var(--ink2)}
+.lp-plan.pop .lp-btn-dark{background:var(--white);color:var(--navy)}
+.lp-plan-note{margin-top:20px;background:var(--light);border-radius:14px;padding:12px 14px;font-size:12.5px;line-height:1.7;color:var(--ink2)}
 
 /* الأسئلة: صفوف بخط رفيع مثل أبل */
 .lp-faq{max-width:820px;margin:0 auto;border-top:1px solid var(--hair)}
@@ -153,7 +153,7 @@ html,body{overflow-x:clip}
 .lp-msg.err{background:var(--err-bg);color:var(--err)}
 
 /* التذييل: فاتح وصغير مثل أبل */
-.lp-footer{background:var(--sand);color:var(--ink2);padding:56px 0 28px;font-size:14px}
+.lp-footer{background:var(--light);color:var(--ink2);padding:56px 0 28px;font-size:14px}
 .lp-foot-grid{display:grid;grid-template-columns:minmax(0,2fr) repeat(3,minmax(0,1fr));gap:32px;padding-bottom:32px;border-bottom:1px solid var(--hair)}
 .lp-footer .lp-brand{color:var(--navy)}
 .lp-foot-tag{font-size:14px;line-height:1.8;max-width:280px;margin-top:12px}

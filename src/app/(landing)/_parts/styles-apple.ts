@@ -1,9 +1,9 @@
-// أقسام الصفحة الرئيسية بأسلوب أبل (2026-11-17) — طبقة فوق LP_CSS وبنفس رموزها: أبيض، رملي، كحلي، والنقطة النعناعية فقط
+// أقسام الصفحة الرئيسية بأسلوب أبل (2026-11-17) — طبقة فوق LP_CSS وبنفس رموزها: أبيض، رمادي النظام الفاتح، كحلي، والنقطة النعناعية فقط
 export const AP_CSS = `
 .ap-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mint);flex-shrink:0}
 
 /* الواجهة: الفيديو في الوسط وشاشتان حقيقيتان تطلعان من أسفل البلاطة */
-.ap-hero{background:var(--sand);text-align:center;padding:56px 20px 0;overflow:hidden}
+.ap-hero{background:var(--light);text-align:center;padding:56px 20px 0;overflow:hidden}
 .ap-hero h1{font-size:clamp(42px,6.6vw,88px);font-weight:700;line-height:1.1;color:var(--navy);overflow-wrap:break-word;min-width:0}
 .ap-lead{font-size:clamp(19px,1.9vw,26px);line-height:1.55;color:var(--ink2);max-width:720px;margin:18px auto 0}
 .ap-acts{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:30px}
@@ -34,22 +34,22 @@ export const AP_CSS = `
 .ap-logos img{width:64px;height:64px;object-fit:contain;border-radius:16px;background:var(--white);border:1px solid var(--hair)}
 .ap-logos span{font-size:13px;color:var(--ink2);line-height:1.4}
 
-/* يوم واحد: بلاطات تتبادل الكحلي والرملي، وفي كل بلاطة شاشة حقيقية */
+/* يوم واحد: بلاطات تتبادل الكحلي والرمادي الفاتح، وفي كل بلاطة شاشة حقيقية */
 .ap-intro{text-align:center;padding:120px 24px 48px}
 .ap-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;padding:0 12px}
 .ap-tile{position:relative;overflow:hidden;text-align:center;padding:60px 28px 0;display:flex;flex-direction:column;align-items:center}
 .ap-txt{display:flex;flex-direction:column;align-items:center}
 .ap-wide{grid-column:1 / -1}
 .ap-navy{background:var(--navy);color:var(--on-navy)}
-.ap-sandt{background:var(--sand);color:var(--navy)}
+.ap-light{background:var(--light);color:var(--navy)}
 .ap-time{display:inline-flex;align-items:center;gap:8px;font-size:16px;font-weight:500}
 .ap-navy .ap-time{color:var(--on-navy2)}
-.ap-sandt .ap-time{color:var(--ink2)}
+.ap-light .ap-time{color:var(--ink2)}
 .ap-tile h3{font-size:clamp(30px,3.4vw,48px);font-weight:700;line-height:1.18;margin-top:10px;max-width:16ch}
 .ap-wide h3{max-width:22ch}
 .ap-tile p{font-size:clamp(17px,1.5vw,21px);line-height:1.6;margin-top:12px;max-width:560px}
 .ap-navy p{color:var(--on-navy2)}
-.ap-sandt p{color:var(--ink2)}
+.ap-light p{color:var(--ink2)}
 .ap-shot{margin-top:40px;width:min(300px,74vw);height:clamp(360px,34vw,470px);border-radius:34px 34px 0 0;overflow:hidden;background:var(--white);box-shadow:var(--shot-shadow)}
 .ap-wide .ap-shot{width:min(330px,76vw);height:clamp(380px,38vw,520px)}
 .ap-shot img{width:100%}
@@ -68,7 +68,7 @@ export const AP_CSS = `
 
 /* الأدوار: مقارنة مثل «قارن الطرازات» — أعمدة على الكمبيوتر وسحب جانبي على الجوال */
 .ap-roles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-.ap-role{background:var(--sand);border-radius:28px;padding:32px 24px 0;overflow:hidden;display:flex;flex-direction:column;text-align:center;align-items:center}
+.ap-role{background:var(--light);border-radius:28px;padding:32px 24px 0;overflow:hidden;display:flex;flex-direction:column;text-align:center;align-items:center}
 .ap-role h3{font-size:26px;font-weight:700;color:var(--navy)}
 .ap-role ul{list-style:none;margin-top:16px;display:grid;gap:10px;text-align:start;width:100%}
 .ap-role li{display:flex;gap:10px;align-items:baseline;font-size:16px;line-height:1.55;color:var(--ink2)}
@@ -85,8 +85,8 @@ export const AP_CSS = `
 .ap-principles dt{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:500}
 .ap-principles dd{font-size:15.5px;line-height:1.7;color:var(--on-navy2);margin-top:8px}
 
-/* ابدأ: بلاطة رملية بالسعر المعلن */
-.ap-start{background:var(--sand);text-align:center;padding:120px 24px}
+/* ابدأ: بلاطة فاتحة بالسعر المعلن */
+.ap-start{background:var(--light);text-align:center;padding:120px 24px}
 .ap-price{display:flex;align-items:baseline;justify-content:center;gap:10px;margin-top:26px;color:var(--navy)}
 .ap-price b{font-size:clamp(72px,9vw,120px);font-weight:700;line-height:1}
 .ap-price span{font-size:20px;color:var(--ink2)}

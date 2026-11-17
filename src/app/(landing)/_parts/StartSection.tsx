@@ -2,7 +2,7 @@
 import type { LandingState } from './useLanding'
 import { STARTING_PRICE } from '@/lib/planPricing'
 
-// ابدأ اليوم: بلاطة رملية — السعر المعلن (من جدول الأسعار نفسه) + إزالة المخاطرة + ثلاث خطوات
+// ابدأ اليوم: بلاطة فاتحة — السعر المعلن (من جدول الأسعار نفسه) + إزالة المخاطرة + ثلاث خطوات
 export default function StartSection({ m }: { m: LandingState }) {
   const { t, lang, router } = m
   return (

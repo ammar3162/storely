@@ -1,17 +1,17 @@
 'use client'
 import type { LandingState } from './useLanding'
 
-// يوم واحد في مطعمك بأسلوب بلاطات أبل: لكل لحظة بلاطة بلون من الشعار (كحلي/رملي بالتناوب)
+// يوم واحد في مطعمك بأسلوب بلاطات أبل: لكل لحظة بلاطة (كحلي / رمادي النظام الفاتح بالتناوب)
 // وعنوان النتيجة، وسطر الآلية، وشاشة حقيقية من ستورلي تطلع من أسفل البلاطة.
 // الترتيب نفسه ترتيب السلسلة: مخزون الصباح ← طلب المورد ← فاتورة الشراء ← إقفال الكاشير ← الرواتب ← الربح.
-type Tile = { n: number; img: string; h: number; tone: 'navy' | 'sand'; wide?: boolean }
+type Tile = { n: number; img: string; h: number; tone: 'navy' | 'light'; wide?: boolean }
 const TILES: Tile[] = [
   { n: 1, img: 'inv', h: 1559, tone: 'navy', wide: true },
-  { n: 2, img: 'notif_coffee', h: 1559, tone: 'sand' },
+  { n: 2, img: 'notif_coffee', h: 1559, tone: 'light' },
   { n: 3, img: 'pur_draft', h: 1559, tone: 'navy' },
-  { n: 4, img: 'closing', h: 1440, tone: 'sand', wide: true },
+  { n: 4, img: 'closing', h: 1440, tone: 'light', wide: true },
   { n: 5, img: 'ssal', h: 1559, tone: 'navy' },
-  { n: 6, img: 'profit', h: 1559, tone: 'sand' },
+  { n: 6, img: 'profit', h: 1559, tone: 'light' },
 ]
 
 export default function DayTiles({ m }: { m: LandingState }) {
@@ -24,7 +24,7 @@ export default function DayTiles({ m }: { m: LandingState }) {
       </div>
       <div className="ap-grid">
         {TILES.map(x => (
-          <article key={x.n} className={`ap-tile ${x.tone === 'navy' ? 'ap-navy' : 'ap-sandt'}${x.wide ? ' ap-wide' : ''}`}>
+          <article key={x.n} className={`ap-tile ${x.tone === 'navy' ? 'ap-navy' : 'ap-light'}${x.wide ? ' ap-wide' : ''}`}>
             <div className="ap-txt">
               <span className="ap-time"><span className="ap-dot" aria-hidden="true" />{t(`day${x.n}T`)}</span>
               <h3>{t(`day${x.n}H`)}</h3>

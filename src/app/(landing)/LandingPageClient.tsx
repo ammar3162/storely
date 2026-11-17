@@ -17,7 +17,7 @@ import FinalCta from './_parts/FinalCta'
 import SiteFooter from './_parts/SiteFooter'
 import WhatsAppFloat from './_parts/WhatsAppFloat'
 
-// بأسلوب أبل وبهوية ستورلي (أبيض/رملي/كحلي + نقطة الشعار). الترتيب المتسلسل نفسه:
+// بأسلوب أبل وبهوية ستورلي (أبيض / رمادي النظام الفاتح / كحلي + نقطة الشعار). الترتيب المتسلسل نفسه:
 // الفيديو «من هي ستورلي» ← عملاء حقيقيون ← يوم في مطعمك (لحظة لحظة بشاشات حقيقية) ← كيف يترابط ← الأدوار ←
 // من نحن ← ابدأ (السعر وإزالة المخاطرة) ← الأسئلة ← الدعوة وطلب العرض
 export default function LandingPage({ initialMarquee }: { initialMarquee?: string[] } = {}) {
