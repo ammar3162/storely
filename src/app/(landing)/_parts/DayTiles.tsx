@@ -8,7 +8,7 @@ import type { LandingState } from './useLanding'
 type Tile = { n: number; img: string; h: number; tone: 'dark' | 'light'; wide?: boolean }
 const TILES: Tile[] = [
   { n: 1, img: 'inv', h: 1559, tone: 'dark', wide: true },
-  { n: 2, img: 'notif_coffee', h: 1559, tone: 'light' },
+  { n: 2, img: 'notif-supplier', h: 1559, tone: 'light' },
   { n: 3, img: 'pur_draft', h: 1559, tone: 'dark' },
   { n: 4, img: 'closing', h: 1440, tone: 'light', wide: true },
   { n: 5, img: 'ssal', h: 1559, tone: 'dark' },
