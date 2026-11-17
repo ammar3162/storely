@@ -3,22 +3,25 @@ export const AP_CSS = `
 .ap-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mint);flex-shrink:0}
 
 /* الواجهة: الفيديو في الوسط وشاشتان حقيقيتان تطلعان من أسفل البلاطة */
-.ap-hero{background:var(--sand);text-align:center;padding:60px 20px 40px;overflow:hidden}
+.ap-hero{background:var(--sand);text-align:center;padding:56px 20px 0;overflow:hidden}
 .ap-hero h1{font-size:clamp(42px,6.6vw,88px);font-weight:700;line-height:1.1;color:var(--navy);overflow-wrap:break-word;min-width:0}
 .ap-lead{font-size:clamp(19px,1.9vw,26px);line-height:1.55;color:var(--ink2);max-width:720px;margin:18px auto 0}
 .ap-acts{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:30px}
 .ap-note{font-size:14.5px;color:var(--ink2);margin-top:16px}
-.ap-alt{border:0;background:none;font:500 15px var(--font);color:var(--navy);cursor:pointer;margin-top:18px;min-height:44px;padding:0 8px;text-decoration:underline;text-decoration-color:var(--hair);text-underline-offset:6px}
+.ap-alt{border:0;background:none;font:500 15px var(--font);color:var(--navy);cursor:pointer;margin-top:4px;min-height:44px;padding:0 8px;text-decoration:underline;text-decoration-color:var(--hair);text-underline-offset:6px}
 .ap-alt:hover{text-decoration-color:var(--navy)}
-.ap-stage{--vw:clamp(256px,24vw,336px);--sw:clamp(200px,19vw,268px);--ov:70px;position:relative;max-width:1000px;margin:40px auto 0;display:flex;justify-content:center;align-items:flex-end}
-.ap-video,.ap-side{border-radius:34px;overflow:hidden;box-shadow:var(--shot-shadow)}
+.ap-stage{--vw:clamp(256px,24vw,336px);--sw:clamp(200px,19vw,268px);--ov:70px;position:relative;max-width:1000px;margin:28px auto 0;height:clamp(360px,30vw,430px);overflow:hidden;display:flex;justify-content:center;align-items:flex-start}
+.ap-stage.is-playing{height:auto;overflow:visible;padding-bottom:40px}
+.ap-stage.is-playing .ap-side{display:none}
+.ap-video,.ap-side{border-radius:34px 34px 0 0;overflow:hidden;box-shadow:var(--shot-shadow)}
+.ap-stage.is-playing .ap-video{border-radius:34px}
 .ap-video{position:relative;width:var(--vw);aspect-ratio:9/16;z-index:3;background:var(--navy)}
 .ap-video video,.ap-video .ap-cover,.ap-video .ap-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .ap-cover{border:0;padding:0;cursor:pointer;background:var(--navy)}
 .ap-play{position:absolute;inset:0;margin:auto;width:76px;height:76px;border-radius:50%;background:var(--white);color:var(--navy);display:grid;place-items:center;box-shadow:var(--play-shadow);transition:transform .2s var(--ease)}
 .ap-cover:hover .ap-play{transform:scale(1.05)}
 .ap-cover:active .ap-play{transform:scale(.96)}
-.ap-side{position:absolute;bottom:0;width:var(--sw);aspect-ratio:9/16;background:var(--white);z-index:2}
+.ap-side{position:absolute;top:72px;width:var(--sw);aspect-ratio:9/16;background:var(--white);z-index:2}
 .ap-side img{width:100%;height:100%;object-fit:cover;object-position:top}
 .ap-side-r{right:calc(50% - var(--vw)/2 + var(--ov) - var(--sw))}
 .ap-side-l{left:calc(50% - var(--vw)/2 + var(--ov) - var(--sw))}
@@ -32,7 +35,7 @@ export const AP_CSS = `
 .ap-logos span{font-size:13px;color:var(--ink2);line-height:1.4}
 
 /* يوم واحد: بلاطات تتبادل الكحلي والرملي، وفي كل بلاطة شاشة حقيقية */
-.ap-intro{text-align:center;padding:96px 24px 44px}
+.ap-intro{text-align:center;padding:120px 24px 48px}
 .ap-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;padding:0 12px}
 .ap-tile{position:relative;overflow:hidden;text-align:center;padding:60px 28px 0;display:flex;flex-direction:column;align-items:center}
 .ap-txt{display:flex;flex-direction:column;align-items:center}
@@ -57,7 +60,7 @@ export const AP_CSS = `
 .ap-flow::before{content:'';position:absolute;top:7px;right:10%;left:10%;height:2px;background:var(--hair)}
 .ap-flow li{position:relative;text-align:center;padding-top:34px}
 .ap-flow li::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:16px;height:16px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 6px var(--white)}
-.ap-flow b{display:block;font-size:20px;font-weight:600;color:var(--navy)}
+.ap-flow b{display:block;font-size:20px;font-weight:500;color:var(--navy)}
 .ap-flow span{display:block;font-size:15.5px;line-height:1.65;color:var(--ink2);margin-top:6px}
 .ap-desk{margin:64px auto 0;max-width:1040px;border-radius:22px;overflow:hidden;border:1px solid var(--hair);box-shadow:var(--desk-shadow)}
 .ap-desk img{width:100%}
@@ -79,7 +82,7 @@ export const AP_CSS = `
 .ap-about-body p{font-size:clamp(18px,1.7vw,22px);line-height:1.85;color:var(--on-navy2);margin-top:18px}
 .ap-principles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:56px}
 .ap-principles div{border-top:1px solid var(--hair-dark);padding-top:20px}
-.ap-principles dt{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:600}
+.ap-principles dt{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:500}
 .ap-principles dd{font-size:15.5px;line-height:1.7;color:var(--on-navy2);margin-top:8px}
 
 /* ابدأ: بلاطة رملية بالسعر المعلن */
@@ -92,7 +95,7 @@ export const AP_CSS = `
 .ap-ticks li{display:flex;align-items:center;gap:8px;font-size:16px;color:var(--navy)}
 .ap-steps{list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:980px;margin:48px auto 0;counter-reset:s}
 .ap-steps li{background:var(--white);border-radius:22px;padding:24px;text-align:start;display:flex;gap:14px;align-items:center;font-size:17px;color:var(--navy)}
-.ap-steps li::before{counter-increment:s;content:counter(s);width:36px;height:36px;border-radius:50%;background:var(--navy);color:var(--on-navy);display:grid;place-items:center;font-size:15px;font-weight:600;flex-shrink:0}
+.ap-steps li::before{counter-increment:s;content:counter(s);width:36px;height:36px;border-radius:50%;background:var(--navy);color:var(--on-navy);display:grid;place-items:center;font-size:15px;font-weight:500;flex-shrink:0}
 
 @media (min-width:981px){
   .ap-wide{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:48px;align-items:end;text-align:start;padding:0 72px;min-height:600px}
@@ -109,9 +112,10 @@ export const AP_CSS = `
 }
 @media (max-width:720px){
   .ap-hero{padding:40px 20px 28px}
-  .ap-stage{--vw:228px;--sw:170px;--ov:96px;margin-top:30px}
+  .ap-stage{--vw:228px;--sw:170px;--ov:96px;margin-top:24px;height:310px}
+  .ap-side{top:56px}
   .ap-play{width:64px;height:64px}
-  .ap-intro{padding:72px 20px 32px}
+  .ap-intro{padding:88px 20px 32px}
   .ap-grid{grid-template-columns:minmax(0,1fr);padding:0;gap:12px}
   .ap-tile{padding:52px 20px 0}
   .ap-shot,.ap-wide .ap-shot{width:min(270px,74vw);height:380px}

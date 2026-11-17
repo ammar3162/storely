@@ -8,7 +8,7 @@ export default function DemoRequestSection({ m }: { m: LandingState }) {
   return (
     <>
       {/* طلب عرض النظام */}
-      <section id="demo" className="lp-section lp-sand">
+      <section id="demo" className="lp-section">
         <div className="lp-wrap lp-demo rv">
           <div className="lp-demo-side">
             <img src="/storely-logo.png" alt=""/>

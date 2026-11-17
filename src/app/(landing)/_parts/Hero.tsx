@@ -21,11 +21,9 @@ export default function Hero({ m }: { m: LandingState }) {
   const play = () => {
     ref.current?.play().catch(() => {})
     setPlaying(true)
+    requestAnimationFrame(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
   }
-  const watch = () => {
-    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    play()
-  }
+  const watch = () => play()
   const switchVideo = () => { setI(1 - i); setPlaying(false) }
 
   return (
@@ -37,8 +35,9 @@ export default function Hero({ m }: { m: LandingState }) {
         <button className="lp-btn lp-btn-line lp-btn-lg" onClick={watch}><Play size={16} fill="currentColor" aria-hidden />{t('heroVideo')}</button>
       </div>
       <p className="ap-note">{t('heroNote')}</p>
+      <button className="ap-alt" onClick={switchVideo}>{t('heroOr')} {t(other.k)} ({other.sec} {t('heroSecLong')})</button>
 
-      <div className="ap-stage">
+      <div className={`ap-stage${playing ? ' is-playing' : ''}`}>
         <div className="ap-side ap-side-r" aria-hidden="true"><img src="/landing/dash2.webp" alt="" width={720} height={1559} /></div>
         <div className="ap-side ap-side-l" aria-hidden="true"><img src="/landing/staff-home.webp" alt="" width={720} height={1440} /></div>
         <div className="ap-video">
@@ -51,7 +50,6 @@ export default function Hero({ m }: { m: LandingState }) {
           )}
         </div>
       </div>
-      <button className="ap-alt" onClick={switchVideo}>{t('heroOr')} {t(other.k)} ({other.sec} {t('heroSecLong')})</button>
     </header>
   )
 }
