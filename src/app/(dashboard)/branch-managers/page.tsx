@@ -30,9 +30,9 @@ function PermGrid({ value, onChange, feat }: { value: Record<string, boolean>; o
   return (
     <div style={{ display: 'grid', gap: 14 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 12.5, color: colors.text3 }}>الرئيسية والإشعارات متاحة دائماً، أما الإعدادات والفروع والإضافات فللمالك فقط.</span>
+        <span style={{ fontSize:13, color: colors.text3 }}>الرئيسية والإشعارات متاحة دائماً، أما الإعدادات والفروع والإضافات فللمالك فقط.</span>
         <button type="button" onClick={() => onChange({ ...value, ...Object.fromEntries(LIST.map(p => [p.key, !allOn])) })}
-          style={{ background: 'none', border: 'none', color: colors.primary, fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+          style={{ background: 'none', border: 'none', color: colors.primary, fontWeight:600, fontSize:15, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
           {allOn ? 'إلغاء الكل' : 'تحديد الكل'}
         </button>
       </div>
@@ -42,20 +42,20 @@ function PermGrid({ value, onChange, feat }: { value: Record<string, boolean>; o
         return (
           <div key={g}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 12.5, fontWeight: 800, color: colors.text2 }}>{g}</span>
+              <span style={{ fontSize:13, fontWeight:600, color: colors.text2 }}>{g}</span>
               <button type="button" onClick={() => onChange({ ...value, ...Object.fromEntries(items.map(p => [p.key, !gOn])) })}
-                style={{ background: 'none', border: 'none', color: colors.text3, fontWeight: 600, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>{gOn ? 'إلغاء' : 'الكل'}</button>
+                style={{ background: 'none', border: 'none', color: colors.text3, fontWeight: 600, fontSize:13, cursor: 'pointer', fontFamily: 'inherit' }}>{gOn ? 'إلغاء' : 'الكل'}</button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(210px,1fr))', gap: 8 }}>
               {items.map(p => {
                 const on = !!value[p.key]
                 return (
-                  <label key={p.key} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 12px', borderRadius: 10, cursor: 'pointer',
+                  <label key={p.key} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 12px', borderRadius:12, cursor: 'pointer',
                     background: on ? colors.primaryLight : '#fff', border: `1.5px solid ${on ? colors.primaryBorder : colors.border}` }}>
                     <input type="checkbox" checked={on} onChange={e => set(p.key, e.target.checked)} style={{ marginTop: 3, width: 16, height: 16, accentColor: colors.primary }} />
                     <span>
-                      <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: on ? colors.primary : colors.text }}>{p.label}</span>
-                      <span style={{ display: 'block', fontSize: 11.5, color: colors.text4, lineHeight: 1.5 }}>{p.hint}</span>
+                      <span style={{ display: 'block', fontSize:15, fontWeight:600, color: on ? colors.primary : colors.text }}>{p.label}</span>
+                      <span style={{ display: 'block', fontSize:13, color: colors.text4, lineHeight: 1.5 }}>{p.hint}</span>
                     </span>
                   </label>
                 )
@@ -72,10 +72,10 @@ function PermGrid({ value, onChange, feat }: { value: Record<string, boolean>; o
 function WaField({ phone, setPhone, consent, setConsent }: { phone: string; setPhone: (v: string) => void; consent: boolean; setConsent: (v: boolean) => void }) {
   return (
     <div style={{ marginBottom: 14, maxWidth: 420 }}>
-      <label style={{ fontSize: 12, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 5 }}>رقم واتساب المدير (اختياري) — يصل إليه التقرير الصباحي لفرعه</label>
+      <label style={{ fontSize:13, fontWeight:600, color: colors.text3, display: 'block', marginBottom: 5 }}>رقم واتساب المدير (اختياري) — يصل إليه التقرير الصباحي لفرعه</label>
       <input dir="ltr" inputMode="tel" value={phone} onChange={e => setPhone(e.target.value)} style={inp()} placeholder="05xxxxxxxx" autoComplete="off" />
       {phone.trim() && (
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 12.5, color: colors.text2, cursor: 'pointer' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize:13, color: colors.text2, cursor: 'pointer' }}>
           <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} style={{ accentColor: colors.primary, width: 16, height: 16 }} />
           المدير موافق يستلم رسائل واتساب من ستورلي
         </label>
@@ -178,7 +178,7 @@ export default function BranchManagersPage() {
     loadManagers(orgId)
   }
 
-  const lbl: React.CSSProperties = { fontSize: 12, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 5 }
+  const lbl: React.CSSProperties = { fontSize:13, fontWeight:600, color: colors.text3, display: 'block', marginBottom: 5 }
 
   return (
     <div style={{ fontFamily: font.family, direction: 'rtl' }}>
@@ -188,7 +188,7 @@ export default function BranchManagersPage() {
       </div>
 
       <section style={{ ...card, padding: '20px 22px', marginBottom: 20 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 14px' }}>مدير فرع جديد</h2>
+        <h2 style={{ fontSize:17, fontWeight:600, margin: '0 0 14px' }}>مدير فرع جديد</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 12, marginBottom: 16 }}>
           <div><label style={lbl}>اسم المدير</label><input value={name} onChange={e => setName(e.target.value)} style={inp()} placeholder="مثال: أحمد محمد" /></div>
           <div><label style={lbl}>الفرع</label>
@@ -206,36 +206,36 @@ export default function BranchManagersPage() {
           </div>
         </div>
         <WaField phone={waPhone} setPhone={setWaPhone} consent={waConsent} setConsent={setWaConsent} />
-        <div style={{ fontSize: 13, fontWeight: 800, color: colors.text, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={16} /> الصفحات المتاحة <span style={{ fontWeight: 600, color: colors.text4 }}>({countOn(perms)} من {MANAGER_PERMS.length})</span></div>
+        <div style={{ fontSize:15, fontWeight:600, color: colors.text, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}><ShieldCheck size={16} /> الصفحات المتاحة <span style={{ fontWeight: 600, color: colors.text4 }}>({countOn(perms)} من {MANAGER_PERMS.length})</span></div>
         <PermGrid value={perms} onChange={setPerms} feat={brFeat[branchId]} />
         <button onClick={addManager} disabled={saving} style={{ ...btnPrimary, padding: '12px 22px', marginTop: 16 }}>{saving ? 'جاري الإضافة…' : 'أضف مدير الفرع'}</button>
       </section>
 
       <section style={{ ...card, padding: '20px 22px' }}>
-        <h2 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 14px' }}>المديرون الحاليون <span style={{ color: colors.text4, fontWeight: 600 }}>({managers.length})</span></h2>
-        {loading ? <div style={{ color: colors.text4, fontSize: 13 }}>جاري التحميل…</div>
-          : managers.length === 0 ? <div style={{ color: colors.text4, fontSize: 13.5, textAlign: 'center', padding: 24 }}>لا يوجد مديرو فروع — أضف أول مدير من الأعلى</div>
+        <h2 style={{ fontSize:17, fontWeight:600, margin: '0 0 14px' }}>المديرون الحاليون <span style={{ color: colors.text4, fontWeight: 600 }}>({managers.length})</span></h2>
+        {loading ? <div style={{ color: colors.text4, fontSize:15 }}>جاري التحميل…</div>
+          : managers.length === 0 ? <div style={{ color: colors.text4, fontSize:15, textAlign: 'center', padding: 24 }}>لا يوجد مديرو فروع — أضف أول مدير من الأعلى</div>
           : <div style={{ display: 'grid', gap: 12 }}>
             {managers.map((m: any) => {
               const editing = editId === m.id
               const on = MANAGER_PERMS.filter(p => m.permissions?.[p.key])
               return (
-                <article key={m.id} style={{ border: `1px solid ${editing ? colors.primaryBorder : colors.border}`, borderRadius: 12, padding: 14, background: editing ? '#fff' : colors.bg }}>
+                <article key={m.id} style={{ border: `1px solid ${editing ? colors.primaryBorder : colors.border}`, borderRadius:20, padding: 14, background: editing ? '#fff' : colors.bg }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <div>
-                      <div style={{ fontSize: 15, fontWeight: 800 }}>{m.full_name}</div>
-                      <div style={{ fontSize: 12.5, color: colors.text3, display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}><Store size={13} /> {(m.branches as any)?.name || '—'} · يطّلع على {on.length} من {MANAGER_PERMS.length} صفحات</div>
+                      <div style={{ fontSize:17, fontWeight:600 }}>{m.full_name}</div>
+                      <div style={{ fontSize:13, color: colors.text3, display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}><Store size={13} /> {(m.branches as any)?.name || '—'} · يطّلع على {on.length} من {MANAGER_PERMS.length} صفحات</div>
                     </div>
                     {!editing && <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={() => startEdit(m)} style={{ ...btnSecondary, padding: '7px 12px', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Pencil size={14} /> تعديل</button>
-                      <button onClick={() => deleteManager(m)} aria-label="حذف" style={{ background:'#fff', border: `1px solid ${colors.dangerBorder}`, color: colors.danger, borderRadius: 8, padding: '7px 10px', cursor: 'pointer', display: 'inline-flex' }}><Trash2 size={15} /></button>
+                      <button onClick={() => startEdit(m)} style={{ ...btnSecondary, padding: '7px 12px', fontSize:15, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Pencil size={14} /> تعديل</button>
+                      <button onClick={() => deleteManager(m)} aria-label="حذف" style={{ background:'#fff', border: `1px solid ${colors.dangerBorder}`, color: colors.danger, borderRadius:12, padding: '7px 10px', cursor: 'pointer', display: 'inline-flex' }}><Trash2 size={15} /></button>
                     </div>}
                   </div>
                   {!editing ? (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
-                      {on.length ? on.map(p => <span key={p.key} style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 99, background: colors.primaryLight, color: colors.primary, border: `1px solid ${colors.primaryBorder}` }}>{p.label}</span>)
-                        : <span style={{ fontSize: 12.5, color: colors.warning }}>لا توجد صلاحيات — يطّلع على الرئيسية والإشعارات فقط</span>}
-                      {m.report_whatsapp && <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 99, background: colors.bg, color: colors.text3, border: `1px solid ${colors.border}` }} dir="ltr">التقرير الصباحي: {m.report_whatsapp}</span>}
+                      {on.length ? on.map(p => <span key={p.key} style={{ fontSize:13, fontWeight: 600, padding: '4px 10px', borderRadius: 99, background: colors.primaryLight, color: colors.primary, border: `1px solid ${colors.primaryBorder}` }}>{p.label}</span>)
+                        : <span style={{ fontSize:13, color: colors.warning }}>لا توجد صلاحيات — يطّلع على الرئيسية والإشعارات فقط</span>}
+                      {m.report_whatsapp && <span style={{ fontSize:13, fontWeight: 600, padding: '4px 10px', borderRadius: 99, background: colors.bg, color: colors.text3, border: `1px solid ${colors.border}` }} dir="ltr">التقرير الصباحي: {m.report_whatsapp}</span>}
                     </div>
                   ) : (
                     <div style={{ marginTop: 14, display: 'grid', gap: 14 }}>

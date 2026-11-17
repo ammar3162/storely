@@ -222,11 +222,11 @@ export function useAttendance() {
   // خانة الانصراف: الوقت + «مستأذن» + «سجّله المالك»، أو زر تسجيل الانصراف للمالك لو الموظف ما انصرف
   function checkOutCell(r: any, name: string) {
     const badge = (txt: string, c: { fg: string; bg: string; bd: string }) =>
-      <span style={{ marginRight: 6, fontSize: 10, fontWeight: 700, color: c.fg, background: c.bg, border: `1px solid ${c.bd}`, borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{txt}</span>
+      <span style={{ marginRight: 6, fontSize:12, fontWeight:600, color: c.fg, background: c.bg, border: `1px solid ${c.bd}`, borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' as const }}>{txt}</span>
     if (!r.check_out && r.check_in && r.attendance_id && isOwner) {
       return (
         <button onClick={() => openManualCheckout(r, name)} title="غادر الموظف دون تسجيل انصرافه — سجّله نيابةً عنه"
-          style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text2, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
+          style={{ padding: '4px 10px', borderRadius:12, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text2, fontSize:12, fontWeight:600, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
           تسجيل انصراف
         </button>
       )
@@ -243,15 +243,15 @@ export function useAttendance() {
   function penaltyCell(r: any) {
     const amount = r.penalty_original ?? r.penalty_amount
     if (!amount) return <span style={{ color: colors.text4 }}>—</span>
-    if (r.penalty_legacy) return <span style={{ color: colors.text4, whiteSpace: 'nowrap' as const }} title="غرامة سابقة لتفعيل الخصم التلقائي — لا تُخصم">{amount} ⃁ · <span style={{ fontSize: 10, fontWeight: 700 }}>لم تُخصم</span></span>
+    if (r.penalty_legacy) return <span style={{ color: colors.text4, whiteSpace: 'nowrap' as const }} title="غرامة سابقة لتفعيل الخصم التلقائي — لا تُخصم">{amount} ⃁ · <span style={{ fontSize:12, fontWeight:600 }}>لم تُخصم</span></span>
     const canToggle = isOwner && r.attendance_id && !r.penalty_locked
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' as const }}>
-        <span style={{ color: r.penalty_waived ? colors.text4 : colors.danger, fontWeight: 700, textDecoration: r.penalty_waived ? 'line-through' : 'none' }}>{amount} ⃁</span>
-        {r.penalty_waived && <span style={{ fontSize: 10, fontWeight: 700, color: colors.text3 }}>ملغاة</span>}
+        <span style={{ color: r.penalty_waived ? colors.text4 : colors.danger, fontWeight:600, textDecoration: r.penalty_waived ? 'line-through' : 'none' }}>{amount} ⃁</span>
+        {r.penalty_waived && <span style={{ fontSize:12, fontWeight:600, color: colors.text3 }}>ملغاة</span>}
         {canToggle && (
           <button onClick={() => toggleWaive(r.attendance_id, !r.penalty_waived)} disabled={waiving === r.attendance_id}
-            style={{ padding: '2px 8px', borderRadius: 6, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text3, fontSize: 10.5, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
+            style={{ padding: '2px 8px', borderRadius:12, border: `1px solid ${colors.border2}`, background: colors.surface, color: colors.text3, fontSize: 10.5, fontWeight:600, cursor: 'pointer', fontFamily: font.family }}>
             {waiving === r.attendance_id ? '...' : r.penalty_waived ? 'إرجاع' : 'إلغاء'}
           </button>
         )}
@@ -370,9 +370,9 @@ export function useAttendance() {
   const offCount = rows.filter(r => !r.check_in && r.day_off).length
 
   const statusColor = (s: string) =>
-    s.startsWith('حاضر') ? colors.primary : s.startsWith('انصرف') ? colors.info : s.startsWith('إجازة') ? '#1d4ed8' : colors.text4
+    s.startsWith('حاضر') ? colors.primary : s.startsWith('انصرف') ? colors.info : s.startsWith('إجازة') ? 'var(--storely-navy)' : colors.text4
   const statusBg = (s: string) =>
-    s.startsWith('حاضر') ? colors.primaryLight : s.startsWith('انصرف') ? colors.infoLight : s.startsWith('إجازة') ? '#eff6ff' : colors.bg
+    s.startsWith('حاضر') ? colors.primaryLight : s.startsWith('انصرف') ? colors.infoLight : s.startsWith('إجازة') ? 'var(--storely-fill)' : colors.bg
   return { editShift, setEditShift, savingEditShift, startEditShift, saveEditShift, tab, setTab, orgId, setOrgId, orgName, setOrgName, isOwner, setIsOwner, waiving, setWaiving, checkoutFor, setCheckoutFor, coTime, setCoTime, coExcused, setCoExcused, savingCo, setSavingCo, locked, setLocked, branchId, setBranchId, periodMode, setPeriodMode, date, setDate, rangeFrom, setRangeFrom, rangeTo, setRangeTo, staffFilter, setStaffFilter, rows, setRows, rangeRows, setRangeRows, loading, setLoading, exporting, setExporting, monthStats, setMonthStats, shifts, setShifts, newShiftName, setNewShiftName, newShiftStart, setNewShiftStart, newShiftEnd, setNewShiftEnd, newShift24h, setNewShift24h, savingShift, setSavingShift, staffList, setStaffList, late, setLate, savingLate, setSavingLate, ot, setOt, savingOt, setSavingOt, presentCount, absentCount, offCount, statusColor, statusBg, init, loadMonthOverview, loadRange, exportRangePdf, load, toggleWaive, openManualCheckout, submitManualCheckout, checkOutCell, penaltyCell, loadShifts, loadStaff, loadOvertime, saveOvertime, patchOff, addShift, deleteShift, assignShift, saveLate }
 }
 

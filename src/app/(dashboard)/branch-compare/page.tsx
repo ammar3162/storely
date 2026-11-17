@@ -49,7 +49,7 @@ const BC_STYLES = `
   .bc-page>.ui-stack{gap:${T.spacing[5]}px}
   .bc-page .bc-branch{margin-bottom:0}
   .bc-branch>.ui-between{margin-bottom:${T.spacing[4]}px}
-  .bc-branch>.ui-between .ui-section-title{margin:0;font-size:16px}
+  .bc-branch>.ui-between .ui-section-title{margin:0;font-size:17px}
   .bc-branch>.ui-between>span{font-size:${T.typography.supporting}px;border:1px solid currentColor;border-radius:${T.radius.control};padding:${T.spacing[1]}px ${T.spacing[2]}px;font-weight:600}
   .bc-rank{display:flex;align-items:center;justify-content:center;min-width:24px;color:${T.color.textMuted};font-variant-numeric:tabular-nums}
   .bc-bar-track{height:4px;background:${T.color.infoBg};border-radius:${T.radius.control};overflow:hidden;margin-bottom:${T.spacing[5]}px}

@@ -13,10 +13,10 @@ export default function MoreMenuSheet({ m }: { m: DashboardShell }) {
           <div data-no-pull className="sh-sheet" onClick={e=>e.stopPropagation()}>
             <div style={{width:36,height:4,borderRadius:99,background:C.border2,margin:'0 auto 16px'}}/>
             <div style={{display:'flex',alignItems:'center',gap:12,padding:'4px 4px 16px',borderBottom:`1px solid ${C.border}`,marginBottom:8}}>
-              <div className="sh-avatar" style={{width:40,height:40,fontSize:15}}>{userInit}</div>
+              <div className="sh-avatar" style={{width:40,height:40,fontSize:17}}>{userInit}</div>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:14,fontWeight:700,color:C.text}}>{userName}</div>
-                <div style={{fontSize:12,color:C.text3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName}{branchName?` · ${branchName}`:''}</div>
+                <div style={{fontSize:17,fontWeight:600,color:C.text}}>{userName}</div>
+                <div style={{fontSize:13,color:C.text3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName}{branchName?` · ${branchName}`:''}</div>
               </div>
               {branches.length>1&&<button className="sh-btn sh-btn-sm" onClick={()=>{setShowMore(false);openBranchSelector()}}>تغيير الفرع</button>}
             </div>

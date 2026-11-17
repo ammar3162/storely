@@ -25,8 +25,8 @@ export default function HRManagementPage() {
     <div style={{minHeight:'50vh',display:'flex',alignItems:'center',justifyContent:'center',textAlign:'center' as const,padding:20}}>
       <div>
         <div style={{display:'flex',justifyContent:'center',marginBottom:12,color:colors.text3}}><Lock size={40}/></div>
-        <div style={{fontSize:16,fontWeight:800,color:colors.text,marginBottom:8}}>الحضور والرواتب متاحة بالباقة الكاملة أو بإضافة «الحضور والرواتب»</div>
-        <div className="hide-in-app" style={{fontSize:13,color:colors.text3}}>رقِّ باقتك لتفعيل إدارة الرواتب والمهام لفريقك</div>
+        <div style={{fontSize:17,fontWeight:600,color:colors.text,marginBottom:8}}>الحضور والرواتب متاحة بالباقة الكاملة أو بإضافة «الحضور والرواتب»</div>
+        <div className="hide-in-app" style={{fontSize:15,color:colors.text3}}>رقِّ باقتك لتفعيل إدارة الرواتب والمهام لفريقك</div>
       </div>
     </div>
   )
@@ -55,7 +55,7 @@ export default function HRManagementPage() {
 
       {staff.length===0 ? (
         <div style={{...card,padding:56,textAlign:'center' as const}}>
-          <div style={{fontSize:13,color:colors.text4}}>لا يوجد موظفون بعد — أضفهم من صفحة "الموظفون" أولاً</div>
+          <div style={{fontSize:15,color:colors.text4}}>لا يوجد موظفون بعد — أضفهم من صفحة "الموظفون" أولاً</div>
         </div>
       ) : (
         <div style={{display:'flex',flexDirection:'column' as const,gap:10}}>

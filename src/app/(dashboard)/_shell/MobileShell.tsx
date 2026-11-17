@@ -14,7 +14,7 @@ export default function MobileShell({ m, banners, children }: { m: DashboardShel
           <header className="mob-header">
             <img src={orgLogo||'/storely-logo.png'} alt="" className="sh-logo"/>
             <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:14,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName||'Storely'}</div>
+              <div style={{fontSize:17,fontWeight:600,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{orgName||'Storely'}</div>
               {branchName&&(
                 <button className="sh-branch-inline" onClick={()=>branches.length>1&&openBranchSelector()} disabled={branches.length<2}>
                   <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}}>{branchName}</span>

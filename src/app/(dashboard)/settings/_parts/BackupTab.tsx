@@ -14,7 +14,7 @@ export default function BackupTab({ m }: { m: SettingsState }) {
                 <div style={{...card,padding:'12px 16px',marginBottom:16,display:'flex',alignItems:'center',gap:10,background:colors.primaryLight,border:`1px solid ${colors.primaryBorder}`}}>
                   <FeatureIcon name="💾" size={18} />
                   <div>
-                    <div style={{fontSize:font.xs,color:colors.primary,fontWeight:700}}>آخر نسخة احتياطية</div>
+                    <div style={{fontSize:font.xs,color:colors.primary,fontWeight:600}}>آخر نسخة احتياطية</div>
                     <div style={{fontSize:font.xs,color:colors.primary,opacity:.8,marginTop:1}}>{new Date(lastBackup).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',weekday:'long',year:'numeric',month:'long',day:'numeric'})}</div>
                   </div>
                 </div>
@@ -36,7 +36,7 @@ export default function BackupTab({ m }: { m: SettingsState }) {
               </div>
               {backups.length>0&&(
                 <div style={{...card,overflow:'hidden'}}>
-                  <div style={{padding:'10px 16px',borderBottom:`1px solid ${colors.border}`,fontSize:font.xs,fontWeight:700,color:colors.text4}}>النسخ الاحتياطية ({backups.length})</div>
+                  <div style={{padding:'10px 16px',borderBottom:`1px solid ${colors.border}`,fontSize:font.xs,fontWeight:600,color:colors.text4}}>النسخ الاحتياطية ({backups.length})</div>
                   {backups.map((b,i)=>(
                     <div key={i} style={{padding:'12px 16px',borderBottom:i<backups.length-1?`1px solid ${colors.border}`:'none',display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}}>
                       <div>

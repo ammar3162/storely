@@ -21,7 +21,7 @@ const C = {
   bg:dsColors.bg, surface:dsColors.surface, border:dsColors.border, border2:dsColors.border2,
 }
 
-const CAT_COLORS = ['#203640','#2563eb','#dc2626','#d97706','#7c3aed','#0891b2','#db2777','#65a30d']
+const CAT_COLORS = ['#203640','var(--storely-navy)','#dc2626','#d97706','var(--storely-navy)','var(--storely-navy)','#db2777','#65a30d']
 const OTHER = 'أخرى'
 
 export default function DispensePage() {
@@ -124,9 +124,9 @@ export default function DispensePage() {
   if(loading) return (
     <div style={{fontFamily:'var(--storely-font)',direction:'rtl',padding:'0 4px'}}>
       <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.4s ease infinite}`}</style>
-      <div style={{height:24,width:120,background:'#e5e7eb',borderRadius:6,marginBottom:14}} className="sk"/>
+      <div style={{height:24,width:120,background:'var(--storely-border)',borderRadius:12,marginBottom:14}} className="sk"/>
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(100px,1fr))',gap:8}}>
-        {Array(12).fill(0).map((_,i)=><div key={i} className="sk" style={{height:80,borderRadius:10,background:'#f0f0f0'}}/>)}
+        {Array(12).fill(0).map((_,i)=><div key={i} className="sk" style={{height:80,borderRadius:12,background:'var(--storely-border)'}}/>)}
       </div>
     </div>
   )
@@ -137,15 +137,15 @@ export default function DispensePage() {
         *{box-sizing:border-box}
         @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}
         @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-        .chip{padding:5px 12px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;border:1.5px solid;transition:all .15s;font-family:inherit}
+        .chip{padding:5px 12px;border-radius:99px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;border:1.5px solid;transition:all .15s;font-family:inherit}
         .chip:active{transform:scale(.95)}
-        .qbtn{width:44px;height:44px;border-radius:10px;border:1.5px solid var(--storely-border);background:var(--storely-background);font-size:20px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit}
+        .qbtn{width:44px;height:44px;border-radius:12px;border:1.5px solid var(--storely-border);background:var(--storely-background);font-size:20px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:inherit}
         .qbtn:active{background:var(--storely-background);border-color:#203640;color:#203640}
         input:focus{border-color:#203640!important;box-shadow:0 0 0 3px #f0fdfa!important;outline:none!important}
         /* Product card */
         .pcard{
-          background:white;border-radius:12px;padding:10px 8px;
-          cursor:pointer;border:1.5px solid #f0f0f0;
+          background:white;border-radius:20px;padding:10px 8px;
+          cursor:pointer;border:1.5px solid var(--storely-border);
           box-shadow:0 1px 3px rgba(15,23,42,.04),0 1px 2px rgba(15,23,42,.03);
           transition:all .15s;font-family:inherit;
           display:flex;flex-direction:column;align-items:center;
@@ -155,7 +155,7 @@ export default function DispensePage() {
         .pcard:active{transform:scale(.97)}
         .pcard.selected{border-color:#203640;background:var(--storely-background);box-shadow:0 0 0 2px #029FA240}
         .pcard.out{opacity:.45;cursor:not-allowed}
-        .pcard.out:hover{transform:none;box-shadow:none;border-color:#f0f0f0}
+        .pcard.out:hover{transform:none;box-shadow:none;border-color:var(--storely-border)}
         /* Grid — auto fill */
         .pgrid{
           display:grid;
@@ -169,15 +169,15 @@ export default function DispensePage() {
       {/* Header */}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
         <div>
-          <h1 style={{fontSize:18,fontWeight:800,color:C.text,margin:0,display:'flex',alignItems:'center',gap:10}}><PageIcon size={32}/>الصرف</h1>
-          <p style={{fontSize:10,color:C.text3,margin:'2px 0 0'}}>
+          <h1 style={{fontSize:20,fontWeight:600,color:C.text,margin:0,display:'flex',alignItems:'center',gap:10}}><PageIcon size={32}/>الصرف</h1>
+          <p style={{fontSize:12,color:C.text3,margin:'2px 0 0'}}>
             {products.length} صنف
-            {outCount>0&&<span style={{color:C.danger,fontWeight:700}}> · {outCount} نفد</span>}
-            {lowCount>0&&<span style={{color:C.warning,fontWeight:700}}> · {lowCount} ناقص</span>}
+            {outCount>0&&<span style={{color:C.danger,fontWeight:600}}> · {outCount} نفد</span>}
+            {lowCount>0&&<span style={{color:C.warning,fontWeight:600}}> · {lowCount} ناقص</span>}
           </p>
         </div>
         <button onClick={()=>setShowHistory(true)}
-          style={{display:'flex',alignItems:'center',gap:5,padding:'7px 12px',background:'white',border:`1.5px solid ${C.border2}`,borderRadius:9,fontSize:11,fontWeight:700,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>
+          style={{display:'flex',alignItems:'center',gap:5,padding:'7px 12px',background:'white',border:`1.5px solid ${C.border2}`,borderRadius:12,fontSize:12,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit'}}>
           <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           السجل ({history.length})
         </button>
@@ -187,7 +187,7 @@ export default function DispensePage() {
       <div style={{position:'relative',marginBottom:10}}>
         <svg style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',pointerEvents:'none'}} width="13" height="13" fill="none" stroke={C.text4} strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input value={search} onChange={e=>{setSearch(e.target.value);setActiveCat('كل المنتجات')}}
-          style={{width:'100%',padding:'9px 32px 9px 12px',border:`1.5px solid ${C.border2}`,borderRadius:9,fontSize:12,background:'white',color:C.text,fontFamily:'inherit'}}
+          style={{width:'100%',padding:'9px 32px 9px 12px',border:`1.5px solid ${C.border2}`,borderRadius:12,fontSize:13,background:'white',color:C.text,fontFamily:'inherit'}}
           placeholder="ابحث..."/>
       </div>
 
@@ -200,7 +200,7 @@ export default function DispensePage() {
             <button key={cat} className="chip" onClick={()=>setActiveCat(cat)}
               style={{background:active?color:'white',color:active?'white':C.text3,borderColor:active?color:C.border2,flexShrink:0}}>
               {cat==='كل المنتجات'?'الكل':cat}
-              {cat!=='كل المنتجات'&&<span style={{opacity:.6,fontSize:9,marginRight:2}}>({catMap[cat]})</span>}
+              {cat!=='كل المنتجات'&&<span style={{opacity:.6,fontSize:12,marginRight:2}}>({catMap[cat]})</span>}
             </button>
           )
         })}
@@ -208,9 +208,9 @@ export default function DispensePage() {
 
       {/* Products Grid */}
       {displayed.length===0 ? (
-        <div style={{background:'white',borderRadius:12,padding:'40px 20px',textAlign:'center',border:`1px solid ${C.border}`}}>
+        <div style={{background:'white',borderRadius:20,padding:'40px 20px',textAlign:'center',border:`1px solid ${C.border}`}}>
           <div style={{display:'flex',justifyContent:'center',marginBottom:8,color:C.text4}}><Package size={36} strokeWidth={1.5}/></div>
-          <div style={{fontSize:13,fontWeight:700,color:C.text2}}>{search?'لا توجد نتائج':'لا يوجد منتجات'}</div>
+          <div style={{fontSize:15,fontWeight:600,color:C.text2}}>{search?'لا توجد نتائج':'لا يوجد منتجات'}</div>
         </div>
       ) : (
         <div className="pgrid">
@@ -224,13 +224,13 @@ export default function DispensePage() {
                 className={`pcard${isSel?' selected':''}${isOut?' out':''}`}
                 onClick={()=>{if(isOut)return;setSelected(p);setQty('1')}}>
                 {/* Qty */}
-                <div style={{fontSize:22,fontWeight:900,color:sc,lineHeight:1}}>{p.qty}</div>
+                <div style={{fontSize:22,fontWeight:600,color:sc,lineHeight:1}}>{p.qty}</div>
                 {/* Name */}
-                <div style={{fontSize:11,fontWeight:700,color:C.text,lineHeight:1.3,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' as any}}>{p.name}</div>
+                <div style={{fontSize:12,fontWeight:600,color:C.text,lineHeight:1.3,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' as any}}>{p.name}</div>
                 {/* Unit */}
-                <div style={{fontSize:9,color:C.text4}}>{p.unit}</div>
+                <div style={{fontSize:12,color:C.text4}}>{p.unit}</div>
                 {/* Status */}
-                <span style={{fontSize:8,fontWeight:700,color:sc,background:isOut?C.dangerL:isLow?C.warningL:C.primaryL,padding:'2px 8px',borderRadius:99,border:`1px solid ${isOut?C.dangerB:isLow?C.warningB:C.primaryB}`}}>
+                <span style={{fontSize:8,fontWeight:600,color:sc,background:isOut?C.dangerL:isLow?C.warningL:C.primaryL,padding:'2px 8px',borderRadius:99,border:`1px solid ${isOut?C.dangerB:isLow?C.warningB:C.primaryB}`}}>
                   {isOut?'نفد':isLow?'ناقص':'كافٍ'}
                 </span>
               </button>
@@ -246,12 +246,12 @@ export default function DispensePage() {
           <div style={{background:'white',borderRadius:'20px 20px 0 0',width:'100%',maxHeight:'75vh',display:'flex',flexDirection:'column',position:'relative',animation:'slideUp .3s ease',fontFamily:'var(--storely-font)',direction:'rtl'}}>
             <div style={{padding:'14px 20px',borderBottom:`1px solid ${C.border}`,display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
               <div style={{width:32,height:3,borderRadius:99,background:C.border2,position:'absolute',top:8,left:'50%',transform:'translateX(-50%)'}}/>
-              <span style={{fontSize:14,fontWeight:700,color:C.text}}>آخر الصرف</span>
-              <button onClick={()=>setShowHistory(false)} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:C.text3,padding:4}} aria-label="إغلاق"><X size={16}/></button>
+              <span style={{fontSize:17,fontWeight:600,color:C.text}}>آخر الصرف</span>
+              <button onClick={()=>setShowHistory(false)} style={{background:'none',border:'none',fontSize:20,cursor:'pointer',color:C.text3,padding:4}} aria-label="إغلاق"><X size={16}/></button>
             </div>
             <div style={{overflowY:'auto',flex:1}}>
               {history.length===0?(
-                <div style={{padding:'32px',textAlign:'center',color:C.text4,fontSize:12}}>لا توجد عمليات بعد</div>
+                <div style={{padding:'32px',textAlign:'center',color:C.text4,fontSize:13}}>لا توجد عمليات بعد</div>
               ):history.map((h,i)=>{
                 const isWaste=h.type==='waste'
                 const badgeColor=isWaste?'#d97706':C.danger
@@ -259,17 +259,17 @@ export default function DispensePage() {
                 const badgeBorder=isWaste?C.warningB:C.dangerB
                 return (
                 <div key={h.id} style={{display:'flex',alignItems:'center',gap:10,padding:'11px 20px',borderBottom:i<history.length-1?`1px solid ${C.border}`:'none'}}>
-                  <div style={{width:30,height:30,borderRadius:8,background:badgeBg,border:`1px solid ${badgeBorder}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:13}}>
+                  <div style={{width:30,height:30,borderRadius:12,background:badgeBg,border:`1px solid ${badgeBorder}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:15}}>
                     {isWaste?<Trash2 size={13} color="#d97706"/>:<svg width="12" height="12" fill="none" stroke={C.danger} strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><path d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>}
                   </div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,fontWeight:700,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                    <div style={{fontSize:15,fontWeight:600,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                       {(h.products as any)?.name}
-                      {isWaste&&<span style={{fontSize:9,fontWeight:700,color:'#b45309',background:'#fffbeb',padding:'1px 6px',borderRadius:99,marginRight:6,border:'1px solid #fde68a'}}>هدر{h.waste_reason?` · ${h.waste_reason}`:''}</span>}
+                      {isWaste&&<span style={{fontSize:12,fontWeight:600,color:'#b45309',background:'#fffbeb',padding:'1px 6px',borderRadius:99,marginRight:6,border:'1px solid #fde68a'}}>هدر{h.waste_reason?` · ${h.waste_reason}`:''}</span>}
                     </div>
-                    <div style={{fontSize:10,color:C.text4,marginTop:1}}>{new Date(h.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                    <div style={{fontSize:12,color:C.text4,marginTop:1}}>{new Date(h.created_at).toLocaleDateString('ar-SA-u-ca-gregory', {numberingSystem:'latn',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
                   </div>
-                  <span style={{fontSize:13,fontWeight:800,color:badgeColor,flexShrink:0}}>{Math.abs(h.qty_change)} <span style={{fontSize:10,color:C.text4,fontWeight:400}}>{(h.products as any)?.unit}</span></span>
+                  <span style={{fontSize:15,fontWeight:600,color:badgeColor,flexShrink:0}}>{Math.abs(h.qty_change)} <span style={{fontSize:12,color:C.text4,fontWeight:400}}>{(h.products as any)?.unit}</span></span>
                 </div>
               )})}
             </div>
@@ -286,30 +286,30 @@ export default function DispensePage() {
             <div style={{padding:'14px 20px 0'}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
                 <div>
-                  <div style={{fontSize:16,fontWeight:800,color:C.text}}>{selected.name}</div>
-                  <div style={{fontSize:11,color:C.text3,marginTop:2}}>متاح: <b style={{color:C.primary,fontSize:14}}>{selected.qty}</b> {selected.unit}</div>
+                  <div style={{fontSize:17,fontWeight:600,color:C.text}}>{selected.name}</div>
+                  <div style={{fontSize:12,color:C.text3,marginTop:2}}>متاح: <b style={{color:C.primary,fontSize:17}}>{selected.qty}</b> {selected.unit}</div>
                 </div>
-                <button onClick={()=>{setSelected(null);setQty('');setWasteMode(false);setWasteReason('')}} style={{width:28,height:28,borderRadius:'50%',background:C.bg,border:`1px solid ${C.border2}`,cursor:'pointer',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}} aria-label="إغلاق"><X size={16}/></button>
+                <button onClick={()=>{setSelected(null);setQty('');setWasteMode(false);setWasteReason('')}} style={{width:28,height:28,borderRadius:'50%',background:C.bg,border:`1px solid ${C.border2}`,cursor:'pointer',fontSize:17,display:'flex',alignItems:'center',justifyContent:'center',color:C.text3}} aria-label="إغلاق"><X size={16}/></button>
               </div>
 
-              <div style={{display:'flex',gap:6,marginBottom:14,background:C.bg,padding:4,borderRadius:12}}>
+              <div style={{display:'flex',gap:6,marginBottom:14,background:C.bg,padding:4,borderRadius:20}}>
                 <button onClick={()=>{setWasteMode(false);setWasteReason('')}}
-                  style={{flex:1,padding:'9px',borderRadius:9,border:'none',background:!wasteMode?'white':'transparent',color:!wasteMode?C.danger:C.text3,fontWeight:800,fontSize:13,cursor:'pointer',fontFamily:'inherit',boxShadow:!wasteMode?'0 1px 4px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
+                  style={{flex:1,padding:'9px',borderRadius:12,border:'none',background:!wasteMode?'white':'transparent',color:!wasteMode?C.danger:C.text3,fontWeight:600,fontSize:15,cursor:'pointer',fontFamily:'inherit',boxShadow:!wasteMode?'0 1px 4px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
                   <span style={{display:'inline-flex',alignItems:'center',gap:6}}><ArrowUpRight size={15}/>صرف عادي</span>
                 </button>
                 <button onClick={()=>setWasteMode(true)}
-                  style={{flex:1,padding:'9px',borderRadius:9,border:'none',background:wasteMode?'white':'transparent',color:wasteMode?'#b45309':C.text3,fontWeight:800,fontSize:13,cursor:'pointer',fontFamily:'inherit',boxShadow:wasteMode?'0 1px 4px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
+                  style={{flex:1,padding:'9px',borderRadius:12,border:'none',background:wasteMode?'white':'transparent',color:wasteMode?'#b45309':C.text3,fontWeight:600,fontSize:15,cursor:'pointer',fontFamily:'inherit',boxShadow:wasteMode?'0 1px 4px rgba(0,0,0,.08)':'none',transition:'all .15s'}}>
                   <span style={{display:'inline-flex',alignItems:'center',gap:6}}><Trash2 size={15}/>تسجيل هدر</span>
                 </button>
               </div>
 
               {wasteMode && (
                 <div style={{marginBottom:14}}>
-                  <div style={{fontSize:12,fontWeight:700,color:C.text3,marginBottom:6}}>سبب الهدر *</div>
+                  <div style={{fontSize:13,fontWeight:600,color:C.text3,marginBottom:6}}>سبب الهدر *</div>
                   <div style={{display:'flex',flexWrap:'wrap' as const,gap:6}}>
                     {WASTE_REASONS.map(r=>(
                       <button key={r} onClick={()=>setWasteReason(r)}
-                        style={{padding:'6px 12px',borderRadius:99,border:`1.5px solid ${wasteReason===r?'#d97706':C.border2}`,background:wasteReason===r?'#fffbeb':'white',color:wasteReason===r?'#b45309':C.text3,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+                        style={{padding:'6px 12px',borderRadius:99,border:`1.5px solid ${wasteReason===r?'#d97706':C.border2}`,background:wasteReason===r?'#fffbeb':'white',color:wasteReason===r?'#b45309':C.text3,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>
                         {r}
                       </button>
                     ))}
@@ -325,13 +325,13 @@ export default function DispensePage() {
                 <div style={{display:'flex',alignItems:'center',gap:12,justifyContent:'center',marginBottom:10}}>
                   <button className="qbtn" onClick={()=>setQty(q=>String(Math.max(1,Number(q)-1)))}>−</button>
                   <NumberInput min="1" value={qty} onChange={e=>setQty(e.target.value)} inputMode="numeric"
-                    style={{width:88,padding:'8px',border:`2px solid ${C.border}`,borderRadius:12,fontSize:30,fontWeight:900,textAlign:'center',outline:'none',color:C.text,background:C.bg,fontFamily:'inherit'}}/>
+                    style={{width:88,padding:'8px',border:`2px solid ${C.border}`,borderRadius:20,fontSize:30,fontWeight:600,textAlign:'center',outline:'none',color:C.text,background:C.bg,fontFamily:'inherit'}}/>
                   <button className="qbtn" onClick={()=>setQty(q=>String(Number(q)+1))}>+</button>
                 </div>
                 <div style={{display:'flex',gap:6,justifyContent:'center'}}>
                   {[1,5,10,20].map(v=>(
                     <button key={v} onClick={()=>setQty(String(v))}
-                      style={{padding:'5px 12px',borderRadius:99,border:`1.5px solid ${Number(qty)===v?C.primary:C.border2}`,background:Number(qty)===v?C.primaryL:'white',color:Number(qty)===v?C.primary:C.text3,fontSize:12,fontWeight:700,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
+                      style={{padding:'5px 12px',borderRadius:99,border:`1.5px solid ${Number(qty)===v?C.primary:C.border2}`,background:Number(qty)===v?C.primaryL:'white',color:Number(qty)===v?C.primary:C.text3,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',transition:'all .15s'}}>
                       {v}
                     </button>
                   ))}
@@ -339,7 +339,7 @@ export default function DispensePage() {
               </div>
 
               {Number(qty)>selected.qty&&(
-                <div style={{background:C.dangerL,border:`1px solid ${C.dangerB}`,borderRadius:9,padding:'8px 14px',marginBottom:10,fontSize:12,fontWeight:700,color:C.danger}}>
+                <div style={{background:C.dangerL,border:`1px solid ${C.dangerB}`,borderRadius:12,padding:'8px 14px',marginBottom:10,fontSize:13,fontWeight:600,color:C.danger}}>
                   <span style={{display:'inline-flex',alignItems:'center',gap:6}}><AlertTriangle size={14}/>الكمية تتجاوز المتاح</span>
                 </div>
               )}
@@ -348,12 +348,12 @@ export default function DispensePage() {
             <div style={{padding:'8px 20px 16px'}}>
               {wasteMode ? (
                 <button disabled={saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason} onClick={handleWaste}
-                  style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason?C.text4:'#d97706',color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason?.6:1,boxShadow:'0 6px 16px #d9770630',transition:'all .2s'}}>
+                  style={{width:'100%',padding:'14px',fontSize:17,fontWeight:600,background:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason?C.text4:'#d97706',color:'white',border:'none',borderRadius:20,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty||!wasteReason?.6:1,boxShadow:'0 6px 16px #d9770630',transition:'all .2s'}}>
                   {saving?'جارٍ الحفظ...':`تسجيل هدر ${qty||0} ${unitFor(qty||0, selected.unit)}`}
                 </button>
               ) : (
                 <button disabled={saving||!qty||Number(qty)<=0||Number(qty)>selected.qty} onClick={handleDispense}
-                  style={{width:'100%',padding:'14px',fontSize:14,fontWeight:800,background:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?C.text4:C.danger,color:'white',border:'none',borderRadius:12,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?.6:1,boxShadow:`0 6px 16px ${C.danger}30`,transition:'all .2s'}}>
+                  style={{width:'100%',padding:'14px',fontSize:17,fontWeight:600,background:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?C.text4:C.danger,color:'white',border:'none',borderRadius:20,cursor:'pointer',fontFamily:'inherit',opacity:saving||!qty||Number(qty)<=0||Number(qty)>selected.qty?.6:1,boxShadow:`0 6px 16px ${C.danger}30`,transition:'all .2s'}}>
                   {saving?'جارٍ الحفظ...':`صرف ${qty||0} ${unitFor(qty||0, selected.unit)} من ${selected.name}`}
                 </button>
               )}

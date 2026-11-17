@@ -25,7 +25,7 @@ export default function StaffManagementPage() {
   if(loading) return (
     <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.6s ease-in-out infinite}`}</style>
-      <div style={{height:20,width:120,background:colors.border2,borderRadius:6,marginBottom:8}} className="sk"/>
+      <div style={{height:20,width:120,background:colors.border2,borderRadius:12,marginBottom:8}} className="sk"/>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:20}}>
         {[1,2,3].map(i=>(<div key={i} className="sk" style={{height:80,borderRadius:radius.lg,background:colors.border}}/>))}
       </div>
@@ -44,7 +44,7 @@ export default function StaffManagementPage() {
         input:focus,select:focus{border-color:${colors.primary}!important;box-shadow:0 0 0 3px ${colors.primaryLight}!important}
         .staff-card{transition:all .2s cubic-bezier(.4,0,.2,1)}
         .staff-card:hover{box-shadow:${shadow.md}!important}
-        .act-btn{border:none;border-radius:8px;padding:6px 12px;font-size:${font.xs};font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+        .act-btn{border:none;border-radius:12px;padding:6px 12px;font-size:${font.xs};font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
         .act-btn:hover{transform:scale(1.05)}
       `}</style>
 
@@ -55,7 +55,7 @@ export default function StaffManagementPage() {
         <div style={{background:colors.warningLight,border:`1.5px solid ${colors.warningBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16,fontSize:font.sm,color:colors.warning,display:'flex',alignItems:'center',gap:10}}>
           <AlertTriangle size={18} strokeWidth={2} style={{flexShrink:0}}/>
           <div>
-            <b>تقارير إقفال الكاشير عبر واتساب موقوفة من الإعدادات العامة.</b> لن تعمل الخيارات أدناه لكل موظف (مفعّل/موقوف) حتى تفعّلها من <a href="/settings" style={{color:colors.warning,textDecoration:'underline',fontWeight:700}}>الإعدادات ← الإشعارات</a>.
+            <b>تقارير إقفال الكاشير عبر واتساب موقوفة من الإعدادات العامة.</b> لن تعمل الخيارات أدناه لكل موظف (مفعّل/موقوف) حتى تفعّلها من <a href="/settings" style={{color:colors.warning,textDecoration:'underline',fontWeight:600}}>الإعدادات ← الإشعارات</a>.
           </div>
         </div>
       )}
@@ -85,7 +85,7 @@ export default function StaffManagementPage() {
       {visibleStaff.length===0 ? (
         <div style={{...card,padding:56,textAlign:'center'}} className="su">
           <div style={{display:'flex',justifyContent:'center',marginBottom:14}}><Users size={52} strokeWidth={1.25} color={colors.text4}/></div>
-          <div style={{fontSize:font.base,fontWeight:700,color:colors.text2,marginBottom:6}}>لا يوجد موظفين بعد</div>
+          <div style={{fontSize:font.base,fontWeight:600,color:colors.text2,marginBottom:6}}>لا يوجد موظفين بعد</div>
           <div style={{fontSize:font.sm,color:colors.text4,marginBottom:20}}>أضف أول موظف وشارك معه بيانات الدخول</div>
           <button onClick={()=>setShowAdd(true)} style={{...btnPrimary,padding:'10px 24px',fontSize:font.sm}}>+ إضافة أول موظف</button>
         </div>

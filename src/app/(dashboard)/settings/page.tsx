@@ -21,8 +21,8 @@ export default function SettingsPage() {
   if(loading) return (
     <div style={{fontFamily:font.family,direction:'rtl'}}>
       <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.3}}.sk{animation:sk 1.6s ease-in-out infinite}`}</style>
-      <div className="sk" style={{height:20,width:120,background:colors.border2,borderRadius:6,marginBottom:8}}/>
-      <div className="sk" style={{height:12,width:200,background:colors.border,borderRadius:6,marginBottom:24}}/>
+      <div className="sk" style={{height:20,width:120,background:colors.border2,borderRadius:12,marginBottom:8}}/>
+      <div className="sk" style={{height:12,width:200,background:colors.border,borderRadius:12,marginBottom:24}}/>
       <div className="sk" style={{height:52,borderRadius:radius.lg,background:colors.border,marginBottom:16}}/>
       {[1,2,3].map(i=>(<div key={i} className="sk" style={{height:160,borderRadius:radius.lg,background:colors.border,marginBottom:12}}/>))}
     </div>
@@ -44,8 +44,8 @@ export default function SettingsPage() {
         @media (min-width:1000px){
           .set-shell{display:grid;grid-template-columns:220px 1fr}
           .set-tabs{flex-direction:column!important;border-bottom:none!important;border-left:1px solid ${colors.border};padding:12px 10px;gap:2px;overflow:visible!important}
-          .set-tabs .tab-btn{flex:none;flex-direction:row;justify-content:flex-start;gap:10px;padding:11px 14px;border-bottom:none;border-radius:10px}
-          .set-tabs .tab-btn span:last-child{font-size:13.5px!important}
+          .set-tabs .tab-btn{flex:none;flex-direction:row;justify-content:flex-start;gap:10px;padding:11px 14px;border-bottom:none;border-radius:12px}
+          .set-tabs .tab-btn span:last-child{font-size:15px!important}
           .set-tabs .tab-btn:hover{background:${colors.bg}}
           .set-tabs .tab-btn.active{background:${colors.primaryLight};border-bottom:none}
           .set-body{padding:26px 30px}
@@ -53,9 +53,9 @@ export default function SettingsPage() {
         @media (min-width:1280px){
           .acc-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
         }
-        .day-btn{padding:8px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid ${colors.border};background:${colors.surface};color:${colors.text3};font-family:inherit;transition:all .15s}
+        .day-btn{padding:8px 10px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid ${colors.border};background:${colors.surface};color:${colors.text3};font-family:inherit;transition:all .15s}
         .day-btn.active{border-color:${colors.primary};background:${colors.primaryLight};color:${colors.primary}}
-        .sched-btn{padding:14px 8px;border-radius:${radius.md};cursor:pointer;border:1.5px solid ${colors.border};background:${colors.surface};color:${colors.text3};font-size:${font.sm};font-weight:700;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;transition:all .2s}
+        .sched-btn{padding:14px 8px;border-radius:${radius.md};cursor:pointer;border:1.5px solid ${colors.border};background:${colors.surface};color:${colors.text3};font-size:${font.sm};font-weight:600;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;transition:all .2s}
         .sched-btn:hover{border-color:${colors.primary};transform:translateY(-1px)}
         .sched-btn.active{border-color:${colors.primary};background:${colors.primaryLight};color:${colors.primary};box-shadow:0 4px 12px ${colors.primary}22}
       `}</style>
@@ -68,16 +68,16 @@ export default function SettingsPage() {
 
       {/* Plan badge */}
       <div className="su" style={{...card,padding:'14px 18px',marginBottom:16,display:'flex',alignItems:'center',gap:12,animationDelay:'.05s',background:colors.primaryLight,border:'1px solid var(--storely-border)'}}>
-        <div style={{width:40,height:40,borderRadius:12,background:'var(--storely-surface)',border:'1px solid var(--storely-border)',color:colors.primary,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Gem size={18}/></div>
+        <div style={{width:40,height:40,borderRadius:20,background:'var(--storely-surface)',border:'1px solid var(--storely-border)',color:colors.primary,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Gem size={18}/></div>
         <div>
-          <div style={{fontSize:font.sm,fontWeight:800,color:colors.primary}}>{planLabel}</div>
+          <div style={{fontSize:font.sm,fontWeight:600,color:colors.primary}}>{planLabel}</div>
           <div style={{fontSize:font.xs,color:colors.primary,opacity:.7,marginTop:1}}>الفروع: {branches.length} / {maxBranches} مسموح</div>
         </div>
       </div>
 
       {/* Save success */}
       {saveOk&&(
-        <div className="su" style={{background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16,fontSize:font.sm,fontWeight:700,color:colors.primary,display:'flex',alignItems:'center',gap:8}}>
+        <div className="su" style={{background:colors.primaryLight,border:`1.5px solid ${colors.primaryBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16,fontSize:font.sm,fontWeight:600,color:colors.primary,display:'flex',alignItems:'center',gap:8}}>
           <span style={{display:"inline-flex",alignItems:"center",gap:6}}><FeatureIcon name="✅" size={15} /></span> تم حفظ الإعدادات بنجاح
         </div>
       )}
@@ -90,7 +90,7 @@ export default function SettingsPage() {
               onClick={()=>setActiveTab(t.key)}
               style={{background:'none',color:activeTab===t.key?colors.primary:colors.text3}}>
               <FeatureIcon name={t.icon} size={17} />
-              <span style={{fontSize:10,fontWeight:700}}>{t.label}</span>
+              <span style={{fontSize:12,fontWeight:600}}>{t.label}</span>
             </button>
           ))}
         </div>

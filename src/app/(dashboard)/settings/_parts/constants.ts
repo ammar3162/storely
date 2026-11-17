@@ -1,6 +1,6 @@
 import { colors, font } from '@/lib/ds'
 
-export const lbl: React.CSSProperties = { fontSize: font.xs, fontWeight: 700, color: colors.text3, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }
+export const lbl: React.CSSProperties = { fontSize: font.xs, fontWeight:600, color: colors.text3, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }
 
 export const DAYS = [
   {key:'0',label:'أحد'},{key:'1',label:'إثن'},{key:'2',label:'ثلث'},

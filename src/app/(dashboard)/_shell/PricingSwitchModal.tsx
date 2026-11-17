@@ -97,16 +97,16 @@ export default function PricingSwitchModal({ m }: { m: DashboardShell }) {
     <div className="sh-overlay" style={{ zIndex: 3050 }}>
       <div className="sh-modal" style={{ maxWidth: 520, maxHeight: '92vh', overflowY: 'auto', padding: 0 }}>
         <div style={{ padding: '22px 22px 0' }}>
-          <div style={{ width: 44, height: 44, borderRadius: 12, background: C.primaryL, display: 'grid', placeItems: 'center', marginBottom: 12 }}>
+          <div style={{ width: 44, height: 44, borderRadius:20, background: C.primaryL, display: 'grid', placeItems: 'center', marginBottom: 12 }}>
             <Handshake size={22} strokeWidth={1.75} color={C.primary} />
           </div>
-          <div style={{ fontSize: 13, color: C.text3, marginBottom: 4 }}>إلى شركائنا في</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 12 }}>{data.orgName}</div>
+          <div style={{ fontSize:15, color: C.text3, marginBottom: 4 }}>إلى شركائنا في</div>
+          <div style={{ fontSize: 20, fontWeight:600, color: C.text, marginBottom: 12 }}>{data.orgName}</div>
         </div>
 
         {done ? (
           <div style={{ padding: '0 22px 22px' }}>
-            <div style={{ fontSize: 15, color: C.text, lineHeight: 1.9, marginBottom: 14 }}>
+            <div style={{ fontSize:17, color: C.text, lineHeight: 1.9, marginBottom: 14 }}>
               شكراً لثقتكم، تم تسجيل اختياركم.
               {' '}تُفعَّل خدماتكم الجديدة بفاتورة <b>{fmt(done.projected)} ⃁ شهرياً</b> ابتداءً من تجديد اشتراككم القادم{renew ? ` في ${renew}` : ''}، وتبقى فاتورتكم الحالية ({fmt(done.current)} ⃁) كما هي حتى ذلك التاريخ.
             </div>
@@ -114,7 +114,7 @@ export default function PricingSwitchModal({ m }: { m: DashboardShell }) {
           </div>
         ) : (
           <>
-            <div style={{ padding: '0 22px', fontSize: 14.5, color: C.text2, lineHeight: 1.95 }}>
+            <div style={{ padding: '0 22px', fontSize:17, color: C.text2, lineHeight: 1.95 }}>
               <p style={{ margin: '0 0 10px' }}>نشكر لكم ثقتكم بـ Storely، فأنتم من أوائل المنشآت التي اعتمدت عليه، ونعتز بشراكتكم ونتطلع إلى مواصلة النمو معكم.</p>
               <p style={{ margin: '0 0 8px' }}>حدّثنا نظام الأسعار، فلم تعد هناك باقات ثابتة. تختارون الخدمات التي تحتاجونها فقط، ويُحتسب سعر كل خدمة لكل فرع.</p>
               <ul style={{ margin: '0 0 14px', paddingInlineStart: 20, display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -124,8 +124,8 @@ export default function PricingSwitchModal({ m }: { m: DashboardShell }) {
             </div>
 
             <div style={{ padding: '0 22px' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: multi ? 2 : 8 }}>اختاروا الخدمات التي تحتاجونها <span style={{ fontWeight: 400, color: C.text3, fontSize: 12.5 }}>({branchesTxt})</span></div>
-              {multi && <div style={{ fontSize: 12.5, color: C.text3, marginBottom: 8 }}>يمكنكم تحديد الفروع التي تحتاج كل خدمة، ويُحتسب سعرها على هذه الفروع فقط، على أن يكون لكل فرع خدمة واحدة على الأقل.</div>}
+              <div style={{ fontSize:17, fontWeight:600, color: C.text, marginBottom: multi ? 2 : 8 }}>اختاروا الخدمات التي تحتاجونها <span style={{ fontWeight: 400, color: C.text3, fontSize:13 }}>({branchesTxt})</span></div>
+              {multi && <div style={{ fontSize:13, color: C.text3, marginBottom: 8 }}>يمكنكم تحديد الفروع التي تحتاج كل خدمة، ويُحتسب سعرها على هذه الفروع فقط، على أن يكون لكل فرع خدمة واحدة على الأقل.</div>}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {data.features.map(f => {
                   const on = picked.includes(f.slug)
@@ -135,25 +135,25 @@ export default function PricingSwitchModal({ m }: { m: DashboardShell }) {
                   return (
                     <div key={f.slug}>
                     <button type="button" onClick={() => toggle(f.slug)} aria-pressed={on}
-                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 12px', borderRadius: 10, cursor: 'pointer', textAlign: 'right',
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 12px', borderRadius:12, cursor: 'pointer', textAlign: 'right',
                         border: `1px solid ${on ? C.primary : C.border}`, background: on ? C.primaryL : C.surface, fontFamily: 'inherit' }}>
-                      <span style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0, display: 'grid', placeItems: 'center',
+                      <span style={{ width: 20, height: 20, borderRadius:12, flexShrink: 0, display: 'grid', placeItems: 'center',
                         border: `1.5px solid ${on ? C.primary : C.border2}`, background: on ? C.primary : 'transparent' }}>
                         {on && <Check size={14} strokeWidth={2.5} color="#fff" />}
                       </span>
-                      <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: C.text }}>{FEATURE_NAMES[f.slug]?.ar || f.slug}</span>
-                      <span style={{ fontSize: 13.5, color: C.text2, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-                        {fmt(amount)} ⃁ <span style={{ fontSize: 11.5, color: C.text3 }}>{f.perBranch ? (multi ? `لـ ${nTxt}` : data.branches > 1 ? `لـ ${branchesTxt}` : 'لكل فرع') : 'للمنشأة'}</span>
+                      <span style={{ flex: 1, fontSize:17, fontWeight: 600, color: C.text }}>{FEATURE_NAMES[f.slug]?.ar || f.slug}</span>
+                      <span style={{ fontSize:15, color: C.text2, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                        {fmt(amount)} ⃁ <span style={{ fontSize:13, color: C.text3 }}>{f.perBranch ? (multi ? `لـ ${nTxt}` : data.branches > 1 ? `لـ ${branchesTxt}` : 'لكل فرع') : 'للمنشأة'}</span>
                       </span>
                     </button>
                     {on && f.perBranch && multi && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', padding: '8px 4px 2px' }}>
-                        <span style={{ fontSize: 12.5, color: C.text3 }}>الفروع:</span>
+                        <span style={{ fontSize:13, color: C.text3 }}>الفروع:</span>
                         {branchList.map(b => {
                           const bOn = (branchMap[f.slug] || []).includes(b.id)
                           return (
                             <button key={b.id} type="button" onClick={() => toggleBranch(f.slug, b.id)} aria-pressed={bOn}
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 30, padding: '0 10px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 600,
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 30, padding: '0 10px', borderRadius:12, cursor: 'pointer', fontFamily: 'inherit', fontSize:13, fontWeight: 600,
                                 border: `1px solid ${bOn ? C.primary : C.border}`, background: bOn ? C.primary : C.surface, color: bOn ? '#fff' : C.text2 }}>
                               {bOn && <Check size={12} strokeWidth={2.5} />}{b.name || 'فرع'}
                             </button>
@@ -167,30 +167,30 @@ export default function PricingSwitchModal({ m }: { m: DashboardShell }) {
               </div>
             </div>
 
-            <div style={{ margin: '14px 22px 0', padding: '12px 14px', borderRadius: 10, background: C.bg, border: `1px solid ${C.border}` }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, color: C.text2, marginBottom: 6 }}>
+            <div style={{ margin: '14px 22px 0', padding: '12px 14px', borderRadius:12, background: C.bg, border: `1px solid ${C.border}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize:15, color: C.text2, marginBottom: 6 }}>
                 <span>فاتورتكم الحالية</span><span style={{ fontVariantNumeric: 'tabular-nums' }}>{fmt(data.current)} ⃁ شهرياً</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700, color: C.text }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize:17, fontWeight:600, color: C.text }}>
                 <span>بعد اختياركم</span>
                 <span style={{ fontVariantNumeric: 'tabular-nums' }}>{!picked.length ? '—' : preview ? `${fmt(preview.projected)} ⃁ شهرياً` : '…'}</span>
               </div>
               {preview && picked.length > 0 && (
-                <div style={{ fontSize: 12.5, color: C.text3, marginTop: 8, lineHeight: 1.7 }}>
+                <div style={{ fontSize:13, color: C.text3, marginTop: 8, lineHeight: 1.7 }}>
                   {`تُفعَّل من تجديد اشتراككم القادم${renew ? ` في ${renew}` : ''}، وتبقى فاتورتكم الحالية حتى ذلك التاريخ.`}
                   {preview.projected > data.current && ` الفاتورة الجديدة أعلى من الحالية بـ ${fmt(preview.projected - data.current)} ⃁.`}
                 </div>
               )}
             </div>
 
-            {missingNames.length > 0 && <div role="alert" style={{ margin: '10px 22px 0', padding: '10px 12px', borderRadius: 10, fontSize: 13, lineHeight: 1.7, color: C.danger, background: '#fef3f2', border: '1px solid #fecdca' }}>{uncoveredMessage(missingNames)}</div>}
-            {error && <div role="alert" style={{ margin: '10px 22px 0', fontSize: 13, color: C.danger }}>{error}</div>}
+            {missingNames.length > 0 && <div role="alert" style={{ margin: '10px 22px 0', padding: '10px 12px', borderRadius:12, fontSize:15, lineHeight: 1.7, color: C.danger, background: '#fef3f2', border: '1px solid #fecdca' }}>{uncoveredMessage(missingNames)}</div>}
+            {error && <div role="alert" style={{ margin: '10px 22px 0', fontSize:15, color: C.danger }}>{error}</div>}
 
             <div style={{ padding: '16px 22px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
               <button className="sh-btn sh-btn-primary" style={{ width: '100%' }} onClick={confirm} disabled={!picked.length || saving || missingNames.length > 0}>
                 {saving ? 'جاري الحفظ...' : !picked.length ? 'اختاروا خدمة واحدة على الأقل' : missingNames.length ? 'اختاروا خدمة لكل فرع' : 'تأكيد اختياري'}
               </button>
-              <button type="button" className="sh-link-btn" style={{ alignSelf: 'center', fontSize: 13.5, color: C.text3, background: 'none', border: 'none', cursor: 'pointer', padding: 6, fontFamily: 'inherit' }} onClick={later}>ذكّرني لاحقاً</button>
+              <button type="button" className="sh-link-btn" style={{ alignSelf: 'center', fontSize:15, color: C.text3, background: 'none', border: 'none', cursor: 'pointer', padding: 6, fontFamily: 'inherit' }} onClick={later}>ذكّرني لاحقاً</button>
             </div>
           </>
         )}

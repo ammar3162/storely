@@ -14,21 +14,21 @@ export default function AddStaffModal({ m }: { m: StaffPage }) {
           <div style={{background:colors.surface,borderRadius:radius.xl,padding:26,width:'100%',maxWidth:440,animation:'modalIn .2s ease',boxShadow:shadow.lg}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
               <div>
-                <div style={{fontSize:font.md,fontWeight:800,color:colors.text}}>إضافة موظف جديد</div>
+                <div style={{fontSize:font.md,fontWeight:600,color:colors.text}}>إضافة موظف جديد</div>
                 <div style={{fontSize:font.xs,color:colors.text4,marginTop:2}}>سيتم توليد رمز PIN تلقائياً</div>
               </div>
-              <button onClick={()=>setShowAdd(false)} style={{width:32,height:32,borderRadius:radius.sm,border:`1.5px solid ${colors.border2}`,background:colors.bg,cursor:'pointer',fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',color:colors.text3}}>×</button>
+              <button onClick={()=>setShowAdd(false)} style={{width:32,height:32,borderRadius:radius.sm,border:`1.5px solid ${colors.border2}`,background:colors.bg,cursor:'pointer',fontSize:20,display:'flex',alignItems:'center',justifyContent:'center',color:colors.text3}}>×</button>
             </div>
             <div style={{display:'flex',flexDirection:'column' as const,gap:12,marginBottom:18}}>
               <div>
-                <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>اسم الموظف *</label>
+                <label style={{fontSize:font.xs,fontWeight:600,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>اسم الموظف *</label>
                 <input value={newName} onChange={e=>setNewName(e.target.value)} style={inp()} placeholder="مثال: أحمد محمد"/>
               </div>
               <div>
-                <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>رقم الجوال *</label>
+                <label style={{fontSize:font.xs,fontWeight:600,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>رقم الجوال *</label>
                 <div style={{display:'flex',gap:8}}>
                   <select value={staffCountry} onChange={e=>setStaffCountry(e.target.value)}
-                    style={{padding:'10px 8px',border:`1px solid ${colors.border}`,borderRadius:8,fontFamily:'inherit',fontSize:12,color:colors.text,background:'white',cursor:'pointer'}}>
+                    style={{padding:'10px 8px',border:`1px solid ${colors.border}`,borderRadius:12,fontFamily:'inherit',fontSize:13,color:colors.text,background:'white',cursor:'pointer'}}>
                     {[['+966','السعودية'],['+971','الإمارات'],['+965','الكويت'],['+973','البحرين'],['+974','قطر'],['+968','عُمان'],['+20','مصر'],['+962','الأردن'],['+1','أمريكا'],['+44','بريطانيا'],['+91','الهند'],['+92','باكستان']].map(([code,name])=>(
                       <option key={code} value={code}>{name} {'\u2066'+code+'\u2069'}</option>
                     ))}
@@ -38,54 +38,54 @@ export default function AddStaffModal({ m }: { m: StaffPage }) {
               </div>
               {branches.length>1 && (
                 <div>
-                  <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>الفرع</label>
+                  <label style={{fontSize:font.xs,fontWeight:600,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>الفرع</label>
                   {/* الموظف ينضاف للفرع اللي شغّال فيه المالك حالياً — لتغييره بدّل الفرع من القائمة الجانبية */}
-                  <div style={{...inp(),background:colors.bg,color:colors.text2,fontWeight:700}}>
+                  <div style={{...inp(),background:colors.bg,color:colors.text2,fontWeight:600}}>
                     {branches.find((b:any)=>b.id===newBranch)?.name||'—'}
                   </div>
                 </div>
               )}
               <div>
-                <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>نوع الموظف</label>
+                <label style={{fontSize:font.xs,fontWeight:600,color:colors.text3,display:'block',marginBottom:5,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>نوع الموظف</label>
                 <div style={{display:'grid',gridTemplateColumns:permOkFor('cashier', newBranch)?'1fr 1fr':'1fr',gap:8}}>
-                  <button type="button" onClick={()=>setNewRole('staff')} style={{padding:'12px 10px',borderRadius:10,border:`1.5px solid ${newRole==='staff'?colors.primary:colors.border}`,background:newRole==='staff'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='staff'?`0 2px 8px ${colors.primary}22`:'none'}}>
-                    <div style={{fontWeight:800,fontSize:font.sm,color:newRole==='staff'?colors.primary:colors.text2,marginBottom:3,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><User size={14} strokeWidth={2.25}/> موظف عادي</div>
-                    <div style={{fontSize:10,color:newRole==='staff'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>{permOk('dispense')?'يستخدم نظام الصرف والمخزون':permOk('purchases')?'يسجّل المشتريات':'يسجّل حضوره ومهامه'}</div>
+                  <button type="button" onClick={()=>setNewRole('staff')} style={{padding:'12px 10px',borderRadius:12,border:`1.5px solid ${newRole==='staff'?colors.primary:colors.border}`,background:newRole==='staff'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='staff'?`0 2px 8px ${colors.primary}22`:'none'}}>
+                    <div style={{fontWeight:600,fontSize:font.sm,color:newRole==='staff'?colors.primary:colors.text2,marginBottom:3,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><User size={14} strokeWidth={2.25}/> موظف عادي</div>
+                    <div style={{fontSize:12,color:newRole==='staff'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>{permOk('dispense')?'يستخدم نظام الصرف والمخزون':permOk('purchases')?'يسجّل المشتريات':'يسجّل حضوره ومهامه'}</div>
                   </button>
                   {permOkFor('cashier', newBranch) && (
                   <button type="button" onClick={()=>{
                       if(!hasCashier){toast('الكاشير يحتاج باقة فيها إقفال الكاشير أو إضافة «إقفال الكاشير» لهذا الفرع من صفحة الإضافات','warning');return}
                       setNewRole('cashier')
-                    }} style={{padding:'12px 10px',borderRadius:10,border:`1.5px solid ${newRole==='cashier'?colors.primary:colors.border}`,background:newRole==='cashier'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='cashier'?`0 2px 8px ${colors.primary}22`:'none',opacity:!hasCashier?.55:1,position:'relative' as const}}>
+                    }} style={{padding:'12px 10px',borderRadius:12,border:`1.5px solid ${newRole==='cashier'?colors.primary:colors.border}`,background:newRole==='cashier'?colors.primaryLight:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'center' as const,transition:'all .15s',boxShadow:newRole==='cashier'?`0 2px 8px ${colors.primary}22`:'none',opacity:!hasCashier?.55:1,position:'relative' as const}}>
                     {!hasCashier && (
-                      <div style={{position:'absolute',top:-8,left:-6,background:'#1c1c1a',color:'white',fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:99,display:'flex',alignItems:'center',gap:4}}><Lock size={9} strokeWidth={2.5}/> إضافة</div>
+                      <div style={{position:'absolute',top:-8,left:-6,background:'#1c1c1a',color:'white',fontSize:12,fontWeight:600,padding:'2px 8px',borderRadius:99,display:'flex',alignItems:'center',gap:4}}><Lock size={9} strokeWidth={2.5}/> إضافة</div>
                     )}
-                    <div style={{fontWeight:800,fontSize:font.sm,color:newRole==='cashier'?colors.primary:colors.text2,marginBottom:3,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><Wallet size={14} strokeWidth={2.25}/> كاشير</div>
-                    <div style={{fontSize:10,color:newRole==='cashier'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يقفل الصندوق يومياً فقط</div>
+                    <div style={{fontWeight:600,fontSize:font.sm,color:newRole==='cashier'?colors.primary:colors.text2,marginBottom:3,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}><Wallet size={14} strokeWidth={2.25}/> كاشير</div>
+                    <div style={{fontSize:12,color:newRole==='cashier'?colors.primary:colors.text4,opacity:.8,lineHeight:1.4}}>يقفل الصندوق يومياً فقط</div>
                   </button>
                   )}
                 </div>
               </div>
               {newRole==='cashier' && (
                 <div style={{background:colors.bg,borderRadius:radius.md,padding:'12px 14px'}}>
-                  <div style={{fontSize:font.xs,fontWeight:700,color:colors.text3,marginBottom:4}}>اليوم الجديد يبدأ الساعة</div>
-                  <div style={{fontSize:10,color:colors.text4,marginBottom:10,lineHeight:1.5}}>يُحتسب أي إقفال قبل هذه الساعة على اليوم السابق — مفيد إذا كان المحل يُغلق بعد 12 منتصف الليل</div>
+                  <div style={{fontSize:font.xs,fontWeight:600,color:colors.text3,marginBottom:4}}>اليوم الجديد يبدأ الساعة</div>
+                  <div style={{fontSize:12,color:colors.text4,marginBottom:10,lineHeight:1.5}}>يُحتسب أي إقفال قبل هذه الساعة على اليوم السابق — مفيد إذا كان المحل يُغلق بعد 12 منتصف الليل</div>
                   <div>
                     <select value={dayStartHour} onChange={e=>setDayStartHour(Number(e.target.value))} style={inp()}>
                       {Array.from({length:11},(_,h)=>(
                         <option key={h} value={h}>{h===0 ? '12:00 منتصف الليل (بدون ترحيل)' : `${h}:00 ${h<6?'الفجر':'الصباح'}`}</option>
                       ))}
                     </select>
-                    <div style={{fontSize:10.5,color:colors.text3,marginTop:8,lineHeight:1.6,background:'white',borderRadius:8,padding:'8px 10px',border:`1px solid ${colors.border}`}}>
+                    <div style={{fontSize:10.5,color:colors.text3,marginTop:8,lineHeight:1.6,background:'white',borderRadius:12,padding:'8px 10px',border:`1px solid ${colors.border}`}}>
                       {dayStartHour===0 ? 'يُسجَّل كل إقفال بتاريخ يومه نفسه.' : <>مثال: إذا أقفل الكاشير يوم الأحد الساعة {dayStartHour===1?'12':dayStartHour-1}:30 {dayStartHour<=6?'الفجر':'الصباح'}، يُسجَّل الإقفال على <b>السبت</b>.</>}
                     </div>
                   </div>
-                  <label style={{display:'flex',alignItems:'center',gap:8,marginTop:12,padding:'10px 12px',background:'white',borderRadius:8,border:`1.5px solid ${newSendClosingWA?colors.primary:colors.border}`,cursor:'pointer'}}>
+                  <label style={{display:'flex',alignItems:'center',gap:8,marginTop:12,padding:'10px 12px',background:'white',borderRadius:12,border:`1.5px solid ${newSendClosingWA?colors.primary:colors.border}`,cursor:'pointer'}}>
                     <input type="checkbox" checked={newSendClosingWA} onChange={e=>setNewSendClosingWA(e.target.checked)}
                       style={{accentColor:colors.primary,width:14,height:14}}/>
                     <div>
-                      <div style={{fontSize:12,fontWeight:700,color:newSendClosingWA?colors.primary:colors.text2,display:'flex',alignItems:'center',gap:5}}><Smartphone size={13} strokeWidth={2.25}/> إرسال تفاصيل الإقفال للمالك عبر واتساب</div>
-                      <div style={{fontSize:10,color:colors.text4,marginTop:2,lineHeight:1.4}}>{newSendClosingWA?'مفعّل: يصل إلى المالك تقرير الإقفال الكامل':'موقوف: يصل إلى المالك إشعار فقط "الكاشير أقفل"، بدون تفاصيل'}</div>
+                      <div style={{fontSize:13,fontWeight:600,color:newSendClosingWA?colors.primary:colors.text2,display:'flex',alignItems:'center',gap:5}}><Smartphone size={13} strokeWidth={2.25}/> إرسال تفاصيل الإقفال للمالك عبر واتساب</div>
+                      <div style={{fontSize:12,color:colors.text4,marginTop:2,lineHeight:1.4}}>{newSendClosingWA?'مفعّل: يصل إلى المالك تقرير الإقفال الكامل':'موقوف: يصل إلى المالك إشعار فقط "الكاشير أقفل"، بدون تفاصيل'}</div>
                     </div>
                   </label>
                 </div>
@@ -97,7 +97,7 @@ export default function AddStaffModal({ m }: { m: StaffPage }) {
             </div>
             {newRole==='staff' && (
               <div style={{background:colors.bg,borderRadius:radius.md,padding:'14px 16px',marginTop:12}}>
-                <div style={{fontSize:font.xs,fontWeight:700,color:colors.text3,marginBottom:10,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>صلاحيات الموظف</div>
+                <div style={{fontSize:font.xs,fontWeight:600,color:colors.text3,marginBottom:10,textTransform:'uppercase' as const,letterSpacing:'.05em'}}>صلاحيات الموظف</div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
                   {[
                     {key:'dispense',   label:'الصرف من المخزون', Icon:Send, locked:false},
@@ -106,12 +106,12 @@ export default function AddStaffModal({ m }: { m: StaffPage }) {
                     {key:'reports',    label:'التقارير',   Icon:BarChart3, locked:false},
                     {key:'cashier',    label:'إقفال الكاشير', Icon:Wallet, locked:false},
                   ].filter(p=>permOkFor(p.key, newBranch)).map(p=>(
-                    <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:'white',borderRadius:8,border:`1.5px solid ${(newPermissions as any)[p.key]?colors.primary:colors.border}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
+                    <label key={p.key} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',background:'white',borderRadius:12,border:`1.5px solid ${(newPermissions as any)[p.key]?colors.primary:colors.border}`,cursor:p.locked?'not-allowed':'pointer',transition:'all .15s'}}>
                       <input type="checkbox" checked={(newPermissions as any)[p.key]} disabled={p.locked}
                         onChange={e=>!p.locked&&setNewPermissions(prev=>({...prev,[p.key]:e.target.checked}))}
                         style={{accentColor:colors.primary,width:14,height:14}}/>
-                      <span style={{fontSize:12,fontWeight:600,color:(newPermissions as any)[p.key]?colors.primary:colors.text2,display:'flex',alignItems:'center',gap:5}}><p.Icon size={13} strokeWidth={2.25}/> {p.label}</span>
-                      {p.locked&&<span style={{fontSize:9,color:colors.text4}}>(افتراضي)</span>}
+                      <span style={{fontSize:13,fontWeight:600,color:(newPermissions as any)[p.key]?colors.primary:colors.text2,display:'flex',alignItems:'center',gap:5}}><p.Icon size={13} strokeWidth={2.25}/> {p.label}</span>
+                      {p.locked&&<span style={{fontSize:12,color:colors.text4}}>(افتراضي)</span>}
                     </label>
                   ))}
                 </div>

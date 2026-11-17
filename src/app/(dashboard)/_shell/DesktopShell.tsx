@@ -50,18 +50,18 @@ export default function DesktopShell({ m, banners, children }: { m: DashboardShe
 
             <div style={{padding:'10px 12px',borderTop:`1px solid ${C.border}`,display:'flex',alignItems:'center',gap:10}}>
               <div className="sh-avatar">{userInit}</div>
-              <div style={{flex:1,minWidth:0,fontSize:15,fontWeight:500,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{userName}</div>
+              <div style={{flex:1,minWidth:0,fontSize:17,fontWeight:500,color:C.text,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{userName}</div>
               <button className="sh-icon-btn sh-icon-sm" title={theme==='light'?'الوضع الداكن':'الوضع الفاتح'} onClick={toggleTheme}>{theme==='light'?<Moon size={16}/>:<Sun size={16}/>}</button>
               <button className="sh-icon-btn sh-icon-sm" title="تسجيل الخروج" onClick={signOut}><LogOut size={16}/></button>
             </div>
           </aside>
 
           <header className="desk-topbar">
-            <div style={{fontSize:13,color:C.text3,display:'flex',alignItems:'center',gap:6,minWidth:0}}>
+            <div style={{fontSize:15,color:C.text3,display:'flex',alignItems:'center',gap:6,minWidth:0}}>
               <span style={{fontWeight:600,color:C.text2}}>{orgName}</span>{branchName&&<><span>/</span><span>{branchName}</span></>}
             </div>
             <div style={{display:'flex',alignItems:'center',gap:4}}>
-              <button className="sh-icon-btn" data-no-translate title={m.lang==='en'?'العربية':'English'} onClick={()=>m.setLang(m.lang==='en'?'ar':'en')} style={{fontSize:12.5,fontWeight:700,width:'auto',padding:'0 10px'}}>{m.lang==='en'?'عربي':'EN'}</button>
+              <button className="sh-icon-btn" data-no-translate title={m.lang==='en'?'العربية':'English'} onClick={()=>m.setLang(m.lang==='en'?'ar':'en')} style={{fontSize:13,fontWeight:600,width:'auto',padding:'0 10px'}}>{m.lang==='en'?'عربي':'EN'}</button>
               <HelpVideoButton/>
               <button className="sh-icon-btn" title="الدعم الفني" onClick={()=>window.dispatchEvent(new Event('storely:support'))}><HelpCircle size={19}/></button>
               <button className="sh-icon-btn" title="الإعدادات" onClick={()=>router.push('/settings')}><Settings size={19}/></button>

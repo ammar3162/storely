@@ -54,20 +54,20 @@ export default function AccountantHub({ orgId }: { orgId: string }) {
 
   return (
     <div style={{ fontFamily: font.family }}>
-      <style>{`.ah-head{display:grid;grid-template-columns:1fr;gap:14px}.ah-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--storely-border);border:1px solid var(--storely-border);border-radius:12px;overflow:hidden}
+      <style>{`.ah-head{display:grid;grid-template-columns:1fr;gap:14px}.ah-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--storely-border);border:1px solid var(--storely-border);border-radius:20px;overflow:hidden}
         @media(min-width:900px){.ah-head{grid-template-columns:minmax(0,1fr) auto;align-items:center}.ah-stats{grid-template-columns:repeat(3,120px)}}
         .ah-tab:hover{background:${colors.bg}}.ah-tabs{display:flex}.ah-s{display:none}
-        @media(max-width:640px){.ah-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))}.ah-tab{flex-direction:column;gap:3px!important;padding:9px 2px!important;font-size:12px!important}.ah-l{display:none}.ah-s{display:inline}}`}</style>
+        @media(max-width:640px){.ah-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))}.ah-tab{flex-direction:column;gap:3px!important;padding:9px 2px!important;font-size:13px!important}.ah-l{display:none}.ah-s{display:inline}}`}</style>
 
       {/* الملخص */}
       <div style={{ background: 'var(--storely-surface)', border: '1px solid var(--storely-border)', borderRadius: radius.xl, padding: 16, marginBottom: 14 }}>
         <div className="ah-head">
           <div style={{ minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 34, height: 34, borderRadius: 10, background: colors.primary, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><ShieldCheck size={18} color="#fff" /></span>
+              <span style={{ width: 34, height: 34, borderRadius:12, background: colors.primary, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><ShieldCheck size={18} color="#fff" /></span>
               <div>
-                <div style={{ fontSize: 17, fontWeight: 800, color: colors.text }}>محاسبك</div>
-                <div style={{ fontSize: 12.5, color: colors.text3 }}>
+                <div style={{ fontSize: 17, fontWeight:600, color: colors.text }}>محاسبك</div>
+                <div style={{ fontSize:13, color: colors.text3 }}>
                   {people.length ? `${active} مفعّل${pending ? ` · ${pending} بانتظار القبول` : ''}` : 'ادعُ محاسبك — يطّلع على بياناتك للقراءة فقط ويصله التقرير تلقائياً'}
                 </div>
               </div>
@@ -78,8 +78,8 @@ export default function AccountantHub({ orgId }: { orgId: string }) {
                   const on = p.status === 'active'
                   return (
                     <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--storely-surface)', border: `1px solid ${colors.border}`, borderRadius: 99, padding: '4px 12px 4px 4px', maxWidth: '100%' }}>
-                      <span style={{ width: 28, height: 28, borderRadius: 99, background: on ? colors.primary : 'var(--storely-background)', color: on ? '#fff' : 'var(--storely-text)', border: on ? 'none' : '1px solid var(--storely-border)', fontSize: 12.5, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{initials(p.name || p.email)}</span>
-                      <span style={{ fontSize: 12.5, fontWeight: 700, color: colors.text2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{p.name || p.email}</span>
+                      <span style={{ width: 28, height: 28, borderRadius: 99, background: on ? colors.primary : 'var(--storely-background)', color: on ? '#fff' : 'var(--storely-text)', border: on ? 'none' : '1px solid var(--storely-border)', fontSize:13, fontWeight:600, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{initials(p.name || p.email)}</span>
+                      <span style={{ fontSize:13, fontWeight:600, color: colors.text2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{p.name || p.email}</span>
                       <span style={{ width: 7, height: 7, borderRadius: 99, background: on ? '#047857' : '#B45309', flexShrink: 0 }} title={on ? 'مفعّل' : 'بانتظار القبول'} />
                     </div>
                   )
@@ -94,8 +94,8 @@ export default function AccountantHub({ orgId }: { orgId: string }) {
               { l: 'شهور مقفلة', v: String(locks), s: 'locks' as Sub },
             ].map(x => (
               <button key={x.l} onClick={() => go(x.s)} style={{ textAlign: 'center' as const, background: 'var(--storely-surface)', border: 'none', padding: '10px 6px', cursor: 'pointer', fontFamily: font.family, minWidth: 0 }}>
-                <div style={{ fontSize: 17, fontWeight: 700, color: x.warn ? '#B45309' : colors.text, fontVariantNumeric: 'tabular-nums', lineHeight: 1.3, whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' }}>{x.v}</div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: colors.text3, marginTop: 2, whiteSpace: 'nowrap' as const }}>{x.l}</div>
+                <div style={{ fontSize: 17, fontWeight:600, color: x.warn ? '#B45309' : colors.text, fontVariantNumeric: 'tabular-nums', lineHeight: 1.3, whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' }}>{x.v}</div>
+                <div style={{ fontSize:12, fontWeight: 600, color: colors.text3, marginTop: 2, whiteSpace: 'nowrap' as const }}>{x.l}</div>
               </button>
             ))}
           </div>
@@ -109,10 +109,10 @@ export default function AccountantHub({ orgId }: { orgId: string }) {
           return (
             <button key={t.k} role="tab" aria-selected={on} className="ah-tab" onClick={() => go(t.k)}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 14px', border: 'none', borderBottom: `2.5px solid ${on ? colors.primary : 'transparent'}`, marginBottom: -1,
-                background: 'transparent', color: on ? colors.primary : colors.text3, fontSize: 13.5, fontWeight: on ? 800 : 600, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const, borderRadius: '8px 8px 0 0' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Icon size={16} />{t.badge ? <span className="ah-s" style={{ fontSize: 10.5, fontWeight: 800, padding: '0 5px', borderRadius: 99, background: t.tone ? '#fef3c7' : colors.bg, color: t.tone || colors.text3 }}>{t.badge}</span> : null}</span>
+                background: 'transparent', color: on ? colors.primary : colors.text3, fontSize:15, fontWeight: on ? 800 : 600, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const, borderRadius: '8px 8px 0 0' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><Icon size={16} />{t.badge ? <span className="ah-s" style={{ fontSize: 10.5, fontWeight:600, padding: '0 5px', borderRadius: 99, background: t.tone ? '#fef3c7' : colors.bg, color: t.tone || colors.text3 }}>{t.badge}</span> : null}</span>
               <span className="ah-l">{t.label}</span><span className="ah-s">{t.short}</span>
-              {t.badge ? <span className="ah-l" style={{ fontSize: 11, fontWeight: 800, minWidth: 20, padding: '1px 6px', borderRadius: 99, background: t.tone ? '#fef3c7' : on ? colors.primaryLight : colors.bg, color: t.tone || (on ? colors.primary : colors.text3) }}>{t.badge}</span> : null}
+              {t.badge ? <span className="ah-l" style={{ fontSize:12, fontWeight:600, minWidth: 20, padding: '1px 6px', borderRadius: 99, background: t.tone ? '#fef3c7' : on ? colors.primaryLight : colors.bg, color: t.tone || (on ? colors.primary : colors.text3) }}>{t.badge}</span> : null}
             </button>
           )
         })}
@@ -120,7 +120,7 @@ export default function AccountantHub({ orgId }: { orgId: string }) {
 
       <div>
         {(sub === 'people' || sub === 'reports') && <VatStatusLine orgId={orgId} />}
-        {sub === null && <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: colors.text4, fontSize: 13, padding: 20 }}><Clock size={14} /> جاري التحميل...</div>}
+        {sub === null && <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: colors.text4, fontSize:15, padding: 20 }}><Clock size={14} /> جاري التحميل...</div>}
         {sub === 'people' && <AccountantPortalAccess orgId={orgId} onChange={loadSummary} />}
         {sub === 'reports' && <AccountantLinkSettings orgId={orgId} onChange={loadSummary} />}
         {sub === 'requests' && <OwnerAccountantRequests orgId={orgId} showEmpty onChange={loadSummary} />}

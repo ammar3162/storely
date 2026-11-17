@@ -18,8 +18,8 @@ export default function NotifyTab({ m }: { m: SettingsState }) {
                     <input type="checkbox" checked={form.notify_cashier_closing_wa} onChange={e=>setForm({...form,notify_cashier_closing_wa:e.target.checked})}
                       style={{accentColor:colors.primary,width:16,height:16}}/>
                     <div>
-                      <div style={{fontSize:font.sm,fontWeight:700,color:colors.text}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><FeatureIcon name="🏪" size={15} /></span> تقارير إقفال الكاشير</div>
-                      <div style={{fontSize:11,color:colors.text4,marginTop:2}}>رسالة فورية كل ما موظف يقفل الصندوق</div>
+                      <div style={{fontSize:font.sm,fontWeight:600,color:colors.text}}><span style={{display:"inline-flex",alignItems:"center",gap:6}}><FeatureIcon name="🏪" size={15} /></span> تقارير إقفال الكاشير</div>
+                      <div style={{fontSize:12,color:colors.text4,marginTop:2}}>رسالة فورية كل ما موظف يقفل الصندوق</div>
                     </div>
                   </label>
                 </div>
@@ -28,7 +28,7 @@ export default function NotifyTab({ m }: { m: SettingsState }) {
 
               <div style={{marginBottom:20}}>
                 <label style={lbl}>التقرير الصباحي — موعد الإرسال</label>
-                <div style={{fontSize:11,color:colors.text4,marginBottom:8,lineHeight:1.7}}>يصلك عبر واتساب: قرارات اليوم، ومبيعات أمس، والموظفون، والمخزون الناقص، ومشتريات أمس (حسب المزايا المفعّلة). ويصل إلى مدير كل فرع تقرير فرعه إذا أضفت رقمه في صفحة مديري الفروع.</div>
+                <div style={{fontSize:12,color:colors.text4,marginBottom:8,lineHeight:1.7}}>يصلك عبر واتساب: قرارات اليوم، ومبيعات أمس، والموظفون، والمخزون الناقص، ومشتريات أمس (حسب المزايا المفعّلة). ويصل إلى مدير كل فرع تقرير فرعه إذا أضفت رقمه في صفحة مديري الفروع.</div>
                 <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
                   {[{key:'daily',label:'يومي',icon:'📅'},{key:'weekly',label:'أسبوعي',icon:'📆'},{key:'manual',label:'يدوي',icon:'👆'}].map(s=>(
                     <button key={s.key} type="button" className={`sched-btn${form.notify_schedule===s.key?' active':''}`}
@@ -63,7 +63,7 @@ export default function NotifyTab({ m }: { m: SettingsState }) {
                       return <option key={hh} value={hh}>{h12}:00 {period}</option>
                     })}
                   </select>
-                  <div style={{fontSize:11,color:colors.text4,marginTop:6}}>توقيت الرياض (UTC+3) — الإرسال بالساعة كاملة فقط (بدون دقائق)</div>
+                  <div style={{fontSize:12,color:colors.text4,marginTop:6}}>توقيت الرياض (UTC+3) — الإرسال بالساعة كاملة فقط (بدون دقائق)</div>
                 </div>
               )}
 
@@ -74,7 +74,7 @@ export default function NotifyTab({ m }: { m: SettingsState }) {
                 fontSize:font.sm,color:form.notify_schedule==='manual'?colors.warning:colors.primary,
                 fontWeight:600,display:'flex',alignItems:'center',gap:8
               }}>
-                <span style={{fontSize:18}}>{form.notify_schedule==='manual'?'':''}</span>
+                <span style={{fontSize:20}}>{form.notify_schedule==='manual'?'':''}</span>
                 {form.notify_schedule==='manual'?'الإرسال يدوياً فقط عند الضغط على الزر':scheduleLabel()}
               </div>
 
@@ -83,7 +83,7 @@ export default function NotifyTab({ m }: { m: SettingsState }) {
                   {saving?'حفظ...':'حفظ الجدولة'}
                 </button>
                 <button type="button" onClick={sendNow} disabled={sending}
-                  style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'13px',background:sending?colors.text4:'#25d366',color:'white',border:'none',borderRadius:radius.md,fontSize:font.sm,fontWeight:700,cursor:sending?'not-allowed':'pointer',fontFamily:font.family,transition:'all .15s',boxShadow:sending?'none':'0 4px 14px rgba(37,211,102,.3)'}}>
+                  style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'13px',background:sending?colors.text4:'#25d366',color:'white',border:'none',borderRadius:radius.md,fontSize:font.sm,fontWeight:600,cursor:sending?'not-allowed':'pointer',fontFamily:font.family,transition:'all .15s',boxShadow:sending?'none':'0 4px 14px rgba(37,211,102,.3)'}}>
                   {sending?'إرسال...':'إرسال الآن'}
                 </button>
               </div>

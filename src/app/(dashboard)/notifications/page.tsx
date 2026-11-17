@@ -171,7 +171,7 @@ export default function NotificationsPage() {
         {filtered.length === 0 ? (
           <div className="notification-empty">
             <Bell size={24} aria-hidden="true" />
-            <div className="text-sm font-semibold">{filter==='unread'?'لا توجد إشعارات غير مقروءة':'لا توجد إشعارات'}</div>
+            <div className="text-[15px] font-semibold">{filter==='unread'?'لا توجد إشعارات غير مقروءة':'لا توجد إشعارات'}</div>
             <p>ستظهر إشعارات المخزون هنا</p>
           </div>
         ) : (

@@ -46,14 +46,14 @@ export default function PlanUpgrade({ orgId, plan, maxBranches, activeSlugs = []
     if (!missing.length) return null
     return (
       <div className="hide-in-app" style={{ marginTop: 16, display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
-        <div style={{ fontSize: font.sm, fontWeight: 700, color: colors.text }}>أضف ميزة</div>
+        <div style={{ fontSize: font.sm, fontWeight:600, color: colors.text }}>أضف ميزة</div>
         {missing.map(slug => {
           const m = CUSTOM_MODULES[slug]
           return (
             <div key={slug} style={{ padding: '12px 14px', borderRadius: radius.md, border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ flex: 1, fontSize: font.sm, fontWeight: 700, color: colors.text }}>{FEATURE_NAMES[slug]?.ar || slug}</div>
+              <div style={{ flex: 1, fontSize: font.sm, fontWeight:600, color: colors.text }}>{FEATURE_NAMES[slug]?.ar || slug}</div>
               <div style={{ fontSize: font.sm, color: colors.text2, whiteSpace: 'nowrap' as const }}>{m.first} ريال {m.perBranch ? 'لكل فرع' : 'للمنشأة'}</div>
-              <a href="/addons-market" style={{ padding: '8px 14px', borderRadius: 8, background: colors.primary, color: 'white', fontSize: 12, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' as const }}>أضف</a>
+              <a href="/addons-market" style={{ padding: '8px 14px', borderRadius:12, background: colors.primary, color: 'white', fontSize:13, fontWeight:600, textDecoration: 'none', whiteSpace: 'nowrap' as const }}>أضف</a>
             </div>
           )
         })}
@@ -72,21 +72,21 @@ export default function PlanUpgrade({ orgId, plan, maxBranches, activeSlugs = []
     )
     if (switchInfo.show) return (
       <div className="hide-in-app" style={{ marginTop: 16, padding: '14px', borderRadius: radius.md, border: `1px solid ${colors.border}`, display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
-        <div style={{ fontSize: font.sm, fontWeight: 700, color: colors.text }}>الأسعار الجديدة: ادفع فقط للمزايا التي تحتاجها</div>
+        <div style={{ fontSize: font.sm, fontWeight:600, color: colors.text }}>الأسعار الجديدة: ادفع فقط للمزايا التي تحتاجها</div>
         <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
           {CUSTOM_MODULE_ORDER.map(slug => {
             const mod = CUSTOM_MODULES[slug]
             return (
               <div key={slug} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: font.sm, color: colors.text }}>
-                <span style={{ flex: 1 }}>{FEATURE_NAMES[slug]?.ar || slug}{activeSlugs.includes(slug) ? <span style={{ color: colors.text3, fontSize: 12 }}> · مفعّلة لديك</span> : null}</span>
+                <span style={{ flex: 1 }}>{FEATURE_NAMES[slug]?.ar || slug}{activeSlugs.includes(slug) ? <span style={{ color: colors.text3, fontSize:13 }}> · مفعّلة لديك</span> : null}</span>
                 <span style={{ color: colors.text2, whiteSpace: 'nowrap' as const }}>{mod.first} ريال {mod.perBranch ? 'لكل فرع' : 'للمنشأة'}</span>
               </div>
             )
           })}
         </div>
-        <div style={{ fontSize: 12, color: colors.text3, lineHeight: 1.7 }}>خصم 20% على كل فرع من الفرع الثالث، و6 موظفين مشمولين لكل فرع. لن تدفع أكثر من فاتورتك الحالية.</div>
+        <div style={{ fontSize:13, color: colors.text3, lineHeight: 1.7 }}>خصم 20% على كل فرع من الفرع الثالث، و6 موظفين مشمولين لكل فرع. لن تدفع أكثر من فاتورتك الحالية.</div>
         <button type="button" onClick={() => window.dispatchEvent(new Event('pricing-switch-open'))}
-          style={{ alignSelf: 'flex-start', padding: '9px 16px', borderRadius: 8, border: 'none', background: colors.primary, color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>
+          style={{ alignSelf: 'flex-start', padding: '9px 16px', borderRadius:12, border: 'none', background: colors.primary, color: 'white', fontSize:15, fontWeight:600, cursor: 'pointer', fontFamily: font.family }}>
           اختر مزاياك بالأسعار الجديدة
         </button>
       </div>
@@ -100,16 +100,16 @@ export default function PlanUpgrade({ orgId, plan, maxBranches, activeSlugs = []
       {pending ? (
         <div style={{ padding: '12px 14px', borderRadius: radius.md, background: colors.primaryLight, border: `1px solid ${colors.primaryBorder}`, fontSize: font.sm, color: colors.text, display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ flex: 1 }}>طلب الترقية إلى <b>{PLAN_PRICING[pending.target_plan as PlanKey]?.label}</b> قيد المراجعة</span>
-          <button type="button" onClick={cancel} style={{ background: 'none', border: 'none', color: colors.danger, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family }}>إلغاء الطلب</button>
+          <button type="button" onClick={cancel} style={{ background: 'none', border: 'none', color: colors.danger, fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: font.family }}>إلغاء الطلب</button>
         </div>
       ) : higher.map(k => (
         <div key={k} style={{ padding: '12px 14px', borderRadius: radius.md, border: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: font.sm, fontWeight: 800, color: colors.text }}>{PLAN_PRICING[k].label} — {planPriceFor(k, null, isNewPlan(k) ? maxBranches : 1).monthly} ريال شهرياً{isNewPlan(k) && maxBranches > 1 ? ` لـ ${maxBranches} فروع` : ''}</div>
-            <div style={{ fontSize: 11, color: colors.text3, marginTop: 2 }}>{desc(k)}</div>
+            <div style={{ fontSize: font.sm, fontWeight:600, color: colors.text }}>{PLAN_PRICING[k].label} — {planPriceFor(k, null, isNewPlan(k) ? maxBranches : 1).monthly} ريال شهرياً{isNewPlan(k) && maxBranches > 1 ? ` لـ ${maxBranches} فروع` : ''}</div>
+            <div style={{ fontSize:12, color: colors.text3, marginTop: 2 }}>{desc(k)}</div>
           </div>
           <button type="button" onClick={() => request(k)} disabled={!!sending}
-            style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: colors.primary, color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
+            style={{ padding: '8px 14px', borderRadius:12, border: 'none', background: colors.primary, color: 'white', fontSize:13, fontWeight:600, cursor: 'pointer', fontFamily: font.family, whiteSpace: 'nowrap' as const }}>
             {sending === k ? '...' : 'اطلب الترقية'}
           </button>
         </div>

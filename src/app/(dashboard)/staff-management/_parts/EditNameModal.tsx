@@ -10,9 +10,9 @@ export default function EditNameModal({ m }: { m: StaffPage }) {
       {editingNameId && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,.5)',zIndex:700,display:'flex',alignItems:'center',justifyContent:'center',padding:20,backdropFilter:'blur(6px)'}}>
           <div style={{background:colors.surface,borderRadius:radius.xl,padding:24,width:'100%',maxWidth:360,boxShadow:shadow.lg}}>
-            <div style={{fontSize:font.md,fontWeight:800,color:colors.text,marginBottom:16}}>تعديل اسم الموظف</div>
+            <div style={{fontSize:font.md,fontWeight:600,color:colors.text,marginBottom:16}}>تعديل اسم الموظف</div>
             <div style={{marginBottom:18}}>
-              <label style={{fontSize:font.xs,fontWeight:700,color:colors.text3,display:'block',marginBottom:5}}>الاسم</label>
+              <label style={{fontSize:font.xs,fontWeight:600,color:colors.text3,display:'block',marginBottom:5}}>الاسم</label>
               <input value={editNameValue} onChange={e=>setEditNameValue(e.target.value)} style={inp()} placeholder="اسم الموظف"
                 onKeyDown={e=>{if(e.key==='Enter')saveName()}}/>
             </div>

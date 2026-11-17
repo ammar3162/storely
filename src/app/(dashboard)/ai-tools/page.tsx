@@ -30,8 +30,8 @@ export default function AIToolsPage() {
         <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:6}}>
           <PageIcon size={44}/>
           <div>
-            <h1 style={{fontSize:20,fontWeight:800,color:C.text,margin:0}}>أدوات الذكاء</h1>
-            <p style={{fontSize:11,color:C.text3,margin:'3px 0 0'}}>أدوات تحليل ذكية مبنية على بيانات مخزونك الحقيقية</p>
+            <h1 style={{fontSize:20,fontWeight:600,color:C.text,margin:0}}>أدوات الذكاء</h1>
+            <p style={{fontSize:12,color:C.text3,margin:'3px 0 0'}}>أدوات تحليل ذكية مبنية على بيانات مخزونك الحقيقية</p>
           </div>
         </div>
       </div>
@@ -68,13 +68,13 @@ export default function AIToolsPage() {
       )}
 
       {hasAiAddon===false && (
-        <div className="fu" style={{marginTop:16,background:'linear-gradient(135deg,#203640,#0C213B)',borderRadius:16,padding:'28px 24px',textAlign:'center' as const}}>
+        <div className="fu" style={{marginTop:16,background:'linear-gradient(135deg,#203640,#0C213B)',borderRadius:20,padding:'28px 24px',textAlign:'center' as const}}>
           <div style={{display:'flex',justifyContent:'center',marginBottom:10,color:'white'}}><Sparkles size={32}/></div>
-          <div style={{fontSize:16,fontWeight:800,color:'white',marginBottom:6}}>أدوات ذكاء اصطناعي بانتظارك</div>
-          <div style={{fontSize:12,color:'rgba(255,255,255,.65)',marginBottom:18,lineHeight:1.7,maxWidth:420,marginLeft:'auto',marginRight:'auto'}}>
+          <div style={{fontSize:17,fontWeight:600,color:'white',marginBottom:6}}>أدوات ذكاء اصطناعي بانتظارك</div>
+          <div style={{fontSize:13,color:'rgba(255,255,255,.65)',marginBottom:18,lineHeight:1.7,maxWidth:420,marginLeft:'auto',marginRight:'auto'}}>
             توقع نفاد المخزون، اقتراح كميات الشراء، تحليل الموسمية، تحسين نقطة إعادة الطلب، والتقرير الأسبوعي التلقائي — مع الباقة الكاملة أو إضافة «أدوات الذكاء الاصطناعي».
           </div>
-          <a className="hide-in-app" href="/addons-market" style={{display:'inline-block',padding:'12px 28px',background:'#203640',color:'white',borderRadius:10,fontSize:13,fontWeight:800,textDecoration:'none'}}>أضف أدوات الذكاء</a>
+          <a className="hide-in-app" href="/addons-market" style={{display:'inline-block',padding:'12px 28px',background:'#203640',color:'white',borderRadius:12,fontSize:15,fontWeight:600,textDecoration:'none'}}>أضف أدوات الذكاء</a>
         </div>
       )}
 

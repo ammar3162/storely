@@ -29,15 +29,15 @@ export default function UnassignedProducts({ m }: { m: StaffPage }) {
                     <button onClick={()=>setPickerFor(prev=>prev===p.id?null:p.id)}
                       style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center',padding:'8px 12px',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit'}}>
                       <span style={{fontSize:font.xs,fontWeight:600,color:colors.text2}}>{p.name}</span>
-                      <span style={{fontSize:11,color:colors.primary,fontWeight:700}}>{pickerFor===p.id?'إغلاق ×':'+ تخصيص لموظف'}</span>
+                      <span style={{fontSize:12,color:colors.primary,fontWeight:600}}>{pickerFor===p.id?'إغلاق ×':'+ تخصيص لموظف'}</span>
                     </button>
                     {pickerFor===p.id && (
                       <div style={{display:'flex',flexWrap:'wrap' as const,gap:6,padding:'0 12px 10px'}}>
                         {staff.length===0 ? (
-                          <span style={{fontSize:11,color:colors.text4}}>لا يوجد موظفون بعد</span>
+                          <span style={{fontSize:12,color:colors.text4}}>لا يوجد موظفون بعد</span>
                         ) : staff.map((s:any)=>(
                           <button key={s.id} disabled={assigning} onClick={()=>quickAssignProduct(p.id,s.id)}
-                            style={{fontSize:11,fontWeight:600,padding:'5px 10px',borderRadius:99,border:`1px solid ${colors.primaryBorder}`,background:colors.primaryLight,color:colors.primary,cursor:assigning?'not-allowed':'pointer',fontFamily:'inherit',opacity:assigning?.6:1}}>
+                            style={{fontSize:12,fontWeight:600,padding:'5px 10px',borderRadius:99,border:`1px solid ${colors.primaryBorder}`,background:colors.primaryLight,color:colors.primary,cursor:assigning?'not-allowed':'pointer',fontFamily:'inherit',opacity:assigning?.6:1}}>
                             {s.name}
                           </button>
                         ))}

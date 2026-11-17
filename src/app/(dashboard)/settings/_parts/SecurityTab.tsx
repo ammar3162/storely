@@ -18,7 +18,7 @@ export default function SecurityTab({ m }: { m: SettingsState }) {
               </div>
 
               {pwMsg&&(
-                <div style={{background:pwMsg.ok?colors.primaryLight:colors.dangerLight,border:`1.5px solid ${pwMsg.ok?colors.primaryBorder:colors.dangerBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16,fontSize:font.sm,fontWeight:700,color:pwMsg.ok?colors.primary:colors.danger,display:'flex',alignItems:'center',gap:8}}>
+                <div style={{background:pwMsg.ok?colors.primaryLight:colors.dangerLight,border:`1.5px solid ${pwMsg.ok?colors.primaryBorder:colors.dangerBorder}`,borderRadius:radius.md,padding:'12px 16px',marginBottom:16,fontSize:font.sm,fontWeight:600,color:pwMsg.ok?colors.primary:colors.danger,display:'flex',alignItems:'center',gap:8}}>
                   {pwMsg.ok?'':''} {pwMsg.text}
                 </div>
               )}
@@ -49,13 +49,13 @@ export default function SecurityTab({ m }: { m: SettingsState }) {
                   <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:12}}>
                     <FeatureIcon name="🗑️" size={20} />
                     <div>
-                      <div style={{fontSize:font.sm,fontWeight:800,color:colors.danger}}>حذف الحساب نهائياً</div>
+                      <div style={{fontSize:font.sm,fontWeight:600,color:colors.danger}}>حذف الحساب نهائياً</div>
                       <div style={{fontSize:font.xs,color:colors.danger,opacity:.8}}>لا يمكن التراجع عن هذا الإجراء</div>
                     </div>
                   </div>
                   <p style={{fontSize:font.xs,color:colors.danger,opacity:.85,marginBottom:14,lineHeight:1.7}}>عند الحذف، تحصل على <b>15 يوم فترة سماح</b> — بعدها تُحذف جميع البيانات نهائياً (المخزون، والمشتريات، والموظفون، والتقارير). وتسجيل الدخول خلال هذه الفترة يلغي الحذف تلقائياً.</p>
                   <button onClick={()=>setShowDelete(true)}
-                    style={{width:'100%',padding:'11px',background:colors.danger,color:'white',border:'none',borderRadius:radius.md,fontSize:font.xs,fontWeight:700,cursor:'pointer',fontFamily:font.family}}>
+                    style={{width:'100%',padding:'11px',background:colors.danger,color:'white',border:'none',borderRadius:radius.md,fontSize:font.xs,fontWeight:600,cursor:'pointer',fontFamily:font.family}}>
                     حذف حسابي
                   </button>
                 </div>
