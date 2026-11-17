@@ -789,3 +789,4 @@ html[dir="ltr"] body { font-family: -apple-system, BlinkMacSystemFont, "SF Arabi
 [data-theme="dark"] [style^="color: rgb(220, 38, 38)"], [data-theme="dark"] [style*="; color: rgb(220, 38, 38)"],
 [data-theme="dark"] [style^="color:#991b1b" i], [data-theme="dark"] [style*=";color:#991b1b" i],
 [data-theme="dark"] [style^="color: rgb(153, 27, 27)"], [data-theme="dark"] [style*="; color: rgb(153, 27, 27)"] { color: #f28b82 !important; }
+[data-theme="dark"] .branches-page header b { color: #a9c6d4 !important; }

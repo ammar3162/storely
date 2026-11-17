@@ -1,6 +1,7 @@
 'use client'
 export const dynamic = 'force-dynamic'
 import { StorelyPageHeader } from '@/components/ui/page-header'
+import { qtyUnit } from '@/lib/arabicCount'
 import { StorelyButton } from '@/components/ui/button'
 import { StorelyCard } from '@/components/ui/card'
 import { StorelyFormField } from '@/components/ui/form-field'
@@ -367,7 +368,7 @@ export default function BranchesPage() {
       <style>{BRANCH_STYLES}</style>
       <StorelyPageHeader
         title="إدارة الفروع"
-        description={<>كل فرع له مخزونه المستقل. باقتك مع الإضافات تسمح بـ <b>{maxBranches} فرع</b>.</>}
+        description={<>كل فرع له مخزونه المستقل. باقتك مع الإضافات تسمح بـ <b>{qtyUnit(maxBranches,'فرع')}</b>.</>}
       />
 
       {branches.length>0&&(

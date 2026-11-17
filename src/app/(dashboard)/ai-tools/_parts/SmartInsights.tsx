@@ -29,7 +29,7 @@ export default function SmartInsights({ m }: { m: AiToolsPage }) {
           <div style={{display:'flex',flexDirection:'column' as const,gap:14}}>
             <div style={{background:'rgba(255,255,255,.08)',borderRadius:20,padding:16}}>
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-                <span style={{fontSize:12,fontWeight:600,padding:'3px 10px',borderRadius:99,background:insights.status==='صحي'?'#203640':insights.status==='خطر'?'#dc2626':'#f59e0b',color:'white'}}>{insights.status}</span>
+                <span style={{fontSize:12,fontWeight:600,padding:'3px 10px',borderRadius:99,background:insights.status==='صحي'?'#203640':insights.status==='خطر'?'#dc2626':'#b45309',color:'white'}}>{insights.status}</span>
                 <span style={{fontSize:13,fontWeight:600,color:'white'}}>الملخص التنفيذي</span>
               </div>
               <div style={{fontSize:13,color:'rgba(255,255,255,.85)',lineHeight:1.9}}>{insights.summary}</div>

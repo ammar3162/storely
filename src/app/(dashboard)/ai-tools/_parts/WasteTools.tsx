@@ -26,8 +26,8 @@ export default function WasteTools({ m }: { m: AiToolsPage }) {
               const data=await res.json()
               setWasteReport(data.waste||[])
               setWasteLoading(false)
-            }} style={{padding:'6px 14px',background:'#f59e0b',color:'white',border:'none',borderRadius:999,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
-              {wasteLoading?'⏳ جاري...':'فحص الراكد'}
+            }} style={{padding:'6px 14px',background:'#b45309',color:'white',border:'none',borderRadius:999,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
+              {wasteLoading?'جارٍ الفحص…':'فحص الراكد'}
             </button>
           </div>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
@@ -45,7 +45,7 @@ export default function WasteTools({ m }: { m: AiToolsPage }) {
               setRealWasteReport(data)
               setRealWasteLoading(false)
             }} style={{padding:'6px 14px',background:'#dc2626',color:'white',border:'none',borderRadius:999,fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap'}}>
-              {realWasteLoading?'⏳ جاري...':'كشف الهدر'}
+              {realWasteLoading?'جارٍ الفحص…':'كشف الهدر'}
             </button>
           </div>
         </div>

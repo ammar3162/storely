@@ -19,7 +19,7 @@ export default function WeeklyReport({ m }: { m: AiToolsPage }) {
               <div style={{fontSize:12,color:C.text3,marginTop:2}}>إجمالي الصرف</div>
             </div>
             <div style={{background:C.bg,borderRadius:12,padding:'12px',textAlign:'center'}}>
-              <div style={{fontSize:22,fontWeight:600,color:'#f59e0b'}}>{weeklyReport.lowStock||0}</div>
+              <div style={{fontSize:22,fontWeight:600,color:'#b45309'}}>{weeklyReport.lowStock||0}</div>
               <div style={{fontSize:12,color:C.text3,marginTop:2}}>منتجات ناقصة</div>
             </div>
             <div style={{background:C.bg,borderRadius:12,padding:'12px',textAlign:'center'}}>
