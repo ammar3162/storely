@@ -12,6 +12,7 @@ const EVENTS: Record<string, { label: string; tone: Tone; icon: LucideIcon }> = 
   upgraded: { label: 'رقّى الباقة', tone: 'violet', icon: ArrowUpCircle },
   downgraded: { label: 'خفّض الباقة', tone: 'warning', icon: ArrowDownCircle },
   renewed: { label: 'جدّد الاشتراك', tone: 'primary', icon: RotateCw },
+  resumed: { label: 'استُؤنف بعد إيقاف', tone: 'info', icon: RotateCw },
 }
 
 const money = (n: number) => `${Math.round(n || 0).toLocaleString('en')} ⃁`

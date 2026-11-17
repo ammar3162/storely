@@ -10,6 +10,7 @@ import { type Customer, STATUS, PLAN_KEYS, PLAN_LIMITS, planLabel } from './cust
 import ActivityCard from './ActivityCard'
 import { addMonths, offerItems as buildOfferItems, sendOffer, activateOffer, offerStart } from './offerFlow'
 import { offerState, offerMonthsLabel } from '@/lib/offerQuote'
+import { renewalEnd, resumeOutcome } from '@/lib/subscriptionLifecycle'
 import CustomerEmailCard from './CustomerEmailCard'
 
 const QTY_SLUGS = ['extra_staff', 'extra_suppliers', 'extra_branch']
@@ -69,6 +70,9 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
   // الجديدة: فروع الباقة الحالية (1–10) — القديمة تنتقل بنفس عدد فروعها
   const planBranches = Math.max(1, Math.min(10, c.max_branches || 1))
   const curDiscount = activeDiscount(c.discount)
+  // معاينة التفعيل المدفوع للمدة المختارة — نفس قاعدة الخادم
+  const paidPreview = renewalEnd({ type: c.subscription_type, endsAt: c.subscription_ends_at }, 'paid', { days })
+  const resumeInfo = resumeOutcome({ type: c.subscription_type, endsAt: c.subscription_ends_at })
   const hasPhone = !!c.phone
   // السعر العادي للمدة = الفاتورة الشهرية الحالية × الأشهر (السنوي: فاتورته ÷ 12)
   const monthlyBill = c.billing_cycle === 'yearly' ? Math.round(bill.total / 12) : bill.total
@@ -88,26 +92,46 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
     const planNote = type === 'paid' && c!.subscription_type === 'trial' && wanted && wanted !== c!.plan && (PLAN_KEYS as string[]).includes(wanted)
       ? `\n\nتنبيه: باقته الحالية «${planLabel(c!.plan)}» (التجربة)، والباقة التي اختارها عند التسجيل «${planLabel(wanted)}». غيّر الباقة أولاً إن كان سيشترك فيها، لأن الفاتورة ومكافأة السفير تُحتسبان على الباقة الحالية.`
       : ''
-    if (!(await confirmDialog({ title: label, message: `${label} لـ"${c!.org_name}" لمدة ${DURATIONS.find(x => x.d === d)?.l || d + ' يوم'}؟\n\nتتجدد الإضافات المفعّلة حتى التاريخ نفسه.${planNote}`, type: planNote ? 'warning' : undefined }))) return
+    const p = renewalEnd({ type: c!.subscription_type, endsAt: c!.subscription_ends_at }, type, { days: d })
+    const fromEnd = p.start.getTime() > Date.now() + 60000
+    const durLabel = DURATIONS.find(x => x.d === d)?.l || d + ' يوم'
+    if (!(await confirmDialog({ title: label, message: `${label} لـ«${c!.org_name}» لمدة ${durLabel}.\n\nيبدأ: ${fromEnd ? `بعد نهاية اشتراكه الحالي (${fmtDate(p.start.toISOString())}) — ما يخسر أيامه المتبقية` : 'من اليوم'}\nينتهي: ${fmtDate(p.end.toISOString())}${c!.status === 'suspended' ? '\nويُستأنف الحساب الموقوف.' : ''}\n\nتتجدد الإضافات المفعّلة حتى التاريخ نفسه.${planNote}`, type: planNote ? 'warning' : undefined }))) return
     setBusy('activate')
-    const ends = new Date(Date.now() + d * 86400000).toISOString()
-    const j = await adminFetch('/api/admin/activate-user', { method: 'POST', body: { userId: c!.id, type, ends } })
+    // الخادم يحسب التاريخ النهائي بنفس القاعدة (lib/subscriptionLifecycle)
+    const j = await adminFetch('/api/admin/activate-user', { method: 'POST', body: { userId: c!.id, type, days: d } })
     if (!j.success) { setBusy(null); toast(j.error || 'تعذّر التفعيل', 'error'); return }
+    const ends: string = j.ends
     await adminFetch('/api/notify-activation', { method: 'POST', body: { userId: c!.id, subscriptionType: type, subscriptionEndsAt: ends } })
     setBusy(null)
-    toast('تم التفعيل', 'success')
+    toast(`تم التفعيل حتى ${fmtDate(ends)}`, 'success')
     onChanged({ status: 'active', subscription_type: type, subscription_ends_at: ends })
     loadAddons(c!.org_id)
   }
 
   async function suspend() {
-    if (!(await confirmDialog({ title: 'إيقاف الحساب', message: `إيقاف «${c!.org_name}»؟ يشمل ذلك جميع مديري الفروع التابعين له.` }))) return
+    if (!(await confirmDialog({ title: 'إيقاف الحساب', message: `إيقاف «${c!.org_name}»؟\n\nيتوقف: دخول المالك ومديري الفروع والموظفين، وبوت واتساب، والرسائل والتقارير التلقائية، وتعديلات المحاسب.\n\nتاريخ انتهاء الاشتراك لا يتغيّر (${fmtDate(c!.subscription_ends_at)})، وتقدر تستأنفه لاحقاً لنفس التاريخ. الأيام التي يقضيها موقوفاً محسوبة من اشتراكه.` }))) return
     setBusy('suspend')
     const j = await adminFetch('/api/admin/suspend-user', { method: 'POST', body: { userId: c!.id } })
     setBusy(null)
     if (!j.success) { toast(j.error || 'تعذّر الإيقاف', 'error'); return }
     toast('تم إيقاف الحساب', 'success')
     onChanged({ status: 'suspended' })
+  }
+
+  // استئناف حساب موقوف: نفس الاشتراك السابق (نفس النوع ونفس تاريخ الانتهاء) — مو مدة جديدة
+  async function resume() {
+    const r = resumeOutcome({ type: c!.subscription_type, endsAt: c!.subscription_ends_at })
+    const msg = r.expired
+      ? `انتهى اشتراك «${c!.org_name}» أثناء الإيقاف (${fmtDate(r.endsAt)}).\n\nبعد الاستئناف يدخل على صفحة «انتهى الاشتراك» حتى تجدّد له من تبويب «الاشتراك والدفع».`
+      : `يكمل «${c!.org_name}» اشتراكه نفسه حتى ${fmtDate(r.endsAt)} (متبقٍ ${r.daysLeft} يوم).\n\nيرجع دخول المالك والمديرين والموظفين وكل المزايا كما كانت.`
+    if (!(await confirmDialog({ title: 'استئناف الاشتراك', message: msg, type: r.expired ? 'warning' : 'success', confirmText: 'استئناف' }))) return
+    setBusy('resume')
+    const j = await adminFetch('/api/admin/resume-user', { method: 'POST', body: { userId: c!.id } })
+    if (!j.success) { setBusy(null); toast(j.error || 'تعذّر الاستئناف', 'error'); return }
+    if (!j.expired && j.endsAt) await adminFetch('/api/notify-activation', { method: 'POST', body: { userId: c!.id, subscriptionType: j.type || c!.subscription_type, subscriptionEndsAt: j.endsAt } }).catch(() => null)
+    setBusy(null)
+    toast(j.expired ? 'استُؤنف الحساب — الاشتراك منتهٍ ويحتاج تجديد' : `استُؤنف حتى ${fmtDate(j.endsAt)}`, j.expired ? 'error' : 'success')
+    onChanged({ status: 'active' })
   }
 
   // branchesOverride = تغيير عدد فروع الباقة الجديدة (نفس الباقة)
@@ -331,7 +355,7 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
 
       {tab === 'sub' && <>
       {/* الاشتراك */}
-      <Card title="تفعيل أو تجديد بالسعر العادي" subtitle="المدة تبدأ من اليوم">
+      <Card title={c.subscription_type === 'paid' ? 'تجديد بالسعر العادي' : 'تفعيل بالسعر العادي'} subtitle={paidPreview.start.getTime() > Date.now() + 60000 ? `يبدأ بعد نهاية اشتراكه الحالي (${fmtDate(paidPreview.start.toISOString())}) — ما يخسر أيامه` : 'يبدأ من اليوم'}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginBottom: 12 }}>
           {DURATIONS.map(x => (
             <button key={x.d} onClick={() => setDays(x.d)} className="adm-btn"
@@ -341,9 +365,13 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
             </button>
           ))}
         </div>
+        <div style={{ fontSize: 12.5, color: A.text2, marginBottom: 10 }}>
+          ينتهي المدفوع في <b style={{ color: A.text }}>{fmtDate(paidPreview.end.toISOString())}</b>
+          {c.status === 'suspended' && ' · ويُستأنف الحساب الموقوف'}
+        </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <Btn kind="primary" full loading={busy === 'activate'} onClick={() => activate('paid', days)}>تفعيل مدفوع</Btn>
-          <Btn full disabled={!!busy} onClick={() => activate('trial', days)}>تجربة مجانية</Btn>
+          <Btn kind="primary" full loading={busy === 'activate'} onClick={() => activate('paid', days)}>{c.subscription_type === 'paid' ? 'تجديد مدفوع' : 'تفعيل مدفوع'}</Btn>
+          <Btn full disabled={!!busy} onClick={() => activate('trial', days)}>{c.subscription_type === 'trial' && (dl ?? 0) > 0 ? 'تمديد التجربة' : 'تجربة مجانية'}</Btn>
         </div>
       </Card>
 
@@ -626,10 +654,17 @@ export default function CustomerDrawer({ customer, onClose, onChanged }: {
       <Card title="إجراءات الحساب">
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {c.status === 'active' && <Btn loading={busy === 'suspend'} disabled={!!busy} onClick={suspend}><PauseCircle size={15} /> إيقاف الحساب</Btn>}
-          {c.status === 'suspended' && <Btn kind="primary" disabled={!!busy} onClick={() => activate(c.subscription_type === 'paid' ? 'paid' : 'trial', 30)}><PlayCircle size={15} /> إعادة تفعيل (شهر)</Btn>}
+          {c.status === 'suspended' && <Btn kind="primary" loading={busy === 'resume'} disabled={!!busy && busy !== 'resume'} onClick={resume}><PlayCircle size={15} /> استئناف الاشتراك</Btn>}
           <Btn loading={busy === 'device-code'} disabled={!!busy} onClick={issueDeviceCode}><KeyRound size={15} /> رمز دخول مؤقت</Btn>
           <Btn kind="danger" loading={busy === 'delete'} disabled={!!busy} onClick={remove}><Trash2 size={15} /> حذف نهائي</Btn>
         </div>
+        {c.status === 'suspended' && (
+          <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 10, background: A.muted, fontSize: 12.5, color: A.text2, lineHeight: 1.8 }}>
+            {resumeInfo.expired
+              ? <>انتهى اشتراكه أثناء الإيقاف ({fmtDate(resumeInfo.endsAt)}). بعد الاستئناف جدّد له من تبويب «الاشتراك والدفع».</>
+              : <>الاستئناف يكمل اشتراكه نفسه حتى <b style={{ color: A.text }}>{fmtDate(resumeInfo.endsAt)}</b> (متبقٍ {resumeInfo.daysLeft} يوم) — بدون مدة جديدة.</>}
+          </div>
+        )}
         {deviceCode && (
           <div style={{ marginTop: 12, padding: '12px 14px', borderRadius: 10, background: A.primarySoft, fontSize: 13, color: A.text }}>
             رمز الدخول: <b dir="ltr" style={{ fontSize: 20, letterSpacing: 4, color: A.primary }}>{deviceCode}</b>

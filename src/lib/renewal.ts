@@ -44,6 +44,9 @@ export async function requestRenewal(db: SupabaseClient, orgId: string, userId: 
       await db.from('subscription_renewals').delete().eq('id', (row as any).id)
       return { ok: false, error: 'تعذر تجديد الاشتراك، حاول مرة أخرى', status: 500 }
     }
+    // الإضافات المفعّلة تتبع نفس يوم السماح — وإلا يدخل الحساب ومزاياه (المخزون، الكاشير…) مقفولة
+    await db.from('org_addon_subscriptions').update({ expires_at: grace } as any)
+      .eq('org_id', orgId).eq('status', 'active').lt('expires_at', grace)
   }
   return { ok: true, created: true, extended: !!grace, endsAt: grace || currentEnd, renewalId: (row as any).id }
 }

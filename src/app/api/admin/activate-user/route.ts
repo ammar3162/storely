@@ -6,6 +6,8 @@ import { markRenewalPaid } from '@/lib/renewal'
 import { syncBranchesToLimit } from '@/lib/branchLimit'
 import { awardAgentCommission } from '@/lib/agentReferral'
 import { applyPricingSwitch } from '@/lib/pricingSwitch'
+import { renewalEnd, type SubType } from '@/lib/subscriptionLifecycle'
+import { forgetOrgSubState } from '@/lib/subscription'
 
 export async function POST(req: Request) {
   const adminKey = req.headers.get('x-admin-key')
@@ -19,9 +21,36 @@ export async function POST(req: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { userId, type, ends } = await req.json()
+  const body = await req.json()
+  const { userId } = body
+  const type: SubType = body.type === 'trial' ? 'trial' : 'paid'
 
   const { data: profile } = await supabase.from('profiles').select('org_id,full_name,organizations(name,max_branches,plan,locked_plan_monthly)').eq('id', userId).maybeSingle()
+  if (!profile) return NextResponse.json({ error: 'الحساب غير موجود' }, { status: 404 })
+
+  // تاريخ الانتهاء من الخادم (قاعدة واحدة — lib/subscriptionLifecycle):
+  // مدة بالأيام أو الأشهر → تبدأ من نهاية الاشتراك الحالي لو نفس النوع ولسا ساري، وإلا من اليوم.
+  // (ends الصريح مقبول للتوافق فقط)
+  let ends: string | null = typeof body.ends === 'string' ? body.ends : null
+  let startsAt: string | null = null
+  const days = Number(body.days), months = Number(body.months)
+  const orgIdForSub = (profile as any)?.org_id
+  const { data: owner } = orgIdForSub
+    ? await supabase.from('profiles').select('subscription_type,subscription_ends_at,status').eq('org_id', orgIdForSub).eq('role', 'owner').maybeSingle()
+    : await supabase.from('profiles').select('subscription_type,subscription_ends_at,status').eq('id', userId).maybeSingle()
+  // كان مدفوع قبل؟ → «جدّد» في سجل الأحداث (الإحصائيات)، وإلا «اشترك» لأول مرة
+  const wasPaid = (owner as any)?.subscription_type === 'paid'
+  if (days > 0 || months > 0) {
+    const { data: pendingRenewal } = orgIdForSub
+      ? await supabase.from('subscription_renewals').select('grace_until').eq('org_id', orgIdForSub).eq('status', 'pending_payment').maybeSingle()
+      : { data: null }
+    const r = renewalEnd(
+      { type: (owner as any)?.subscription_type, endsAt: (owner as any)?.subscription_ends_at, status: (owner as any)?.status },
+      type, months > 0 ? { months } : { days }, Date.now(), (pendingRenewal as any)?.grace_until || null,
+    )
+    ends = r.end.toISOString(); startsAt = r.start.toISOString()
+  }
+  if (!ends || !Number.isFinite(Date.parse(ends))) return NextResponse.json({ error: 'مدة التفعيل غير صحيحة' }, { status: 400 })
 
   const orgIdForUpdate = (profile as any)?.org_id
   const updateQuery = supabase
@@ -69,7 +98,7 @@ export async function POST(req: Request) {
     if (orgId) {
       await (supabase as any).from('subscription_events').insert({
         org_id: orgId,
-        event_type: type === 'paid' ? 'activated' : 'trial_started',
+        event_type: type === 'paid' ? (wasPaid ? 'renewed' : 'activated') : 'trial_started',
         plan: planName,
         amount: type === 'paid' ? amount : 0,
       })
@@ -82,5 +111,6 @@ export async function POST(req: Request) {
     try { agentReward = await awardAgentCommission(supabase, orgIdForUpdate) } catch (e) { console.error('AGENT_COMMISSION_FAILED', e) }
   }
 
-  return NextResponse.json({ success: true, addonsRenewed, agentReward, pricingSwitch })
+  if (orgIdForUpdate) forgetOrgSubState(orgIdForUpdate)
+  return NextResponse.json({ success: true, ends, startsAt, addonsRenewed, agentReward, pricingSwitch })
 }

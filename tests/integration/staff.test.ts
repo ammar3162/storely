@@ -584,5 +584,61 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
         await db.from('profiles').update({ subscription_ends_at: null } as any).eq('org_id', orgId)
       }
     })
+
+    it('grace day also reopens expired add-ons (features follow the account)', async () => {
+      const { requestRenewal } = await import('@/lib/renewal')
+      const { data: addon } = await db.from('marketplace_addons').select('id').limit(1).single()
+      const past = new Date(Date.now() - 2 * 86400e3).toISOString()
+      await db.from('profiles').update({ subscription_ends_at: past, subscription_type: 'paid' } as any).eq('org_id', orgId)
+      const { data: sub } = await db.from('org_addon_subscriptions').insert({ org_id: orgId, addon_id: (addon as any).id, status: 'active', expires_at: past, quantity: 1 } as any).select('id').single()
+      try {
+        const r = await requestRenewal(db as any, orgId, userId)
+        expect(r).toMatchObject({ ok: true, extended: true })
+        const a = (await db.from('org_addon_subscriptions').select('expires_at').eq('id', (sub as any).id).single()).data as any
+        expect(Math.abs(Date.parse(a.expires_at) - Date.parse((r as any).endsAt))).toBeLessThan(5000)
+      } finally {
+        await db.from('org_addon_subscriptions').delete().eq('id', (sub as any).id)
+        await db.from('subscription_renewals').delete().eq('org_id', orgId)
+        await db.from('profiles').update({ subscription_ends_at: null } as any).eq('org_id', orgId)
+      }
+    })
+  })
+
+  describe('suspend → resume → renew keeps one consistent subscription', () => {
+    const admin = (route: any, path: string, body: unknown) => route.POST(new Request(`http://test${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-key': 'it-admin' }, body: JSON.stringify(body) }))
+    it('resume keeps the same end date; renewing a paid subscription continues from its end', async () => {
+      const suspend = await import('@/app/api/admin/suspend-user/route')
+      const resume = await import('@/app/api/admin/resume-user/route')
+      const activate = await import('@/app/api/admin/activate-user/route')
+      const end = new Date(Date.now() + 20 * 86400e3).toISOString()
+      await db.from('profiles').update({ subscription_ends_at: end, subscription_type: 'paid', status: 'active' } as any).eq('org_id', orgId)
+      try {
+        expect((await admin(suspend, '/api/admin/suspend-user', { userId })).status).toBe(200)
+        expect(((await db.from('profiles').select('status').eq('id', userId).single()).data as any).status).toBe('suspended')
+
+        const res = await admin(resume, '/api/admin/resume-user', { userId })
+        const j = await res.json()
+        expect(res.status).toBe(200)
+        expect(j).toMatchObject({ success: true, expired: false })
+        const p = (await db.from('profiles').select('status,subscription_ends_at').eq('id', userId).single()).data as any
+        expect(p.status).toBe('active')
+        expect(Date.parse(p.subscription_ends_at)).toBe(Date.parse(end))           // نفس التاريخ — مو شهر جديد
+        expect((await db.from('subscription_events').select('id', { count: 'exact', head: true }).eq('org_id', orgId).eq('event_type', 'resumed')).count).toBeGreaterThan(0)
+
+        // الاستئناف لحساب غير موقوف يُرفض
+        expect((await admin(resume, '/api/admin/resume-user', { userId })).status).toBe(409)
+
+        // تجديد مدفوع شهر بينما الاشتراك ساري → يبدأ من نهايته
+        const act = await admin(activate, '/api/admin/activate-user', { userId, type: 'paid', days: 30 })
+        const a = await act.json()
+        expect(act.status).toBe(200)
+        expect(Date.parse(a.startsAt)).toBe(Date.parse(end))
+        expect(Date.parse(a.ends)).toBe(Date.parse(end) + 30 * 86400e3)
+        expect((await db.from('subscription_events').select('event_type').eq('org_id', orgId).order('created_at', { ascending: false }).limit(1).single()).data).toMatchObject({ event_type: 'renewed' })
+      } finally {
+        await db.from('subscription_events').delete().eq('org_id', orgId)
+        await db.from('profiles').update({ subscription_ends_at: null, status: 'active' } as any).eq('org_id', orgId)
+      }
+    })
   })
 })

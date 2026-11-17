@@ -1,13 +1,14 @@
 // عرض السعر الخاص — نفس الخطوات من ملف العميل ومن «طلبات التجديد»
 import { adminFetch, fmtDate } from './kit'
 import { offerMonthsLabel } from '@/lib/offerQuote'
+import { renewalStart } from '@/lib/subscriptionLifecycle'
 
 export const addMonths = (m: number, from = new Date()) => { const d = new Date(from); d.setMonth(d.getMonth() + m); return d }
 
 /** بداية مدة العرض: مشترك مدفوع اشتراكه ساري → من نهاية اشتراكه (ما يخسر أيامه)، غير كذا من اليوم */
 export function offerStart(sub?: { type?: string | null; ends?: string | null }) {
-  const end = sub?.ends ? new Date(sub.ends) : null
-  return sub?.type === 'paid' && end && end.getTime() > Date.now() ? end : new Date()
+  // نفس قاعدة التفعيل في الخادم (lib/subscriptionLifecycle) — هنا للعرض فقط، والتاريخ النهائي يحدده الخادم
+  return renewalStart({ type: sub?.type, endsAt: sub?.ends }, 'paid')
 }
 
 export function offerItems(months: number, amount: number, note = '', kind: 'manual' | 'renewal' = 'manual', from = new Date()) {
@@ -25,10 +26,11 @@ export async function sendOffer(o: { orgId: string; orgName: string; phone: stri
 
 /** العميل دفع: تفعيل مدفوع حتى نهاية المدة + فاتورة مدفوعة + العرض «مدفوع» */
 export async function activateOffer(o: { userId: string; orgId: string; orgName: string; phone?: string; months: number; amount: number; note?: string; kind?: 'manual' | 'renewal'; offerId?: string | null; from?: Date }) {
-  const from = o.from || new Date()
-  const ends = addMonths(o.months, from).toISOString()
-  const a = await adminFetch('/api/admin/activate-user', { method: 'POST', body: { userId: o.userId, type: 'paid', ends } })
+  // الخادم يحسب البداية والنهاية (من نهاية الاشتراك الساري، أو من اليوم) — نستخدم تاريخه في الفاتورة والرسالة
+  const a = await adminFetch('/api/admin/activate-user', { method: 'POST', body: { userId: o.userId, type: 'paid', months: o.months } })
   if (!a.success) return { ok: false as const, error: a.error || 'تعذّر التفعيل' }
+  const ends: string = a.ends
+  const from = a.startsAt ? new Date(a.startsAt) : (o.from || new Date())
   await adminFetch('/api/notify-activation', { method: 'POST', body: { userId: o.userId, subscriptionType: 'paid', subscriptionEndsAt: ends } }).catch(() => null)
   let invoiceNumber: number | null = null, invoiceError: string | null = null
   if (o.phone) {
