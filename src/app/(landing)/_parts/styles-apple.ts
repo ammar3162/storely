@@ -1,4 +1,4 @@
-// أقسام الصفحة الرئيسية بأسلوب صفحات أبل (2026-11-17): خلفيات أبل (أبيض، رمادي #F5F5F7، أسود) وحركاتها
+// أقسام الصفحة الرئيسية بأسلوب صفحات أبل (2026-11-17): خلفيات أبل (أبيض، رمادي #F5F5F7) والكحلي مكان الأسود وحركاتها
 // المرتبطة بالتمرير (useScrollFx يضع --p من 0 إلى 1)، والكحلي لون الأزرار والروابط فقط. الشاشات حقيقية داخل
 // إطار جوال (.ap-phone في LP_CSS). بدون جافاسكربت أو مع تقليل الحركة: كل شيء في وضعه النهائي.
 export const AP_CSS = `
@@ -14,8 +14,8 @@ export const AP_CSS = `
 .ap-stage.is-playing{height:auto;overflow:visible;padding-bottom:48px}
 .ap-stage.is-playing .ap-side{display:none}
 .ap-video{--r:52px;--b:10px;width:var(--vw);z-index:3;transform-origin:50% 0}
-.ap-video .ap-phone-screen{background:var(--black)}
-.ap-video video,.ap-cover,.ap-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--black)}
+.ap-video .ap-phone-screen{background:var(--dark)}
+.ap-video video,.ap-cover,.ap-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:var(--dark)}
 .ap-cover{border:0;padding:0;cursor:pointer}
 .ap-play{position:absolute;top:31%;left:50%;transform:translate(-50%,-50%);width:76px;height:76px;border-radius:50%;background:var(--white);color:var(--ink);display:grid;place-items:center;box-shadow:var(--play-shadow);transition:transform .2s var(--ease)}
 .ap-cover:hover .ap-play{transform:translate(-50%,-50%) scale(1.05)}
@@ -46,13 +46,13 @@ export const AP_CSS = `
 .ap-logos img{width:64px;height:64px;object-fit:contain;border-radius:16px;background:var(--white);border:1px solid var(--hair)}
 .ap-logos span{font-size:13px;color:var(--ink);line-height:1.4}
 
-/* يوم واحد: بطاقات أبل — أسود ورمادي فاتح بالتناوب، وفي كل بطاقة جوال بشاشة حقيقية يطلع مع التمرير */
+/* يوم واحد: بطاقات أبل — كحلي ورمادي فاتح بالتناوب، وفي كل بطاقة جوال بشاشة حقيقية يطلع مع التمرير */
 .ap-intro{text-align:center;padding:120px 24px 52px}
 .ap-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:0 14px;max-width:1440px;margin:0 auto}
 .ap-tile{position:relative;overflow:hidden;text-align:center;padding:64px 32px 0;display:flex;flex-direction:column;align-items:center;border-radius:30px}
 .ap-txt{display:flex;flex-direction:column;align-items:center}
 .ap-wide{grid-column:1 / -1}
-.ap-dark{background:var(--black);color:var(--on-dark)}
+.ap-dark{background:var(--dark);color:var(--on-dark)}
 .ap-light{background:var(--light);color:var(--ink)}
 .ap-time{font-size:17px;font-weight:700}
 .ap-dark .ap-time{color:var(--on-dark)}
@@ -92,8 +92,8 @@ export const AP_CSS = `
 .ap-role .ap-shot{margin-top:32px;width:min(210px,84%);height:330px}
 .ap-role .ap-phone{--r:36px;--b:7px}
 
-/* من نحن: بلاطة سوداء */
-.ap-about{background:var(--black);color:var(--on-dark);padding:120px 0}
+/* من نحن: بلاطة كحلية */
+.ap-about{background:var(--dark);color:var(--on-dark);padding:120px 0}
 .ap-about .lp-h2{color:var(--on-dark)}
 .ap-about-body{max-width:800px;margin:0 auto;text-align:center}
 .ap-about-body p{font-size:clamp(19px,1.8vw,23px);line-height:1.85;color:var(--on-dark);margin-top:20px}

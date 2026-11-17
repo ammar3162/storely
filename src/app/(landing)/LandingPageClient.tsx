@@ -18,7 +18,7 @@ import FinalCta from './_parts/FinalCta'
 import SiteFooter from './_parts/SiteFooter'
 import WhatsAppFloat from './_parts/WhatsAppFloat'
 
-// بأسلوب أبل: خلفيات أبل (أبيض / رمادي #F5F5F7 / أسود) وحركاتها مع التمرير، والكحلي لون الأزرار والروابط. الترتيب المتسلسل نفسه:
+// بأسلوب أبل: خلفيات أبل (أبيض / رمادي #F5F5F7) والكحلي مكان الأسود وحركاتها مع التمرير، والكحلي لون الأزرار والروابط. الترتيب المتسلسل نفسه:
 // الفيديو «من هي ستورلي» ← عملاء حقيقيون ← يوم في مطعمك (لحظة لحظة بشاشات حقيقية) ← كيف يترابط ← الأدوار ←
 // من نحن ← ابدأ (السعر وإزالة المخاطرة) ← الأسئلة ← الدعوة وطلب العرض
 export default function LandingPage({ initialMarquee }: { initialMarquee?: string[] } = {}) {

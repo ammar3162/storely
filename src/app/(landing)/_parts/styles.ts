@@ -1,8 +1,8 @@
 export const LP_CSS = `
-/* hallmark v2.0.0 · direction: apple.com (owner: same motion, shapes and backgrounds as Apple) in Storely's identity · backgrounds: Apple's white, #F5F5F7 and black · accent: Storely navy for actions and links, like Apple's blue · type: IBM Plex Sans Arabic · signature: real Storely screens in phone frames, moving with the scroll */
+/* hallmark v2.0.0 · direction: apple.com (owner: same motion, shapes and backgrounds as Apple) in Storely's identity · backgrounds: Apple's white and #F5F5F7, with Storely navy where Apple uses black (owner's call) · accent: Storely navy for actions and links, like Apple's blue · type: IBM Plex Sans Arabic · signature: real Storely screens in phone frames, moving with the scroll */
 /* critique: neutrals carry the page, navy marks what you can press, the real screens bring the colour; black text everywhere (owner); no decorative dots, no beige, no gradients, no invented numbers */
 /* waive: 39b FAQ rows are full-width disclosure rows (72px from the question text) · 77 the FAQ keeps a reading measure · sloplint 2026-11-17: 0 FAIL; two 40px buttons and 10px text it reports were not found on the live page with the same walker */
-.lp{--navy:#203640;--navy-deep:#16262D;--light:#F5F5F7;--light-2:#E8E8ED;--black:#000000;--on-dark:#F5F5F7;--wa:#25D366;--mint:#5FC4B8;--white:#FFFFFF;--cream:#F7F9FA;
+.lp{--navy:#203640;--navy-deep:#16262D;--light:#F5F5F7;--light-2:#E8E8ED;--dark:#203640;--on-dark:#F5F5F7;--wa:#25D366;--mint:#5FC4B8;--white:#FFFFFF;--cream:#F7F9FA;
   --ink:#1D1D1F;--ink2:#1D1D1F;--ink3:#424245;--hair:rgba(0,0,0,.12);--hair-dark:rgba(255,255,255,.16);--on-navy:#FFFFFF;--on-navy2:#F5F5F7;
   --line:#E2E7EA;--line2:#CBD4DC;--field-edge:#80909B;--focus:#203640;--no:#CBD5E1;
   --teal:#203640;--teal2:#203640;--mint-a25:rgba(95,196,184,.25);
@@ -137,7 +137,7 @@ html,body{overflow-x:clip}
 .lp-faq-a{padding:0 0 24px;font-size:17px;line-height:1.85;color:var(--ink2);max-width:720px}
 
 /* الدعوة الأخيرة: بلاطة كحلية كاملة */
-.lp-cta{background:var(--black);color:var(--on-navy);text-align:center;padding:120px 24px 0;overflow:hidden}
+.lp-cta{background:var(--dark);color:var(--on-navy);text-align:center;padding:120px 24px 0;overflow:hidden}
 .lp-cta h2{font-size:clamp(34px,5vw,64px);font-weight:700;line-height:1.15}
 .lp-cta p{font-size:clamp(18px,1.7vw,22px);color:var(--on-navy2);margin-top:14px}
 .lp-cta-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:32px}
@@ -151,7 +151,7 @@ html,body{overflow-x:clip}
 
 /* طلب العرض */
 .lp-demo{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);background:var(--white);border-radius:28px;overflow:hidden;border:1px solid var(--hair)}
-.lp-demo-side{background:var(--black);color:var(--on-navy);padding:56px 44px;display:flex;flex-direction:column;justify-content:center}
+.lp-demo-side{background:var(--dark);color:var(--on-navy);padding:56px 44px;display:flex;flex-direction:column;justify-content:center}
 .lp-demo-side img{width:56px;height:56px;border-radius:16px;margin-bottom:24px}
 .lp-demo-side h3{font-weight:700;font-size:clamp(26px,2.6vw,34px);line-height:1.35;margin-bottom:12px}
 .lp-demo-side p{font-size:17px;line-height:1.85;color:var(--on-navy2)}
