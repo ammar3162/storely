@@ -4,14 +4,14 @@ export const AP_CSS = `
 .ap-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mint);flex-shrink:0}
 
 /* الواجهة: ثلاثة جوالات — الفيديو في الوسط، وشاشتا المالك والموظف بزاوية — تطلع من أسفل البلاطة */
-.ap-hero{background:var(--light);text-align:center;padding:60px 20px 0;overflow:hidden}
+.ap-hero{background:var(--light);text-align:center;padding:48px 20px 0;overflow:hidden}
 .ap-hero h1{font-size:clamp(40px,6.6vw,92px);font-weight:700;line-height:1.08;color:var(--navy);overflow-wrap:break-word;min-width:0}
 .ap-lead{font-size:clamp(19px,1.9vw,27px);line-height:1.5;color:var(--ink2);max-width:760px;margin:18px auto 0}
 .ap-acts{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:30px}
 .ap-note{font-size:14.5px;color:var(--ink2);margin-top:16px}
 .ap-alt{border:0;background:none;font:500 15px var(--font);color:var(--navy);cursor:pointer;margin-top:2px;min-height:44px;padding:0 8px;text-decoration:underline;text-decoration-color:var(--hair);text-underline-offset:6px}
 .ap-alt:hover{text-decoration-color:var(--navy)}
-.ap-stage{--vw:clamp(240px,21vw,300px);--sw:clamp(196px,17vw,250px);position:relative;max-width:1040px;margin:30px auto 0;height:clamp(340px,28vw,410px);overflow:hidden;display:flex;justify-content:center;align-items:flex-start;padding-top:14px}
+.ap-stage{--vw:clamp(240px,21vw,300px);--sw:clamp(196px,17vw,250px);position:relative;max-width:1040px;margin:30px auto 0;height:clamp(330px,27vw,400px);overflow:hidden;display:flex;justify-content:center;align-items:flex-start;padding-top:14px}
 .ap-stage.is-playing{height:auto;overflow:visible;padding-bottom:48px}
 .ap-stage.is-playing .ap-side{display:none}
 .ap-video{--r:52px;--b:10px;width:var(--vw);z-index:3}
@@ -97,7 +97,7 @@ export const AP_CSS = `
 .ap-per{font-size:18px;color:var(--ink2);margin-top:10px}
 .ap-ticks{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:12px 28px;margin-top:30px}
 .ap-ticks li{display:flex;align-items:center;gap:8px;font-size:16px;color:var(--navy)}
-.ap-steps{list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;max-width:1000px;margin:52px auto 0;counter-reset:s}
+.ap-steps{list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;max-width:1200px;margin:52px auto 0;counter-reset:s}
 .ap-steps li{background:var(--white);border-radius:24px;padding:26px;text-align:start;display:flex;gap:14px;align-items:center;font-size:17px;color:var(--navy)}
 .ap-steps li::before{counter-increment:s;content:counter(s);width:38px;height:38px;border-radius:50%;background:var(--navy);color:var(--on-navy);display:grid;place-items:center;font-size:15px;font-weight:500;flex-shrink:0}
 

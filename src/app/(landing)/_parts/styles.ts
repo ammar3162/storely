@@ -17,6 +17,8 @@ html,body{overflow-x:clip}
 .lp a{color:inherit;text-decoration:none}
 .lp img{display:block;max-width:100%}
 .lp a:focus-visible,.lp button:focus-visible,.lp input:focus-visible,.lp select:focus-visible,.lp textarea:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.lp-cta :focus-visible,.lp-demo-side :focus-visible,.ap-navy :focus-visible,.ap-about :focus-visible,.ap-video :focus-visible{outline-color:var(--white)}
+.ap-cover:focus-visible{outline-offset:-6px}
 .lp h1,.lp h2,.lp h3{text-wrap:balance;letter-spacing:0}
 .lp p{text-wrap:pretty}
 .lp-wrap{max-width:1180px;margin:0 auto;padding:0 24px}
@@ -134,7 +136,7 @@ html,body{overflow-x:clip}
 .lp-cta p{font-size:clamp(18px,1.7vw,22px);color:var(--on-navy2);margin-top:14px}
 .lp-cta-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:32px}
 .lp-cta-shots{display:flex;justify-content:center;align-items:flex-start;gap:0;margin:64px auto 0;height:340px;overflow:hidden;padding-top:24px}
-.lp-cta-shots .ap-phone{--r:36px;--b:7px;width:min(210px,16vw);flex-shrink:0;margin:0 -10px;transform-origin:50% 100%}
+.lp-cta-shots .ap-phone{--r:38px;--b:8px;width:min(250px,17.5vw);flex-shrink:0;margin:0 6px;transform-origin:50% 100%}
 .lp-cta-shots .ap-phone:nth-child(1){transform:rotate(-9deg) translateY(56px)}
 .lp-cta-shots .ap-phone:nth-child(2){transform:rotate(-4deg) translateY(18px);z-index:1}
 .lp-cta-shots .ap-phone:nth-child(3){z-index:2}
