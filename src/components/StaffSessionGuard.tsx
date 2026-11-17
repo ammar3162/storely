@@ -129,9 +129,9 @@ export default function StaffSessionGuard({ children }: { children: React.ReactN
           style={{ position: 'fixed', inset: 0, zIndex: 9500, background: '#203640', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, textAlign: 'center', fontFamily: 'var(--storely-font)' }}>
           <div style={{ maxWidth: 340 }}>
             <div style={{ width: 64, height: 64, borderRadius: 18, background: 'rgba(255,255,255,.1)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px' }}><CalendarX2 size={30} /></div>
-            <div id="sub-exp-t" style={{ fontSize: 19, fontWeight: 700, color: '#fff', marginBottom: 10, lineHeight: 1.5 }}>{pick(SUB_DICT, 'title', lang)}</div>
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,.78)', lineHeight: 1.8, marginBottom: 26 }}>{pick(SUB_DICT, 'body', lang)}</div>
-            <button onClick={signOutExpired} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 26px', background: '#fff', color: '#203640', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <div id="sub-exp-t" style={{ fontSize:22, fontWeight:600, color: '#fff', marginBottom: 10, lineHeight: 1.5 }}>{pick(SUB_DICT, 'title', lang)}</div>
+            <div style={{ fontSize:17, color: 'rgba(255,255,255,.78)', lineHeight: 1.8, marginBottom: 26 }}>{pick(SUB_DICT, 'body', lang)}</div>
+            <button onClick={signOutExpired} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 26px', background: '#fff', color: '#203640', border: 'none', borderRadius:999, fontSize:17, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
               <LogOut size={17} />{pick(SUB_DICT, 'out', lang)}
             </button>
           </div>
@@ -140,20 +140,20 @@ export default function StaffSessionGuard({ children }: { children: React.ReactN
       {open && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(15,23,42,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, fontFamily: 'var(--storely-font)', direction: 'rtl' }}>
           <div style={{ background: 'white', borderRadius: 20, width: '100%', maxWidth: 340, padding: 26, textAlign: 'center', boxShadow: '0 20px 50px rgba(15,23,42,.25)' }}>
-            <div style={{ width: 52, height: 52, borderRadius: 16, background: '#f0fdfa', color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}><Lock size={24} /></div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#0f172a' }}>أدخل رمزك للمتابعة</div>
-            <div style={{ fontSize: 12.5, color: '#64748b', marginTop: 4, marginBottom: 16 }}>{name ? `${name}، ` : ''}انتهت جلستك لدواعٍ أمنية — بعد إدخال الرمز نكمل طلبك تلقائياً</div>
+            <div style={{ width: 52, height: 52, borderRadius:20, background: '#f0fdfa', color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}><Lock size={24} /></div>
+            <div style={{ fontSize:17, fontWeight:600, color: 'var(--storely-text)' }}>أدخل رمزك للمتابعة</div>
+            <div style={{ fontSize:13, color: 'var(--storely-muted)', marginTop: 4, marginBottom: 16 }}>{name ? `${name}، ` : ''}انتهت جلستك لدواعٍ أمنية — بعد إدخال الرمز نكمل طلبك تلقائياً</div>
             <input type="password" inputMode="numeric" autoFocus maxLength={6} value={pin}
               onChange={e => { setPin(e.target.value.replace(/\D/g, '')); setErr('') }}
               onKeyDown={e => { if (e.key === 'Enter') submit() }}
               placeholder="••••"
-              style={{ width: '100%', height: 54, fontSize: 24, fontWeight: 800, textAlign: 'center', letterSpacing: 8, border: `1.5px solid ${err ? '#fca5a5' : '#e2e8f0'}`, borderRadius: 14, boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none' }} />
-            {err && <div style={{ fontSize: 12.5, color: '#dc2626', fontWeight: 600, marginTop: 8 }}>{err}</div>}
+              style={{ width: '100%', height: 54, fontSize: 24, fontWeight:600, textAlign: 'center', letterSpacing: 8, border: `1.5px solid ${err ? '#fca5a5' : 'var(--storely-border)'}`, borderRadius:20, boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none' }} />
+            {err && <div style={{ fontSize:13, color: '#dc2626', fontWeight: 600, marginTop: 8 }}>{err}</div>}
             <button onClick={submit} disabled={!pin || busy}
-              style={{ width: '100%', height: 48, marginTop: 14, background: !pin || busy ? '#94a3b8' : '#0f766e', color: 'white', border: 'none', borderRadius: 14, fontSize: 15, fontWeight: 800, cursor: !pin || busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+              style={{ width: '100%', height: 48, marginTop: 14, background: !pin || busy ? 'var(--storely-subtle)' : '#0f766e', color: 'white', border: 'none', borderRadius:20, fontSize:17, fontWeight:600, cursor: !pin || busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
               {busy ? 'جاري التحقق...' : 'متابعة'}
             </button>
-            <button onClick={logout} style={{ width: '100%', marginTop: 8, padding: 10, background: 'none', border: 'none', color: '#94a3b8', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>تسجيل خروج</button>
+            <button onClick={logout} style={{ width: '100%', marginTop: 8, padding: 10, background: 'none', border: 'none', color: 'var(--storely-subtle)', fontSize:15, cursor: 'pointer', fontFamily: 'inherit' }}>تسجيل خروج</button>
           </div>
         </div>
       )}

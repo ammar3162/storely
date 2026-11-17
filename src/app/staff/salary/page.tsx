@@ -79,7 +79,7 @@ export default function PayslipPage() {
 
   const isCurrent = month === thisMonth()
   const money = (v: number, sign?: '+' | '−', color?: string) => (
-    <span style={{ ...receiptNum, fontSize: 14, color: color || C.t1, whiteSpace: 'nowrap' }}>
+    <span style={{ ...receiptNum, fontSize:17, color: color || C.t1, whiteSpace: 'nowrap' }}>
       {sign === '−' ? '-' : sign || ''}{num(v)}
     </span>
   )
@@ -95,14 +95,14 @@ export default function PayslipPage() {
   const line = (key: string, label: string, value: number, opts: { sub?: React.ReactNode; sign?: '+' | '−'; color?: string; strong?: boolean; first?: boolean } = {}) => (
     <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, padding: opts.strong ? '8px 0 2px' : '5px 0' }}>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: opts.strong ? 600 : 400, color: opts.strong ? C.t1 : C.t2 }}>{label}</div>
-        {opts.sub && <div style={{ fontSize: 12, color: C.t3, marginTop: 2, lineHeight: 1.5, overflowWrap: 'anywhere' }}>{opts.sub}</div>}
+        <div style={{ fontSize:17, fontWeight: opts.strong ? 600 : 400, color: opts.strong ? C.t1 : C.t2 }}>{label}</div>
+        {opts.sub && <div style={{ fontSize:13, color: C.t3, marginTop: 2, lineHeight: 1.5, overflowWrap: 'anywhere' }}>{opts.sub}</div>}
       </div>
       {money(value, opts.sign, opts.color)}
     </div>
   )
   const sectionTitle = (txt: string) => <div style={sectionLabel}>{txt}</div>
-  const receiptHead = (txt: string) => <div style={{ fontSize: 12, color: C.t3, margin: '2px 0 4px' }}>{txt}</div>
+  const receiptHead = (txt: string) => <div style={{ fontSize:13, color: C.t3, margin: '2px 0 4px' }}>{txt}</div>
   const deductionLabel = (src: string) => src === 'cashier_deficit' ? t('deficit') : src === 'late_bundle' ? t('lateBundle') : t('manual')
 
   return (
@@ -114,10 +114,10 @@ export default function PayslipPage() {
             <Globe size={16} strokeWidth={1.75} />{L.label}
           </button>
           {showLang && (
-            <div style={{ position: 'absolute', top: '100%', insetInlineEnd: 0, marginTop: 6, background: 'white', borderRadius: 12, border:'1px solid var(--storely-border)', boxShadow: '0 12px 28px rgba(15,23,42,.16)', overflow: 'hidden', minWidth: 150, zIndex: 50 }}>
+            <div style={{ position: 'absolute', top: '100%', insetInlineEnd: 0, marginTop: 6, background: 'white', borderRadius:20, border:'1px solid var(--storely-border)', boxShadow: '0 12px 28px rgba(15,23,42,.16)', overflow: 'hidden', minWidth: 150, zIndex: 50 }}>
               {PAYSLIP_LANGS.map(l => (
                 <button key={l.code} onClick={() => chooseLang(l.code)}
-                  style={{ width: '100%', padding: '11px 14px', border: 'none', borderBottom:'1px solid #eceef1', background: lang === l.code ? '#e7f3f1' : 'white', color: lang === l.code ? '#203640' : '#111827', fontSize: 13, fontWeight: lang === l.code ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'start', display: 'block' }}>
+                  style={{ width: '100%', padding: '11px 14px', border: 'none', borderBottom:'1px solid #eceef1', background: lang === l.code ? '#e7f3f1' : 'white', color: lang === l.code ? '#203640' : '#111827', fontSize:15, fontWeight: lang === l.code ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'start', display: 'block' }}>
                   {l.label}
                 </button>
               ))}
@@ -129,14 +129,14 @@ export default function PayslipPage() {
       <div style={{ maxWidth: 560, margin: '0 auto', padding: 16 }}>
         {/* الشهر */}
         <div style={{ ...card, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 8 }}>
-          <button aria-label={t('prev')} onClick={() => setMonth(shiftMonth(month, -1))} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: 'transparent', cursor: 'pointer', display: 'grid', placeItems: 'center', color: C.t1 }}>
+          <button aria-label={t('prev')} onClick={() => setMonth(shiftMonth(month, -1))} style={{ width: 36, height: 36, border: 'none', borderRadius:12, background: 'transparent', cursor: 'pointer', display: 'grid', placeItems: 'center', color: C.t1 }}>
             {rtl ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 16, fontWeight:600, color: C.t1 }}>{monthLabel(month)}</div>
-            {isCurrent && <div style={{ fontSize: 12, color: C.t3 }}>{t('current')}</div>}
+            <div style={{ fontSize:17, fontWeight:600, color: C.t1 }}>{monthLabel(month)}</div>
+            {isCurrent && <div style={{ fontSize:13, color: C.t3 }}>{t('current')}</div>}
           </div>
-          <button aria-label={t('next')} disabled={isCurrent} onClick={() => setMonth(shiftMonth(month, 1))} style={{ width: 36, height: 36, border: 'none', borderRadius: 10, background: 'transparent', cursor: isCurrent ? 'default' : 'pointer', opacity: isCurrent ? .35 : 1, display: 'grid', placeItems: 'center', color: C.t1 }}>
+          <button aria-label={t('next')} disabled={isCurrent} onClick={() => setMonth(shiftMonth(month, 1))} style={{ width: 36, height: 36, border: 'none', borderRadius:12, background: 'transparent', cursor: isCurrent ? 'default' : 'pointer', opacity: isCurrent ? .35 : 1, display: 'grid', placeItems: 'center', color: C.t1 }}>
             {rtl ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
           </button>
         </div>
@@ -144,15 +144,15 @@ export default function PayslipPage() {
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: 50 }}><div style={{ width: 30, height: 30, border:'3px solid var(--storely-border)', borderTopColor:'#203640', borderRadius: '50%', animation: 'spin .7s linear infinite' }} /></div>
         ) : error ? (
-          <div style={{ ...card, marginTop: 16, padding: '36px 20px', textAlign: 'center', fontSize: 14, color: C.t2 }}>{t(error)}</div>
+          <div style={{ ...card, marginTop: 16, padding: '36px 20px', textAlign: 'center', fontSize:17, color: C.t2 }}>{t(error)}</div>
         ) : data && (
           <>
             {/* إيصال الراتب: الصافي فوق، وتحته المستحقات والخصومات بخط الإيصال */}
             <div style={{ ...paper, marginTop: 16 }}>
-              <div style={{ fontSize: 14, color: C.t2 }}>{isCurrent ? t('netSoFar') : t('net')}</div>
+              <div style={{ fontSize:17, color: C.t2 }}>{isCurrent ? t('netSoFar') : t('net')}</div>
               <div style={{ marginTop: 4, display: 'flex', alignItems: 'baseline', gap: 6 }}>
                 <span style={{ ...receiptNum, fontSize: 34, fontWeight: 500, color: C.t1 }}>{num(data.netSalary)}</span>
-                <span style={{ fontSize: 13, color: C.t3 }}>{curr}</span>
+                <span style={{ fontSize:15, color: C.t3 }}>{curr}</span>
               </div>
               <div style={{ ...cutLine, margin: '16px 0 10px' }} />
               {receiptHead(t('earnings'))}
@@ -169,7 +169,7 @@ export default function PayslipPage() {
               <div style={cutLine} />
               {receiptHead(t('deductions'))}
               {data.latePenalties.length + data.deductions.length + data.advances.length === 0 ? (
-                <div style={{ padding: '6px 0', fontSize: 13, color: C.t3 }}>{t('noDeductions')}</div>
+                <div style={{ padding: '6px 0', fontSize:15, color: C.t3 }}>{t('noDeductions')}</div>
               ) : (
                 <>
                   {[
@@ -188,7 +188,7 @@ export default function PayslipPage() {
               )}
               <div style={cutLine} />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 2 }}>
-                <span style={{ fontSize: 15, fontWeight: 600, color: C.t1 }}>{t('net')}</span>
+                <span style={{ fontSize:17, fontWeight: 600, color: C.t1 }}>{t('net')}</span>
                 <span style={{ ...receiptNum, fontSize: 20, fontWeight: 500, color: C.t1 }}>{num(data.netSalary)}</span>
               </div>
             </div>
@@ -213,8 +213,8 @@ export default function PayslipPage() {
                 { v: data.overtime.minutes ? dur(data.overtime.minutes) : '0', l: t('overtimeStat') },
               ].map((k, i) => (
                 <div key={i} style={{ padding: '12px 8px', textAlign: 'center', borderInlineStart: i ? `1px solid ${C.line}` : 'none' }}>
-                  <div style={{ fontSize: 18, fontWeight: 500, color: C.t1, fontVariantNumeric: 'tabular-nums' }}>{k.v}</div>
-                  <div style={{ fontSize: 12, color: C.t3, marginTop: 2 }}>{k.l}</div>
+                  <div style={{ fontSize:20, fontWeight: 500, color: C.t1, fontVariantNumeric: 'tabular-nums' }}>{k.v}</div>
+                  <div style={{ fontSize:13, color: C.t3, marginTop: 2 }}>{k.l}</div>
                 </div>
               ))}
             </div>
@@ -229,7 +229,7 @@ export default function PayslipPage() {
               </>
             )}
 
-            <p style={{ fontSize: 13, color: C.t3, textAlign: 'center', lineHeight: 1.7, marginTop: 16 }}>
+            <p style={{ fontSize:15, color: C.t3, textAlign: 'center', lineHeight: 1.7, marginTop: 16 }}>
               {data.overtime.mode === 'off' ? t('noteOff') : t(data.overtime.mode === 'fixed' ? 'noteFixed' : 'noteAuto', { rate: `${num(data.overtime.hourRate)} ${curr}` })}
               {isCurrent && <><br />{t('noteCurrent')}</>}
             </p>

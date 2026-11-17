@@ -14,7 +14,7 @@ export default function AddProductModal({ m }: { m: StaffDispense }) {
   const q = pickSearch.trim().toLowerCase()
   const matches = (products || []).filter((p: any) => !q || String(p.name || '').toLowerCase().includes(q)).slice(0, 8)
   const canSave = !savingProduct && !!newProduct.qty && (existing ? !!picked : !!newProduct.name.trim())
-  const tabBtn = (on: boolean) => ({ flex: 1, padding: '10px', borderRadius: 10, border: 'none', fontSize: 14, fontWeight:600, cursor: 'pointer', fontFamily: 'inherit',
+  const tabBtn = (on: boolean) => ({ flex: 1, padding: '10px', borderRadius:12, border: 'none', fontSize:17, fontWeight:600, cursor: 'pointer', fontFamily: 'inherit',
     background: on ? 'white' : 'transparent', color: on ? '#203640' : '#374151', boxShadow: on ? '0 1px 4px rgba(0,0,0,.08)' : 'none' })
   return (
     <>
@@ -24,19 +24,19 @@ export default function AddProductModal({ m }: { m: StaffDispense }) {
           <div style={sheetStyle} onClick={e=>e.stopPropagation()}>
             <SheetTop lang={lang} onBack={()=>setShowAddProduct(false)} title={T('addToStock',lang)}/>
             {/* منتج موجود (بحث + كمية) أو منتج جديد */}
-            <div style={{display:'flex',gap:4,background:'#f4f5f6',padding:4,borderRadius:12,marginBottom:16}}>
+            <div style={{display:'flex',gap:4,background:'#f4f5f6',padding:4,borderRadius:20,marginBottom:16}}>
               <button type="button" onClick={()=>setAddMode('existing')} style={tabBtn(existing)}>{T('existingProd',lang)}</button>
               <button type="button" onClick={()=>{ setAddMode('new'); setPicked(null) }} style={tabBtn(!existing)}>{T('newProdTab',lang)}</button>
             </div>
             {existing ? (
             <div style={{display:'flex',flexDirection:'column' as const,gap:12,marginBottom:22}}>
               {picked ? (
-                <div style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',borderRadius:12,border:'1.5px solid #203640',background:'#e7f3f1'}}>
+                <div style={{display:'flex',alignItems:'center',gap:10,padding:'12px 14px',borderRadius:20,border:'1.5px solid #203640',background:'#e7f3f1'}}>
                   <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:16,fontWeight:600,color:'var(--storely-text)'}}>{picked.name}</div>
-                    <div style={{fontSize:13,color:'var(--storely-text)'}}>{T('currentQty',lang)}: {Number(picked.qty) || 0} {picked.unit || ''}</div>
+                    <div style={{fontSize:17,fontWeight:600,color:'var(--storely-text)'}}>{picked.name}</div>
+                    <div style={{fontSize:15,color:'var(--storely-text)'}}>{T('currentQty',lang)}: {Number(picked.qty) || 0} {picked.unit || ''}</div>
                   </div>
-                  <button type="button" onClick={()=>setPicked(null)} style={{border:'1px solid #d1d5db',background:'white',borderRadius:8,padding:'6px 12px',fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:'var(--storely-text)'}}>{T('change',lang)}</button>
+                  <button type="button" onClick={()=>setPicked(null)} style={{border:'1px solid #d1d5db',background:'white',borderRadius:12,padding:'6px 12px',fontSize:15,fontWeight:600,cursor:'pointer',fontFamily:'inherit',color:'var(--storely-text)'}}>{T('change',lang)}</button>
                 </div>
               ) : (
                 <>
@@ -44,12 +44,12 @@ export default function AddProductModal({ m }: { m: StaffDispense }) {
                   <div style={{maxHeight:240,overflowY:'auto' as const,display:'flex',flexDirection:'column' as const,gap:6}}>
                     {matches.length === 0 ? (
                       <button type="button" onClick={()=>{ setAddMode('new'); setNewProduct(p=>({...p,name:pickSearch.trim()})) }}
-                        style={{padding:'12px',borderRadius:10,border:'1px dashed #6b7487',background:'white',fontSize:14,color:'var(--storely-text)',cursor:'pointer',fontFamily:'inherit'}}>{T('noMatch',lang)}</button>
+                        style={{padding:'12px',borderRadius:12,border:'1px dashed #6b7487',background:'white',fontSize:17,color:'var(--storely-text)',cursor:'pointer',fontFamily:'inherit'}}>{T('noMatch',lang)}</button>
                     ) : matches.map((p: any) => (
                       <button key={p.id} type="button" onClick={()=>setPicked(p)}
-                        style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:10,padding:'11px 14px',borderRadius:10,border:'1px solid var(--storely-border)',background:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
-                        <span style={{fontSize:15,fontWeight:600,color:'var(--storely-text)'}}>{p.name}</span>
-                        <span style={{fontSize:13,color:'var(--storely-text)',whiteSpace:'nowrap' as const}}>{Number(p.qty) || 0} {p.unit || ''}</span>
+                        style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:10,padding:'11px 14px',borderRadius:12,border:'1px solid var(--storely-border)',background:'white',cursor:'pointer',fontFamily:'inherit',textAlign:'right' as const}}>
+                        <span style={{fontSize:17,fontWeight:600,color:'var(--storely-text)'}}>{p.name}</span>
+                        <span style={{fontSize:15,color:'var(--storely-text)',whiteSpace:'nowrap' as const}}>{Number(p.qty) || 0} {p.unit || ''}</span>
                       </button>
                     ))}
                   </div>
@@ -88,11 +88,11 @@ export default function AddProductModal({ m }: { m: StaffDispense }) {
             <SheetFoot>
             <div style={{display:'flex',gap:8}}>
               <button onClick={addProduct} disabled={!canSave}
-                style={{flex:2,height:48,background:'#203640',color:'white',border:'none',borderRadius:10,fontSize:16,fontWeight:600,cursor:'pointer',fontFamily:'inherit',opacity:canSave?1:0.6}}>
+                style={{flex:2,height:48,background:'#203640',color:'white',border:'none',borderRadius:12,fontSize:17,fontWeight:600,cursor:'pointer',fontFamily:'inherit',opacity:canSave?1:0.6}}>
                 {savingProduct?T('adding',lang):T('add',lang)}
               </button>
               <button onClick={()=>setShowAddProduct(false)}
-                style={{flex:1,height:48,background:'#f4f5f6',color:'var(--storely-text)',border:'none',borderRadius:10,fontSize:15,cursor:'pointer',fontFamily:'inherit'}}>
+                style={{flex:1,height:48,background:'#f4f5f6',color:'var(--storely-text)',border:'none',borderRadius:12,fontSize:17,cursor:'pointer',fontFamily:'inherit'}}>
                 {T('cancel',lang)}
               </button>
             </div>
