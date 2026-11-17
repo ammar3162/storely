@@ -103,6 +103,12 @@ export const CUI: Record<string,Record<'ar'|'en',string>> = {
   returnsNone:      {ar:'لا توجد',en:'None'},
   returnPrevWarn:   {ar:'سُجّلت مرتجعاً في إقفال {date}.',en:'already recorded as a return on {date}.'},
   returnPrevNote:   {ar:'تأكّد من الرقم، فسيظهر للمالك أنها مكررة.',en:'Check the number. The owner will see it as a repeat.'},
+  snapReturn:       {ar:'صوّر فاتورة مرتجعة',en:'Photograph a return'},
+  snapAnother:      {ar:'صوّر فاتورة أخرى',en:'Photograph another'},
+  fromGallery:      {ar:'أو اختر صورة من الجهاز',en:'or choose a photo from the device'},
+  returnNoReq:      {ar:'اكتب رقم الفاتورة',en:'Enter the invoice number'},
+  retakePhoto:      {ar:'إعادة التصوير',en:'Retake photo'},
+  uploadRetry:      {ar:'تعذّر الرفع، اضغط للإعادة',en:'Upload failed, tap to retry'},
 }
 // العربي والإنجليزي هنا، وباقي اللغات من staffI18n/cashier
 export const ct = (key: string, lang: string) =>

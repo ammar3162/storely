@@ -108,6 +108,12 @@ export const CASHIER_EXTRA: Record<string, L5> = {
   rr_unsatisfied:   { ur: 'گاہک مطمئن نہیں', hi: 'ग्राहक संतुष्ट नहीं', tl: 'Hindi nasiyahan ang customer', bn: 'গ্রাহক সন্তুষ্ট নন', fr: 'Client mécontent' },
   rr_cancelled:     { ur: 'گاہک نے آرڈر منسوخ کیا', hi: 'ग्राहक ने ऑर्डर रद्द किया', tl: 'Kinansela ng customer', bn: 'গ্রাহক অর্ডার বাতিল করেছেন', fr: 'Commande annulée par le client' },
   rr_other:         { ur: 'دوسری وجہ', hi: 'अन्य कारण', tl: 'Ibang dahilan', bn: 'অন্য কারণ', fr: 'Autre raison' },
+  snapReturn:       { ur: 'واپس شدہ انوائس کی تصویر لیں', hi: 'वापसी बिल की फोटो लें', tl: 'Kunan ng larawan ang ibinalik na resibo', bn: 'ফেরত বিলের ছবি তুলুন', fr: 'Photographier une facture retournée' },
+  snapAnother:      { ur: 'ایک اور تصویر لیں', hi: 'एक और फोटो लें', tl: 'Kunan ng isa pa', bn: 'আরেকটির ছবি তুলুন', fr: 'Photographier une autre' },
+  fromGallery:      { ur: 'یا ڈیوائس سے تصویر منتخب کریں', hi: 'या डिवाइस से फोटो चुनें', tl: 'o pumili ng larawan sa device', bn: 'অথবা ডিভাইস থেকে ছবি বেছে নিন', fr: 'ou choisir une photo sur l’appareil' },
+  returnNoReq:      { ur: 'انوائس نمبر لکھیں', hi: 'बिल नंबर लिखें', tl: 'Ilagay ang numero ng resibo', bn: 'বিল নম্বর লিখুন', fr: 'Saisissez le numéro' },
+  retakePhoto:      { ur: 'دوبارہ تصویر لیں', hi: 'फिर से फोटो लें', tl: 'Kunan muli', bn: 'আবার ছবি তুলুন', fr: 'Reprendre la photo' },
+  uploadRetry:      { ur: 'اپ لوڈ نہیں ہوا، دوبارہ کے لیے دبائیں', hi: 'अपलोड नहीं हुआ, दोबारा के लिए दबाएं', tl: 'Hindi na-upload, pindutin para ulitin', bn: 'আপলোড হয়নি, আবার চেষ্টা করতে চাপুন', fr: 'Échec de l’envoi, touchez pour réessayer' },
 }
 
 export const THANKS_EXTRA: Record<keyof L5, string[]> = {

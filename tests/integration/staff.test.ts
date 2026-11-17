@@ -366,6 +366,28 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
     })
   })
 
+  describe('detailed price quote', () => {
+    it('builds the quote from the org itself: owner, plan, working branches, monthly bill, regular price and discount', async () => {
+      const { offerQuoteDetails } = await import('@/lib/offerQuoteServer')
+      const q = await offerQuoteDetails(db as any, orgId, { months: 6, kind: 'manual', note: 'عرض اختبار' }, 1000)
+      expect(q).toBeTruthy()
+      expect(q!.orgName).toBe(`__it_${stamp}`)
+      const d = q!.details
+      expect(d.ownerName).toBe('اختبار')
+      expect(d.planLabel).toBeTruthy()
+      expect(d.branchNames).toContain('الفرع الرئيسي')
+      expect(d.months).toBe(6)
+      expect(d.billLines.length).toBeGreaterThan(0)
+      expect(d.list).toBe(d.monthly * 6)
+      if (d.list > 1000) expect(d.discount).toBe(d.list - 1000)
+      expect(d.note).toBe('عرض اختبار')
+      // مدة غير صالحة أو مبلغ صفر: بدون تفاصيل (الفاتورة تنرسل بالشكل العادي)
+      expect(await offerQuoteDetails(db as any, orgId, { months: 0 }, 1000)).toBeNull()
+      expect(await offerQuoteDetails(db as any, orgId, { months: 3 }, 0)).toBeNull()
+      expect(await offerQuoteDetails(db as any, crypto.randomUUID(), { months: 3 }, 500)).toBeNull()
+    })
+  })
+
   describe('cashier closing with returned invoices', () => {
     it('saves photo + number + optional reason (record only, cash math unchanged), flags repeats from earlier closings, and the owner sees them', async () => {
       process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'

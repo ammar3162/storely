@@ -13,9 +13,10 @@ import { cleanInvoiceNo, MAX_RETURNS } from '@/lib/closingReturns'
 import { ct, THANK_YOU_TEMPLATES_AR, THANK_YOU_TEMPLATES_EN, DEFICIT_REASONS } from './strings'
 import type { StaffSession, Purchase } from './types'
 
-// فاتورة مرتجعة يضيفها الكاشير: صورة (مرفوعة) + رقم + سبب اختياري
-export type ReturnRow = { invoice_no: string; photo: string; preview: string; reason: string | null; uploading: boolean }
-const emptyReturn = (): ReturnRow => ({ invoice_no: '', photo: '', preview: '', reason: null, uploading: false })
+// فاتورة مرتجعة يضيفها الكاشير: تبدأ بالصورة (ترتفع بالخلفية وهو يكتب الرقم) + رقم + سبب اختياري
+// failed = الرفع فشل (الملف محفوظ عشان يعيد بضغطة على الصورة)
+export type ReturnRow = { key: string; invoice_no: string; photo: string; preview: string; reason: string | null; uploading: boolean; failed: boolean; file?: File }
+let returnSeq = 0
 
 /** حالة صفحة إقفال الكاشير وحساباتها — منقولة كما هي من page.tsx */
 export function useCashierClosing() {
@@ -51,8 +52,9 @@ export function useCashierClosing() {
   const [uploadingSales, setUploadingSales] = useState(false)
   // الفواتير المرتجعة (للتوثيق فقط — ما تغيّر الحساب): سؤال إلزامي نعم/لا مثل المسحوبات
   const [hasReturns, setHasReturns] = useState<'yes'|'no'|null>(null)
-  const [returns, setReturns] = useState<ReturnRow[]>([emptyReturn()])
+  const [returns, setReturns] = useState<ReturnRow[]>([])
   const [returnsPrev, setReturnsPrev] = useState<Record<string,string>>({})   // رقم → تاريخ إقفال سابق فيه نفس الفاتورة
+  const [showReturnErrors, setShowReturnErrors] = useState(false)             // بعد «التالي» الناقص: الخانات الفاضية تتلوّن
   const [submitting, setSubmitting] = useState(false)
   const [saved, setSaved] = useState(false)
   const [locked, setLocked] = useState(false)
@@ -138,24 +140,36 @@ export function useCashierClosing() {
     setDeliveryAmounts(prev=>{const n={...prev}; delete n[name]; return n})
   }
 
-  function addReturnRow() { setReturns(prev=>prev.length>=MAX_RETURNS?prev:[...prev,emptyReturn()]) }
-  function removeReturnRow(idx:number) { setReturns(prev=>prev.length>1?prev.filter((_,i)=>i!==idx):[emptyReturn()]) }
-  function updateReturn(idx:number, patch:Partial<ReturnRow>) { setReturns(prev=>prev.map((r,i)=>i===idx?{...r,...patch}:r)) }
+  function updateReturn(key:string, patch:Partial<ReturnRow>) { setReturns(prev=>prev.map(r=>r.key===key?{...r,...patch}:r)) }
   // الصورة تتصغّر قبل الرفع (أسرع على نت المحل)، والمعاينة من الجهاز لأن الرابط المحفوظ خاص
-  async function uploadReturnPhoto(idx:number, file:File) {
-    updateReturn(idx,{uploading:true})
+  async function uploadReturn(key:string, file:File) {
+    updateReturn(key,{uploading:true,failed:false,file})
     try {
       const small = await shrinkImage(file)
+      updateReturn(key,{preview:URL.createObjectURL(small)})
       const fd = new FormData()
       fd.append('file', new File([small], 'return.jpg', { type: small.type || 'image/jpeg' }))
       const res = await fetch('/api/staff-upload-invoice',{method:'POST',headers:{'Authorization':`Bearer ${localStorage.getItem('staff_token')}`},body:fd})
       const j = await res.json().catch(()=>null)
-      if(!res.ok||!j?.success){ showToast(j?.error||ct('imgUploadFailed',lang),'error'); updateReturn(idx,{uploading:false}); return }
-      updateReturn(idx,{photo:j.url,preview:URL.createObjectURL(small),uploading:false})
+      if(!res.ok||!j?.success){ showToast(j?.error||ct('imgUploadFailed',lang),'error'); updateReturn(key,{uploading:false,failed:true}); return }
+      updateReturn(key,{photo:j.url,uploading:false,failed:false,file:undefined})
     } catch {
-      showToast(ct('imgUploadFailed',lang),'error'); updateReturn(idx,{uploading:false})
+      showToast(ct('imgUploadFailed',lang),'error'); updateReturn(key,{uploading:false,failed:true})
     }
   }
+  /** صورة جديدة = مرتجع جديد (يرجع مفتاحه عشان خانة الرقم تاخذ التركيز) */
+  function addReturnPhoto(file:File): string | null {
+    if(returns.length>=MAX_RETURNS) return null
+    const key = `r${Date.now()}-${returnSeq++}`
+    setHasReturns('yes'); setShowReturnErrors(false)
+    setReturns(prev=>[...prev,{key,invoice_no:'',photo:'',preview:URL.createObjectURL(file),reason:null,uploading:true,failed:false,file}])
+    uploadReturn(key,file)
+    return key
+  }
+  function retakeReturn(key:string, file:File) { updateReturn(key,{photo:'',preview:URL.createObjectURL(file)}); uploadReturn(key,file) }
+  function retryReturn(key:string) { const r = returns.find(x=>x.key===key); if(r?.file) uploadReturn(key,r.file) }
+  function removeReturn(key:string) { const next = returns.filter(r=>r.key!==key); setReturns(next); if(!next.length) setHasReturns(null) }
+  function setNoReturns() { setHasReturns('no'); setReturns([]); setShowReturnErrors(false) }
 
   function addPurchaseRow() { setPurchases(prev=>[...prev,{amount:'',reason:''}]) }
   function removePurchaseRow(idx:number) { setPurchases(prev=>prev.filter((_,i)=>i!==idx)) }
@@ -201,6 +215,7 @@ export function useCashierClosing() {
       return
     }
     if(step===3 && !step3Valid){
+      if(salesImage && networkImage) setShowReturnErrors(true)
       showToast(!salesImage||!networkImage ? ct('uploadBothPhotos',lang)
         : hasReturns===null ? ct('specifyReturns',lang)
         : returnsUploading ? ct('uploadingImg',lang)
@@ -275,11 +290,11 @@ export function useCashierClosing() {
     setTotalSales(''); setMadaAmount(''); setVisaAmount(''); setMastercardAmount(''); setCashAmount(''); setDeliveryApps([]); setDeliveryAmounts({}); setAppPickerOpen(false); setOtherAppOpen(false); setOtherAppName('')
     setHasPurchases(null); setPurchases([{amount:'',reason:''}])
     setNetworkImage(''); setSalesImage(''); setNetworkPreview(''); setSalesPreview(''); setDeficitChoice(''); setDeficitNote('')
-    setHasReturns(null); setReturns([emptyReturn()]); setReturnsPrev({})
+    setHasReturns(null); setReturns([]); setReturnsPrev({}); setShowReturnErrors(false)
     setStep(1); setSaved(false)
   }
 
-  return { lang, session, setSession, orgLogo, setOrgLogo, dayStartHour, setDayStartHour, clockTick, setClockTick, step, setStep, closingDate, setClosingDate, madaAmount, setMadaAmount, visaAmount, setVisaAmount, mastercardAmount, setMastercardAmount, cashAmount, setCashAmount, deliveryChoices, setDeliveryChoices, deliveryApps, setDeliveryApps, appPickerOpen, setAppPickerOpen, deliveryAmounts, setDeliveryAmounts, otherAppOpen, setOtherAppOpen, otherAppName, setOtherAppName, hasPurchases, setHasPurchases, purchases, setPurchases, deficitChoice, setDeficitChoice, deficitNote, setDeficitNote, networkImage, setNetworkImage, salesImage, setSalesImage, networkPreview, salesPreview, uploadingNetwork, setUploadingNetwork, uploadingSales, setUploadingSales, submitting, setSubmitting, saved, setSaved, locked, setLocked, thankYouMsg, setThankYouMsg, curr, setCurr, toast, setToast, totalSales, setTotalSales, rtl, router, sales, mada, visa, mastercard, network, cash, deliveryList, delivery, anyNetworkEntered, networkError, validPurchasesNow, totalPurchasesNow, expectedCash, cashAfterWithdrawal, difference, status, step1Valid, step2Valid, step3Valid, deficitOption, deficitReason, deficitReasonOk, businessDate, businessDateLabel, isAfterMidnightCarry, logout, showToast, uploadImage, addDeliveryApp, removeDeliveryApp, addPurchaseRow, removePurchaseRow, updatePurchase, goNext, goBack, saveClosing, resetForm, hasReturns, setHasReturns, returns, returnsList, returnsPrev, addReturnRow, removeReturnRow, updateReturn, uploadReturnPhoto }
+  return { lang, session, setSession, orgLogo, setOrgLogo, dayStartHour, setDayStartHour, clockTick, setClockTick, step, setStep, closingDate, setClosingDate, madaAmount, setMadaAmount, visaAmount, setVisaAmount, mastercardAmount, setMastercardAmount, cashAmount, setCashAmount, deliveryChoices, setDeliveryChoices, deliveryApps, setDeliveryApps, appPickerOpen, setAppPickerOpen, deliveryAmounts, setDeliveryAmounts, otherAppOpen, setOtherAppOpen, otherAppName, setOtherAppName, hasPurchases, setHasPurchases, purchases, setPurchases, deficitChoice, setDeficitChoice, deficitNote, setDeficitNote, networkImage, setNetworkImage, salesImage, setSalesImage, networkPreview, salesPreview, uploadingNetwork, setUploadingNetwork, uploadingSales, setUploadingSales, submitting, setSubmitting, saved, setSaved, locked, setLocked, thankYouMsg, setThankYouMsg, curr, setCurr, toast, setToast, totalSales, setTotalSales, rtl, router, sales, mada, visa, mastercard, network, cash, deliveryList, delivery, anyNetworkEntered, networkError, validPurchasesNow, totalPurchasesNow, expectedCash, cashAfterWithdrawal, difference, status, step1Valid, step2Valid, step3Valid, deficitOption, deficitReason, deficitReasonOk, businessDate, businessDateLabel, isAfterMidnightCarry, logout, showToast, uploadImage, addDeliveryApp, removeDeliveryApp, addPurchaseRow, removePurchaseRow, updatePurchase, goNext, goBack, saveClosing, resetForm, hasReturns, returns, returnsList, returnsPrev, showReturnErrors, updateReturn, addReturnPhoto, retakeReturn, retryReturn, removeReturn, setNoReturns }
 }
 
 export type CashierClosing = ReturnType<typeof useCashierClosing>
