@@ -24,7 +24,7 @@ export const IV_CSS = `
   .iv-tab-n{color:${C.text4};font-weight:500;margin-right:4px;font-variant-numeric:tabular-nums}
   .iv-search{flex:1;min-width:200px;position:relative;display:flex;align-items:center}
   .iv-search svg{position:absolute;right:11px;color:${C.text4};pointer-events:none}
-  .iv-search input{width:100%;min-height:${T.control.medium}px;padding:8px 36px 8px 12px;border:1px solid ${T.color.border};border-radius:${T.radius.control};font-size:${T.typography.body}px;font-family:inherit;background:white;color:${C.text};outline:none}
+  .iv-search input{width:100%;min-height:${T.control.medium}px;padding:8px 36px 8px 12px;border:1px solid ${T.color.border};border-radius:${T.radius.control};font-size:${T.typography.body}px;font-family:inherit;background:${T.color.surface};color:${C.text};outline:none}
   .iv-cats{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:12px}
   .iv-cat{flex-shrink:0;padding:5px 11px;border-radius:99px;border:1px solid ${C.border};background:white;font-family:inherit;font-size:13px;color:${C.text2};cursor:pointer;white-space:nowrap}
   .iv-cat.on{border-color:${C.text};color:${C.text};font-weight:600}
@@ -37,7 +37,7 @@ export const IV_CSS = `
   .iv-qty{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
   .iv-unit{font-size:13px;font-weight:400;color:${C.text3}}
   .iv-min{font-size:13px;color:${C.text4};margin-top:2px}
-  .iv-table-wrap{background:white;border:1px solid ${C.border};border-radius:20px;overflow:hidden}
+  .iv-table-wrap{background:${T.color.surface};border:1px solid ${C.border};border-radius:20px;overflow:hidden}
   .iv-table{width:100%;border-collapse:collapse}
   .iv-table th{text-align:start;padding:10px 16px;font-size:13px;font-weight:600;color:${C.text3};background:var(--storely-background);border-bottom:1px solid ${C.border};white-space:nowrap}
   .iv-table td{padding:12px 16px;border-bottom:1px solid ${C.border};font-size:15px;color:${C.text};vertical-align:middle}

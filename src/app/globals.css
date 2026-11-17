@@ -775,3 +775,7 @@ html[dir="ltr"] body { font-family: -apple-system, BlinkMacSystemFont, "SF Arabi
 [data-theme="dark"] [style*=";color:var(--storely-navy)"],
 [data-theme="dark"] [style^="color: var(--storely-navy)"],
 [data-theme="dark"] [style*="; color: var(--storely-navy)"] { color: #a9c6d4 !important; }
+[data-theme="dark"] .storely-button[data-variant=primary] { background: #3d6a7f; border-color: #3d6a7f; color: #fff; }
+[data-theme="dark"] .storely-button[data-variant=primary]:hover:not(:disabled) { background: #4a7a90; border-color: #4a7a90; }
+[data-theme="dark"] .storely-button[data-variant=ghost] { color: #a9c6d4; }
+[data-theme="dark"] .iv-tab.on { background: #48484a !important; color: #f5f5f7 !important; }
