@@ -64,11 +64,30 @@ export const SHELL_CSS = `
   .sh-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;padding:7px 2px 6px;border:none;background:none;color:${C.text3};font-size:11px;font-weight:500;font-family:inherit;cursor:pointer}
   .sh-tab.on{color:${C.primary};font-weight:600}
 
-  /* الكمبيوتر: قائمة جانبية فاتحة وشريط علوي شفاف */
+  /* القائمة الجانبية على الكمبيوتر بالكحلي (طلب المالك 2026-11-17: «نفس اللون الأول»):
+     نص أبيض، والعنصر المختار حبة بيضاء بنص كحلي — بخط أبل ومقاساته */
+  .desk-sidebar .sh-group-label{color:rgba(255,255,255,.6)}
+  .desk-sidebar .sh-nav{color:rgba(255,255,255,.9)}
+  .desk-sidebar .sh-nav svg{color:rgba(255,255,255,.65)}
+  .desk-sidebar .sh-nav:hover{background:rgba(255,255,255,.08);color:#fff}
+  .desk-sidebar .sh-nav:hover svg{color:#fff}
+  .desk-sidebar .sh-nav.on{background:#fff;color:${C.primary};font-weight:600}
+  .desk-sidebar .sh-nav.on svg{color:${C.primary}}
+  .desk-sidebar .sh-count{background:rgba(255,255,255,.14);color:#fff}
+  .desk-sidebar .sh-nav.on .sh-count{background:var(--storely-fill);color:${C.primary}}
+  .desk-sidebar .sh-logo{border-color:rgba(255,255,255,.2)}
+  .desk-sidebar .sh-branch{background:rgba(255,255,255,.08);color:rgba(255,255,255,.92)}
+  .desk-sidebar .sh-branch:hover:not(:disabled){background:rgba(255,255,255,.14)}
+  .desk-sidebar .sh-avatar{background:rgba(255,255,255,.14);color:#fff}
+  .desk-sidebar .sh-icon-btn{color:rgba(255,255,255,.75)}
+  .desk-sidebar .sh-icon-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+  .desk-sidebar :focus-visible{outline:2px solid #fff;outline-offset:2px}
+
+  /* الكمبيوتر: قائمة جانبية كحلية وشريط علوي شفاف */
   @media(min-width:768px){
     .mob-layout{display:none}
     .desk-layout{display:block;min-height:100vh}
-    .desk-sidebar{position:fixed;top:0;right:0;bottom:0;width:248px;display:flex;flex-direction:column;background:${C.surface};border-left:1px solid ${C.border};z-index:100}
+    .desk-sidebar{position:fixed;top:0;right:0;bottom:0;width:248px;display:flex;flex-direction:column;background:${C.primary};color-scheme:dark;z-index:100}
     .desk-topbar{position:fixed;top:0;right:248px;left:0;height:56px;z-index:99;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);border-bottom:1px solid ${C.border}}
     .desk-content{margin-right:248px;padding:80px 32px 48px;min-height:100vh;max-width:calc(100vw - 248px)}
   }

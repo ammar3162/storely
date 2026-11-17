@@ -57,14 +57,14 @@ export function PortalShell({ title, subtitle, actions, children, orgLogo, subna
   const isActive = (h: string) => h === '/accountant-portal' ? path === h : path.startsWith(h)
 
   const sidebar = (
-    <aside className={`ap-side${open ? ' open' : ''}`} style={{ background: colors.surface, color: colors.text, borderLeft: `1px solid ${colors.border}`, display: 'flex', flexDirection: 'column', fontFamily: font.family }}>
+    <aside className={`ap-side${open ? ' open' : ''}`} style={{ background: colors.primary, color: '#fff', colorScheme: 'dark', display: 'flex', flexDirection: 'column', fontFamily: font.family }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 18px 14px' }}>
-        <img src="/storely-logo.png" alt="Storely" width={34} height={34} style={{ borderRadius: 10, background: '#fff', border: `1px solid ${colors.border}` }} />
+        <img src="/storely-logo.png" alt="Storely" width={34} height={34} style={{ borderRadius: 10, background: '#fff', border: '1px solid rgba(255,255,255,.2)' }} />
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 17, fontWeight: 600, color: colors.primary }} dir="ltr">Storely</div>
-          <div style={{ fontSize: 13, color: colors.text3 }}>بوابة المحاسب</div>
+          <div style={{ fontSize: 17, fontWeight: 600, color: '#fff' }} dir="ltr">Storely</div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,.65)' }}>بوابة المحاسب</div>
         </div>
-        <button className="ap-close" onClick={() => setOpen(false)} aria-label="إغلاق" style={{ background: 'none', border: 'none', color: colors.text, cursor: 'pointer' }}><X size={20} /></button>
+        <button className="ap-close" onClick={() => setOpen(false)} aria-label="إغلاق" style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}><X size={20} /></button>
       </div>
 
       <nav style={{ padding: '6px 12px' }}>
@@ -84,26 +84,26 @@ export function PortalShell({ title, subtitle, actions, children, orgLogo, subna
       <div style={{ padding: '10px 12px 6px', flex: 1, overflowY: 'auto', minHeight: 0 }}>
         <div className="ap-sec">عملاؤك {data ? `(${data.orgs.length})` : ''}</div>
         {!data ? <ListSkeleton/>
-          : !data.orgs.length ? <div style={{ fontSize: 13, color: colors.text3, padding: '6px 10px', lineHeight: 1.6 }}>لا يوجد لديك عملاء بعد — تظهر المنشآت هنا فور دعوتك</div>
+          : !data.orgs.length ? <div style={{ fontSize: 13, color: 'rgba(255,255,255,.65)', padding: '6px 10px', lineHeight: 1.6 }}>لا يوجد لديك عملاء بعد — تظهر المنشآت هنا فور دعوتك</div>
           : data.orgs.map(o => {
             const href = `/accountant-portal/${o.org_id}`, on = path === href
             return (
               <a key={o.org_id} href={href} onClick={e => { e.preventDefault(); if (!o.expired) router.push(href) }} className={`ap-org${on ? ' on' : ''}`} style={{ opacity: o.expired ? .45 : 1 }}>
                 <OrgLogo name={o.name} url={o.logo_url} size={28} />
                 <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.name}</span>
-                {o.expired ? <span style={{ fontSize: 12, color: colors.text3 }}>انتهى</span> : o.answered ? <span className="ap-dot" style={{ background: 'var(--storely-navy)' }} title="رد جديد" /> : o.open ? <span className="ap-dot" style={{ background: '#fbbf24' }} title="بانتظار الرد" /> : null}
+                {o.expired ? <span style={{ fontSize: 12, color: 'rgba(255,255,255,.65)' }}>انتهى</span> : o.answered ? <span className="ap-dot" style={{ background: '#fff' }} title="رد جديد" /> : o.open ? <span className="ap-dot" style={{ background: '#fbbf24' }} title="بانتظار الرد" /> : null}
               </a>
             )
           })}
       </div>
 
-      <div style={{ borderTop: `1px solid ${colors.border}`, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--storely-fill)', color: colors.text, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600, flexShrink: 0 }}>{(data?.me.name || data?.me.email || '؟').trim()[0]}</span>
+      <div style={{ borderTop: '1px solid rgba(255,255,255,.12)', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,.14)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 600, flexShrink: 0 }}>{(data?.me.name || data?.me.email || '؟').trim()[0]}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data?.me.name || 'المحاسب'}</div>
-          <div style={{ fontSize: 12, color: colors.text3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} dir="ltr">{data?.me.email}</div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,.65)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} dir="ltr">{data?.me.email}</div>
         </div>
-        <button onClick={logout} title="خروج" aria-label="خروج" style={{ width: 36, height: 36, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'var(--storely-fill)', border: 'none', color: colors.text, borderRadius: 999, cursor: 'pointer', flexShrink: 0 }}><LogOut size={16} /></button>
+        <button onClick={logout} title="خروج" aria-label="خروج" style={{ width: 36, height: 36, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,.1)', border: 'none', color: '#fff', borderRadius: 999, cursor: 'pointer', flexShrink: 0 }}><LogOut size={16} /></button>
       </div>
     </aside>
   )
@@ -112,16 +112,18 @@ export function PortalShell({ title, subtitle, actions, children, orgLogo, subna
     <div dir="rtl" style={{ minHeight: '100vh', background: colors.bg, fontFamily: font.family, color: colors.text }}>
       <style>{`
         .ap-side{position:fixed;top:0;right:0;bottom:0;width:${SIDEBAR}px;z-index:60}
-        .ap-sec{display:block;font-size:13px;font-weight:600;color:${colors.text3};padding:14px 10px 6px}
-        .ap-item,.ap-org{position:relative;display:flex;align-items:center;gap:10px;min-height:38px;padding:8px 10px;border-radius:10px;color:${colors.text};text-decoration:none;font-size:15px;font-weight:400;margin-bottom:2px;transition:background-color .15s,color .15s}
-        .ap-item svg{color:${colors.text3};flex-shrink:0;transition:color .15s}
-        .ap-item:hover,.ap-org:hover{background:var(--storely-fill)}
-        .ap-item.on{background:var(--storely-fill);color:${colors.primary};font-weight:600}
+        .ap-sec{display:block;font-size:13px;font-weight:600;color:rgba(255,255,255,.6);padding:14px 10px 6px}
+        .ap-item,.ap-org{position:relative;display:flex;align-items:center;gap:10px;min-height:38px;padding:8px 10px;border-radius:10px;color:rgba(255,255,255,.9);text-decoration:none;font-size:15px;font-weight:400;margin-bottom:2px;transition:background-color .15s,color .15s}
+        .ap-item svg{color:rgba(255,255,255,.65);flex-shrink:0;transition:color .15s}
+        .ap-item:hover,.ap-org:hover{background:rgba(255,255,255,.08);color:#fff}
+        .ap-item:hover svg{color:#fff}
+        .ap-item.on{background:#fff;color:${colors.primary};font-weight:600}
         .ap-item.on svg{color:${colors.primary}}
         .ap-org{padding:7px 10px}
-        .ap-org.on{background:var(--storely-fill);font-weight:600}
-        .ap-badge{background:var(--storely-fill);color:${colors.text};font-size:12px;font-weight:600;border-radius:99px;min-width:20px;height:20px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center}
-        .ap-item.on .ap-badge{background:#fff;color:${colors.primary}}
+        .ap-org.on{background:rgba(255,255,255,.14);color:#fff;font-weight:600}
+        .ap-badge{background:rgba(255,255,255,.14);color:#fff;font-size:12px;font-weight:600;border-radius:99px;min-width:20px;height:20px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center}
+        .ap-item.on .ap-badge{background:var(--storely-fill);color:${colors.primary}}
+        .ap-side :focus-visible{outline:2px solid #fff;outline-offset:2px}
         .ap-dot{width:8px;height:8px;border-radius:99px;flex-shrink:0}
         .ap-main{margin-right:${SIDEBAR}px;min-height:100vh}
         .ap-top{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);border-bottom:1px solid ${colors.border}}

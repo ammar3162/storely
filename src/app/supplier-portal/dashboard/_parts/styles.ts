@@ -1,28 +1,30 @@
 // تصميم بوابة المورد بأسلوب أبل (2026-11-17) — نفس إطار لوحة المالك وبوابة المحاسب:
-// قائمة جانبية فاتحة والعنصر المختار حبة رمادية بنص كحلي، بطاقات بيضاء بلا إطار على خلفية #F5F5F7،
+// قائمة جانبية كحلية (طلب المالك: «نفس اللون الأول») والعنصر المختار حبة بيضاء بنص كحلي، بطاقات بيضاء بلا إطار على خلفية #F5F5F7،
 // أزرار بأطراف دائرية، والكحلي للإجراءات فقط. الألوان كلها من رموز النظام (var(--storely-*)).
 export const SD_CSS = `
 .sd{--ink:var(--storely-text);--teal:var(--storely-navy);--teal2:var(--storely-navy);--line:var(--storely-border);--muted:var(--storely-muted);--bg:var(--storely-background);--mint:var(--storely-fill);
   display:flex;min-height:100vh;background:var(--bg);font-family:var(--storely-font);color:var(--ink);font-size:17px;line-height:1.47}
 .sd *{box-sizing:border-box}
-.sd-side{width:248px;flex-shrink:0;background:var(--storely-surface);color:var(--ink);border-left:1px solid var(--line);display:flex;flex-direction:column;padding:18px 12px;position:sticky;top:0;height:100vh}
-.sd-brand{display:flex;gap:10px;align-items:center;padding:2px 6px 16px;border-bottom:1px solid var(--line);margin-bottom:12px}
-.sd-brand img{width:40px;height:40px;border-radius:10px;background:#fff;object-fit:cover;border:1px solid var(--line)}
+.sd-side{width:248px;flex-shrink:0;background:var(--storely-navy);color:#fff;color-scheme:dark;display:flex;flex-direction:column;padding:18px 12px;position:sticky;top:0;height:100vh}
+.sd-brand{display:flex;gap:10px;align-items:center;padding:2px 6px 16px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:12px}
+.sd-brand img{width:40px;height:40px;border-radius:10px;background:#fff;object-fit:cover;border:1px solid rgba(255,255,255,.2)}
 .sd-logo{display:flex;gap:14px;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--line)}
 .sd-logo-box{width:84px;height:84px;border-radius:20px;border:1.5px dashed var(--storely-control-border);display:flex;align-items:center;justify-content:center;color:var(--muted);overflow:hidden;flex-shrink:0;background:var(--bg)}
 .sd-logo-box img{width:100%;height:100%;object-fit:cover}
 .sd-logo b{display:block;font-size:17px;font-weight:600}.sd-logo span{display:block;font-size:13px;color:var(--muted);line-height:1.6}
-.sd-brand b{display:block;color:var(--ink);font-size:17px;font-weight:600;line-height:1.3}.sd-brand span{font-size:13px;color:var(--muted)}
+.sd-brand b{display:block;color:#fff;font-size:17px;font-weight:600;line-height:1.3}.sd-brand span{font-size:13px;color:rgba(255,255,255,.65)}
 .sd-nav{display:flex;flex-direction:column;gap:2px}
-.sd-nav button{display:flex;align-items:center;gap:10px;min-height:38px;padding:8px 12px;border-radius:10px;border:none;background:none;color:var(--ink);font:inherit;font-size:15px;font-weight:400;cursor:pointer;text-align:start;transition:background-color .15s,color .15s}
-.sd-nav button svg{color:var(--muted);flex-shrink:0;transition:color .15s}
-.sd-nav button:hover{background:var(--mint)}
-.sd-nav button.on{background:var(--mint);color:var(--teal);font-weight:600}
+.sd-nav button{display:flex;align-items:center;gap:10px;min-height:38px;padding:8px 12px;border-radius:10px;border:none;background:none;color:rgba(255,255,255,.9);font:inherit;font-size:15px;font-weight:400;cursor:pointer;text-align:start;transition:background-color .15s,color .15s}
+.sd-nav button svg{color:rgba(255,255,255,.65);flex-shrink:0;transition:color .15s}
+.sd-nav button:hover{background:rgba(255,255,255,.08);color:#fff}.sd-nav button:hover svg{color:#fff}
+.sd-nav button.on{background:#fff;color:var(--teal);font-weight:600}
 .sd-nav button.on svg{color:var(--teal)}
 .sd-nav button span{flex:1}
-.sd-nav em{font-style:normal;background:var(--teal);color:#fff;font-size:12px;font-weight:600;border-radius:99px;min-width:20px;padding:1px 7px;text-align:center}
-.sd-out{margin-top:auto;display:flex;align-items:center;gap:8px;min-height:38px;padding:8px 12px;border:none;background:none;color:var(--muted);font:inherit;font-size:15px;cursor:pointer;border-radius:10px;transition:background-color .15s,color .15s}
-.sd-out:hover{color:var(--ink);background:var(--mint)}
+.sd-nav button.on em{background:var(--mint);color:var(--teal)}
+.sd-nav em{font-style:normal;background:#fff;color:var(--teal);font-size:12px;font-weight:600;border-radius:99px;min-width:20px;padding:1px 7px;text-align:center}
+.sd-out{margin-top:auto;display:flex;align-items:center;gap:8px;min-height:38px;padding:8px 12px;border:none;background:none;color:rgba(255,255,255,.75);font:inherit;font-size:15px;cursor:pointer;border-radius:10px;transition:background-color .15s,color .15s}
+.sd-out:hover{color:#fff;background:rgba(255,255,255,.08)}
+.sd-side :focus-visible{outline:2px solid #fff!important;outline-offset:2px}
 .sd-main{flex:1;min-width:0;padding:28px 32px 48px;max-width:1180px}
 .sd-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:20px;flex-wrap:wrap}
 .sd-top h1{font-size:28px;font-weight:600;margin:0}.sd-top p{margin:4px 0 0;color:var(--muted);font-size:15px}
@@ -95,7 +97,7 @@ button.sd-badge{cursor:pointer}
 .sd button:focus-visible,.sd a:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
 @media(max-width:900px){
   .sd{flex-direction:column}
-  .sd-side{width:auto;height:auto;position:sticky;top:0;z-index:20;padding:10px 12px;flex-direction:row;align-items:center;gap:10px;overflow-x:auto;border-left:none;border-bottom:1px solid var(--line);background:rgba(255,255,255,.86);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px)}
+  .sd-side{width:auto;height:auto;position:sticky;top:0;z-index:20;padding:10px 12px;flex-direction:row;align-items:center;gap:10px;overflow-x:auto}
   .sd-brand{border:none;margin:0;padding:0}.sd-brand div{display:none}
   .sd-nav{flex-direction:row;gap:4px}.sd-nav button{min-height:36px;padding:7px 12px;font-size:15px;white-space:nowrap;border-radius:999px}
   .sd-out{margin:0;padding:8px;font-size:0;min-height:36px}.sd-out svg{width:18px;height:18px}
