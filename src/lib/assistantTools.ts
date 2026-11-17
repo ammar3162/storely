@@ -9,6 +9,7 @@ import { vatReturn } from '@/lib/accountantExport'
 import { offReason } from '@/lib/daysOff'
 import { shiftIdForDate } from '@/lib/shiftSchedule'
 import { unitFor } from '@/lib/arabicCount'
+import { closingReturns, returnReasonAr } from '@/lib/closingReturns'
 
 type Access = { role?: string | null; permissions?: Record<string, unknown> | null }
 export type ToolCtx = { db: SupabaseClient; orgId: string; branchId: string | null; vatRegistered: boolean; businessType: string | null }
@@ -41,12 +42,14 @@ export const ASSISTANT_TOOLS: Tool[] = [
   {
     name: 'purchases',
     description: 'فواتير المشتريات: آخر فاتورة، فواتير فترة، مشتريات مورد أو صنف، مع الصافي والضريبة والإجمالي.',
-    input_schema: { type: 'object', properties: { ...range, supplier: { type: 'string', description: 'اسم المورد (جزء منه)' }, product: { type: 'string', description: 'اسم الصنف (جزء منه)' }, limit: { type: 'number', description: 'عدد الفواتير (افتراضي 10، أقصى 30)' } } },
+    input_schema: { type: 'object', properties: { ...range, unpaid: { type: 'boolean', description: 'الفواتير غير المدفوعة (الآجلة) فقط مع تاريخ استحقاق كل فاتورة، بغض النظر عن الفترة' }, supplier: { type: 'string', description: 'اسم المورد (جزء منه)' }, product: { type: 'string', description: 'اسم الصنف (جزء منه)' }, limit: { type: 'number', description: 'عدد الفواتير (افتراضي 10، أقصى 30)' } } },
     allowed: (f, a) => data(f) && managerMay(a, 'purchases', 'reports'),
     run: async (ctx, i) => {
       const p = period(i)
-      let q = ctx.db.from('purchases').select('created_at,supplier,invoice_number,invoice_group,name,qty,unit,amount,vat_amount,total_amount,branch_id,payment_status')
-        .eq('org_id', ctx.orgId).is('deleted_at', null).gte('created_at', p.start).lte('created_at', p.end).order('created_at', { ascending: false }).limit(1000)
+      let q = ctx.db.from('purchases').select('created_at,supplier,invoice_number,invoice_group,name,qty,unit,amount,vat_amount,total_amount,branch_id,payment_status,due_date')
+        .eq('org_id', ctx.orgId).is('deleted_at', null).order('created_at', { ascending: false }).limit(1000)
+      // الآجلة: كل غير المدفوع (مهما كان تاريخه)، والباقي حسب الفترة
+      q = i?.unpaid ? q.eq('payment_status', 'unpaid') : q.gte('created_at', p.start).lte('created_at', p.end)
       if (ctx.branchId) q = q.eq('branch_id', ctx.branchId)
       if (i?.supplier) q = q.ilike('supplier', like(i.supplier))
       if (i?.product) q = q.ilike('name', like(i.product))
@@ -54,14 +57,16 @@ export const ASSISTANT_TOOLS: Tool[] = [
       const groups = new Map<string, any>()
       for (const r of (rows || []) as any[]) {
         const k = r.invoice_group || r.invoice_number || `${r.created_at}|${r.supplier}`
-        const g = groups.get(k) || { date: saudiDay(Date.parse(r.created_at)), supplier: r.supplier || '—', invoice: r.invoice_number || null, branch: bn.get(r.branch_id) || null, unpaid: r.payment_status === 'unpaid', items: [] as string[], net: 0, vat: 0, total: 0 }
+        const g = groups.get(k) || { date: saudiDay(Date.parse(r.created_at)), supplier: r.supplier || '—', invoice: r.invoice_number || null, branch: bn.get(r.branch_id) || null, unpaid: r.payment_status === 'unpaid', ...(r.payment_status === 'unpaid' && r.due_date ? { due_date: r.due_date } : {}), items: [] as string[], net: 0, vat: 0, total: 0 }
         g.items.push(`${r.name} ${r.qty || ''} ${unitFor(r.qty || '', r.unit || '')}`.trim()); g.net += Number(r.amount || 0); g.vat += Number(r.vat_amount || 0); g.total += Number(r.total_amount || 0)
         groups.set(k, g)
       }
       const all = [...groups.values()]
+      // الآجلة: الأقرب استحقاقاً أول
+      if (i?.unpaid) all.sort((a, b) => String(a.due_date || '9999').localeCompare(String(b.due_date || '9999')))
       const limit = Math.min(30, Math.max(1, Number(i?.limit) || 10))
       return {
-        period: `${p.from} → ${p.to}`, invoices_count: all.length,
+        period: i?.unpaid ? 'كل الفواتير غير المدفوعة (الآجلة)' : `${p.from} → ${p.to}`, invoices_count: all.length,
         totals: { net: r2(all.reduce((t, g) => t + g.net, 0)), vat: r2(all.reduce((t, g) => t + g.vat, 0)), total: r2(all.reduce((t, g) => t + g.total, 0)) },
         latest: all.slice(0, limit).map(g => ({ ...g, items: g.items.slice(0, 8), net: r2(g.net), vat: r2(g.vat), total: r2(g.total) })),
       }
@@ -168,28 +173,37 @@ export const ASSISTANT_TOOLS: Tool[] = [
   },
   {
     name: 'cashier_closings',
-    description: 'إقفالات الكاشير لفترة: المبيعات والكاش والشبكة والعجز أو الزيادة لكل إقفال، والمجموع.',
-    input_schema: { type: 'object', properties: { ...range, staff: { type: 'string', description: 'اسم الكاشير (جزء منه)' } } },
+    description: 'إقفالات الكاشير لفترة: المبيعات والكاش والشبكة والعجز أو الزيادة لكل إقفال، والمجموع، والعجز الذي ينتظر قرار المالك، والفواتير المرتجعة (أرقامها وأسبابها — للتوثيق، لا تدخل في حساب الكاش).',
+    input_schema: { type: 'object', properties: { ...range, staff: { type: 'string', description: 'اسم الكاشير (جزء منه)' },
+      pending_deficits: { type: 'boolean', description: 'فقط الإقفالات التي فيها عجز ينتظر قرار المالك (بغض النظر عن الفترة)' } } },
     allowed: (f, a) => data(f) && f.cashier && managerMay(a, 'reports'),
     run: async (ctx, i) => {
-      const p = period(i)
-      let q = ctx.db.from('cashier_closings').select('closing_date,branch_id,staff_name,total_sales,cash_amount,network_amount,delivery_amount,difference,status')
+      const p = i?.pending_deficits ? { ...period({ from: saudiDay(Date.now() - 365 * DAY) }) } : period(i)
+      let q = ctx.db.from('cashier_closings').select('closing_date,branch_id,staff_name,total_sales,cash_amount,network_amount,delivery_amount,difference,status,deficit_reason,deficit_decision,returns')
         .eq('org_id', ctx.orgId).gte('closing_date', p.from).lte('closing_date', p.to).order('closing_date', { ascending: false }).limit(500)
       if (ctx.branchId) q = q.eq('branch_id', ctx.branchId)
       if (i?.staff) q = q.ilike('staff_name', like(i.staff))
+      if (i?.pending_deficits) q = q.eq('status', 'deficit').eq('deficit_decision', 'pending')
       const [{ data: rows }, bn] = await Promise.all([q, branchNames(ctx)])
       const list = (rows || []) as any[]
       const sum = (k: string) => r2(list.reduce((t, r) => t + Number(r[k] || 0), 0))
       return {
         period: `${p.from} → ${p.to}`, closings: list.length,
-        totals: { sales: sum('total_sales'), cash: sum('cash_amount'), network: sum('network_amount'), delivery_apps: sum('delivery_amount'), difference: sum('difference'), deficits: list.filter(r => Number(r.difference) < 0).length },
-        latest: list.slice(0, 20).map(r => ({ date: r.closing_date, branch: bn.get(r.branch_id) || null, cashier: r.staff_name, sales: r2(r.total_sales), cash: r2(r.cash_amount), network: r2(r.network_amount), delivery_apps: r2(r.delivery_amount), difference: r2(r.difference) })),
+        totals: { sales: sum('total_sales'), cash: sum('cash_amount'), network: sum('network_amount'), delivery_apps: sum('delivery_amount'), difference: sum('difference'), deficits: list.filter(r => Number(r.difference) < 0).length,
+          deficits_awaiting_owner_decision: list.filter(r => r.status === 'deficit' && r.deficit_decision === 'pending').length,
+          returned_invoices: list.reduce((t, r) => t + closingReturns(r).length, 0) },
+        latest: list.slice(0, 20).map(r => {
+          const rets = closingReturns(r)
+          return { date: r.closing_date, branch: bn.get(r.branch_id) || null, cashier: r.staff_name, sales: r2(r.total_sales), cash: r2(r.cash_amount), network: r2(r.network_amount), delivery_apps: r2(r.delivery_amount), difference: r2(r.difference),
+            ...(r.status === 'deficit' ? { deficit_reason: r.deficit_reason || null, deficit_decision: r.deficit_decision === 'pending' ? 'ينتظر قرار المالك' : r.deficit_decision === 'approved' ? 'خُصم من الراتب' : r.deficit_decision === 'rejected' ? 'رُفض الخصم' : null } : {}),
+            ...(rets.length ? { returned_invoices: rets.map(x => ({ invoice: x.invoice_no, reason: returnReasonAr(x.reason) || 'بدون سبب', ...(x.dup_of ? { repeated_from: x.dup_of } : {}) })) } : {}) }
+        }),
       }
     },
   },
   {
     name: 'attendance',
-    description: 'الحضور والانصراف لفترة: لكل موظف أيام الحضور والغياب ومرات التأخير ودقائقه — أو موظف معيّن.',
+    description: 'الحضور والانصراف لفترة: لكل موظف أيام الحضور والغياب ومرات التأخير ودقائقه — أو موظف معيّن. وإذا شملت الفترة اليوم: حالة كل موظف اليوم (حاضر، انصرف، لم يحضر بعد، راحة أو إجازة) ووقت حضوره وتأخيره.',
     input_schema: { type: 'object', properties: { ...range, staff: { type: 'string', description: 'اسم الموظف (جزء منه)' } } },
     allowed: (f, a) => data(f) && f.hr && managerMay(a, 'attendance', 'staff', 'hr'),
     run: async (ctx, i) => {
@@ -207,8 +221,24 @@ export const ASSISTANT_TOOLS: Tool[] = [
       const today = saudiDay(Date.now())
       const days: string[] = []
       for (let d = p.from; d <= p.to && d < today; d = saudiDay(Date.parse(d + 'T12:00:00Z') + DAY - 3 * 3600e3)) days.push(d)
+      // حالة اليوم (الأيام اللي فوق تحسب لين أمس — اليوم لسا ما خلص)
+      let todayInfo: unknown[] | null = null
+      if (p.from <= today && p.to >= today) {
+        const { data: ev } = await ctx.db.from('staff_attendance').select('staff_id,type,recorded_at,late_minutes').eq('org_id', ctx.orgId).in('staff_id', ids)
+          .gte('recorded_at', `${today}T00:00:00+03:00`).order('recorded_at', { ascending: true })
+        const timeOf = (iso: string) => new Date(iso).toLocaleTimeString('ar-SA-u-ca-gregory', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Riyadh', numberingSystem: 'latn' })
+        todayInfo = ((staff || []) as any[]).map(s => {
+          const mine = ((ev || []) as any[]).filter(e => e.staff_id === s.id)
+          const inn = mine.find(e => e.type === 'check_in'), out = [...mine].reverse().find(e => e.type === 'check_out')
+          if (inn) return { name: s.name, status: out && out.recorded_at > inn.recorded_at ? 'انصرف' : 'حاضر', check_in: timeOf(inn.recorded_at), ...(out && out.recorded_at > inn.recorded_at ? { check_out: timeOf(out.recorded_at) } : {}), late_minutes: Number(inn.late_minutes) || 0 }
+          const lv = ((leaves || []) as any[]).filter(l => l.staff_id === s.id)
+          const scheduled = !!shiftIdForDate(s, today) && (!!s.date_shifts?.[today] || !offReason(today, s, lv))
+          return { name: s.name, status: scheduled ? 'لم يحضر بعد' : 'راحة أو إجازة' }
+        })
+      }
       return {
         period: `${p.from} → ${p.to}`,
+        ...(todayInfo ? { today: todayInfo } : {}),
         staff: ((staff || []) as any[]).map(s => {
           const ins = ((att || []) as any[]).filter(a => a.staff_id === s.id)
           const present = new Set(ins.map(a => saudiDay(Date.parse(a.recorded_at))))

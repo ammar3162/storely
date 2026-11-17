@@ -1,7 +1,8 @@
 'use client'
 import { FeatureIcon } from '@/components/ui/feature-icon'
 import React, { useState, useRef, useEffect } from 'react'
-import { Bot, ChevronDown, ChevronUp, LifeBuoy, Send } from 'lucide-react'
+import { Bot, ChevronDown, ChevronUp, LifeBuoy, Send, Receipt, UserCheck, Clock, AlertTriangle, RotateCcw, PackageMinus, Percent, Wallet, CalendarClock, Sparkles } from 'lucide-react'
+import type { Suggestion, SuggestIcon } from '@/lib/assistantSuggestions'
 import { getMe } from '@/lib/session'
 import { storelyTokens as uiTokens } from '@/components/ui/design-tokens'
 
@@ -31,6 +32,12 @@ const QUICK_BASIC = [
 ]
 const WELCOME_AI = 'مرحباً، أنا مساعدك الذكي في Storely.\n\nيمكنني مساعدتك في:\n• المخزون وما سينفد منه\n• المشتريات والموردين وأسعارهم\n• الصرف والموظفين والحضور\n• الكاشير والضريبة\n• اشتراكك وطريقة استخدام النظام\n\nبماذا يمكنني مساعدتك؟'
 const WELCOME_BASIC = 'مرحباً، أنا مساعدك في Storely.\n\nيمكنني تعليمك استخدام النظام خطوة بخطوة مع فيديوهات الشرح، والإجابة عن اشتراكك وباقتك.\n\nأما تحليل بياناتك (المخزون، والمشتريات، والموظفون…) فمتاح مع إضافة الذكاء الاصطناعي.\n\nبماذا يمكنني مساعدتك؟'
+
+// أيقونة كل اقتراح (lib/assistantSuggestions)
+const SUGGEST_ICON: Record<SuggestIcon, React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
+  closing: Receipt, attendance: UserCheck, late: Clock, deficit: AlertTriangle, returns: RotateCcw, stock: PackageMinus, vat: Percent, payables: Wallet, subscription: CalendarClock,
+}
+const SUGGEST_TTL = 2 * 60 * 1000   // نحدّث الاقتراحات لو صار لها أكثر من دقيقتين
 
 const SUPPORT_TIP_KEY = 'support_tip_seen'
 interface Msg { role:'user'|'ai'; text:string; time:string; kind?:'support'|'ticket' }
@@ -200,6 +207,23 @@ export default function AIAssistant() {
   // عنده ميزة الذكاء (الباقة أو الإضافة أو التجربة)؟ — يحدد الترحيب والاقتراحات
   const [hasAi, setHasAi] = useState<boolean|null>(null)
   useEffect(()=>{ getMe().then(me=>setHasAi(!!me?.org?.features?.ai)).catch(()=>setHasAi(false)) },[])
+  // اقتراحات من بيانات المنشأة الحين (إقفالات اليوم، من داوم، العجز...) — بدون ذكاء اصطناعي، وتتحدث كل دقيقتين
+  const [sugs, setSugs] = useState<Suggestion[]|null>(null)
+  const sugsAt = useRef(0)
+  const [asked, setAsked] = useState<string[]>([])
+  async function loadSuggestions(force = false) {
+    if (!force && Date.now() - sugsAt.current < SUGGEST_TTL) return
+    const org_id = typeof window!=='undefined' ? sessionStorage.getItem('s_org_id') : null
+    if (!org_id) return
+    sugsAt.current = Date.now()
+    try {
+      const branch_id = sessionStorage.getItem('s_branch_id') || ''
+      const r = await fetch(`/api/ai-assistant/suggestions?org_id=${encodeURIComponent(org_id)}&branch_id=${encodeURIComponent(branch_id)}`)
+      const j = await r.json().catch(()=>null)
+      setSugs(j?.success && Array.isArray(j.suggestions) ? j.suggestions : [])
+    } catch { setSugs([]) }
+  }
+  useEffect(()=>{ if(hasAi) loadSuggestions(true) },[hasAi])
   const [msgs, setMsgs]       = useState<Msg[]>(()=>{
     if(typeof window==='undefined') return []
     try { return JSON.parse(sessionStorage.getItem('ai_msgs')||'[]') } catch { return [] }
@@ -233,6 +257,7 @@ export default function AIAssistant() {
     setShowTimeout(false)
     setOpen(false)
     setMsgs([])
+    setAsked([])
     sessionStorage.removeItem('ai_msgs')
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
   }
@@ -244,6 +269,7 @@ export default function AIAssistant() {
     }
   },[msgs])
 
+  useEffect(()=>{ if(open && hasAi) loadSuggestions() },[open])
   useEffect(()=>{
     if(open) resetTimer()
     else { if(timeoutRef.current) clearTimeout(timeoutRef.current); setShowTimeout(false) }
@@ -282,11 +308,12 @@ export default function AIAssistant() {
     setTicketBusy(false)
   }
 
-  async function send(text?:string) {
+  // shown = نص الاقتراح القصير اللي يطلع بفقاعة المستخدم (والسؤال الكامل يروح للمساعد)
+  async function send(text?:string, shown?:string) {
     const msg = (text || input).trim()
     if(!msg || loading) return
     setInput('')
-    const userMsg:Msg = {role:'user', text:msg, time:now()}
+    const userMsg:Msg = {role:'user', text:shown || msg, time:now()}
     setMsgs(m=>[...m, userMsg])
     setLoading(true)
 
@@ -318,7 +345,8 @@ export default function AIAssistant() {
     setTimeout(()=>inputRef.current?.focus(), 100)
   }
 
-  const unreadCount = 0
+  // نقطة على زر المساعد: فيه شي يحتاج انتباهه (عجز ينتظر قراره، إقفال ناقص، اشتراك ينتهي...)
+  const urgentSug = (sugs || []).find(s=>s.urgent && !asked.includes(s.id))
 
   // زر المساعد: العميل يسحبه لأي مكان (يلتصق بأقرب طرف يمين/يسار) ويُحفظ مكانه بالجهاز
   const FAB_KEY = 'storely_ai_fab'
@@ -395,7 +423,8 @@ export default function AIAssistant() {
         .ai-fab:active{transform:none}
         .ai-win button:focus-visible{outline:2px solid ${C.primary};outline-offset:2px}.ai-win{animation:aiFadeUp .2s ease}
         .ai-input:focus{border-color:${C.primary};box-shadow:${uiTokens.shadow.focus};outline:none}
-        .quick-btn{transition:all .15s}
+        .quick-btn{transition:transform .15s,background-color .15s}
+        .ai-chips::-webkit-scrollbar{display:none}
         .quick-btn:active{transform:scale(.95)}
         .send-btn{transition:all .2s}
         .send-btn:not(:disabled):active{transform:scale(.92)}
@@ -405,9 +434,9 @@ export default function AIAssistant() {
       {!open && mounted && (
         <button className="ai-fab" onPointerDown={onFabDown} onPointerMove={onFabMove} onPointerUp={onFabUp} onPointerCancel={()=>{ dragRef.current=null; setDrag(null) }}
           onKeyDown={e=>{ if(e.key==='Enter'||e.key===' ') { e.preventDefault(); setOpen(true) } }}
-          aria-label="المساعد" title="المساعد — اسحبه لتغيير مكانه" style={{position:'fixed',...fabStyle(),touchAction:'none',userSelect:'none' as const,zIndex:999,width:46,height:46,borderRadius:'50%',background:C.primary,color:'white',border:`1px solid ${C.primary}`,boxShadow:uiTokens.shadow.surface,cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          aria-label={urgentSug ? `المساعد — ${urgentSug.label}` : 'المساعد'} title={urgentSug ? `المساعد: ${urgentSug.label}` : 'المساعد — اسحبه لتغيير مكانه'} style={{position:'fixed',...fabStyle(),touchAction:'none',userSelect:'none' as const,zIndex:999,width:46,height:46,borderRadius:'50%',background:C.primary,color:'white',border:`1px solid ${C.primary}`,boxShadow:uiTokens.shadow.surface,cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0}}>
           <Bot size={22} strokeWidth={2} />
-          {unreadCount>0&&<span style={{position:'absolute',top:-2,right:-2,width:16,height:16,borderRadius:'50%',background:uiTokens.color.danger,color:'white',fontSize:uiTokens.typography.supporting,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid white'}}>{unreadCount}</span>}
+          {urgentSug&&<span aria-hidden style={{position:'absolute',top:1,right:1,width:12,height:12,borderRadius:'50%',background:uiTokens.color.danger,border:'2px solid white'}}/>}
         </button>
       )}
 
@@ -547,20 +576,33 @@ export default function AIAssistant() {
             </div>
           )}
 
-          {/* Quick suggestions */}
-              {msgs.length<=1 && (
-                <div style={{padding:'10px 14px 0',background:C.surface,borderTop:`1px solid ${C.border}`,flexShrink:0}}>
-                  <div style={{fontSize:uiTokens.typography.supporting,fontWeight:700,color:C.text4,marginBottom:8,textTransform:'uppercase',letterSpacing:'.06em'}}>اقتراحات سريعة</div>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:10}}>
-                    {(hasAi===false ? QUICK_BASIC : QUICK_AI).map(q=>(
-                      <button key={q.text} className="quick-btn" onClick={()=>send(q.text)}
-                        style={{display:'flex',alignItems:'center',gap:6,padding:'8px 10px',background:C.bg,border:`1px solid ${C.border2}`,borderRadius:uiTokens.radius.control,fontSize:uiTokens.typography.supporting,fontWeight:600,color:C.text2,cursor:'pointer',fontFamily:'inherit',textAlign:'right'}}>
-                        {q.text}
-                      </button>
-                    ))}
+          {/* اقتراحات (مثل Siri وGemini): من بيانات المنشأة الحين، وإلا الأسئلة الثابتة — ضغطة وحدة ترسل السؤال */}
+              {(()=>{
+                const live = (sugs || []).filter(x=>!asked.includes(x.id))
+                const fallback = msgs.length<=1 ? (hasAi===false ? QUICK_BASIC : QUICK_AI).map((q,k)=>({ id:`q${k}`, label:q.text, prompt:q.text })) : []
+                const list: (Partial<Suggestion> & { id:string; label:string; prompt:string })[] = live.length ? live : (hasAi && sugs===null ? [] : fallback)
+                if (!list.length || loading) return null
+                return (
+                  <div style={{padding:'10px 0 8px',background:C.surface,borderTop:`1px solid ${C.border}`,flexShrink:0}}>
+                    <div style={{display:'flex',alignItems:'center',gap:6,fontSize:uiTokens.typography.supporting,fontWeight:600,color:C.text3,margin:'0 14px 8px'}}>
+                      <Sparkles size={14} strokeWidth={2}/> {live.length ? 'مقترح لك الآن' : 'اقتراحات'}
+                    </div>
+                    <div className="ai-chips" style={{display:'flex',gap:8,overflowX:'auto',padding:'0 14px 2px',scrollbarWidth:'none' as const}}>
+                      {list.map(x=>{
+                        const Icon = x.icon ? SUGGEST_ICON[x.icon] : null
+                        return (
+                          <button key={x.id} className="quick-btn" onClick={()=>{ setAsked(a=>[...a, x.id]); send(x.prompt, x.label) }}
+                            style={{display:'inline-flex',alignItems:'center',gap:6,flexShrink:0,minHeight:36,padding:'6px 12px',borderRadius:999,border:`1px solid ${x.urgent?uiTokens.color.warningBorder:C.border2}`,background:x.urgent?uiTokens.color.warningBg:C.bg,color:x.urgent?uiTokens.color.warning:C.text,fontSize:uiTokens.typography.supporting,fontWeight:600,cursor:'pointer',fontFamily:'inherit',whiteSpace:'nowrap' as const}}>
+                            {Icon && <Icon size={15} strokeWidth={2}/>}
+                            {x.label}
+                            {x.count!=null && x.count>0 && <span style={{minWidth:20,height:20,padding:'0 6px',borderRadius:999,background:x.urgent?uiTokens.color.warning:C.primary,color:'white',fontSize:12,fontWeight:700,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{x.count}</span>}
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                )
+              })()}
 
           {/* Input */}
               <div style={{padding:'10px 12px',borderTop:`1px solid ${C.border}`,background:C.surface,display:'flex',gap:8,alignItems:'flex-end',flexShrink:0}}>

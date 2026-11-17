@@ -441,6 +441,32 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
     })
   })
 
+  describe('assistant suggestions', () => {
+    it('suggests from today’s data (closings and their returns) within the user’s tools; a manager without reports gets none of them', async () => {
+      const sugg = await import('@/app/api/ai-assistant/suggestions/route')
+      const r = await call(sugg.GET, 'GET', `/api/ai-assistant/suggestions?org_id=${orgId}`)
+      expect(r.status).toBe(200)
+      expect(r.json.ai).toBe(true)
+      const ids = (r.json.suggestions as any[]).map(s => s.id)
+      // الاختبار اللي قبل سجّل إقفالين اليوم فيهم مرتجعات
+      expect(ids).toContain('returns')
+      expect(ids.some(id => id === 'closings')).toBe(true)
+      expect((r.json.suggestions as any[]).find(s => s.id === 'returns').count).toBeGreaterThan(0)
+      expect(r.json.suggestions.length).toBeLessThanOrEqual(5)
+
+      const ownerAuth = auth.current
+      auth.current = { userId, orgId, role: 'manager', branchId: branchA, permissions: {} }
+      try {
+        const m = await call(sugg.GET, 'GET', `/api/ai-assistant/suggestions?org_id=${orgId}`)
+        expect(m.status).toBe(200)
+        const mids = (m.json.suggestions as any[]).map(s => s.id)
+        expect(mids).not.toContain('closings')
+        expect(mids).not.toContain('returns')
+        expect(mids).not.toContain('subscription')
+      } finally { auth.current = ownerAuth }
+    })
+  })
+
   describe('accountant edits from the portal', () => {
     it('accountant edits a closing and an invoice (applied at once, marked «from the accountant»), is limited by sections/branch/locks, and the owner can revert', async () => {
       process.env.STAFF_TOKEN_SECRET = process.env.STAFF_TOKEN_SECRET || 'it-secret'
