@@ -80,7 +80,10 @@ export async function activateAddon(db: SupabaseClient, input: { orgId: string; 
 
   // المستحق الحين: الوحدات الجديدة فقط × الأيام الباقية لين التجديد
   const chargedQty = wasActive ? Math.max(0, qtyDelta) : qty
-  const unit = wasActive ? unitPrice(addonPriceFor(plan, slug) ?? (addonRow as any).monthly_price, existingRow as any) : (Number(input.unitPrice) > 0 ? Number(input.unitPrice) : Number((addonRow as any).monthly_price) || 0)
+  // الفرع الإضافي: سعره حسب الباقة دايماً — «باقتك المخصصة» سعره 0 (خدماته تنحسب لحالها)، فما نرجع لسعر الإضافة العام
+  const branchUnit = slug === 'extra_branch' ? branchPriceFor(planKeyOf(plan, (org as any)?.max_branches)) : null
+  const unit = wasActive ? unitPrice(addonPriceFor(plan, slug) ?? (addonRow as any).monthly_price, existingRow as any)
+    : (Number(input.unitPrice) > 0 ? Number(input.unitPrice) : branchUnit != null ? branchUnit : Number((addonRow as any).monthly_price) || 0)
   // ميزة بسعر «فرع أول + فرع إضافي» (الباقات الجديدة): المستحق = فرق المبلغ الشهري بين الكمية القديمة والجديدة
   const feat = isNewPlan(plan) ? CUSTOM_MODULES[slug] : undefined
   const locked = Number((wasActive ? (existingRow as any)?.locked_price : input.unitPrice)) || null

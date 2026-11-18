@@ -17,6 +17,8 @@ import { cache } from '@/lib/cache'
 import { ListSkeleton } from '@/components/PageSkeleton'
 import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import { PauseCircle, MapPin, Plus, AlertTriangle, Pencil, Copy, PackagePlus, CheckCircle2 } from 'lucide-react'
+import BranchRequestSheet from './_parts/BranchRequestSheet'
+import { branchMonthly, defaultServices } from '@/lib/branchServices'
 
 
 const BRANCH_STYLES = `
@@ -121,6 +123,16 @@ export default function BranchesPage() {
   const [maxBranches, setMaxBranches] = useState(1)
   // طلب فرع إضافي فوق باقته (lib/extraBranch): السعر وكم يقدر يوصل — يوافق عليه الأدمن
   const [offer, setOffer] = useState<any>(null)
+  const [reqOpen, setReqOpen] = useState(false)   // نافذة طلب فرع بخدماته («باقتك المخصصة»)
+  // من بطاقة «فرع إضافي» بصفحة الإضافات (#extra): تنفتح النافذة مباشرة
+  useEffect(() => {
+    if (offer?.custom && offer?.canAdd && typeof window !== 'undefined' && window.location.hash === '#extra') {
+      history.replaceState(null, '', window.location.pathname)
+      // عنده مكان فاضي: يضيف الفرع مباشرة من بطاقة «إضافة فرع جديد» بدل طلب جديد
+      if ((offer.active ?? 0) >= (offer.total ?? 0)) setReqOpen(true)
+      else document.querySelector('.br-add')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [offer])
   const [buyingBranch, setBuyingBranch] = useState(false)
   const [branches, setBranches] = useState<any[]>([])
   const [inactiveBranches, setInactiveBranches] = useState<any[]>([])
@@ -222,6 +234,8 @@ export default function BranchesPage() {
   // يطلب فرع إضافي — بعد موافقة الأدمن ينضاف لباقته وفاتورته، وبعدها يقدر يسجّل الفرع الجديد
   async function buyBranch() {
     if (!offer?.canAdd) return
+    // «باقتك المخصصة»: اسم الفرع وخدماته بنفس الطلب
+    if (offer.custom) { setReqOpen(true); return }
     const ok = await confirmDialog({
       title: 'طلب فرع إضافي',
       message: `الفرع الإضافي بـ${offer.price} ريال شهرياً${offer.yearly ? ' (بخصم السنوي)' : ''}، ومعه ${offer.staff} موظفين و${offer.suppliers} موردين. بعد الموافقة يُضاف إلى فاتورتك، ويُحتسب على الأيام المتبقية من اشتراكك فقط.`,
@@ -366,6 +380,9 @@ export default function BranchesPage() {
   return (
     <div className="branches-page">
       <style>{BRANCH_STYLES}</style>
+      {reqOpen && offer?.custom && orgId && (
+        <BranchRequestSheet orgId={orgId} offer={offer} onClose={()=>setReqOpen(false)} onSent={()=>{ setReqOpen(false); init() }}/>
+      )}
       <StorelyPageHeader
         title="إدارة الفروع"
         description={<>كل فرع له مخزونه المستقل. باقتك مع الإضافات تسمح بـ <b>{qtyUnit(maxBranches,'فرع')}</b>.</>}
@@ -510,9 +527,13 @@ export default function BranchesPage() {
           {offer?.canAdd ? (
             <div className="hide-in-app" style={{marginTop:12}}>
               <StorelyButton variant="primary" onClick={buyBranch} disabled={buyingBranch}>
-                {buyingBranch ? 'جارٍ الإرسال...' : `+ اطلب فرعاً إضافياً (${offer.price} ريال شهرياً)`}
+                {buyingBranch ? 'جارٍ الإرسال...' : offer.custom ? '+ اطلب فرعاً إضافياً' : `+ اطلب فرعاً إضافياً (${offer.price} ريال شهرياً)`}
               </StorelyButton>
-              <div className="br-supporting" style={{marginTop:8}}>معه {offer.staff} موظفين و{offer.suppliers} موردين · يمكنك الوصول إلى {offer.maxTotal} فروع</div>
+              <div className="br-supporting" style={{marginTop:8}}>
+                {offer.custom
+                  ? <>الفرع بدون رسوم، وتدفع لخدماته فقط{branchMonthly(offer.services||[], defaultServices(offer.services||[]))>0 ? <> (بخدماتك الحالية {branchMonthly(offer.services||[], defaultServices(offer.services||[]))} ريال شهرياً)</> : null} · يمكنك الوصول إلى {offer.maxTotal} فروع</>
+                  : <>معه {offer.staff} موظفين و{offer.suppliers} موردين · يمكنك الوصول إلى {offer.maxTotal} فروع</>}
+              </div>
             </div>
           ) : offer?.nextPlan && !offer?.pending ? (
             <a className="hide-in-app br-link" href="/settings" style={{display:'block',marginTop:10,color:T.color.navy}}>وصلت إلى أقصى عدد فروع في باقتك ({offer.maxTotal}) — رقِّ باقتك من الإعدادات لإضافة المزيد</a>

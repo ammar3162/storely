@@ -12,7 +12,8 @@ import { confirmDialog } from '@/components/ConfirmDialog'
 import { colors, font, card, pageTitle, pageSub } from '@/lib/ds'
 import { toast } from '@/components/toast'
 import { billLines, planKeyOf, addonPeriodEnd, proratedCharge, unitPrice, branchPriceFor, PLAN_PRICING, isNewPlan, nextPlanOf, planPriceFor, customModuleAmount, isCustomPlan, NEW_PLANS, CUSTOM_MODULES, signupAddonsMonthly, CUSTOM_STAFF_STEP, PLAN_CAPS } from '@/lib/planPricing'
-import { Check, Trash2 } from 'lucide-react'
+import { Check, Trash2, Store } from 'lucide-react'
+import { branchMonthly, defaultServices } from '@/lib/branchServices'
 import { isInApp } from '@/lib/inApp'
 import { ListSkeleton } from '@/components/PageSkeleton'
 
@@ -29,6 +30,12 @@ export default function AddonsMarketPage() {
   useEffect(() => { setInApp(isInApp()) }, [])
 
   useEffect(() => { init() }, [])
+  // «باقتك المخصصة»: بطاقة «فرع إضافي» بتكلفته الحقيقية (خدمات الفرع) — الطلب نفسه من صفحة الفروع
+  const [brOffer, setBrOffer] = useState<any>(null)
+  useEffect(() => {
+    if (!orgId || !plan || !isCustomPlan(plan.key)) return
+    api.get('/api/branches/extra', { org_id: orgId }).then(o => setBrOffer(o.success ? o.offer : null)).catch(() => setBrOffer(null))
+  }, [orgId, plan?.key])
 
   async function init() {
     // لو المعرّف محفوظ بالجلسة، نبدأ جلب الإضافات فوراً بالتوازي مع فحص المستخدم بدل ما ننتظره
@@ -207,6 +214,26 @@ export default function AddonsMarketPage() {
         <div style={{ ...card, padding: 40, textAlign: 'center' as const, color: colors.text4 }}>لا توجد إضافات متاحة حالياً</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 16 }}>
+          {brOffer?.custom && (() => {
+            const monthly = branchMonthly(brOffer.services || [], defaultServices(brOffer.services || []))
+            return (
+              <div style={{ ...card, padding: 20, display: 'flex', flexDirection: 'column' as const }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--storely-background)', border: '1px solid var(--storely-border)', color: 'var(--storely-text)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}><Store size={22} strokeWidth={1.75} /></div>
+                <div style={{ fontSize: 17, fontWeight: 600, color: colors.text, marginBottom: 6 }}>فرع إضافي</div>
+                <div style={{ fontSize: 13, color: colors.text3, lineHeight: 1.7, marginBottom: 14, minHeight: 40 }}>الفرع نفسه بدون رسوم، وتدفع لخدماته فقط. تكتب اسمه وتختار خدماته في طلب واحد.</div>
+                <div style={{ fontSize: 20, fontWeight: 600, color: colors.primary }}>{monthly} <span style={{ fontSize: 12, fontWeight: 600, color: colors.text4 }}>⃁ / فرع / شهر</span></div>
+                <div style={{ fontSize: 12, color: colors.text4, marginBottom: 14 }}>{monthly > 0 ? 'بخدماتك الحالية، وتقدر تغيّرها في الطلب' : 'حسب الخدمات التي تختارها له'}</div>
+                {brOffer.pending > 0 && <div style={{ fontSize: 13, fontWeight: 600, color: colors.primary, marginBottom: 10 }}>{brOffer.pending === 1 ? 'لديك طلب فرع قيد المراجعة' : `لديك ${brOffer.pending} طلبات فروع قيد المراجعة`}</div>}
+                <div style={{ marginTop: 'auto' }}>
+                  {(brOffer.active ?? 0) < (brOffer.total ?? 0)
+                    ? <a href="/branches#extra" style={{ display: 'block', textAlign: 'center' as const, padding: '10px', borderRadius: 999, background: colors.primary, color: 'white', fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>لديك مكان لفرع: أضفه الآن</a>
+                    : brOffer.canAdd
+                    ? <a href="/branches#extra" style={{ display: 'block', textAlign: 'center' as const, padding: '10px', borderRadius: 999, background: colors.primary, color: 'white', fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>اطلب فرعاً إضافياً</a>
+                    : <div style={{ fontSize: 13, color: colors.text3, textAlign: 'center' as const }}>وصلت إلى أقصى عدد فروع في باقتك ({brOffer.maxTotal})</div>}
+                </div>
+              </div>
+            )
+          })()}
           {addons.map((a: any) => {
             // "موظف إضافي" له بطاقة خاصة (يدعم عدة فروع بنفس الوقت)
             if (a.slug === 'extra_staff') {

@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js'
 import { requirePermission, logAdminAction } from '@/lib/adminAuth'
 import { activateAddon } from '@/lib/addonActivation'
 import { targetForRequest } from '@/lib/addonRequests'
+import { approveBranchRequest } from '@/lib/branchRequestApproval'
+import { PER_BRANCH_SERVICES } from '@/lib/branchServices'
 
 const sb = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
@@ -18,15 +20,17 @@ export async function GET(req: Request) {
     return NextResponse.json({ success: true, pending: count || 0 })
   }
   const { data: rows } = await db.from('addon_requests')
-    .select('id,org_id,addon_id,quantity,branch_ids,note,status,reason,prorated_amount,decided_by_name,created_at,decided_at,organizations(name),marketplace_addons(name,slug,monthly_price)')
+    .select('id,org_id,addon_id,quantity,branch_ids,note,details,status,reason,prorated_amount,decided_by_name,created_at,decided_at,organizations(name),marketplace_addons(name,slug,monthly_price)')
     .order('created_at', { ascending: false }).limit(100)
   const list = (rows || []) as any[]
   const orgIds = [...new Set(list.map(r => r.org_id))]
-  const [{ data: owners }, { data: branches }, { data: subs }] = await Promise.all([
+  const [{ data: owners }, { data: branches }, { data: subs }, { data: svc }] = await Promise.all([
     db.from('profiles').select('org_id,full_name,phone').eq('role', 'owner').in('org_id', orgIds.length ? orgIds : ['00000000-0000-0000-0000-000000000000']),
     db.from('branches').select('id,name').in('org_id', orgIds.length ? orgIds : ['00000000-0000-0000-0000-000000000000']),
     db.from('org_addon_subscriptions').select('org_id,addon_id,status,quantity,branch_ids,expires_at').in('org_id', orgIds.length ? orgIds : ['00000000-0000-0000-0000-000000000000']),
+    db.from('marketplace_addons').select('slug,name').in('slug', PER_BRANCH_SERVICES),
   ])
+  const svcName = new Map(((svc || []) as any[]).map(a => [a.slug, a.name]))
   const bName = new Map((branches || []).map((b: any) => [b.id, b.name]))
   const out = list.map(r => {
     const sub = (subs || []).find((s: any) => s.org_id === r.org_id && s.addon_id === r.addon_id && s.status === 'active' && new Date(s.expires_at) > new Date())
@@ -34,6 +38,7 @@ export async function GET(req: Request) {
     return {
       ...r, owner_name: owner?.full_name || null, owner_phone: owner?.phone || null,
       branch_names: (r.branch_ids || []).map((id: string) => bName.get(id) || '—'),
+      service_names: Array.isArray(r.details?.services) ? r.details.services.map((slug: string) => svcName.get(slug) || slug) : [],
       current: sub ? { quantity: sub.quantity, branch_names: (sub.branch_ids || []).map((id: string) => bName.get(id) || '—') } : null,
     }
   })
@@ -48,7 +53,7 @@ export async function POST(req: Request) {
   const { id, action, reason } = await req.json().catch(() => ({}))
   if (!id || !['approve', 'reject'].includes(action)) return NextResponse.json({ error: 'بيانات ناقصة' }, { status: 400 })
   const db = sb()
-  const { data: r } = await db.from('addon_requests').select('id,org_id,addon_id,quantity,branch_ids,status,organizations(name),marketplace_addons(name,slug)').eq('id', id).maybeSingle()
+  const { data: r } = await db.from('addon_requests').select('id,org_id,addon_id,quantity,branch_ids,details,status,organizations(name),marketplace_addons(name,slug)').eq('id', id).maybeSingle()
   if (!r) return NextResponse.json({ error: 'الطلب غير موجود' }, { status: 404 })
   if ((r as any).status !== 'pending') return NextResponse.json({ error: 'الطلب ما عاد معلّق' }, { status: 409 })
   const req0 = r as any, addonName = req0.marketplace_addons?.name || 'الإضافة', orgName = req0.organizations?.name || null
@@ -60,6 +65,17 @@ export async function POST(req: Request) {
     await notifyInsert(db, { org_id: req0.org_id, title: `طلب «${addonName}»`, message: why ? `لم تتم الموافقة على الطلب: ${why}` : 'لم تتم الموافقة على الطلب — تواصل معنا إذا كان لديك استفسار', type: 'warning', read: false } as any)
     await logAdminAction(admin, 'reject_addon_request', req0.org_id, orgName, { request_id: id, addon_name: addonName, reason: why })
     return NextResponse.json({ success: true })
+  }
+
+  // فرع بخدماته («باقتك المخصصة»): الموافقة تنشئ الفرع وتفعّل خدماته مرة وحدة (أو ما يتغير شي)
+  if (req0.marketplace_addons?.slug === 'extra_branch' && req0.details?.branch_name) {
+    const b = await approveBranchRequest(db, req0)
+    if (!b.ok) return NextResponse.json({ error: b.error }, { status: b.status })
+    await db.from('addon_requests').update({ status: 'approved', decided_at: now, decided_by_name: admin.full_name, prorated_amount: b.proratedAmount } as any).eq('id', id)
+    await notifyInsert(db, { org_id: req0.org_id, title: `فرع «${b.branchName}» جاهز`,
+      message: `أُضيف الفرع${b.services.length ? ` مع: ${b.services.join('، ')}` : ''}، ويمكنك استخدامه الآن.${b.proratedAmount > 0 ? ` المستحق ${b.proratedAmount} ⃁ عن الأيام المتبقية حتى تجديد باقتك.` : ''}`, type: 'success', read: false } as any)
+    await logAdminAction(admin, 'approve_branch_request', req0.org_id, orgName, { request_id: id, branch_id: b.branchId, branch_name: b.branchName, services: b.services, prorated_amount: b.proratedAmount })
+    return NextResponse.json({ success: true, proratedAmount: b.proratedAmount, proratedDays: b.proratedDays, branchName: b.branchName, services: b.services })
   }
 
   // الموافقة: الكمية الجديدة = الحالية + المطلوبة (والمنيو: الفروع الحالية + المطلوبة)

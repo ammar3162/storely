@@ -291,6 +291,15 @@ export function subscriptionReminderEmail(o: { name?: string | null; isTrial: bo
   }
 }
 
+/** رسالة شخصية من الإدارة لعميل (من ملفه في لوحة الإدارة): نص الأدمن كما هو، وزر اختياري من الأزرار المسموحة فقط (lib/customerEmailTemplates) */
+export function customerMessageEmail(o: { subject: string; paragraphs: string[]; button?: { label: string; path: string } | null }) {
+  return brandEmail({
+    title: o.subject, paragraphs: o.paragraphs,
+    ...(o.button ? { button: { label: o.button.label, rawUrl: `${BRAND.site}${o.button.path}` } } : {}),
+    small: 'فريق Storely — يمكنك الرد على هذا البريد مباشرة.',
+  })
+}
+
 export function welcomeEmail(o: { name: string; trialEnds?: string | null }) {
   return {
     subject: 'أهلاً بك في Storely',
