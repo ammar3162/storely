@@ -409,7 +409,7 @@ export default function AIAssistant() {
   },[open, sugs])
   const dragRef = useRef<{ sx:number; sy:number; ox:number; oy:number; moved:boolean }|null>(null)
   const fabLimits = () => {
-    const mobile = window.innerWidth < 768, size = mobile ? 62 : 69   // زر الشخصية: 62×58 بالجوال و69×64 بالكمبيوتر (نحسب بالأكبر)
+    const mobile = window.innerWidth < 768, size = mobile ? 48 : 54   // زر الشخصية: 48×45 بالجوال و54×50 بالكمبيوتر (نحسب بالأكبر) — صغّرناه بطلب المالك 2026-11-18
     return { size, edge: mobile ? 14 : 24, minBottom: mobile ? 76 : 16, maxBottom: window.innerHeight - size - (mobile ? 72 : 80) }
   }
   const onFabDown = (e: React.PointerEvent<HTMLButtonElement>) => {
@@ -451,7 +451,7 @@ export default function AIAssistant() {
         @keyframes spin{to{transform:rotate(360deg)}}
         .ai-fab{display:flex;transition:transform .15s}
         /* على الكمبيوتر: النافذة بالزاوية السفلية بجهة زر المساعد (الزر مكانه يحدده العميل بالسحب) */
-        @media(min-width:768px){.ai-fab{width:69px!important;height:64px!important}.ai-win{bottom:86px!important;left:24px!important;right:auto!important;width:400px;margin:0!important}.ai-win.ai-win-r{left:auto!important;right:24px!important}}
+        @media(min-width:768px){.ai-fab{width:54px!important;height:50px!important}.ai-win{bottom:86px!important;left:24px!important;right:auto!important;width:400px;margin:0!important}.ai-win.ai-win-r{left:auto!important;right:24px!important}}
         .ai-fab .ai-m{width:100%!important;height:100%!important}
         .ai-fab:hover{transform:translateY(-2px)}
         .ai-fab:active{transform:scale(.96)}
@@ -480,9 +480,9 @@ export default function AIAssistant() {
       {!open && mounted && (
         <button className="ai-fab" onPointerDown={onFabDown} onPointerMove={onFabMove} onPointerUp={onFabUp} onPointerCancel={()=>{ dragRef.current=null; setDrag(null) }}
           onKeyDown={e=>{ if(e.key==='Enter'||e.key===' ') { e.preventDefault(); setOpen(true) } }}
-          aria-label={urgentSug ? `Soul — ${urgentSug.label}` : 'Soul، مساعدك الذكي'} title={urgentSug ? `Soul: ${urgentSug.label}` : 'Soul — اسحبه لتغيير مكانه'} style={{position:'fixed',...fabStyle(),touchAction:'none',userSelect:'none' as const,zIndex:999,width:62,height:58,padding:0,background:'transparent',border:'none',filter:'drop-shadow(0 6px 12px rgba(32,54,64,.28)) drop-shadow(0 1px 2px rgba(0,0,0,.12))',cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-          <AssistantMascot size={58} motion={urgentSug ? 'alert' : 'idle'} />
-          {urgentSug&&<span aria-hidden style={{position:'absolute',top:2,right:4,width:13,height:13,borderRadius:'50%',background:'#FF3B30',border:'2px solid var(--storely-surface, #fff)'}}/>}
+          aria-label={urgentSug ? `Soul — ${urgentSug.label}` : 'Soul، مساعدك الذكي'} title={urgentSug ? `Soul: ${urgentSug.label}` : 'Soul — اسحبه لتغيير مكانه'} style={{position:'fixed',...fabStyle(),touchAction:'none',userSelect:'none' as const,zIndex:999,width:48,height:45,padding:0,background:'transparent',border:'none',filter:'drop-shadow(0 5px 10px rgba(32,54,64,.26)) drop-shadow(0 1px 2px rgba(0,0,0,.12))',cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          <AssistantMascot size={45} motion={urgentSug ? 'alert' : 'idle'} />
+          {urgentSug&&<span aria-hidden style={{position:'absolute',top:0,right:2,width:12,height:12,borderRadius:'50%',background:'#FF3B30',border:'2px solid var(--storely-surface, #fff)'}}/>}
         </button>
       )}
 
@@ -493,7 +493,7 @@ export default function AIAssistant() {
         const Icon = SUGGEST_ICON[bubble.icon] || Sparkles
         return (
           // مثل إشعارات الآيفون: اسم المساعد بالأعلى، والعنوان، وسطر يوضّح وش يصير لو ضغط
-          <div className="ai-bubble" role="status" aria-live="polite" style={{position:'fixed', [side]: fs[side], bottom: (Number(fs.bottom)||24)+74, zIndex:999, width:300, maxWidth:'calc(100vw - 28px)', background:C.surface, borderRadius:20, boxShadow:'0 12px 40px rgba(0,0,0,.16), 0 0 0 .5px rgba(0,0,0,.08)', animation:'aiFadeUp .25s cubic-bezier(.22,1,.36,1)', direction:'rtl'}}>
+          <div className="ai-bubble" role="status" aria-live="polite" style={{position:'fixed', [side]: fs[side], bottom: (Number(fs.bottom)||24)+60, zIndex:999, width:300, maxWidth:'calc(100vw - 28px)', background:C.surface, borderRadius:20, boxShadow:'0 12px 40px rgba(0,0,0,.16), 0 0 0 .5px rgba(0,0,0,.08)', animation:'aiFadeUp .25s cubic-bezier(.22,1,.36,1)', direction:'rtl'}}>
             <button onClick={()=>openBubble(bubble)} aria-label={`${bubble.label}${bubble.count ? ` (${bubble.count})` : ''} — اضغط لأعرض لك التفاصيل`}
               style={{display:'block',width:'100%',padding:'12px 14px 13px',paddingInlineEnd:44,background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',textAlign:'start',color:C.text}}>
               <span style={{display:'flex',alignItems:'center',gap:7,marginBottom:6}}>
@@ -518,7 +518,7 @@ export default function AIAssistant() {
       {supportTip && !open && mounted && !drag && (()=>{
         const fs = fabStyle() as any, side = fs.left !== undefined ? 'left' : 'right'
         return (
-          <div role="status" style={{position:'fixed', [side]: fs[side], bottom: (Number(fs.bottom)||24)+74, zIndex:999, width:260, background:C.surface, border:`1px solid ${C.border}`, borderRadius:uiTokens.radius.card, boxShadow:'0 12px 32px rgba(32,54,64,.18)', padding:'12px 14px'}}>
+          <div role="status" style={{position:'fixed', [side]: fs[side], bottom: (Number(fs.bottom)||24)+60, zIndex:999, width:260, background:C.surface, border:`1px solid ${C.border}`, borderRadius:uiTokens.radius.card, boxShadow:'0 12px 32px rgba(32,54,64,.18)', padding:'12px 14px'}}>
             <div style={{display:'flex',alignItems:'center',gap:6,fontSize:uiTokens.typography.body,fontWeight:800,color:C.text,marginBottom:4}}><LifeBuoy size={16}/> جديد: الدعم الفني من هنا</div>
             <div style={{fontSize:uiTokens.typography.supporting,color:C.text3,lineHeight:1.8,marginBottom:10}}>اسأل المساعد عن أي شيء، وإذا ما انحلّت مشكلتك أرسلها للدعم الفني بضغطة — يوصلك الرد في الإشعارات.</div>
             <div style={{display:'flex',gap:8}}>
