@@ -619,7 +619,8 @@ export default function AIAssistant() {
 
       {/* Chat Window */}
       {open && (
-        <div className={`ai-win${fabPos?.side==='right'?' ai-win-r':''}`} style={{
+        // مفتوح بالجوال: الصفحة اللي وراه ثابتة (OverlayScrollLock). مصغّر أو بالكمبيوتر: الصفحة تتحرك عادي
+        <div className={`ai-win${fabPos?.side==='right'?' ai-win-r':''}`} data-scroll-lock={minimized ? undefined : 'narrow'} style={{
           position:'fixed',
           bottom: minimized ? 86 : 86,
           left: 12, right: 12,
@@ -687,7 +688,7 @@ export default function AIAssistant() {
           )}
 
           {/* Messages */}
-              <div className="ai-msgs" style={{flex:1,overflowY:'auto',padding:'14px 14px 10px',display:'flex',flexDirection:'column',gap:8,background:C.surface}}>
+              <div className="ai-msgs" style={{flex:1,overflowY:'auto',overscrollBehavior:'contain',padding:'14px 14px 10px',display:'flex',flexDirection:'column',gap:8,background:C.surface}}>
                 {msgs.length===0 && visible.length>0 && <SoulDecisions items={visible} orgId={orgKey()} highlight={highlight} onExtraDone={onExtraDone} />}
                 {msgs.map((m,i)=>(
                   <React.Fragment key={i}>

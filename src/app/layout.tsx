@@ -1,5 +1,6 @@
 import { ToastContainer } from '@/components/toast'
 import KeyboardInset from '@/components/KeyboardInset'
+import OverlayScrollLock from '@/components/OverlayScrollLock'
 import { ConfirmDialogContainer } from '@/components/ConfirmDialog'
 import PWAInstall from '@/components/PWAInstall'
 import FeatureAnnouncement from '@/components/FeatureAnnouncement'
@@ -71,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <DigitNormalizer/>
         <ToastContainer/>
         <KeyboardInset/>
+        <OverlayScrollLock/>
         <ConfirmDialogContainer/>
         <PWAInstall/>
         <FeatureAnnouncement/>
