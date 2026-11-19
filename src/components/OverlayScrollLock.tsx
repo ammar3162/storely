@@ -9,9 +9,10 @@ export default function OverlayScrollLock() {
   useEffect(() => {
     const root = document.documentElement
     const narrow = window.matchMedia(NARROW_QUERY)
-    let raf = 0
+    // setTimeout مو requestAnimationFrame: الإطارات تتوقف لما الصفحة مخفية، والقفل لازم ينحط حتى لو انفتحت النافذة وقتها
+    let timer: ReturnType<typeof setTimeout> | 0 = 0
     const check = () => {
-      raf = 0
+      timer = 0
       const vw = window.innerWidth, vh = window.innerHeight
       const on = Array.from(document.querySelectorAll<HTMLElement>(OVERLAY_SELECTOR)).some(el => {
         const cs = getComputedStyle(el)
@@ -24,7 +25,7 @@ export default function OverlayScrollLock() {
       })
       root.classList.toggle('scroll-locked', on)
     }
-    const schedule = () => { if (!raf) raf = requestAnimationFrame(check) }
+    const schedule = () => { if (!timer) timer = setTimeout(check, 0) }
     const mo = new MutationObserver(schedule)
     mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'data-scroll-lock'] })
     // بعد حركة الظهور (النافذة تكون أصغر شوي أول إطار) ولما يتغير مقاس الشاشة
@@ -39,7 +40,7 @@ export default function OverlayScrollLock() {
       document.removeEventListener('transitionend', schedule, true)
       window.removeEventListener('resize', schedule)
       narrow.removeEventListener('change', schedule)
-      if (raf) cancelAnimationFrame(raf)
+      if (timer) clearTimeout(timer)
       root.classList.remove('scroll-locked')
     }
   }, [])
