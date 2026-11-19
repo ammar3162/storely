@@ -15,11 +15,10 @@ describe('assistant suggestions', () => {
     const night = buildSuggestions({ ...base, hour: 23, closingsToday: 0 })
     expect(night[0]).toMatchObject({ id: 'closings-missing', urgent: true })
   })
-  it('a pending deficit and an ending subscription come first and are urgent', () => {
-    const s = buildSuggestions({ ...base, deficitPending: 2, subscriptionDaysLeft: 3 })
-    expect(s.slice(0, 2).map(x => x.id)).toEqual(['deficit', 'subscription'])
-    expect(s[0]).toMatchObject({ urgent: true, count: 2 })
-    expect(s[1].label).toBe('اشتراكك ينتهي خلال 3 أيام')
+  it('an ending subscription comes first and is urgent; a pending deficit is a decision card now, not a suggestion', () => {
+    const s = buildSuggestions({ ...base, subscriptionDaysLeft: 3 })
+    expect(s[0]).toMatchObject({ id: 'subscription', urgent: true, label: 'اشتراكك ينتهي خلال 3 أيام' })
+    expect(ids({ ...base, deficitPending: 2 } as any)).not.toContain('deficit')
   })
   it('only suggests what the user’s tools can answer (manager without attendance, no AI tools)', () => {
     expect(ids({ ...base, tools: ['cashier_closings'], owner: false, subscriptionDaysLeft: 2 })).toEqual(['closings-yesterday'])
@@ -31,7 +30,7 @@ describe('assistant suggestions', () => {
     expect(buildSuggestions({ ...base, vatRegistered: true, vatDueInDays: 70 }).find(x => x.id === 'vat')?.label).toBe('ضريبة هذا الربع')
   })
   it('at most 5 suggestions', () => {
-    expect(buildSuggestions({ ...base, deficitPending: 1, returnsToday: 2, payablesDueWeek: 3, vatRegistered: true, vatDueInDays: 20, subscriptionDaysLeft: 5 }).length).toBe(5)
+    expect(buildSuggestions({ ...base, returnsToday: 2, payablesDueWeek: 3, vatRegistered: true, vatDueInDays: 20, subscriptionDaysLeft: 5 }).length).toBe(5)
   })
   it('quarterly VAT deadline: end of the month after the quarter', () => {
     expect(vatDueInDays('2026-11-17')).toBe(75)     // الربع الرابع ← 31 يناير

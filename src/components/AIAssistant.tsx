@@ -4,6 +4,11 @@ import React, { useState, useRef, useEffect } from 'react'
 import { ChevronDown, ChevronUp, ChevronLeft, X, ArrowUp, LifeBuoy, Send, Receipt, UserCheck, Clock, AlertTriangle, RotateCcw, PackageMinus, Percent, Wallet, CalendarClock, Sparkles } from 'lucide-react'
 import type { Suggestion, SuggestIcon } from '@/lib/assistantSuggestions'
 import AssistantMascot, { MASCOT_CSS } from '@/components/AssistantMascot'
+import SoulDecisions, { DecisionCard, SOUL_DECISIONS_CSS } from '@/components/SoulDecisions'
+import { parseBubbleLog, pickBubble, remember, urgentKey } from '@/lib/assistantBubble'
+import { countAr, type Decision } from '@/lib/soulDecisions'
+import { clearPhase, decisionPhase, isHandled, useDecisionPhases } from '@/lib/soulDecisionQueue'
+import { useLiveRefresh } from '@/lib/useLiveRefresh'
 import { getMe } from '@/lib/session'
 import { storelyTokens as uiTokens } from '@/components/ui/design-tokens'
 
@@ -44,7 +49,18 @@ const SUPPORT_TIP_KEY = 'support_tip_seen'
 // suggest = ترحيب المساعد بأهم أشياء اليوم، والاقتراحات أزرار تحت الرسالة
 interface Msg { role:'user'|'ai'; text:string; time:string; kind?:'support'|'ticket'|'suggest'; sugs?: Suggestion[] }
 const greeting = () => (new Date().getHours() < 12 ? 'صباح الخير' : 'مساء الخير')
-const BUBBLE_SEEN = 'ai_bubble_seen'   // الاقتراحات اللي طلعت كفقاعة بهالجلسة (ما تتكرر)
+// سجل فقاعة Soul بالجهاز لكل منشأة (lib/assistantBubble): القرار الجديد مرة وحدة، والتنبيه العاجل مرة باليوم، والمعلومات ما تطلع كفقاعة
+const BUBBLE_LOG = 'storely_ai_bubble'
+const localDay = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
+const orgKey = () => { try { return sessionStorage.getItem('s_org_id') || '' } catch { return '' } }
+const readBubbleLog = () => { try { return parseBubbleLog(localStorage.getItem(`${BUBBLE_LOG}:${orgKey()}`)) } catch { return parseBubbleLog(null) } }
+const rememberBubble = (keys: string[]) => { if (!keys.length) return; try { localStorage.setItem(`${BUBBLE_LOG}:${orgKey()}`, JSON.stringify(remember(readBubbleLog(), keys))) } catch {} }
+// «لاحقاً» على قرار: يختفي من هذا الجهاز لين بكرة
+const LATER_KEY = 'storely_soul_later'
+const readLater = (): Record<string, string> => { try { const v = JSON.parse(localStorage.getItem(`${LATER_KEY}:${orgKey()}`) || '{}'); return v && typeof v === 'object' ? v : {} } catch { return {} } }
+const saveLater = (key: string) => { try { const day = localDay(); const v = Object.fromEntries(Object.entries(readLater()).filter(([, d]) => d === day)); v[key] = day; localStorage.setItem(`${LATER_KEY}:${orgKey()}`, JSON.stringify(v)) } catch {} }
+const waits = (n: number) => (n === 1 ? 'ينتظرك' : n === 2 ? 'ينتظرانك' : 'تنتظرك')
+const qarar = (n: number) => countAr(n, ['قرار واحد', 'قراران', 'قرارات', 'قراراً'])
 
 // الروابط بالرد تنضغط: يوتيوب يطلع زر «مشاهدة فيديو الشرح»، والباقي الرابط نفسه — تفتح بتبويب جديد
 const URL_RE = /(https?:\/\/[^\s)<>»«"']+)/g
@@ -206,6 +222,13 @@ export default function AIAssistant() {
   const [sugs, setSugs] = useState<Suggestion[]|null>(null)
   const sugsAt = useRef(0)
   const [asked, setAsked] = useState<string[]>([])
+  // قرارات تنتظر هذا المستخدم (lib/assistantDecisions): أزرار بدون ذكاء، فتطلع للكل حسب الصلاحية
+  const [decisions, setDecisions] = useState<Decision[]>([])
+  // الظاهرة = بدون اللي تأجّلت لبكرة بهالجهاز، والرقم الأحمر = اللي ما انأخذ فيها قرار
+  useDecisionPhases()
+  const [later, setLater] = useState<Record<string, string>>(() => (typeof window === 'undefined' ? {} : readLater()))
+  const visible = decisions.filter(d => later[d.key] !== localDay())
+  const pendingCount = visible.filter(d => !isHandled(d.key)).length
   async function loadSuggestions(force = false) {
     if (!force && Date.now() - sugsAt.current < SUGGEST_TTL) return
     const org_id = typeof window!=='undefined' ? sessionStorage.getItem('s_org_id') : null
@@ -216,9 +239,14 @@ export default function AIAssistant() {
       const r = await fetch(`/api/ai-assistant/suggestions?org_id=${encodeURIComponent(org_id)}&branch_id=${encodeURIComponent(branch_id)}`)
       const j = await r.json().catch(()=>null)
       setSugs(j?.success && Array.isArray(j.suggestions) ? j.suggestions : [])
+      if (j?.success) setDecisions(Array.isArray(j.decisions) ? j.decisions : [])
     } catch { setSugs([]) }
   }
-  useEffect(()=>{ if(hasAi) loadSuggestions(true) },[hasAi])
+  useEffect(()=>{ if(hasAi!==null) loadSuggestions(true) },[hasAi])
+  // طلب جديد أو قرار من جهاز ثاني: نعيد الجلب فوراً
+  useLiveRefresh(typeof window!=='undefined' ? sessionStorage.getItem('s_org_id') : null,
+    ['notifications','cashier_closings','attendance_permission_requests','staff_leave_requests','staff_payroll_adjustments','staff_extra_days','purchases'],
+    () => { if (hasAi!==null) loadSuggestions(true) })
   const [msgs, setMsgs]       = useState<Msg[]>(()=>{
     if(typeof window==='undefined') return []
     try { return JSON.parse(sessionStorage.getItem('ai_msgs')||'[]') } catch { return [] }
@@ -264,7 +292,7 @@ export default function AIAssistant() {
     }
   },[msgs])
 
-  useEffect(()=>{ if(open && hasAi) loadSuggestions() },[open])
+  useEffect(()=>{ if(open && hasAi!==null) loadSuggestions() },[open])
   useEffect(()=>{
     if(open) resetTimer()
     else { if(timeoutRef.current) clearTimeout(timeoutRef.current); setShowTimeout(false) }
@@ -344,20 +372,20 @@ export default function AIAssistant() {
     setTimeout(()=>inputRef.current?.focus(), 100)
   }
 
-  // نقطة على زر المساعد: فيه شي يحتاج انتباهه (عجز ينتظر قراره، إقفال ناقص، اشتراك ينتهي...)
+  // نقطة على زر المساعد لو ما فيه قرارات: تنبيه عاجل (إقفال ناقص، اشتراك ينتهي، موعد الإقرار)
   const urgentSug = (sugs || []).find(s=>s.urgent && !asked.includes(s.id))
-  // فقاعة من زر المساعد بأهم اقتراح (بدون فتح الشات) — مرة لكل اقتراح بالجلسة، وتختفي بعد 15 ثانية
-  const [bubble, setBubble] = useState<Suggestion|null>(null)
-  function dismissBubble(b: Suggestion|null = bubble) {
-    if (b) { try { const seen = JSON.parse(sessionStorage.getItem(BUBBLE_SEEN)||'[]'); sessionStorage.setItem(BUBBLE_SEEN, JSON.stringify([...new Set([...seen, b.id])])) } catch {} }
-    setBubble(null)
-  }
+  // فقاعة من زر المساعد بدون فتح الشات: قرار جديد (بأزراره) أو عدة قرارات جديدة مجمّعة، أو تنبيه عاجل مرة باليوم — وتختفي بعد 15 ثانية
+  const [bubble, setBubble] = useState<{ type:'urgent'; s:Suggestion } | { type:'decisions'; keys:string[] } | null>(null)
+  const [hopTick, setHopTick] = useState(0)
+  const [highlight, setHighlight] = useState<string|null>(null)
+  function dismissBubble() { setBubble(null) }
   function openBubble(b: Suggestion) {
-    dismissBubble(b)
+    setBubble(null)
     setOpen(true); setMinimized(false)
     setAsked(a=>[...a, b.id])
     send(b.prompt, b.label)
   }
+  function openDecisions(key?: string) { setBubble(null); setHighlight(key || null); setOpen(true); setMinimized(false) }
 
   // زر المساعد: العميل يسحبه لأي مكان (يلتصق بأقرب طرف يمين/يسار) ويُحفظ مكانه بالجهاز
   const FAB_KEY = 'storely_ai_fab'
@@ -369,6 +397,17 @@ export default function AIAssistant() {
   // مكان الزر محفوظ بالجهاز: نرسمه بعد التحميل عشان ما يختلف عن نسخة الخادم
   const [mounted, setMounted] = useState(false)
   useEffect(()=>{ setMounted(true) },[])
+  // رابط إشعار الجوال أو الواتساب (?soul=نوع:معرّف): يفتح Soul على بطاقة القرار نفسها
+  useEffect(()=>{
+    if (!mounted) return
+    try {
+      const u = new URL(window.location.href), v = u.searchParams.get('soul')
+      if (!v) return
+      u.searchParams.delete('soul')
+      window.history.replaceState(window.history.state, '', u.pathname + u.search + u.hash)
+      setHighlight(v.includes(':') ? v : null); setOpen(true); setMinimized(false)
+    } catch {}
+  },[mounted])
   // زر «الدعم الفني» (القائمة الجانبية وأعلى الصفحة) يفتح المساعد على «أرسل طلبك للدعم» — بدل واتساب شخصي
   useEffect(()=>{
     const onSupport = () => {
@@ -386,27 +425,43 @@ export default function AIAssistant() {
   const [supportTip, setSupportTip] = useState(false)
   useEffect(()=>{ try { if(!localStorage.getItem(SUPPORT_TIP_KEY)) setTimeout(()=>setSupportTip(true), 2500) } catch {} },[])
   const hideSupportTip = () => { setSupportTip(false); try { localStorage.setItem(SUPPORT_TIP_KEY,'1') } catch {} }
-  // الفقاعة: أعلى اقتراح ما طلع قبل بهالجلسة، بعد ثانيتين من التحميل (وما تطلع مع إعلان الدعم ولا والشات مفتوح)
+  // الفقاعة بعد ثانيتين ونص من التحميل (lib/assistantBubble): بس لشي جديد — وما تطلع مع إعلان الدعم ولا والشات مفتوح
   useEffect(()=>{
-    if (open || !mounted || supportTip || !sugs?.length) return
-    let seen: string[] = []
-    try { seen = JSON.parse(sessionStorage.getItem(BUBBLE_SEEN)||'[]') } catch {}
-    const next = sugs.find(x=>!seen.includes(x.id) && !asked.includes(x.id))
-    if (!next) return
-    const t = setTimeout(()=>setBubble(next), 2500)
+    if (open || !mounted || supportTip || sugs===null) return
+    const pick = pickBubble(visible.filter(d=>!isHandled(d.key)).map(d=>d.key), sugs, readBubbleLog(), localDay(), asked)
+    if (!pick) return
+    const t = setTimeout(()=>{
+      if (pick.type==='decisions') { setBubble({ type:'decisions', keys: pick.keys }); rememberBubble(pick.keys); setHopTick(x=>x+1) }
+      else { const s = sugs.find(x=>x.id===pick.id); if (s) { setBubble({ type:'urgent', s }); rememberBubble([urgentKey(s.id, localDay())]) } }
+    }, 2500)
     return ()=>clearTimeout(t)
-  },[sugs, open, mounted, supportTip])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[sugs, decisions, later, open, mounted, supportTip])
   useEffect(()=>{
     if (!bubble) return
-    const t = setTimeout(()=>dismissBubble(bubble), 15000)
+    // قرار بدأ من الفقاعة (مهلة التراجع أو التنفيذ): ما تختفي في نصه
+    const t = setTimeout(()=>{ if (bubble.type==='decisions' && bubble.keys.some(k=>decisionPhase(k))) return; setBubble(null) }, 15000)
     return ()=>clearTimeout(t)
   },[bubble])
-  // فتح الشات = شاف الاقتراحات كلها بالترحيب: ما ترجع نفسها كفقاعة لما يقفله
+  // قرارات الفقاعة انحلت كلها: تختفي
+  useEffect(()=>{ if (bubble?.type==='decisions' && !bubble.keys.some(k=>visible.some(d=>d.key===k))) setBubble(null) },[bubble, visible])
+  // فتح الشات = شاف كل اللي فيه: القرارات والتنبيهات العاجلة ما ترجع تطلع كفقاعة
   useEffect(()=>{
     if (!open) return
     setBubble(null)
-    if (sugs?.length) { try { const seen = JSON.parse(sessionStorage.getItem(BUBBLE_SEEN)||'[]'); sessionStorage.setItem(BUBBLE_SEEN, JSON.stringify([...new Set([...seen, ...sugs.map(x=>x.id)])])) } catch {} }
-  },[open, sugs])
+    rememberBubble([...visible.map(d=>d.key), ...(sugs||[]).filter(s=>s.urgent).map(s=>urgentKey(s.id, localDay()))])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[open, sugs, decisions])
+  // نتيجة القرار: ينشال من القائمة بعد ما يقرأ التأكيد، و«لاحقاً» يخفيه من هالجهاز لين بكرة
+  useEffect(()=>{
+    const onDecided = (e: Event) => { const { key, ok } = (e as CustomEvent).detail || {}; if (!ok || !key) return
+      setTimeout(()=>{ setDecisions(p=>p.filter(d=>d.key!==key)); clearPhase(key) }, 2400) }
+    const onLater = (e: Event) => { const { key } = (e as CustomEvent).detail || {}; if (!key) return
+      setTimeout(()=>{ saveLater(key); setLater(readLater()); clearPhase(key) }, 1800) }
+    window.addEventListener('soul:decided', onDecided); window.addEventListener('soul:later', onLater)
+    return ()=>{ window.removeEventListener('soul:decided', onDecided); window.removeEventListener('soul:later', onLater) }
+  },[])
+  const onExtraDone = (key: string) => { setTimeout(()=>setDecisions(p=>p.filter(d=>d.key!==key)), 1500) }
   const dragRef = useRef<{ sx:number; sy:number; ox:number; oy:number; moved:boolean }|null>(null)
   const fabLimits = () => {
     const mobile = window.innerWidth < 768, size = mobile ? 48 : 54   // زر الشخصية: 48×45 بالجوال و54×50 بالكمبيوتر (نحسب بالأكبر) — صغّرناه بطلب المالك 2026-11-18
@@ -469,6 +524,10 @@ export default function AIAssistant() {
         .ai-ic-btn:hover{background:var(--storely-control-border)}
         .ai-bubble button:focus-visible,.ai-win input:focus-visible{outline:2px solid ${C.primary};outline-offset:2px}
         ${MASCOT_CSS}
+        ${SOUL_DECISIONS_CSS}
+        /* محتوى المحادثة يطول (بطاقات القرارات): ما ينضغط أي عنصر — كانت قائمة «مقترح لك الآن» تختفي بارتفاع صفر */
+        .ai-msgs>*{flex-shrink:0}
+        .ai-badge{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#FF3B30;color:#fff;font-size:12px;font-weight:700;line-height:16px;text-align:center;border:2px solid var(--storely-surface,#fff);font-variant-numeric:tabular-nums}
         @media (prefers-reduced-motion:reduce){.ai-win,.ai-bubble{animation:none!important}.ai-chip:active,.ai-row:active{transform:none}}
         .ai-chips::-webkit-scrollbar{display:none}
         .quick-btn:active{transform:scale(.95)}
@@ -480,9 +539,12 @@ export default function AIAssistant() {
       {!open && mounted && (
         <button className="ai-fab" onPointerDown={onFabDown} onPointerMove={onFabMove} onPointerUp={onFabUp} onPointerCancel={()=>{ dragRef.current=null; setDrag(null) }}
           onKeyDown={e=>{ if(e.key==='Enter'||e.key===' ') { e.preventDefault(); setOpen(true) } }}
-          aria-label={urgentSug ? `Soul — ${urgentSug.label}` : 'Soul، مساعدك الذكي'} title={urgentSug ? `Soul: ${urgentSug.label}` : 'Soul — اسحبه لتغيير مكانه'} style={{position:'fixed',...fabStyle(),touchAction:'none',userSelect:'none' as const,zIndex:999,width:48,height:45,padding:0,background:'transparent',border:'none',filter:'drop-shadow(0 5px 10px rgba(32,54,64,.26)) drop-shadow(0 1px 2px rgba(0,0,0,.12))',cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-          <AssistantMascot size={45} motion={urgentSug ? 'alert' : 'idle'} />
-          {urgentSug&&<span aria-hidden style={{position:'absolute',top:0,right:2,width:12,height:12,borderRadius:'50%',background:'#FF3B30',border:'2px solid var(--storely-surface, #fff)'}}/>}
+          aria-label={pendingCount ? `Soul، لديك ${qarar(pendingCount)} ${waits(pendingCount)}` : urgentSug ? `Soul — ${urgentSug.label}` : 'Soul، مساعدك الذكي'} title={pendingCount ? `Soul: ${qarar(pendingCount)} ${waits(pendingCount)}` : urgentSug ? `Soul: ${urgentSug.label}` : 'Soul — اسحبه لتغيير مكانه'} style={{position:'fixed',...fabStyle(),touchAction:'none',userSelect:'none' as const,zIndex:999,width:48,height:45,padding:0,background:'transparent',border:'none',filter:'drop-shadow(0 5px 10px rgba(32,54,64,.26)) drop-shadow(0 1px 2px rgba(0,0,0,.12))',cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          {/* ينط بس لما يوصل قرار جديد (مو كل دخول) */}
+          <AssistantMascot key={hopTick} size={45} motion={hopTick ? 'alert' : 'idle'} />
+          {pendingCount > 0
+            ? <span aria-hidden className="ai-badge">{pendingCount > 99 ? '99+' : pendingCount}</span>
+            : urgentSug && <span aria-hidden style={{position:'absolute',top:0,right:2,width:12,height:12,borderRadius:'50%',background:'#FF3B30',border:'2px solid var(--storely-surface, #fff)'}}/>}
         </button>
       )}
 
@@ -490,27 +552,53 @@ export default function AIAssistant() {
       {/* فقاعة اقتراح من زر المساعد: ضغطة تفتح الشات ويجاوب المساعد مباشرة */}
       {bubble && !open && mounted && !drag && !supportTip && (()=>{
         const fs = fabStyle() as any, side = fs.left !== undefined ? 'left' : 'right'
-        const Icon = SUGGEST_ICON[bubble.icon] || Sparkles
+        const head = (
+          <span style={{display:'flex',alignItems:'center',gap:7,marginBottom:6}}>
+            <AssistantMascot variant="face" size={20} />
+            <span style={{fontSize:13,fontWeight:500,color:C.text3}}>Soul</span>
+            <span style={{fontSize:13,color:C.text3}}>الآن</span>
+          </span>
+        )
+        const close = (
+          <button className="ai-ic-btn" onClick={dismissBubble} aria-label="إخفاء"
+            style={{position:'absolute',top:10,insetInlineEnd:10,width:26,height:26,borderRadius:'50%',border:'none',background:'var(--storely-fill)',color:C.text3,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <X size={14} strokeWidth={2.4}/>
+          </button>
+        )
+        const box: React.CSSProperties = {position:'fixed', [side]: fs[side], bottom: (Number(fs.bottom)||24)+60, zIndex:999, width:316, maxWidth:'calc(100vw - 28px)', background:C.surface, borderRadius:20, boxShadow:'0 12px 40px rgba(0,0,0,.16), 0 0 0 .5px rgba(0,0,0,.08)', animation:'aiFadeUp .25s cubic-bezier(.22,1,.36,1)', direction:'rtl'}
+        if (bubble.type==='decisions') {
+          const items = visible.filter(d=>bubble.keys.includes(d.key))
+          if (!items.length) return null
+          // قرار واحد جديد: الفقاعة نفسها فيها أزراره. أكثر من قرار: فقاعة وحدة تجمعها
+          return (
+            <div className="ai-bubble" role="status" aria-live="polite" style={{...box, padding:'12px 14px 14px'}}>
+              {head}
+              {close}
+              {items.length===1
+                ? <div style={{paddingInlineEnd:28}}><DecisionCard d={items[0]} orgId={orgKey()} compact onExtraDone={onExtraDone} /></div>
+                : <>
+                    <div style={{fontSize:16,fontWeight:600,lineHeight:1.45,paddingInlineEnd:28,color:C.text}}>{`لديك ${qarar(items.length)} ${waits(items.length)}`}</div>
+                    <div style={{fontSize:14,color:C.text3,lineHeight:1.55,marginTop:2}}>{items.slice(0,3).map(d=>d.title).join('، ')}{items.length>3?'، وغيرها':''}</div>
+                    <button className="sd-a sd-pri" style={{marginTop:10}} onClick={()=>openDecisions()}>عرض القرارات</button>
+                  </>}
+            </div>
+          )
+        }
+        const b = bubble.s
+        const Icon = SUGGEST_ICON[b.icon] || Sparkles
         return (
           // مثل إشعارات الآيفون: اسم المساعد بالأعلى، والعنوان، وسطر يوضّح وش يصير لو ضغط
-          <div className="ai-bubble" role="status" aria-live="polite" style={{position:'fixed', [side]: fs[side], bottom: (Number(fs.bottom)||24)+60, zIndex:999, width:300, maxWidth:'calc(100vw - 28px)', background:C.surface, borderRadius:20, boxShadow:'0 12px 40px rgba(0,0,0,.16), 0 0 0 .5px rgba(0,0,0,.08)', animation:'aiFadeUp .25s cubic-bezier(.22,1,.36,1)', direction:'rtl'}}>
-            <button onClick={()=>openBubble(bubble)} aria-label={`${bubble.label}${bubble.count ? ` (${bubble.count})` : ''} — اضغط لأعرض لك التفاصيل`}
+          <div className="ai-bubble" role="status" aria-live="polite" style={box}>
+            <button onClick={()=>openBubble(b)} aria-label={`${b.label}${b.count ? ` (${b.count})` : ''} — اضغط لأعرض لك التفاصيل`}
               style={{display:'block',width:'100%',padding:'12px 14px 13px',paddingInlineEnd:44,background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',textAlign:'start',color:C.text}}>
-              <span style={{display:'flex',alignItems:'center',gap:7,marginBottom:6}}>
-                <AssistantMascot variant="face" size={20} />
-                <span style={{fontSize:13,fontWeight:500,color:C.text3}}>Soul</span>
-                <span style={{fontSize:13,color:C.text3}}>الآن</span>
-              </span>
+              {head}
               <span style={{display:'flex',alignItems:'center',gap:6,fontSize:16,fontWeight:600,lineHeight:1.45}}>
-                <Icon size={16} strokeWidth={2.2} style={{color:bubble.urgent?'var(--ai-orange)':C.primary,flexShrink:0}}/>
-                {bubble.label}{bubble.count ? ` (${bubble.count})` : ''}
+                <Icon size={16} strokeWidth={2.2} style={{color:b.urgent?'var(--ai-orange)':C.primary,flexShrink:0}}/>
+                {b.label}{b.count ? ` (${b.count})` : ''}
               </span>
               <span style={{display:'block',fontSize:14,color:C.text3,marginTop:2}}>اضغط لأعرض لك التفاصيل</span>
             </button>
-            <button className="ai-ic-btn" onClick={()=>dismissBubble(bubble)} aria-label="إخفاء الاقتراح"
-              style={{position:'absolute',top:10,insetInlineEnd:10,width:26,height:26,borderRadius:'50%',border:'none',background:'var(--storely-fill)',color:C.text3,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <X size={14} strokeWidth={2.4}/>
-            </button>
+            {close}
           </div>
         )
       })()}
@@ -599,7 +687,8 @@ export default function AIAssistant() {
           )}
 
           {/* Messages */}
-              <div style={{flex:1,overflowY:'auto',padding:'14px 14px 10px',display:'flex',flexDirection:'column',gap:8,background:C.surface}}>
+              <div className="ai-msgs" style={{flex:1,overflowY:'auto',padding:'14px 14px 10px',display:'flex',flexDirection:'column',gap:8,background:C.surface}}>
+                {msgs.length===0 && visible.length>0 && <SoulDecisions items={visible} orgId={orgKey()} highlight={highlight} onExtraDone={onExtraDone} />}
                 {msgs.map((m,i)=>(
                   <React.Fragment key={i}>
                     {/* أول المحادثة: الشخصية ترفع إصبعها وعندها شي تقوله */}
@@ -609,6 +698,8 @@ export default function AIAssistant() {
                       </div>
                     )}
                     <MsgBubble msg={m}/>
+                    {/* قرارات تنتظرك: تحت الترحيب وفوق «مقترح لك الآن» */}
+                    {i===0 && visible.length>0 && <SoulDecisions items={visible} orgId={orgKey()} highlight={highlight} onExtraDone={onExtraDone} />}
                     {m.kind==='suggest' && !!m.sugs?.length && (
                       // قائمة مثل إعدادات الآيفون: أيقونة بدائرة ملوّنة، العنوان، العدد، وسهم
                       <div role="list" aria-label="مقترح لك الآن" style={{width:'100%',background:'var(--storely-background)',borderRadius:16,overflow:'hidden',margin:'2px 0 4px'}}>

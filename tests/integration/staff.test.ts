@@ -464,6 +464,59 @@ describe.skipIf(!enabled)('integration (staging) — staff', async () => {
         expect(mids).not.toContain('returns')
         expect(mids).not.toContain('subscription')
       } finally { auth.current = ownerAuth }
+
+      // قرارات Soul: كل مستخدم تطلع له بطاقات القرارات اللي يقدر ياخذها بس — العجز للمالك، والسلفة والإجازة للمالك
+      // أو مدير عنده الموارد البشرية بفرعه. والعجز ما عاد سؤالاً بالاقتراحات
+      const { editClosing } = await import('@/lib/cashierClosingEdit')
+      const one = (await db.from('cashier_closings').select('id,total_sales').eq('org_id', orgId).eq('status', 'balanced').order('created_at', { ascending: false }).limit(1).single()).data as any
+      const sales = Number(one.total_sales)
+      const made = await editClosing(db as any, orgId, one.id, { total_sales: sales + 50, deficit_reason: 'اختبار قرار العجز' }, 'اختبار')   // مبيعات أكثر بنفس الكاش = عجز 50
+      expect(made).toMatchObject({ ok: true })
+      const { data: st } = await db.from('staff_members').insert({ org_id: orgId, branch_id: branchA, name: 'موظف قرارات', phone: uniqPhone(), pin: 'x', is_active: true, role: 'staff' } as any).select('id').single()
+      const staffId = (st as any).id
+      const { data: adv } = await db.from('staff_payroll_adjustments').insert({ org_id: orgId, staff_id: staffId, type: 'advance', amount: 300, reason: 'اختبار', status: 'pending', requested_by: 'staff' } as any).select('id').single()
+      const { data: lv } = await db.from('staff_leave_requests').insert({ org_id: orgId, staff_id: staffId, start_date: '2030-01-05', end_date: '2030-01-06', days_count: 2, reason: 'اختبار', status: 'pending' } as any).select('id').single()
+      const { data: ex } = await db.from('attendance_permission_requests').insert({ org_id: orgId, branch_id: branchA, staff_id: staffId, staff_name: 'موظف قرارات', reason: 'اختبار', token: crypto.randomUUID() } as any).select('id').single()
+      const { data: xd } = await db.from('staff_extra_days').insert({ org_id: orgId, staff_id: staffId, work_date: '2030-01-03', reason: 'weekly', status: 'pending' } as any).select('id').single()
+      const due = new Date(Date.now() + 3 * 3600e3 + 2 * 86400e3).toISOString().slice(0, 10)
+      const { data: pay, error: payErr } = await db.from('purchases').insert({ org_id: orgId, branch_id: branchA, category: 'أخرى', name: 'اختبار مستحق', amount: 100, supplier: 'مورد اختبار', payment_status: 'unpaid', due_date: due } as any).select('id').single()
+      expect(payErr).toBeNull()
+      const keysFor = async (who: any) => {
+        auth.current = who
+        const r = await call(sugg.GET, 'GET', `/api/ai-assistant/suggestions?org_id=${orgId}`)
+        expect(r.status).toBe(200)
+        return { keys: (r.json.decisions as any[]).map(d => d.key), sugIds: (r.json.suggestions as any[]).map(s => s.id), decisions: r.json.decisions as any[] }
+      }
+      try {
+        const o = await keysFor(ownerAuth)
+        expect(o.keys).toEqual(expect.arrayContaining([`deficit:${one.id}`, `advance:${(adv as any).id}`, `leave:${(lv as any).id}`, `excuse:${(ex as any).id}`, `extra_day:${(xd as any).id}`, `payable:${(pay as any).id}`]))
+        expect(o.decisions.find(d => d.key === `payable:${(pay as any).id}`)).toMatchObject({ title: 'فاتورة مورد اختبار مستحقة', ids: [(pay as any).id] })
+        expect(o.sugIds).not.toContain('deficit')
+        expect(o.decisions.find(d => d.key === `advance:${(adv as any).id}`)).toMatchObject({ title: 'طلب سلفة 300 ⃁ من موظف قرارات' })
+        // مدير عنده التقارير بس: لا عجز (للمالك) ولا طلبات الموظفين (للموارد البشرية)
+        const rep = await keysFor({ userId, orgId, role: 'manager', branchId: branchA, permissions: { reports: true } })
+        expect(rep.keys.some((k: string) => /^(deficit|advance|leave|excuse):/.test(k))).toBe(false)
+        // مدير عنده الحضور بس: الاستئذان، بدون السلفة والإجازة
+        const att = await keysFor({ userId, orgId, role: 'manager', branchId: branchA, permissions: { attendance: true } })
+        expect(att.keys).toContain(`excuse:${(ex as any).id}`)
+        expect(att.keys.some((k: string) => /^(advance|leave):/.test(k))).toBe(false)
+        // مدير عنده الموارد البشرية بنفس الفرع: السلفة والإجازة، بدون العجز
+        const hr = await keysFor({ userId, orgId, role: 'manager', branchId: branchA, permissions: { hr: true } })
+        expect(hr.keys).toEqual(expect.arrayContaining([`advance:${(adv as any).id}`, `leave:${(lv as any).id}`]))
+        expect(hr.keys.some((k: string) => /^(deficit|extra_day|payable):/.test(k))).toBe(false)
+        // مدير عنده المشتريات: الفاتورة المستحقة بفرعه
+        const pur = await keysFor({ userId, orgId, role: 'manager', branchId: branchA, permissions: { purchases: true } })
+        expect(pur.keys).toContain(`payable:${(pay as any).id}`)
+      } finally {
+        auth.current = ownerAuth
+        await editClosing(db as any, orgId, one.id, { total_sales: sales }, 'اختبار')
+        await db.from('staff_leave_requests').delete().eq('id', (lv as any).id)
+        await db.from('attendance_permission_requests').delete().eq('id', (ex as any).id)
+        await db.from('staff_extra_days').delete().eq('id', (xd as any).id)
+        if (pay) await db.from('purchases').delete().eq('id', (pay as any).id)
+        await db.from('staff_payroll_adjustments').delete().eq('id', (adv as any).id)
+        await db.from('staff_members').delete().eq('id', staffId)
+      }
     })
   })
 

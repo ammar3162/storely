@@ -7,6 +7,8 @@ import { formatPhone, sendWhatsAppMessage, delay } from '@/lib/whatsapp'
 import { orgFeatures } from '@/lib/planFeatures'
 import { managerMay } from '@/lib/managerPerms'
 import { buildBranchReports, branchBlock, reportMessage, fullView } from '@/lib/morningReport'
+import { loadDecisions } from '@/lib/assistantDecisions'
+import { soulLink } from '@/lib/soulLink'
 
 // التقرير الصباحي (lib/morningReport): المالك يوصله كل الفروع برسالة وحدة، ورقم كل فرع ومدير الفرع يوصلهم تقرير فرعهم
 async function sendForOrg(supabase: any, org: any) {
@@ -44,7 +46,9 @@ async function sendForOrg(supabase: any, org: any) {
   const ownerOk = (owner as any)?.whatsapp_consent === true
   if (ownerOk) {
     const blocks = reports.map(r => ({ name: r.branchName, text: branchBlock(r, viewOf(r.branchId)) })).filter(b => b.text) as { name: string; text: string }[]
-    add(org.whatsapp_number, reportMessage(org.name, blocks, multi))
+    // قرارات تنتظر المالك (كل الفروع): سطر برابط يفتح Soul عليها — التوريد ما ينحسب لأنه ينرسل تلقائياً
+    const pending = await loadDecisions(supabase as any, { orgId: org.id, branchId: null, user: { role: 'owner' }, features, kinds: ['deficit', 'excuse', 'leave', 'advance', 'extra_day', 'payable'] }).catch(() => [])
+    add(org.whatsapp_number, reportMessage(org.name, blocks, multi, Date.now(), { count: pending.length, link: soulLink() }))
   }
   for (const r of reports) {
     const branch = (branches as any[]).find(b => b.id === r.branchId)

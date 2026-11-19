@@ -14,7 +14,6 @@ export type SuggestionFacts = {
   owner: boolean
   closingsToday?: number
   closingsYesterday?: number
-  deficitPending?: number
   returnsToday?: number
   staffCount?: number
   checkedInToday?: number
@@ -40,7 +39,7 @@ export function buildSuggestions(f: SuggestionFacts, max = 5): Suggestion[] {
     add({ id: 'subscription', icon: 'subscription', urgent: true, label: f.subscriptionDaysLeft === 0 ? 'اشتراكك ينتهي اليوم' : `اشتراكك ينتهي خلال ${days(f.subscriptionDaysLeft)}`, prompt: 'متى ينتهي اشتراكي؟ وكيف أجدده؟' }, 95)
 
   if (has('cashier_closings')) {
-    if (f.deficitPending) add({ id: 'deficit', icon: 'deficit', urgent: true, label: 'عجز بانتظار قرارك', count: f.deficitPending, prompt: 'اعرض العجز في إقفالات الكاشير الذي ينتظر قراري، مع مبالغه وأسبابه' }, 100)
+    // العجز اللي ينتظر قرار صار بطاقة قرار في Soul (lib/assistantDecisions) بأزرار الخصم والرفض، فما يتكرر هنا كسؤال
     if (f.closingsToday) add({ id: 'closings', icon: 'closing', label: 'إقفالات اليوم', count: f.closingsToday, prompt: 'اعرض ملخص إقفالات الكاشير اليوم: المبيعات والشبكة والكاش والعجز أو الزيادة' }, evening ? 90 : 62)
     else if (f.hour >= 22 || f.hour < 3) add({ id: 'closings-missing', icon: 'closing', urgent: true, label: 'لم يُسجَّل إقفال اليوم', prompt: 'هل سُجّل إقفال الكاشير اليوم؟ وما آخر إقفال مسجّل؟' }, 86)
     else if (morning && f.closingsYesterday) add({ id: 'closings-yesterday', icon: 'closing', label: 'إقفالات أمس', count: f.closingsYesterday, prompt: 'اعرض ملخص إقفالات الكاشير أمس: المبيعات والشبكة والكاش والعجز أو الزيادة' }, 72)
@@ -94,7 +93,6 @@ export async function loadSuggestionFacts(db: SupabaseClient, o: { orgId: string
   const tasks: Record<string, PromiseLike<any>> = {}
   if (has('cashier_closings')) {
     tasks.closings = br(db.from('cashier_closings').select('closing_date,returns').eq('org_id', o.orgId).in('closing_date', [businessToday, businessYesterday]) )
-    tasks.deficit = br(db.from('cashier_closings').select('id', { count: 'exact', head: true }).eq('org_id', o.orgId).eq('status', 'deficit').eq('deficit_decision', 'pending') )
   }
   if (has('attendance')) {
     tasks.staff = br(db.from('staff_members').select('id', { count: 'exact', head: true }).eq('org_id', o.orgId).eq('is_active', true) )
@@ -119,7 +117,6 @@ export async function loadSuggestionFacts(db: SupabaseClient, o: { orgId: string
     closingsToday: todays.length,
     closingsYesterday: closings.filter(c => c.closing_date === businessYesterday).length,
     returnsToday: todays.reduce((t, c) => t + closingReturns(c).length, 0),
-    deficitPending: res.deficit?.count || 0,
     staffCount: res.staff?.count || 0,
     checkedInToday: new Set(checkins.map(c => c.staff_id)).size,
     lateToday: new Set(checkins.filter(c => Number(c.late_minutes) > 0).map(c => c.staff_id)).size,
