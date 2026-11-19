@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
 import { PlayCircle, X } from 'lucide-react'
 import { helpKeyFor } from '@/lib/helpVideos'
@@ -30,7 +31,9 @@ export default function HelpVideoButton({ variant = 'icon' }: { variant?: 'icon'
           <PlayCircle size={17} /> شرح الصفحة
         </button>
       )}
-      {open && (
+      {/* النافذة تنرسم على مستوى الصفحة (portal): الزر داخل الشريط العلوي، وتغبيش الشريط (backdrop-filter) كان يحبسها
+          بارتفاعه (55 بكسل) فتطلع فوق الصفحة بدون تعتيم والصفحة تتحرك من تحتها */}
+      {open && typeof document !== 'undefined' && createPortal(
         <div role="dialog" aria-modal="true" aria-label={v.title || label} onClick={() => setOpen(false)}
           style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(2,6,23,.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 900, background: '#000', borderRadius:20, overflow: 'hidden', position: 'relative' }}>
@@ -44,7 +47,8 @@ export default function HelpVideoButton({ variant = 'icon' }: { variant?: 'icon'
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   )
