@@ -464,7 +464,7 @@ export default function AIAssistant() {
   const onExtraDone = (key: string) => { setTimeout(()=>setDecisions(p=>p.filter(d=>d.key!==key)), 1500) }
   const dragRef = useRef<{ sx:number; sy:number; ox:number; oy:number; moved:boolean }|null>(null)
   const fabLimits = () => {
-    const mobile = window.innerWidth < 768, size = mobile ? 48 : 54   // زر الشخصية: 48×45 بالجوال و54×50 بالكمبيوتر (نحسب بالأكبر) — صغّرناه بطلب المالك 2026-11-18
+    const mobile = window.innerWidth < 768, size = mobile ? 51 : 57   // زر الشخصية: 51×45 بالجوال و57×50 بالكمبيوتر (نحسب بالأكبر) — بنفس ارتفاع التصغير 2026-11-18، والعرض حسب نسبة الشكل الجديد
     return { size, edge: mobile ? 14 : 24, minBottom: mobile ? 76 : 16, maxBottom: window.innerHeight - size - (mobile ? 72 : 80) }
   }
   const onFabDown = (e: React.PointerEvent<HTMLButtonElement>) => {
@@ -506,7 +506,7 @@ export default function AIAssistant() {
         @keyframes spin{to{transform:rotate(360deg)}}
         .ai-fab{display:flex;transition:transform .15s}
         /* على الكمبيوتر: النافذة بالزاوية السفلية بجهة زر المساعد (الزر مكانه يحدده العميل بالسحب) */
-        @media(min-width:768px){.ai-fab{width:54px!important;height:50px!important}.ai-win{bottom:86px!important;left:24px!important;right:auto!important;width:400px;margin:0!important}.ai-win.ai-win-r{left:auto!important;right:24px!important}}
+        @media(min-width:768px){.ai-fab{width:57px!important;height:50px!important}.ai-win{bottom:86px!important;left:24px!important;right:auto!important;width:400px;margin:0!important}.ai-win.ai-win-r{left:auto!important;right:24px!important}}
         .ai-fab .ai-m{width:100%!important;height:100%!important}
         .ai-fab:hover{transform:translateY(-2px)}
         .ai-fab:active{transform:scale(.96)}
@@ -539,7 +539,7 @@ export default function AIAssistant() {
       {!open && mounted && (
         <button className="ai-fab" onPointerDown={onFabDown} onPointerMove={onFabMove} onPointerUp={onFabUp} onPointerCancel={()=>{ dragRef.current=null; setDrag(null) }}
           onKeyDown={e=>{ if(e.key==='Enter'||e.key===' ') { e.preventDefault(); setOpen(true) } }}
-          aria-label={pendingCount ? `Soul، لديك ${qarar(pendingCount)} ${waits(pendingCount)}` : urgentSug ? `Soul — ${urgentSug.label}` : 'Soul، مساعدك الذكي'} title={pendingCount ? `Soul: ${qarar(pendingCount)} ${waits(pendingCount)}` : urgentSug ? `Soul: ${urgentSug.label}` : 'Soul — اسحبه لتغيير مكانه'} style={{position:'fixed',...fabStyle(),touchAction:'none',userSelect:'none' as const,zIndex:999,width:48,height:45,padding:0,background:'transparent',border:'none',filter:'drop-shadow(0 5px 10px rgba(32,54,64,.26)) drop-shadow(0 1px 2px rgba(0,0,0,.12))',cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          aria-label={pendingCount ? `Soul، لديك ${qarar(pendingCount)} ${waits(pendingCount)}` : urgentSug ? `Soul — ${urgentSug.label}` : 'Soul، مساعدك الذكي'} title={pendingCount ? `Soul: ${qarar(pendingCount)} ${waits(pendingCount)}` : urgentSug ? `Soul: ${urgentSug.label}` : 'Soul — اسحبه لتغيير مكانه'} style={{position:'fixed',...fabStyle(),touchAction:'none',userSelect:'none' as const,zIndex:999,width:51,height:45,padding:0,background:'transparent',border:'none',filter:'drop-shadow(0 5px 10px rgba(32,54,64,.26)) drop-shadow(0 1px 2px rgba(0,0,0,.12))',cursor:'pointer',alignItems:'center',justifyContent:'center',flexShrink:0}}>
           {/* ينط بس لما يوصل قرار جديد (مو كل دخول) */}
           <AssistantMascot key={hopTick} size={45} motion={hopTick ? 'alert' : 'idle'} />
           {pendingCount > 0

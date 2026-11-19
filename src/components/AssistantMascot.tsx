@@ -1,19 +1,21 @@
-// شخصية المساعد «Soul» (اختارها المالك وسمّاها 2026-11-17): غيمة رمادية بعيون وشنب وياقة وكرفتة، تمسك قائمة مهام وترفع إصبعها — بدل أيقونة الروبوت.
+// شخصية المساعد «Soul» (اختارها المالك وسمّاها 2026-11-17، وشكلها الجديد من ورقة الشخصية 2026-11-19):
+// غيمة رمادية بعيون وابتسامة وقفازات بيضاء، تمسك لوحة قرارات وتأشّر بإصبعها — بدل أيقونة الروبوت.
 // صورة ثلاثية الأبعاد بخلفية شفافة (public/assistant)، وتنعرض بثلاث هيئات:
 //   body: الشخصية كاملة (زر المساعد العائم)
-//   face: الوجه والياقة داخل دائرة (رأس الشات والإشعار)، عشان تنقرأ بالمقاسات الصغيرة
+//   face: الوجه داخل دائرة (رأس الشات والإشعار)، عشان ينقرأ بالمقاسات الصغيرة
 //   hero: الشخصية مع علامات الانتباه جنب إصبعها (أول المحادثة)؛ العلامات مرسومة بالكود فتاخذ لون النص بالوضعين الفاتح والداكن
 // الحركة (طلب المالك 2026-11-18): تتنفس بهدوء وترمش، وتنط ثلاث مرات لما يكون فيه شي عاجل.
 // الرمشة طبقة صغيرة فوق العيون (body-blink / face-blink بنفس القص بالضبط)، وكل الحركة تتوقف لمن مفعّل «تقليل الحركة».
 
-const BODY_W = 290, BODY_H = 270           // مقاس body.webp
-const HERO_W = BODY_W + 18                 // مساحة إضافية يمين الصورة للعلامات
-// علامات «!» بإحداثيات body.webp (مأخوذة من رسمة المالك نفسها)
+const BODY_W = 307, BODY_H = 270           // مقاس body.webp
+const HERO_W = BODY_W + 35                 // مساحة إضافية يمين الصورة للعلامات
+// علامات الانتباه بإحداثيات body.webp (مأخوذة من ورقة الشخصية نفسها)
 const MARKS = [
-  { x1: 269.2, y1: 70.5, x2: 273.1, y2: 55.2, w: 8.3 },
-  { x1: 281.9, y1: 76.8, x2: 293.5, y2: 65.4, w: 8.3 },
-  { x1: 288.8, y1: 88.2, x2: 302.3, y2: 84.6, w: 7.9 },
+  { x1: 282.8, y1: 49.5, x2: 291, y2: 26.8, w: 14.3 },
+  { x1: 300.1, y1: 58.5, x2: 319.6, y2: 40.4, w: 15.1 },
+  { x1: 308.1, y1: 75.1, x2: 332.4, y2: 68.5, w: 13.3 },
 ]
+const FACE_BG = '#E1E1E9'                  // لون الغيمة حول الوجه (احتياط خلف صورة الدائرة)
 
 /** ستايل الحركة — يندمج مرة وحدة في صفحة المساعد */
 export const MASCOT_CSS = `
@@ -47,7 +49,7 @@ export default function AssistantMascot({ variant = 'body', size = 40, motion = 
   const live = motion !== 'none'
 
   if (variant === 'face') return (
-    <span aria-hidden className="ai-m" style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', background: '#C9CAD3' }}>
+    <span aria-hidden className="ai-m" style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', background: FACE_BG }}>
       <span className="ai-m-in">
         <img src="/assistant/face.webp" width={size} height={size} alt="" draggable={false} />
         {live && <img src="/assistant/face-blink.webp" className="ai-m-blink on" width={size} height={size} alt="" draggable={false} />}
