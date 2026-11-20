@@ -40,6 +40,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         <MobileShell m={m} banners={banners}>{content}</MobileShell>
         <DesktopShell m={m} banners={banners}>{content}</DesktopShell>
       </div>
+      {/* رايح لصفحة ثانية وتأخرت: خط تحميل رفيع بأعلى الشاشة (برا الشريط العلوي لأن ضبابيته تحبس العناصر الثابتة) */}
+      {m.goingTo && <div className="sh-nav-progress" aria-hidden/>}
       <AIAssistant/>
     </>
   )

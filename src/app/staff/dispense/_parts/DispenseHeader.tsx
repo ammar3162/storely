@@ -1,4 +1,5 @@
 'use client'
+import { useEffect } from 'react'
 import { Globe, LogOut, ChevronRight } from 'lucide-react'
 import { LANGUAGES, T } from './strings'
 import type { StaffDispense, PageVals } from './useStaffDispense'
@@ -6,6 +7,8 @@ import type { StaffDispense, PageVals } from './useStaffDispense'
 export default function DispenseHeader({ m, v }: { m: StaffDispense; v: PageVals }) {
   const { lang, setLang, showLangMenu, setShowLangMenu, translating, router, fetchTranslation, logout, tab } = m
   const { session, isRTL, tabs } = v
+  // الرئيسية تتجهّز بالخلفية: زر الرجوع يفتحها على طول
+  useEffect(() => { router.prefetch('/staff/choose') }, [router])
   return (
     <>
       {/* Header */}

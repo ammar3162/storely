@@ -1,10 +1,11 @@
 'use client'
 import { LogOut, Moon, Sun, Languages } from 'lucide-react'
 import { C, navTone, Icon } from './nav'
+import ShellLink from './ShellLink'
 import type { DashboardShell } from './useDashboardShell'
 
 export default function MoreMenuSheet({ m }: { m: DashboardShell }) {
-  const { t, orgName, branchName, userName, userInit, lowCount, unread, branches, showMore, setShowMore, theme, router, isActive, visibleGroups, toggleTheme, openBranchSelector, signOut } = m
+  const { t, orgName, branchName, userName, userInit, lowCount, unread, branches, showMore, setShowMore, theme, isActive, startNav, visibleGroups, toggleTheme, openBranchSelector, signOut } = m
   return (
     <>
       {/* More — قائمة الجوال */}
@@ -27,13 +28,21 @@ export default function MoreMenuSheet({ m }: { m: DashboardShell }) {
                   const active=isActive(item.href)
                   const external=item.href.startsWith('http')
                   const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
+                  const body = <>
+                    <Icon d={item.icon} size={18} width={1.75}/>
+                    <span style={{flex:1}}>{t(item.labelKey)}</span>
+                    {badge>0&&<span className="sh-count">{badge}</span>}
+                  </>
+                  const cls = `sh-nav${active?' on':''}`
+                  // الدعم الفني يفتح Soul، والروابط الخارجية بتبويب جديد، وصفحات النظام روابط تتجهّز أول ما تنفتح القائمة
+                  if (item.href==='#support') return (
+                    <button key={item.href} className={cls} style={navTone(item.href)} onClick={()=>{ window.dispatchEvent(new Event('storely:support')); setShowMore(false) }}>{body}</button>
+                  )
+                  if (external) return (
+                    <a key={item.href} href={item.href} target="_blank" rel="noopener noreferrer" className={cls} style={navTone(item.href)} onClick={()=>setShowMore(false)}>{body}</a>
+                  )
                   return (
-                    <button key={item.href} className={`sh-nav${active?' on':''}`} style={navTone(item.href)}
-                      onClick={()=>{ if(item.href==='#support') window.dispatchEvent(new Event('storely:support')); else if(external) window.open(item.href,'_blank'); else router.push(item.href); setShowMore(false) }}>
-                      <Icon d={item.icon} size={18} width={1.75}/>
-                      <span style={{flex:1}}>{t(item.labelKey)}</span>
-                      {badge>0&&<span className="sh-count">{badge}</span>}
-                    </button>
+                    <ShellLink key={item.href} href={item.href} className={cls} style={navTone(item.href)} aria-current={active?'page':undefined} onGo={startNav} onClick={()=>setShowMore(false)}>{body}</ShellLink>
                   )
                 })}
               </div>

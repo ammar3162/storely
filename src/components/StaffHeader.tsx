@@ -1,5 +1,5 @@
 'use client'
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
 import { useStaffLang, type Dict } from '@/lib/staffLang'
@@ -18,6 +18,8 @@ export default function StaffHeader({ title, subtitle, end, rtl = true, backTo =
   const router = useRouter()
   const { t } = useStaffLang(BACK)
   const back = backLabel || t('b')
+  // صفحة الرجوع تتجهّز بالخلفية: زر الرجوع يفتحها على طول بدل ما ينتظرها توصل
+  useEffect(() => { router.prefetch(backTo) }, [router, backTo])
   return (
     // فاتح مثل لوحة المالك: أبيض بخط سفلي، والنص أسود واضح
     <div style={{ background:'#ffffff', position:'sticky', top:0, zIndex:100, borderBottom:'1px solid var(--storely-border)', direction: rtl ? 'rtl' : 'ltr' }}>

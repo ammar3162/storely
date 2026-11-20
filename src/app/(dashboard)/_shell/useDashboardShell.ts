@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { api } from '@/lib/api-client'
 import { getMeResult, refreshMe } from '@/lib/session'
+import { goingTo as navGoingTo, isNavActive, type NavTarget } from '@/lib/navActive'
 import { getAddonsMarket } from '@/lib/addonsCache'
 import { DEVICE_UNVERIFIED_REASON, VERIFY_DEVICE_PATH } from '@/lib/deviceMessages'
 import { useLiveRefresh } from '@/lib/useLiveRefresh'
@@ -400,7 +401,17 @@ export function useDashboardShell() {
     if(userRole==='manager' && managerPermissions && pathname && !managerPageAllowed(pathname, managerPermissions)) router.replace('/dashboard')
   },[userRole, managerPermissions, pathname])
 
-  const isActive=(href:string)=>pathname===href||(href!=='/dashboard'&&pathname.startsWith(href))
+  // الزر اللي انضغط يتلوّن لحظة الضغط، بدل ما ينتظر الصفحة الجديدة توصل (كان يبان إن الضغطة ما انحسبت فيضغط مرة ثانية).
+  // goingTo = الصفحة اللي رايح لها، وينتهي لحاله أول ما يتغير المسار. ولو ما تم التنقل (رجّعه النظام لنفس الصفحة) يرجع بعد ثواني
+  const [navTo, setNavTo] = useState<NavTarget>(null)
+  const goingTo = navGoingTo(navTo, pathname)
+  useEffect(()=>{
+    if(!navTo) return
+    const t = setTimeout(()=>setNavTo(null), 8000)
+    return ()=>clearTimeout(t)
+  },[navTo])
+  const startNav = (href:string) => { if(href!==pathname) setNavTo({ href, from:pathname }) }
+  const isActive=(href:string)=>isNavActive(href, pathname, goingTo)
 
   // Bottom nav items
   const BOT_NAV = [
@@ -433,7 +444,7 @@ export function useDashboardShell() {
   const visibleGroups = NAV_GROUPS.map(g=>({...g, items:g.items.filter(i=>navAllowed(i.href))})).filter(g=>g.items.length)
   async function signOut(){ await sb.auth.signOut(); _cache=null; sessionStorage.clear(); window.location.href='/login' }
 
-  return { showIosInstall, snoozeNotif, pageLock, branchFeat, trialLocked, trialEnds, t, lang, setLang, orgName, setOrgName, subDaysLeft, setSubDaysLeft, orgLogo, setOrgLogo, hasHrAddon, setHasHrAddon, hasProfitAddon, setHasProfitAddon, hasAiAddon, setHasAiAddon, hasExtraBranchAddon, setHasExtraBranchAddon, inApp, setInApp, branchName, setBranchName, userName, setUserName, userInit, setUserInit, lowCount, setLowCount, unread, setUnread, branches, setBranches, orgPlan, setOrgPlan, orgFeat, setOrgFeat, orgMaxBranches, setOrgMaxBranches, userRole, setUserRole, managerPermissions, setManagerPermissions, showMore, setShowMore, showBranch, setShowBranch, branchLowCounts, setBranchLowCounts, ready, setReady, showConsent, setShowConsent, showWaInvite, setShowWaInvite, consentChecked, setConsentChecked, consentSaving, setConsentSaving, showMaintenance, setShowMaintenance, showEnableNotif, setShowEnableNotif, enablingPush, setEnablingPush, maintenanceMsg, setMaintenanceMsg, showTermsConsent, setShowTermsConsent, termsChecked, setTermsChecked, termsSaving, setTermsSaving, profileId, setProfileId, theme, setTheme, confirmStopBranch, setConfirmStopBranch, stoppingBranch, setStoppingBranch, loadAddons, isDesk, router, pathname, navRef, sb, load, isActive, BOT_NAV, visibleGroups, toggleTheme, acceptConsent, confirmWaFirstContact, acceptTermsConsent, enablePush, loadBranchLowCounts, openBranchSelector, selectBranch, stopBranch, navVisible, navAllowed, signOut }
+  return { showIosInstall, snoozeNotif, pageLock, branchFeat, trialLocked, trialEnds, t, lang, setLang, orgName, setOrgName, subDaysLeft, setSubDaysLeft, orgLogo, setOrgLogo, hasHrAddon, setHasHrAddon, hasProfitAddon, setHasProfitAddon, hasAiAddon, setHasAiAddon, hasExtraBranchAddon, setHasExtraBranchAddon, inApp, setInApp, branchName, setBranchName, userName, setUserName, userInit, setUserInit, lowCount, setLowCount, unread, setUnread, branches, setBranches, orgPlan, setOrgPlan, orgFeat, setOrgFeat, orgMaxBranches, setOrgMaxBranches, userRole, setUserRole, managerPermissions, setManagerPermissions, showMore, setShowMore, showBranch, setShowBranch, branchLowCounts, setBranchLowCounts, ready, setReady, showConsent, setShowConsent, showWaInvite, setShowWaInvite, consentChecked, setConsentChecked, consentSaving, setConsentSaving, showMaintenance, setShowMaintenance, showEnableNotif, setShowEnableNotif, enablingPush, setEnablingPush, maintenanceMsg, setMaintenanceMsg, showTermsConsent, setShowTermsConsent, termsChecked, setTermsChecked, termsSaving, setTermsSaving, profileId, setProfileId, theme, setTheme, confirmStopBranch, setConfirmStopBranch, stoppingBranch, setStoppingBranch, loadAddons, isDesk, router, pathname, navRef, sb, load, isActive, BOT_NAV, visibleGroups, toggleTheme, goingTo, startNav, acceptConsent, confirmWaFirstContact, acceptTermsConsent, enablePush, loadBranchLowCounts, openBranchSelector, selectBranch, stopBranch, navVisible, navAllowed, signOut }
 }
 
 export type DashboardShell = ReturnType<typeof useDashboardShell>
