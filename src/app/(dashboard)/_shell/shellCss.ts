@@ -52,7 +52,7 @@ export const SHELL_CSS = `
   .sh-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;padding:20px;font-family:var(--storely-font);direction:rtl}
   .sh-modal{background:${C.surface};border-radius:22px;width:100%;max-height:calc(100dvh - 40px);overflow-y:auto;padding:24px;box-shadow:var(--storely-panel-shadow)}
   .sh-sheet-wrap{align-items:flex-end;padding:0}
-  .sh-sheet{background:${C.surface};border-radius:22px 22px 0 0;width:100%;max-width:560px;padding:12px 16px calc(24px + env(safe-area-inset-bottom));max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;animation:shUp .22s ease}
+  .sh-sheet{background:${C.surface};border-radius:22px 22px 0 0;width:100%;max-width:560px;padding:12px 16px calc(24px + env(safe-area-inset-bottom));max-height:90dvh;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;animation:shUp .22s ease}
   @keyframes shUp{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
 
   /* الجوال: شريط علوي وسفلي شفافان بالضبابية مثل الآيفون */

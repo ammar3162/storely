@@ -15,6 +15,7 @@ import { computeClosing } from '@/lib/cashierClosingCalc'
 import { deliveryFromInput, rememberApps } from '@/lib/deliveryApps'
 import { fetchExternal } from '@/lib/fetchExternal'
 import { returnsFromInput, previousReturns, type ClosingReturn } from '@/lib/closingReturns'
+import { soulLink } from '@/lib/soulLink'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -219,7 +220,9 @@ export async function POST(req: Request) {
             `💵 الكاش الفعلي: *${cash.toFixed(2)} ر.س*` +
             purchasesLine +
             returnsLine +
-            `\n\n${statusLine}`
+            `\n\n${statusLine}` +
+            // العجز ينتظر قرار المالك: الرابط يفتح Soul على بطاقته (خصم من الراتب أو رفض)
+            (status === 'deficit' && (data as any)?.id ? `\n\nقرّر في الخصم من Soul: ${soulLink('deficit', (data as any).id)}` : '')
         }
 
         await fetchExternal('https://www.wasenderapi.com/api/send-message', {

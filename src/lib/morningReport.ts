@@ -7,6 +7,7 @@ import type { Features } from '@/lib/planFeatures'
 import { shiftIdForDate } from '@/lib/shiftSchedule'
 import { offReason } from '@/lib/daysOff'
 import { unitFor } from '@/lib/arabicCount'
+import { countAr } from '@/lib/soulDecisions'
 
 const DAY = 864e5
 const saudiDate = (ms: number) => new Date(ms + 3 * 3600e3).toISOString().slice(0, 10)
@@ -154,9 +155,13 @@ export function branchBlock(r: BranchReport, v: ReportView): string | null {
 }
 
 /** الرسالة كاملة: عنوان + فرع أو أكثر */
-export function reportMessage(orgName: string, blocks: { name: string; text: string }[], multiBranch: boolean, nowMs = Date.now()): string | null {
+export function reportMessage(orgName: string, blocks: { name: string; text: string }[], multiBranch: boolean, nowMs = Date.now(), decisions?: { count: number; link: string } | null): string | null {
   if (!blocks.length) return null
   const date = new Date(nowMs).toLocaleDateString('ar-SA-u-ca-gregory', { numberingSystem: 'latn', timeZone: 'Asia/Riyadh', weekday: 'long', day: 'numeric', month: 'long' })
   const body = blocks.map(b => (multiBranch ? `▬▬ *${b.name}* ▬▬\n\n` : '') + b.text).join('\n\n\n')
-  return `*التقرير الصباحي*\n${orgName} | ${date}\n\n${body}\n\n_ستورلي · storely.dev_`
+  // قرارات تنتظر المالك (عجز، طلبات الموظفين، فواتير مستحقة): رابط يفتح Soul عليها بدل التنقل بين الصفحات
+  const soul = decisions && decisions.count > 0
+    ? `\n\n*لديك ${countAr(decisions.count, ['قرار واحد', 'قراران', 'قرارات', 'قراراً'])} في Soul*\nقرّر من هنا: ${decisions.link}`
+    : ''
+  return `*التقرير الصباحي*\n${orgName} | ${date}\n\n${body}${soul}\n\n_ستورلي · storely.dev_`
 }

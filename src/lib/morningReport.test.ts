@@ -37,6 +37,10 @@ describe('morning report', () => {
     const quiet = { ...r, decisions: null, sales: null, stockOut: null, stockLow: null, purchases: null, staffNotable: false }
     expect(branchBlock(quiet, all)).toBeNull()
     expect(reportMessage('مطعم', [], false)).toBeNull()
+    // قرارات تنتظر المالك: سطر برابط Soul قبل التذييل، وبدون قرارات ما يطلع شي
+    const withSoul = reportMessage('مطعم', [{ name: 'أ', text: 'x' }], false, Date.parse('2026-11-19T05:00:00Z'), { count: 3, link: 'https://storely.dev/dashboard?soul=1' })!
+    expect(withSoul).toContain('*لديك 3 قرارات في Soul*\nقرّر من هنا: https://storely.dev/dashboard?soul=1\n\n_ستورلي')
+    expect(reportMessage('مطعم', [{ name: 'أ', text: 'x' }], false, Date.now(), { count: 0, link: 'l' })).not.toContain('Soul')
   })
   it('owner message has a header and one titled block per branch', () => {
     const m = reportMessage('مطعم الأصيل', [{ name: 'أ', text: 'x' }, { name: 'ب', text: 'y' }], true)!

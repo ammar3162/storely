@@ -43,6 +43,14 @@ input, button, select, textarea { font-family: inherit !important; }
    والرمادي الفاتح اللي تكتبه الصفحات مباشرة يصير أغمق (بالوضع العادي بس — الوضع الليلي له ألوانه) */
 :root:not([data-theme="dark"]) { color-scheme: light; }
 
+/* نافذة أو قائمة مفتوحة (OverlayScrollLock): الصفحة اللي وراها ثابتة ما تتحرك، والتمرير داخل النافذة ما ينتقل لها.
+   scrollbar-gutter يحفظ مكان شريط التمرير بالكمبيوتر عشان الصفحة ما تنزاح لما يختفي */
+html.scroll-locked, html.scroll-locked body { overflow: hidden !important; overscroll-behavior: none; }
+html.scroll-locked { scrollbar-gutter: stable; }
+/* زر Soul العائم وفقاعته يختفون وقت أي نافذة ثانية (طبقتهم 999 كانت فوق 13 نافذة)، ويرجعون أول ما تتسكّر.
+   وقت نافذة Soul نفسها الزر أصلاً مو موجود */
+html.scroll-locked .ai-fab, html.scroll-locked .ai-bubble { visibility: hidden; }
+
 /* النوافذ اللي تغطي الشاشة ترتفع فوق كيبورد الجوال (--kb من KeyboardInset)، ومحتواها يصير قابل للتمرير لو ما كفّت المساحة */
 [style*="position: fixed"][style*="inset: 0px"],
 [style*="position:fixed"][style*="inset:0"] { bottom: var(--kb, 0px) !important; transition: bottom .12s ease-out; }

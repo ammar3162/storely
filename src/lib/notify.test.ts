@@ -17,6 +17,12 @@ describe('notifyInsert — كل إشعار بالجرس يوصل كإشعار ج
     // إشعار فرع → يوصل لأجهزة هالفرع (والمالك)؛ بدون فرع → كل أجهزة المنشأة
     expect(sent).toEqual([['o1', 'عجز 50 ر.س', 'خالد', '/reports', 'b1'], ['o2', 'طلب إجازة', 'سارة', '/reports', null]])
   })
+  it('a decision request opens Soul on its card; other notifications keep their link', async () => {
+    sent.length = 0
+    await notifyInsert(fakeDb(), [{ org_id: 'o1', title: 'طلب استئذان', ref_type: 'excuse_request', ref_id: 'r1' }, { org_id: 'o1', title: 'عجز', ref_type: 'cashier_deficit', ref_id: 'c1' }, { org_id: 'o1', title: 'دعم', ref_type: 'support_ticket', ref_id: 't1' }])
+    await new Promise(r => setTimeout(r, 0))
+    expect(sent.map(x => x[3])).toEqual(['/dashboard?soul=excuse:r1', '/dashboard?soul=deficit:c1', '/notifications'])
+  })
   it('no push when the insert failed or push:false', async () => {
     sent.length = 0
     await notifyInsert(fakeDb({ message: 'x' }), { org_id: 'o1', title: 't' })

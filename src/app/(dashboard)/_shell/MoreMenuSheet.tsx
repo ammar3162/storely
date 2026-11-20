@@ -38,10 +38,11 @@ export default function MoreMenuSheet({ m }: { m: DashboardShell }) {
                 })}
               </div>
             ))}
-            <div style={{display:'flex',gap:8,marginTop:16,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
-              <button className="sh-btn" data-no-translate style={{flex:1}} onClick={()=>m.setLang(m.lang==='en'?'ar':'en')}><Languages size={16}/> {m.lang==='en'?'العربية':'English'}</button>
-              <button className="sh-btn" style={{flex:1}} onClick={toggleTheme}>{theme==='light'?<Moon size={16}/>:<Sun size={16}/>} {theme==='light'?'الوضع الداكن':'الوضع الفاتح'}</button>
-              <button className="sh-btn sh-btn-danger" style={{flex:1}} onClick={signOut}><LogOut size={16}/> تسجيل الخروج</button>
+            {/* اللغة والوضع جنب بعض، وتسجيل الخروج بسطر لحاله — الثلاثة بسطر واحد كانت أعرض من شاشة الجوال فتتحرك القائمة يمين ويسار */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:8,marginTop:16,paddingTop:16,borderTop:`1px solid ${C.border}`}}>
+              <button className="sh-btn" data-no-translate style={{minWidth:0}} onClick={()=>m.setLang(m.lang==='en'?'ar':'en')}><Languages size={16}/> {m.lang==='en'?'العربية':'English'}</button>
+              <button className="sh-btn" style={{minWidth:0}} onClick={toggleTheme}>{theme==='light'?<Moon size={16}/>:<Sun size={16}/>} {theme==='light'?'الوضع الداكن':'الوضع الفاتح'}</button>
+              <button className="sh-btn sh-btn-danger" style={{gridColumn:'1 / -1'}} onClick={signOut}><LogOut size={16}/> تسجيل الخروج</button>
             </div>
           </div>
         </div>

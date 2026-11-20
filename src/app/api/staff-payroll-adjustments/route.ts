@@ -10,6 +10,7 @@ import { verifyStaffToken, extractStaffToken } from '@/lib/staffAuth'
 import { markRefNotificationsRead } from '@/lib/requestRefs'
 import { sendWhatsAppMessage, formatPhone } from '@/lib/whatsapp'
 import { ownerWhatsapp } from '@/lib/ownerContact'
+import { soulLink } from '@/lib/soulLink'
 
 const sb = () => createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -133,7 +134,7 @@ export async function POST(req: Request) {
       const ownerWa = await ownerWhatsapp(supabase, org_id)   // رقم واتساب المنشأة اللي حدده المالك
       if (ownerWa) {
         await sendWhatsAppMessage(ownerWa!,
-          `💰 *طلب سلفة جديد*\n\n${staffName} يطلب سلفة بمبلغ *${amountNum} ر.س*${reason ? `\nالسبب: ${reason}` : ''}\n\nراجع الطلب من لوحة "إدارة الموظفين" بحساب Storely.`
+          `💰 *طلب سلفة جديد*\n\n${staffName} يطلب سلفة بمبلغ *${amountNum} ر.س*${reason ? `\nالسبب: ${reason}` : ''}\n\nقرّر من Soul: ${soulLink('advance', (created as any)?.id)}`
         )
       }
 
