@@ -59,9 +59,12 @@ html.kb-open [style*="position: fixed"][style*="inset: 0px"],
 html.kb-open [style*="position:fixed"][style*="inset:0"] { top: var(--vvt, 0px) !important; bottom: auto !important; height: var(--vvh, 100%) !important; }
 html.kb-open [style*="position: fixed"][style*="inset: 0px"] > div:last-child,
 html.kb-open [style*="position:fixed"][style*="inset:0"] > div:last-child { max-height: calc(100% - 12px) !important; overflow-y: auto !important; }
-/* وقت الكيبورد: شريط التنقل السفلي يختفي (مثل التطبيقات)، ونافذة المساعد تنحط على الجزء الظاهر فوق الكيبورد بالضبط */
-html.kb-open .mob-bottom-nav, html.kb-open .ai-fab { display: none !important; }
-html.kb-open .ai-win { top: calc(var(--vvt, 0px) + 8px) !important; bottom: auto !important; height: calc(var(--vvh, 100%) - 16px) !important; max-height: none !important; }
+/* وقت الكيبورد: شريط التنقل السفلي يختفي (مثل التطبيقات)، ونافذة المساعد تنحط على الجزء الظاهر فوق الكيبورد بالضبط.
+   Soul مصغّر والكتابة بخانة بالصفحة: شريطه يختفي مثل زره، بدل ما يتمدد لنافذة فاضية بطول الشاشة */
+html.kb-open .mob-bottom-nav, html.kb-open .ai-fab, html.kb-open .ai-win.ai-win-min { display: none !important; }
+html.kb-open .ai-win:not(.ai-win-min) { top: calc(var(--vvt, 0px) + 8px) !important; bottom: auto !important; height: calc(var(--vvh, 100%) - 16px) !important; max-height: none !important; }
+/* وهو يكتب: صف الاقتراحات فوق الخانة يختفي عشان تكفي المساحة للرد (يرجع أول ما يتسكّر الكيبورد) */
+html.kb-open .ai-win .ai-sugrow { display: none !important; }
 :root:not([data-theme="dark"]) input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 :root:not([data-theme="dark"]) select,
 :root:not([data-theme="dark"]) textarea { color: #000000 !important; }
