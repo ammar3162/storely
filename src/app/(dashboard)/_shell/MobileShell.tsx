@@ -1,4 +1,5 @@
 'use client'
+import { useEffect } from 'react'
 import PageSkeleton from '@/components/PageSkeleton'
 import HelpVideoButton from '@/components/HelpVideoButton'
 import { Bell, ChevronDown } from 'lucide-react'
@@ -7,7 +8,17 @@ import ShellLink from './ShellLink'
 import type { DashboardShell } from './useDashboardShell'
 
 export default function MobileShell({ m, banners, children }: { m: DashboardShell; banners: React.ReactNode; children: React.ReactNode }) {
-  const { t, orgName, orgLogo, branchName, userInit, lowCount, unread, branches, setShowMore, ready, isDesk, isActive, startNav, BOT_NAV, openBranchSelector, navAllowed } = m
+  const { t, orgName, orgLogo, branchName, userInit, lowCount, unread, branches, setShowMore, ready, isDesk, router, isActive, startNav, BOT_NAV, openBranchSelector, navAllowed } = m
+  // رجع التطبيق من الخلفية (الجوال انقفل أو كان بتطبيق ثاني): نجدد تجهيز صفحات الشريط السفلي، لأن التجهيز صالح 5 دقائق بس.
+  // لو التجهيز لسه صالح ما يصير أي طلب
+  useEffect(()=>{
+    const onVis = () => {
+      if (document.visibilityState !== 'visible') return
+      document.querySelectorAll<HTMLAnchorElement>('.mob-bottom-nav a.sh-tab').forEach(a => { const h = a.getAttribute('href'); if (h) router.prefetch(h) })
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => document.removeEventListener('visibilitychange', onVis)
+  },[router])
   return (
     <>
         {/* ═══ الجوال ═══ */}
