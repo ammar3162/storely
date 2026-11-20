@@ -54,6 +54,12 @@ export default function ChoosePage() {
   const [showPermRequestModal, setShowPermRequestModal] = useState(false)
   const [orgLogo, setOrgLogo] = useState('')
 
+  // أقسام الموظف تتجهّز بالخلفية أول ما تفتح الرئيسية: الضغط على أي قسم يفتحه على طول بدل ما ينتظر الصفحة توصل
+  // (صفحات ثابتة بدون بيانات، فتجهيز قسم ما يقدر يدخله ما يضر — الصلاحية تنفحص داخل الصفحة)
+  useEffect(()=>{
+    for (const p of ['/staff/dispense','/staff/cashier-closing','/staff/inventory','/staff/purchases','/staff/tasks','/staff/salary','/staff/leave']) router.prefetch(p)
+  },[router])
+
   // تحديث فوري: لما تتغير البيانات من أي جهاز، الصفحة تعيد جلبها
   useLiveRefresh(staffData?.org_id, ['staff_notifications','staff_tasks','staff_leave_requests','attendance_permission_requests','staff_payroll_adjustments','staff_attendance'], ()=>{ loadNotifications(); loadTaskCount(); const s=localStorage.getItem('staff_session'); if(s) loadToday(JSON.parse(s)) })
   useEffect(()=>{

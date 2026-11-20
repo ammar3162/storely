@@ -63,6 +63,17 @@ export const SHELL_CSS = `
   .mob-bottom-nav{position:fixed;bottom:0;right:0;left:0;z-index:100;display:flex;background:rgba(255,255,255,.86);-webkit-backdrop-filter:saturate(1.8) blur(20px);backdrop-filter:saturate(1.8) blur(20px);border-top:1px solid ${C.border};padding-bottom:env(safe-area-inset-bottom)}
   .sh-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;padding:7px 2px 6px;border:none;background:none;color:${C.text3};font-size:11px;font-weight:500;font-family:inherit;cursor:pointer}
   .sh-tab.on{color:${C.primary};font-weight:600}
+  /* أزرار التنقل صارت روابط (ShellLink): بدون خط تحت، وبدون قائمة الضغط المطوّل بالآيفون، وتخف لحظة اللمس عشان يبان إن الضغطة انحسبت */
+  a.sh-tab,a.sh-nav,a.sh-icon-btn{text-decoration:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+  .sh-tab{transition:opacity .1s}
+  .sh-tab:active{opacity:.55}
+  /* بين الصفحات: خط رفيع بأعلى الشاشة يتحرك لو الصفحة تأخرت أكثر من ربع ثانية (لو وصلت أسرع ما يبان) */
+  .sh-nav-progress{position:fixed;top:0;left:0;right:0;height:2.5px;z-index:1001;overflow:hidden;pointer-events:none;opacity:0;animation:shNavShow .2s ease .25s forwards}
+  .sh-nav-progress::before{content:'';position:absolute;top:0;bottom:0;left:0;width:40%;border-radius:2px;background:${C.primary};animation:shNavSlide 1.1s ease-in-out infinite}
+  @keyframes shNavShow{to{opacity:1}}
+  @keyframes shNavSlide{from{transform:translateX(250%)}to{transform:translateX(-100%)}}
+  [data-theme="dark"] .sh-nav-progress::before{background:#a9c6d4}
+  @media (prefers-reduced-motion:reduce){.sh-tab{transition:none}.sh-nav-progress::before{animation:none;width:100%}}
 
   /* القائمة الجانبية على الكمبيوتر بالكحلي (طلب المالك 2026-11-17: «نفس اللون الأول»):
      نص أبيض، والعنصر المختار حبة بيضاء بنص كحلي — بخط أبل ومقاساته */

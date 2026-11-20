@@ -3,10 +3,11 @@ import PageSkeleton from '@/components/PageSkeleton'
 import HelpVideoButton from '@/components/HelpVideoButton'
 import { Bell, ChevronDown, HelpCircle, LogOut, Moon, Settings, Store, Sun } from 'lucide-react'
 import { C, navTone, Icon } from './nav'
+import ShellLink from './ShellLink'
 import type { DashboardShell } from './useDashboardShell'
 
 export default function DesktopShell({ m, banners, children }: { m: DashboardShell; banners: React.ReactNode; children: React.ReactNode }) {
-  const { t, orgName, orgLogo, branchName, userName, userInit, lowCount, unread, branches, ready, theme, isDesk, router, navRef, isActive, visibleGroups, toggleTheme, openBranchSelector, signOut } = m
+  const { t, orgName, orgLogo, branchName, userName, userInit, lowCount, unread, branches, ready, theme, isDesk, navRef, isActive, startNav, visibleGroups, toggleTheme, openBranchSelector, signOut } = m
   return (
     <>
         {/* ═══ الكمبيوتر ═══ */}
@@ -34,14 +35,21 @@ export default function DesktopShell({ m, banners, children }: { m: DashboardShe
                     const active=isActive(item.href)
                     const external=item.href.startsWith('http')
                     const badge=item.href==='/inventory'?lowCount:item.href==='/notifications'?unread:0
+                    const body = <>
+                      <Icon d={item.icon} size={18} width={1.75}/>
+                      <span style={{flex:1}}>{t(item.labelKey)}</span>
+                      {badge>0&&<span className="sh-count">{badge}</span>}
+                    </>
+                    const cls = `sh-nav${active?' on':''}`
+                    if (item.href==='#support') return (
+                      <button key={item.href} className={cls} style={navTone(item.href)} onClick={()=>window.dispatchEvent(new Event('storely:support'))}>{body}</button>
+                    )
+                    if (external) return (
+                      <a key={item.href} href={item.href} target="_blank" rel="noopener noreferrer" className={cls} style={navTone(item.href)}>{body}</a>
+                    )
+                    // القائمة الجانبية: الصفحة تتجهّز لما يمر عليها الماوس (hoverOnly) — مثل قبل، بس صارت رابط حقيقي
                     return (
-                      <button key={item.href} className={`sh-nav${active?' on':''}`} style={navTone(item.href)}
-                        onClick={()=>item.href==='#support'?window.dispatchEvent(new Event('storely:support')):external?window.open(item.href,'_blank'):router.push(item.href)}
-                        onMouseEnter={()=>!external&&router.prefetch(item.href)}>
-                        <Icon d={item.icon} size={18} width={1.75}/>
-                        <span style={{flex:1}}>{t(item.labelKey)}</span>
-                        {badge>0&&<span className="sh-count">{badge}</span>}
-                      </button>
+                      <ShellLink key={item.href} href={item.href} hoverOnly className={cls} style={navTone(item.href)} aria-current={active?'page':undefined} onGo={startNav}>{body}</ShellLink>
                     )
                   })}
                 </div>
@@ -64,8 +72,8 @@ export default function DesktopShell({ m, banners, children }: { m: DashboardShe
               <button className="sh-icon-btn" data-no-translate title={m.lang==='en'?'العربية':'English'} onClick={()=>m.setLang(m.lang==='en'?'ar':'en')} style={{fontSize:13,fontWeight:600,width:'auto',padding:'0 10px'}}>{m.lang==='en'?'عربي':'EN'}</button>
               <HelpVideoButton/>
               <button className="sh-icon-btn" title="الدعم الفني" onClick={()=>window.dispatchEvent(new Event('storely:support'))}><HelpCircle size={19}/></button>
-              <button className="sh-icon-btn" title="الإعدادات" onClick={()=>router.push('/settings')}><Settings size={19}/></button>
-              <button className="sh-icon-btn" title="الإشعارات" onClick={()=>router.push('/notifications')}><Bell size={19}/>{unread>0&&<span className="sh-dot"/>}</button>
+              <ShellLink href="/settings" className="sh-icon-btn" title="الإعدادات" aria-label="الإعدادات" onGo={startNav}><Settings size={19}/></ShellLink>
+              <ShellLink href="/notifications" className="sh-icon-btn" title="الإشعارات" aria-label="الإشعارات" onGo={startNav}><Bell size={19}/>{unread>0&&<span className="sh-dot"/>}</ShellLink>
             </div>
           </header>
 
