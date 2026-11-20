@@ -49,6 +49,8 @@ const SUPPORT_TIP_KEY = 'support_tip_seen'
 // suggest = ترحيب المساعد بأهم أشياء اليوم، والاقتراحات أزرار تحت الرسالة
 interface Msg { role:'user'|'ai'; text:string; time:string; kind?:'support'|'ticket'|'suggest'; sugs?: Suggestion[] }
 const greeting = () => (new Date().getHours() < 12 ? 'صباح الخير' : 'مساء الخير')
+// جهاز بماوس (كمبيوتر): نحط المؤشر بخانة الكتابة لحاله. بالجوال لا — الكيبورد يطلع ويغطي نص الشاشة والقرارات
+const hasMouse = () => typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches
 // سجل فقاعة Soul بالجهاز لكل منشأة (lib/assistantBubble): القرار الجديد مرة وحدة، والتنبيه العاجل مرة باليوم، والمعلومات ما تطلع كفقاعة
 const BUBBLE_LOG = 'storely_ai_bubble'
 const localDay = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
@@ -224,6 +226,8 @@ export default function AIAssistant() {
   const [asked, setAsked] = useState<string[]>([])
   // قرارات تنتظر هذا المستخدم (lib/assistantDecisions): أزرار بدون ذكاء، فتطلع للكل حسب الصلاحية
   const [decisions, setDecisions] = useState<Decision[]>([])
+  // القرار اللي انفتح عليه Soul (رابط إشعار أو فقاعة): بطاقته تتلوّن وتمرّر لنفسها
+  const [highlight, setHighlight] = useState<string|null>(null)
   // الظاهرة = بدون اللي تأجّلت لبكرة بهالجهاز، والرقم الأحمر = اللي ما انأخذ فيها قرار
   useDecisionPhases()
   const [later, setLater] = useState<Record<string, string>>(() => (typeof window === 'undefined' ? {} : readLater()))
@@ -258,7 +262,8 @@ export default function AIAssistant() {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false)
   const [showPeriodPicker, setShowPeriodPicker] = useState(false)
   const IDLE_MS = 3 * 60 * 1000
-  const bottomRef  = useRef<HTMLDivElement>(null)
+  const msgsRef    = useRef<HTMLDivElement>(null)
+  const atBottom   = useRef(false)
   const inputRef   = useRef<HTMLInputElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout>|null>(null)
 
@@ -307,14 +312,30 @@ export default function AIAssistant() {
         ? {role:'ai', kind:'suggest', text:`${greeting()}، هذه أهم الأشياء الآن في منشأتك. اضغط أي منها وأعرض لك التفاصيل، أو اسألني عن أي شيء.`, sugs: live.slice(0, 5), time:now()}
         : {role:'ai', text: hasAi===false ? WELCOME_BASIC : WELCOME_AI, time:now()}])
     }
-    if(open && !minimized) {
+    if(open && !minimized && hasMouse()) {
       setTimeout(()=>inputRef.current?.focus(), 300)
     }
   },[open, minimized, hasAi, sugs])
 
+  // التمرير داخل صندوق الرسائل بس — scrollIntoView كان يحرّك الصفحة اللي وراه، وبالآيفون يخربط الجزء الظاهر وقت الكيبورد.
+  // بداية المحادثة (الترحيب والقرارات): من الأعلى عشان تبان أول شي، إلا لو انفتح على قرار معيّن (البطاقة تمرّر لنفسها).
+  // بعد أول سؤال: آخر رسالة
   useEffect(()=>{
-    if(!minimized) bottomRef.current?.scrollIntoView({behavior:'smooth'})
+    const el = msgsRef.current
+    if (!el || minimized) return
+    if (!msgs.some(m=>m.role==='user')) { if (!highlight) el.scrollTop = 0; atBottom.current = false; return }
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }); atBottom.current = true
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[msgs, minimized])
+  // النافذة تقصر لما يطلع الكيبورد: لو كان على آخر المحادثة يبقى عليها
+  useEffect(()=>{
+    const el = msgsRef.current
+    if (!el) return
+    const onScroll = () => { atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 24 }
+    const ro = new ResizeObserver(()=>{ if (atBottom.current) el.scrollTop = el.scrollHeight })
+    el.addEventListener('scroll', onScroll, { passive:true }); ro.observe(el)
+    return ()=>{ el.removeEventListener('scroll', onScroll); ro.disconnect() }
+  },[open, minimized])
 
   // تذكرة دعم: المحادثة كاملة + الصفحة الحالية → «صندوق الطلبات ← الدعم» في لوحة الإدارة
   const [ticketBusy, setTicketBusy] = useState(false)
@@ -339,6 +360,8 @@ export default function AIAssistant() {
   async function send(text?:string, shown?:string) {
     const msg = (text || input).trim()
     if(!msg || loading) return
+    // كان يكتب بالخانة؟ نرجّع المؤشر لها بعد الرد. ضغط اقتراح بالجوال: ما نفتح الكيبورد فوق الرد
+    const typing = document.activeElement === inputRef.current
     setInput('')
     const userMsg:Msg = {role:'user', text:shown || msg, time:now()}
     setMsgs(m=>[...m, userMsg])
@@ -369,7 +392,7 @@ export default function AIAssistant() {
       setMsgs(m=>[...m, {role:'ai', text:'عذراً، حدث خطأ في الاتصال. تأكد من اتصالك بالإنترنت.', time:now()}])
     }
     setLoading(false)
-    setTimeout(()=>inputRef.current?.focus(), 100)
+    if (typing || hasMouse()) setTimeout(()=>inputRef.current?.focus(), 100)
   }
 
   // نقطة على زر المساعد لو ما فيه قرارات: تنبيه عاجل (إقفال ناقص، اشتراك ينتهي، موعد الإقرار)
@@ -377,7 +400,6 @@ export default function AIAssistant() {
   // فقاعة من زر المساعد بدون فتح الشات: قرار جديد (بأزراره) أو عدة قرارات جديدة مجمّعة، أو تنبيه عاجل مرة باليوم — وتختفي بعد 15 ثانية
   const [bubble, setBubble] = useState<{ type:'urgent'; s:Suggestion } | { type:'decisions'; keys:string[] } | null>(null)
   const [hopTick, setHopTick] = useState(0)
-  const [highlight, setHighlight] = useState<string|null>(null)
   function dismissBubble() { setBubble(null) }
   function openBubble(b: Suggestion) {
     setBubble(null)
@@ -511,7 +533,7 @@ export default function AIAssistant() {
         .ai-fab:hover{transform:translateY(-2px)}
         .ai-fab:active{transform:scale(.96)}
         .ai-win button:focus-visible{outline:2px solid ${C.primary};outline-offset:2px}.ai-win{animation:aiFadeUp .2s ease}
-        .ai-input:focus{border-color:${C.primary};box-shadow:0 0 0 3px rgba(32,54,64,.14);outline:none}
+        .ai-input:focus{border-color:${C.primary}!important;box-shadow:0 0 0 3px rgba(32,54,64,.14);outline:none}
         .quick-btn{transition:transform .15s,background-color .15s}
         .ai-win,.ai-bubble{--ai-orange:#C2410C;--ai-orange-bg:rgba(255,149,0,.13);--ai-hair:rgba(60,60,67,.16)}
         :root[data-theme="dark"] .ai-win,:root[data-theme="dark"] .ai-bubble{--ai-orange:#FF9F0A;--ai-orange-bg:rgba(255,159,10,.18);--ai-hair:rgba(84,84,88,.65)}
@@ -522,7 +544,9 @@ export default function AIAssistant() {
         .ai-chip:active,.ai-row:active{transform:scale(.98)}
         .ai-ic-btn{transition:background-color .15s}
         .ai-ic-btn:hover{background:var(--storely-control-border)}
-        .ai-bubble button:focus-visible,.ai-win input:focus-visible{outline:2px solid ${C.primary};outline-offset:2px}
+        .ai-bubble button:focus-visible{outline:2px solid ${C.primary};outline-offset:2px}
+        /* خانة الكتابة: إطار كحلي واحد وقت الكتابة (كان إطارين: الحد وخط ثاني حوله) */
+        .ai-input:focus-visible{outline:none}
         ${MASCOT_CSS}
         ${SOUL_DECISIONS_CSS}
         /* محتوى المحادثة يطول (بطاقات القرارات): ما ينضغط أي عنصر — كانت قائمة «مقترح لك الآن» تختفي بارتفاع صفر */
@@ -620,7 +644,7 @@ export default function AIAssistant() {
       {/* Chat Window */}
       {open && (
         // مفتوح بالجوال: الصفحة اللي وراه ثابتة (OverlayScrollLock). مصغّر أو بالكمبيوتر: الصفحة تتحرك عادي
-        <div className={`ai-win${fabPos?.side==='right'?' ai-win-r':''}`} data-scroll-lock={minimized ? undefined : 'narrow'} style={{
+        <div className={`ai-win${fabPos?.side==='right'?' ai-win-r':''}${minimized?' ai-win-min':''}`} data-scroll-lock={minimized ? undefined : 'narrow'} style={{
           position:'fixed',
           bottom: minimized ? 86 : 86,
           left: 12, right: 12,
@@ -688,7 +712,7 @@ export default function AIAssistant() {
           )}
 
           {/* Messages */}
-              <div className="ai-msgs" style={{flex:1,overflowY:'auto',overscrollBehavior:'contain',padding:'14px 14px 10px',display:'flex',flexDirection:'column',gap:8,background:C.surface}}>
+              <div ref={msgsRef} className="ai-msgs" style={{flex:1,overflowY:'auto',overscrollBehavior:'contain',padding:'14px 14px 10px',display:'flex',flexDirection:'column',gap:8,background:C.surface}}>
                 {msgs.length===0 && visible.length>0 && <SoulDecisions items={visible} orgId={orgKey()} highlight={highlight} onExtraDone={onExtraDone} />}
                 {msgs.map((m,i)=>(
                   <React.Fragment key={i}>
@@ -741,7 +765,6 @@ export default function AIAssistant() {
                     </div>
                   </div>
                 )}
-                <div ref={bottomRef}/>
               </div>
 
               {/* Timeout message */}
@@ -764,7 +787,7 @@ export default function AIAssistant() {
                 const list: (Partial<Suggestion> & { id:string; label:string; prompt:string })[] = live.length ? live : (hasAi && sugs===null ? [] : fallback)
                 if (!list.length || loading) return null
                 return (
-                  <div style={{padding:'8px 0 6px',background:C.surface,flexShrink:0}}>
+                  <div className="ai-sugrow" style={{padding:'8px 0 6px',background:C.surface,flexShrink:0}}>
                     <div style={{display:'flex',alignItems:'center',gap:5,fontSize:13,fontWeight:500,color:C.text3,margin:'0 16px 6px'}}>
                       <Sparkles size={13} strokeWidth={2}/> {live.length ? 'مقترح لك الآن' : 'اقتراحات'}
                     </div>
@@ -792,7 +815,8 @@ export default function AIAssistant() {
                   onKeyDown={e=>e.key==='Enter'&&!e.shiftKey&&send()}
                   placeholder="اسأل عن منشأتك…" aria-label="اكتب سؤالك" enterKeyHint="send"
                   style={{flex:1,minWidth:0,height:40,padding:'0 16px',border:'1px solid var(--storely-control-border)',borderRadius:999,fontSize:16,fontFamily:'inherit',color:C.text,background:C.surface,transition:'border-color .15s'}}/>
-                <button className="send-btn" onClick={()=>send()} disabled={!input.trim()||loading} aria-label="إرسال"
+                {/* الضغط على الإرسال ما يسحب المؤشر من الخانة: الكيبورد يبقى مفتوح مثل الرسائل */}
+                <button className="send-btn" onMouseDown={e=>e.preventDefault()} onClick={()=>send()} disabled={!input.trim()||loading} aria-label="إرسال"
                   style={{width:36,height:36,borderRadius:'50%',background:input.trim()&&!loading?C.primary:'var(--storely-fill)',color:input.trim()&&!loading?'white':'var(--storely-subtle, #8E8E93)',border:'none',cursor:input.trim()&&!loading?'pointer':'default',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                   <ArrowUp size={19} strokeWidth={2.6}/>
                 </button>

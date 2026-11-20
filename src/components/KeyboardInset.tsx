@@ -1,21 +1,21 @@
 'use client'
 import { useEffect } from 'react'
+import { keyboardState } from '@/lib/keyboardInset'
 
 // لما يطلع كيبورد الجوال: نحسب ارتفاعه ونحطه في --kb عشان النوافذ (اللي تغطي الشاشة) ترتفع فوقه بدل ما يغطيها
-// (الآيفون ما يصغّر الشاشة للعناصر الثابتة — الكيبورد يطلع فوقها)
+// (الآيفون ما يصغّر الشاشة للعناصر الثابتة — الكيبورد يطلع فوقها). الحساب نفسه في lib/keyboardInset.ts
 export default function KeyboardInset() {
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
     const root = document.documentElement
     const update = () => {
-      const kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop))
-      const open = kb > 80   // أقل من كذا = شريط المتصفح مو كيبورد
-      root.style.setProperty('--kb', open ? `${kb}px` : '0px')
+      const k = keyboardState({ innerHeight: window.innerHeight, vvHeight: vv.height, vvOffsetTop: vv.offsetTop })
+      root.style.setProperty('--kb', `${k.kb}px`)
       // الجزء الظاهر من الشاشة (بداية ارتفاعه) — النوافذ تنحط عليه بالضبط وقت الكيبورد
-      root.style.setProperty('--vvt', `${Math.round(vv.offsetTop)}px`)
-      root.style.setProperty('--vvh', `${Math.round(vv.height)}px`)
-      root.classList.toggle('kb-open', open)
+      root.style.setProperty('--vvt', `${k.top}px`)
+      root.style.setProperty('--vvh', `${k.height}px`)
+      root.classList.toggle('kb-open', k.open)
     }
     vv.addEventListener('resize', update)
     vv.addEventListener('scroll', update)
